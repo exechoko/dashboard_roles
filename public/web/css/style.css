@@ -4149,6 +4149,9 @@ body:not(.sidebar-mini) .sidebar-style-2 .sidebar-menu li.active ul.dropdown-men
 .bg-c-pink {
     background: linear-gradient(45deg,#ff869a, #FF5370);
 }
+.bg-c-orange {
+    background: linear-gradient(45deg,#ffeb86, #ffc653);
+}
 .card {
     -webkit-box-shadow: 0 1px 2.94px 0.06px rgba(4,26,55,0.16);
     box-shadow: 0 1px 2.94px 0.06px rgba(4,26,55,0.16);

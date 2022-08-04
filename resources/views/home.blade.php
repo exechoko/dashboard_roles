@@ -53,6 +53,20 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div class="col-md-4 col-xl-4">
+                                        <div class="card bg-c-orange order-card">
+                                            <div class="card-block">
+                                                <h5>Equipos</h5>
+                                                @php
+                                                 use App\Models\Equipo;
+                                                $cant_equipos = Equipo::count();
+                                                @endphp
+                                                <h2 class="text-right"><i class="fa fa-mobile f-left"></i><span>{{$cant_equipos}}</span></h2>
+                                                <p class="m-b-0 text-right"><a href="/equipos" class="text-white">Ver más</a></p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                         </div>
                     </div>

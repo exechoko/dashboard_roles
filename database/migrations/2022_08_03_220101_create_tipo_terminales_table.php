@@ -15,10 +15,10 @@ class CreateTipoTerminalesTable extends Migration
     {
         Schema::create('tipo_terminales', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->string('tipo');
-            $table->string('marca');
-            $table->string('modelo');
-            $table->string('imagen');
+            $table->string('tipo')->nullable();
+            $table->string('marca')->nullable();
+            $table->string('modelo')->nullable();
+            $table->string('imagen')->nullable();
             $table->timestamps();
         });
     }

@@ -33,8 +33,26 @@
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-12">
                                     <div class="form-group">
+                                        <label for="apellido">Apellido</label>
+                                        {!! Form::text('apellido', null, array('class'=>'form-control')) !!}
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="form-group">
+                                        <label for="lp">L.P.</label>
+                                        {!! Form::number('lp', null, array('class'=>'form-control')) !!}
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="form-group">
+                                        <label for="dni">D.N.I.</label>
+                                        {!! Form::number('dni', null, array('class'=>'form-control')) !!}
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="form-group">
                                         <label for="email">E-mail</label>
-                                        {!! Form::text('email', null, array('class'=>'form-control')) !!}
+                                        {!! Form::email('email', null, array('class'=>'form-control')) !!}
                                     </div>
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-12">

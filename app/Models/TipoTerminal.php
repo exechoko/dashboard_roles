@@ -8,4 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class TipoTerminal extends Model
 {
     protected $table = 'tipo_terminales';
+
+    public function equipo(){
+        return $this->hasMany(Equipo::class);
+    }
 }

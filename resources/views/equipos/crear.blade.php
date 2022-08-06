@@ -28,33 +28,68 @@
                                 <div class="row">
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
-                                            <label for="titulo">Título</label>
-                                            <input type="text" name="titulo" class="form-control">
+                                            <label for="">Marca</label>
+                                            {!! Form::select('marca_terminal', $marca_terminal, [], ['placeholder' => 'Selecciona una marca', 'class' => 'form-control']) !!}
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
-                                            <label for="titulo">Otra cosa</label>
-                                            <input type="text" name="titulo" class="form-control">
+                                            <label for="">Modelo</label>
+                                            {!! Form::select('modelo_terminal', $modelo_terminal, [], ['placeholder' => 'Selecciona un modelo', 'class' => 'form-control']) !!}
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
-                                            <label for="titulo">ISSI</label>
-                                            <input type="text" name="titulo" class="form-control">
+                                            <label for="">Estado</label>
+                                            {!! Form::select('estados[]', $estados, [], ['placeholder' => 'Selecciona el estado', 'class' => 'form-control']) !!}
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
-
+                                        <div class="form-group">
+                                            <label for="fecha_estado">Fecha</label>
+                                            {!! Form::date('fecha_estado', \Carbon\Carbon::now()) !!}
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <label for="issi">ISSI</label>
+                                            <input type="text" name="issi" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <label for="tei">TEI</label>
+                                            <input type="text" name="tei" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <label for="propietario">Propietario</label>
+                                            <input type="text" name="Propietario" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <label for="con_garantia">Con garantía</label>
+                                            {!! Form::checkbox('con_garantia', 'SI') !!}
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12" id="label_fecha_venc_garantia">
+                                        <div class="form-group">
+                                            <label for="fecha_venc_garantia">Fecha de vencimiento de la garantía</label>
+                                            {!! Form::date('fecha_venc_garantia', \Carbon\Carbon::now()) !!}
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
-                                            <textarea class="form-control" name="contenido" style="height: 100px"></textarea>
-                                            <label for="contenido">Contenido</label>
+                                            <label for="observaciones">Observaciones</label>
+                                            <textarea class="form-control" name="observaciones" style="height: 100px"></textarea>
                                         </div>
-
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
                                         <button type="submit" class="btn btn-primary">Guardar</button>
                                     </div>
                             </form>
-
                         </div>
                     </div>
                 </div>

@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Equipo;
+use App\Models\Estado;
+use App\Models\TipoTerminal;
+use Illuminate\Support\Arr;
 
 class EquipoController extends Controller
 {
@@ -20,7 +23,8 @@ class EquipoController extends Controller
      */
     public function index()
     {
-        //
+        //$tipos_terminales = TipoTerminal::all();
+        //$estados = Estado::all();
         $equipos = Equipo::paginate(5);
         return view('equipos.index', compact('equipos'));
     }
@@ -32,8 +36,11 @@ class EquipoController extends Controller
      */
     public function create()
     {
-        //
-        return view('equipos.crear');
+        $estados = Estado::pluck('nombre','nombre')->all();
+        $marca_terminal = TipoTerminal::pluck('marca', 'marca');
+        $modelo_terminal = TipoTerminal::pluck('modelo', 'modelo');
+
+        return view('equipos.crear',compact('estados', 'marca_terminal', 'modelo_terminal'));
     }
 
     /**
@@ -46,11 +53,34 @@ class EquipoController extends Controller
     {
         //
         request()->validate([
-            'issi' => 'required', //Solamente requerido el TEI
+            'marca_terminal' => 'required',
+            'modelo_terminal' => 'required',
+            'estados' => 'required',
+            'issi' => 'required',
             'tei' => 'required'
         ]);
 
-        Equipo::create($request->all());
+        $terminal_info = TipoTerminal::where('marca', $request->marca_terminal)->where('modelo', $request->modelo_terminal)->first();
+        $estado_info = Estado::where('nombre', $request->estados)->first();
+
+        //Equipo::create($request->all());
+        if (!is_null($terminal_info) && !is_null($estado_info)){
+            $equipo = new Equipo;
+            $equipo->tipo_terminal_id = $terminal_info->id;
+            $equipo->estado_id = $estado_info->id;
+            $equipo->fecha_estado = $request->fecha_estado;
+            $equipo->issi = $request->issi;
+            $equipo->tei = $request->tei;
+            $equipo->propietario = $request->propietario;
+            //$equipo->condicion = $request->condicion;
+            $equipo->con_garantia = (isset($request->con_garantia)) ? true : false;
+            $equipo->fecha_venc_garantia = $request->fecha_venc_garantia;
+            $equipo->observaciones = $request->observaciones;
+
+            $equipo->save();
+
+        }
+
         return redirect()->route('equipos.index');
     }
 
@@ -71,10 +101,15 @@ class EquipoController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit(Equipo $equipo)
     {
-        //
-        return view('equipos.editar', compact('equipo'));
+        $estados = Estado::pluck('nombre','nombre')->all();
+        //$tipos_terminales = TipoTerminal::pluck('marca','marca')->all();
+        //$marca_terminal = TipoTerminal::pluck('marca', 'marca');
+        $marca_terminal = $equipo->tipo_terminal()->pluck('marca')->all();
+        $modelo_terminal = $equipo->tipo_terminal()->pluck('modelo')->all();
+        //$modelo_terminal = TipoTerminal::pluck('modelo', 'modelo');
+        return view('equipos.editar', compact('equipo','marca_terminal', 'modelo_terminal', 'estados'));
     }
 
     /**
@@ -84,15 +119,32 @@ class EquipoController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request,Equipo $equipo)
     {
         //
         request()->validate([
-            'issi' => 'required', //Solamente requerido el TEI
+            'estados' => 'required',
+            'issi' => 'required',
             'tei' => 'required'
         ]);
 
-        Equipo::create($request->all());
+        $estado_info = Estado::where('nombre', $request->estados)->first();
+
+        //Equipo::create($request->all());
+        if (!is_null($estado_info)){
+            $equipo->estado_id = $estado_info->id;
+            $equipo->fecha_estado = $request->fecha_estado;
+            $equipo->issi = $request->issi;
+            $equipo->tei = $request->tei;
+            $equipo->propietario = $request->propietario;
+            //$equipo->condicion = $request->condicion;
+            $equipo->con_garantia = (isset($request->con_garantia)) ? true : false;
+            $equipo->fecha_venc_garantia = $request->fecha_venc_garantia;
+            $equipo->observaciones = $request->observaciones;
+
+            $equipo->save();
+
+        }
         return redirect()->route('equipos.index');
     }
 
@@ -102,10 +154,10 @@ class EquipoController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Equipo $equipo)
     {
         //
-        $equipos->delete();
+        $equipo->delete();
         return redirect()->route('equipos.index');
     }
 }

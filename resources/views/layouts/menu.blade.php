@@ -2,12 +2,16 @@
     <a class="nav-link" href="/home">
         <i class=" fas fa-chart-line"></i><span>Dashboard</span>
     </a>
+    @can('ver-usuario')
     <a class="nav-link" href="/usuarios">
         <i class=" fas fa-users"></i><span>Usuarios</span>
     </a>
+    @endcan
+    @can('ver-rol')
     <a class="nav-link" href="/roles">
         <i class=" fas fa-lock"></i><span>Roles</span>
     </a>
+    @endcan
     <!--a class="nav-link" href="/blogs">
         <i class=" fas fa-blog"></i><span>Blogs</span>
     </a-->

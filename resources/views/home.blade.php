@@ -12,8 +12,7 @@
                         <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-4 col-xl-4">
-
-                                    <div class="card bg-c-blue order-card">
+                                        <div class="card bg-c-blue order-card">
                                             <div class="card-block">
                                             <h5>Usuarios</h5>
                                                 @php
@@ -21,11 +20,12 @@
                                                 $cant_usuarios = User::count();
                                                 @endphp
                                                 <h2 class="text-right"><i class="fa fa-users f-left"></i><span>{{$cant_usuarios}}</span></h2>
+                                                @can('ver-usuario')
                                                 <p class="m-b-0 text-right"><a href="/usuarios" class="text-white">Ver más</a></p>
+                                                @endcan
                                             </div>
                                         </div>
                                     </div>
-
                                     <div class="col-md-4 col-xl-4">
                                         <div class="card bg-c-green order-card">
                                             <div class="card-block">
@@ -35,24 +35,13 @@
                                                  $cant_roles = Role::count();
                                                 @endphp
                                                 <h2 class="text-right"><i class="fa fa-user-lock f-left"></i><span>{{$cant_roles}}</span></h2>
+                                                @can('ver-rol')
                                                 <p class="m-b-0 text-right"><a href="/roles" class="text-white">Ver más</a></p>
+                                                @endcan
+
                                             </div>
                                         </div>
                                     </div>
-
-                                    <!--div class="col-md-4 col-xl-4">
-                                        <div class="card bg-c-pink order-card">
-                                            <div class="card-block">
-                                                <h5>Blogs</h5>
-                                                @php
-                                                 use App\Models\Blog;
-                                                $cant_blogs = Blog::count();
-                                                @endphp
-                                                <h2 class="text-right"><i class="fa fa-blog f-left"></i><span>{{$cant_blogs}}</span></h2>
-                                                <p class="m-b-0 text-right"><a href="/blogs" class="text-white">Ver más</a></p>
-                                            </div>
-                                        </div>
-                                    </div-->
 
                                     <div class="col-md-4 col-xl-4">
                                         <div class="card bg-c-pink order-card">
@@ -63,7 +52,9 @@
                                                 $cant_equipos = Equipo::count();
                                                 @endphp
                                                 <h2 class="text-right"><i class="fa fa-mobile f-left"></i><span>{{$cant_equipos}}</span></h2>
+                                                @can('ver-equipo')
                                                 <p class="m-b-0 text-right"><a href="/equipos" class="text-white">Ver más</a></p>
+                                                @endcan
                                             </div>
                                         </div>
                                     </div>

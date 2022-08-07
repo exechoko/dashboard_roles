@@ -73,7 +73,7 @@ class EquipoController extends Controller
             $equipo->tei = $request->tei;
             $equipo->propietario = $request->propietario;
             //$equipo->condicion = $request->condicion;
-            $equipo->con_garantia = (isset($request->con_garantia)) ? true : false;
+            $equipo->con_garantia = isset($request->con_garantia);
             $equipo->fecha_venc_garantia = $request->fecha_venc_garantia;
             $equipo->observaciones = $request->observaciones;
 
@@ -104,11 +104,8 @@ class EquipoController extends Controller
     public function edit(Equipo $equipo)
     {
         $estados = Estado::pluck('nombre','nombre')->all();
-        //$tipos_terminales = TipoTerminal::pluck('marca','marca')->all();
-        //$marca_terminal = TipoTerminal::pluck('marca', 'marca');
         $marca_terminal = $equipo->tipo_terminal()->pluck('marca')->all();
         $modelo_terminal = $equipo->tipo_terminal()->pluck('modelo')->all();
-        //$modelo_terminal = TipoTerminal::pluck('modelo', 'modelo');
         return view('equipos.editar', compact('equipo','marca_terminal', 'modelo_terminal', 'estados'));
     }
 

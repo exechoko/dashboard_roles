@@ -1,3 +1,3 @@
 <div class="footer-left">
-    All rights reserved &copy; {{ date('Y') }}
+    Div. 911 y Videovig. Sección Técnica &copy; {{ date('Y') }}
 </div>

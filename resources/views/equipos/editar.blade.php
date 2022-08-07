@@ -70,7 +70,7 @@
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
                                             <label for="con_garantia">Con garantía</label>
-                                            {!! Form::checkbox('con_garantia', 'SI') !!}
+                                            {!! Form::checkbox('con_garantia', 'con_garantia', ($equipo->con_garantia == 1) ? true : null) !!}
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12" id="label_fecha_venc_garantia">

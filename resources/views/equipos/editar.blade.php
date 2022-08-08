@@ -29,17 +29,17 @@
                                 @method('PUT')
                                 <div class="row">
                                     <!--div class="col-xs-12 col-sm-12 col-md-12">
-                                        <div class="form-group">
-                                            <label for="">Marca</label>
-                                            {!! Form::select('marca_terminal[]', $marca_terminal, [], ['class' => 'form-control']) !!}
+                                            <div class="form-group">
+                                                <label for="">Marca</label>
+                                                {!! Form::select('marca_terminal[]', $marca_terminal, [], ['class' => 'form-control']) !!}
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
-                                        <div class="form-group">
-                                            <label for="">Modelo</label>
-                                            {!! Form::select('modelo_terminal[]', $modelo_terminal, [], ['class' => 'form-control']) !!}
-                                        </div>
-                                    </div-->
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <div class="form-group">
+                                                <label for="">Modelo</label>
+                                                {!! Form::select('modelo_terminal[]', $modelo_terminal, [], ['class' => 'form-control']) !!}
+                                            </div>
+                                        </div-->
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
                                             <label for="issi">ISSI</label>
@@ -63,14 +63,14 @@
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
                                             <label for="propietario">Propietario</label>
-                                            <input type="text" name="Propietario" class="form-control"
+                                            <input type="text" name="propietario" class="form-control"
                                                 value="{{ $equipo->propietario }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
                                             <label for="con_garantia">Con garantía</label>
-                                            {!! Form::checkbox('con_garantia', 'con_garantia', ($equipo->con_garantia == 1) ? true : null) !!}
+                                            {!! Form::checkbox('con_garantia', 'con_garantia', $equipo->con_garantia == 1 ? true : false) !!}
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12" id="label_fecha_venc_garantia">
@@ -80,11 +80,55 @@
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
-
+                                        <div class="form-group">
+                                            <label for="gps">Con GPS</label>
+                                            {!! Form::checkbox('gps', 'gps', $equipo->gps == 1 ? true : false) !!}
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="desc_gps">Descripción GPS</label>
+                                            <input type="text" name="desc_gps" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <label for="frente_remoto">Con Frente Remoto</label>
+                                            {!! Form::checkbox('frente_remoto', 'frente_remoto', $equipo->frente_remoto == 1 ? true : false) !!}
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="desc_frente">Descripción Frente Remoto</label>
+                                            <input type="text" name="desc_frente" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <label for="rf">Con Antena R.F. </label>
+                                            {!! Form::checkbox('rf', 'rf', $equipo->rf == 1 ? true : false) !!}
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="desc_rf">Descripción Antena R.F.</label>
+                                            <input type="text" name="desc_rf" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <label for="kit_inst">Con Kit de instalación </label>
+                                            {!! Form::checkbox('kit_inst', 'kit_inst', $equipo->kit_inst == 1 ? true : false) !!}
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="desc_kit_inst">Descripción del kit de instalación</label>
+                                            <input type="text" name="desc_kit_inst" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <label for="operativo">Operativo</label>
+                                            {!! Form::checkbox('operativo', 'operativo', $equipo->operativo == 1 ? true : false) !!}
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>
                                             <textarea class="form-control" name="observaciones" style="height: 100px">{{ $equipo->observaciones }}</textarea>
-
                                         </div>
                                         <br>
                                         <button type="submit" class="btn btn-primary">Guardar</button>
@@ -98,3 +142,11 @@
         </div>
     </section>
 @endsection
+
+<!--script>
+    var msg = '{{Session::get('alert')}}';
+    var exist = '{{Session::has('alert')}}';
+    if(exist){
+      alert(msg);
+    }
+</script-->

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateTipoTerminalesTable extends Migration
+class CreateTipoUsoTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,12 +13,9 @@ class CreateTipoTerminalesTable extends Migration
      */
     public function up()
     {
-        Schema::create('tipo_terminales', function (Blueprint $table) {
+        Schema::create('tipo_uso', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->unsignedBigInteger('tipo_uso_id')->nullable();
-            $table->string('marca')->nullable();
-            $table->string('modelo')->nullable();
-            $table->string('imagen')->nullable();
+            $table->string('uso',30)->nullable();
             $table->timestamps();
         });
     }
@@ -30,6 +27,6 @@ class CreateTipoTerminalesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('tipo_terminales');
+        Schema::dropIfExists('tipo_uso');
     }
 }

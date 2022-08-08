@@ -36,6 +36,7 @@
         </div>
         <!-- Main Content -->
         <div class="main-content">
+            @include('layouts.alerts')
             @yield('content')
         </div>
         <footer class="main-footer">

@@ -6,7 +6,9 @@ use Illuminate\Http\Request;
 use App\Models\Equipo;
 use App\Models\Estado;
 use App\Models\TipoTerminal;
+use App\Models\TipoUso;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
 
 class EquipoController extends Controller
 {
@@ -36,6 +38,7 @@ class EquipoController extends Controller
      */
     public function create()
     {
+        //$uso = TipoUso::pluck('uso', 'uso');
         $estados = Estado::pluck('nombre','nombre')->all();
         $marca_terminal = TipoTerminal::pluck('marca', 'marca');
         $modelo_terminal = TipoTerminal::pluck('modelo', 'modelo');
@@ -56,29 +59,47 @@ class EquipoController extends Controller
             'marca_terminal' => 'required',
             'modelo_terminal' => 'required',
             'estados' => 'required',
-            'issi' => 'required',
-            'tei' => 'required'
+            //'issi' => 'required', //No es requerido porque si es un equipo nuevo no tiene asignado uno
+            'tei' => 'required',
+            'operativo' => 'required'
         ]);
 
         $terminal_info = TipoTerminal::where('marca', $request->marca_terminal)->where('modelo', $request->modelo_terminal)->first();
         $estado_info = Estado::where('nombre', $request->estados)->first();
 
-        //Equipo::create($request->all());
-        if (!is_null($terminal_info) && !is_null($estado_info)){
-            $equipo = new Equipo;
-            $equipo->tipo_terminal_id = $terminal_info->id;
-            $equipo->estado_id = $estado_info->id;
-            $equipo->fecha_estado = $request->fecha_estado;
-            $equipo->issi = $request->issi;
-            $equipo->tei = $request->tei;
-            $equipo->propietario = $request->propietario;
-            //$equipo->condicion = $request->condicion;
-            $equipo->con_garantia = isset($request->con_garantia);
-            $equipo->fecha_venc_garantia = $request->fecha_venc_garantia;
-            $equipo->observaciones = $request->observaciones;
+        try{
+            DB::beginTransaction();
+            if (!is_null($terminal_info) && !is_null($estado_info)){
+                $equipo = new Equipo;
+                $equipo->tipo_terminal_id = $terminal_info->id;
+                $equipo->estado_id = $estado_info->id;
+                $equipo->fecha_estado = $request->fecha_estado;
+                $equipo->issi = $request->issi;
+                $equipo->tei = $request->tei;
+                $equipo->gps = isset($request->gps);
+                $equipo->frente_remoto = isset($request->frente_remoto);
+                $equipo->rf = isset($request->rf);
+                $equipo->kit_inst = isset($request->kit_inst);
+                $equipo->operativo = isset($request->operativo);
+                $equipo->desc_gps = $request->desc_gps;
+                $equipo->desc_frente = $request->desc_frente;
+                $equipo->desc_rf = $request->desc_rf;
+                $equipo->desc_kit_inst = $request->desc_kit_inst;
+                $equipo->propietario = $request->propietario;
+                //$equipo->condicion = $request->condicion;
+                $equipo->con_garantia = isset($request->con_garantia);
+                $equipo->fecha_venc_garantia = $request->fecha_venc_garantia;
+                $equipo->observaciones = $request->observaciones;
 
-            $equipo->save();
-
+                $equipo->save();
+            }
+            DB::commit();
+        } catch (\Exception $e){
+            DB::rollback();
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+              ]);
         }
 
         return redirect()->route('equipos.index');
@@ -118,29 +139,37 @@ class EquipoController extends Controller
      */
     public function update(Request $request,Equipo $equipo)
     {
-        //
+        $estado_info = Estado::where('nombre', $request->estados)->first();
+        //dd($estado_info->id);
+
         request()->validate([
-            'estados' => 'required',
-            'issi' => 'required',
+            //'estados' => 'required',
+            //'issi' => 'required', //No es requerido porque si es un equipo nuevo no tiene asignado uno
             'tei' => 'required'
         ]);
 
-        $estado_info = Estado::where('nombre', $request->estados)->first();
-
-        //Equipo::create($request->all());
         if (!is_null($estado_info)){
             $equipo->estado_id = $estado_info->id;
             $equipo->fecha_estado = $request->fecha_estado;
             $equipo->issi = $request->issi;
             $equipo->tei = $request->tei;
+            $equipo->gps = (isset($request->gps)) ? true : false;
+            $equipo->frente_remoto = (isset($request->frente_remoto)) ? true : false;
+            $equipo->rf = (isset($request->rf)) ? true : false;
+            $equipo->kit_inst = (isset($request->kit_inst)) ? true : false;
+            $equipo->operativo = (isset($request->operativo)) ? true : false;
+            $equipo->desc_gps = $request->desc_gps;
+            $equipo->desc_frente = $request->desc_frente;
+            $equipo->desc_rf = $request->desc_rf;
+            $equipo->desc_kit_inst = $request->desc_kit_inst;
             $equipo->propietario = $request->propietario;
-            //$equipo->condicion = $request->condicion;
             $equipo->con_garantia = (isset($request->con_garantia)) ? true : false;
             $equipo->fecha_venc_garantia = $request->fecha_venc_garantia;
             $equipo->observaciones = $request->observaciones;
 
-            $equipo->save();
-
+            $equipo->update();
+        } else {
+            return redirect()->back()->with('error', 'Debe seleccionar un estado.');
         }
         return redirect()->route('equipos.index');
     }

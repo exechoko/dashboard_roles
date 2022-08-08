@@ -7,6 +7,7 @@ use App\Http\Controllers\RolController;
 use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\EquipoController;
+use App\Http\Controllers\TipoTerminalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,5 +33,5 @@ Route::group(['middleware' => ['auth']], function(){
     Route::resource('usuarios', UsuarioController::class);
     Route::resource('blogs', BlogController::class);
     Route::resource('equipos', EquipoController::class);
-
+    Route::resource('terminales', TipoTerminalController::class);
 });

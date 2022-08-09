@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Equipo;
 use App\Models\TipoTerminal;
+use App\Models\TipoUso;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TipoTerminalController extends Controller
 {
@@ -25,10 +28,11 @@ class TipoTerminalController extends Controller
      */
     public function create()
     {
-        $marca_terminal = TipoTerminal::pluck('marca', 'marca');
-        $modelo_terminal = TipoTerminal::pluck('modelo', 'modelo');
+        $tipo_uso = TipoUso::pluck('uso', 'uso');
+        /*$marca_terminal = TipoTerminal::pluck('marca', 'marca');
+        $modelo_terminal = TipoTerminal::pluck('modelo', 'modelo');*/
 
-        return view('terminales.crear',compact('marca_terminal', 'modelo_terminal'));
+        return view('terminales.crear', compact('tipo_uso'));
     }
 
     /**
@@ -39,7 +43,36 @@ class TipoTerminalController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        request()->validate([
+            'tipo_uso' => 'required|not_in:Selecciona su uso',
+            'marca' => 'required',
+            'modelo' => 'required'
+        ], [
+            'required' => 'El campo :attribute es necesario completar.'
+        ]);
+
+        $uso = TipoUso::where('uso', $request->tipo_uso)->first();
+
+        try {
+            DB::beginTransaction();
+
+            $terminal = new TipoTerminal();
+            $terminal->tipo_uso_id = $uso->id;
+            $terminal->marca = $request->marca;
+            $terminal->modelo = $request->modelo;
+            $terminal->imagen = $request->imagen;
+
+            $terminal->save();
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+              ]);
+        }
+
+        return redirect()->route('terminales.index');
     }
 
     /**
@@ -61,7 +94,9 @@ class TipoTerminalController extends Controller
      */
     public function edit($id)
     {
-        //
+        $terminal = TipoTerminal::find($id);
+        $tipo_uso = TipoUso::pluck('uso','uso')->all();
+        return view('terminales.editar', compact('terminal','tipo_uso'));
     }
 
     /**
@@ -73,7 +108,34 @@ class TipoTerminalController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        request()->validate([
+            'tipo_uso' => 'required|not_in:Selecciona su uso',
+            'marca' => 'required',
+            'modelo' => 'required'
+        ], [
+            'required' => 'El campo :attribute es necesario completar.'
+        ]);
+
+        $uso = TipoUso::where('uso', $request->tipo_uso)->first();
+        $terminal = TipoTerminal::find($id);
+
+        try {
+            DB::beginTransaction();
+            $terminal->tipo_uso_id = $uso->id;
+            $terminal->marca = $request->marca;
+            $terminal->modelo = $request->modelo;
+            $terminal->imagen = $request->imagen;
+            $terminal->save();
+            DB::commit();
+        } catch (\Exception $e){
+            DB::rollback();
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+              ]);
+        }
+
+        return redirect()->route('terminales.index');
     }
 
     /**
@@ -84,6 +146,8 @@ class TipoTerminalController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $terminal = TipoTerminal::find($id);
+        $terminal->delete();
+        return redirect()->route('terminales.index');
     }
 }

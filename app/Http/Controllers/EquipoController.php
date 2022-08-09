@@ -60,8 +60,9 @@ class EquipoController extends Controller
             'modelo_terminal' => 'required',
             'estados' => 'required',
             //'issi' => 'required', //No es requerido porque si es un equipo nuevo no tiene asignado uno
-            'tei' => 'required',
-            'operativo' => 'required'
+            'tei' => 'required'
+        ], [
+            'required' => 'El campo :attribute es necesario completar.'
         ]);
 
         $terminal_info = TipoTerminal::where('marca', $request->marca_terminal)->where('modelo', $request->modelo_terminal)->first();
@@ -122,8 +123,9 @@ class EquipoController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit(Equipo $equipo)
+    public function edit($id)
     {
+        $equipo = Equipo::find($id);
         $estados = Estado::pluck('nombre','nombre')->all();
         $marca_terminal = $equipo->tipo_terminal()->pluck('marca')->all();
         $modelo_terminal = $equipo->tipo_terminal()->pluck('modelo')->all();
@@ -137,8 +139,10 @@ class EquipoController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request,Equipo $equipo)
+    public function update(Request $request,$id)
     {
+        $equipo = Equipo::find($id);
+
         $estado_info = Estado::where('nombre', $request->estados)->first();
         //dd($estado_info->id);
 
@@ -146,6 +150,8 @@ class EquipoController extends Controller
             //'estados' => 'required',
             //'issi' => 'required', //No es requerido porque si es un equipo nuevo no tiene asignado uno
             'tei' => 'required'
+        ], [
+            'required' => 'El campo :attribute es necesario completar.'
         ]);
 
         if (!is_null($estado_info)){
@@ -167,7 +173,7 @@ class EquipoController extends Controller
             $equipo->fecha_venc_garantia = $request->fecha_venc_garantia;
             $equipo->observaciones = $request->observaciones;
 
-            $equipo->update();
+            $equipo->save();
         } else {
             return redirect()->back()->with('error', 'Debe seleccionar un estado.');
         }
@@ -180,9 +186,9 @@ class EquipoController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Equipo $equipo)
+    public function destroy($id)
     {
-        //
+        $equipo = Equipo::find($id);
         $equipo->delete();
         return redirect()->route('equipos.index');
     }

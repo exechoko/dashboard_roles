@@ -21,12 +21,6 @@ class SeederTablaPermisos extends Seeder
             'editar-rol',
             'borrar-rol',
 
-            //tabla blogs
-            'ver-blog',
-            'crear-blog',
-            'editar-blog',
-            'borrar-blog',
-
             //tabla equipos
             'ver-equipo',
             'crear-equipo',
@@ -36,6 +30,12 @@ class SeederTablaPermisos extends Seeder
             //tabla usuarios
             'ver-usuario',
             'crear-usuario',
+            'editar-usuario',
+            'borrar-usuario',
+
+            //tabla terminales
+            'ver-terminal',
+            'crear-terminal',
             'editar-usuario',
             'borrar-usuario',
         ];

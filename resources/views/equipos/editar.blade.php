@@ -86,7 +86,8 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="desc_gps">Descripción GPS</label>
-                                            <input type="text" name="desc_gps" class="form-control">
+                                            <input type="text" name="desc_gps" class="form-control"
+                                                value="{{ $equipo->desc_gps }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
@@ -96,7 +97,8 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="desc_frente">Descripción Frente Remoto</label>
-                                            <input type="text" name="desc_frente" class="form-control">
+                                            <input type="text" name="desc_frente" class="form-control"
+                                                value="{{ $equipo->desc_frente }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
@@ -106,7 +108,8 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="desc_rf">Descripción Antena R.F.</label>
-                                            <input type="text" name="desc_rf" class="form-control">
+                                            <input type="text" name="desc_rf" class="form-control"
+                                                value="{{ $equipo->desc_rf }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
@@ -116,7 +119,8 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="desc_kit_inst">Descripción del kit de instalación</label>
-                                            <input type="text" name="desc_kit_inst" class="form-control">
+                                            <input type="text" name="desc_kit_inst" class="form-control"
+                                                value="{{ $equipo->desc_kit_inst }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">

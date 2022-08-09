@@ -3,7 +3,7 @@
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h3 class="page__heading">Editar Equipo</h3>
+            <h3 class="page__heading">Editar Terminal</h3>
         </div>
         <div class="section-body">
             <div class="row">
@@ -23,33 +23,55 @@
                                 </div>
                             @endif
 
-
-                            <form action="{{ route('equipos.update', $equipo->id) }}" method="POST">
+                            <form action="{{ route('terminales.update', $terminal->id) }}" method="POST">
                                 @csrf
                                 @method('PUT')
                                 <div class="row">
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
-                                            <label for="">Marca</label>
-                                            {!! Form::select('marca_terminal[]', $marca_terminal, [], ['class' => 'form-control']) !!}
+                                            <label for="">Uso</label>
+                                            {!! Form::select('tipo_uso', $tipo_uso, [], ['placeholder' => 'Selecciona su uso', 'class' => 'form-control']) !!}
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
-                                            <label for="">Modelo</label>
-                                            {!! Form::select('modelo_terminal[]', $modelo_terminal, [], ['class' => 'form-control']) !!}
+                                            <label for="marca">Marca</label>
+                                            <input type="text" name="marca" class="form-control"
+                                                value="{{ $terminal->marca }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <label for="modelo">Modelo</label>
+                                            <input type="text" name="modelo" class="form-control"
+                                                value="{{ $terminal->modelo }}">
+                                        </div>
+                                    </div>
+                                    <div class="form-group col-sm-6 d-flex">
+                                        <div class="col-sm-4 col-md-6 pl-0 form-group">
+                                            <label>Imagen:</label>
+                                            <br>
+                                            <label
+                                                    class="image__file-upload btn btn-primary text-white"
+                                                    tabindex="2"> Elegir
+                                                <input type="file" name="imagen" id="pfImage" class="d-none">
+                                            </label>
+                                        </div>
+                                        <div class="col-sm-3 preview-image-video-container float-right mt-1">
+                                            <img id='edit_preview_photo'
+                                                 class="img-thumbnail user-img user-profile-img profilePicture"
+                                                 src="{{asset('img/logo.png')}}"/>
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>
-                                            <textarea class="form-control" name="observaciones" style="height: 100px">{{ $equipo->observaciones }}</textarea>
+                                            <textarea class="form-control" name="observaciones" style="height: 100px">{{ $terminal->observaciones }}</textarea>
                                         </div>
                                         <br>
                                         <button type="submit" class="btn btn-primary">Guardar</button>
                                     </div>
                             </form>
-
                         </div>
                     </div>
                 </div>

@@ -28,6 +28,7 @@
                                         @foreach ($terminales as $terminal)
                                             <tr>
                                                 <td style="display: none;">{{ $terminal->id }}</td>
+                                                <td>{{ $terminal->tipo_uso->uso }}</td>
                                                 <td>{{ $terminal->marca }}</td>
                                                 <td>{{ $terminal->modelo }}</td>
                                                 <td>
@@ -35,13 +36,13 @@
                                                         method="POST">
                                                         @can('editar-equipo')
                                                             <a class="btn btn-info"
-                                                                href="{{ route('equipos.edit', $terminal->id) }}">Editar</a>
+                                                                href="{{ route('terminales.edit', $terminal->id) }}">Editar</a>
                                                         @endcan
 
                                                         @csrf
                                                         @method('DELETE')
                                                         @can('borrar-equipo')
-                                                            <button type="submit" class="btn btn-danger">Borrar</button>
+                                                            <button type="submit" onclick="return confirm('Está seguro')" class="btn btn-danger">Borrar</button>
                                                         @endcan
                                                     </form>
                                                 </td>

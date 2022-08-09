@@ -36,8 +36,8 @@ class SeederTablaPermisos extends Seeder
             //tabla terminales
             'ver-terminal',
             'crear-terminal',
-            'editar-usuario',
-            'borrar-usuario',
+            'editar-terminal',
+            'borrar-terminal',
         ];
 
         foreach($permisos as $permiso){

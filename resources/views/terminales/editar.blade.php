@@ -27,20 +27,20 @@
                                 @csrf
                                 @method('PUT')
                                 <div class="row">
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="">Uso</label>
                                             {!! Form::select('tipo_uso', $tipo_uso, [], ['placeholder' => 'Selecciona su uso', 'class' => 'form-control']) !!}
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="marca">Marca</label>
                                             <input type="text" name="marca" class="form-control"
                                                 value="{{ $terminal->marca }}">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="modelo">Modelo</label>
                                             <input type="text" name="modelo" class="form-control"

@@ -28,58 +28,47 @@
                                 @csrf
                                 @method('PUT')
                                 <div class="row">
-                                    <!--div class="col-xs-12 col-sm-12 col-md-12">
-                                            <div class="form-group">
-                                                <label for="">Marca</label>
-                                                {!! Form::select('marca_terminal[]', $marca_terminal, [], ['class' => 'form-control']) !!}
-                                            </div>
-                                        </div>
-                                        <div class="col-xs-12 col-sm-12 col-md-12">
-                                            <div class="form-group">
-                                                <label for="">Modelo</label>
-                                                {!! Form::select('modelo_terminal[]', $modelo_terminal, [], ['class' => 'form-control']) !!}
-                                            </div>
-                                        </div-->
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="issi">ISSI</label>
                                             <input type="text" name="issi" class="form-control"
                                                 value="{{ $equipo->issi }}">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
-                                        <div class="form-group">
-                                            <label for="">Estado</label>
-                                            {!! Form::select('estados[]', $estados, [], ['placeholder' => 'Selecciona el estado', 'class' => 'form-control']) !!}
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="tei">TEI</label>
                                             <input type="text" name="tei" class="form-control"
                                                 value="{{ $equipo->tei }}">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                        <div class="form-group">
+                                            <label for="">Estado</label>
+                                            {!! Form::select('estados[]', $estados, [], ['placeholder' => 'Selecciona el estado', 'class' => 'form-control']) !!}
+                                        </div>
+                                    </div>
+
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="propietario">Propietario</label>
                                             <input type="text" name="propietario" class="form-control"
                                                 value="{{ $equipo->propietario }}">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="col-xs-12 col-sm-12 col-md-2">
                                         <div class="form-group">
                                             <label for="con_garantia">Con garantía</label>
                                             {!! Form::checkbox('con_garantia', 'con_garantia', $equipo->con_garantia == 1 ? true : false) !!}
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12" id="label_fecha_venc_garantia">
+                                    <div class="col-xs-12 col-sm-12 col-md-10" id="label_fecha_venc_garantia">
                                         <div class="form-group">
                                             <label for="fecha_venc_garantia">Fecha de vencimiento de la garantía</label>
                                             {!! Form::date('fecha_venc_garantia', \Carbon\Carbon::now()) !!}
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="col-xs-12 col-sm-12 col-md-3">
                                         <div class="form-group">
                                             <label for="gps">Con GPS</label>
                                             {!! Form::checkbox('gps', 'gps', $equipo->gps == 1 ? true : false) !!}
@@ -90,7 +79,7 @@
                                                 value="{{ $equipo->desc_gps }}">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="col-xs-12 col-sm-12 col-md-3">
                                         <div class="form-group">
                                             <label for="frente_remoto">Con Frente Remoto</label>
                                             {!! Form::checkbox('frente_remoto', 'frente_remoto', $equipo->frente_remoto == 1 ? true : false) !!}
@@ -101,7 +90,7 @@
                                                 value="{{ $equipo->desc_frente }}">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="col-xs-12 col-sm-12 col-md-3">
                                         <div class="form-group">
                                             <label for="rf">Con Antena R.F. </label>
                                             {!! Form::checkbox('rf', 'rf', $equipo->rf == 1 ? true : false) !!}
@@ -112,7 +101,7 @@
                                                 value="{{ $equipo->desc_rf }}">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="col-xs-12 col-sm-12 col-md-3">
                                         <div class="form-group">
                                             <label for="kit_inst">Con Kit de instalación </label>
                                             {!! Form::checkbox('kit_inst', 'kit_inst', $equipo->kit_inst == 1 ? true : false) !!}

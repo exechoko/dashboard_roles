@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Equipo;
 use App\Models\TipoTerminal;
 use App\Models\TipoUso;
 use Illuminate\Http\Request;
@@ -10,6 +9,12 @@ use Illuminate\Support\Facades\DB;
 
 class TipoTerminalController extends Controller
 {
+    function __construct(){
+        $this->middleware('permission:ver-terminal|crear-terminal|editar-terminal|borrar-terminal')->only('index');
+        $this->middleware('permission:crear-terminal', ['only'=>['create', 'store']]);
+        $this->middleware('permission:editar-terminal', ['only'=>['edit', 'update']]);
+        $this->middleware('permission:borrar-terminal', ['only'=>['destroy']]);
+    }
     /**
      * Display a listing of the resource.
      *

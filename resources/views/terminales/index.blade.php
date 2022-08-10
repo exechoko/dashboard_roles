@@ -11,7 +11,7 @@
                     <div class="card">
                         <div class="card-body">
 
-                            @can('crear-equipo')
+                            @can('crear-terminal')
                                 <a class="btn btn-success" href="{{ route('terminales.create') }}">Nuevo</a>
                             @endcan
 
@@ -34,14 +34,14 @@
                                                 <td>
                                                     <form action="{{ route('terminales.destroy', $terminal->id) }}"
                                                         method="POST">
-                                                        @can('editar-equipo')
+                                                        @can('editar-terminal')
                                                             <a class="btn btn-info"
                                                                 href="{{ route('terminales.edit', $terminal->id) }}">Editar</a>
                                                         @endcan
 
                                                         @csrf
                                                         @method('DELETE')
-                                                        @can('borrar-equipo')
+                                                        @can('borrar-terminal')
                                                             <button type="submit" onclick="return confirm('Está seguro')" class="btn btn-danger">Borrar</button>
                                                         @endcan
                                                     </form>

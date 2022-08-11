@@ -24,6 +24,7 @@
                                         <th style="color:#fff;">ISSI</th>
                                         <th style="color:#fff;">TEI</th>
                                         <th style="color: #fff">Estado</th>
+                                        <th style="color: #fff">Ult. Mod.</th>
                                         <th style="color:#fff;">Acciones</th>
                                     </thead>
                                     <tbody>
@@ -35,6 +36,7 @@
                                                 <td>{{ $equipo->issi }}</td>
                                                 <td>{{ $equipo->tei }}</td>
                                                 <td>{{ $equipo->estado->nombre }}</td>
+                                                <td>{{ \Carbon\Carbon::parse($equipo->fecha_estado)->format('d-m-Y') }}</td>
                                                 <td>
                                                     <form action="{{ route('equipos.destroy', $equipo->id) }}"
                                                         method="POST">
@@ -46,7 +48,7 @@
                                                         @csrf
                                                         @method('DELETE')
                                                         @can('borrar-equipo')
-                                                            <button type="submit" class="btn btn-danger">Borrar</button>
+                                                        <button type="submit" onclick="return confirm('Está seguro')" class="btn btn-danger">Borrar</button>
                                                         @endcan
                                                     </form>
                                                 </td>

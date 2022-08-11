@@ -9,6 +9,7 @@ use App\Models\TipoTerminal;
 use App\Models\TipoUso;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class EquipoController extends Controller
 {
@@ -42,8 +43,9 @@ class EquipoController extends Controller
         $estados = Estado::pluck('nombre','nombre')->all();
         $marca_terminal = TipoTerminal::pluck('marca', 'marca');
         $modelo_terminal = TipoTerminal::pluck('modelo', 'modelo');
+        $terminales = TipoTerminal::all();
 
-        return view('equipos.crear',compact('estados', 'marca_terminal', 'modelo_terminal'));
+        return view('equipos.crear',compact('estados', 'marca_terminal', 'modelo_terminal', 'terminales'));
     }
 
     /**
@@ -56,8 +58,9 @@ class EquipoController extends Controller
     {
         //
         request()->validate([
-            'marca_terminal' => 'required',
-            'modelo_terminal' => 'required',
+            //'marca_terminal' => 'required',
+            //'modelo_terminal' => 'required',
+            'terminal' => 'required',
             'estados' => 'required',
             //'issi' => 'required', //No es requerido porque si es un equipo nuevo no tiene asignado uno
             'tei' => 'required'
@@ -65,7 +68,7 @@ class EquipoController extends Controller
             'required' => 'El campo :attribute es necesario completar.'
         ]);
 
-        $terminal_info = TipoTerminal::where('marca', $request->marca_terminal)->where('modelo', $request->modelo_terminal)->first();
+        $terminal_info = TipoTerminal::find($request->terminal);
         $estado_info = Estado::where('nombre', $request->estados)->first();
 
         try{
@@ -74,7 +77,8 @@ class EquipoController extends Controller
                 $equipo = new Equipo;
                 $equipo->tipo_terminal_id = $terminal_info->id;
                 $equipo->estado_id = $estado_info->id;
-                $equipo->fecha_estado = $request->fecha_estado;
+                //$equipo->fecha_estado = $request->fecha_estado;
+                $equipo->fecha_estado = Carbon::now();
                 $equipo->issi = $request->issi;
                 $equipo->tei = $request->tei;
                 $equipo->gps = isset($request->gps);

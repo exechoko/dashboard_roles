@@ -26,28 +26,28 @@
                             <form action="{{ route('equipos.store') }}" method="POST">
                                 @csrf
                                 <div class="row">
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                    <div class="col-xs-12 col-sm-12 col-md-8">
                                         <div class="form-group">
-                                            <label for="">Marca</label>
-                                            {!! Form::select('marca_terminal', $marca_terminal, [], ['placeholder' => 'Selecciona una marca', 'class' => 'form-control']) !!}
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
-                                        <div class="form-group">
-                                            <label for="">Modelo</label>
-                                            {!! Form::select('modelo_terminal', $modelo_terminal, [], ['placeholder' => 'Selecciona un modelo', 'class' => 'form-control']) !!}
+                                            <label for="">Terminal</label>
+                                            <select name="terminal" id="" class="form-control"
+                                                style="margin-bottom: 15px">
+                                                <option value="">Seleccionar Terminal</option>
+                                                @foreach ($terminales as $terminal)
+                                                    <option value="{{ $terminal->id }}">
+                                                        {{ $terminal->marca . ' ' . $terminal->modelo }}</option>
+                                                @endforeach
+                                            </select>
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="">Estado</label>
-                                            {!! Form::select('estados[]', $estados, [], ['placeholder' => 'Selecciona el estado', 'class' => 'form-control']) !!}
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
-                                        <div class="form-group">
-                                            <label for="fecha_estado">Fecha</label>
-                                            {!! Form::date('fecha_estado', \Carbon\Carbon::now()) !!}
+                                            {!! Form::select(
+                                                'estados[]',
+                                                $estados,
+                                                [],
+                                                ['placeholder' => 'Selecciona el estado', 'class' => 'form-control'],
+                                            ) !!}
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
@@ -136,6 +136,7 @@
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <button type="submit" class="btn btn-primary">Guardar</button>
                                     </div>
+                                </div>
                             </form>
                         </div>
                     </div>

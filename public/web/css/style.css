@@ -2115,7 +2115,7 @@ h6 .badge {
     background-color: #6777ef;
     box-shadow: rgba(103, 119, 239, 0.2) rgba(0, 0, 0, 0.03);
 }
-
+/*color del banner superior*/
 .navbar-bg {
     content: ' ';
     position: absolute;
@@ -2124,6 +2124,7 @@ h6 .badge {
     width: 100%;
     height: 115px;
     background-color: #6777ef;
+    background: linear-gradient(45deg,#6777ef, #35199a);
     z-index: -1;
 }
 
@@ -3512,7 +3513,7 @@ body.sidebar-mini .main-sidebar .sidebar-menu > li > a .badge {
 body.sidebar-mini .main-sidebar .sidebar-menu > li > a.has-dropdown:after {
     content: initial;
 }
-
+/*fondo del sidebar cuando esta contraido*/
 body.sidebar-mini .main-sidebar .sidebar-menu > li.active > a {
     box-shadow: 0 4px 8px #acb5f6;
     background-color: #6777ef;
@@ -3884,13 +3885,13 @@ body.layout-3 .main-footer {
 }
 
 .main-sidebar .sidebar-menu li a:hover {
-    background-color: #f8fafb;
+    background-color: #ffffff;
 }
-
+/* color de texto y fondo del sidebar*/
 .main-sidebar .sidebar-menu li.active a {
-    color: #6777ef;
+    color: #000000;
     font-weight: 600;
-    background-color: #f8fafb;
+    background-color: #ffffff;
 }
 
 .main-sidebar .sidebar-menu li.active a.has-dropdown:after {
@@ -4141,16 +4142,16 @@ body:not(.sidebar-mini) .sidebar-style-2 .sidebar-menu li.active ul.dropdown-men
     color: #fff;
 }
 .bg-c-blue {
-    background: linear-gradient(45deg,#73b4ff, #4099ff);
+    background: linear-gradient(45deg,#4c7099, #4099ff);
 }
 .bg-c-green {
-    background: linear-gradient(45deg,#59e0c5, #2ed8b6);
+    background: linear-gradient(45deg,#489283, #2ed8b6);
 }
 .bg-c-pink {
-    background: linear-gradient(45deg,#ff869a, #FF5370);
+    background: linear-gradient(45deg,#874651, #FF5370);
 }
 .bg-c-orange {
-    background: linear-gradient(45deg,#ffeb86, #ffc653);
+    background: linear-gradient(45deg,#978b51, #ffc653);
 }
 .card {
     -webkit-box-shadow: 0 1px 2.94px 0.06px rgba(4,26,55,0.16);

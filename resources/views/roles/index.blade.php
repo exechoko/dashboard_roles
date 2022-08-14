@@ -16,7 +16,7 @@
                             @endcan
 
                             <table class="table table-striped mt-2">
-                                <thead style="background-color:#6777ef">
+                                <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                     <th style="color:#fff;">Rol</th>
                                     <th style="color:#fff;">Acciones</th>
                                 </thead>

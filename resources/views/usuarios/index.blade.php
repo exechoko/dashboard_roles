@@ -17,7 +17,7 @@
 
                             <div class="table-responsive">
                                 <table class="table table-striped mt-2">
-                                    <thead style="background-color: #6777ef">
+                                    <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                         <th style="display: none;">ID</th>
                                         <th style="color: #fff;">Nombre y Apellido</th>
                                         <th style="color: #fff;">L.P.</th>

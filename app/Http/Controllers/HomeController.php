@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\User;
+use Spatie\Permission\Models\Role;
 
 class HomeController extends Controller
 {
@@ -23,6 +25,9 @@ class HomeController extends Controller
      */
     public function index()
     {
-        return view('home');
+        //variables para ver en el dashboard
+        $cant_usuarios = User::count();
+        $cant_roles = Role::count();
+        return view('home', compact('cant_usuarios', 'cant_roles'));
     }
 }

@@ -39,7 +39,7 @@ class SeederTablaComisarias extends Seeder
 
         foreach($comisarias as $comisaria){
             Comisaria::create([
-                'departamental_id' => '11',
+                'departamental_id' => '12',
                 'nombre' => $comisaria
             ]);
         }

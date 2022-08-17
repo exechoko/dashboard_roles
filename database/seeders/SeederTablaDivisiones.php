@@ -141,6 +141,149 @@ class SeederTablaDivisiones extends Seeder
         ];
 
         //Faltan las divisiones por departamental
+        //Colon
+        $divisionesColon = [
+            'Operaciones Y Seguridad',
+            'Investigaciones',
+            'Logística',
+            'Secretaria General y Personal',
+            'Toxicologia',
+            'Criminalística',
+        ];
+        //concordia
+        $divisionesConcordia = [
+            'Operaciones Y Seguridad',
+            'Investigaciones',
+            'Logística',
+            'Secretaria General y Personal',
+            'Toxicologia',
+            'Criminalística',
+        ];
+        //diamante
+        $divisionesDiamante = [
+            'Operaciones Y Seguridad',
+            'Investigaciones',
+            'Logística',
+            'Secretaria General y Personal',
+            'Toxicologia',
+        ];
+        //federacion
+        $divisionesFederacion = [
+            'Operaciones Y Seguridad',
+            'Investigaciones',
+            'Logística',
+            'Secretaria General y Personal',
+            'Toxicologia',
+            'Criminalística',
+        ];
+        //federal
+        $divisionesFederal = [
+            'Operaciones Y Seguridad',
+            'Investigaciones',
+            'Logística',
+            'Secretaria General y Personal',
+            'Toxicologia',
+        ];
+        //feliciano
+        $divisionesFeliciano = [
+            'Operaciones Y Seguridad',
+            'Investigaciones',
+            'Logística',
+            'Secretaria General y Personal',
+            'Toxicologia',
+        ];
+        //gualeguay
+        $divisionesGualeguay = [
+            'Operaciones Y Seguridad',
+            'Investigaciones',
+            'Logística',
+            'Secretaria General y Personal',
+            'Toxicologia',
+        ];
+        //gualeguaychu
+        $divisionesGualeguaychu = [
+            'Operaciones Y Seguridad',
+            'Investigaciones',
+            'Logística',
+            'Secretaria General y Personal',
+            'Toxicologia',
+            'Criminalística',
+        ];
+        //islas del ibicuy
+        $divisionesIslas = [
+            'Operaciones Y Seguridad',
+            'Investigaciones',
+            'Logística',
+            'Secretaria General y Personal',
+            'Toxicologia',
+        ];
+        //la paz
+        $divisionesLaPaz = [
+            'Operaciones Y Seguridad',
+            'Investigaciones',
+            'Logística',
+            'Secretaria General y Personal',
+            'Toxicologia',
+            'Criminalística',
+        ];
+        //nogoya
+        $divisionesNogoya = [
+            'Operaciones Y Seguridad',
+            'Investigaciones',
+            'Logística',
+            'Secretaria General y Personal',
+            'Toxicologia',
+            'Criminalística',
+        ];
+        //parana
+        $divisionesParana = [
+            'Secretaria General y Personal',
+            'Operaciones y Seguridad',
+            'Logística',
+        ];
+        //san salvador
+        $divisionesSanSalvador = [
+            'Operaciones Y Seguridad',
+            'Investigaciones',
+            'Logística',
+            'Secretaria General y Personal',
+            'Toxicologia',
+        ];
+        //tala
+        $divisionesTala = [
+            'Operaciones Y Seguridad',
+            'Investigaciones',
+            'Logística',
+            'Secretaria General y Personal',
+            'Toxicologia',
+        ];
+        //Uruguay
+        $divisionesUruguay = [
+            'Secretaria General y Personal',
+            'Operaciones y Seguridad',
+            'Logística',
+            'Inter. Forestales y E.Soc.',
+            'Investigaciones',
+        ];
+        //victoria
+        $divisionesVictoria = [
+            'Operaciones Y Seguridad',
+            'Investigaciones',
+            'Logística',
+            'Secretaria General y Personal',
+            'Toxicologia',
+            'Criminalística',
+        ];
+        //villaguay
+        $divisionesVillaguay = [
+            'Operaciones Y Seguridad',
+            'Investigaciones',
+            'Logística',
+            'Secretaria General y Personal',
+            'Toxicologia',
+            'Criminalística',
+        ];
+
 
         foreach($divisionesOper as $division){
             Division::create([
@@ -229,6 +372,110 @@ class SeederTablaDivisiones extends Seeder
         foreach($divisionesDelRur as $division){
             Division::create([
                 'direccion_id' => '13',
+                'nombre' => $division,
+            ]);
+        }
+
+        //dependientes de Departamentales
+        foreach($divisionesColon as $division){
+            Division::create([
+                'departamental_id' => '1',
+                'nombre' => $division,
+            ]);
+        }
+        foreach($divisionesConcordia as $division){
+            Division::create([
+                'departamental_id' => '2',
+                'nombre' => $division,
+            ]);
+        }
+        foreach($divisionesDiamante as $division){
+            Division::create([
+                'departamental_id' => '3',
+                'nombre' => $division,
+            ]);
+        }
+        foreach($divisionesFederacion as $division){
+            Division::create([
+                'departamental_id' => '4',
+                'nombre' => $division,
+            ]);
+        }
+        foreach($divisionesFederal as $division){
+            Division::create([
+                'departamental_id' => '5',
+                'nombre' => $division,
+            ]);
+        }
+        foreach($divisionesFeliciano as $division){
+            Division::create([
+                'departamental_id' => '6',
+                'nombre' => $division,
+            ]);
+        }
+        foreach($divisionesGualeguay as $division){
+            Division::create([
+                'departamental_id' => '7',
+                'nombre' => $division,
+            ]);
+        }
+        foreach($divisionesGualeguaychu as $division){
+            Division::create([
+                'departamental_id' => '8',
+                'nombre' => $division,
+            ]);
+        }
+        foreach($divisionesIslas as $division){
+            Division::create([
+                'departamental_id' => '9',
+                'nombre' => $division,
+            ]);
+        }
+        foreach($divisionesLaPaz as $division){
+            Division::create([
+                'departamental_id' => '10',
+                'nombre' => $division,
+            ]);
+        }
+        foreach($divisionesNogoya as $division){
+            Division::create([
+                'departamental_id' => '11',
+                'nombre' => $division,
+            ]);
+        }
+        foreach($divisionesParana as $division){
+            Division::create([
+                'departamental_id' => '12',
+                'nombre' => $division,
+            ]);
+        }
+        foreach($divisionesSanSalvador as $division){
+            Division::create([
+                'departamental_id' => '13',
+                'nombre' => $division,
+            ]);
+        }
+        foreach($divisionesTala as $division){
+            Division::create([
+                'departamental_id' => '14',
+                'nombre' => $division,
+            ]);
+        }
+        foreach($divisionesUruguay as $division){
+            Division::create([
+                'departamental_id' => '15',
+                'nombre' => $division,
+            ]);
+        }
+        foreach($divisionesVictoria as $division){
+            Division::create([
+                'departamental_id' => '16',
+                'nombre' => $division,
+            ]);
+        }
+        foreach($divisionesVillaguay as $division){
+            Division::create([
+                'departamental_id' => '17',
                 'nombre' => $division,
             ]);
         }

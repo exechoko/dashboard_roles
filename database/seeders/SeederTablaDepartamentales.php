@@ -22,6 +22,7 @@ class SeederTablaDepartamentales extends Seeder
             'Federal',
             'Feliciano',
             'Gualeguay',
+            'Gualeguaychu',
             'Islas del Ibicuy',
             'La Paz',
             'Nogoya',

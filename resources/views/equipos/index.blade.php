@@ -16,7 +16,7 @@
                             @endcan
 
                             <div class="table-responsive">
-                                <table class="table table-striped mt-2">
+                                <table id="dataTable" class="table table-striped mt-2">
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                         <th style="display: none;">ID</th>
                                         <th style="color:#fff;">Marca</th>
@@ -29,6 +29,8 @@
                                     </thead>
                                     <tbody>
                                         @foreach ($equipos as $equipo)
+                                        @include('equipos.modal.detalle')
+                                        @include('equipos.modal.borrar')
                                             <tr>
                                                 <td style="display: none;">{{ $equipo->id }}</td>
                                                 <td>{{ $equipo->tipo_terminal->marca }}</td>
@@ -40,20 +42,24 @@
                                                 <td>
                                                     <form action="{{ route('equipos.destroy', $equipo->id) }}"
                                                         method="POST">
+
+                                                        <a class="btn btn-warning" href="#" data-toggle="modal"
+                                                        data-target="#ModalDetalle{{ $equipo->id }}">Detalles</a>
+
                                                         @can('editar-equipo')
                                                             <a class="btn btn-info"
                                                                 href="{{ route('equipos.edit', $equipo->id) }}">Editar</a>
                                                         @endcan
 
-                                                        @csrf
-                                                        @method('DELETE')
                                                         @can('borrar-equipo')
-                                                        <button type="submit" onclick="return confirm('Está seguro')" class="btn btn-danger">Borrar</button>
+                                                        <a class="btn btn-danger" href="#" data-toggle="modal"
+                                                        data-target="#ModalDelete{{ $equipo->id }}">Borrar</a>
                                                         @endcan
                                                     </form>
                                                 </td>
                                             </tr>
                                         @endforeach
+
                                     </tbody>
                                 </table>
                             </div>

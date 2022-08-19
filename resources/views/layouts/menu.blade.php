@@ -14,6 +14,9 @@
     <a class="nav-link" href="/terminales">
         <i class=" fas fa-satellite-dish"></i><span>Terminales</span>
     </a>
+    <a class="nav-link" href="/dependencias">
+        <i class="fas fa-building"></i><span>Dependencias</span>
+    </a>
     @endcan
 
     <!--a class="nav-link" href="/blogs">

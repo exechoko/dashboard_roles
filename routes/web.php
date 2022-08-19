@@ -8,6 +8,7 @@ use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\EquipoController;
 use App\Http\Controllers\TipoTerminalController;
+use App\Http\Controllers\DependenciaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,7 +26,6 @@ Route::get('/', function () {
     //return view('welcome');
 });
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
 Auth::routes();
 
@@ -35,4 +35,7 @@ Route::group(['middleware' => ['auth']], function(){
     Route::resource('blogs', BlogController::class);
     Route::resource('equipos', EquipoController::class);
     Route::resource('terminales', TipoTerminalController::class);
+    Route::resource('dependencias', DependenciaController::class);
+
+    Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 });

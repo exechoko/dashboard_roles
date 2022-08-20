@@ -15,6 +15,15 @@
                                 <a class="btn btn-success" href="{{ route('equipos.create') }}">Nuevo</a>
                             @endcan
 
+                            <form action="{{ route('equipos.index') }}" method="get" onsubmit="return showLoad()">
+                                <div class="input-group mt-4">
+                                    <input type="text" name="texto" class="form-control" placeholder="Ingrese el TEI o ISSI que desea buscar" value="{{ $texto }}">
+                                    <div class="input-group-append">
+                                        <button type="submit" class="btn btn-info">Buscar</button>
+                                    </div>
+                                </div>
+                            </form>
+
                             <div class="table-responsive">
                                 <table id="dataTable" class="table table-striped mt-2">
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
@@ -28,9 +37,14 @@
                                         <th style="color:#fff;">Acciones</th>
                                     </thead>
                                     <tbody>
+                                        @if (count($equipos) <= 0)
+                                            <tr>
+                                                <td colspan="8">No se encontraron resultados</td>
+                                            </tr>
+                                        @else
                                         @foreach ($equipos as $equipo)
-                                        @include('equipos.modal.detalle')
-                                        @include('equipos.modal.borrar')
+                                            @include('equipos.modal.detalle')
+                                            @include('equipos.modal.borrar')
                                             <tr>
                                                 <td style="display: none;">{{ $equipo->id }}</td>
                                                 <td>{{ $equipo->tipo_terminal->marca }}</td>
@@ -44,7 +58,7 @@
                                                         method="POST">
 
                                                         <a class="btn btn-warning" href="#" data-toggle="modal"
-                                                        data-target="#ModalDetalle{{ $equipo->id }}">Detalles</a>
+                                                            data-target="#ModalDetalle{{ $equipo->id }}">Detalles</a>
 
                                                         @can('editar-equipo')
                                                             <a class="btn btn-info"
@@ -52,14 +66,14 @@
                                                         @endcan
 
                                                         @can('borrar-equipo')
-                                                        <a class="btn btn-danger" href="#" data-toggle="modal"
-                                                        data-target="#ModalDelete{{ $equipo->id }}">Borrar</a>
+                                                            <a class="btn btn-danger" href="#" data-toggle="modal"
+                                                                data-target="#ModalDelete{{ $equipo->id }}">Borrar</a>
                                                         @endcan
                                                     </form>
                                                 </td>
                                             </tr>
                                         @endforeach
-
+                                        @endif
                                     </tbody>
                                 </table>
                             </div>

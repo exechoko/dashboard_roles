@@ -19,24 +19,34 @@ class EquipoController extends Controller
         $this->middleware('permission:editar-equipo', ['only'=>['edit', 'update']]);
         $this->middleware('permission:borrar-equipo', ['only'=>['destroy']]);
     }
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
+
+    public function index(Request $request)
     {
-        //$tipos_terminales = TipoTerminal::all();
-        //$estados = Estado::all();
-        $equipos = Equipo::paginate(5);
-        return view('equipos.index', compact('equipos'));
+        $texto = trim($request->get('texto')); //trim quita espacios vacios
+        $equipos = Equipo::where('tei', 'LIKE', '%'.$texto.'%')
+                    ->orWhere('issi', 'LIKE', '%'.$texto.'%')
+                    ->orWhere('propietario', 'LIKE', '%'.$texto.'%')
+                    ->orderBy('tei','asc')
+                    ->paginate(10);
+
+        //$equipos = Equipo::paginate(5);
+        return view('equipos.index', compact('equipos', 'texto'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    /*public function busqueda(Request $request)
+    {
+        //dd($request);
+        $input = $request->all();
+
+        if ($request->get('busqueda')) {
+            $equipo = Equipo::where("tei", "LIKE", "%{$request->get('busqueda')}%")->paginate(5);
+            return view('equipos.index', compact('equipo'));
+        }
+
+        return response('equipos.index');
+    }*/
+
+
     public function create()
     {
         //$uso = TipoUso::pluck('uso', 'uso');
@@ -48,12 +58,7 @@ class EquipoController extends Controller
         return view('equipos.crear',compact('estados', 'marca_terminal', 'modelo_terminal', 'terminales'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function store(Request $request)
     {
         //
@@ -110,23 +115,12 @@ class EquipoController extends Controller
         return redirect()->route('equipos.index');
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function show($id)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function edit($id)
     {
         $equipo = Equipo::find($id);
@@ -136,13 +130,6 @@ class EquipoController extends Controller
         return view('equipos.editar', compact('equipo','marca_terminal', 'modelo_terminal', 'estados'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request,$id)
     {
         $equipo = Equipo::find($id);
@@ -184,12 +171,6 @@ class EquipoController extends Controller
         return redirect()->route('equipos.index');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function destroy($id)
     {
         $equipo = Equipo::find($id);

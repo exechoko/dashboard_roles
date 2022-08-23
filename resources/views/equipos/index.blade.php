@@ -45,6 +45,7 @@
                                         @foreach ($equipos as $equipo)
                                             @include('equipos.modal.detalle')
                                             @include('equipos.modal.borrar')
+                                            {{-- @include('equipos.modal.editar') --}}
                                             <tr>
                                                 <td style="display: none;">{{ $equipo->id }}</td>
                                                 <td>{{ $equipo->tipo_terminal->marca }}</td>
@@ -56,6 +57,9 @@
                                                 <td>
                                                     <form action="{{ route('equipos.destroy', $equipo->id) }}"
                                                         method="POST">
+
+                                                        {{--<a class="btn btn-success" href="#" data-toggle="modal"
+                                                            data-target="#ModalEditar{{ $equipo->id }}">Editar</a>--}}
 
                                                         <a class="btn btn-warning" href="#" data-toggle="modal"
                                                             data-target="#ModalDetalle{{ $equipo->id }}">Detalles</a>

@@ -37,4 +37,8 @@ class Equipo extends Model
     public function estado(){
         return $this->belongsTo(Estado::class);
     }
+
+    public function actuacion_policial(){
+        return $this->hasMany(ActuacionPolicial::class);
+    }
 }

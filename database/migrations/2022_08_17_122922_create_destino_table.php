@@ -18,8 +18,10 @@ class CreateDestinoTable extends Migration
             $table->unsignedBigInteger('direccion_id')->nullable();
             $table->unsignedBigInteger('departamental_id')->nullable();
             $table->unsignedBigInteger('destacamento_id')->nullable();
+            $table->unsignedBigInteger('comisaria_id')->nullable();
             $table->unsignedBigInteger('division_id')->nullable();
             $table->unsignedBigInteger('seccion_id')->nullable();
+            $table->unsignedBigInteger('empresa_soporte_id')->nullable();
             $table->string('nombre')->nullable();
             $table->string('observaciones')->nullable();
             $table->timestamps();

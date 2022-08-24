@@ -23,6 +23,6 @@
         <i class=" fas fa-blog"></i><span>Blogs</span>
     </a-->
     <a class="nav-link" href="/equipos">
-        <i class="fas fa-mobile"></i><span>Equipamiento</span>
+        <i class="fas fa-mobile"></i><span>Equipamientos</span>
     </a>
 </li>

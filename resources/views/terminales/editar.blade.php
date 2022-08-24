@@ -23,7 +23,7 @@
                                 </div>
                             @endif
 
-                            <form action="{{ route('terminales.update', $terminal->id) }}" method="POST">
+                            <form action="{{ route('terminales.update', $terminal->id) }}" method="POST" enctype="multipart/form-data">
                                 @csrf
                                 @method('PUT')
                                 <div class="row">
@@ -51,16 +51,15 @@
                                         <div class="col-sm-4 col-md-6 pl-0 form-group">
                                             <label>Imagen:</label>
                                             <br>
-                                            <label
-                                                    class="image__file-upload btn btn-primary text-white"
+                                            <label for="imagen"  class="image__file-upload btn btn-primary text-white"
                                                     tabindex="2"> Elegir
-                                                <input type="file" name="imagen" id="pfImage" class="d-none">
+                                                <input type="file" name="imagen" id="imagen" class="d-none">
                                             </label>
                                         </div>
                                         <div class="col-sm-3 preview-image-video-container float-right mt-1">
                                             <img id='edit_preview_photo'
                                                  class="img-thumbnail user-img user-profile-img profilePicture"
-                                                 src="{{asset('img/logo.png')}}"/>
+                                                 src="{{asset( $terminal->imagen )}}"/>
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">

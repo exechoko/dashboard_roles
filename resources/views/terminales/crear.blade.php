@@ -23,7 +23,7 @@
                                 </div>
                             @endif
 
-                            <form action="{{ route('terminales.store') }}" method="POST">
+                            <form action="{{ route('terminales.store') }}" method="POST" enctype="multipart/form-data">
                                 @csrf
                                 <div class="row">
                                     <div class="col-xs-12 col-sm-12 col-md-4">
@@ -48,10 +48,9 @@
                                         <div class="col-sm-4 col-md-6 pl-0 form-group">
                                             <label>Imagen:</label>
                                             <br>
-                                            <label
-                                                    class="image__file-upload btn btn-primary text-white"
+                                            <label for="imagen"  class="image__file-upload btn btn-primary text-white"
                                                     tabindex="2"> Elegir
-                                                <input type="file" name="imagen" id="pfImage" class="d-none">
+                                                <input type="file" name="imagen" id="imagen" class="d-none">
                                             </label>
                                         </div>
                                         <div class="col-sm-3 preview-image-video-container float-right mt-1">

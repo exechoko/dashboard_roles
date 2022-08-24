@@ -9,7 +9,8 @@
                 </button>
             </div>
             <div class="modal-body">
-                <ul>
+                <img src="{{asset( $equipo->tipo_terminal->imagen )}}" class="card-img-top" alt="">
+                <ul class="mt-3">
                     <li>Marca: <b>{{ $equipo->tipo_terminal->marca }}</b> - Modelo:
                         <b>{{ $equipo->tipo_terminal->modelo }}</b></li>
                     <li>Estado: <b>{{ $equipo->estado->nombre }}</b></li>

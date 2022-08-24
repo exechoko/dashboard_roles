@@ -61,11 +61,20 @@ class TipoTerminalController extends Controller
         try {
             DB::beginTransaction();
 
+            if($request->hasFile('imagen')){
+                //dd('tiene el campo imagen');
+                $file = $request->file('imagen');
+                $destinationPath = 'images/uploads/';
+                $filename = time() . '-' . $file->getClientOriginalName();
+                $uploadSuccess = $request->file('imagen')->move($destinationPath, $filename);
+
+            }
+
             $terminal = new TipoTerminal();
             $terminal->tipo_uso_id = $uso->id;
             $terminal->marca = $request->marca;
             $terminal->modelo = $request->modelo;
-            $terminal->imagen = $request->imagen;
+            $terminal->imagen = $request->hasFile('imagen') ? $destinationPath . $filename : null;
 
             $terminal->save();
             DB::commit();
@@ -126,10 +135,20 @@ class TipoTerminalController extends Controller
 
         try {
             DB::beginTransaction();
+
+            if($request->hasFile('imagen')){
+                //dd('tiene el campo imagen');
+                $file = $request->file('imagen');
+                $destinationPath = 'images/uploads/';
+                $filename = time() . '-' . $file->getClientOriginalName();
+                $uploadSuccess = $request->file('imagen')->move($destinationPath, $filename);
+
+            }
+
             $terminal->tipo_uso_id = $uso->id;
             $terminal->marca = $request->marca;
             $terminal->modelo = $request->modelo;
-            $terminal->imagen = $request->imagen;
+            $terminal->imagen = $request->hasFile('imagen') ? $destinationPath . $filename : $terminal->imagen;
             $terminal->save();
             DB::commit();
         } catch (\Exception $e){

@@ -8,4 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class EmpresaSoporte extends Model
 {
     protected $table = 'empresas_soporte';
+
+    public function destino(){
+        return $this->hasMany(Destino::class);
+    }
 }

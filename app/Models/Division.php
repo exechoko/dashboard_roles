@@ -28,4 +28,8 @@ class Division extends Model
         return $this->hasMany(Destacamento::class);
     }
 
+    public function destino(){
+        return $this->hasMany(Destino::class);
+    }
+
 }

@@ -24,5 +24,8 @@ class Seccion extends Model
         return $this->belongsTo(Comisaria::class);
     }
 
+    public function destino(){
+        return $this->hasMany(Destino::class);
+    }
 
 }

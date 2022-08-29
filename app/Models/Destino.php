@@ -10,7 +10,7 @@ class Destino extends Model
     protected $table = 'destino';
 
     public function direccion(){
-        return $this->belongsTo(Direcccion::class);
+        return $this->belongsTo(Direccion::class);
     }
 
     public function departamental(){

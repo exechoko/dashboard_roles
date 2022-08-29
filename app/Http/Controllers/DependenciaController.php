@@ -4,10 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Comisaria;
 use App\Models\Departamental;
+use App\Models\Destacamento;
 use App\Models\Destino;
 use App\Models\Direccion;
 use App\Models\Division;
+use App\Models\Seccion;
+use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DependenciaController extends Controller
 {
@@ -54,11 +58,15 @@ class DependenciaController extends Controller
         if(!is_null($request->departamental_id)){
             $divisiones = Division::where('departamental_id', $request->departamental_id)->get();
         } else {
-            $divisiones = Division::where('departamental_id', $request->direccion_id)->get();
-        }
-        //dd($divisiones);
 
+            $divisiones = Division::where('direccion_id', $request->direccion_id)->get();
+        }
         return response()->json($divisiones);
+    }
+
+    public function getComisarias(Request $request){
+        $comisarias = Comisaria::where('departamental_id', $request->departamental_id)->get();
+        return response()->json($comisarias);
     }
 
     /**
@@ -69,7 +77,57 @@ class DependenciaController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        request()->validate([
+            'direccion' => 'required',
+            'nombre' => 'required',
+            'tipoDependencia' => 'required',
+        ], [
+            'required' => 'El campo :attribute es necesario completar.'
+        ]);
+
+        $tipoDependencia = $request->tipoDependencia;
+        $dependencia = null;
+        try{
+            DB::beginTransaction();
+            $destino = new Destino();
+            if($tipoDependencia == 'seccion'){
+                $dependencia = new Seccion();
+                $dependencia->direccion_id = $request->direccion;
+                $dependencia->departamental_id = $request->departamental;
+                $dependencia->comisaria_id = $request->comisaria;
+                $dependencia->division_id = $request->division;
+                $dependencia->nombre = $request->nombre;
+                //$dependencia->telefono = $request->nombre;
+                //$dependencia->ubicacion = $request->nombre;
+                //$dependencia->observaciones = $request->nombre;
+            } else {
+                $dependencia = new Destacamento();
+                $dependencia->comisaria_id = $request->comisaria;
+                $dependencia->division_id = $request->division;
+                $dependencia->nombre = $request->nombre;
+                //$dependencia->telefono = $request->nombre;
+                //$dependencia->ubicacion = $request->nombre;
+                //$dependencia->observaciones = $request->nombre;
+            }
+            $dependencia->save();
+            $destino->direccion_id = $request->direccion;
+            $destino->departamental_id = $request->departamental;
+            $destino->seccion_id = ($tipoDependencia == 'seccion') ? $dependencia->id : null;
+            $destino->destacamento_id = ($tipoDependencia == 'destacamento') ? $dependencia->id : null;
+            $destino->comisaria_id = $request->comisaria;
+            $destino->division_id = $request->division;
+            $destino->nombre = ($tipoDependencia == 'seccion') ? 'Sección ' . $request->nombre : 'Destacamento ' . $request->nombre;
+            $destino->save();
+            DB::commit();
+        } catch (\Exception $e){
+            DB::rollback();
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+              ]);
+        }
+
+        return redirect()->route('dependencias.index');
     }
 
     /**

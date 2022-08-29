@@ -23,4 +23,8 @@ class Comisaria extends Model
     public function destacamento(){
         return $this->hasMany(Destacamento::class);
     }
+
+    public function destino(){
+        return $this->hasMany(Destino::class);
+    }
 }

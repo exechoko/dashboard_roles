@@ -19,4 +19,8 @@ class Direccion extends Model
     public function division(){
         return $this->hasMany(Division::class);
     }
+
+    public function destino(){
+        return $this->hasMany(Destino::class);
+    }
 }

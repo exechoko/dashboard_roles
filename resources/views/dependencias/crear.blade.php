@@ -28,7 +28,7 @@
                                 <div class="row">
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
-                                            <label for="">Dependencia</label>
+                                            <label for="">Dirección</label>
                                             <select name="direccion" id="direccion" class="form-control"
                                                 style="margin-bottom: 15px">
                                                 <option value="">Seleccionar Dirección</option>
@@ -38,11 +38,18 @@
                                                 @endforeach
                                             </select>
                                         </div>
+
                                         <div class="form-group">
-                                            <select class="form-control" id="departamental" ></select>
+                                            <label for="">Departamental</label>
+                                            <select class="form-control" name="departamental" id="departamental"></select>
                                         </div>
                                         <div class="form-group">
-                                            <select class="form-control" id="divisiones"></select>
+                                            <label for="">División</label>
+                                            <select class="form-control" name="division" id="division"></select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="">Comisaría</label>
+                                            <select class="form-control" name="comisaria" id="comisaria"></select>
                                         </div>
                                     </div>
 
@@ -52,16 +59,36 @@
                                             <input type="text" name="nombre" class="form-control">
                                         </div>
                                     </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <label for="">Tipo de dependencia</label>
+                                            <div class="form-check mb-3">
+                                                <input class="form-check-input" type="radio" name="tipoDependencia"
+                                                    id="esDestacamento" value="destacamento">
+                                                <label class="form-check-label font-weight-bold text-dark" for="esDestacamento">
+                                                    DESTACAMENTO
+                                                </label>
+                                            </div>
+                                            <div class="form-check mb-3">
+                                                <input class="form-check-input" type="radio" name="tipoDependencia"
+                                                    id="esSeccion" checked value="seccion">
+                                                <label class="form-check-label font-weight-bold text-dark" for="esSeccion">
+                                                    SECCIÓN
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="telefono">Telefono</label>
                                             <input type="text" name="telefono" class="form-control">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                    <div class="col-xs-12 col-sm-12 col-md-8">
                                         <div class="form-group">
-                                            <label for="">Propietario</label>
-                                            <input type="text" name="propietario" class="form-control">
+                                            <label for="">Ubicación</label>
+                                            <input type="text" name="ubicacion" class="form-control">
                                         </div>
                                     </div>
 
@@ -85,34 +112,70 @@
 
 
     <script type="text/javascript">
-        $(document).ready(function () {
-            $('#direccion').on('change', function () {
+        $(document).ready(function() {
+            $('#direccion').on('change', function() {
                 var direccionId = this.value;
                 $('#departamental').html('');
                 $.ajax({
-                    url: '{{ route('getDepartamentales') }}?direccion_id='+direccionId,
+                    headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                    url: '{{ route('getDepartamentales') }}?direccion_id=' + direccionId,
                     type: 'get',
-                    success: function (res) {
-                        $('#departamental').html('<option value="">Seleccionar Departamental</option>');
-                        $.each(res, function (key, value) {
+                    success: function(res) {
+                        $('#departamental').html(
+                            '<option value="">Seleccionar Departamental</option>');
+                        $.each(res, function(key, value) {
                             $('#departamental').append('<option value="' + value
                                 .id + '">' + value.nombre + '</option>');
                         });
-                        $('#divisiones').html('<option value="">Seleccionar División</option>');
+                        //$('#divisiones').html('<option value="">Seleccionar División</option>');
                     }
+                });
+
+                var direccionId = this.value;
+                $('#division').html('');
+                $.ajax({
+                    headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                    url: '{{ route('getDivisiones') }}?direccion_id=' + direccionId,
+                    type: 'get',
+                    success: function(res) {
+                        $('#division').html(
+                            '<option value="">Seleccionar Division</option>');
+                        $.each(res, function(key, value) {
+                            $('#division').append('<option value="' + value
+                                .id + '">' + value.nombre + '</option>');
+                        });
+                        //$('#divisiones').html('<option value="">Seleccionar División</option>');
+                    }
+
                 });
             });
 
-            $('#departamental').on('change', function () {
+            $('#departamental').on('change', function() {
                 var departamentalId = this.value;
-                $('#divisiones').html('');
+                $('#division').html('');
                 $.ajax({
-                    url: '{{ route('getDivisiones') }}?departamental_id='+departamentalId,
+                    headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                    url: '{{ route('getDivisiones') }}?departamental_id=' + departamentalId,
                     type: 'get',
-                    success: function (res) {
-                        $('#divisiones').html('<option value="">Seleccionar División</option>');
-                        $.each(res, function (key, value) {
-                            $('#divisiones').append('<option value="' + value
+                    success: function(res) {
+                        $('#division').html('<option value="">Seleccionar División</option>');
+                        $.each(res, function(key, value) {
+                            $('#division').append('<option value="' + value
+                                .id + '">' + value.nombre + '</option>');
+                        });
+                    }
+                });
+
+                var departamentalId = this.value;
+                $('#comisaria').html('');
+                $.ajax({
+                    headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                    url: '{{ route('getComisarias') }}?departamental_id=' + departamentalId,
+                    type: 'get',
+                    success: function(res) {
+                        $('#comisaria').html('<option value="">Seleccionar Comisaria</option>');
+                        $.each(res, function(key, value) {
+                            $('#comisaria').append('<option value="' + value
                                 .id + '">' + value.nombre + '</option>');
                         });
                     }

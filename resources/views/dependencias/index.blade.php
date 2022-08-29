@@ -18,6 +18,74 @@
             </div>
         </div>
 
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4>Ultimas dependencias agregadas</h4>
+                        <div class="table-responsive">
+                            <table class="table table-striped mt-2">
+                                <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
+                                    <th style="display: none;">ID</th>
+                                    <th style="color:#fff;">Dependencia</th>
+                                    <th style="color:#fff;">Direccion</th>
+                                    <th style="color:#fff;">Departamental</th>
+                                    <th style="color:#fff;">División</th>
+                                    <th style="color:#fff;">Comisaria</th>
+                                    <th style="color:#fff;">Acciones</th>
+                                </thead>
+                                <tbody>
+                                    @foreach ($dependencias as $dependencia)
+                                        <tr>
+                                            <td style="display: none;">{{ $dependencia->id }}</td>
+                                            <td style="font-weight:bold">{{ $dependencia->nombre }}</td>
+                                            @if (!is_null($dependencia->direccion_id))
+                                                <td>{{ $dependencia->direccion->nombre }}</td>
+                                            @else
+                                                <td>-</td>
+                                            @endif
+                                            @if (!is_null($dependencia->departamental_id))
+                                                <td>{{ $dependencia->departamental->nombre }}</td>
+                                            @else
+                                                <td>-</td>
+                                            @endif
+                                            @if (!is_null($dependencia->division_id))
+                                                <td>{{ $dependencia->division->nombre }}</td>
+                                            @else
+                                                <td>-</td>
+                                            @endif
+                                            @if (!is_null($dependencia->comisaria_id))
+                                                <td>{{ $dependencia->comisaria->nombre }}</td>
+                                            @else
+                                                <td>-</td>
+                                            @endif
+
+                                            <td>
+                                                <form action="{{ route('dependencias.destroy', $dependencia->id) }}"
+                                                    method="POST">
+                                                    @can('editar-dependencia')
+                                                        <a class="btn btn-info"
+                                                            href="{{ route('dependencias.edit', $dependencia->id) }}">Editar</a>
+                                                    @endcan
+
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    @can('borrar-dependencia')
+                                                        <button type="submit" onclick="return confirm('Está seguro')"
+                                                            class="btn btn-danger">Borrar</button>
+                                                    @endcan
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!--Accordion wrapper-->
         <div class="accordion md-accordion" id="accordionEx" role="tablist" aria-multiselectable="true">
 
@@ -159,60 +227,5 @@
             <!-- Accordion card -->
         </div>
 
-        <div class="row">
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-body">
-                        @can('crear-dependencia')
-                            <a class="btn btn-success" href="{{ route('dependencias.create') }}">Nuevo</a>
-                        @endcan
-                        <div class="table-responsive">
-                            <table class="table table-striped mt-2">
-                                <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
-                                    <th style="display: none;">ID</th>
-                                    <th style="color:#fff;">Dependencia</th>
-                                    <th style="color:#fff;">Modelo</th>
-                                    <th style="color:#fff;">ISSI</th>
-                                    <th style="color:#fff;">TEI</th>
-                                    <th style="color: #fff">Estado</th>
-                                    <th style="color: #fff">Ult. Mod.</th>
-                                    <th style="color:#fff;">Acciones</th>
-                                </thead>
-                                <tbody>
-                                    @foreach ($dependencias as $dependencia)
-                                        <tr>
-                                            <td style="display: none;">{{ $dependencia->id }}</td>
-                                            <td>{{ $dependencia->tipo_terminal->marca }}</td>
-                                            <td>{{ $dependencia->tipo_terminal->modelo }}</td>
-                                            <td>{{ $dependencia->issi }}</td>
-                                            <td>{{ $dependencia->tei }}</td>
-                                            <td>{{ $dependencia->estado->nombre }}</td>
-                                            <td>{{ \Carbon\Carbon::parse($dependencia->fecha_estado)->format('d-m-Y') }}
-                                            </td>
-                                            <td>
-                                                <form action="{{ route('dependencias.destroy', $dependencia->id) }}"
-                                                    method="POST">
-                                                    @can('editar-dependencia')
-                                                        <a class="btn btn-info"
-                                                            href="{{ route('dependencias.edit', $dependencia->id) }}">Editar</a>
-                                                    @endcan
-
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    @can('borrar-dependencia')
-                                                        <button type="submit" onclick="return confirm('Está seguro')"
-                                                            class="btn btn-danger">Borrar</button>
-                                                    @endcan
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </section>
 @endsection

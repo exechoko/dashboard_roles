@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Comisaria;
 use App\Models\Departamental;
 use App\Models\Destino;
 use App\Models\Direccion;
+use App\Models\Division;
 use Illuminate\Http\Request;
 
 class DependenciaController extends Controller
@@ -36,7 +38,27 @@ class DependenciaController extends Controller
      */
     public function create()
     {
-        //
+        $direcciones = Direccion::all();
+        //$departamentales = Departamental::all();
+        //$comisarias = Comisaria::all();
+
+        return view('dependencias.crear',compact('direcciones'));
+    }
+
+    public function getDepartamentales(Request $request){
+        $departamentales = Departamental::where('direccion_id', $request->direccion_id)->get();
+        return response()->json($departamentales);
+    }
+
+    public function getDivisiones(Request $request){
+        if(!is_null($request->departamental_id)){
+            $divisiones = Division::where('departamental_id', $request->departamental_id)->get();
+        } else {
+            $divisiones = Division::where('departamental_id', $request->direccion_id)->get();
+        }
+        //dd($divisiones);
+
+        return response()->json($divisiones);
     }
 
     /**

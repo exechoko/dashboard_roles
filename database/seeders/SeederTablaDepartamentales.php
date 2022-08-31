@@ -15,28 +15,27 @@ class SeederTablaDepartamentales extends Seeder
     public function run()
     {
         $departamentales = [
-            'Colon',
-            'Concordia',
-            'Diamante',
-            'Federación',
-            'Federal',
-            'Feliciano',
-            'Gualeguay',
-            'Gualeguaychu',
-            'Islas del Ibicuy',
-            'La Paz',
-            'Nogoya',
-            'Paraná',
-            'San Salvador',
-            'Tala',
-            'Uruguay',
-            'Victoria',
-            'Villaguay',
+            'Departamental Colon',
+            'Departamental Concordia',
+            'Departamental Diamante',
+            'Departamental Federación',
+            'Departamental Federal',
+            'Departamental Feliciano',
+            'Departamental Gualeguay',
+            'Departamental Gualeguaychu',
+            'Departamental Islas del Ibicuy',
+            'Departamental La Paz',
+            'Departamental Nogoya',
+            'Departamental Paraná',
+            'Departamental San Salvador',
+            'Departamental Tala',
+            'Departamental Uruguay',
+            'Departamental Victoria',
+            'Departamental Villaguay',
         ];
 
         foreach($departamentales as $departamental){
             Departamental::create([
-                'direccion_id' => '1',
                 'nombre' => $departamental
             ]);
         }

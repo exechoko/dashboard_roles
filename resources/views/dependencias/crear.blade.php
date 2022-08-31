@@ -40,8 +40,15 @@
                                         </div>
 
                                         <div class="form-group">
-                                            <label for="">Departamental</label>
-                                            <select class="form-control" name="departamental" id="departamental"></select>
+                                            <label for="">Dirección</label>
+                                            <select name="departamental" id="departamental" class="form-control"
+                                                style="margin-bottom: 15px">
+                                                <option value="">Seleccionar Departamental</option>
+                                                @foreach ($departamentales as $departamental)
+                                                    <option value="{{ $departamental->id }}">
+                                                        {{ $departamental->nombre }}</option>
+                                                @endforeach
+                                            </select>
                                         </div>
                                         <div class="form-group">
                                             <label for="">División</label>
@@ -114,7 +121,7 @@
     <script type="text/javascript">
         $(document).ready(function() {
             $('#direccion').on('change', function() {
-                var direccionId = this.value;
+                /*var direccionId = this.value;
                 $('#departamental').html('');
                 $.ajax({
                     headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
@@ -129,7 +136,7 @@
                         });
                         //$('#divisiones').html('<option value="">Seleccionar División</option>');
                     }
-                });
+                });*/
 
                 var direccionId = this.value;
                 $('#division').html('');

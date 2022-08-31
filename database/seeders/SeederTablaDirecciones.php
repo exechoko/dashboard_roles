@@ -15,19 +15,19 @@ class SeederTablaDirecciones extends Seeder
     public function run()
     {
         $direcciones = [
-            'Operaciones y Seguridad',
-            'Ayudantía General',
-            'Institutos Policiales',
-            'Logística',
-            'Personal',
-            'Criminalística',
-            'Inteligencia',
-            'Prevención y Seguridad Vial',
-            'Asuntos Internos',
-            'Investigaciones',
-            'Inteligencia Criminal',
-            'Toxicología',
-            'Prevención Delitos Rurales',
+            'Dirección Operaciones y Seguridad',
+            'Dirección Ayudantía General',
+            'Dirección Institutos Policiales',
+            'Dirección Logística',
+            'Dirección Personal',
+            'Dirección Criminalística',
+            'Dirección Inteligencia',
+            'Dirección Prevención y Seguridad Vial',
+            'Dirección Asuntos Internos',
+            'Dirección Investigaciones',
+            'Dirección Inteligencia Criminal',
+            'Dirección Toxicología',
+            'Dirección Prevención Delitos Rurales',
         ];
 
         foreach($direcciones as $direccion){

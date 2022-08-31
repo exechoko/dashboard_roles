@@ -15,273 +15,273 @@ class SeederTablaDivisiones extends Seeder
     public function run()
     {
         $divisionesOper = [
-            'Policia Adicional',
-            'Minoridad Y Violencia Familiar',
-            'Secretaria General',
-            'Comunicaciones',
-            'Bomberos Zapadores',
-            'Guardia Infanteria Adiestrada',
-            'Alcaidía Tribunales',
-            'Seguridad Urbana Y Bancaria',
-            'Custodia Gubernamental',
-            'Compañía de Operaciones Especiales',
-            'Seguridad Deportiva',
-            '911 y Videovigilancia',
-            'Montada Y Canes',
-            'Custodia de Autoridades Gubernamentales',
-            'Planeamiento y Desarrollo',
+            'División Policia Adicional',
+            'División Minoridad Y Violencia Familiar',
+            'División Secretaria General',
+            'División Comunicaciones',
+            'División Bomberos Zapadores',
+            'División Guardia Infanteria Adiestrada',
+            'División Alcaidía Tribunales',
+            'División Seguridad Urbana Y Bancaria',
+            'División Custodia Gubernamental',
+            'División Compañía de Operaciones Especiales',
+            'División Seguridad Deportiva',
+            'División 911 y Videovigilancia',
+            'División Montada Y Canes',
+            'División Custodia de Autoridades Gubernamentales',
+            'División Planeamiento y Desarrollo',
         ];
 
         $divisionesAyudantia = [
-            'Informática',
-            'Secretaría General',
-            'Relaciones Publicas Prensa Y Ceremonial',
-            'Servicio Médico Sanitario',
-            'Asesoría Letrada',
-            'Relaciones Culturales',
-            'Convenio Policial',
-            'Odontologia',
-            'Proyectos Tecnológicos y CCTV',
+            'División Informática',
+            'División Secretaría General',
+            'División Relaciones Publicas Prensa Y Ceremonial',
+            'División Servicio Médico Sanitario',
+            'División Asesoría Letrada',
+            'División Relaciones Culturales',
+            'División Convenio Policial',
+            'División Odontologia',
+            'División Proyectos Tecnológicos y CCTV',
         ];
 
         $divisionesInstituto = [
-            'Secretaría General y Personal',
-            'Capellania',
-            'Logística',
-            'Escuela Superior De Oficiales',
-            'Instrucción y Capacitación',
-            'Escuela Policial De Formacion Profesional',
-            'Escuela De Agentes',
-            'Escuela De Suboficiales',
-            'Coordinación Universitaria',
+            'División Secretaría General y Personal',
+            'División Capellania',
+            'División Logística',
+            'División Escuela Superior De Oficiales',
+            'División Instrucción y Capacitación',
+            'División Escuela Policial De Formacion Profesional',
+            'División Escuela De Agentes',
+            'División Escuela De Suboficiales',
+            'División Coordinación Universitaria',
         ];
 
         $divisionesLogistica = [
-            'Secretaría General y Personal',
-            'Abastecimiento y Servicio Integral del Automotor',
-            'Arquitectura',
-            'Finanzas',
-            'Licitaciones y Compras',
-            'Servicios',
-            'Tesorería',
-            'Control De Gestion y Rendición De Cuentas',
+            'División Secretaría General y Personal',
+            'División Abastecimiento y Servicio Integral del Automotor',
+            'División Arquitectura',
+            'División Finanzas',
+            'División Licitaciones y Compras',
+            'División Servicios',
+            'División Tesorería',
+            'División Control De Gestion y Rendición De Cuentas',
         ];
 
         $divisionesPersonal = [
-            'Administración de Recursos Humanos',
-            'Asuntos Previsionales y Sociales',
-            'Despacho',
-            'Junta Médica Superior',
-            'Higiene y Seguridad en el Trabajo',
-            'Armas y Municiones',
+            'División Administración de Recursos Humanos',
+            'División Asuntos Previsionales y Sociales',
+            'División Despacho',
+            'División Junta Médica Superior',
+            'División Higiene y Seguridad en el Trabajo',
+            'División Armas y Municiones',
         ];
 
         $divisionesCrimin = [
-            'Accidentologia Vial',
-            'Quimica Forense y Toxicologia',
-            'Rastros',
-            'Scopometría',
-            'Secretaria General y Personal',
-            'Antecedentes Personales',
-            'Registro Provincial Armas',
+            'División Accidentologia Vial',
+            'División Quimica Forense y Toxicologia',
+            'División Rastros',
+            'División Scopometría',
+            'División Secretaria General y Personal',
+            'División Antecedentes Personales',
+            'División Registro Provincial Armas',
         ];
 
         $divisionesIntelig = [
-            'Despacho',
-            'Busqueda y Reunión de la Informacion',
-            'Técnica E Informatica',
+            'División Despacho',
+            'División Busqueda y Reunión de la Informacion',
+            'División Técnica E Informatica',
         ];
 
         $divisionesPrevVial = [
-            'Operaciones Viales',
-            'Logistica',
-            'Educación Vial',
-            'Secretaria General',
-            'Asesoria Juridica y Ejecuciones Fiscales',
+            'División Operaciones Viales',
+            'División Logistica',
+            'División Educación Vial',
+            'División Secretaria General',
+            'División Asesoria Juridica y Ejecuciones Fiscales',
         ];
 
         $divisionesAsuntosInt = [
-            'Sumarios Administrativos',
-            'Inteligencia e Investigaciones Internas',
-            'Secretaria General y Personal',
+            'División Sumarios Administrativos',
+            'División Inteligencia e Investigaciones Internas',
+            'División Secretaria General y Personal',
         ];
 
         $divisionesInvest = [
-            'Secretaría General y Personal',
-            'Robos y Hurtos',
-            'Homicidios',
-            'Trata de Personas',
-            'Sustracción Automotores',
-            'Delitos Económicos',
-            'Asuntos Jurídicos',
+            'División Secretaría General y Personal',
+            'División Robos y Hurtos',
+            'División Homicidios',
+            'División Trata de Personas',
+            'División Sustracción Automotores',
+            'División Delitos Económicos',
+            'División Asuntos Jurídicos',
         ];
 
         $divisionesIntCrim = [
-            'Despacho y Relaciones Institucionales',
-            'Tecnicas Especiales y Desarrollo Informático',
-            'Delitos Complejos',
-            'Cibercrimen',
-            'Capacitacion Y Relaciones Institucionales',
+            'División Despacho y Relaciones Institucionales',
+            'División Tecnicas Especiales y Desarrollo Informático',
+            'División Delitos Complejos',
+            'División Cibercrimen',
+            'División Capacitacion Y Relaciones Institucionales',
         ];
 
         $divisionesToxic = [
-            'Inteligencia',
-            'Operaciones Tecnicas y Pericias Tecnologicas',
-            'Prevención Conductas Adictivas',
-            'Secretaría General',
-            'Operaciones',
+            'División Inteligencia',
+            'División Operaciones Tecnicas y Pericias Tecnologicas',
+            'División Prevención Conductas Adictivas',
+            'División Secretaría General',
+            'División Operaciones',
         ];
 
         $divisionesDelRur = [
-            'Secretaria General y Personal',
-            'Operaciones y Seguridad',
-            'Logística',
-            'Inter. Forestales y E.Soc.',
-            'Investigaciones',
+            'División Secretaria General y Personal',
+            'División Operaciones y Seguridad',
+            'División Logística',
+            'División Inter. Forestales y E.Soc.',
+            'División Investigaciones',
         ];
 
         //Faltan las divisiones por departamental
         //Colon
         $divisionesColon = [
-            'Operaciones Y Seguridad',
-            'Investigaciones',
-            'Logística',
-            'Secretaria General y Personal',
-            'Toxicologia',
-            'Criminalística',
+            'División Operaciones Y Seguridad',
+            'División Investigaciones',
+            'División Logística',
+            'División Secretaria General y Personal',
+            'División Toxicologia',
+            'División Criminalística',
         ];
         //concordia
         $divisionesConcordia = [
-            'Operaciones Y Seguridad',
-            'Investigaciones',
-            'Logística',
-            'Secretaria General y Personal',
-            'Toxicologia',
-            'Criminalística',
+            'División Operaciones Y Seguridad',
+            'División Investigaciones',
+            'División Logística',
+            'División Secretaria General y Personal',
+            'División Toxicologia',
+            'División Criminalística',
         ];
         //diamante
         $divisionesDiamante = [
-            'Operaciones Y Seguridad',
-            'Investigaciones',
-            'Logística',
-            'Secretaria General y Personal',
-            'Toxicologia',
+            'División Operaciones Y Seguridad',
+            'División Investigaciones',
+            'División Logística',
+            'División Secretaria General y Personal',
+            'División Toxicologia',
         ];
         //federacion
         $divisionesFederacion = [
-            'Operaciones Y Seguridad',
-            'Investigaciones',
-            'Logística',
-            'Secretaria General y Personal',
-            'Toxicologia',
-            'Criminalística',
+            'División Operaciones Y Seguridad',
+            'División Investigaciones',
+            'División Logística',
+            'División Secretaria General y Personal',
+            'División Toxicologia',
+            'División Criminalística',
         ];
         //federal
         $divisionesFederal = [
-            'Operaciones Y Seguridad',
-            'Investigaciones',
-            'Logística',
-            'Secretaria General y Personal',
-            'Toxicologia',
+            'División Operaciones Y Seguridad',
+            'División Investigaciones',
+            'División Logística',
+            'División Secretaria General y Personal',
+            'División Toxicologia',
         ];
         //feliciano
         $divisionesFeliciano = [
-            'Operaciones Y Seguridad',
-            'Investigaciones',
-            'Logística',
-            'Secretaria General y Personal',
-            'Toxicologia',
+            'División Operaciones Y Seguridad',
+            'División Investigaciones',
+            'División Logística',
+            'División Secretaria General y Personal',
+            'División Toxicologia',
         ];
         //gualeguay
         $divisionesGualeguay = [
-            'Operaciones Y Seguridad',
-            'Investigaciones',
-            'Logística',
-            'Secretaria General y Personal',
-            'Toxicologia',
+            'División Operaciones Y Seguridad',
+            'División Investigaciones',
+            'División Logística',
+            'División Secretaria General y Personal',
+            'División Toxicologia',
         ];
         //gualeguaychu
         $divisionesGualeguaychu = [
-            'Operaciones Y Seguridad',
-            'Investigaciones',
-            'Logística',
-            'Secretaria General y Personal',
-            'Toxicologia',
-            'Criminalística',
+            'División Operaciones Y Seguridad',
+            'División Investigaciones',
+            'División Logística',
+            'División Secretaria General y Personal',
+            'División Toxicologia',
+            'División Criminalística',
         ];
         //islas del ibicuy
         $divisionesIslas = [
-            'Operaciones Y Seguridad',
-            'Investigaciones',
-            'Logística',
-            'Secretaria General y Personal',
-            'Toxicologia',
+            'División Operaciones Y Seguridad',
+            'División Investigaciones',
+            'División Logística',
+            'División Secretaria General y Personal',
+            'División Toxicologia',
         ];
         //la paz
         $divisionesLaPaz = [
-            'Operaciones Y Seguridad',
-            'Investigaciones',
-            'Logística',
-            'Secretaria General y Personal',
-            'Toxicologia',
-            'Criminalística',
+            'División Operaciones Y Seguridad',
+            'División Investigaciones',
+            'División Logística',
+            'División Secretaria General y Personal',
+            'División Toxicologia',
+            'División Criminalística',
         ];
         //nogoya
         $divisionesNogoya = [
-            'Operaciones Y Seguridad',
-            'Investigaciones',
-            'Logística',
-            'Secretaria General y Personal',
-            'Toxicologia',
-            'Criminalística',
+            'División Operaciones Y Seguridad',
+            'División Investigaciones',
+            'División Logística',
+            'División Secretaria General y Personal',
+            'División Toxicologia',
+            'División Criminalística',
         ];
         //parana
         $divisionesParana = [
-            'Secretaria General y Personal',
-            'Operaciones y Seguridad',
-            'Logística',
+            'División Secretaria General y Personal',
+            'División Operaciones y Seguridad',
+            'División Logística',
         ];
         //san salvador
         $divisionesSanSalvador = [
-            'Operaciones Y Seguridad',
-            'Investigaciones',
-            'Logística',
-            'Secretaria General y Personal',
-            'Toxicologia',
+            'División Operaciones Y Seguridad',
+            'División Investigaciones',
+            'División Logística',
+            'División Secretaria General y Personal',
+            'División Toxicologia',
         ];
         //tala
         $divisionesTala = [
-            'Operaciones Y Seguridad',
-            'Investigaciones',
-            'Logística',
-            'Secretaria General y Personal',
-            'Toxicologia',
+            'División Operaciones Y Seguridad',
+            'División Investigaciones',
+            'División Logística',
+            'División Secretaria General y Personal',
+            'División Toxicologia',
         ];
         //Uruguay
         $divisionesUruguay = [
-            'Secretaria General y Personal',
-            'Operaciones y Seguridad',
-            'Logística',
-            'Inter. Forestales y E.Soc.',
-            'Investigaciones',
+            'División Secretaria General y Personal',
+            'División Operaciones y Seguridad',
+            'División Logística',
+            'División Inter. Forestales y E.Soc.',
+            'División Investigaciones',
         ];
         //victoria
         $divisionesVictoria = [
-            'Operaciones Y Seguridad',
-            'Investigaciones',
-            'Logística',
-            'Secretaria General y Personal',
-            'Toxicologia',
-            'Criminalística',
+            'División Operaciones Y Seguridad',
+            'División Investigaciones',
+            'División Logística',
+            'División Secretaria General y Personal',
+            'División Toxicologia',
+            'División Criminalística',
         ];
         //villaguay
         $divisionesVillaguay = [
-            'Operaciones Y Seguridad',
-            'Investigaciones',
-            'Logística',
-            'Secretaria General y Personal',
-            'Toxicologia',
-            'Criminalística',
+            'División Operaciones Y Seguridad',
+            'División Investigaciones',
+            'División Logística',
+            'División Secretaria General y Personal',
+            'División Toxicologia',
+            'División Criminalística',
         ];
 
 

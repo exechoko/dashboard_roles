@@ -43,10 +43,10 @@ class DependenciaController extends Controller
     public function create()
     {
         $direcciones = Direccion::all();
-        //$departamentales = Departamental::all();
+        $departamentales = Departamental::all();
         //$comisarias = Comisaria::all();
 
-        return view('dependencias.crear',compact('direcciones'));
+        return view('dependencias.crear',compact('direcciones', 'departamentales'));
     }
 
     public function getDepartamentales(Request $request){

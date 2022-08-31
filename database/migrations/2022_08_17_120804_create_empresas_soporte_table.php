@@ -17,7 +17,8 @@ class CreateEmpresasSoporteTable extends Migration
             $table->bigIncrements('id');
             $table->string('nombre')->nullable();
             $table->string('cuit')->nullable();
-            $table->string('direccion')->nullable();
+            $table->string('telefono', 100)->nullable();
+            $table->string('ubicacion')->nullable();
             $table->timestamps();
         });
     }

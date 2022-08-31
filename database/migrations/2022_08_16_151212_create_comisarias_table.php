@@ -17,6 +17,8 @@ class CreateComisariasTable extends Migration
             $table->bigIncrements('id');
             $table->unsignedBigInteger('departamental_id')->nullable();
             $table->string('nombre', 100)->nullable();
+            $table->string('telefono', 100)->nullable();
+            $table->string('ubicacion')->nullable();
             $table->timestamps();
         });
     }

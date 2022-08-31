@@ -18,6 +18,8 @@ class CreateDivisionesTable extends Migration
             $table->unsignedBigInteger('direccion_id')->nullable();
             $table->unsignedBigInteger('departamental_id')->nullable();
             $table->string('nombre')->nullable();
+            $table->string('telefono', 100)->nullable();
+            $table->string('ubicacion')->nullable();
             $table->timestamps();
         });
     }

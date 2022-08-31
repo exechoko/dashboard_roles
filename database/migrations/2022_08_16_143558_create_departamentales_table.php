@@ -15,8 +15,9 @@ class CreateDepartamentalesTable extends Migration
     {
         Schema::create('departamentales', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->unsignedBigInteger('direccion_id')->nullable();
             $table->string('nombre', 100)->nullable();
+            $table->string('telefono', 100)->nullable();
+            $table->string('ubicacion')->nullable();
             $table->timestamps();
         });
     }

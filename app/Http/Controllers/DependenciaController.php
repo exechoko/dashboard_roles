@@ -28,7 +28,8 @@ class DependenciaController extends Controller
      */
     public function index()
     {
-        $dependencias = Destino::all();
+        $dependencias = Destino::latest()->take(5)->get();
+        //dd($dependencias);
         $direcciones = Direccion::all();
         $departamentales = Departamental::all();
         //dd($dependencias);
@@ -96,17 +97,17 @@ class DependenciaController extends Controller
                 $dependencia->departamental_id = $request->departamental;
                 $dependencia->comisaria_id = $request->comisaria;
                 $dependencia->division_id = $request->division;
-                $dependencia->nombre = $request->nombre;
-                //$dependencia->telefono = $request->nombre;
-                //$dependencia->ubicacion = $request->nombre;
+                $dependencia->nombre ='Sección ' . $request->nombre;
+                $dependencia->telefono = $request->nombre;
+                $dependencia->ubicacion = $request->nombre;
                 //$dependencia->observaciones = $request->nombre;
             } else {
                 $dependencia = new Destacamento();
                 $dependencia->comisaria_id = $request->comisaria;
                 $dependencia->division_id = $request->division;
-                $dependencia->nombre = $request->nombre;
-                //$dependencia->telefono = $request->nombre;
-                //$dependencia->ubicacion = $request->nombre;
+                $dependencia->nombre = 'Destacamento ' . $request->nombre;
+                $dependencia->telefono = $request->nombre;
+                $dependencia->ubicacion = $request->nombre;
                 //$dependencia->observaciones = $request->nombre;
             }
             $dependencia->save();
@@ -116,7 +117,7 @@ class DependenciaController extends Controller
             $destino->destacamento_id = ($tipoDependencia == 'destacamento') ? $dependencia->id : null;
             $destino->comisaria_id = $request->comisaria;
             $destino->division_id = $request->division;
-            $destino->nombre = ($tipoDependencia == 'seccion') ? 'Sección ' . $request->nombre : 'Destacamento ' . $request->nombre;
+            $destino->nombre = $dependencia->nombre;
             $destino->save();
             DB::commit();
         } catch (\Exception $e){
@@ -161,7 +162,40 @@ class DependenciaController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $destino = null;
+        try {
+            DB::beginTransaction();
+            if($request->tipo_dependencia == 'direccion'){
+                $d = Direccion::find($id);
+                $destino = Destino::where('direccion_id', $d->id)->where('nombre', $d->nombre)->first();
+            } elseif($request->tipo_dependencia == 'departamental'){
+                $d = Departamental::find($id);
+                $destino = Destino::where('departamental_id', $d->id)->where('nombre', $d->nombre)->first();
+            }
+
+            $d->nombre = $request->nombre;
+            $destino->nombre = $request->nombre;
+
+            $d->telefono = $request->telefono;
+            $destino->telefono = $request->telefono;
+
+            $d->ubicacion = $request->ubicacion;
+            $destino->ubicacion = $request->ubicacion;
+
+            $d->save();
+            $destino->save();
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+              ]);
+        }
+
+        return redirect()->route('dependencias.index');
+        //dd($request);
     }
 
     /**

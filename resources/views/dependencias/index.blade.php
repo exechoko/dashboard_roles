@@ -28,54 +28,16 @@
                                 <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                     <th style="display: none;">ID</th>
                                     <th style="color:#fff;">Dependencia</th>
-                                    <th style="color:#fff;">Direccion</th>
-                                    <th style="color:#fff;">Departamental</th>
-                                    <th style="color:#fff;">División</th>
-                                    <th style="color:#fff;">Comisaria</th>
-                                    <th style="color:#fff;">Acciones</th>
+                                    <th style="color:#fff;">Telefono</th>
+                                    <th style="color:#fff;">Dirección</th>
                                 </thead>
                                 <tbody>
                                     @foreach ($dependencias as $dependencia)
                                         <tr>
                                             <td style="display: none;">{{ $dependencia->id }}</td>
                                             <td style="font-weight:bold">{{ $dependencia->nombre }}</td>
-                                            @if (!is_null($dependencia->direccion_id))
-                                                <td>{{ $dependencia->direccion->nombre }}</td>
-                                            @else
-                                                <td>-</td>
-                                            @endif
-                                            @if (!is_null($dependencia->departamental_id))
-                                                <td>{{ $dependencia->departamental->nombre }}</td>
-                                            @else
-                                                <td>-</td>
-                                            @endif
-                                            @if (!is_null($dependencia->division_id))
-                                                <td>{{ $dependencia->division->nombre }}</td>
-                                            @else
-                                                <td>-</td>
-                                            @endif
-                                            @if (!is_null($dependencia->comisaria_id))
-                                                <td>{{ $dependencia->comisaria->nombre }}</td>
-                                            @else
-                                                <td>-</td>
-                                            @endif
-
-                                            <td>
-                                                <form action="{{ route('dependencias.destroy', $dependencia->id) }}"
-                                                    method="POST">
-                                                    @can('editar-dependencia')
-                                                        <a class="btn btn-info"
-                                                            href="{{ route('dependencias.edit', $dependencia->id) }}">Editar</a>
-                                                    @endcan
-
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    @can('borrar-dependencia')
-                                                        <button type="submit" onclick="return confirm('Está seguro')"
-                                                            class="btn btn-danger">Borrar</button>
-                                                    @endcan
-                                                </form>
-                                            </td>
+                                            <td style="font-weight:bold">{{ $dependencia->telefono }}</td>
+                                            <td style="font-weight:bold">{{ $dependencia->ubicacion }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -111,17 +73,24 @@
                                 <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                     <th style="display: none;">ID</th>
                                     <th style="color:#fff;">Nombre</th>
+                                    <th style="color:#fff;">Teléfono</th>
+                                    <th style="color:#fff;">Ubicación</th>
                                     <th style="color:#fff;">Acciones</th>
                                 </thead>
                                 <tbody>
                                     @foreach ($direcciones as $direccion)
+                                        @include('dependencias.modal.editar_direccion')
                                         <tr>
                                             <td style="display: none;">{{ $direccion->id }}</td>
-                                            <td>{{ $direccion->nombre }}</td>
+                                            <td style="font-weight:bold">{{ $direccion->nombre }}</td>
+                                            <td>{{ $direccion->telefono }}</td>
+                                            <td>{{ $direccion->ubicacion }}</td>
                                             <td>
                                                 <form action="#" method="POST">
                                                     @can('editar-dependencia')
-                                                        <a class="btn btn-info" href="#">Editar</a>
+                                                        {{--<a class="btn btn-info" href="#">Editar</a>--}}
+                                                        <a class="btn btn-success" href="#" data-toggle="modal"
+                                                            data-target="#ModalEditar{{ $direccion->id }}">Editar</a>
                                                     @endcan
 
                                                     @csrf
@@ -165,17 +134,24 @@
                                 <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                     <th style="display: none;">ID</th>
                                     <th style="color:#fff;">Nombre</th>
+                                    <th style="color:#fff;">Teléfono</th>
+                                    <th style="color:#fff;">Ubicación</th>
                                     <th style="color:#fff;">Acciones</th>
                                 </thead>
                                 <tbody>
                                     @foreach ($departamentales as $departamental)
+                                        @include('dependencias.modal.editar_departamental')
                                         <tr>
                                             <td style="display: none;">{{ $departamental->id }}</td>
-                                            <td>{{ $departamental->nombre }}</td>
+                                            <td style="font-weight:bold">{{ $departamental->nombre }}</td>
+                                            <td>{{ $departamental->telefono }}</td>
+                                            <td>{{ $departamental->ubicacion }}</td>
                                             <td>
                                                 <form action="#" method="POST">
                                                     @can('editar-dependencia')
-                                                        <a class="btn btn-info" href="#">Editar</a>
+                                                        {{--<a class="btn btn-info" href="#">Editar</a>--}}
+                                                        <a class="btn btn-success" href="#" data-toggle="modal"
+                                                            data-target="#ModalEditarDptal{{ $departamental->id }}">Editar</a>
                                                     @endcan
 
                                                     @csrf
@@ -205,7 +181,7 @@
                     <a class="collapsed" data-toggle="collapse" data-parent="#accordionEx" href="#collapseThree3"
                         aria-expanded="false" aria-controls="collapseThree3">
                         <h5 class="mb-0">
-                            Collapsible Group Item #3 <i class="fas fa-angle-down rotate-icon"></i>
+                            Divisiones <i class="fas fa-angle-down rotate-icon"></i>
                         </h5>
                     </a>
                 </div>
@@ -225,7 +201,83 @@
                 </div>
             </div>
             <!-- Accordion card -->
+
+            <!-- Accordion card -->
+            <div class="card">
+
+                <!-- Card header -->
+                <div class="card-header" role="tab" id="headingThree4">
+                    <a class="collapsed" data-toggle="collapse" data-parent="#accordionEx" href="#collapseThree4"
+                        aria-expanded="false" aria-controls="collapseThree4">
+                        <h5 class="mb-0">
+                            Comisarías <i class="fas fa-angle-down rotate-icon"></i>
+                        </h5>
+                    </a>
+                </div>
+
+                <!-- Card body -->
+                <div id="collapseThree4" class="collapse" role="tabpanel" aria-labelledby="headingThree4"
+                    data-parent="#accordionEx">
+                    <div class="card-body">
+                        Anim pari Acordion 4 excepteur butcher vice lomo. Leggings occaecat craft beer
+                        farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus
+                        labore sustainable VHS.
+                    </div>
+                </div>
+            </div>
+            <!-- Accordion card -->
+
+            <!-- Accordion card -->
+            <div class="card">
+
+                <!-- Card header -->
+                <div class="card-header" role="tab" id="headingThree5">
+                    <a class="collapsed" data-toggle="collapse" data-parent="#accordionEx" href="#collapseThree5"
+                        aria-expanded="false" aria-controls="collapseThree5">
+                        <h5 class="mb-0">
+                            Secciones <i class="fas fa-angle-down rotate-icon"></i>
+                        </h5>
+                    </a>
+                </div>
+
+                <!-- Card body -->
+                <div id="collapseThree5" class="collapse" role="tabpanel" aria-labelledby="headingThree5"
+                    data-parent="#accordionEx">
+                    <div class="card-body">
+                        Anim pari Acordion 4 excepteur butcher vice lomo. Leggings occaecat craft beer
+                        farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus
+                        labore sustainable VHS.
+                    </div>
+                </div>
+            </div>
+            <!-- Accordion card -->
+
+            <!-- Accordion card -->
+            <div class="card">
+
+                <!-- Card header -->
+                <div class="card-header" role="tab" id="headingThree6">
+                    <a class="collapsed" data-toggle="collapse" data-parent="#accordionEx" href="#collapseThree6"
+                        aria-expanded="false" aria-controls="collapseThree4">
+                        <h5 class="mb-0">
+                            Destacamentos <i class="fas fa-angle-down rotate-icon"></i>
+                        </h5>
+                    </a>
+                </div>
+
+                <!-- Card body -->
+                <div id="collapseThree6" class="collapse" role="tabpanel" aria-labelledby="headingThree6"
+                    data-parent="#accordionEx">
+                    <div class="card-body">
+                        Anim pari Acordion 4 excepteur butcher vice lomo. Leggings occaecat craft beer
+                        farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus
+                        labore sustainable VHS.
+                    </div>
+                </div>
+            </div>
+            <!-- Accordion card -->
         </div>
+
 
     </section>
 @endsection

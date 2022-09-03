@@ -4,6 +4,9 @@
     <section class="section">
         <div class="section-header">
             <h3 class="page__heading">Crear Dependencia</h3>
+            <div class="alert alert-info ml-3">
+                Nota: Sólo se pueden crear Secciones y Destacamentos.
+            </div>
         </div>
         <div class="section-body">
             <div class="row">

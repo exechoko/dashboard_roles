@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Destino;
 use App\Models\Direccion;
 use Illuminate\Database\Seeder;
 

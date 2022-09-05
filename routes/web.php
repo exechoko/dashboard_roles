@@ -36,6 +36,8 @@ Route::group(['middleware' => ['auth']], function(){
     Route::resource('equipos', EquipoController::class);
     Route::resource('terminales', TipoTerminalController::class);
     Route::resource('dependencias', DependenciaController::class);
+    Route::resource('vehiculos', VehiculoController::class);
+    Route::resource('recursos', RecursoController::class);
 
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
     Route::get('get-departamentales', [App\Http\Controllers\DependenciaController::class, 'getDepartamentales'])->name('getDepartamentales');

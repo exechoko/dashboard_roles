@@ -5,7 +5,7 @@
     <a class="nav-link" href="/equipos">
         <i class="fas fa-microchip"></i><span>Equipamientos</span>
     </a>
-    <a class="nav-link" href="#">
+    <a class="nav-link" href="/recursos">
         <i class="fas fa-car"></i></i><span>Recursos</span>
     </a>
     <a class="nav-link" href="/dependencias">
@@ -14,7 +14,7 @@
     <a class="nav-link" href="/terminales">
         <i class=" fas fa-satellite-dish"></i><span>Terminales</span>
     </a>
-    <a class="nav-link" href="#">
+    <a class="nav-link" href="/vehiculos">
         <i class="fas fa-truck-pickup"></i><span>Vehiculos</span>
     </a>
     @can('ver-rol')

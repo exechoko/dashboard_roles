@@ -36,4 +36,8 @@ class Destino extends Model
     public function empresa_soporte(){
         return $this->belongsTo(EmpresaSoporte::class);
     }
+
+    public function recurso(){
+        return $this->hasMany(Recurso::class);
+    }
 }

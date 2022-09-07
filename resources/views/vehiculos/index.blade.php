@@ -11,13 +11,13 @@
                     <div class="card">
                         <div class="card-body">
 
-                            @can('crear-equipo')
-                                <a class="btn btn-success" href="{{ route('vehiculo.create') }}">Nuevo</a>
+                            @can('crear-vehiculo')
+                                <a class="btn btn-success" href="{{ route('vehiculos.create') }}">Nuevo</a>
                             @endcan
 
                             <form action="{{ route('vehiculos.index') }}" method="get" onsubmit="return showLoad()">
                                 <div class="input-group mt-4">
-                                    <input type="text" name="texto" class="form-control" placeholder="Ingrese el TEI o ISSI que desea buscar" value="{{ $texto }}">
+                                    <input type="text" name="texto" class="form-control" placeholder="Ingrese Marca, Modelo o Dominio que desea buscar" value="{{ $texto }}">
                                     <div class="input-group-append">
                                         <button type="submit" class="btn btn-info">Buscar</button>
                                     </div>
@@ -58,12 +58,12 @@
                                                         <a class="btn btn-warning" href="#" data-toggle="modal"
                                                             data-target="#ModalDetalle{{ $vehiculo->id }}">Detalles</a>
 
-                                                        @can('editar-equipo')
+                                                        @can('editar-vehiculo')
                                                             <a class="btn btn-info"
-                                                                href="{{ route('equipos.edit', $vehiculo->id) }}">Editar</a>
+                                                                href="{{ route('vehiculos.edit', $vehiculo->id) }}">Editar</a>
                                                         @endcan
 
-                                                        @can('borrar-equipo')
+                                                        @can('borrar-vehiculo')
                                                             <a class="btn btn-danger" href="#" data-toggle="modal"
                                                                 data-target="#ModalDelete{{ $vehiculo->id }}">Borrar</a>
                                                         @endcan
@@ -78,7 +78,7 @@
 
                             <!-- Ubicamos la paginacion a la derecha -->
                             <div class="pagination justify-content-end">
-                                {!! $vehiculo->links() !!}
+                                {!! $vehiculos->links() !!}
                             </div>
                         </div>
                     </div>

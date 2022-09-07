@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Vehiculo;
+use Illuminate\Support\Facades\DB;
 
 class VehiculoController extends Controller
 {
@@ -20,76 +21,102 @@ class VehiculoController extends Controller
         $vehiculos = Vehiculo::where('marca', 'LIKE', '%'.$texto.'%')
                     ->orWhere('modelo', 'LIKE', '%'.$texto.'%')
                     ->orWhere('dominio', 'LIKE', '%'.$texto.'%')
-                    ->orWhere('propietario', 'LIKE', '%'.$texto.'%')
+                    ->orWhere('propiedad', 'LIKE', '%'.$texto.'%')
                     ->orderBy('marca','asc')
                     ->paginate(10);
 
         return view('vehiculos.index', compact('vehiculos', 'texto'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function create()
     {
-        //
+        return view('vehiculos.crear');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
-        //
+        request()->validate([
+            'marca' => 'required',
+            'modelo' => 'required',
+            'dominio' => 'required'
+        ], [
+            'required' => 'El campo :attribute es necesario completar.'
+        ]);
+
+        try{
+            DB::beginTransaction();
+            $vehiculo = new Vehiculo();
+            $vehiculo->tipo_vehiculo = $request->tipo_vehiculo;
+            $vehiculo->marca = $request->marca;
+            $vehiculo->modelo = $request->modelo;
+            $vehiculo->nro_chasis = $request->nro_chasis;
+            $vehiculo->dominio = $request->dominio;
+            $vehiculo->color = $request->color;
+            $vehiculo->propiedad = $request->propiedad;
+            $vehiculo->detalles = $request->detalles;
+            $vehiculo->observaciones = $request->observaciones;
+            $vehiculo->save();
+            DB::commit();
+        } catch (\Exception $e){
+            DB::rollback();
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+              ]);
+        }
+        return redirect()->route('vehiculos.index');
     }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function show($id)
     {
         //
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function edit($id)
     {
-        //
+        $vehiculo = Vehiculo::find($id);
+        return view('vehiculos.editar', compact('vehiculo'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, $id)
     {
-        //
+        request()->validate([
+            'marca' => 'required',
+            'modelo' => 'required',
+            'dominio' => 'required'
+        ], [
+            'required' => 'El campo :attribute es necesario completar.'
+        ]);
+
+        $vehiculo = Vehiculo::find($id);
+        try{
+            DB::beginTransaction();
+            $vehiculo->tipo_vehiculo = $request->tipo_vehiculo;
+            $vehiculo->marca = $request->marca;
+            $vehiculo->modelo = $request->modelo;
+            $vehiculo->nro_chasis = $request->nro_chasis;
+            $vehiculo->dominio = $request->dominio;
+            $vehiculo->color = $request->color;
+            $vehiculo->propiedad = $request->propiedad;
+            $vehiculo->detalles = $request->detalles;
+            $vehiculo->observaciones = $request->observaciones;
+            $vehiculo->save();
+            DB::commit();
+        } catch (\Exception $e){
+            DB::rollback();
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+              ]);
+        }
+
+        return redirect()->route('vehiculos.index');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function destroy($id)
     {
-        //
+        $vehiculo = Vehiculo::find($id);
+        $vehiculo->delete();
+        return redirect()->route('vehiculos.index');
     }
 }

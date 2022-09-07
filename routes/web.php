@@ -9,6 +9,8 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\EquipoController;
 use App\Http\Controllers\TipoTerminalController;
 use App\Http\Controllers\DependenciaController;
+use App\Http\Controllers\VehiculoController;
+use App\Http\Controllers\RecursoController;
 
 /*
 |--------------------------------------------------------------------------

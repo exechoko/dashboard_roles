@@ -3,7 +3,7 @@
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h3 class="page__heading">Equipamientos</h3>
+            <h3 class="page__heading">Recursos</h3>
         </div>
         <div class="section-body">
             <div class="row">
@@ -11,13 +11,13 @@
                     <div class="card">
                         <div class="card-body">
 
-                            @can('crear-equipo')
-                                <a class="btn btn-success" href="{{ route('equipos.create') }}">Nuevo</a>
+                            @can('crear-recurso')
+                                <a class="btn btn-success" href="{{ route('recursos.create') }}">Nuevo</a>
                             @endcan
 
-                            <form action="{{ route('equipos.index') }}" method="get" onsubmit="return showLoad()">
+                            <form action="{{ route('recursos.index') }}" method="get" onsubmit="return showLoad()">
                                 <div class="input-group mt-4">
-                                    <input type="text" name="texto" class="form-control" placeholder="Ingrese el TEI o ISSI que desea buscar" value="{{ $texto }}">
+                                    <input type="text" name="texto" class="form-control" placeholder="Ingrese el nombre del recurso que desea buscar" value="{{ $texto }}">
                                     <div class="input-group-append">
                                         <button type="submit" class="btn btn-info">Buscar</button>
                                     </div>
@@ -28,50 +28,44 @@
                                 <table id="dataTable" class="table table-striped mt-2">
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                         <th style="display: none;">ID</th>
-                                        <th style="color:#fff;">Marca</th>
-                                        <th style="color:#fff;">Modelo</th>
-                                        <th style="color:#fff;">ISSI</th>
-                                        <th style="color:#fff;">TEI</th>
-                                        <th style="color: #fff">Estado</th>
-                                        <th style="color: #fff">Ult. Mod.</th>
+                                        <th style="color:#fff;">Movil</th>
+                                        <th style="color:#fff;">Tipo de Vehiculo</th>
+                                        <th style="color:#fff;">Destino</th>
                                         <th style="color:#fff;">Acciones</th>
                                     </thead>
                                     <tbody>
-                                        @if (count($equipos) <= 0)
+                                        @if (count($recursos) <= 0)
                                             <tr>
                                                 <td colspan="8">No se encontraron resultados</td>
                                             </tr>
                                         @else
-                                        @foreach ($equipos as $equipo)
-                                            @include('equipos.modal.detalle')
-                                            @include('equipos.modal.borrar')
-                                            {{-- @include('equipos.modal.editar') --}}
+                                        @foreach ($recursos as $recurso)
+                                            @include('recursos.modal.detalle')
+                                            @include('recursos.modal.borrar')
+                                            {{-- @include('recursos.modal.editar') --}}
                                             <tr>
-                                                <td style="display: none;">{{ $equipo->id }}</td>
-                                                <td>{{ $equipo->tipo_terminal->marca }}</td>
-                                                <td>{{ $equipo->tipo_terminal->modelo }}</td>
-                                                <td>{{ $equipo->issi }}</td>
-                                                <td>{{ $equipo->tei }}</td>
-                                                <td>{{ $equipo->estado->nombre }}</td>
-                                                <td>{{ \Carbon\Carbon::parse($equipo->fecha_estado)->format('d-m-Y') }}</td>
+                                                <td style="display: none;">{{ $recurso->id }}</td>
+                                                <td>{{ $recurso->nombre }}</td>
+                                                <td>{{ $recurso->vehiculo->tipo_vehiculo }}</td>
+                                                <td>{{ $recurso->destino->nombre }}</td>
                                                 <td>
-                                                    <form action="{{ route('equipos.destroy', $equipo->id) }}"
+                                                    <form action="{{ route('recursos.destroy', $recurso->id) }}"
                                                         method="POST">
 
                                                         {{--<a class="btn btn-success" href="#" data-toggle="modal"
-                                                            data-target="#ModalEditar{{ $equipo->id }}">Editar</a>--}}
+                                                            data-target="#ModalEditar{{ $recurso->id }}">Editar</a>--}}
 
                                                         <a class="btn btn-warning" href="#" data-toggle="modal"
-                                                            data-target="#ModalDetalle{{ $equipo->id }}">Detalles</a>
+                                                            data-target="#ModalDetalle{{ $recurso->id }}">Detalles</a>
 
-                                                        @can('editar-equipo')
+                                                        @can('editar-recurso')
                                                             <a class="btn btn-info"
-                                                                href="{{ route('equipos.edit', $equipo->id) }}">Editar</a>
+                                                                href="{{ route('recursos.edit', $recurso->id) }}">Editar</a>
                                                         @endcan
 
-                                                        @can('borrar-equipo')
+                                                        @can('borrar-recurso')
                                                             <a class="btn btn-danger" href="#" data-toggle="modal"
-                                                                data-target="#ModalDelete{{ $equipo->id }}">Borrar</a>
+                                                                data-target="#ModalDelete{{ $recurso->id }}">Borrar</a>
                                                         @endcan
                                                     </form>
                                                 </td>
@@ -84,7 +78,7 @@
 
                             <!-- Ubicamos la paginacion a la derecha -->
                             <div class="pagination justify-content-end">
-                                {!! $equipos->links() !!}
+                                {!! $recursos->links() !!}
                             </div>
                         </div>
                     </div>

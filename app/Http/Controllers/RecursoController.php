@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Recurso;
 use Illuminate\Http\Request;
 
 class RecursoController extends Controller
@@ -13,9 +14,14 @@ class RecursoController extends Controller
         $this->middleware('permission:borrar-recurso', ['only'=>['destroy']]);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $texto = trim($request->get('texto')); //trim quita espacios vacios
+        $recursos = Recurso::where('nombre', 'LIKE', '%'.$texto.'%')
+                    ->orderBy('nombre','asc')
+                    ->paginate(10);
+
+        return view('recursos.index', compact('recursos', 'texto'));
     }
 
     /**

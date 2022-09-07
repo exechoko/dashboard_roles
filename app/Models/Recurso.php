@@ -12,4 +12,8 @@ class Recurso extends Model
     public function vehiculo(){
         return $this->hasOne(Vehiculo::class);
     }
+
+    public function destino(){
+        return $this->belongsTo(Destino::class);
+    }
 }

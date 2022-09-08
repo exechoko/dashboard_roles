@@ -40,4 +40,24 @@ class Destino extends Model
     public function recurso(){
         return $this->hasMany(Recurso::class);
     }
+
+    public function dependeDe(){
+        $depende = '';
+        //Verificar que clase de dependencia es
+        //Verificar que si es una Direccion no depende de una direccion
+
+        if(!is_null($this->direccion)){
+            $depende .= $this->direccion->nombre . '';
+        }
+        if(!is_null($this->departamental)){
+            $depende .= $this->departamental->nombre . '';
+        }
+        if(!is_null($this->division)){
+            $depende .= $this->division->nombre . '';
+        }
+        if(!is_null($this->comisaria)){
+            $depende .= $this->comisaria->nombre . '';
+        }
+        return $depende;
+    }
 }

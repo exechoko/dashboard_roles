@@ -46,7 +46,7 @@
                                             <tr>
                                                 <td style="display: none;">{{ $recurso->id }}</td>
                                                 <td>{{ $recurso->nombre }}</td>
-                                                <td>{{ $recurso->vehiculo->tipo_vehiculo }}</td>
+                                                <td>aaaa{{-- $recurso->vehiculo->tipo_vehiculo --}}</td>
                                                 <td>{{ $recurso->destino->nombre }}</td>
                                                 <td>
                                                     <form action="{{ route('recursos.destroy', $recurso->id) }}"

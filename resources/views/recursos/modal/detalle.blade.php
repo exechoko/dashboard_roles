@@ -10,13 +10,9 @@
             </div>
             <div class="modal-body">
                 <ul class="mt-3">
-                    <li>Marca: <b> </b> - Modelo:
+                    <li>Dependencia: <b> </b> - Modelo:
                         <b> </b></li>
-                    <li>Estado: <b>{{ $recurso->estado->nombre }}</b></li>
-
-                    <li>GPS: <b></b></li>
-                    <li>Antena R.F.: <b></b></li>
-
+                    <li>Nombre: <b>{{ $recurso->nombre }}</b></li>
 
                 </ul>
             </div>

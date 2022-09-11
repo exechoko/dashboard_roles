@@ -6,6 +6,7 @@ use App\Models\Recurso;
 use Illuminate\Http\Request;
 use App\Models\Destino;
 use App\Models\Vehiculo;
+use Illuminate\Support\Facades\DB;
 
 class RecursoController extends Controller
 {
@@ -37,7 +38,31 @@ class RecursoController extends Controller
 
     public function store(Request $request)
     {
-        //
+        //dd($request);
+        request()->validate([
+            'dependencia' => 'required',
+            'nombre' => 'required',
+        ], [
+            'required' => 'El campo :attribute es necesario completar.'
+        ]);
+
+        try{
+            DB::beginTransaction();
+            $recurso = new Recurso();
+            $recurso->vehiculo_id = $request->vehiculo;
+            $recurso->destino_id = $request->dependencia;
+            $recurso->nombre = $request->nombre;
+            $recurso->observaciones = $request->observaciones;
+            $recurso->save();
+            DB::commit();
+        } catch (\Exception $e){
+            DB::rollback();
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+              ]);
+        }
+        return redirect()->route('recursos.index');
     }
 
     public function show($id)

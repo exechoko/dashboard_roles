@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Destino extends Model
 {
@@ -46,18 +47,22 @@ class Destino extends Model
         //Verificar que clase de dependencia es
         //Verificar que si es una Direccion no depende de una direccion
 
-        if(!is_null($this->direccion)){
+        if(Str::contains($this->nombre, 'Direcc')){
+            $depende .= 'Jefe de Policía';
+        }
+        if(Str::contains($this->nombre, 'Departamental')){
+            $depende .= 'Jefe de Policía';
+        }
+        if( (Str::contains($this->nombre, 'Divis')) && (!is_null($this->direccion_id)) ){
             $depende .= $this->direccion->nombre . '';
         }
-        if(!is_null($this->departamental)){
+        if( (Str::contains($this->nombre, 'Divis')) && (!is_null($this->departamental_id)) ){
             $depende .= $this->departamental->nombre . '';
         }
-        if(!is_null($this->division)){
-            $depende .= $this->division->nombre . '';
+        if( Str::contains($this->nombre, 'Comisar')){
+            $depende .= $this->departamental->nombre . '';
         }
-        if(!is_null($this->comisaria)){
-            $depende .= $this->comisaria->nombre . '';
-        }
+
         return $depende;
     }
 }

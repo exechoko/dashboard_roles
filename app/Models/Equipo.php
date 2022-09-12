@@ -41,4 +41,8 @@ class Equipo extends Model
     public function actuacion_policial(){
         return $this->hasMany(ActuacionPolicial::class);
     }
+
+    public function flota_general(){
+        return $this->hasMany(FlotaGeneral::class);
+    }
 }

@@ -62,6 +62,12 @@ class SeederTablaPermisos extends Seeder
             'crear-historico',
             'editar-historico',
             'borrar-historico',
+
+            //tabla flota
+            'ver-flota',
+            'crear-flota',
+            'editar-flota',
+            'borrar-flota',
         ];
 
         foreach($permisos as $permiso){

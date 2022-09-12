@@ -2,6 +2,9 @@
     <a class="nav-link" href="/home">
         <i class=" fas fa-chart-line"></i><span>Dashboard</span>
     </a>
+    <a class="nav-link" href="/flota">
+        <i class="fas fa-cog"></i><span>Flota de equipos</span>
+    </a>
     <a class="nav-link" href="/equipos">
         <i class="fas fa-microchip"></i><span>Equipamientos</span>
     </a>

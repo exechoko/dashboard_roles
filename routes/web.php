@@ -11,6 +11,7 @@ use App\Http\Controllers\TipoTerminalController;
 use App\Http\Controllers\DependenciaController;
 use App\Http\Controllers\VehiculoController;
 use App\Http\Controllers\RecursoController;
+use App\Http\Controllers\FlotaGeneralController;
 
 /*
 |--------------------------------------------------------------------------
@@ -40,6 +41,7 @@ Route::group(['middleware' => ['auth']], function(){
     Route::resource('dependencias', DependenciaController::class);
     Route::resource('vehiculos', VehiculoController::class);
     Route::resource('recursos', RecursoController::class);
+    Route::resource('flota', FlotaGeneralController::class);
 
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
     Route::get('get-departamentales', [App\Http\Controllers\DependenciaController::class, 'getDepartamentales'])->name('getDepartamentales');

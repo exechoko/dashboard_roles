@@ -90,6 +90,23 @@ class RecursoController extends Controller
         ]);
 
         $recurso = Recurso::find($id);
+        try{
+            DB::beginTransaction();
+            $recurso->vehiculo_id = $request->vehiculo;
+            $recurso->destino_id = $request->dependencia;
+            $recurso->nombre = $request->nombre;
+            $recurso->observaciones = $request->observaciones;
+            $recurso->save();
+            DB::commit();
+        } catch (\Exception $e){
+            DB::rollback();
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+              ]);
+        }
+
+        return view('recursos.index');
 
     }
 

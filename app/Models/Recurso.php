@@ -16,4 +16,8 @@ class Recurso extends Model
     public function destino(){
         return $this->belongsTo(Destino::class);
     }
+
+    public function flota_general(){
+        return $this->hasMany(FlotaGeneral::class);
+    }
 }

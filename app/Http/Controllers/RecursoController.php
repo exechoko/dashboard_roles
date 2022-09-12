@@ -72,12 +72,25 @@ class RecursoController extends Controller
 
     public function edit($id)
     {
-        //
+        $recurso = Recurso::find($id);
+        $dependencias = Destino::all();
+        $vehiculos = Vehiculo::all();
+
+        return view('recursos.editar', compact('recurso', 'dependencias', 'vehiculos'));
     }
 
     public function update(Request $request, $id)
     {
-        //
+        dd($request);
+        request()->validate([
+            'dependencia' => 'required',
+            'nombre' => 'required',
+        ], [
+            'required' => 'El campo :attribute es necesario completar.'
+        ]);
+
+        $recurso = Recurso::find($id);
+
     }
 
     public function destroy($id)

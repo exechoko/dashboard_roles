@@ -30,7 +30,7 @@
                                         <th style="display: none;">ID</th>
                                         <th style="color:#fff;">Movil</th>
                                         <th style="color:#fff;">Tipo de Vehiculo</th>
-                                        <th style="color:#fff;">Destino</th>
+                                        <th style="color:#fff;">Dependencia</th>
                                         <th style="color:#fff;">Acciones</th>
                                     </thead>
                                     <tbody>
@@ -46,8 +46,8 @@
                                             <tr>
                                                 <td style="display: none;">{{ $recurso->id }}</td>
                                                 <td>{{ $recurso->nombre }}</td>
-                                                <td>aaaa{{-- $recurso->vehiculo->tipo_vehiculo --}}</td>
-                                                <td>{{ $recurso->destino->nombre }}</td>
+                                                <td>{{ $recurso->vehiculo->tipo_vehiculo }}</td>
+                                                <td>{{ $recurso->destino->nombre . ' - ' . $recurso->destino->dependeDe() }}</td>
                                                 <td>
                                                     <form action="{{ route('recursos.destroy', $recurso->id) }}"
                                                         method="POST">

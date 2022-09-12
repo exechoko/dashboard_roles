@@ -10,6 +10,6 @@ class Vehiculo extends Model
     protected $table = 'vehiculos';
 
     public function recurso(){
-        return $this->belongsTo(Recurso::class);
+        return $this->hasMany(Recurso::class);
     }
 }

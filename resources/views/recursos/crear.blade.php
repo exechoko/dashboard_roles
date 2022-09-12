@@ -34,7 +34,7 @@
                                                 <option value="">Seleccionar Dependencia</option>
                                                 @foreach ($dependencias as $dependencia)
                                                     <option value="{{ $dependencia->id }}">
-                                                        {{ $dependencia->nombre . ' - Dependiente de ' . $dependencia->dependeDe() }}</option>
+                                                        {{ $dependencia->nombre . ' - ' . $dependencia->dependeDe() }}</option>
                                                 @endforeach
                                             </select>
                                         </div>

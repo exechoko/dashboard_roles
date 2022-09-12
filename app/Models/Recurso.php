@@ -10,7 +10,7 @@ class Recurso extends Model
     protected $table = 'recursos';
 
     public function vehiculo(){
-        return $this->hasOne(Vehiculo::class);
+        return $this->belongsTo(Vehiculo::class);
     }
 
     public function destino(){

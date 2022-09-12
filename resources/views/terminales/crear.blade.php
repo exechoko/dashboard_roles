@@ -3,7 +3,7 @@
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h3 class="page__heading">Cargar de Terminales</h3>
+            <h3 class="page__heading">Carga de Terminales</h3>
         </div>
         <div class="section-body">
             <div class="row">

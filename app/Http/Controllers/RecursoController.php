@@ -112,6 +112,8 @@ class RecursoController extends Controller
 
     public function destroy($id)
     {
-        //
+        $recurso = Recurso::find($id);
+        $recurso->delete();
+        return redirect()->route('recursos.index');
     }
 }

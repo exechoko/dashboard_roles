@@ -22,9 +22,17 @@ class FlotaGeneralController extends Controller
     public function index(Request $request)
     {
         $texto = trim($request->get('texto')); //trim quita espacios vacios
-        $flota = FlotaGeneral::where('observaciones', 'LIKE', '%'.$texto.'%')
-                    ->orderBy('observaciones','asc')
-                    ->paginate(10);
+
+        //Busqueda por ISSI, Movil o Destino
+        $flota = FlotaGeneral::whereHas('equipo', function ($query) use ($texto) {
+            $query->where('issi', 'like', '%' . $texto . '%');
+        })->orWhereHas('recurso', function ($query1) use ($texto) {
+            $query1->where('nombre', 'like', '%' . $texto . '%');
+        })->orWhereHas('destino', function ($query2) use ($texto) {
+            $query2->where('nombre', 'like', '%' . $texto . '%');
+        })->orderBy('id', 'asc')->get();//->orWhere('observaciones', 'LIKE', '%' . $texto . '%')->orderBy('id', 'asc')->get();
+
+        //dd($flota);
 
         return view('flota.index', compact('flota', 'texto'));
     }

@@ -81,7 +81,7 @@
 
                             <!-- Ubicamos la paginacion a la derecha -->
                             <div class="pagination justify-content-end">
-                                {!! $flota->links() !!}
+                                {{--!! $flota->links() !!--}}
                             </div>
                         </div>
                     </div>

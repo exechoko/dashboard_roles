@@ -28,10 +28,22 @@
                                 <div class="row">
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
+                                            <label for="">Tipo de vehiculo</label>
+                                            <label class="alert alert-info ml-3" for="tipo_terminal">Moto - Auto - Camioneta - Helicoptero</label>
+                                            <select name="tipo_vehiculo" id="" class="form-control"
+                                                style="margin-bottom: 15px">
+                                                <option value="">Seleccionar Tipo de Vehiculo</option>
+                                                @foreach ($tipo_vehiculo as $t)
+                                                    <option value="{{ $t }}">
+                                                        {{ $t }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <!--div class="form-group">
                                             <label for="tipo_vehiculo">Tipo de vehiculo</label>
                                             <label class="alert alert-info ml-3" for="tipo_terminal">Moto - Auto - Camioneta - Helicoptero</label>
                                             <input type="text" name="tipo_vehiculo" class="form-control">
-                                        </div>
+                                        </div-->
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">

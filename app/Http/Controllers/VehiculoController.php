@@ -30,7 +30,8 @@ class VehiculoController extends Controller
 
     public function create()
     {
-        return view('vehiculos.crear');
+        $tipo_vehiculo = ['Auto', 'Camioneta', 'Moto', 'Helicoptero'];
+        return view('vehiculos.crear', compact('tipo_vehiculo'));
     }
 
     public function store(Request $request)

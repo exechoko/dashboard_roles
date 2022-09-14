@@ -47,5 +47,6 @@ Route::group(['middleware' => ['auth']], function(){
     Route::get('get-departamentales', [App\Http\Controllers\DependenciaController::class, 'getDepartamentales'])->name('getDepartamentales');
     Route::get('get-divisiones', [App\Http\Controllers\DependenciaController::class, 'getDivisiones'])->name('getDivisiones');
     Route::get('get-comisarias', [App\Http\Controllers\DependenciaController::class, 'getComisarias'])->name('getComisarias');
+    Route::get('/generate-docx/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'generateDocx'])->name('generateDocx');
 
 });

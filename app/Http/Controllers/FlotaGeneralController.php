@@ -85,12 +85,24 @@ class FlotaGeneralController extends Controller
 
     public function edit($id)
     {
-        //
+        $flota = FlotaGeneral::find($id);
+        $equipos = Equipo::all();
+        $dependencias = Destino::all();
+        $recursos = Recurso::all();
+
+        //dd($dependencias);
+        return view('flota.editar', compact('flota', 'equipos', 'dependencias', 'recursos'));
     }
 
     public function update(Request $request, $id)
     {
-        //
+        dd($request);
+        request()->validate([
+            'dependencia' => 'required',
+            'equipo' => 'required',
+        ], [
+            'required' => 'El campo :attribute es necesario completar.'
+        ]);
     }
 
     public function destroy($id)

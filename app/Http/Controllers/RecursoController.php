@@ -81,7 +81,7 @@ class RecursoController extends Controller
 
     public function update(Request $request, $id)
     {
-        dd($request);
+        //dd($request);
         request()->validate([
             'dependencia' => 'required',
             'nombre' => 'required',

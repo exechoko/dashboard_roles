@@ -40,6 +40,35 @@ class FlotaGeneralController extends Controller
         return view('flota.index', compact('flota', 'texto'));
     }
 
+    function obtenerNombreMes($mes){
+        switch ($mes) {
+            case 1: return "Enero";
+            break;
+            case 2: return "Febrero";
+            break;
+            case 3: return "Marzo";
+            break;
+            case 4: return "Abril";
+            break;
+            case 5: return "Mayo";
+            break;
+            case 6: return "Junio";
+            break;
+            case 7: return "Julio";
+            break;
+            case 8: return "Agosto";
+            break;
+            case 9: return "Septiembre";
+            break;
+            case 10: return "Octubre";
+            break;
+            case 11: return "Noviembre";
+            break;
+            case 12: return "Diciembre";
+            break;
+        }
+    }
+
     public function generateDocx($id){
         //dd($id);
 
@@ -47,30 +76,87 @@ class FlotaGeneralController extends Controller
         $today = Carbon::now()->toDateTimeString();
         $today = str_replace(' ', '_', $today);
         $today = str_replace(':', '', $today);
-        //dd($today);
+
+        $dia = Carbon::now()->format('d');
+        $m = Carbon::now()->format('m');
+        $anio = Carbon::now()->format('Y');
+        $mes = null;
+
+        switch ($m) {
+            case 1: $mes = "Enero";
+            break;
+            case 2: $mes = "Febrero";
+            break;
+            case 3: $mes = "Marzo";
+            break;
+            case 4: $mes = "Abril";
+            break;
+            case 5: $mes = "Mayo";
+            break;
+            case 6: $mes = "Junio";
+            break;
+            case 7: $mes = "Julio";
+            break;
+            case 8: $mes = "Agosto";
+            break;
+            case 9: $mes = "Septiembre";
+            break;
+            case 10: $mes = "Octubre";
+            break;
+            case 11: $mes = "Noviembre";
+            break;
+            case 12: $mes = "Diciembre";
+            break;
+        }
+
+
+        //dd($anio);
 
         $rec_de_flota = FlotaGeneral::find($id);
 
         $phpWord = new PhpWord();
 
+        //$imagenPER = file_get_contents('/img/escudo_per.png');
+        $imagenPERStyle = ['width' => 35, 'height' => 35];
+        $imagen911Style = ['width' => 35, 'height' => 35];
+        $paragraphStyleName = 'pStyle';
+        $phpWord->addParagraphStyle($paragraphStyleName, array(
+            'alignment' => \PhpOffice\PhpWord\SimpleType\Jc::CENTER,
+            'spacing' => 100
+        ));
+        $boldFontStyleName = 'BoldText';
+        $phpWord->addFontStyle($boldFontStyleName, array(
+            'bold' => true,
+            'size' => 5
+            //'underline' => \PhpOffice\PhpWord\Style\Font::UNDERLINE_SINGLE
+        ));
+
+
+        //$title = 'POLICÍA DE ENTRE RÍOS – DIRECCIÓN OPERACIONES Y SEGURIDAD<w:br/>DIVISIÓN 911 Y VIDEO VIGILANCIA – SECCIÓN TÉCNICA';
+        $encabezado = '          POLICÍA DE ENTRE RÍOS – DIRECCIÓN OPERACIONES Y SEGURIDAD          ';
+        $titulo = 'RECIBO DE ENTREGA';
+        $descripcion = "----------En la ciudad de Paraná, capital de la provincia de Entre Ríos, a los ". $dia ." días del mes de ". $mes ." del año ". $anio .", siendo las ______ horas, se hace entrega a Personal de ". $rec_de_flota->destino->division->nombre .", " . $rec_de_flota->equipo->tipo_terminal->marca . ", para ser usado en el Móvil 1141 de Destacamento Tilcara.<w:br/>----------Firmando al pie para constancia y de conformidad.";
+
+
+
         $section = $phpWord->addSection();
+        $header = $section->addHeader();
+        //$logos = $header->addTable();
 
-        $description = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod " . $rec_de_flota->equipo->issi . "
+        $logoPER = public_path().'/img/escudo_per.jpg';
+        $logo911 = public_path().'/img/escudo911.jpg';
 
-tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
-
-quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-
-consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
-
-cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-
-proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+        $textrun = $header->addTextRun($paragraphStyleName);
+        $textrun->addImage($logoPER, $imagenPERStyle);
+        $textrun->addText($encabezado, $boldFontStyleName);
+        $textrun->addImage($logo911, $imagen911Style);
 
 
-        $section->addImage("http://itsolutionstuff.com/frontTheme/images/logo.png");
 
-        $section->addText($description);
+
+        //$section->addImage("http://itsolutionstuff.com/frontTheme/images/logo.png");
+
+        $section->addText($descripcion);
 
         //$objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
         $objWriter = new Word2007($phpWord);
@@ -85,6 +171,8 @@ proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
                 'message' => $e->getMessage()
               ]);
         }
+
+        //!Deberia guardar el movimiento en el historico cuando se hace un acta de entrega
 
         return response()->download(storage_path($today . 'acta_entrega.docx'));
     }

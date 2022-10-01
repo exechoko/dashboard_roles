@@ -29,7 +29,7 @@
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
                                             <label for="">Tipo de vehiculo</label>
-                                            <label class="alert alert-info ml-3" for="tipo_terminal">Moto - Auto - Camioneta - Helicoptero</label>
+                                            <label class="alert alert-info ml-3" for="tipo_terminal">Moto - Auto - Camioneta - Camión - Helicoptero</label>
                                             <select name="tipo_vehiculo" id="" class="form-control"
                                                 style="margin-bottom: 15px">
                                                 <option value="">Seleccionar Tipo de Vehiculo</option>

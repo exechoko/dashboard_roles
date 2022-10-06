@@ -9,7 +9,9 @@ use App\Models\Recurso;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpWord\Element\TextRun;
 use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\TemplateProcessor;
 use PhpOffice\PhpWord\Writer\Word2007;
 
 class FlotaGeneralController extends Controller
@@ -165,6 +167,92 @@ class FlotaGeneralController extends Controller
 
             $objWriter->save(storage_path($today . 'acta_entrega.docx'));
 
+        } catch (\Exception $e) {
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+              ]);
+        }
+
+        //!Deberia guardar el movimiento en el historico cuando se hace un acta de entrega
+
+        return response()->download(storage_path($today . 'acta_entrega.docx'));
+    }
+
+    public function generateDocxConTemplate($id){
+
+        $today = Carbon::now()->toDateTimeString();
+        $today = str_replace(' ', '_', $today);
+        $today = str_replace(':', '', $today);
+
+        $dia = Carbon::now()->format('d');
+        $m = Carbon::now()->format('m');
+        $anio = Carbon::now()->format('Y');
+        $mes = null;
+
+        switch ($m) {
+            case 1: $mes = "Enero";
+            break;
+            case 2: $mes = "Febrero";
+            break;
+            case 3: $mes = "Marzo";
+            break;
+            case 4: $mes = "Abril";
+            break;
+            case 5: $mes = "Mayo";
+            break;
+            case 6: $mes = "Junio";
+            break;
+            case 7: $mes = "Julio";
+            break;
+            case 8: $mes = "Agosto";
+            break;
+            case 9: $mes = "Septiembre";
+            break;
+            case 10: $mes = "Octubre";
+            break;
+            case 11: $mes = "Noviembre";
+            break;
+            case 12: $mes = "Diciembre";
+            break;
+        }
+
+        $rec_de_flota = FlotaGeneral::find($id);
+
+        $observaciones = "";
+        $destino = $rec_de_flota->destino->nombre . ' dependiente de la ' . $rec_de_flota->destino->dependeDe();
+        $cant = '01';
+        $marca = $rec_de_flota->equipo->tipo_terminal->marca;
+        $modelo = $rec_de_flota->equipo->tipo_terminal->modelo;
+        $tei = $rec_de_flota->equipo->tei;
+        $issi = $rec_de_flota->equipo->issi;
+
+        $cantNegrita = new TextRun();
+        $cantNegrita->addText($cant, array(/*'underline' => 'single', */'size' => 12, 'bold' => true));
+        $marcaNegrita = new TextRun();
+        $marcaNegrita->addText($marca, array(/*'underline' => 'single', */'size' => 12, 'bold' => true));
+        $modeloNegrita = new TextRun();
+        $modeloNegrita->addText($modelo, array(/*'underline' => 'single', */'size' => 12, 'bold' => true));
+        $teiNegrita = new TextRun();
+        $teiNegrita->addText($tei, array(/*'underline' => 'single', */'size' => 12, 'bold' => true));
+        $issiNegrita = new TextRun();
+        $issiNegrita->addText($issi, array(/*'underline' => 'single', */'size' => 12, 'bold' => true));
+
+        $templateWord = new TemplateProcessor(storage_path("template.docx"));
+        $templateWord->setValue('dia', $dia);
+        $templateWord->setValue('mes', $mes);
+        $templateWord->setValue('anio', $anio);
+        $templateWord->setValue('observaciones', $observaciones);
+        $templateWord->setValue('destino', $destino);
+        $templateWord->setComplexValue('cant', $cantNegrita);
+        $templateWord->setComplexValue('marca', $marcaNegrita);
+        $templateWord->setComplexValue('modelo', $modeloNegrita);
+        $templateWord->setComplexValue('tei', $teiNegrita);
+        $templateWord->setComplexValue('issi', $issiNegrita);
+
+        try {
+            $templateWord->saveAs(storage_path($today . 'acta_entrega.docx'));
+            //$objWriter->save(storage_path($today . 'acta_entrega.docx'));
         } catch (\Exception $e) {
             return response()->json([
                 'result' => 'ERROR',

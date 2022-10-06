@@ -58,7 +58,7 @@
                                                         {{--<a class="btn btn-success" href="#" data-toggle="modal"
                                                             data-target="#ModalEditar{{ $flota->id }}">Editar</a>--}}
 
-                                                        <a class="btn btn-success" href="{{ route('generateDocx', $f->id) }}">Acta de entrega</a>
+                                                        <a class="btn btn-success" href="{{ route('generateDocxConTemplate', $f->id) }}">Acta de entrega</a>
 
                                                         <a class="btn btn-warning" href="#" data-toggle="modal"
                                                             data-target="#ModalDetalle{{ $f->id }}">Detalles</a>

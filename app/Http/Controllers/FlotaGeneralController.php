@@ -265,6 +265,98 @@ class FlotaGeneralController extends Controller
         return response()->download(storage_path($today . 'acta_entrega.docx'));
     }
 
+    public function generateDocxConTabla($id){
+
+        $today = Carbon::now()->toDateTimeString();
+        $today = str_replace(' ', '_', $today);
+        $today = str_replace(':', '_', $today);
+
+        $dia = Carbon::now()->format('d');
+        $m = Carbon::now()->format('m');
+        $anio = Carbon::now()->format('Y');
+        $mes = null;
+
+        switch ($m) {
+            case 1: $mes = "Enero";
+            break;
+            case 2: $mes = "Febrero";
+            break;
+            case 3: $mes = "Marzo";
+            break;
+            case 4: $mes = "Abril";
+            break;
+            case 5: $mes = "Mayo";
+            break;
+            case 6: $mes = "Junio";
+            break;
+            case 7: $mes = "Julio";
+            break;
+            case 8: $mes = "Agosto";
+            break;
+            case 9: $mes = "Septiembre";
+            break;
+            case 10: $mes = "Octubre";
+            break;
+            case 11: $mes = "Noviembre";
+            break;
+            case 12: $mes = "Diciembre";
+            break;
+        }
+
+        $rec_de_flota = FlotaGeneral::find($id);
+
+        $document = new TemplateProcessor(storage_path("template_tabla.docx"));
+
+        $data1 = array(
+            array(
+                "num" => "1",
+                "tei" => "1930013250",
+                "bat1" => "B001123",
+                "bat2" => "B001125",
+                "cuna" => "C001234",
+                "issi" => "1990001",
+                "ptt" => "ST0038"
+            ),
+            array(
+                "num" => "2",
+                "tei" => "1930013251",
+                "bat1" => "B001124",
+                "bat2" => "B001125",
+                "cuna" => "C001235",
+                "issi" => "1990002",
+                "ptt" => "ST0039"
+            ),
+            array(
+                "num" => "3",
+                "tei" => "1930013252",
+                "bat1" => "B001129",
+                "bat2" => "B001126",
+                "cuna" => "C001236",
+                "issi" => "1990003",
+                "ptt" => "ST0040"
+            ),
+        );
+
+
+        $document->cloneRowAndSetValues("num", $data1);
+
+        //dd($document);
+
+        try {
+            $document->saveAs(storage_path($today . 'acta_entrega.docx'));
+            //$objWriter->save(storage_path($today . 'acta_entrega.docx'));
+        } catch (\Exception $e) {
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+              ]);
+        }
+
+        //!Deberia guardar el movimiento en el historico cuando se hace un acta de entrega
+
+        return response()->download(storage_path($today . 'acta_entrega.docx'));
+    }
+
     public function create()
     {
         $equipos = Equipo::all();

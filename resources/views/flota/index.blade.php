@@ -27,6 +27,7 @@
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                         <th style="display: none;">ID</th>
                                         <th style="color:#fff;">ISSI</th>
+                                        <th style="color:#fff;">TEI</th>
                                         <th style="color:#fff;">Movil</th>
                                         <th style="color:#fff;">Dependencia</th>
                                         <th style="color:#fff;">Acciones</th>
@@ -44,6 +45,7 @@
                                             <tr>
                                                 <td style="display: none;">{{ $f->id }}</td>
                                                 <td>{{ $f->equipo->issi }}</td>
+                                                <td>{{ $f->equipo->tei }}</td>
                                                 @if(is_null($f->recurso_id))
                                                     <td>-</td>
                                                 @else
@@ -58,7 +60,7 @@
                                                         {{--<a class="btn btn-success" href="#" data-toggle="modal"
                                                             data-target="#ModalEditar{{ $flota->id }}">Editar</a>--}}
 
-                                                        <a class="btn btn-success" href="{{ route('generateDocxConTemplate', $f->id) }}">Acta de entrega</a>
+                                                        <a class="btn btn-success" href="{{ route('generateDocxConTabla', $f->id) }}">Acta de entrega</a>
 
                                                         <a class="btn btn-warning" href="#" data-toggle="modal"
                                                             data-target="#ModalDetalle{{ $f->id }}">Detalles</a>

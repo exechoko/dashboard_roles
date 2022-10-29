@@ -52,10 +52,10 @@ class Destino extends Model
         //Verificar que si es una Direccion no depende de una direccion
 
         if(Str::contains($this->nombre, 'Direcc')){
-            $depende .= 'Jefe de Policía';
+            $depende .= 'Jefatura Policia de Entre Ríos';
         }
         if(Str::contains($this->nombre, 'Departamental')){
-            $depende .= 'Jefe de Policía';
+            $depende .= 'Jefatura Policia de Entre Ríos';
         }
         if( (Str::contains($this->nombre, 'Divis')) && (!is_null($this->direccion_id)) ){
             $depende .= $this->direccion->nombre . '';

@@ -20,10 +20,12 @@ class DatabaseSeeder extends Seeder
         DB::table('divisiones')->truncate();
         DB::table('comisarias')->truncate();
         DB::table('destino')->truncate();
+        DB::table('tipo_uso')->truncate();
         $this->call(SeederTablaDirecciones::class);
         $this->call(SeederTablaDepartamentales::class);
         $this->call(SeederTablaDivisiones::class);
         $this->call(SeederTablaComisarias::class);
         $this->call(SeederTablaDestinos::class);
+        $this->call(SeederTipoDeUso::class);
     }
 }

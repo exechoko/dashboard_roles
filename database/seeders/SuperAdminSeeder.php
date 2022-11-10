@@ -18,16 +18,16 @@ class SuperAdminSeeder extends Seeder
     public function run()
     {
         $usuario = User::create([
-            'name' => 'Ernesto',
-            'email' => 'ernesto@gmail.com',
+            'name' => 'Admin',
+            'email' => 'admin@gmail.com',
             'password' => bcrypt('123456789')
         ]);
 
-        /*$rol = Role::create(['name'=>'Administrador']);
+        /*$rol = Role::create(['name'=>'Super Administrador']);
         $permisos = Permission::pluck('id', 'id')->all();
         $rol->syncPermissions($permisos);
         $usuario->assignRole([$rol->id]);*/
         //Como ya esta creado el rol Administrador es que las lineas anteriores se comentan
-        $usuario->assignRole('Administrador');
+        $usuario->assignRole('Super Administrador');
     }
 }

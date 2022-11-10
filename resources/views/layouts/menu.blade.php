@@ -17,6 +17,9 @@
     <a class="nav-link" href="/terminales">
         <i class=" fas fa-satellite-dish"></i><span>Terminales</span>
     </a>
+    <a class="nav-link" href="/accesorios">
+        <i class="f fas fa-satellite-dish"></i><span>Accesorios</span>
+    </a>
     <a class="nav-link" href="/vehiculos">
         <i class="fas fa-truck-pickup"></i><span>Vehiculos</span>
     </a>

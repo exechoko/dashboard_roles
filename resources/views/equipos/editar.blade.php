@@ -42,20 +42,29 @@
                                                 value="{{ $equipo->tei }}">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="">Estado</label>
                                             {!! Form::select('estados[]', $estados, [], ['placeholder' => 'Selecciona el estado', 'class' => 'form-control']) !!}
                                         </div>
                                     </div>
 
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="propietario">Propietario</label>
                                             <input type="text" name="propietario" class="form-control"
                                                 value="{{ $equipo->propietario }}">
                                         </div>
                                     </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                        <div class="form-group">
+                                            <label for="provisto">Provisto por</label>
+                                            <input type="text" name="provisto" class="form-control"
+                                                value="{{ $equipo->provisto }}">
+                                        </div>
+                                    </div>
+
+
                                     <div class="col-xs-12 col-sm-12 col-md-2">
                                         <div class="form-group">
                                             <label for="con_garantia">Con garantía</label>
@@ -68,7 +77,7 @@
                                             {!! Form::date('fecha_venc_garantia', \Carbon\Carbon::now()) !!}
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-3">
+                                    <!--div class="col-xs-12 col-sm-12 col-md-3">
                                         <div class="form-group">
                                             <label for="gps">Con GPS</label>
                                             {!! Form::checkbox('gps', 'gps', $equipo->gps == 1 ? true : false) !!}
@@ -117,7 +126,7 @@
                                             <label for="operativo">Operativo</label>
                                             {!! Form::checkbox('operativo', 'operativo', $equipo->operativo == 1 ? true : false) !!}
                                         </div>
-                                    </div>
+                                    </div-->
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>

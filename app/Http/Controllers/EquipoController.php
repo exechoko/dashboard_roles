@@ -25,6 +25,7 @@ class EquipoController extends Controller
         $texto = trim($request->get('texto')); //trim quita espacios vacios
         $equipos = Equipo::where('tei', 'LIKE', '%'.$texto.'%')
                     ->orWhere('issi', 'LIKE', '%'.$texto.'%')
+                    ->orWhere('provisto', 'LIKE', '%'.$texto.'%')
                     ->orWhere('propietario', 'LIKE', '%'.$texto.'%')
                     ->orderBy('tei','asc')
                     ->paginate(10);
@@ -63,8 +64,6 @@ class EquipoController extends Controller
     {
         //
         request()->validate([
-            //'marca_terminal' => 'required',
-            //'modelo_terminal' => 'required',
             'terminal' => 'required',
             'estados' => 'required',
             //'issi' => 'required', //No es requerido porque si es un equipo nuevo no tiene asignado uno
@@ -82,25 +81,14 @@ class EquipoController extends Controller
                 $equipo = new Equipo;
                 $equipo->tipo_terminal_id = $terminal_info->id;
                 $equipo->estado_id = $estado_info->id;
-                //$equipo->fecha_estado = $request->fecha_estado;
                 $equipo->fecha_estado = Carbon::now();
                 $equipo->issi = $request->issi;
                 $equipo->tei = $request->tei;
-                $equipo->gps = isset($request->gps);
-                $equipo->frente_remoto = isset($request->frente_remoto);
-                $equipo->rf = isset($request->rf);
-                $equipo->kit_inst = isset($request->kit_inst);
-                $equipo->operativo = isset($request->operativo);
-                $equipo->desc_gps = $request->desc_gps;
-                $equipo->desc_frente = $request->desc_frente;
-                $equipo->desc_rf = $request->desc_rf;
-                $equipo->desc_kit_inst = $request->desc_kit_inst;
                 $equipo->propietario = $request->propietario;
-                //$equipo->condicion = $request->condicion;
+                $equipo->provisto = $request->provisto;
                 $equipo->con_garantia = isset($request->con_garantia);
                 $equipo->fecha_venc_garantia = $request->fecha_venc_garantia;
                 $equipo->observaciones = $request->observaciones;
-
                 $equipo->save();
             }
             DB::commit();
@@ -150,7 +138,7 @@ class EquipoController extends Controller
             $equipo->fecha_estado = $request->fecha_estado;
             $equipo->issi = $request->issi;
             $equipo->tei = $request->tei;
-            $equipo->gps = (isset($request->gps)) ? true : false;
+            /*$equipo->gps = (isset($request->gps)) ? true : false;
             $equipo->frente_remoto = (isset($request->frente_remoto)) ? true : false;
             $equipo->rf = (isset($request->rf)) ? true : false;
             $equipo->kit_inst = (isset($request->kit_inst)) ? true : false;
@@ -158,7 +146,8 @@ class EquipoController extends Controller
             $equipo->desc_gps = $request->desc_gps;
             $equipo->desc_frente = $request->desc_frente;
             $equipo->desc_rf = $request->desc_rf;
-            $equipo->desc_kit_inst = $request->desc_kit_inst;
+            $equipo->desc_kit_inst = $request->desc_kit_inst;*/
+            $equipo->provisto = $request->provisto;
             $equipo->propietario = $request->propietario;
             $equipo->con_garantia = (isset($request->con_garantia)) ? true : false;
             $equipo->fecha_venc_garantia = $request->fecha_venc_garantia;

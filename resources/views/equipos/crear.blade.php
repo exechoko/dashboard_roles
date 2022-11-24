@@ -87,51 +87,72 @@
                                         </div>
                                     </div>
                                     <!--div class="col-xs-12 col-sm-12 col-md-3">
-                                        <div class="form-group">
-                                            <label for="gps">Con GPS</label>
-                                            {--!! Form::checkbox('gps', 'gps') !!--}
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="desc_gps">Descripción GPS</label>
-                                            <input type="text" name="desc_gps" class="form-control">
-                                        </div>
-                                    </div-->
+                                                <div class="form-group">
+                                                    <label for="gps">Con GPS</label>
+                                                    {--!! Form::checkbox('gps', 'gps') !!--}
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="desc_gps">Descripción GPS</label>
+                                                    <input type="text" name="desc_gps" class="form-control">
+                                                </div>
+                                            </div-->
                                     <!--div class="col-xs-12 col-sm-12 col-md-3">
-                                        <div class="form-group">
-                                            <label for="frente_remoto">Con Frente Remoto</label>
-                                            {--!! Form::checkbox('frente_remoto', 'frente_remoto') !!--}
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="desc_frente">Descripción Frente Remoto</label>
-                                            <input type="text" name="desc_frente" class="form-control">
-                                        </div>
-                                    </div-->
+                                                <div class="form-group">
+                                                    <label for="frente_remoto">Con Frente Remoto</label>
+                                                    {--!! Form::checkbox('frente_remoto', 'frente_remoto') !!--}
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="desc_frente">Descripción Frente Remoto</label>
+                                                    <input type="text" name="desc_frente" class="form-control">
+                                                </div>
+                                            </div-->
                                     <!--div class="col-xs-12 col-sm-12 col-md-3">
-                                        <div class="form-group">
-                                            <label for="rf">Con Antena R.F. </label>
-                                            {--!! Form::checkbox('rf', 'rf') !!--}
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="desc_rf">Descripción Antena R.F.</label>
-                                            <input type="text" name="desc_rf" class="form-control">
-                                        </div>
-                                    </div-->
+                                                <div class="form-group">
+                                                    <label for="rf">Con Antena R.F. </label>
+                                                    {--!! Form::checkbox('rf', 'rf') !!--}
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="desc_rf">Descripción Antena R.F.</label>
+                                                    <input type="text" name="desc_rf" class="form-control">
+                                                </div>
+                                            </div-->
                                     <!--div class="col-xs-12 col-sm-12 col-md-3">
-                                        <div class="form-group">
-                                            <label for="kit_inst">Con Kit de instalación </label>
-                                            {--!! Form::checkbox('kit_inst', 'kit_inst') !!--}
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="desc_kit_inst">Descripción Antena R.F.</label>
-                                            <input type="text" name="desc_kit_inst" class="form-control">
-                                        </div>
-                                    </div-->
+                                                <div class="form-group">
+                                                    <label for="kit_inst">Con Kit de instalación </label>
+                                                    {--!! Form::checkbox('kit_inst', 'kit_inst') !!--}
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="desc_kit_inst">Descripción Antena R.F.</label>
+                                                    <input type="text" name="desc_kit_inst" class="form-control">
+                                                </div>
+                                            </div-->
                                     <!--div class="col-xs-12 col-sm-12 col-md-12">
-                                        <div class="form-group">
-                                            <label for="operativo">Operativo</label>
-                                            {--!! Form::checkbox('operativo', 'operativo') !!--}
+                                                <div class="form-group">
+                                                    <label for="operativo">Operativo</label>
+                                                    {--!! Form::checkbox('operativo', 'operativo') !!--}
+                                                </div>
+                                            </div-->
+
+                                    <!--form method="post" action="">
+                                        <div class="row">
+                                            <div class="col-lg-12">
+                                                <div id="inputFormRow">
+                                                    <div class="input-group mb-12">
+                                                        <input type="text" name="title[]" class="form-control m-input"
+                                                            placeholder="Ingrese titulo" autocomplete="off">
+                                                        <div class="input-group-append">
+                                                            <button id="removeRow" type="button"
+                                                                class="btn btn-danger">Borrar</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div id="newRow"></div>
+                                                <button id="addRow" type="button"
+                                                    class="btn btn-info">Agregar</button>
+                                            </div>
                                         </div>
-                                    </div-->
+                                    </form-->
 
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">

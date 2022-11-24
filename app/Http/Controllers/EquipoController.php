@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Accesorio;
 use Illuminate\Http\Request;
 use App\Models\Equipo;
 use App\Models\Estado;

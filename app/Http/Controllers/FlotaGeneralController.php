@@ -6,6 +6,7 @@ use App\Models\Destino;
 use App\Models\Equipo;
 use App\Models\FlotaGeneral;
 use App\Models\Recurso;
+use App\Models\Historico;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -360,6 +361,7 @@ class FlotaGeneralController extends Controller
     public function create()
     {
         $equipos = Equipo::all();
+        //dd($equipos);
         $dependencias = Destino::all();
         $recursos = Recurso::all();
 
@@ -380,13 +382,23 @@ class FlotaGeneralController extends Controller
         try{
             DB::beginTransaction();
             $flota = new FlotaGeneral();
+            $historico = new Historico();
             $flota->equipo_id = $request->equipo;
             $flota->recurso_id = $request->recurso;
+            /*$rec = Recurso::find($request->recurso);
+            $flota->destino_id = $rec->destino_id;*/
             $flota->destino_id = $request->dependencia;
             $flota->fecha_asignacion = Carbon::now()->toDateTimeString();
             //$flota->fecha_asignacion = Carbon::createFromFormat('d-m-Y H:i:s', $request->fecha)->toDateTimeString();
             $flota->observaciones = $request->observaciones;
             $flota->save();
+
+            $historico->equipo_id = $request->equipo;
+            $historico->recurso_id = $request->recurso;
+            $historico->destino_id = $request->dependencia;
+            $historico->fecha_asignacion = Carbon::now();
+            $historico->save();
+
             DB::commit();
         } catch (\Exception $e){
             DB::rollback();
@@ -416,17 +428,60 @@ class FlotaGeneralController extends Controller
 
     public function update(Request $request, $id)
     {
-        dd($request);
+        $flota = FlotaGeneral::find($id);
         request()->validate([
             'dependencia' => 'required',
             'equipo' => 'required',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
+
+        try {
+            DB::beginTransaction();
+            if (!is_null($flota)) {
+                if (($flota->recurso_id != $request->recurso) || ($flota->destino_id != $request->dependencia)) {
+                    //dd('distintos recursos');
+                    $flota->equipo_id = $request->equipo;
+                    $flota->recurso_id = $request->recurso;
+                    /*$rec = Recurso::find($request->recurso);
+                    $flota->destino_id = $rec->destino_id;*/
+                    $flota->destino_id = $request->dependencia;
+                    //$flota->fecha_asignacion = Carbon::now()->toDateTimeString();
+                    $flota->fecha_asignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString();
+                    $flota->observaciones = $request->observaciones;
+                    $flota->save();
+
+                    $histAnt = Historico::where('equipo_id', $request->equipo)->orderBy('created_at','desc')->first();
+                    //dd($histAnt);
+                    $histAnt->fecha_desasignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString();//Carbon::now();
+                    $histAnt->save();
+
+                    $historico = new Historico();
+                    $historico->equipo_id = $request->equipo;
+                    $historico->recurso_id = $request->recurso;
+                    $historico->destino_id = $request->dependencia;
+                    $historico->fecha_asignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString();//Carbon::now();
+                    $historico->save();
+                } else {
+                    //dd('mismo recursos');
+                    return back()->with('warning', 'Debe seleccionar otro recurso o dependencia porque ya está asignado');
+                }
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+            ]);
+        }
+        return redirect()->route('flota.index');
     }
 
     public function destroy($id)
     {
-        //
+        $flota = FlotaGeneral::find($id);
+        $flota->delete();
+        return redirect()->route('flota.index');
     }
 }

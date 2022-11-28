@@ -11,6 +11,12 @@
                     <div class="card">
                         <div class="card-body">
 
+                            @if (Session::has('warning'))
+                                <div class="alert alert-warning">
+                                    {{ Session::get('warning') }}
+                                </div>
+                            @endif
+
                             @if ($errors->any())
                                 <div class="alert alert-dark alert-dismissible fade show" role="alert">
                                     <strong>¡Revise los campos!</strong>
@@ -23,7 +29,6 @@
                                 </div>
                             @endif
 
-
                             <form action="{{ route('flota.update', $flota->id) }}" method="POST">
                                 @csrf
                                 @method('PUT')
@@ -33,7 +38,9 @@
                                             <label for="">Equipos</label>
                                             <select name="equipo" id="" class="form-control"
                                                 style="margin-bottom: 15px">
-                                                <option value="{{ $flota->equipo_id }}">{{ $flota->equipo->tipo_terminal->tipo_uso->uso . ' ' . $flota->equipo->issi . ' ' . $flota->equipo->tipo_terminal->marca . ' ' . $flota->equipo->tipo_terminal->modelo }}</option>
+                                                <option value="{{ $flota->equipo_id }}">
+                                                    {{ $flota->equipo->tipo_terminal->tipo_uso->uso . ' ' . $flota->equipo->issi . ' ' . $flota->equipo->tipo_terminal->marca . ' ' . $flota->equipo->tipo_terminal->modelo }}
+                                                </option>
                                                 @foreach ($equipos as $equipo)
                                                     <option value="{{ $equipo->id }}">
                                                         {{ $equipo->tipo_terminal->tipo_uso->uso . ' ' . $equipo->issi . ' - ' . $equipo->tipo_terminal->marca . ' ' . $equipo->tipo_terminal->modelo }}
@@ -47,7 +54,9 @@
                                             <label for="">Recurso</label>
                                             <select name="recurso" id="" class="form-control"
                                                 style="margin-bottom: 15px">
-                                                <option value="{{ $flota->recurso_id }}">{{ isset($flota->recurso->nombre) ? $flota->recurso->nombre : 'Seleccionar recurso' }}</option>
+                                                <option value="{{ $flota->recurso_id }}">
+                                                    {{ isset($flota->recurso->nombre) ? $flota->recurso->nombre : 'Seleccionar recurso' }}
+                                                </option>
                                                 @foreach ($recursos as $recurso)
                                                     <option value="{{ $recurso->id }}">
                                                         {{ $recurso->nombre . ' - ' . $recurso->vehiculo->tipo_vehiculo }}
@@ -57,19 +66,19 @@
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
-                                        <div class="form-group">
-                                            <label for="">Dependencia</label>
-                                            <select name="dependencia" id="" class="form-control"
-                                                style="margin-bottom: 15px">
-                                                <option value="{{ $flota->destino->nombre }}">{{ $flota->destino->nombre . ' - ' . $flota->destino->dependeDe() }}</option>
+                                            <div class="form-group">
+                                                <label for="">Dependencia</label>
+                                                <select name="dependencia" id="" class="form-control"
+                                                    style="margin-bottom: 15px">
+                                                    <option value="{{ $flota->destino->nombre }}">{{ $flota->destino->nombre . ' - ' . $flota->destino->dependeDe() }}</option>
                                                 @foreach ($dependencias as $dependencia)
                                                     <option value="{{ $dependencia->id }}">
                                                         {{ $dependencia->nombre . ' - ' . $dependencia->dependeDe() }}
                                                     </option>
                                                 @endforeach
-                                            </select>
+                                                </select>
+                                            </div>
                                         </div>
-                                    </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>

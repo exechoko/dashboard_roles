@@ -7,6 +7,7 @@ use App\Models\Equipo;
 use App\Models\FlotaGeneral;
 use App\Models\Recurso;
 use App\Models\Historico;
+use App\Models\TipoMovimiento;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -421,15 +422,19 @@ class FlotaGeneralController extends Controller
         $equipos = Equipo::all();
         $dependencias = Destino::all();
         $recursos = Recurso::all();
+        $tipos_movimiento = TipoMovimiento::all();
 
         //dd($dependencias);
-        return view('flota.editar', compact('flota', 'equipos', 'dependencias', 'recursos'));
+        return view('flota.editar', compact('flota', 'equipos', 'dependencias', 'recursos', 'tipos_movimiento'));
     }
 
     public function update(Request $request, $id)
     {
         $flota = FlotaGeneral::find($id);
+        $tipo_de_mov = TipoMovimiento::where('id', $request->tipo_movimiento)->first();
+        //dd($tipo_de_mov->id);
         request()->validate([
+            'tipo_movimiento' => 'required',
             'dependencia' => 'required',
             'equipo' => 'required',
         ], [
@@ -439,27 +444,37 @@ class FlotaGeneralController extends Controller
         try {
             DB::beginTransaction();
             if (!is_null($flota)) {
-                if (($flota->recurso_id != $request->recurso) || ($flota->destino_id != $request->dependencia)) {
+                if (($flota->recurso_id != $request->recurso)
+                    || (($tipo_de_mov->id == 2) && ($flota->destino_id == $request->dependencia))
+                    || (($tipo_de_mov->id != 2) && ($flota->destino_id != $request->dependencia))) {
                     //dd('distintos recursos');
                     $flota->equipo_id = $request->equipo;
                     $flota->recurso_id = $request->recurso;
-                    /*$rec = Recurso::find($request->recurso);
-                    $flota->destino_id = $rec->destino_id;*/
-                    $flota->destino_id = $request->dependencia;
-                    //$flota->fecha_asignacion = Carbon::now()->toDateTimeString();
                     $flota->fecha_asignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString();
                     $flota->observaciones = $request->observaciones;
                     $flota->save();
 
-                    $histAnt = Historico::where('equipo_id', $request->equipo)->orderBy('created_at','desc')->first();
-                    //dd($histAnt);
-                    $histAnt->fecha_desasignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString();//Carbon::now();
-                    $histAnt->save();
+                    if($tipo_de_mov->id == 1) {//1 - movimiento patrimonial
+                        $flota->destino_id = $request->dependencia;
+                    }
+                    /*if(($tipo_de_mov->id == 2) && ($flota->destino_id == $request->dependencia)) {//2 - Mov transitorio
+                        dd('se devuelve a la dependencia de origen');
+                        //no deberia poder seguir
+
+                    }*/
+
+                    $histAnt = Historico::where('equipo_id', $request->equipo)->orderBy('created_at', 'desc')->first();
+                    if (!is_null($histAnt)) {
+                        $histAnt->tipo_movimiento_id = $tipo_de_mov->id;
+                        $histAnt->fecha_desasignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString(); //Carbon::now();
+                        $histAnt->save();
+                    }
 
                     $historico = new Historico();
                     $historico->equipo_id = $request->equipo;
                     $historico->recurso_id = $request->recurso;
                     $historico->destino_id = $request->dependencia;
+                    $historico->tipo_movimiento_id = $tipo_de_mov->id;
                     $historico->fecha_asignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString();//Carbon::now();
                     $historico->save();
                 } else {

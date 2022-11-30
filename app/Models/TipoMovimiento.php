@@ -7,5 +7,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class TipoMovimiento extends Model
 {
-    use HasFactory;
+    protected $table = 'tipo_movimiento';
 }

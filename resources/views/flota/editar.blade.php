@@ -33,9 +33,9 @@
                                 @csrf
                                 @method('PUT')
                                 <div class="row">
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
-                                            <label for="">Equipos</label>
+                                            <label for="">Equipo</label>
                                             <select name="equipo" id="" class="form-control"
                                                 style="margin-bottom: 15px">
                                                 <option value="{{ $flota->equipo_id }}">
@@ -49,9 +49,9 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
-                                            <label for="">Recurso</label>
+                                            <label for="">Recurso al que se asigna</label>
                                             <select name="recurso" id="" class="form-control"
                                                 style="margin-bottom: 15px">
                                                 <option value="{{ $flota->recurso_id }}">
@@ -66,19 +66,35 @@
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
-                                            <div class="form-group">
-                                                <label for="">Dependencia</label>
-                                                <select name="dependencia" id="" class="form-control"
-                                                    style="margin-bottom: 15px">
-                                                    <option value="{{ $flota->destino->nombre }}">{{ $flota->destino->nombre . ' - ' . $flota->destino->dependeDe() }}</option>
+                                        <div class="form-group">
+                                            <label for="">Tipo de movimiento</label>
+                                            <select name="tipo_movimiento" id="" class="form-control"
+                                                style="margin-bottom: 15px">
+                                                <option value="">Seleccionar tipo de movimiento</option>
+                                                @foreach ($tipos_movimiento as $tipo_movimiento)
+                                                    <option value="{{ $tipo_movimiento->id }}">
+                                                        {{ $tipo_movimiento->nombre }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-8">
+                                        <div class="form-group">
+                                            <label for="">Dependencia o lugar al que se asigna</label>
+                                            <select name="dependencia" id="" class="form-control"
+                                                style="margin-bottom: 15px">
+                                                <option value="{{ $flota->destino->id }}">
+                                                    {{ $flota->destino->nombre . ' - ' . $flota->destino->dependeDe() }}
+                                                </option>
                                                 @foreach ($dependencias as $dependencia)
                                                     <option value="{{ $dependencia->id }}">
                                                         {{ $dependencia->nombre . ' - ' . $dependencia->dependeDe() }}
                                                     </option>
                                                 @endforeach
-                                                </select>
-                                            </div>
+                                            </select>
                                         </div>
+                                    </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>

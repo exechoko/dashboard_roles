@@ -8,4 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class Historico extends Model
 {
     protected $table = 'historico';
+
+    public function destino(){
+        return $this->belongsTo(Destino::class);
+    }
 }

@@ -46,6 +46,10 @@ class Destino extends Model
         return $this->hasMany(FlotaGeneral::class);
     }
 
+    public function historico(){
+        return $this->hasMany(Historico::class);
+    }
+
     public function dependeDe(){
         $depende = '';
         //Verificar que clase de dependencia es

@@ -419,17 +419,21 @@ class FlotaGeneralController extends Controller
     public function edit($id)
     {
         $flota = FlotaGeneral::find($id);
+        //dd($flota);
         $equipos = Equipo::all();
         $dependencias = Destino::all();
         $recursos = Recurso::all();
         $tipos_movimiento = TipoMovimiento::all();
+        $hist = Historico::where('equipo_id', $flota->equipo_id)->orderBy('created_at', 'desc')->first();
+        //dd($hist);
 
         //dd($dependencias);
-        return view('flota.editar', compact('flota', 'equipos', 'dependencias', 'recursos', 'tipos_movimiento'));
+        return view('flota.editar', compact('flota', 'equipos', 'dependencias', 'recursos', 'tipos_movimiento', 'hist'));
     }
 
     public function update(Request $request, $id)
     {
+        //dd($request->all());
         $flota = FlotaGeneral::find($id);
         $tipo_de_mov = TipoMovimiento::where('id', $request->tipo_movimiento)->first();
         //dd($tipo_de_mov->id);
@@ -444,19 +448,17 @@ class FlotaGeneralController extends Controller
         try {
             DB::beginTransaction();
             if (!is_null($flota)) {
-                if (($flota->recurso_id != $request->recurso)
-                    || (($tipo_de_mov->id == 2) && ($flota->destino_id == $request->dependencia))
-                    || (($tipo_de_mov->id != 2) && ($flota->destino_id != $request->dependencia))) {
+                //if (($flota->recurso_id != $request->recurso) || ($flota->destino_id != $request->dependencia)) {
                     //dd('distintos recursos');
                     $flota->equipo_id = $request->equipo;
                     $flota->recurso_id = $request->recurso;
                     $flota->fecha_asignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString();
                     $flota->observaciones = $request->observaciones;
-                    $flota->save();
 
                     if($tipo_de_mov->id == 1) {//1 - movimiento patrimonial
                         $flota->destino_id = $request->dependencia;
                     }
+
                     /*if(($tipo_de_mov->id == 2) && ($flota->destino_id == $request->dependencia)) {//2 - Mov transitorio
                         dd('se devuelve a la dependencia de origen');
                         //no deberia poder seguir
@@ -477,10 +479,11 @@ class FlotaGeneralController extends Controller
                     $historico->tipo_movimiento_id = $tipo_de_mov->id;
                     $historico->fecha_asignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString();//Carbon::now();
                     $historico->save();
-                } else {
+                    $flota->save();
+                //} else {
                     //dd('mismo recursos');
-                    return back()->with('warning', 'Debe seleccionar otro recurso o dependencia porque ya está asignado');
-                }
+                //    return back()->with('warning', 'Debe seleccionar otro recurso o dependencia porque ya está asignado');
+                //}
             }
             DB::commit();
         } catch (\Exception $e) {

@@ -65,7 +65,19 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                        <div class="form-group">
+                                            <label for="">Pertenece a</label>
+                                            <label for="" class="form-control">{{ $flota->destino->nombre . ' - ' . $flota->destino->dependeDe() }}</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                        <div class="form-group">
+                                            <label for="">Actualmente está en</label>
+                                            <label for="" class="form-control">{{ $hist->destino->nombre . ' - ' . $hist->destino->dependeDe() }}</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="">Tipo de movimiento</label>
                                             <select name="tipo_movimiento" id="" class="form-control"
@@ -79,14 +91,12 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-8">
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="">Dependencia o lugar al que se asigna</label>
                                             <select name="dependencia" id="" class="form-control"
                                                 style="margin-bottom: 15px">
-                                                <option value="{{ $flota->destino->id }}">
-                                                    {{ $flota->destino->nombre . ' - ' . $flota->destino->dependeDe() }}
-                                                </option>
+                                                <option value="">Seleccionar destino/dependencia</option>
                                                 @foreach ($dependencias as $dependencia)
                                                     <option value="{{ $dependencia->id }}">
                                                         {{ $dependencia->nombre . ' - ' . $dependencia->dependeDe() }}

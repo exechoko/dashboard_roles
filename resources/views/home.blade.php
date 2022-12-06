@@ -85,7 +85,7 @@
                                                 })->count();
                                             @endphp
                                             <h2 class="text-right"><i
-                                                    class="fas fa-truck-pickup f-left"></i><span>{{ $cant_moviles }}</span></h2>
+                                                    class="fas fa-car f-left"></i><span>{{ $cant_moviles }}</span></h2>
                                             @can('ver-equipo')
                                                 <p class="m-b-0 text-right"><a href="/recursos" class="text-white">Ver más</a>
                                                 </p>

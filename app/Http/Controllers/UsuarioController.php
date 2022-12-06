@@ -60,6 +60,12 @@ class UsuarioController extends Controller
             'roles' => 'required'
         ]);
 
+        //Para no guardar el mismo usuario 2 veces
+        $u = User::where('lp', $request->lp)->first();
+        if (!is_null($u)){
+            return back()->with('error', 'Ya se encuentra un usuario con el mismo LP');//->withInput();
+        }
+
         $input = $request->all();
         $input['password'] = Hash::make($input['password']);
 

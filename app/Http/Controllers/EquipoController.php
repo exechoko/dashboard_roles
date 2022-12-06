@@ -73,6 +73,12 @@ class EquipoController extends Controller
             'required' => 'El campo :attribute es necesario completar.'
         ]);
 
+        //Para no guardar el mismo equipo 2 veces
+        $e = Equipo::where('tei', $request->tei)->first();
+        if (!is_null($e)){
+            return back()->with('error', 'Ya se encuentra un equipo con el mismo TEI');//->withInput();
+        }
+
         $terminal_info = TipoTerminal::find($request->terminal);
         $estado_info = Estado::where('nombre', $request->estados)->first();
 

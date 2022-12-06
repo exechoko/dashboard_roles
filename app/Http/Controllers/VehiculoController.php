@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Vehiculo;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class VehiculoController extends Controller
 {
@@ -36,6 +37,7 @@ class VehiculoController extends Controller
 
     public function store(Request $request)
     {
+        //dd($request->all());
         request()->validate([
             'marca' => 'required',
             'modelo' => 'required',
@@ -43,6 +45,12 @@ class VehiculoController extends Controller
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
+
+        //Para no guardar el mismo vehiculo 2 veces
+        $v = Vehiculo::where('dominio', $request->dominio)->first();
+        if (!is_null($v)){
+            return back()->with('error', 'Ya se encuentra un vehiculo con el mismo dominio');//->withInput();
+        }
 
         try{
             DB::beginTransaction();

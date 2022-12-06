@@ -20,4 +20,16 @@ class FlotaGeneral extends Model
     public function destino(){
         return $this->belongsTo(Destino::class);
     }
+
+    public function historico(){
+        return $this->belongsTo(Historico::class);
+    }
+
+    public function ultimoLugar(){
+        $hist = Historico::where('equipo_id', $this->equipo_id)->orderBy('created_at', 'desc')->first();
+        if(!is_null($hist)){
+            return $hist->destino->nombre . ' - ' . $hist->destino->dependeDe();
+        }
+        return null;
+    }
 }

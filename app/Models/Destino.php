@@ -70,6 +70,19 @@ class Destino extends Model
         if( Str::contains($this->nombre, 'Comisar')){
             $depende .= $this->departamental->nombre . '';
         }
+        if( Str::contains($this->nombre, 'Secci')){
+            if(!is_null($this->departamental_id)){
+                $depende .= $this->departamental->nombre . '';
+                if (!is_null($this->comisaria_id)){
+                    $depende .= ' - ' . $this->departamental->nombre . '';
+                }
+            } else {
+                $depende .= $this->direccion->nombre . '';
+                if (!is_null($this->division_id)){
+                    $depende .= ' - ' . $this->division->nombre . '';
+                }
+            }
+        }
 
         return $depende;
     }

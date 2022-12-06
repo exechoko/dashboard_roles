@@ -4150,8 +4150,20 @@ body:not(.sidebar-mini) .sidebar-style-2 .sidebar-menu li.active ul.dropdown-men
 .bg-c-pink {
     background: linear-gradient(45deg,#874651, #FF5370);
 }
+.bg-c-brown {
+    background: linear-gradient(45deg,#876b46, #f0bc6de5);
+}
+.bg-c-violet {
+    background: linear-gradient(45deg,#504687, #9f6df0e5);
+}
 .bg-c-orange {
     background: linear-gradient(45deg,#978b51, #ffc653);
+}
+.bg-c-red {
+    background: linear-gradient(45deg,#c05f5f, #dd1818);
+}
+.bg-c-gren-light {
+    background: linear-gradient(45deg,#5fc067, #57a310);
 }
 .card {
     -webkit-box-shadow: 0 1px 2.94px 0.06px rgba(4,26,55,0.16);

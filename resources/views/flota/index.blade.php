@@ -30,6 +30,7 @@
                                         <th style="color:#fff;">TEI</th>
                                         <th style="color:#fff;">Movil</th>
                                         <th style="color:#fff;">Dependencia</th>
+                                        <th style="color:#fff;">Actualmente en</th>
                                         <th style="color:#fff;">Acciones</th>
                                     </thead>
                                     <tbody>
@@ -53,6 +54,11 @@
                                                 @endif
 
                                                 <td>{{ $f->destino->nombre . ' ' . $f->destino->dependeDe() }}</td>
+                                                @if(is_null($f->ultimoLugar()))
+                                                    <td>Sin movimientos</td>
+                                                @else
+                                                    <td>{{ $f->ultimoLugar() }}</td>
+                                                @endif
                                                 <td>
                                                     <form action="{{ route('flota.destroy', $f->id) }}"
                                                         method="POST">
@@ -60,7 +66,7 @@
                                                         {{--<a class="btn btn-success" href="#" data-toggle="modal"
                                                             data-target="#ModalEditar{{ $flota->id }}">Editar</a>--}}
 
-                                                        <a class="btn btn-success" href="{{ route('generateDocxConTabla', $f->id) }}">Acta de entrega</a>
+                                                        {{--<a class="btn btn-success" href="{{ route('generateDocxConTabla', $f->id) }}">Acta de entrega</a>--}}
 
                                                         <a class="btn btn-warning" href="#" data-toggle="modal"
                                                             data-target="#ModalDetalle{{ $f->id }}">Detalles</a>

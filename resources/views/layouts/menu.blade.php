@@ -8,6 +8,9 @@
     <a class="nav-link" href="/equipos">
         <i class="fas fa-microchip"></i><span>Equipamientos</span>
     </a>
+    <a class="nav-link" href="/accesorios">
+        <i class="fas fa-headphones-alt"></i><span>Accesorios</span>
+    </a>
     <a class="nav-link" href="/recursos">
         <i class="fas fa-car"></i></i><span>Recursos</span>
     </a>
@@ -16,9 +19,6 @@
     </a>
     <a class="nav-link" href="/terminales">
         <i class=" fas fa-satellite-dish"></i><span>Terminales</span>
-    </a>
-    <a class="nav-link" href="/accesorios">
-        <i class="f fas fa-satellite-dish"></i><span>Accesorios</span>
     </a>
     <a class="nav-link" href="/vehiculos">
         <i class="fas fa-truck-pickup"></i><span>Vehiculos</span>

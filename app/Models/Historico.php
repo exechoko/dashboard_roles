@@ -12,4 +12,9 @@ class Historico extends Model
     public function destino(){
         return $this->belongsTo(Destino::class);
     }
+
+    public function flota(){
+        return $this->hasMany(FlotaGeneral::class);
+    }
+
 }

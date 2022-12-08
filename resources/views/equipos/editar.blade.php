@@ -28,14 +28,21 @@
                                 @csrf
                                 @method('PUT')
                                 <div class="row">
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="issi">ISSI</label>
                                             <input type="text" name="issi" class="form-control"
                                                 value="{{ $equipo->issi }}">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                        <div class="form-group">
+                                            <label for="nombre_issi">ID ISSI</label>
+                                            <input type="text" name="nombre_issi" class="form-control"
+                                                value="{{ $equipo->nombre_issi }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="tei">TEI</label>
                                             <input type="text" name="tei" class="form-control"

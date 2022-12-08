@@ -90,6 +90,7 @@ class EquipoController extends Controller
                 $equipo->estado_id = $estado_info->id;
                 $equipo->fecha_estado = Carbon::now();
                 $equipo->issi = $request->issi;
+                $equipo->nombre_issi = $request->nombre_issi;
                 $equipo->tei = $request->tei;
                 $equipo->propietario = $request->propietario;
                 $equipo->provisto = $request->provisto;
@@ -145,6 +146,7 @@ class EquipoController extends Controller
             $equipo->fecha_estado = $request->fecha_estado;
             $equipo->issi = $request->issi;
             $equipo->tei = $request->tei;
+            $equipo->nombre_issi = $request->nombre_issi;
             /*$equipo->gps = (isset($request->gps)) ? true : false;
             $equipo->frente_remoto = (isset($request->frente_remoto)) ? true : false;
             $equipo->rf = (isset($request->rf)) ? true : false;

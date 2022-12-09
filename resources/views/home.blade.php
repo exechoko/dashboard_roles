@@ -11,6 +11,7 @@
                     <div class="card">
                         <div class="card-body">
                             <div class="row">
+                                {{--
                                 @can('ver-usuario')
                                     <div class="col-md-4 col-xl-4">
                                         <div class="card bg-c-blue order-card">
@@ -36,13 +37,47 @@
                                         </div>
                                     </div>
                                 @endcan
+                                --}}
                                 <div class="col-md-4 col-xl-4">
-                                    <div class="card bg-c-pink order-card">
+                                    <div class="card bg-c-green order-card">
                                         <div class="card-block">
-                                            <h5>Equipos</h5>
+                                            <h5>Equipos sin funcionar</h5>
                                             @php
                                                 use App\Models\Equipo;
-                                                $cant_equipos = Equipo::count();
+                                                $cant_equipos = Equipo::where('estado_id', 3)->count();
+                                            @endphp
+                                            <h2 class="text-right"><i
+                                                    class="fa fa-mobile f-left"></i><span>{{ $cant_equipos }}</span></h2>
+                                            @can('ver-equipo')
+                                                <p class="m-b-0 text-right"><a href="/equipos" class="text-white">Ver más</a>
+                                                </p>
+                                            @endcan
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-xl-4">
+                                    <div class="card bg-c-violet order-card">
+                                        <div class="card-block">
+                                            <h5>Equipos funcionales</h5>
+                                            @php
+                                                $cant_equipos = Equipo::where('estado_id', '<>', 3)->count();
+                                            @endphp
+                                            <h2 class="text-right"><i
+                                                    class="fa fa-mobile f-left"></i><span>{{ $cant_equipos }}</span></h2>
+                                            @can('ver-equipo')
+                                                <p class="m-b-0 text-right"><a href="/equipos" class="text-white">Ver más</a>
+                                                </p>
+                                            @endcan
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-xl-4">
+                                    <div class="card bg-c-orange order-card">
+                                        <div class="card-block">
+                                            <h5>Equipos derivados a P.G.</h5>
+                                            @php
+                                            use App\Models\Historico;
+                                                $cant_equipos = Historico::where('destino_id', 233)->count();
                                             @endphp
                                             <h2 class="text-right"><i
                                                     class="fa fa-mobile f-left"></i><span>{{ $cant_equipos }}</span></h2>

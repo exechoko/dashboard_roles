@@ -26,10 +26,10 @@
                             <form action="{{ route('recursos.store') }}" method="POST">
                                 @csrf
                                 <div class="row">
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                    <div class="col-xs-12 col-sm-12 col-md-3">
                                         <div class="form-group">
                                             <label for="">Dependencia</label>
-                                            <select name="dependencia" id="" class="form-control"
+                                            <select name="dependencia" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 <option value="">Seleccionar Dependencia</option>
                                                 @foreach ($dependencias as $dependencia)
@@ -39,10 +39,10 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                    <div class="col-xs-12 col-sm-12 col-md-3">
                                         <div class="form-group">
                                             <label for="">Vehiculo</label>
-                                            <select name="vehiculo" id="" class="form-control"
+                                            <select name="vehiculo" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 <option value="">Seleccionar Vehiculo</option>
                                                 @foreach ($vehiculos as $vehiculo)
@@ -52,7 +52,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                    <div class="col-xs-12 col-sm-12 col-md-3">
                                         <div class="form-group">
                                             <label for="nombre">Nombre</label>
                                             <input type="text" name="nombre" class="form-control">

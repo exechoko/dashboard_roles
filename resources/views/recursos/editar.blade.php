@@ -31,7 +31,7 @@
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
                                             <label for="">Dependencia</label>
-                                            <select name="dependencia" id="" class="form-control"
+                                            <select name="dependencia" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 <option value="{{ $recurso->destino_id }}">{{ $recurso->destino->nombre }}</option>
                                                 @foreach ($dependencias as $dependencia)

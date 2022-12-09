@@ -32,7 +32,7 @@
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
                                             <label for="">Dirección</label>
-                                            <select name="direccion" id="direccion" class="form-control"
+                                            <select name="direccion" id="direccion" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 <option value="">Seleccionar Dirección</option>
                                                 @foreach ($direcciones as $direccion)
@@ -44,7 +44,7 @@
 
                                         <div class="form-group">
                                             <label for="">Dirección</label>
-                                            <select name="departamental" id="departamental" class="form-control"
+                                            <select name="departamental" id="departamental" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 <option value="">Seleccionar Departamental</option>
                                                 @foreach ($departamentales as $departamental)
@@ -55,11 +55,11 @@
                                         </div>
                                         <div class="form-group">
                                             <label for="">División</label>
-                                            <select class="form-control" name="division" id="division"></select>
+                                            <select class="form-control select2" name="division" id="division"></select>
                                         </div>
                                         <div class="form-group">
                                             <label for="">Comisaría</label>
-                                            <select class="form-control" name="comisaria" id="comisaria"></select>
+                                            <select class="form-control select2" name="comisaria" id="comisaria"></select>
                                         </div>
                                     </div>
 

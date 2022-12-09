@@ -33,10 +33,10 @@
                                 @csrf
                                 @method('PUT')
                                 <div class="row">
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="">Equipo</label>
-                                            <select name="equipo" id="" class="form-control"
+                                            <select name="equipo" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 <option value="{{ $flota->equipo_id }}">
                                                     {{ $flota->equipo->tipo_terminal->tipo_uso->uso . ' ' . $flota->equipo->issi . ' ' . $flota->equipo->tipo_terminal->marca . ' ' . $flota->equipo->tipo_terminal->modelo }}
@@ -49,10 +49,10 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="">Recurso al que se asigna</label>
-                                            <select name="recurso" id="" class="form-control"
+                                            <select name="recurso" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 <option value="{{ $flota->recurso_id }}">
                                                     {{ isset($flota->recurso->nombre) ? $flota->recurso->nombre : 'Seleccionar recurso' }}
@@ -77,10 +77,10 @@
                                             <label for="" class="form-control">{{ $hist->destino->nombre . ' - ' . $hist->destino->dependeDe() }}</label>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="">Tipo de movimiento</label>
-                                            <select name="tipo_movimiento" id="" class="form-control"
+                                            <select name="tipo_movimiento" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 <option value="">Seleccionar tipo de movimiento</option>
                                                 @foreach ($tipos_movimiento as $tipo_movimiento)
@@ -91,10 +91,10 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="">Dependencia o lugar al que se asigna</label>
-                                            <select name="dependencia" id="" class="form-control"
+                                            <select name="dependencia" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 <option value="">Seleccionar destino/dependencia</option>
                                                 @foreach ($dependencias as $dependencia)

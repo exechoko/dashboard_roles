@@ -77,7 +77,7 @@
                                             <h5>Equipos derivados a P.G.</h5>
                                             @php
                                             use App\Models\Historico;
-                                                $cant_equipos = Historico::where('destino_id', 233)->count();
+                                                $cant_equipos = Historico::where('destino_id', 233)->where('fecha_desasignacion',null)->count();
                                             @endphp
                                             <h2 class="text-right"><i
                                                     class="fa fa-mobile f-left"></i><span>{{ $cant_equipos }}</span></h2>

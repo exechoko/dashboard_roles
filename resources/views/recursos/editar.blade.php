@@ -41,17 +41,17 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="nombre">Nombre</label>
                                             <input type="text" name="nombre" class="form-control"
                                                 value="{{ $recurso->nombre }}">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="">Vehiculo</label>
-                                            <select name="vehiculo" id="" class="form-control"
+                                            <select name="vehiculo" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 <option value="{{ $recurso->vehiculo_id }}">{{ $recurso->vehiculo->marca . ' ' . $recurso->vehiculo->modelo . ' ' . $recurso->vehiculo->dominio }}</option>
                                                 @foreach ($vehiculos as $vehiculo)

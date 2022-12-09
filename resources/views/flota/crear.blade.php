@@ -29,7 +29,7 @@
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="">Equipos</label>
-                                            <select name="equipo" id="" class="form-control"
+                                            <select name="equipo" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 <option value="">Seleccionar Equipo</option>
                                                 @foreach ($equipos as $equipo)
@@ -43,7 +43,7 @@
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="">Recurso</label>
-                                            <select name="recurso" id="" class="form-control"
+                                            <select name="recurso" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 <option value="">Seleccionar Recurso</option>
                                                 @foreach ($recursos as $recurso)
@@ -56,7 +56,7 @@
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="">Dependencia</label>
-                                            <select name="dependencia" id="" class="form-control"
+                                            <select name="dependencia" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 <option value="">Seleccionar Dependencia</option>
                                                 @foreach ($dependencias as $dependencia)

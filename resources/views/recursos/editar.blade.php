@@ -53,11 +53,16 @@
                                             <label for="">Vehiculo</label>
                                             <select name="vehiculo" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
-                                                <option value="{{ $recurso->vehiculo_id }}">{{ $recurso->vehiculo->marca . ' ' . $recurso->vehiculo->modelo . ' ' . $recurso->vehiculo->dominio }}</option>
-                                                @foreach ($vehiculos as $vehiculo)
-                                                    <option value="{{ $vehiculo->id }}">
-                                                        {{ $vehiculo->marca . ' ' . $vehiculo->modelo . ' ' . $vehiculo->dominio }}</option>
-                                                @endforeach
+                                                @if (is_null($recurso->vehiculo_id))
+                                                    <option value="">-</option>
+                                                @else
+                                                    <option value="{{ $recurso->vehiculo_id }}">{{ $recurso->vehiculo->marca . ' ' . $recurso->vehiculo->modelo . ' ' . $recurso->vehiculo->dominio }}</option>
+                                                    @foreach ($vehiculos as $vehiculo)
+                                                        <option value="{{ $vehiculo->id }}">
+                                                            {{ $vehiculo->marca . ' ' . $vehiculo->modelo . ' ' . $vehiculo->dominio }}
+                                                        </option>
+                                                    @endforeach
+                                                @endif
                                             </select>
                                         </div>
                                     </div>

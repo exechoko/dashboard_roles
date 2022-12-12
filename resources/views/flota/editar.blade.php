@@ -59,8 +59,12 @@
                                                 </option>
                                                 @foreach ($recursos as $recurso)
                                                     <option value="{{ $recurso->id }}">
+                                                        @if (is_null($recurso->vehiculo))
+                                                        {{ $recurso->nombre }}
+                                                        @else
                                                         {{ $recurso->nombre . ' - ' . $recurso->vehiculo->tipo_vehiculo }}
-                                                    </option>
+                                                        @endif
+                                                        </option>
                                                 @endforeach
                                             </select>
                                         </div>

@@ -48,7 +48,12 @@
                                                 <option value="">Seleccionar Recurso</option>
                                                 @foreach ($recursos as $recurso)
                                                     <option value="{{ $recurso->id }}">
-                                                        {{ $recurso->nombre . ' - ' . $recurso->vehiculo->tipo_vehiculo }}</option>
+                                                        @if (is_null($recurso->vehiculo))
+                                                        {{ $recurso->nombre }}
+                                                        @else
+                                                        {{ $recurso->nombre . ' - ' . $recurso->vehiculo->tipo_vehiculo }}
+                                                        @endif
+                                                        </option>
                                                 @endforeach
                                             </select>
                                         </div>

@@ -89,6 +89,8 @@ class RecursoController extends Controller
             'required' => 'El campo :attribute es necesario completar.'
         ]);
 
+        //dd($request->all());
+
         $recurso = Recurso::find($id);
         try{
             DB::beginTransaction();
@@ -106,7 +108,8 @@ class RecursoController extends Controller
               ]);
         }
 
-        return view('recursos.index');
+        return redirect()->route('recursos.index');
+        //return view('recursos.index');
 
     }
 

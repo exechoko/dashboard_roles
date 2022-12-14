@@ -78,7 +78,12 @@
                                     <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="">Actualmente está en</label>
+                                            @if (is_null($hist))
+                                            <label for="" class="form-control">{{ $flota->destino->nombre . ' - ' . $flota->destino->dependeDe() }}</label>
+                                            @else
                                             <label for="" class="form-control">{{ $hist->destino->nombre . ' - ' . $hist->destino->dependeDe() }}</label>
+                                            @endif
+
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">

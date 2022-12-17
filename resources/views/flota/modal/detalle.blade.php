@@ -12,8 +12,21 @@
                 <ul class="mt-3">
                     <li>Dependencia: <b> </b> - Modelo:
                         <b> </b></li>
-                    <li>Nombre: <b>{{ $recurso->nombre }}</b></li>
-
+                    <li>Nombre: <b>{{ $f->nombre }}</b></li>
+                    <!--table>
+                        <thead>
+                        </thead>
+                        <tbody class="table">
+                            <tr>
+                                <td>1</td>
+                                <td>2</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>4</td>
+                            </tr>
+                        </tbody>
+                    </table-->
                 </ul>
             </div>
             <div class="modal-footer">

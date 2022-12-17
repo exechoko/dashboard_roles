@@ -40,12 +40,12 @@
                                             </tr>
                                         @else
                                         @foreach ($flota as $f)
-                                            {{--@include('flota.modal.detalle')--}}
+                                            @include('flota.modal.detalle')
                                             @include('flota.modal.borrar')
                                             {{-- @include('flota.modal.editar') --}}
                                             <tr>
                                                 <td style="display: none;">{{ $f->id }}</td>
-                                                <td>{{ $f->equipo->issi }}</td>
+                                                <td><a href="#"data-toggle="modal" data-target="#ModalDetalle{{ $f->id }}">{{ $f->equipo->issi }}</a></td>
                                                 <td>{{ $f->equipo->tei }}</td>
                                                 @if(is_null($f->recurso_id))
                                                     <td>-</td>
@@ -68,8 +68,8 @@
 
                                                         {{--<a class="btn btn-success" href="{{ route('generateDocxConTabla', $f->id) }}">Acta de entrega</a>--}}
 
-                                                        <a class="btn btn-warning" href="#" data-toggle="modal"
-                                                            data-target="#ModalDetalle{{ $f->id }}">Detalles</a>
+                                                        {{--<a class="btn btn-warning" href="#" data-toggle="modal"
+                                                            data-target="#ModalDetalle{{ $f->id }}">Detalles</a>--}}
 
                                                         @can('editar-flota')
                                                             <a class="btn btn-info"

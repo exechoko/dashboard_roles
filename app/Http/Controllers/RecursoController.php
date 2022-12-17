@@ -46,6 +46,12 @@ class RecursoController extends Controller
             'required' => 'El campo :attribute es necesario completar.'
         ]);
 
+        //Para no guardar el mismo equipo 2 veces
+        $r = Recurso::where('nombre', $request->nombre)->first();
+        if (!is_null($r)){
+            return back()->with('error', 'Ya se encuentra un recurso con el mismo nombre');//->withInput();
+        }
+
         try{
             DB::beginTransaction();
             $recurso = new Recurso();

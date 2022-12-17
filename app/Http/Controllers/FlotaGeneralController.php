@@ -380,17 +380,20 @@ class FlotaGeneralController extends Controller
             'required' => 'El campo :attribute es necesario completar.'
         ]);
 
+        //Para no guardar el mismo equipo 2 veces
+        $f = FlotaGeneral::where('equipo_id', $request->equipo)->first();
+        if (!is_null($f)){
+            return back()->with('error', 'Ya se encuentra una flota con el mismo equipo');//->withInput();
+        }
+
         try{
             DB::beginTransaction();
             $flota = new FlotaGeneral();
             $historico = new Historico();
             $flota->equipo_id = $request->equipo;
             $flota->recurso_id = $request->recurso;
-            /*$rec = Recurso::find($request->recurso);
-            $flota->destino_id = $rec->destino_id;*/
             $flota->destino_id = $request->dependencia;
             $flota->fecha_asignacion = Carbon::now()->toDateTimeString();
-            //$flota->fecha_asignacion = Carbon::createFromFormat('d-m-Y H:i:s', $request->fecha)->toDateTimeString();
             $flota->observaciones = $request->observaciones;
             $flota->save();
 
@@ -398,6 +401,7 @@ class FlotaGeneralController extends Controller
             $historico->recurso_id = $request->recurso;
             $historico->destino_id = $request->dependencia;
             $historico->fecha_asignacion = Carbon::now();
+            $historico->observaciones = $request->observaciones;
             $historico->save();
 
             DB::commit();
@@ -448,42 +452,32 @@ class FlotaGeneralController extends Controller
         try {
             DB::beginTransaction();
             if (!is_null($flota)) {
-                //if (($flota->recurso_id != $request->recurso) || ($flota->destino_id != $request->dependencia)) {
-                    //dd('distintos recursos');
-                    $flota->equipo_id = $request->equipo;
-                    $flota->recurso_id = $request->recurso;
-                    $flota->fecha_asignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString();
-                    $flota->observaciones = $request->observaciones;
+                $flota->equipo_id = $request->equipo;
+                $flota->recurso_id = $request->recurso;
+                $flota->fecha_asignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString();
+                $flota->observaciones = $request->observaciones;
 
-                    if($tipo_de_mov->id == 1) {//1 - movimiento patrimonial
-                        $flota->destino_id = $request->dependencia;
-                    }
+                if ($tipo_de_mov->id == 1) { //1 - movimiento patrimonial
+                    $flota->destino_id = $request->dependencia;
+                }
 
-                    /*if(($tipo_de_mov->id == 2) && ($flota->destino_id == $request->dependencia)) {//2 - Mov transitorio
-                        dd('se devuelve a la dependencia de origen');
-                        //no deberia poder seguir
+                $histAnt = Historico::where('equipo_id', $request->equipo)->orderBy('created_at', 'desc')->first();
+                if (!is_null($histAnt)) {
+                    $histAnt->tipo_movimiento_id = $tipo_de_mov->id;
+                    $histAnt->fecha_desasignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString(); //Carbon::now();
+                    $histAnt->save();
+                }
 
-                    }*/
+                $historico = new Historico();
+                $historico->equipo_id = $request->equipo;
+                $historico->recurso_id = $request->recurso;
+                $historico->destino_id = $request->dependencia;
+                $historico->tipo_movimiento_id = $tipo_de_mov->id;
+                $historico->fecha_asignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString(); //Carbon::now();
+                $historico->observaciones = $request->observaciones;
 
-                    $histAnt = Historico::where('equipo_id', $request->equipo)->orderBy('created_at', 'desc')->first();
-                    if (!is_null($histAnt)) {
-                        $histAnt->tipo_movimiento_id = $tipo_de_mov->id;
-                        $histAnt->fecha_desasignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString(); //Carbon::now();
-                        $histAnt->save();
-                    }
-
-                    $historico = new Historico();
-                    $historico->equipo_id = $request->equipo;
-                    $historico->recurso_id = $request->recurso;
-                    $historico->destino_id = $request->dependencia;
-                    $historico->tipo_movimiento_id = $tipo_de_mov->id;
-                    $historico->fecha_asignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString();//Carbon::now();
-                    $historico->save();
-                    $flota->save();
-                //} else {
-                    //dd('mismo recursos');
-                //    return back()->with('warning', 'Debe seleccionar otro recurso o dependencia porque ya está asignado');
-                //}
+                $historico->save();
+                $flota->save();
             }
             DB::commit();
         } catch (\Exception $e) {

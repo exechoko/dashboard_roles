@@ -359,6 +359,15 @@ class FlotaGeneralController extends Controller
         return response()->download(storage_path($today . 'acta_entrega.docx'));
     }
 
+    public function verHistorico($id){
+        $flota = FlotaGeneral::find($id);
+
+        $hist = Historico::where('equipo_id', $flota->equipo->id)->orderBy('created_at', 'desc')->get();
+        //dd($hist);
+
+        return view('flota.historico', compact('hist'));
+    }
+
     public function create()
     {
         $equipos = Equipo::all();

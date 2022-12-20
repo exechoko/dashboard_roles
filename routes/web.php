@@ -50,5 +50,6 @@ Route::group(['middleware' => ['auth']], function(){
     Route::get('/generate-docx/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'generateDocx'])->name('generateDocx');
     Route::get('/generate-docx/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'generateDocxConTemplate'])->name('generateDocxConTemplate');
     Route::get('/generate-docx/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'generateDocxConTabla'])->name('generateDocxConTabla');
+    Route::get('/ver-historico/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'verHistorico'])->name('verHistorico');
 
 });

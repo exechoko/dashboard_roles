@@ -1,4 +1,4 @@
-<div class="modal fade" id="ModalDetalle{{ $f->id }}" tabindex="-1" data-backdrop="false" style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
+<div class="modal fade" id="ModalDetalle{{ $f->equipo->id }}" tabindex="-1" data-backdrop="false" style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
 
     <div class="modal-dialog" role="document">
         <div class="modal-content">

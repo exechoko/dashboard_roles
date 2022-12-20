@@ -45,7 +45,8 @@
                                             {{-- @include('flota.modal.editar') --}}
                                             <tr>
                                                 <td style="display: none;">{{ $f->id }}</td>
-                                                <td><a href="#"data-toggle="modal" data-target="#ModalDetalle{{ $f->id }}">{{ $f->equipo->issi }}</a></td>
+                                                <td><a class="btn btn-dark" href="{{ route('verHistorico', $f->id) }}">{{ $f->equipo->issi }}</a></td>
+                                                {{--<td><a href="#"data-toggle="modal" data-toggle="modal" data-target="#ModalDetalle{{ $f->id }}"></a>{{ $f->equipo->issi }}</td>--}}
                                                 <td>{{ $f->equipo->tei }}</td>
                                                 @if(is_null($f->recurso_id))
                                                     <td>-</td>

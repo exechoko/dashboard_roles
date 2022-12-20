@@ -17,4 +17,12 @@ class Historico extends Model
         return $this->hasMany(FlotaGeneral::class);
     }
 
+    public function equipo(){
+        return $this->belongsTo(Equipo::class);
+    }
+
+    public function recurso(){
+        return $this->belongsTo(Recurso::class);
+    }
+
 }

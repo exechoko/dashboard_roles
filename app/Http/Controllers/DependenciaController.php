@@ -79,12 +79,17 @@ class DependenciaController extends Controller
     public function store(Request $request)
     {
         request()->validate([
-            'direccion' => 'required',
+            //'direccion' => 'required',
             'nombre' => 'required',
             'tipoDependencia' => 'required',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
+
+
+        if (is_null($request->direccion) && is_null($request->departamental)){
+            return back()->with('error', 'Debe elegir una Dirección o Departamental');//->withInput();
+        }
 
         $tipoDependencia = $request->tipoDependencia;
         $dependencia = null;
@@ -98,16 +103,16 @@ class DependenciaController extends Controller
                 $dependencia->comisaria_id = $request->comisaria;
                 $dependencia->division_id = $request->division;
                 $dependencia->nombre ='Sección ' . $request->nombre;
-                $dependencia->telefono = $request->nombre;
-                $dependencia->ubicacion = $request->nombre;
+                $dependencia->telefono = $request->telefono;
+                $dependencia->ubicacion = $request->ubicacion;
                 //$dependencia->observaciones = $request->nombre;
             } else {
                 $dependencia = new Destacamento();
                 $dependencia->comisaria_id = $request->comisaria;
                 $dependencia->division_id = $request->division;
                 $dependencia->nombre = 'Destacamento ' . $request->nombre;
-                $dependencia->telefono = $request->nombre;
-                $dependencia->ubicacion = $request->nombre;
+                $dependencia->telefono = $request->ubicacion;
+                $dependencia->ubicacion = $request->ubicacion;
                 //$dependencia->observaciones = $request->nombre;
             }
             $dependencia->save();

@@ -485,6 +485,12 @@ class FlotaGeneralController extends Controller
                 $historico->fecha_asignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString(); //Carbon::now();
                 $historico->observaciones = $request->observaciones;
 
+                if ($tipo_de_mov->id == 7) { //7 - Desinstalacion completa
+                    $flota->recurso_id = null; //quito el recurso asociado
+                    $historico->recurso_id = null;
+                    $flota->destino_id = $request->dependencia;
+                }
+
                 $historico->save();
                 $flota->save();
             }

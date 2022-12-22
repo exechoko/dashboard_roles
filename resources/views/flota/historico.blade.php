@@ -11,31 +11,30 @@
                     <div class="card">
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table id="dataTable" class="table table-striped mt-2">
-                                    <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
+                                <table id="dataTable" class="table table-bordered mt-2">
+                                    <thead style="background: linear-gradient(45deg,#888888, #5f5e63)">
                                         <th style="display: none;">ID</th>
-                                        <th style="color:#fff;">ISSI</th>
-                                        <th style="color:#fff;">TEI</th>
+                                        <th style="color:#fff;">Fecha</th>
                                         <th style="color:#fff;">Movil</th>
                                         <th style="color:#fff;">Actualmente en</th>
-                                        <th style="color:#fff;">Fecha</th>
-                                        <th style="color:#fff;">Acciones</th>
+                                        <th style="color:#fff;">Observaciones</th>
+
+                                        <!--th style="color:#fff;">Acciones</th-->
                                     </thead>
                                     <tbody>
                                         @foreach ($hist as $h)
                                             <tr>
                                                 <td style="display: none;">{{ $h->id }}</td>
-                                                <td>{{ $h->equipo->issi }}</td>
-                                                <td>{{ $h->equipo->tei }}</td>
+                                                <td>{{ $h->created_at }}</td>
                                                 @if(is_null($h->recurso))
                                                     <td>-</td>
                                                 @else
                                                     <td>{{ $h->recurso->nombre }}</td>
                                                 @endif
-
                                                 <td>{{ $h->destino->nombre }}</td>
-                                                <td>{{ $h->created_at }}</td>
-                                                <td>
+                                                <td>{{ $h->observaciones }}</td>
+
+                                                {{--<td>
                                                     <form action="{{ route('flota.destroy', $h->id) }}"
                                                         method="POST">
 
@@ -49,7 +48,7 @@
                                                                 data-target="#ModalDelete{{ $h->id }}">Borrar</a>
                                                         @endcan
                                                     </form>
-                                                </td>
+                                                </td>--}}
                                             </tr>
                                         @endforeach
                                     </tbody>

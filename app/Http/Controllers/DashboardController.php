@@ -9,9 +9,9 @@ use Illuminate\Http\Request;
 class DashboardController extends Controller
 {
     public function getMovilesJSON(Request $request){
-        $fecha = $request->fecha;
+        /*fecha = $request->fecha;
         $desde = Carbon::createFromFormat('d/m/Y', $fecha)->startOfDay()->toDateTimeString();
-        $hasta = Carbon::createFromFormat('d/m/Y', $fecha)->endOfDay()->toDateTimeString();
+        $hasta = Carbon::createFromFormat('d/m/Y', $fecha)->endOfDay()->toDateTimeString();*/
 
 
         $tipo_veh1 = 'Auto';

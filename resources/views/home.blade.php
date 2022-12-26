@@ -155,29 +155,11 @@
                         </div>
                     </div>
                     <div class="modal-body" style="min-height: 500px">
-                        <div class="col-lg-6 pl-0">
-                            <div class="alert alert-info mb-0 p-1" style="margin-top:25px">
-                                <h3 class="m-0">
-                                    <b class="distri"></b>
-                                </h3>
-                            </div>
-                        </div>
-                        <div class="col-lg-4">
-                            <div class="form-group">
-                                <label for="fecha-auditoria-historico">Fecha</label>
-                                <div class="input-group">
-                                    <div class="input-group-addon">
-                                        <i class="fa fa-calendar"></i>
-                                    </div>
-                                    <input type="text" class="form-control datepicker" id="fecha-auditoria-historico">
-                                </div>
-                            </div>
-                        </div>
                         <div class="col-lg-2">
-                            <button id="btn-buscar-auditoria-historico" href="consultarAuditoriaHistorico"
-                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:25px">Buscar</button>
+                            <button id="btn-buscar-moviles" href="consultarMoviles"
+                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
                         </div>
-                        <div class="col-lg-12" style="padding:0; min-height: 400px;">
+                        <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-moviles"
                                 class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -194,23 +176,39 @@
 
     </section>
 
-
     <script>
         $(document).ready(function() {
-            $('#btn-buscar-auditoria-historico').click(function() {
-                consultarAuditoriaHistorico($(this).data('id'))
+            $('#btn-buscar-moviles').click(function() {
+                consultarMoviles($(this).data('id'))
             })
         });
 
+        /*function destino(i, row){
+          var destino = false;
+          if(row.destino_id != null){
 
-        function consultarAuditoriaHistorico(id) {
+
+          }
+          if(!geo){
+            return '<label class="label label-danger">DESCONOCIDO</label>';
+          }
+
+          var latlon = [row.latitud, row.longitud];
+          var url = 'https://www.google.es/maps?q=' + latlon.join(',');
+            return '<a href="' + url + '" target="_blank" class="btn btn-primary btn-xs">\
+                      <i class="fa fa-map-marker"></i>\
+                      <span style="margin-left:5px">MAPA</span>\
+                    </a>';
+        }*/
+
+        function consultarMoviles(id) {
             //$('#box-auditoria-historico').css({height:'400px'})
             //blockUi('box-auditoria-historico', true)
             $.post(
                 "{{ route('get-moviles-json') }}", {
                     _token: "{{ csrf_token() }}",
                     //distribuidor_id: id,
-                    fecha: $('#fecha-auditoria-historico').val()
+                    //fecha: $('#fecha-auditoria-historico').val()
                 },
                 function(data, textStatus, xhr) {
 
@@ -228,17 +226,11 @@
             var columns = [];
             table.bootstrapTable('destroy')
 
-
-            /*columns.push({
-                title: 'Hora',
-                field: 'fecha',
+            columns.push({
+                title: 'Nro',
+                field: 'id',
                 sortable: true,
-                align: 'right',
-                formatter: function(i, row, index) {
-                    return row.fecha != null ? row.fecha.split(' ')[1] : ''
-                }
-
-            })*/
+            })
             columns.push({
                 title: 'Nombre',
                 field: 'nombre',
@@ -247,7 +239,10 @@
             columns.push({
                 title: 'Destino',
                 field: 'destino_id',
-                sortable: true
+                sortable: true,
+                /*formatter: function(i, row, index) {
+                    return destino(i, row)
+                }*/
             })
             columns.push({
                 title: 'Vehiculo',

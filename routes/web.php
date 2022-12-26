@@ -12,6 +12,7 @@ use App\Http\Controllers\DependenciaController;
 use App\Http\Controllers\VehiculoController;
 use App\Http\Controllers\RecursoController;
 use App\Http\Controllers\FlotaGeneralController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,5 +52,7 @@ Route::group(['middleware' => ['auth']], function(){
     Route::get('/generate-docx/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'generateDocxConTemplate'])->name('generateDocxConTemplate');
     Route::get('/generate-docx/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'generateDocxConTabla'])->name('generateDocxConTabla');
     Route::get('/ver-historico/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'verHistorico'])->name('verHistorico');
+
+    Route::post('/get-moviles-json', [App\Http\Controllers\DashboardController::class, 'getMovilesJSON'])->name('get-moviles-json');
 
 });

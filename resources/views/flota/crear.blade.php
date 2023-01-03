@@ -34,7 +34,7 @@
                                                 <option value="">Seleccionar Equipo</option>
                                                 @foreach ($equipos as $equipo)
                                                     <option value="{{ $equipo->id }}">
-                                                        {{ $equipo->tipo_terminal->tipo_uso->uso . ' ' . $equipo->issi . ' - ' . $equipo->tipo_terminal->marca . ' ' . $equipo->tipo_terminal->modelo }}
+                                                        {{ $equipo->tipo_terminal->tipo_uso->uso . ' ' . $equipo->issi . ' - ' . $equipo->tei . ' - '. $equipo->tipo_terminal->marca . ' ' . $equipo->tipo_terminal->modelo }}
                                                     </option>
                                                 @endforeach
                                             </select>

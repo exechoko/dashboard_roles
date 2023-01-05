@@ -26,8 +26,8 @@
                                 <table id="dataTable" class="table table-striped mt-2">
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                         <th style="display: none;">ID</th>
-                                        <th style="color:#fff;">ISSI</th>
                                         <th style="color:#fff;">TEI</th>
+                                        <th style="color:#fff;">ISSI</th>
                                         <th style="color:#fff;">Movil</th>
                                         <th style="color:#fff;">Dependencia</th>
                                         <th style="color:#fff;">Actualmente en</th>
@@ -45,16 +45,16 @@
                                             {{-- @include('flota.modal.editar') --}}
                                             <tr>
                                                 <td style="display: none;">{{ $f->id }}</td>
-                                                <td><a class="btn btn-dark" href="{{ route('verHistorico', $f->id) }}">{{ $f->equipo->issi }}</a></td>
+                                                <td><a class="btn btn-dark" href="{{ route('verHistorico', $f->id) }}">{{ $f->equipo->tei }}</a></td>
                                                 {{--<td><a href="#"data-toggle="modal" data-toggle="modal" data-target="#ModalDetalle{{ $f->id }}"></a>{{ $f->equipo->issi }}</td>--}}
-                                                <td>{{ $f->equipo->tei }}</td>
+                                                <td>{{ $f->equipo->issi }}</td>
                                                 @if(is_null($f->recurso_id))
                                                     <td>-</td>
                                                 @else
                                                     <td>{{ $f->recurso->nombre }}</td>
                                                 @endif
 
-                                                <td>{{ $f->destino->nombre . ' ' . $f->destino->dependeDe() }}</td>
+                                                <td>{{ $f->destino->nombre }}<br>{{ $f->destino->dependeDe() }}</td>
                                                 @if(is_null($f->ultimoLugar()))
                                                     <td>Sin movimientos</td>
                                                 @else
@@ -74,12 +74,12 @@
 
                                                         @can('editar-flota')
                                                             <a class="btn btn-info"
-                                                                href="{{ route('flota.edit', $f->id) }}">Editar</a>
+                                                                href="{{ route('flota.edit', $f->id) }}"><i class="far fa-edit"></i></a>
                                                         @endcan
 
                                                         @can('borrar-flota')
                                                             <a class="btn btn-danger" href="#" data-toggle="modal"
-                                                                data-target="#ModalDelete{{ $f->id }}">Borrar</a>
+                                                                data-target="#ModalDelete{{ $f->id }}"><i class="far fa-trash-alt"></i></a>
                                                         @endcan
                                                     </form>
                                                 </td>

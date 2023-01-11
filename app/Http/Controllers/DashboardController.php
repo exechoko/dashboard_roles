@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FlotaGeneral;
+use Illuminate\Support\Facades\DB;
 use App\Models\Recurso;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -16,9 +18,24 @@ class DashboardController extends Controller
 
         $tipo_veh1 = 'Auto';
         $tipo_veh2 = 'Camioneta';
-        $moviles = Recurso::whereHas('vehiculo', function ($query) use ($tipo_veh1, $tipo_veh2) {
+        /*$moviles = Recurso::whereHas('vehiculo', function ($query) use ($tipo_veh1, $tipo_veh2) {
             $query->where('tipo_vehiculo', '=', $tipo_veh1)->orWhere('tipo_vehiculo', '=', $tipo_veh2);
-        })->get();
+        })->get();*/
+
+        $moviles = Recurso::select(
+            'recursos.*',
+            'vehiculos.tipo_vehiculo',
+            DB::raw('recursos.nombre as nombre_recurso'),
+            'destino.nombre'
+        )
+        ->leftJoin('vehiculos', 'recursos.vehiculo_id', 'vehiculos.id')
+        ->leftJoin('destino', 'recursos.destino_id', 'destino.id')
+        ->where('vehiculos.tipo_vehiculo', $tipo_veh1)
+        ->orWhere('vehiculos.tipo_vehiculo', $tipo_veh2)
+        ->get();
+
+
+        //dd(response()->json($moviles));
 
         //dd($moviles->all());
 
@@ -40,5 +57,22 @@ class DashboardController extends Controller
                                 ->orderBy('auditoria_celulares_historico.fecha')
                                 ->get();*/
         return response()->json($moviles);
+      }
+
+      public function getMotosJSON(Request $request){
+        $tipo_veh1 = 'Moto';
+
+        $motos = Recurso::select(
+            'recursos.*',
+            'vehiculos.tipo_vehiculo',
+            DB::raw('recursos.nombre as nombre_recurso'),
+            'destino.nombre'
+        )
+        ->leftJoin('vehiculos', 'recursos.vehiculo_id', 'vehiculos.id')
+        ->leftJoin('destino', 'recursos.destino_id', 'destino.id')
+        ->where('vehiculos.tipo_vehiculo', $tipo_veh1)
+        ->get();
+
+        return response()->json($motos);
       }
 }

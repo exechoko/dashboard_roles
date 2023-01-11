@@ -105,7 +105,8 @@
                                                     class="fas fa-motorcycle f-left"></i><span>{{ $cant_motos }}</span>
                                             </h2>
                                             @can('ver-equipo')
-                                                <p class="m-b-0 text-right"><a href="/recursos" class="text-white">Ver más</a>
+                                                <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                    data-target="#modal-motos{{-- $vehiculo->id --}}">Ver más</a>
                                                 </p>
                                             @endcan
                                         </div>
@@ -126,8 +127,7 @@
                                                     class="fas fa-car f-left"></i><span>{{ $cant_moviles }}</span></h2>
                                             @can('ver-equipo')
                                                 <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                        data-target="#modal-moviles{{-- $vehiculo->id --}}">Ver
-                                                        más</a>
+                                                        data-target="#modal-moviles{{-- $vehiculo->id --}}">Ver más</a>
                                                 </p>
                                             @endcan
                                         </div>
@@ -174,12 +174,49 @@
             </div>
         </div>
 
+        <div id="modal-motos" class="modal fade " data-backdrop="false" style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
+            <div id="dialog" class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header bg-green">
+                        <div class="col-lg-10">
+                            <h3 class="modal-title upper-case" id="title">Moto patrullas</h3>
+                        </div>
+                        <div class="col-lg-2">
+                            <button id="close" class="close" data-dismiss="modal" aria-label="Close">
+                                <i class="fa fa-times text-white"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-body" style="min-height: 500px">
+                        <div class="col-lg-2">
+                            <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                        </div>
+                        <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
+                            <table id="table-motos"
+                                class="table table-condensed table-bordered table-stripped"></table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" data-dismiss="modal">
+                            <i class="fa fa-times"></i>
+                            <span> Cerrar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </section>
 
     <script>
         $(document).ready(function() {
             $('#btn-buscar-moviles').click(function() {
                 consultarMoviles($(this).data('id'))
+            }),
+
+            $('#btn-buscar-motopatrullas').click(function() {
+                consultarMotopatrullas($(this).data('id'))
             })
         });
 
@@ -201,6 +238,18 @@
                     </a>';
         }*/
 
+        function consultarMotopatrullas(id) {
+            $.post(
+                "{{ route('get-motos-json') }}", {
+                    _token: "{{ csrf_token() }}",
+                },
+                function(data, textStatus, xhr) {
+                    setTableMotos('table-motos', data)
+                }).fail(function(data) {
+                swal('Error', 'Ocurrio un error al guardar: ' + data.responseJSON.message, 'error');
+            })
+        }
+
         function consultarMoviles(id) {
             //$('#box-auditoria-historico').css({height:'400px'})
             //blockUi('box-auditoria-historico', true)
@@ -213,7 +262,7 @@
                 function(data, textStatus, xhr) {
 
                     //blockUi('box-auditoria-historico')
-                    setTableAuditoriaHistorico('table-moviles', data)
+                    setTableMoviles('table-moviles', data)
 
                 }).fail(function(data) {
                 //hideShowBlockUi('box-auditoria')
@@ -221,7 +270,7 @@
             })
         }
 
-        function setTableAuditoriaHistorico(table_id, rows) {
+        function setTableMoviles(table_id, rows) {
             var table = $('#' + table_id)
             var columns = [];
             table.bootstrapTable('destroy')
@@ -232,13 +281,13 @@
                 sortable: true,
             })
             columns.push({
-                title: 'Nombre',
+                title: 'Destino',
                 field: 'nombre',
                 sortable: true
             })
             columns.push({
-                title: 'Destino',
-                field: 'destino_id',
+                title: 'Nombre recurso',
+                field: 'nombre_recurso',
                 sortable: true,
                 /*formatter: function(i, row, index) {
                     return destino(i, row)
@@ -246,7 +295,7 @@
             })
             columns.push({
                 title: 'Vehiculo',
-                field: 'vehiculo_id',
+                field: 'tipo_vehiculo',
                 sortable: true
             })
             /*columns.push({
@@ -382,6 +431,58 @@
             //   fixedColumnTable(table_id, 1, {fondo: '#DEF1F1',texto: '#000000'})
             // }
 
+
+            console.log('ROWS', rows)
+            table.bootstrapTable({
+                striped: true,
+                //pagination: true,
+                fixedColumns: true,
+                fixedNumber: 1,
+                // showColumns: true,
+                // showToggle: true,
+                // showExport: true,
+                sortable: true,
+                paginationVAlign: 'both',
+                //pageSize: 10,
+                //pageList: [10, 25, 50, 100, 'ALL'],
+                columns: columns,
+                data: rows
+            });
+
+            table.find('thead').css({
+                backgroundColor: 'white'
+            })
+            table.closest('.fixed-table-body').css({
+                height: '400px'
+            })
+        }
+
+        function setTableMotos(table_id, rows) {
+            var table = $('#' + table_id)
+            var columns = [];
+            table.bootstrapTable('destroy')
+
+            columns.push({
+                title: 'Nro',
+                field: 'id',
+                sortable: true,
+            })
+            columns.push({
+                title: 'Destino',
+                field: 'nombre',
+                sortable: true
+            })
+            columns.push({
+                title: 'Nombre recurso',
+                field: 'nombre_recurso',
+                sortable: true,
+
+            })
+            columns.push({
+                title: 'Vehiculo',
+                field: 'tipo_vehiculo',
+                sortable: true
+            })
 
             console.log('ROWS', rows)
             table.bootstrapTable({

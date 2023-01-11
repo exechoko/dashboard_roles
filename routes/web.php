@@ -54,5 +54,5 @@ Route::group(['middleware' => ['auth']], function(){
     Route::get('/ver-historico/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'verHistorico'])->name('verHistorico');
 
     Route::post('/get-moviles-json', [App\Http\Controllers\DashboardController::class, 'getMovilesJSON'])->name('get-moviles-json');
-
+    Route::post('/get-motos-json', [App\Http\Controllers\DashboardController::class, 'getMotosJSON'])->name('get-motos-json');
 });

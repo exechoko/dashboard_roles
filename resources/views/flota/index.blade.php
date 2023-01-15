@@ -28,7 +28,7 @@
                                         <th style="display: none;">ID</th>
                                         <th style="color:#fff;">TEI</th>
                                         <th style="color:#fff;">ISSI</th>
-                                        <th style="color:#fff;">Movil</th>
+                                        <th style="color:#fff;">Recurso asignado</th>
                                         <th style="color:#fff;">Dependencia</th>
                                         <th style="color:#fff;">Actualmente en</th>
                                         <th style="color:#fff;">Acciones</th>
@@ -40,6 +40,14 @@
                                             </tr>
                                         @else
                                         @foreach ($flota as $f)
+                                        {{--<tr>
+                                            <td>
+                                                @if ($f->equipo == null)
+                                                $f->id
+                                                @endif
+                                            </td>
+                                        </tr>--}}
+
                                             @include('flota.modal.detalle')
                                             @include('flota.modal.borrar')
                                             {{-- @include('flota.modal.editar') --}}

@@ -57,12 +57,13 @@
                                                     <option value="">-</option>
                                                 @else
                                                     <option value="{{ $recurso->vehiculo_id }}">{{ $recurso->vehiculo->marca . ' ' . $recurso->vehiculo->modelo . ' ' . $recurso->vehiculo->dominio }}</option>
-                                                    @foreach ($vehiculos as $vehiculo)
-                                                        <option value="{{ $vehiculo->id }}">
-                                                            {{ $vehiculo->marca . ' ' . $vehiculo->modelo . ' ' . $vehiculo->dominio }}
-                                                        </option>
-                                                    @endforeach
                                                 @endif
+                                                @foreach ($vehiculos as $vehiculo)
+                                                    <option value="{{ $vehiculo->id }}">
+                                                        {{ $vehiculo->marca . ' ' . $vehiculo->modelo . ' ' . $vehiculo->dominio }}
+                                                    </option>
+                                                @endforeach
+
                                             </select>
                                         </div>
                                     </div>

@@ -6,6 +6,7 @@ use App\Models\Accesorio;
 use Illuminate\Http\Request;
 use App\Models\Equipo;
 use App\Models\Estado;
+use App\Models\FlotaGeneral;
 use App\Models\TipoTerminal;
 use App\Models\TipoUso;
 use Illuminate\Support\Arr;
@@ -172,7 +173,10 @@ class EquipoController extends Controller
     public function destroy($id)
     {
         $equipo = Equipo::find($id);
+        $flota = FlotaGeneral::where('equipo_id', $equipo->id)->get();
+        dd($flota);
         $equipo->delete();
+        $flota->delete();
         return redirect()->route('equipos.index');
     }
 }

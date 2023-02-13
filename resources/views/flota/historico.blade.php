@@ -18,6 +18,7 @@
                                         <th style="color:#fff;">Fecha de asignación</th>
                                         <th style="color:#fff;">Movil/Recurso</th>
                                         <th style="color:#fff;">Actualmente en</th>
+                                        <th style="color:#fff;">Ticket PER</th>
                                         <th style="color:#fff;">Observaciones</th>
 
                                         <!--th style="color:#fff;">Acciones</th-->
@@ -34,6 +35,7 @@
                                                     <td>{{ $h->recurso->nombre }}</td>
                                                 @endif
                                                 <td>{{ $h->destino->nombre }}</td>
+                                                <td>{{ $h->ticket_per }}</td>
                                                 <td>{{ $h->observaciones }}</td>
 
                                                 {{--<td>

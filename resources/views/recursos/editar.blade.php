@@ -44,8 +44,7 @@
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="nombre">Nombre</label>
-                                            <input type="text" name="nombre" class="form-control"
-                                                value="{{ $recurso->nombre }}">
+                                            <input type="text" name="nombre" class="form-control" value="{{ $recurso->nombre }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">

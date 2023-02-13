@@ -381,11 +381,13 @@ class FlotaGeneralController extends Controller
 
     public function store(Request $request)
     {
+        //dd($request->all());
 
         request()->validate([
             'dependencia' => 'required',
             'equipo' => 'required',
             'fecha_asignacion' => 'required',
+            'ticket_per' => 'required',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
@@ -404,6 +406,7 @@ class FlotaGeneralController extends Controller
             $flota->recurso_id = $request->recurso;
             $flota->destino_id = $request->dependencia;
             $flota->fecha_asignacion = $request->fecha_asignacion;
+            $flota->ticket_per = $request->ticket_per;
             $flota->observaciones = $request->observaciones;
             $flota->save();
 
@@ -411,6 +414,7 @@ class FlotaGeneralController extends Controller
             $historico->recurso_id = $request->recurso;
             $historico->destino_id = $request->dependencia;
             $historico->fecha_asignacion = $request->fecha_asignacion;
+            $historico->ticket_per = $request->ticket_per;
             $historico->observaciones = $request->observaciones;
             $historico->save();
 
@@ -466,6 +470,7 @@ class FlotaGeneralController extends Controller
                 $flota->equipo_id = $request->equipo;
                 $flota->recurso_id = $request->recurso;
                 $flota->fecha_asignacion = $request->fecha_asignacion;
+                $flota->ticket_per = $request->ticket_per;
                 $flota->observaciones = $request->observaciones;
 
                 if ($tipo_de_mov->id == 1) { //1 - movimiento patrimonial
@@ -485,6 +490,7 @@ class FlotaGeneralController extends Controller
                 $historico->destino_id = $request->dependencia;
                 $historico->tipo_movimiento_id = $tipo_de_mov->id;
                 $historico->fecha_asignacion = $request->fecha_asignacion;
+                $historico->ticket_per = $request->ticket_per;
                 $historico->observaciones = $request->observaciones;
 
                 if ($tipo_de_mov->id == 7) { //7 - Desinstalacion completa

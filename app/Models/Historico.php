@@ -25,4 +25,7 @@ class Historico extends Model
         return $this->belongsTo(Recurso::class);
     }
 
+    public function tipoMovimiento(){
+        return $this->belongsTo(TipoMovimiento::class);
+    }
 }

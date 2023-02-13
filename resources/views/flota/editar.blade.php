@@ -114,10 +114,16 @@
                                             </select>
                                         </div>
                                     </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-3">
+                                        <div class="form-group">
+                                            <label for="ticket_per">Ticket PER</label>
+                                            <input type="text" name="ticket_per" class="form-control" value="{{ $flota->nombre }}">
+                                        </div>
+                                    </div>
                                     <div class="col-xs-12 col-sm-12 col-md-10" id="label_fecha_asignacion">
                                         <div class="form-group">
                                             <label for="fecha_asignacion">Fecha de asignación</label>
-                                            {!! Form::date('fecha_asignacion', \Carbon\Carbon::now()) !!}
+                                            {!! Form::date('fecha_asignacion', $flota->fecha_asignacion) !!}
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">

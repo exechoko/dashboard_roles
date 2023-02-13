@@ -10,11 +10,20 @@
             </div>
             <div class="modal-body">
                 <ul class="mt-3">
-                    <li>Dependencia: <b>{{ $recurso->destino->nombre }}</b></li>
+                    <li>Dependencia:
+                        @if (is_null($recurso->destino))
+                        <b> - </b>
+                        @else
+                        <b>{{ $recurso->destino->nombre }}</b>
+                        @endif
+                    </li>
                     <li>Nombre: <b>{{ $recurso->nombre }}</b></li>
-                    <li>Vehiculo Marca:<b>{{ $recurso->vehiculo->marca }}</b> - Modelo: <b>{{ $recurso->vehiculo->modelo }}</b></li>
+                    @if (is_null($recurso->vehiculo))
+                    <b> - </b>
+                    @else
+                    <li>Vehiculo Marca: <b>{{ $recurso->vehiculo->marca }}</b> - Modelo: <b>{{ $recurso->vehiculo->modelo }}</b></li>
                     <li>Dominio: <b>{{ $recurso->vehiculo->dominio }}</b></li>
-
+                    @endif
                 </ul>
             </div>
             <div class="modal-footer">

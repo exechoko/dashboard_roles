@@ -117,7 +117,7 @@
                                     <div class="col-xs-12 col-sm-12 col-md-3">
                                         <div class="form-group">
                                             <label for="ticket_per">Ticket PER</label>
-                                            <input type="text" name="ticket_per" class="form-control" value="{{ $flota->nombre }}">
+                                            <input type="text" name="ticket_per" class="form-control" value="{{ $flota->ticket_per }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-10" id="label_fecha_asignacion">

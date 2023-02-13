@@ -479,7 +479,7 @@ class FlotaGeneralController extends Controller
 
                 $histAnt = Historico::where('equipo_id', $request->equipo)->orderBy('created_at', 'desc')->first();
                 if (!is_null($histAnt)) {
-                    $histAnt->tipo_movimiento_id = $tipo_de_mov->id;
+                    //$histAnt->tipo_movimiento_id = $tipo_de_mov->id;
                     $histAnt->fecha_desasignacion = $request->fecha_asignacion;
                     $histAnt->save();
                 }

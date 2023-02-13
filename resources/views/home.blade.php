@@ -79,12 +79,13 @@
                                                 use App\Models\Historico;
                                                 use App\Models\Destino;
                                                 $id_pg = Destino::where('nombre', 'Patagonia Green')->first();
-                                                $cant_equipos = Historico::where('destino_id', $id_pg)
+                                                $cant_equipos_en_pg = Historico::where('destino_id', $id_pg->id)
                                                     ->where('fecha_desasignacion', null)
                                                     ->count();
+                                                    //dd($cant_equipos_en_pg);
                                             @endphp
                                             <h2 class="text-right"><i
-                                                    class="fa fa-mobile f-left"></i><span>{{ $cant_equipos }}</span></h2>
+                                                    class="fa fa-mobile f-left"></i><span>{{ $cant_equipos_en_pg }}</span></h2>
                                             @can('ver-equipo')
                                                 <p class="m-b-0 text-right"><a href="/equipos" class="text-white">Ver más</a>
                                                 </p>

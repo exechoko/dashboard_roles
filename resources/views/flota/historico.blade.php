@@ -27,7 +27,11 @@
                                         @foreach ($hist as $h)
                                             <tr>
                                                 <td style="display: none;">{{ $h->id }}</td>
-                                                <td>{{ $h->tipoMovimiento->nombre }}</td>
+                                                @if(is_null($h->tipoMovimiento))
+                                                    <td>-</td>
+                                                @else
+                                                    <td>{{ $h->tipoMovimiento->nombre }}</td>
+                                                @endif
                                                 <td>{{ $h->fecha_asignacion }}</td>
                                                 @if(is_null($h->recurso))
                                                     <td>-</td>

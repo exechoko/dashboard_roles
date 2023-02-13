@@ -10,9 +10,10 @@
             </div>
             <div class="modal-body">
                 <ul class="mt-3">
-                    <li>Dependencia: <b> </b> - Modelo:
-                        <b> </b></li>
+                    <li>Dependencia: <b>{{ $recurso->destino->nombre }}</b></li>
                     <li>Nombre: <b>{{ $recurso->nombre }}</b></li>
+                    <li>Vehiculo Marca:<b>{{ $recurso->vehiculo->marca }}</b> - Modelo: <b>{{ $recurso->vehiculo->modelo }}</b></li>
+                    <li>Dominio: <b>{{ $recurso->vehiculo->dominio }}</b></li>
 
                 </ul>
             </div>

@@ -75,4 +75,21 @@ class DashboardController extends Controller
 
         return response()->json($motos);
       }
+
+      public function getEquiposPorDependenciaJSON(Request $request){
+        $tipo_veh1 = 'Moto';
+
+        $motos = Recurso::select(
+            'recursos.*',
+            'vehiculos.tipo_vehiculo',
+            DB::raw('recursos.nombre as nombre_recurso'),
+            'destino.nombre'
+        )
+        ->leftJoin('vehiculos', 'recursos.vehiculo_id', 'vehiculos.id')
+        ->leftJoin('destino', 'recursos.destino_id', 'destino.id')
+        ->where('vehiculos.tipo_vehiculo', $tipo_veh1)
+        ->get();
+
+        return response()->json($motos);
+      }
 }

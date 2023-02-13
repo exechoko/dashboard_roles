@@ -27,7 +27,7 @@
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                         <th style="display: none;">ID</th>
                                         <th style="color:#fff;">TEI</th>
-                                        <th style="color:#fff;">ISSI</th>
+                                        <!--th style="color:#fff;">ISSI</th-->
                                         <th style="color:#fff;">Recurso asignado</th>
                                         <th style="color:#fff;">Dependencia</th>
                                         <th style="color:#fff;">Actualmente en</th>
@@ -55,7 +55,7 @@
                                                 <td style="display: none;">{{ $f->id }}</td>
                                                 <td><a class="btn btn-dark" href="{{ route('verHistorico', $f->id) }}">{{ $f->equipo->tei }}</a></td>
                                                 {{--<td><a href="#"data-toggle="modal" data-toggle="modal" data-target="#ModalDetalle{{ $f->id }}"></a>{{ $f->equipo->issi }}</td>--}}
-                                                <td>{{ $f->equipo->issi }}</td>
+                                                {{--<td>{{ $f->equipo->issi }}</td>--}}
                                                 @if(is_null($f->recurso_id))
                                                     <td>-</td>
                                                 @else

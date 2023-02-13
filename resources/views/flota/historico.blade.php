@@ -14,7 +14,7 @@
                                 <table id="dataTable" class="table table-bordered mt-2">
                                     <thead style="background: linear-gradient(45deg,#888888, #5f5e63)">
                                         <th style="display: none;">ID</th>
-                                        <th style="color:#fff;">Fecha</th>
+                                        <th style="color:#fff;">Fecha de asignación</th>
                                         <th style="color:#fff;">Movil</th>
                                         <th style="color:#fff;">Actualmente en</th>
                                         <th style="color:#fff;">Observaciones</th>
@@ -25,7 +25,7 @@
                                         @foreach ($hist as $h)
                                             <tr>
                                                 <td style="display: none;">{{ $h->id }}</td>
-                                                <td>{{ $h->created_at }}</td>
+                                                <td>{{ $h->fecha_asignacion }}</td>
                                                 @if(is_null($h->recurso))
                                                     <td>-</td>
                                                 @else

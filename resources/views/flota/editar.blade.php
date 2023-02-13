@@ -114,6 +114,12 @@
                                             </select>
                                         </div>
                                     </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-10" id="label_fecha_asignacion">
+                                        <div class="form-group">
+                                            <label for="fecha_asignacion">Fecha de asignación</label>
+                                            {!! Form::date('fecha_asignacion', \Carbon\Carbon::now()) !!}
+                                        </div>
+                                    </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>

@@ -385,6 +385,7 @@ class FlotaGeneralController extends Controller
         request()->validate([
             'dependencia' => 'required',
             'equipo' => 'required',
+            'fecha_asignacion' => 'required',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
@@ -402,14 +403,14 @@ class FlotaGeneralController extends Controller
             $flota->equipo_id = $request->equipo;
             $flota->recurso_id = $request->recurso;
             $flota->destino_id = $request->dependencia;
-            $flota->fecha_asignacion = Carbon::now()->toDateTimeString();
+            $flota->fecha_asignacion = $request->fecha_asignacion;
             $flota->observaciones = $request->observaciones;
             $flota->save();
 
             $historico->equipo_id = $request->equipo;
             $historico->recurso_id = $request->recurso;
             $historico->destino_id = $request->dependencia;
-            $historico->fecha_asignacion = Carbon::now();
+            $historico->fecha_asignacion = $request->fecha_asignacion;
             $historico->observaciones = $request->observaciones;
             $historico->save();
 
@@ -454,6 +455,7 @@ class FlotaGeneralController extends Controller
             'tipo_movimiento' => 'required',
             'dependencia' => 'required',
             'equipo' => 'required',
+            'fecha_asignacion' => 'required',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
@@ -463,7 +465,7 @@ class FlotaGeneralController extends Controller
             if (!is_null($flota)) {
                 $flota->equipo_id = $request->equipo;
                 $flota->recurso_id = $request->recurso;
-                $flota->fecha_asignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString();
+                $flota->fecha_asignacion = $request->fecha_asignacion;
                 $flota->observaciones = $request->observaciones;
 
                 if ($tipo_de_mov->id == 1) { //1 - movimiento patrimonial
@@ -473,7 +475,7 @@ class FlotaGeneralController extends Controller
                 $histAnt = Historico::where('equipo_id', $request->equipo)->orderBy('created_at', 'desc')->first();
                 if (!is_null($histAnt)) {
                     $histAnt->tipo_movimiento_id = $tipo_de_mov->id;
-                    $histAnt->fecha_desasignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString(); //Carbon::now();
+                    $histAnt->fecha_desasignacion = $request->fecha_asignacion;
                     $histAnt->save();
                 }
 
@@ -482,7 +484,7 @@ class FlotaGeneralController extends Controller
                 $historico->recurso_id = $request->recurso;
                 $historico->destino_id = $request->dependencia;
                 $historico->tipo_movimiento_id = $tipo_de_mov->id;
-                $historico->fecha_asignacion = Carbon::createFromFormat('Y-m-s H:i:s', now())->toDateTimeString(); //Carbon::now();
+                $historico->fecha_asignacion = $request->fecha_asignacion;
                 $historico->observaciones = $request->observaciones;
 
                 if ($tipo_de_mov->id == 7) { //7 - Desinstalacion completa

@@ -77,7 +77,9 @@
                                             <h5>Equipos derivados a P.G.</h5>
                                             @php
                                                 use App\Models\Historico;
-                                                $cant_equipos = Historico::where('destino_id', 233)
+                                                use App\Models\Destino;
+                                                $id_pg = Destino::where('nombre', 'Patagonia Green')->first();
+                                                $cant_equipos = Historico::where('destino_id', $id_pg)
                                                     ->where('fecha_desasignacion', null)
                                                     ->count();
                                             @endphp
@@ -106,7 +108,7 @@
                                             </h2>
                                             @can('ver-equipo')
                                                 <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                    data-target="#modal-motos{{-- $vehiculo->id --}}">Ver más</a>
+                                                        data-target="#modal-motos{{-- $vehiculo->id --}}">Ver más</a>
                                                 </p>
                                             @endcan
                                         </div>
@@ -133,6 +135,49 @@
                                         </div>
                                     </div>
                                 </div>
+                                <!--div class="col-md-4 col-xl-4">
+                                    <div class="card bg-c-gren-light order-card">
+                                        <div class="card-block">
+                                            <h5>Equipos en la Div. 911</h5>
+                                            {{--@php
+                                                use App\Models\FlotaGeneral;
+                                                use App\Models\Vehiculo;
+
+
+                                                $cant_equipos_911 = FlotaGeneral::whereIn('destino_id', [42, 229, 230, 231])
+                                                ->count();
+                                            @endphp
+                                            <h2 class="text-right"><i
+                                                    class="fas fa-car f-left"></i><span>{{ $cant_equipos_911 }}</span></h2>
+                                            @can('ver-equipo')
+                                                <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                        data-target="#modal-moviles">Ver más</a>
+                                                </p>
+                                            @endcan--}}
+                                        </div>
+                                    </div>
+                                </div-->
+                                <!--div class="col-md-4 col-xl-4">
+                                        <div class="card bg-c-gren-light order-card">
+                                            <div class="card-block">
+                                                <h5>Equipos en Departamental Paraná</h5>
+                                                {{-- @php
+                                                $tipo_veh1 = 'Auto';
+                                                $tipo_veh2 = 'Camioneta';
+                                                $cant_moviles = Recurso::whereHas('vehiculo', function ($query) use ($tipo_veh1, $tipo_veh2) {
+                                                    $query->where('tipo_vehiculo', '=', $tipo_veh1)->orWhere('tipo_vehiculo', '=', $tipo_veh2);
+                                                })->count();
+                                            @endphp
+                                            <h2 class="text-right"><i
+                                                    class="fas fa-car f-left"></i><span>{{ $cant_moviles }}</span></h2>
+                                            @can('ver-equipo')
+                                                <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                        data-target="#modal-moviles{{-- $vehiculo->id --}}">Ver más</a>
+                                                    </p>
+                                                {{-- @endcan --}}
+                                            </div>
+                                        </div>
+                                    </div-->
                             </div>
                         </div>
                     </div>
@@ -141,7 +186,8 @@
         </div>
 
 
-        <div id="modal-moviles" class="modal fade " data-backdrop="false" style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
+        <div id="modal-moviles" class="modal fade " data-backdrop="false" style="background-color: rgba(0, 0, 0, 0.5);"
+            role="dialog" aria-hidden="true">
             <div id="dialog" class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header bg-green">
@@ -160,8 +206,7 @@
                                 class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
                         </div>
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
-                            <table id="table-moviles"
-                                class="table table-condensed table-bordered table-stripped"></table>
+                            <table id="table-moviles" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -174,7 +219,8 @@
             </div>
         </div>
 
-        <div id="modal-motos" class="modal fade " data-backdrop="false" style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
+        <div id="modal-motos" class="modal fade " data-backdrop="false" style="background-color: rgba(0, 0, 0, 0.5);"
+            role="dialog" aria-hidden="true">
             <div id="dialog" class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header bg-green">
@@ -193,8 +239,7 @@
                                 class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
                         </div>
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
-                            <table id="table-motos"
-                                class="table table-condensed table-bordered table-stripped"></table>
+                            <table id="table-motos" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -212,12 +257,12 @@
     <script>
         $(document).ready(function() {
             $('#btn-buscar-moviles').click(function() {
-                consultarMoviles($(this).data('id'))
-            }),
+                    consultarMoviles($(this).data('id'))
+                }),
 
-            $('#btn-buscar-motopatrullas').click(function() {
-                consultarMotopatrullas($(this).data('id'))
-            })
+                $('#btn-buscar-motopatrullas').click(function() {
+                    consultarMotopatrullas($(this).data('id'))
+                })
         });
 
         /*function destino(i, row){
@@ -509,7 +554,4 @@
             })
         }
     </script>
-
 @endsection
-
-

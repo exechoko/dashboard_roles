@@ -82,12 +82,14 @@
                                                 $cant_equipos_en_pg = Historico::where('destino_id', $id_pg->id)
                                                     ->where('fecha_desasignacion', null)
                                                     ->count();
-                                                    //dd($cant_equipos_en_pg);
+                                                //dd($cant_equipos_en_pg);
                                             @endphp
                                             <h2 class="text-right"><i
-                                                    class="fa fa-mobile f-left"></i><span>{{ $cant_equipos_en_pg }}</span></h2>
+                                                    class="fa fa-mobile f-left"></i><span>{{ $cant_equipos_en_pg }}</span>
+                                            </h2>
                                             @can('ver-equipo')
-                                                <p class="m-b-0 text-right"><a href="/equipos" class="text-white">Ver más</a>
+                                                <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                        data-target="#modal-equipos-pg{{-- $vehiculo->id --}}" id="btn-buscar-equipos-pg">Ver más</a>
                                                 </p>
                                             @endcan
                                         </div>
@@ -109,7 +111,7 @@
                                             </h2>
                                             @can('ver-equipo')
                                                 <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                        data-target="#modal-motos{{-- $vehiculo->id --}}">Ver más</a>
+                                                        data-target="#modal-motos{{-- $vehiculo->id --}}" id="btn-buscar-motopatrullas">Ver más</a>
                                                 </p>
                                             @endcan
                                         </div>
@@ -130,17 +132,17 @@
                                                     class="fas fa-car f-left"></i><span>{{ $cant_moviles }}</span></h2>
                                             @can('ver-equipo')
                                                 <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                        data-target="#modal-moviles{{-- $vehiculo->id --}}">Ver más</a>
+                                                        data-target="#modal-moviles{{-- $vehiculo->id --}}" id="btn-buscar-moviles">Ver más</a>
                                                 </p>
                                             @endcan
                                         </div>
                                     </div>
                                 </div>
                                 <!--div class="col-md-4 col-xl-4">
-                                    <div class="card bg-c-gren-light order-card">
-                                        <div class="card-block">
-                                            <h5>Equipos en la Div. 911</h5>
-                                            {{--@php
+                                        <div class="card bg-c-gren-light order-card">
+                                            <div class="card-block">
+                                                <h5>Equipos en la Div. 911</h5>
+                                                {{-- @php
                                                 use App\Models\FlotaGeneral;
                                                 use App\Models\Vehiculo;
 
@@ -154,15 +156,15 @@
                                                 <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
                                                         data-target="#modal-moviles">Ver más</a>
                                                 </p>
-                                            @endcan--}}
+                                            @endcan --}}
+                                            </div>
                                         </div>
-                                    </div>
-                                </div-->
+                                    </div-->
                                 <!--div class="col-md-4 col-xl-4">
-                                        <div class="card bg-c-gren-light order-card">
-                                            <div class="card-block">
-                                                <h5>Equipos en Departamental Paraná</h5>
-                                                {{-- @php
+                                            <div class="card bg-c-gren-light order-card">
+                                                <div class="card-block">
+                                                    <h5>Equipos en Departamental Paraná</h5>
+                                                    {{-- @php
                                                 $tipo_veh1 = 'Auto';
                                                 $tipo_veh2 = 'Camioneta';
                                                 $cant_moviles = Recurso::whereHas('vehiculo', function ($query) use ($tipo_veh1, $tipo_veh2) {
@@ -174,11 +176,11 @@
                                             @can('ver-equipo')
                                                 <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
                                                         data-target="#modal-moviles{{-- $vehiculo->id --}}">Ver más</a>
-                                                    </p>
-                                                {{-- @endcan --}}
+                                                        </p>
+                                                    {{-- @endcan --}}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </div-->
+                                        </div-->
                             </div>
                         </div>
                     </div>
@@ -208,6 +210,39 @@
                         </div>
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-moviles" class="table table-condensed table-bordered table-stripped"></table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" data-dismiss="modal">
+                            <i class="fa fa-times"></i>
+                            <span> Cerrar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-equipos-pg" class="modal fade " data-backdrop="false" style="background-color: rgba(0, 0, 0, 0.5);"
+            role="dialog" aria-hidden="true">
+            <div id="dialog" class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header bg-green">
+                        <div class="col-lg-10">
+                            <h3 class="modal-title upper-case" id="title">Equipos en Patagonia Green</h3>
+                        </div>
+                        <div class="col-lg-2">
+                            <button id="close" class="close" data-dismiss="modal" aria-label="Close">
+                                <i class="fa fa-times text-white"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-body" style="min-height: 500px">
+                        <div class="col-lg-2">
+                            <button id="btn-buscar-equipos-pg" href="consultarEquiposPG"
+                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                        </div>
+                        <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
+                            <table id="table-equipos-pg" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -263,6 +298,10 @@
 
                 $('#btn-buscar-motopatrullas').click(function() {
                     consultarMotopatrullas($(this).data('id'))
+                }),
+
+                $('#btn-buscar-equipos-pg').click(function() {
+                    consultarEquiposPG($(this).data('id'))
                 })
         });
 
@@ -283,6 +322,20 @@
                       <span style="margin-left:5px">MAPA</span>\
                     </a>';
         }*/
+
+        function consultarEquiposPG(id) {
+            $.post(
+                "{{ route('get-equipos-PG-json') }}", {
+                    _token: "{{ csrf_token() }}",
+                },
+                function(data, textStatus, xhr) {
+                    console.log('data', data);
+                    setTableEquiposPG('table-equipos-pg', data)
+                }).fail(function(data) {
+                swal('Error', 'Ocurrio un error al guardar: ' + data.responseJSON.message, 'error');
+            })
+        }
+
 
         function consultarMotopatrullas(id) {
             $.post(
@@ -531,6 +584,62 @@
             })
 
             console.log('ROWS', rows)
+            table.bootstrapTable({
+                striped: true,
+                //pagination: true,
+                fixedColumns: true,
+                fixedNumber: 1,
+                // showColumns: true,
+                // showToggle: true,
+                // showExport: true,
+                sortable: true,
+                paginationVAlign: 'both',
+                //pageSize: 10,
+                //pageList: [10, 25, 50, 100, 'ALL'],
+                columns: columns,
+                data: rows
+            });
+
+            table.find('thead').css({
+                backgroundColor: 'white'
+            })
+            table.closest('.fixed-table-body').css({
+                height: '400px'
+            })
+        }
+
+        function setTableEquiposPG(table_id, rows) {
+            var table = $('#' + table_id)
+            var columns = [];
+            table.bootstrapTable('destroy')
+
+            columns.push({
+                title: 'Marca',
+                field: 'marca',
+                sortable: true,
+            })
+            columns.push({
+                title: 'Modelo',
+                field: 'modelo',
+                sortable: true,
+            })
+            columns.push({
+                title: 'ISSI',
+                field: 'issi',
+                sortable: true
+            })
+            columns.push({
+                title: 'TEI',
+                field: 'tei',
+                sortable: true
+            })
+            columns.push({
+                title: 'Nombre recurso',
+                field: 'nombre_recurso',
+                sortable: true,
+            })
+
+            console.log('ROWS_TABLA', rows)
             table.bootstrapTable({
                 striped: true,
                 //pagination: true,

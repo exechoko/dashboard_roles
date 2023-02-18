@@ -69,7 +69,9 @@
                     data-parent="#accordionEx">
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-striped table-hover">
+                            <input class="form-control" id="inputDirecciones" type="text"
+                                placeholder="Buscar direcciones">
+                            <table class="table table-striped table-hover mt-2">
                                 <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                     <th style="display: none;">ID</th>
                                     <th style="color:#fff;">Nombre</th>
@@ -77,7 +79,7 @@
                                     <th style="color:#fff;">Ubicación</th>
                                     <th style="color:#fff;">Acciones</th>
                                 </thead>
-                                <tbody>
+                                <tbody id="myTableDirecciones">
                                     @foreach ($direcciones as $direccion)
                                         @include('dependencias.modal.editar_direccion')
                                         <tr>
@@ -88,7 +90,7 @@
                                             <td>
                                                 <form action="#" method="POST">
                                                     @can('editar-dependencia')
-                                                        {{--<a class="btn btn-info" href="#">Editar</a>--}}
+                                                        {{-- <a class="btn btn-info" href="#">Editar</a> --}}
                                                         <a class="btn btn-success" href="#" data-toggle="modal"
                                                             data-target="#ModalEditar{{ $direccion->id }}">Editar</a>
                                                     @endcan
@@ -130,7 +132,9 @@
                     data-parent="#accordionEx">
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-striped table-hover">
+                            <input class="form-control" id="inputDepartamentales" type="text"
+                                placeholder="Buscar departamentales">
+                            <table class="table table-striped table-hover mt-2">
                                 <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                     <th style="display: none;">ID</th>
                                     <th style="color:#fff;">Nombre</th>
@@ -138,7 +142,7 @@
                                     <th style="color:#fff;">Ubicación</th>
                                     <th style="color:#fff;">Acciones</th>
                                 </thead>
-                                <tbody>
+                                <tbody id="myTableDepartamentales">
                                     @foreach ($departamentales as $departamental)
                                         @include('dependencias.modal.editar_departamental')
                                         <tr>
@@ -149,7 +153,7 @@
                                             <td>
                                                 <form action="#" method="POST">
                                                     @can('editar-dependencia')
-                                                        {{--<a class="btn btn-info" href="#">Editar</a>--}}
+                                                        {{-- <a class="btn btn-info" href="#">Editar</a> --}}
                                                         <a class="btn btn-success" href="#" data-toggle="modal"
                                                             data-target="#ModalEditarDptal{{ $departamental->id }}">Editar</a>
                                                     @endcan
@@ -190,13 +194,53 @@
                 <div id="collapseThree3" class="collapse" role="tabpanel" aria-labelledby="headingThree3"
                     data-parent="#accordionEx">
                     <div class="card-body">
-                        Anim pariatur cliche reprehenderit, enim eiusmod high life accusamus terry richardson ad squid. 3
-                        wolf moon officia aute, non cupidatat skateboard dolor brunch. Food truck quinoa nesciunt laborum
-                        eiusmod. Brunch 3 wolf moon tempor, sunt aliqua put a bird on it squid single-origin coffee nulla
-                        assumenda shoreditch et. Nihil anim keffiyeh helvetica, craft beer labore wes anderson cred
-                        nesciunt sapiente ea proident. Ad vegan excepteur butcher vice lomo. Leggings occaecat craft beer
-                        farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus
-                        labore sustainable VHS.
+                        <div class="table-responsive">
+                            <input class="form-control" id="inputDivisiones" type="text"
+                                placeholder="Buscar divisiones">
+                            <table class="table table-striped table-hover mt-2">
+                                <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
+                                    <th style="display: none;">ID</th>
+                                    <th style="color:#fff;">Nombre</th>
+                                    <th style="color:#fff;">Teléfono</th>
+                                    <th style="color:#fff;">Ubicación</th>
+                                    <th style="color:#fff;">Acciones</th>
+                                </thead>
+                                <tbody id="myTableDivisiones">
+                                    @foreach ($divisiones as $division)
+                                        @include('dependencias.modal.editar_division')
+                                        <tr>
+                                            <td style="display: none;">{{ $division->id }}</td>
+                                            @if (!is_null($division->departamental))
+                                                <td style="font-weight:bold">
+                                                    {{ $division->nombre . ' - ' . $division->departamental->nombre }}</td>
+                                            @elseif (!is_null($division->direccion))
+                                                <td style="font-weight:bold">
+                                                    {{ $division->nombre . ' - ' . $division->direccion->nombre }}</td>
+                                            @endif
+
+                                            <td>{{ $division->telefono }}</td>
+                                            <td>{{ $division->ubicacion }}</td>
+                                            <td>
+                                                <form action="#" method="POST">
+                                                    @can('editar-dependencia')
+                                                        {{-- <a class="btn btn-info" href="#">Editar</a> --}}
+                                                        <a class="btn btn-success" href="#" data-toggle="modal"
+                                                            data-target="#ModalEditarDivision{{ $division->id }}">Editar</a>
+                                                    @endcan
+
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    @can('borrar-dependencia')
+                                                        <button type="submit" onclick="return confirm('Está seguro')"
+                                                            class="btn btn-danger">Borrar</button>
+                                                    @endcan
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -280,4 +324,26 @@
 
 
     </section>
+    <script>
+        $(document).ready(function() {
+            $("#inputDivisiones").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("#myTableDivisiones tr").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+            $("#inputDepartamentales").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("#myTableDepartamentales tr").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+            $("#inputDirecciones").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("#myTableDirecciones tr").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+        });
+    </script>
 @endsection

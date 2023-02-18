@@ -32,8 +32,9 @@ class DependenciaController extends Controller
         //dd($dependencias);
         $direcciones = Direccion::all();
         $departamentales = Departamental::all();
+        $divisiones = Division::all();
         //dd($dependencias);
-        return view('dependencias.index', compact('dependencias', 'direcciones', 'departamentales'));
+        return view('dependencias.index', compact('dependencias', 'direcciones', 'departamentales', 'divisiones'));
     }
 
     /**

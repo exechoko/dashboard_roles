@@ -638,6 +638,16 @@
                 field: 'nombre_recurso',
                 sortable: true,
             })
+            columns.push({
+                title: 'Ticket PER',
+                field: 'ticket_per',
+                sortable: true,
+            })
+            columns.push({
+                title: 'Observaciones',
+                field: 'observaciones',
+                sortable: false,
+            })
 
             console.log('ROWS_TABLA', rows)
             table.bootstrapTable({

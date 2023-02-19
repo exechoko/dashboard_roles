@@ -28,6 +28,10 @@ class Departamental extends Model
         return $this->hasMany(Seccion::class);
     }
 
+    public function destacamento(){
+        return $this->hasMany(Destacamento::class);
+    }
+
     public function destino(){
         return $this->hasMany(Destino::class);
     }

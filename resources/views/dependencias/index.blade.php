@@ -263,9 +263,53 @@
                 <div id="collapseThree4" class="collapse" role="tabpanel" aria-labelledby="headingThree4"
                     data-parent="#accordionEx">
                     <div class="card-body">
-                        Anim pari Acordion 4 excepteur butcher vice lomo. Leggings occaecat craft beer
-                        farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus
-                        labore sustainable VHS.
+                        <div class="table-responsive">
+                            <input class="form-control" id="inputComisarias" type="text"
+                                placeholder="Buscar comisarias">
+                            <table class="table table-striped table-hover mt-2">
+                                <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
+                                    <th style="display: none;">ID</th>
+                                    <th style="color:#fff;">Nombre</th>
+                                    <th style="color:#fff;">Teléfono</th>
+                                    <th style="color:#fff;">Ubicación</th>
+                                    <th style="color:#fff;">Acciones</th>
+                                </thead>
+                                <tbody id="myTableComisarias">
+                                    @foreach ($comisarias as $comisaria)
+                                        @include('dependencias.modal.editar_comisaria')
+                                        <tr>
+                                            <td style="display: none;">{{ $comisaria->id }}</td>
+                                            @if (!is_null($comisaria->departamental))
+                                                <td style="font-weight:bold">
+                                                    {{ $comisaria->nombre . ' - ' . $comisaria->departamental->nombre }}</td>
+                                            @else
+                                                <td style="font-weight:bold">
+                                                    {{ $comisaria->nombre }}</td>
+                                            @endif
+
+                                            <td>{{ $comisaria->telefono }}</td>
+                                            <td>{{ $comisaria->ubicacion }}</td>
+                                            <td>
+                                                <form action="#" method="POST">
+                                                    @can('editar-dependencia')
+                                                        {{-- <a class="btn btn-info" href="#">Editar</a> --}}
+                                                        <a class="btn btn-success" href="#" data-toggle="modal"
+                                                            data-target="#ModalEditarComisaria{{ $comisaria->id }}">Editar</a>
+                                                    @endcan
+
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    @can('borrar-dependencia')
+                                                        <button type="submit" onclick="return confirm('Está seguro')"
+                                                            class="btn btn-danger">Borrar</button>
+                                                    @endcan
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -288,9 +332,59 @@
                 <div id="collapseThree5" class="collapse" role="tabpanel" aria-labelledby="headingThree5"
                     data-parent="#accordionEx">
                     <div class="card-body">
-                        Anim pari Acordion 4 excepteur butcher vice lomo. Leggings occaecat craft beer
-                        farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus
-                        labore sustainable VHS.
+                        <div class="table-responsive">
+                            <input class="form-control" id="inputSecciones" type="text"
+                                placeholder="Buscar secciones">
+                            <table class="table table-striped table-hover mt-2">
+                                <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
+                                    <th style="display: none;">ID</th>
+                                    <th style="color:#fff;">Nombre</th>
+                                    <th style="color:#fff;">Teléfono</th>
+                                    <th style="color:#fff;">Ubicación</th>
+                                    <th style="color:#fff;">Acciones</th>
+                                </thead>
+                                <tbody id="myTableSecciones">
+                                    @foreach ($secciones as $seccion)
+                                        @include('dependencias.modal.editar_seccion')
+                                        <tr>
+                                            <td style="display: none;">{{ $seccion->id }}</td>
+                                            @if (!is_null($seccion->comisaria))
+                                                <td style="font-weight:bold">
+                                                    {{ $seccion->nombre . ' - ' . $seccion->comisaria->nombre }}</td>
+                                            @elseif (!is_null($seccion->division))
+                                                <td style="font-weight:bold">
+                                                    {{ $seccion->nombre . ' - ' . $seccion->division->nombre}}</td>
+                                            @elseif (!is_null($seccion->departamental))
+                                                <td style="font-weight:bold">
+                                                    {{ $seccion->nombre . ' - ' . $seccion->departamental->nombre }}</td>
+                                            @elseif (!is_null($seccion->direccion))
+                                                <td style="font-weight:bold">
+                                                    {{ $seccion->nombre . ' - ' . $seccion->direccion->nombre }}</td>
+                                            @endif
+
+                                            <td>{{ $seccion->telefono }}</td>
+                                            <td>{{ $seccion->ubicacion }}</td>
+                                            <td>
+                                                <form action="#" method="POST">
+                                                    @can('editar-dependencia')
+                                                        {{-- <a class="btn btn-info" href="#">Editar</a> --}}
+                                                        <a class="btn btn-success" href="#" data-toggle="modal"
+                                                            data-target="#ModalEditarSeccion{{ $seccion->id }}">Editar</a>
+                                                    @endcan
+
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    @can('borrar-dependencia')
+                                                        <button type="submit" onclick="return confirm('Está seguro')"
+                                                            class="btn btn-danger">Borrar</button>
+                                                    @endcan
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -313,9 +407,59 @@
                 <div id="collapseThree6" class="collapse" role="tabpanel" aria-labelledby="headingThree6"
                     data-parent="#accordionEx">
                     <div class="card-body">
-                        Anim pari Acordion 4 excepteur butcher vice lomo. Leggings occaecat craft beer
-                        farm-to-table, raw denim aesthetic synth nesciunt you probably haven't heard of them accusamus
-                        labore sustainable VHS.
+                        <div class="table-responsive">
+                            <input class="form-control" id="inputDestacamentos" type="text"
+                                placeholder="Buscar destacamentos">
+                            <table class="table table-striped table-hover mt-2">
+                                <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
+                                    <th style="display: none;">ID</th>
+                                    <th style="color:#fff;">Nombre</th>
+                                    <th style="color:#fff;">Teléfono</th>
+                                    <th style="color:#fff;">Ubicación</th>
+                                    <th style="color:#fff;">Acciones</th>
+                                </thead>
+                                <tbody id="myTableDestacamentos">
+                                    @foreach ($destacamentos as $destacamento)
+                                        @include('dependencias.modal.editar_destacamento')
+                                        <tr>
+                                            <td style="display: none;">{{ $destacamento->id }}</td>
+                                            @if (!is_null($destacamento->comisaria))
+                                                <td style="font-weight:bold">
+                                                    {{ $destacamento->nombre . ' - ' . $destacamento->comisaria->nombre }}</td>
+                                            @elseif (!is_null($destacamento->division))
+                                                <td style="font-weight:bold">
+                                                    {{ $destacamento->nombre . ' - ' . $destacamento->division->nombre}}</td>
+                                            @elseif (!is_null($destacamento->departamental))
+                                                <td style="font-weight:bold">
+                                                    {{ $destacamento->nombre . ' - ' . $destacamento->departamental->nombre }}</td>
+                                            @elseif (!is_null($destacamento->direccion))
+                                                <td style="font-weight:bold">
+                                                    {{ $destacamento->nombre . ' - ' . $destacamento->direccion->nombre }}</td>
+                                            @endif
+
+                                            <td>{{ $destacamento->telefono }}</td>
+                                            <td>{{ $destacamento->ubicacion }}</td>
+                                            <td>
+                                                <form action="#" method="POST">
+                                                    @can('editar-dependencia')
+                                                        {{-- <a class="btn btn-info" href="#">Editar</a> --}}
+                                                        <a class="btn btn-success" href="#" data-toggle="modal"
+                                                            data-target="#ModalEditarDestacamento{{ $destacamento->id }}">Editar</a>
+                                                    @endcan
+
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    @can('borrar-dependencia')
+                                                        <button type="submit" onclick="return confirm('Está seguro')"
+                                                            class="btn btn-danger">Borrar</button>
+                                                    @endcan
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -341,6 +485,24 @@
             $("#inputDirecciones").on("keyup", function() {
                 var value = $(this).val().toLowerCase();
                 $("#myTableDirecciones tr").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+            $("#inputComisarias").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("#myTableComisarias tr").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+            $("#inputSecciones").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("#myTableSecciones tr").filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+                });
+            });
+            $("#inputDestacamentos").on("keyup", function() {
+                var value = $(this).val().toLowerCase();
+                $("#myTableDestacamentos tr").filter(function() {
                     $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
                 });
             });

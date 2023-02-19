@@ -12,6 +12,10 @@ class Destacamento extends Model
         'nombre'
     ];
 
+    public function departamental(){
+        return $this->belongsTo(Departamental::class);
+    }
+
     public function comisaria(){
         return $this->belongsTo(Comisaria::class);
     }

@@ -33,8 +33,11 @@ class DependenciaController extends Controller
         $direcciones = Direccion::all();
         $departamentales = Departamental::all();
         $divisiones = Division::all();
+        $comisarias = Comisaria::all();
+        $secciones = Seccion::all();
+        $destacamentos = Destacamento::all();
         //dd($dependencias);
-        return view('dependencias.index', compact('dependencias', 'direcciones', 'departamentales', 'divisiones'));
+        return view('dependencias.index', compact('dependencias', 'direcciones', 'departamentales', 'divisiones', 'comisarias', 'secciones', 'destacamentos'));
     }
 
     /**
@@ -109,6 +112,7 @@ class DependenciaController extends Controller
                 //$dependencia->observaciones = $request->nombre;
             } else {
                 $dependencia = new Destacamento();
+                $dependencia->departamental_id = $request->departamental;
                 $dependencia->comisaria_id = $request->comisaria;
                 $dependencia->division_id = $request->division;
                 $dependencia->nombre = 'Destacamento ' . $request->nombre;
@@ -168,6 +172,7 @@ class DependenciaController extends Controller
      */
     public function update(Request $request, $id)
     {
+        //dd($request->all());
         $destino = null;
         try {
             DB::beginTransaction();
@@ -177,6 +182,18 @@ class DependenciaController extends Controller
             } elseif($request->tipo_dependencia == 'departamental'){
                 $d = Departamental::find($id);
                 $destino = Destino::where('departamental_id', $d->id)->where('nombre', $d->nombre)->first();
+            } elseif($request->tipo_dependencia == 'division'){
+                $d = Division::find($id);
+                $destino = Destino::where('division_id', $d->id)->where('nombre', $d->nombre)->first();
+            } elseif($request->tipo_dependencia == 'comisaria'){
+                $d = Comisaria::find($id);
+                $destino = Destino::where('comisaria_id', $d->id)->where('nombre', $d->nombre)->first();
+            } elseif($request->tipo_dependencia == 'seccion'){
+                $d = Seccion::find($id);
+                $destino = Destino::where('seccion_id', $d->id)->where('nombre', $d->nombre)->first();
+            } elseif($request->tipo_dependencia == 'destacamento'){
+                $d = Destacamento::find($id);
+                $destino = Destino::where('destacamento_id', $d->id)->where('nombre', $d->nombre)->first();
             }
 
             $d->nombre = $request->nombre;

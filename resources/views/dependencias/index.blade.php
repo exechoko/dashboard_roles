@@ -12,11 +12,13 @@
                     <div class="card-body">
                         @can('crear-dependencia')
                             <a class="btn btn-success" href="{{ route('dependencias.create') }}">Nuevo</a>
+                            <a class="btn btn-info ml-5" href="{{ route('dependencias.showMap') }}">Mapa</a>
                         @endcan
                     </div>
                 </div>
             </div>
         </div>
+
 
         <div class="row">
             <div class="col-lg-12">

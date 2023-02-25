@@ -14,6 +14,11 @@
     <link href="{{ asset('assets/css/sweetalert.css') }}" rel="stylesheet" type="text/css"/>
     <link href="{{ asset('assets/css/select2.min.css') }}" rel="stylesheet" type="text/css"/>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
+    
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+
 
 @yield('page_css')
 <!-- Template CSS -->
@@ -59,6 +64,8 @@
 <script src="{{ asset('assets/js/jquery.nicescroll.js') }}"></script>
 <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.21.2/dist/bootstrap-table.min.css">
 <script src="https://unpkg.com/bootstrap-table@1.21.2/dist/bootstrap-table.min.js"></script>
+
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
 
 <!-- Template JS File -->
 <script src="{{ asset('web/js/stisla.js') }}"></script>

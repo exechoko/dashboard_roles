@@ -231,4 +231,9 @@ class DependenciaController extends Controller
     {
         //
     }
+
+    public function showMap()
+    {
+        return view('dependencias.mapa');
+    }
 }

@@ -14,11 +14,11 @@
     </section>
 
     <script>
-        var markers = [
-            ["Cria. 1°", -31.7297377, -60.5353802],
-            ["Cria. 2°", -31.7370856, -60.5298358],
-            ["Cria. 3°", -31.7573272, -60.4970351]
-        ];
+        /*var markers = [
+                    ["Cria. 1°", -31.7297377, -60.5353802],
+                    ["Cria. 2°", -31.7370856, -60.5298358],
+                    ["Cria. 3°", -31.7573272, -60.4970351]
+                ];*/
 
         var zoom = 13;
 
@@ -38,19 +38,25 @@
             'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiZW1kZXYiLCJhIjoiY2xlajRsbWpiMDdhNDNvbno1dmQzNW5xbSJ9.WOvCqAED6IUBsKukVJTJkg', {
                 //attribution: 'Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> ',
                 maxZoom: 18,
-                //id: 'mapbox/streets-v11',
+                id: 'mapbox/streets-v11',
                 //id: 'mapbox/outdoors-v11',
-                id: 'mapbox/light-v10',
+                //id: 'mapbox/light-v10',
                 //id: 'mapbox/dark-v10',
                 //id: 'mapbox/satellite-v9',
                 //id: 'mapbox/satellite-streets-v11',
             }).addTo(mymap);
 
-        for (var i = 0; i < markers.length; i++) {
+        @foreach ($markers as $marcador)
+            L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {icon: Icono}).addTo(mymap)
+                .bindPopup("{{ $marcador['titulo'] }}");
+        @endforeach
+
+
+        /*for (var i = 0; i < markers.length; i++) {
             marker = new L.marker([markers[i][1], markers[i][2]], {icon: Icono})
                 .bindPopup(markers[i][0])
                 .addTo(mymap);
-        }
+        }*/
 
         /*var marker = L.marker([-31.733611, -60.520276],{
             title: "Exe",

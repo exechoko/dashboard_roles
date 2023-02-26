@@ -235,7 +235,7 @@ class DependenciaController extends Controller
     public function showMap()
     {
         // Crear un array con algunas ubicaciones
-        $ubicaciones = array(
+        /*$ubicaciones = array(
             array(
                 'latitud' => -31.7297377,
                 'longitud' => -60.5353802,
@@ -251,12 +251,29 @@ class DependenciaController extends Controller
                 'longitud' => -60.4970351,
                 'nombre' => 'Cria. 3°',
             ),
-        );
+        );*/
+        $markers = [
+            [
+                'latitud' => -31.7297377,
+                'longitud' => -60.5353802,
+                'titulo' => 'Cria. 1°'
+            ],
+            [
+                'latitud' => -31.7370856,
+                'longitud' => -60.5298358,
+                'titulo' => 'Cria. 2°'
+            ],
+            [
+                'latitud' => -31.7573272,
+                'longitud' => -60.4970351,
+                'titulo' => 'Cria. 3°'
+            ]
+        ];
 
         // Convertir el array en formato JSON
         //$jsonUbicaciones = json_encode($ubicaciones);
 
 
-        return view('dependencias.mapa', compact('ubicaciones'));
+        return view('dependencias.mapa', ['markers' => $markers]);
     }
 }

@@ -264,8 +264,8 @@ class DependenciaController extends Controller
                 'titulo' => 'Cria. 2°'
             ],
             [
-                'latitud' => -31.7573272,
-                'longitud' => -60.4970351,
+                'latitud' => -31.757298,
+                'longitud' => -60.495857,
                 'titulo' => 'Cria. 3°'
             ]
         ];

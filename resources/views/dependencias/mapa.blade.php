@@ -206,17 +206,19 @@
             justify-content: center;
             -ms-flex-align: center;
             align-items: center;
-            width: 3rem;
-            height: 3rem;
-            left: -1.5rem;
-            top: -1.5rem;
+            width: 30px;
+            height: 30px;
+            left: -15px;
+            top: -15px;
             position: relative;
             border-radius: 100%;
             border: thick solid #424EB0;
             font-size: 16px;
             font-weight: bold;
             color: rgb(196, 56, 13);
-            box-shadow: 2px 2px 4px rgba(0, 0, 0, .3)
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, .3);
+            background-color: white !important;
+
         }
 
         .comprador-matutino {
@@ -520,6 +522,10 @@
             width: 1000px;
         }
 
+        .transparent {
+            background: transparent !important;
+        }
+
 
 
         @media (min-width: 1150px) {
@@ -531,19 +537,8 @@
                 width: 98%;
             }
         }
-    </style>
 
-    <style media="print">
-        .marker-route {
-            background-color: white !important;
-        }
 
-        .marker-comprador {
-            background-color: white !important;
-        }
-        .numero-marker {
-            color: black;
-        }
     </style>
 
 @stop
@@ -584,10 +579,12 @@
 
         //var num = '1'
         var markerIcon = L.divIcon({
-            className: 'marker-comprador',
+            //className: '-transparent',
+            labelAnchor:[0,0],
+            popupAnchor: [0,0],
             iconSize: [30, 30],
-            iconAnchor: [10, 10],
-            html: '<div class="">1</div>'
+            iconAnchor: [15, 15],
+            html: '<div cla4s="marker-comprador">1</div>'
         });
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

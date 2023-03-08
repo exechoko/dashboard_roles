@@ -537,8 +537,6 @@
                 width: 98%;
             }
         }
-
-
     </style>
 
 @stop
@@ -557,15 +555,9 @@
     </section>
 
     <script>
-        /*var markers = [
-                            ["Cria. 1°", -31.7297377, -60.5353802],
-                            ["Cria. 2°", -31.7370856, -60.5298358],
-                            ["Cria. 3°", -31.7573272, -60.4970351]
-                        ];*/
 
-        var zoom = 13;
-
-        var mymap = L.map('map').setView(new L.LatLng(-31.736579, -60.524606), zoom);
+        var zoom = 17;
+        var mymap = L.map('map').setView(new L.LatLng(-31.74275, -60.51827), zoom);
 
         /*var Icono = L.icon({
             //iconUrl: "https://w7.pngwing.com/pngs/825/135/png-transparent-red-location-icon-google-maps-pin-google-map-maker-google-s-heart-map-location.png",
@@ -578,29 +570,33 @@
         });*/
 
         //var num = '1'
-        var markerIcon = L.divIcon({
-            className: 'transparent',
-            labelAnchor:[0,0],
-            popupAnchor: [0,0],
-            iconSize: [30, 30],
-            iconAnchor: [15, 15],
-            html: '<div class="marker-comprador">20</div>'
-        });
+
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
-        //'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiZW1kZXYiLCJhIjoiY2xlajRsbWpiMDdhNDNvbno1dmQzNW5xbSJ9.WOvCqAED6IUBsKukVJTJkg', {
-                //attribution: 'Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> ',
-                //maxZoom: 18,
-                //id: 'mapbox/streets-v11',
-                //id: 'mapbox/outdoors-v11',
-                //id: 'mapbox/light-v10',
-                //id: 'mapbox/dark-v10',
-                //id: 'mapbox/satellite-v9',
-                //id: 'mapbox/satellite-streets-v11',
-            }).addTo(mymap);
+            attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+            //'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiZW1kZXYiLCJhIjoiY2xlajRsbWpiMDdhNDNvbno1dmQzNW5xbSJ9.WOvCqAED6IUBsKukVJTJkg', {
+            //attribution: 'Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> ',
+            //maxZoom: 18,
+            //id: 'mapbox/streets-v11',
+            //id: 'mapbox/outdoors-v11',
+            //id: 'mapbox/light-v10',
+            //id: 'mapbox/dark-v10',
+            //id: 'mapbox/satellite-v9',
+            //id: 'mapbox/satellite-streets-v11',
+        }).addTo(mymap);
 
         @foreach ($markers as $marcador)
+        var numero = "{{ $marcador['numero']}}";
+        console.log("marcador", numero);
+
+            var markerIcon = L.divIcon({
+                className: 'transparent',
+                labelAnchor: [0, 0],
+                popupAnchor: [0, 0],
+                iconSize: [30, 30],
+                iconAnchor: [15, 15],
+                html: '<div class="marker-comprador">'+ numero +'</div>'
+            });
             L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
                     icon: markerIcon
                 }).addTo(mymap)

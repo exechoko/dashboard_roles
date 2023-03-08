@@ -254,19 +254,49 @@ class DependenciaController extends Controller
         );*/
         $markers = [
             [
-                'latitud' => -31.7297377,
-                'longitud' => -60.5353802,
+                'latitud' => -31.72978,
+                'longitud' => -60.53547,
                 'titulo' => 'Cria. 1°'
             ],
             [
-                'latitud' => -31.7370856,
-                'longitud' => -60.5298358,
+                'latitud' => -31.73735,
+                'longitud' => -60.5284,
                 'titulo' => 'Cria. 2°'
             ],
             [
                 'latitud' => -31.757298,
                 'longitud' => -60.495857,
                 'titulo' => 'Cria. 3°'
+            ],
+            [
+                'latitud' => -31.73771,
+                'longitud' => -60.51383,
+                'titulo' => 'Cria. 4°'
+            ],
+            [
+                'latitud' => -31.73001,
+                'longitud' => -60.54851,
+                'titulo' => 'Cria. 5°'
+            ],
+            [
+                'latitud' => -31.74674,
+                'longitud' => -60.5364,
+                'titulo' => 'Cria. 6°'
+            ],
+            [
+                'latitud' => -31.73711,
+                'longitud' => -60.45818,
+                'titulo' => 'Cria. 7°'
+            ],
+            [
+                'latitud' => -31.72208,
+                'longitud' => -60.51665,
+                'titulo' => 'Cria. 8°'
+            ],
+            [
+                'latitud' => -31.74051,
+                'longitud' => -60.55312,
+                'titulo' => 'Cria. 9°'
             ]
         ];
 

@@ -208,8 +208,8 @@
             align-items: center;
             width: 30px;
             height: 30px;
-            left: -15px;
-            top: -15px;
+            left: 0px;
+            top: 0px;
             position: relative;
             border-radius: 100%;
             border: thick solid #424EB0;
@@ -579,12 +579,12 @@
 
         //var num = '1'
         var markerIcon = L.divIcon({
-            //className: '-transparent',
+            className: 'transparent',
             labelAnchor:[0,0],
             popupAnchor: [0,0],
             iconSize: [30, 30],
             iconAnchor: [15, 15],
-            html: '<div class="marker-comprador">1</div>'
+            html: '<div class="marker-comprador">20</div>'
         });
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

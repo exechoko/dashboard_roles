@@ -594,6 +594,7 @@
 
         var capa1 = L.layerGroup();
         var capa2 = L.geoJSON();
+        var capa3 = L.geoJSON();
 
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -611,7 +612,7 @@
 
         @foreach ($comisarias as $marcador)
             var numero = "{{ $marcador['numero'] }}";
-            console.log("marcador", numero);
+            console.log("comisaria", numero);
 
             var markerIcon = L.divIcon({
                 className: 'transparent',
@@ -630,27 +631,59 @@
 
         @foreach ($camaras as $marcador)
             var numero = "{{ $marcador['numero'] }}";
-            console.log("marcador", numero);
+            console.log("camaras", numero);
 
-            var markerIcon = L.divIcon({
+            /*var markerIcon = L.divIcon({
                 className: 'transparent',
                 labelAnchor: [0, 0],
                 popupAnchor: [0, 0],
                 iconSize: [30, 30],
                 iconAnchor: [15, 15],
                 html: '<div class="marker-camara">' + numero + '</div>'
+            });*/
+            var cameraIcon = L.icon({
+                iconUrl: "/img/cctv_icon.png",
+                iconSize: [30, 30],
+                iconAnchor: [15, 15],
+                popupAnchor: [0, -15]
             });
             L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
-                    icon: markerIcon
+                    icon: cameraIcon
                     //}).addTo(mymap)
                 }).addTo(capa2)
+                .bindPopup("{{ $marcador['titulo'] }}");
+        @endforeach
+
+        @foreach ($antenas as $marcador)
+            var numero = "{{ $marcador['numero'] }}";
+            console.log("antenas", numero);
+
+            /*var antenaIcon = L.divIcon({
+                className: 'transparent',
+                labelAnchor: [0, 0],
+                popupAnchor: [0, 0],
+                iconSize: [30, 30],
+                iconAnchor: [15, 15],
+                html: '<div class="marker-camara">' + numero + '</div>'
+            });*/
+            var antenaIcon = L.icon({
+                iconUrl: "/img/antena_icon.png",
+                iconSize: [80, 80],
+                iconAnchor: [15, 15],
+                popupAnchor: [0, -15]
+            });
+            L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
+                    icon: antenaIcon
+                    //}).addTo(mymap)
+                }).addTo(capa3)
                 .bindPopup("{{ $marcador['titulo'] }}");
         @endforeach
 
         // Crear el control de capas
         var controlCapas = L.control.layers({
             'Comisarias': capa1,
-            'Camaras': capa2
+            'Camaras': capa2,
+            'Antenas': capa3
         }).addTo(mymap);
 
         // Crear botón para ocultar/mostrar capa
@@ -662,17 +695,13 @@
             }
         }).addTo(mymap);
 
+        var botonCapa3 = L.easyButton('fa-eye-slash', function() {
+            if (mymap.hasLayer(capa3)) {
+                mymap.removeLayer(capa3);
+            } else {
+                mymap.addLayer(capa3);
+            }
+        }).addTo(mymap);
 
-        /*for (var i = 0; i < markers.length; i++) {
-            marker = new L.marker([markers[i][1], markers[i][2]], {icon: Icono})
-                .bindPopup(markers[i][0])
-                .addTo(mymap);
-        }*/
-
-        /*var marker = L.marker([-31.733611, -60.520276],{
-            title: "Exe",
-            icon: Icono
-        }).addTo(mymap);*/
-        //mymap.setView(new L.LatLng(-31.736579, -60.524606), 13);
     </script>
 @endsection

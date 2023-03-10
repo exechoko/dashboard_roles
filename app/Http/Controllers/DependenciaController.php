@@ -360,10 +360,31 @@ class DependenciaController extends Controller
             ]
         ];
 
+        $antenas = [
+            [
+                'latitud' => -31.73988,
+                'longitud' => -60.53557,
+                'titulo' => 'Antena 1°',
+                'numero' => 1
+            ],
+            [
+                'latitud' => -31.74755,
+                'longitud' => -60.5294,
+                'titulo' => 'Antena 2°',
+                'numero' => 2
+            ],
+            [
+                'latitud' => -31.747398,
+                'longitud' => -60.595877,
+                'titulo' => 'Antena 3°',
+                'numero' => 3
+            ]
+        ];
+
         // Convertir el array en formato JSON
         //$jsonUbicaciones = json_encode($ubicaciones);
 
 
-        return view('dependencias.mapa', ['comisarias' => $comisarias], ['camaras' => $camaras]);
+        return view('dependencias.mapa', ['comisarias' => $comisarias, 'antenas' => $antenas, 'camaras' => $camaras]);
     }
 }

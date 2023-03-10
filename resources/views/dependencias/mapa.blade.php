@@ -221,6 +221,30 @@
 
         }
 
+        .marker-camara {
+            display: -ms-flexbox;
+            display: flex;
+            -ms-flex-direction: row;
+            flex-direction: row;
+            -ms-flex-pack: center;
+            justify-content: center;
+            -ms-flex-align: center;
+            align-items: center;
+            width: 30px;
+            height: 30px;
+            left: 0px;
+            top: 0px;
+            position: relative;
+            border-radius: 100%;
+            border: thick solid #b06a42;
+            font-size: 16px;
+            font-weight: bold;
+            color: rgb(13, 196, 89);
+            box-shadow: 2px 2px 4px rgba(0, 0, 0, .3);
+            background-color: white !important;
+
+        }
+
         .comprador-matutino {
             background-color: var(--fondo-m) !important;
             border-color: var(--border-m) !important;
@@ -555,7 +579,6 @@
     </section>
 
     <script>
-
         var zoom = 17;
         var mymap = L.map('map').setView(new L.LatLng(-31.74275, -60.51827), zoom);
 
@@ -569,7 +592,8 @@
             popupAnchor: [0, -40]
         });*/
 
-        //var num = '1'
+        var capa1 = L.layerGroup();
+        var capa2 = L.geoJSON();
 
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -585,9 +609,9 @@
             //id: 'mapbox/satellite-streets-v11',
         }).addTo(mymap);
 
-        @foreach ($markers as $marcador)
-        var numero = "{{ $marcador['numero']}}";
-        console.log("marcador", numero);
+        @foreach ($comisarias as $marcador)
+            var numero = "{{ $marcador['numero'] }}";
+            console.log("marcador", numero);
 
             var markerIcon = L.divIcon({
                 className: 'transparent',
@@ -595,13 +619,48 @@
                 popupAnchor: [0, 0],
                 iconSize: [30, 30],
                 iconAnchor: [15, 15],
-                html: '<div class="marker-comprador">'+ numero +'</div>'
+                html: '<div class="marker-comprador">' + numero + '</div>'
             });
             L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
                     icon: markerIcon
-                }).addTo(mymap)
+                    //}).addTo(mymap)
+                }).addTo(capa1)
                 .bindPopup("{{ $marcador['titulo'] }}");
         @endforeach
+
+        @foreach ($camaras as $marcador)
+            var numero = "{{ $marcador['numero'] }}";
+            console.log("marcador", numero);
+
+            var markerIcon = L.divIcon({
+                className: 'transparent',
+                labelAnchor: [0, 0],
+                popupAnchor: [0, 0],
+                iconSize: [30, 30],
+                iconAnchor: [15, 15],
+                html: '<div class="marker-camara">' + numero + '</div>'
+            });
+            L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
+                    icon: markerIcon
+                    //}).addTo(mymap)
+                }).addTo(capa2)
+                .bindPopup("{{ $marcador['titulo'] }}");
+        @endforeach
+
+        // Crear el control de capas
+        var controlCapas = L.control.layers({
+            'Comisarias': capa1,
+            'Camaras': capa2
+        }).addTo(mymap);
+
+        // Crear botón para ocultar/mostrar capa
+        var botonCapa2 = L.easyButton('fa-eye-slash', function() {
+            if (mymap.hasLayer(capa2)) {
+                mymap.removeLayer(capa2);
+            } else {
+                mymap.addLayer(capa2);
+            }
+        }).addTo(mymap);
 
 
         /*for (var i = 0; i < markers.length; i++) {

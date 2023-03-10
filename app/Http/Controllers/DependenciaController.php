@@ -234,25 +234,7 @@ class DependenciaController extends Controller
 
     public function showMap()
     {
-        // Crear un array con algunas ubicaciones
-        /*$ubicaciones = array(
-            array(
-                'latitud' => -31.7297377,
-                'longitud' => -60.5353802,
-                'nombre' => 'Cria. 1°',
-            ),
-            array(
-                'latitud' => -31.7370856,
-                'longitud' => -60.5298358,
-                'nombre' => 'Cria. 2°',
-            ),
-            array(
-                'latitud' => -31.7573272,
-                'longitud' => -60.4970351,
-                'nombre' => 'Cria. 3°',
-            ),
-        );*/
-        $markers = [
+        $comisarias = [
             [
                 'latitud' => -31.72978,
                 'longitud' => -60.53547,
@@ -357,10 +339,31 @@ class DependenciaController extends Controller
             ]
         ];
 
+        $camaras = [
+            [
+                'latitud' => -31.72988,
+                'longitud' => -60.53557,
+                'titulo' => 'Camara 1°',
+                'numero' => 1
+            ],
+            [
+                'latitud' => -31.73755,
+                'longitud' => -60.5294,
+                'titulo' => 'Camara 2°',
+                'numero' => 2
+            ],
+            [
+                'latitud' => -31.757398,
+                'longitud' => -60.595877,
+                'titulo' => 'Camara 3°',
+                'numero' => 3
+            ]
+        ];
+
         // Convertir el array en formato JSON
         //$jsonUbicaciones = json_encode($ubicaciones);
 
 
-        return view('dependencias.mapa', ['markers' => $markers]);
+        return view('dependencias.mapa', ['comisarias' => $comisarias], ['camaras' => $camaras]);
     }
 }

@@ -668,7 +668,7 @@
             });*/
             var antenaIcon = L.icon({
                 iconUrl: "/img/antena_icon.png",
-                iconSize: [80, 80],
+                iconSize: [40, 40],
                 iconAnchor: [15, 15],
                 popupAnchor: [0, -15]
             });

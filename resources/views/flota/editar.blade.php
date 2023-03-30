@@ -39,11 +39,11 @@
                                             <select name="equipo" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 <option value="{{ $flota->equipo_id }}">
-                                                    {{ $flota->equipo->tipo_terminal->tipo_uso->uso . ' ' . $flota->equipo->issi . ' ' . $flota->equipo->tipo_terminal->marca . ' ' . $flota->equipo->tipo_terminal->modelo }}
+                                                    {{ $flota->equipo->tei . ' ' . $flota->equipo->tipo_terminal->tipo_uso->uso .' '. $flota->equipo->issi . ' ' . $flota->equipo->tipo_terminal->marca . ' ' . $flota->equipo->tipo_terminal->modelo }}
                                                 </option>
                                                 @foreach ($equipos as $equipo)
                                                     <option value="{{ $equipo->id }}">
-                                                        {{ $equipo->tipo_terminal->tipo_uso->uso . ' ' . $equipo->issi . ' - ' . $equipo->tipo_terminal->marca . ' ' . $equipo->tipo_terminal->modelo }}
+                                                        {{ $equipo->tei . ' ' . $equipo->tipo_terminal->tipo_uso->uso .' '. $equipo->issi . ' - ' . $equipo->tipo_terminal->marca . ' ' . $equipo->tipo_terminal->modelo }}
                                                     </option>
                                                 @endforeach
                                             </select>

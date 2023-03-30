@@ -1,5 +1,27 @@
 @extends('layouts.app')
 
+{{--@section('css')
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="{{ asset('/plugins/JQueryUi/jquery-ui.css') }}" rel="stylesheet">
+    <link href="{{ asset('/plugins/bootstrap-dialog/bootstrap-dialog.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('/plugins/bootstrap-toggle/bootstrap-toggle.min.css') }}" rel="stylesheet">
+
+    <style>
+        .card {
+
+        }
+        .card:hover {
+            translate: 0 -20px;
+            box-shadow: 5px 3px rgb(217 220 242 / 75%),
+                10px 6px rgb(44 217 255 / 50%),
+                15px 9px rgb(126 255 178 / 25%),
+        }
+
+    </style>
+
+@stop--}}
+
 @section('content')
     <section class="section">
         <div class="section-header">

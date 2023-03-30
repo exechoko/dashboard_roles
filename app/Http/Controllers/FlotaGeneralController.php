@@ -371,12 +371,12 @@ class FlotaGeneralController extends Controller
     public function create()
     {
         $equipos = Equipo::all();
-        //dd($equipos);
+        $tipos_movimiento = TipoMovimiento::all();
         $dependencias = Destino::all();
         $recursos = Recurso::all();
 
         //dd($dependencias);
-        return view('flota.crear', compact('equipos', 'dependencias', 'recursos'));
+        return view('flota.crear', compact('equipos', 'dependencias', 'recursos', 'tipos_movimiento'));
     }
 
     public function store(Request $request)
@@ -384,10 +384,11 @@ class FlotaGeneralController extends Controller
         //dd($request->all());
 
         request()->validate([
+            'tipo_movimiento' => 'required',
             'dependencia' => 'required',
             'equipo' => 'required',
             'fecha_asignacion' => 'required',
-            'ticket_per' => 'required',
+            //'ticket_per' => 'required',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
@@ -414,6 +415,7 @@ class FlotaGeneralController extends Controller
             $historico->recurso_id = $request->recurso;
             $historico->destino_id = $request->dependencia;
             $historico->fecha_asignacion = $request->fecha_asignacion;
+            $historico->tipo_movimiento_id = $request->tipo_movimiento;
             $historico->ticket_per = $request->ticket_per;
             $historico->observaciones = $request->observaciones;
             $historico->save();

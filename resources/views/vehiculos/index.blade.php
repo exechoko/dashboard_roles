@@ -28,10 +28,10 @@
                                 <table id="dataTable" class="table table-striped mt-2">
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                         <th style="display: none;">ID</th>
-                                        <th style="color:#fff;">Marca</th>
-                                        <th style="color:#fff;">Modelo</th>
-                                        <th style="color:#fff;">Dominio</th>
-                                        <th style="color:#fff;">Acciones</th>
+                                        <th class="col-1" style="color:#fff;">Marca</th>
+                                        <th class="col-2" style="color:#fff;">Modelo</th>
+                                        <th class="col-3" style="color:#fff;">Dominio</th>
+                                        <th class="col-4" style="color:#fff;">Acciones</th>
                                     </thead>
                                     <tbody>
                                         @if (count($vehiculos) <= 0)
@@ -86,4 +86,20 @@
             </div>
         </div>
     </section>
+    <script>
+        $(document).ready(function() {
+            $('#dataTable').DataTable({
+                /*"columnDefs": [
+                    { "width": "10%", "targets": 0 }, // aquí puedes cambiar los valores de ancho y los objetivos de las columnas
+                    { "width": "10%", "targets": 1 },
+                    { "width": "10%", "targets": 2 },
+                    { "width": "10%", "targets": 2 }
+                ],*/
+                "paging": false,
+                "searching": false,
+                "info": false,
+                "order": [[0, "asc"]] // aquí puedes especificar las columnas y el tipo de ordenamiento
+            });
+        });
+    </script>
 @endsection

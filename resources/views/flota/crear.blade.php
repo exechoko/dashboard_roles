@@ -26,7 +26,21 @@
                             <form action="{{ route('flota.store') }}" method="POST">
                                 @csrf
                                 <div class="row">
-                                    <div class="col-xs-12 col-sm-12 col-md-3">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                        <div class="form-group">
+                                            <label for="">Tipo de movimiento</label>
+                                            <select name="tipo_movimiento" id="" class="form-control select2"
+                                                style="margin-bottom: 15px">
+                                                <option value="">Seleccionar tipo de movimiento</option>
+                                                @foreach ($tipos_movimiento as $tipo_movimiento)
+                                                    <option value="{{ $tipo_movimiento->id }}">
+                                                        {{ $tipo_movimiento->nombre }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="">Equipos</label>
                                             <select name="equipo" id="" class="form-control select2"
@@ -40,7 +54,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-3">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="">Recurso</label>
                                             <select name="recurso" id="" class="form-control select2"
@@ -58,7 +72,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-3">
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="">Dependencia</label>
                                             <select name="dependencia" id="" class="form-control select2"
@@ -71,13 +85,13 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-3">
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="ticket_per">Ticket PER</label>
                                             <input type="text" name="ticket_per" class="form-control">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-6" id="label_fecha_asignacion">
+                                    <div class="col-xs-12 col-sm-12 col-md-12" id="label_fecha_asignacion">
                                         <div class="form-group">
                                             <label for="fecha_asignacion">Fecha de asignación</label>
                                             {!! Form::date('fecha_asignacion', \Carbon\Carbon::now()) !!}

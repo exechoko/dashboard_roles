@@ -12,6 +12,9 @@
 
     <link href="{{ asset('/plugins/leafletjs/lib/leaflet-dist/leaflet.css') }}" rel="stylesheet">
     <link href="{{ asset('/plugins/leafletjs/src/Icon.Label.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js"></script>
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.css"/> -->
 
     <!-- Link de respuesta LOCAL -->
@@ -582,32 +585,15 @@
         var zoom = 17;
         var mymap = L.map('map').setView(new L.LatLng(-31.74275, -60.51827), zoom);
 
-        /*var Icono = L.icon({
-            //iconUrl: "https://w7.pngwing.com/pngs/825/135/png-transparent-red-location-icon-google-maps-pin-google-map-maker-google-s-heart-map-location.png",
-            iconUrl: "/img/marker.png",
-            iconSize: [40, 40],
-            iconAnchor: [15, 40],
-            shadowSize: [35, 50],
-            shadowAnchor: [0, 55],
-            popupAnchor: [0, -40]
-        });*/
-
+        var marcadores = L.markerClusterGroup();
         var capa1 = L.layerGroup();
         var capa2 = L.geoJSON();
         var capa3 = L.geoJSON();
+        var capa4 = L.layerGroup();
 
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
-            //'https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiZW1kZXYiLCJhIjoiY2xlajRsbWpiMDdhNDNvbno1dmQzNW5xbSJ9.WOvCqAED6IUBsKukVJTJkg', {
-            //attribution: 'Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> ',
-            //maxZoom: 18,
-            //id: 'mapbox/streets-v11',
-            //id: 'mapbox/outdoors-v11',
-            //id: 'mapbox/light-v10',
-            //id: 'mapbox/dark-v10',
-            //id: 'mapbox/satellite-v9',
-            //id: 'mapbox/satellite-streets-v11',
         }).addTo(mymap);
 
         @foreach ($comisarias as $marcador)
@@ -622,69 +608,57 @@
                 iconAnchor: [15, 15],
                 html: '<div class="marker-comprador">' + numero + '</div>'
             });
-            L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
+            var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
                     icon: markerIcon
-                    //}).addTo(mymap)
                 }).addTo(capa1)
                 .bindPopup("{{ $marcador['titulo'] }}");
+                //marcadores.addLayer(marker);
         @endforeach
 
         @foreach ($camaras as $marcador)
             var numero = "{{ $marcador['numero'] }}";
             console.log("camaras", numero);
 
-            /*var markerIcon = L.divIcon({
-                className: 'transparent',
-                labelAnchor: [0, 0],
-                popupAnchor: [0, 0],
-                iconSize: [30, 30],
-                iconAnchor: [15, 15],
-                html: '<div class="marker-camara">' + numero + '</div>'
-            });*/
             var cameraIcon = L.icon({
                 iconUrl: "/img/cctv_icon.png",
                 iconSize: [30, 30],
                 iconAnchor: [15, 15],
                 popupAnchor: [0, -15]
             });
-            L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
+            var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
                     icon: cameraIcon
-                    //}).addTo(mymap)
                 }).addTo(capa2)
                 .bindPopup("{{ $marcador['titulo'] }}");
+                marcadores.addLayer(marker);
         @endforeach
 
         @foreach ($antenas as $marcador)
             var numero = "{{ $marcador['numero'] }}";
             console.log("antenas", numero);
 
-            /*var antenaIcon = L.divIcon({
-                className: 'transparent',
-                labelAnchor: [0, 0],
-                popupAnchor: [0, 0],
-                iconSize: [30, 30],
-                iconAnchor: [15, 15],
-                html: '<div class="marker-camara">' + numero + '</div>'
-            });*/
             var antenaIcon = L.icon({
                 iconUrl: "/img/antena_icon.png",
                 iconSize: [40, 40],
                 iconAnchor: [15, 15],
                 popupAnchor: [0, -15]
             });
-            L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
+            var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
                     icon: antenaIcon
                     //}).addTo(mymap)
                 }).addTo(capa3)
                 .bindPopup("{{ $marcador['titulo'] }}");
+                //marcadores.addLayer(marker);
         @endforeach
 
         // Crear el control de capas
         var controlCapas = L.control.layers({
             'Comisarias': capa1,
             'Camaras': capa2,
-            'Antenas': capa3
+            'Antenas': capa3,
+            'Ninguna': capa4
         }).addTo(mymap);
+
+        marcadores.addTo(mymap);
 
         // Crear botón para ocultar/mostrar capa
         var botonCapa2 = L.easyButton('fa-eye-slash', function() {
@@ -702,6 +676,14 @@
                 mymap.addLayer(capa3);
             }
         }).addTo(mymap);
+
+        var botonCapa4 = L.easyButton('fa-eye-slash', function() {
+            if (mymap.hasLayer(capa4)) {
+                mymap.removeLayer(capa3);
+            }
+        }).addTo(mymap);
+
+
 
     </script>
 @endsection

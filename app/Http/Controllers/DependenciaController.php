@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Camara;
 use App\Models\Comisaria;
 use App\Models\Departamental;
 use App\Models\Destacamento;
@@ -339,7 +340,18 @@ class DependenciaController extends Controller
             ]
         ];
 
-        $camaras = [
+        //$camaras = Camara::all();
+        $camaras = Camara::select(
+            'camaras.id',
+            'camaras.nombre',
+            'camaras.latitud',
+            'camaras.longitud',
+            'camaras.sitio',
+            DB::raw('camaras.id as numero'),
+            DB::raw('camaras.nombre as titulo')
+        )->get()->toArray();
+        //dd($camaras);
+        /*$camaras = [
             [
                 'latitud' => -31.72988,
                 'longitud' => -60.53557,
@@ -358,7 +370,7 @@ class DependenciaController extends Controller
                 'titulo' => 'Camara 3°',
                 'numero' => 3
             ]
-        ];
+        ];*/
 
         $antenas = [
             [

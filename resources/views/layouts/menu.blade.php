@@ -23,6 +23,9 @@
     <a class="nav-link" href="/vehiculos">
         <i class="fas fa-truck-pickup"></i><span>Vehiculos</span>
     </a>
+    <a class="nav-link" href="/camaras">
+        <i class="fas fa-video"></i><span>Cámaras</span>
+    </a>
     @can('ver-rol')
     <a class="nav-link" href="/roles">
         <i class=" fas fa-lock"></i><span>Roles</span>

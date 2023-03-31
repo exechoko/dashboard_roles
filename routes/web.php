@@ -13,6 +13,7 @@ use App\Http\Controllers\VehiculoController;
 use App\Http\Controllers\RecursoController;
 use App\Http\Controllers\FlotaGeneralController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CamaraController;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,6 +44,7 @@ Route::group(['middleware' => ['auth']], function(){
     Route::resource('vehiculos', VehiculoController::class);
     Route::resource('recursos', RecursoController::class);
     Route::resource('flota', FlotaGeneralController::class);
+    Route::resource('camaras', CamaraController::class);
 
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
     Route::get('get-departamentales', [App\Http\Controllers\DependenciaController::class, 'getDepartamentales'])->name('getDepartamentales');

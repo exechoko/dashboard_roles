@@ -68,6 +68,12 @@ class SeederTablaPermisos extends Seeder
             'crear-flota',
             'editar-flota',
             'borrar-flota',
+
+            //tabla camara
+            'ver-camara',
+            'crear-camara',
+            'editar-camara',
+            'borrar-camara',
         ];
 
         foreach($permisos as $permiso){

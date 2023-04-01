@@ -1,7 +1,7 @@
-<form action="{{ route('equipos.update', $equipo->id) }}" method="post" enctype="multipart/form-data">
+<form action="{{ route('camaras.update', $camara->id) }}" method="post" enctype="multipart/form-data">
     {{ method_field('patch') }}
     {{ csrf_field() }}
-    <div class="modal fade" id="ModalEditar{{$equipo->id}}" tabindex="-1" data-backdrop="false" role="dialog" aria-hidden="true">
+    <div class="modal fade" id="ModalEditar{{$camara->id}}" tabindex="-1" data-backdrop="false" role="dialog" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -12,14 +12,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="col-xs-12 col-sm-12 col-md-12">
-                        <div class="form-group">
-                            <strong>ISSI:</strong>
-                            {!! Form::text('issi', $equipo->issi, array('placeholder' => $equipo->issi,'class' => 'form-control')) !!}
-                        </div>
-                        <div class="form-group">
-                            <strong>TEI:</strong>
-                            {!! Form::text('tei', $equipo->tei, array('placeholder' => $equipo->tei,'class' => 'form-control')) !!}
-                        </div>
+                        
                     </div>
                     <div class="col-xs-12 col-sm-12 col-md-12">
                         <button type="submit" class="btn btn-warning">Editar</button>

@@ -2,18 +2,30 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Camara;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CamaraController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
+    function __construct(){
+        $this->middleware('permission:ver-camara|crear-camara|editar-camara|borrar-camara')->only('index');
+        $this->middleware('permission:crear-camara', ['only'=>['create', 'store']]);
+        $this->middleware('permission:editar-camara', ['only'=>['edit', 'update']]);
+        $this->middleware('permission:borrar-camara', ['only'=>['destroy']]);
+    }
+
+    public function index(Request $request)
     {
-        //
+        $texto = trim($request->get('texto')); //trim quita espacios vacios
+        $camaras = Camara::where('ip', 'LIKE', '%'.$texto.'%')
+                    ->orWhere('nombre', 'LIKE', '%'.$texto.'%')
+                    ->orWhere('sitio', 'LIKE', '%'.$texto.'%')
+                    ->orderBy('id','asc')
+                    ->paginate(10);
+
+        //$equipos = Equipo::paginate(5);
+        return view('camaras.index', compact('camaras', 'texto'));
     }
 
     /**
@@ -23,7 +35,7 @@ class CamaraController extends Controller
      */
     public function create()
     {
-        //
+        return view('camaras.crear');
     }
 
     /**
@@ -34,7 +46,30 @@ class CamaraController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        //dd($request->all());
+        try{
+            DB::beginTransaction();
+            $camara = new Camara;
+            $camara->ip = $request->ip;
+            $camara->nombre = $request->nombre;
+            $camara->latitud = $request->latitud;
+            $camara->longitud = $request->longitud;
+            $camara->sitio = $request->sitio;
+            $camara->tipo = $request->tipo;
+            $camara->inteligencia = $request->inteligencia;
+            $camara->observaciones = $request->observaciones;
+            $camara->save();
+
+            DB::commit();
+        } catch (\Exception $e){
+            DB::rollback();
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+              ]);
+        }
+
+        return redirect()->route('camaras.index');
     }
 
     /**

@@ -56,13 +56,37 @@
                                             <input type="text" name="longitud" class="form-control">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                    <div class="col-xs-12 col-sm-12 col-md-3">
+                                        <div class="form-group">
+                                            <label for="marca">Marca</label>
+                                            <input type="text" name="marca" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-3">
+                                        <div class="form-group">
+                                            <label for="modelo">Modelo</label>
+                                            <input type="text" name="modelo" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-3">
+                                        <div class="form-group">
+                                            <label for="nro_serie">Nro. de Serie</label>
+                                            <input type="text" name="nro_serie" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-3">
+                                        <div class="form-group">
+                                            <label for="etapa">Etapa de instalación</label>
+                                            <input type="text" name="etapa" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="tipo">Tipo (Fija - Domo)</label>
                                             <input type="text" name="tipo" class="form-control">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="inteligencia">Inteligencia</label>
                                             <input type="text" name="inteligencia" class="form-control">

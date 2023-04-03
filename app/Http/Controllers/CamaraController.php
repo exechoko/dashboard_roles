@@ -46,7 +46,7 @@ class CamaraController extends Controller
      */
     public function store(Request $request)
     {
-        //dd($request->all());
+        dd($request->all());
         try{
             DB::beginTransaction();
             $camara = new Camara;
@@ -57,6 +57,10 @@ class CamaraController extends Controller
             $camara->sitio = $request->sitio;
             $camara->tipo = $request->tipo;
             $camara->inteligencia = $request->inteligencia;
+            $camara->marca = $request->marca;
+            $camara->modelo = $request->modelo;
+            $camara->nro_serie = $request->nro_serie;
+            $camara->etapa = $request->etapa;
             $camara->observaciones = $request->observaciones;
             $camara->save();
 

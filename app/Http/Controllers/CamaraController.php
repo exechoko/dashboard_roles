@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\CamaraImport;
 use App\Models\Camara;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CamaraController extends Controller
 {
@@ -46,7 +48,7 @@ class CamaraController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request->all());
+        //dd($request->all());
         try{
             DB::beginTransaction();
             $camara = new Camara;
@@ -119,5 +121,30 @@ class CamaraController extends Controller
     public function destroy($id)
     {
         //
+    }
+
+    public function importExcel(Request $request)
+    {
+        $file = $request->file('excel_file');
+        Excel::import(new CamaraImport, $file);
+        /*Excel::import($file, function($reader){
+            foreach ($reader->get() as $camara) {
+                Camara::create([
+                    'nombre' => $camara->nombre,
+                    'ip' =>$camara->ip,
+                    'tipo' =>$camara->tipo,
+                    'inteligencia' =>$camara->inteligencia,
+                    'marca' =>$camara->marca,
+                    'modelo' =>$camara->modelo,
+                    'nro_serie' =>$camara->nro_serie,
+                    'etapa' =>$camara->etapa,
+                    'sitio' =>$camara->sitio,
+                    'latitud' =>$camara->latitud,
+                    'longitud' =>$camara->longitud,
+                ]);
+            }
+        });*/
+
+        return redirect()->back()->with('success', 'Los datos se han importado correctamente');
     }
 }

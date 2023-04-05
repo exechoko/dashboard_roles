@@ -20,8 +20,8 @@ class CreateCamarasTable extends Migration
             $table->string('tipo')->nullable();
             $table->string('inteligencia')->nullable();
             $table->string('sitio')->nullable();
-            $table->float('latitud', 8, 6)->nullable();
-            $table->float('longitud', 8, 6)->nullable();
+            $table->string('latitud')->nullable();
+            $table->string('longitud')->nullable();
             $table->date('fecha_instalacion')->nullable();
             $table->date('fecha_desintalacion')->nullable();
             $table->string('observaciones')->nullable();

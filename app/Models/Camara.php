@@ -8,4 +8,5 @@ use Illuminate\Database\Eloquent\Model;
 class Camara extends Model
 {
     protected $table = 'camaras';
+    protected $fillable = ['nombre', 'ip', 'tipo', 'inteligencia','marca', 'modelo', 'nro_serie', 'etapa', 'sitio', 'latitud', 'longitud'];
 }

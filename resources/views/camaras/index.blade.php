@@ -10,7 +10,15 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
+
                             <a class="btn btn-success" href="{{ route('camaras.create') }}">Nuevo</a>
+                            <form method="POST" action="{{ route('camaras.import') }}" enctype="multipart/form-data">
+                                @csrf
+                                <div class="input-group mt-4">
+                                    <input type="file" name="excel_file" accept=".xlsx,.xls">
+                                    <button type="submit" class="btn btn-danger">Importar</button>
+                                </div>
+                            </form>
 
                             <form action="{{ route('camaras.index') }}" method="get" onsubmit="return showLoad()">
                                 <div class="input-group mt-4">

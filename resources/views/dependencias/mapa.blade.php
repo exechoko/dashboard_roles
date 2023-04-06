@@ -628,7 +628,7 @@
             var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
                     icon: cameraIcon
                 }).addTo(capa2)
-                .bindPopup("{{ $marcador['titulo'] }}");
+                .bindPopup("{{ $marcador['titulo'] }}<br>{{ $marcador['tipo'] }}<br>{{ $marcador['inteligencia'] }}");
                 marcadores.addLayer(marker);
         @endforeach
 

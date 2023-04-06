@@ -344,6 +344,8 @@ class DependenciaController extends Controller
         $camaras = Camara::select(
             'camaras.id',
             'camaras.nombre',
+            'camaras.tipo',
+            'camaras.inteligencia',
             'camaras.latitud',
             'camaras.longitud',
             'camaras.sitio',

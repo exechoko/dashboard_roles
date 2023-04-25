@@ -616,8 +616,9 @@
         @endforeach
 
         @foreach ($jurisdicciones as $jurisdiccion)
-            var coordenadas = JSON.parse($jurisdiccion)
-            console.log("jurisdiccion", coordenadas)
+            var coordenadas = "{{ $jurisdiccion }}"
+            coordenadas = coordenadas.replace(/&quot;/g , '"')
+            console.log("jur", coordenadas)
 
             /*let polygonCoords = [];
             for (let i=0; i < coordenadas.length; i++){

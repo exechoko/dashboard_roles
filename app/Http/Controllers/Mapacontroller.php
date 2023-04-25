@@ -207,7 +207,7 @@ class Mapacontroller extends Controller
         // Convertir el array en formato JSON
         //$jsonUbicaciones = json_encode($ubicaciones);
 
-        return view('mapa.mapa', ['comisarias' => $comisarias, 'antenas' => $antenas, 'camaras' => $camaras, 'jurisdicciones' => json_encode($jurisdicciones)]);
+        return view('mapa.mapa', ['comisarias' => $comisarias, 'antenas' => $antenas, 'camaras' => $camaras, 'jurisdicciones' => $jurisdicciones]);
     }
 
     /**

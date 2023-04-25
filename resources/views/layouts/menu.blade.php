@@ -26,6 +26,9 @@
     <a class="nav-link" href="/camaras">
         <i class="fas fa-video"></i><span>Cámaras</span>
     </a>
+    <a class="nav-link" href="/mapa">
+        <i class="fas fa-map-marked"></i><span>Mapa</span>
+    </a>
     @can('ver-rol')
     <a class="nav-link" href="/roles">
         <i class=" fas fa-lock"></i><span>Roles</span>

@@ -61,7 +61,7 @@ Route::group(['middleware' => ['auth']], function(){
     Route::post('/get-motos-json', [App\Http\Controllers\DashboardController::class, 'getMotosJSON'])->name('get-motos-json');
     Route::post('/get-equipos-PG-json', [App\Http\Controllers\DashboardController::class, 'getEquiposPgJSON'])->name('get-equipos-PG-json');
 
-    Route::get('/showmap', [App\Http\Controllers\DependenciaController::class, 'showMap'])->name('dependencias.showMap');
+    //Route::get('/showmap', [App\Http\Controllers\DependenciaController::class, 'showMap'])->name('dependencias.showMap');
     Route::get('/showmap', [App\Http\Controllers\MapaController::class, 'showMap'])->name('mapa.showMap');
     Route::post('/import-camaras', [App\Http\Controllers\CamaraController::class, 'importExcel'])->name('camaras.import');
 });

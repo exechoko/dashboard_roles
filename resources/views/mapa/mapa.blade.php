@@ -615,39 +615,39 @@
                 //marcadores.addLayer(marker);
         @endforeach
 
-        @foreach ($jurisdicciones as $jurisdiccion)
-        /*[
-    {
-        "orden": 1,
-        "latitud": -31.7776,
-        "longitud": -60.5489
-    },
-    {
-        "orden": 2,
-        "latitud": -31.785,
-        "longitud": -60.5507
-    },
-    {
-        "orden": 3,
-        "latitud": -31.7882,
-        "longitud": -60.5337
-    }
-]*/
-            var coordenadas = "{{ $jurisdiccion }}"
-            coordenadas = coordenadas.replace(/&quot;/g , '"')
-            var objeto = JSON.parse(coordenadas)
-            console.log("jur", coordenadas)
-            console.log("jurJSON", objeto)
+//         @foreach ($jurisdicciones as $jurisdiccion)
+//         /*[
+//     {
+//         "orden": 1,
+//         "latitud": -31.7776,
+//         "longitud": -60.5489
+//     },
+//     {
+//         "orden": 2,
+//         "latitud": -31.785,
+//         "longitud": -60.5507
+//     },
+//     {
+//         "orden": 3,
+//         "latitud": -31.7882,
+//         "longitud": -60.5337
+//     }
+// ]*/
+//             var coordenadas = "{{ $jurisdiccion }}"
+//             coordenadas = coordenadas.replace(/&quot;/g , '"')
+//             var objeto = JSON.parse(coordenadas)
+//             console.log("jur", coordenadas)
+//             console.log("jurJSON", objeto)
 
 
-            /*let polygonCoords = [];
-            for (let i=0; i < coordenadas.length; i++){
-                let coord = [coordenadas[i].latitud, coordenadas[i].longitud]; // Creamos un arreglo [latitud, longitud]
-                polygonCoords.push(coord); // Agregamos el arreglo al arreglo de coordenadas del polígono
-            }
-            var polygon = L.polygon(polygonCoords).addTo(capa1);*/
+//             /*let polygonCoords = [];
+//             for (let i=0; i < coordenadas.length; i++){
+//                 let coord = [coordenadas[i].latitud, coordenadas[i].longitud]; // Creamos un arreglo [latitud, longitud]
+//                 polygonCoords.push(coord); // Agregamos el arreglo al arreglo de coordenadas del polígono
+//             }
+//             var polygon = L.polygon(polygonCoords).addTo(capa1);*/
 
-        @endforeach
+//         @endforeach
 
         @foreach ($camaras as $marcador)
             var numero = "{{ $marcador['numero'] }}";

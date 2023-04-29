@@ -13,7 +13,8 @@
     <link href="{{ asset('/plugins/leafletjs/lib/leaflet-dist/leaflet.css') }}" rel="stylesheet">
     <link href="{{ asset('/plugins/leafletjs/src/Icon.Label.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js"></script>
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.css"/> -->
 
@@ -582,6 +583,24 @@
     </section>
 
     <script>
+        function getRandomColor() {  //funcion obtiene color aleatorio
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            var ok = false;
+            color += letters[Math.floor(Math.random() * 10)];
+            while(!ok){
+                for (var i = 0; i < 5; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                if(!inArray(color, colores)){
+                    break;
+                }
+            }
+            colores.push(color); //array para controlar que un color no se repita
+            return color;
+        }
+
+
         var zoom = 17;
         var mymap = L.map('map').setView(new L.LatLng(-31.74275, -60.51827), zoom);
 
@@ -612,42 +631,39 @@
                     icon: markerIcon
                 }).addTo(capa1)
                 .bindPopup("{{ $marcador['titulo'] }}");
-                //marcadores.addLayer(marker);
+            //marcadores.addLayer(marker);
         @endforeach
 
-//         @foreach ($jurisdicciones as $jurisdiccion)
-//         /*[
-//     {
-//         "orden": 1,
-//         "latitud": -31.7776,
-//         "longitud": -60.5489
-//     },
-//     {
-//         "orden": 2,
-//         "latitud": -31.785,
-//         "longitud": -60.5507
-//     },
-//     {
-//         "orden": 3,
-//         "latitud": -31.7882,
-//         "longitud": -60.5337
-//     }
-// ]*/
-//             var coordenadas = "{{ $jurisdiccion }}"
-//             coordenadas = coordenadas.replace(/&quot;/g , '"')
-//             var objeto = JSON.parse(coordenadas)
-//             console.log("jur", coordenadas)
-//             console.log("jurJSON", objeto)
+        var colores = ['black', 'red', 'blue','purple','brown','orange','yellow']
+        //var colores = []
+        @foreach ($jurisdicciones as $jurisdiccion)
+            var indiceAleatorio = Math.floor(Math.random() * colores.length);
+            var colorAleatorio = colores[indiceAleatorio];
+            var coordenadas =
+                @if ($jurisdiccion)
+                    {!! json_encode($jurisdiccion) !!}
+                @else
+                    []
+                @endif ;
+            console.log("jur", coordenadas)
+            var objeto = JSON.parse(coordenadas.jurisdiccion)
+            console.log("jurJSON", objeto)
 
-
-//             /*let polygonCoords = [];
-//             for (let i=0; i < coordenadas.length; i++){
-//                 let coord = [coordenadas[i].latitud, coordenadas[i].longitud]; // Creamos un arreglo [latitud, longitud]
-//                 polygonCoords.push(coord); // Agregamos el arreglo al arreglo de coordenadas del polígono
-//             }
-//             var polygon = L.polygon(polygonCoords).addTo(capa1);*/
-
-//         @endforeach
+            var polygonCoords = [];
+            for (let i = 0; i < objeto.length; i++) {
+                let coord = [objeto[i].lat, objeto[i].lng]; // Creamos un arreglo [latitud, longitud]
+                polygonCoords.push(coord); // Agregamos el arreglo al arreglo de coordenadas del polígono
+            }
+            console.log("coord", polygonCoords);
+            var polygon = L.polygon(polygonCoords).setStyle({
+                    fillColor: colorAleatorio,
+                    fillOpacity: 0.5,
+                    color: 'black',
+                    weight: 2
+                })
+                .addTo(capa1);
+            //console("poligon", polygon)
+        @endforeach
 
         @foreach ($camaras as $marcador)
             var numero = "{{ $marcador['numero'] }}";
@@ -661,10 +677,11 @@
             });
             var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
                     icon: cameraIcon
-                }).addTo(capa2)
+                })//.addTo(capa2)
                 .bindPopup("{{ $marcador['titulo'] }}<br>{{ $marcador['tipo'] }}<br>{{ $marcador['inteligencia'] }}");
-                marcadores.addLayer(marker);
+            marcadores.addLayer(marker);
         @endforeach
+        marcadores.addTo(capa2);
 
         @foreach ($antenas as $marcador)
             var numero = "{{ $marcador['numero'] }}";
@@ -681,7 +698,7 @@
                     //}).addTo(mymap)
                 }).addTo(capa3)
                 .bindPopup("{{ $marcador['titulo'] }}");
-                //marcadores.addLayer(marker);
+            //marcadores.addLayer(marker);
         @endforeach
 
         // Crear el control de capas
@@ -692,7 +709,7 @@
             'Ninguna': capa4
         }).addTo(mymap);
 
-        marcadores.addTo(mymap);
+        //marcadores.addTo(mymap);
 
         // Crear botón para ocultar/mostrar capa
         var botonCapa2 = L.easyButton('fa-eye-slash', function() {
@@ -716,8 +733,5 @@
                 mymap.removeLayer(capa3);
             }
         }).addTo(mymap);
-
-
-
     </script>
 @endsection

@@ -609,6 +609,7 @@
         var capa2 = L.geoJSON();
         var capa3 = L.geoJSON();
         var capa4 = L.layerGroup();
+        var capa5 = L.layerGroup();
 
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -629,7 +630,7 @@
             });
             var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
                     icon: markerIcon
-                }).addTo(capa1)
+                }).addTo(capa1).addTo(capa5)
                 .bindPopup("{{ $marcador['titulo'] }}");
             //marcadores.addLayer(marker);
         @endforeach
@@ -657,11 +658,11 @@
             console.log("coord", polygonCoords);
             var polygon = L.polygon(polygonCoords).setStyle({
                     fillColor: colorAleatorio,
-                    fillOpacity: 0.5,
+                    fillOpacity: 0.15,
                     color: 'black',
                     weight: 2
                 })
-                .addTo(capa1);
+                .addTo(capa1).addTo(capa5);
             //console("poligon", polygon)
         @endforeach
 
@@ -681,7 +682,7 @@
                 .bindPopup("{{ $marcador['titulo'] }}<br>{{ $marcador['tipo'] }}<br>{{ $marcador['inteligencia'] }}");
             marcadores.addLayer(marker);
         @endforeach
-        marcadores.addTo(capa2);
+        marcadores.addTo(capa2).addTo(capa5);
 
         @foreach ($antenas as $marcador)
             var numero = "{{ $marcador['numero'] }}";
@@ -696,7 +697,7 @@
             var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
                     icon: antenaIcon
                     //}).addTo(mymap)
-                }).addTo(capa3)
+                }).addTo(capa3).addTo(capa5)
                 .bindPopup("{{ $marcador['titulo'] }}");
             //marcadores.addLayer(marker);
         @endforeach
@@ -706,13 +707,14 @@
             'Comisarias': capa1,
             'Camaras': capa2,
             'Antenas': capa3,
-            'Ninguna': capa4
+            'Limpiar': capa4,
+            'Mostrar Todo': capa5
         }).addTo(mymap);
 
         //marcadores.addTo(mymap);
 
         // Crear botón para ocultar/mostrar capa
-        var botonCapa2 = L.easyButton('fa-eye-slash', function() {
+        var botonCapa2 = L.easyButton('fa fa-eye-slash', function() {
             if (mymap.hasLayer(capa2)) {
                 mymap.removeLayer(capa2);
             } else {
@@ -731,6 +733,14 @@
         var botonCapa4 = L.easyButton('fa-eye-slash', function() {
             if (mymap.hasLayer(capa4)) {
                 mymap.removeLayer(capa3);
+            }
+        }).addTo(mymap);
+
+        var botonCapa5 = L.easyButton('fa-eye-slash', function() {
+            if (mymap.hasLayer(capa5)) {
+                mymap.removeLayer(capa4);
+            } else {
+                mymap.addLayer(capa5);
             }
         }).addTo(mymap);
     </script>

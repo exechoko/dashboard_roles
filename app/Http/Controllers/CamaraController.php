@@ -26,7 +26,7 @@ class CamaraController extends Controller
                     ->orderBy('id','asc')
                     ->paginate(10);
 
-        //$equipos = Equipo::paginate(5);
+        //$camaras = Equipo::paginate(5);
         return view('camaras.index', compact('camaras', 'texto'));
     }
 
@@ -97,7 +97,8 @@ class CamaraController extends Controller
      */
     public function edit($id)
     {
-        //
+        $camara = Camara::find($id);
+        return view('camaras.editar', compact('camara'));
     }
 
     /**
@@ -109,7 +110,37 @@ class CamaraController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        try {
+            DB::beginTransaction();
+            $camara = Camara::find($id);
+
+            if (!is_null($camara)) {
+                $camara->ip = $request->ip;
+                $camara->nombre = $request->nombre;
+                $camara->latitud = $request->latitud;
+                $camara->longitud = $request->longitud;
+                $camara->sitio = $request->sitio;
+                $camara->tipo = $request->tipo;
+                $camara->inteligencia = $request->inteligencia;
+                $camara->marca = $request->marca;
+                $camara->modelo = $request->modelo;
+                $camara->nro_serie = $request->nro_serie;
+                $camara->etapa = $request->etapa;
+                $camara->observaciones = $request->observaciones;
+
+                $camara->save();
+                DB::commit();
+            } else {
+                return redirect()->back()->with('error', 'Debe seleccionar un estado.');
+            }
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+            ]);
+        }
+        return redirect()->route('camaras.index');
     }
 
     /**

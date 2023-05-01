@@ -3,7 +3,7 @@
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h3 class="page__heading">Editar Equipo</h3>
+            <h3 class="page__heading">Editar cámara</h3>
         </div>
         <div class="section-body">
             <div class="row">
@@ -24,124 +24,98 @@
                             @endif
 
 
-                            <form action="{{ route('equipos.update', $equipo->id) }}" method="POST">
+                            <form action="{{ route('camaras.update', $camara->id) }}" method="POST">
                                 @csrf
                                 @method('PUT')
                                 <div class="row">
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                    <div class="col-xs-12 col-sm-12 col-md-8">
                                         <div class="form-group">
-                                            <label for="issi">ISSI</label>
-                                            <input type="text" name="issi" class="form-control"
-                                                value="{{ $equipo->issi }}">
+                                            <label for="nombre">Nombre</label>
+                                            <input type="text" name="nombre" class="form-control"
+                                            value="{{ $camara->nombre }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
-                                            <label for="nombre_issi">ID ISSI</label>
-                                            <input type="text" name="nombre_issi" class="form-control"
-                                                value="{{ $equipo->nombre_issi }}">
+                                            <label for="ip">IP</label>
+                                            <input type="text" name="ip" class="form-control"
+                                            value="{{ $camara->ip }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
-                                            <label for="tei">TEI</label>
-                                            <input type="text" name="tei" class="form-control"
-                                                value="{{ $equipo->tei }}">
+                                            <label for="sitio">Sitio</label>
+                                            <input type="text" name="sitio" class="form-control"
+                                            value="{{ $camara->sitio }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
-                                            <label for="">Estado</label>
-                                            {!! Form::select('estados[]', $estados, [], ['placeholder' => 'Selecciona el estado', 'class' => 'form-control']) !!}
-                                        </div>
-                                    </div>
-
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
-                                        <div class="form-group">
-                                            <label for="propietario">Propietario</label>
-                                            <input type="text" name="propietario" class="form-control"
-                                                value="{{ $equipo->propietario }}">
+                                            <label for="latitud">Latitud</label>
+                                            <input type="text" name="latitud" class="form-control"
+                                            value="{{ $camara->latitud }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
-                                            <label for="provisto">Provisto por</label>
-                                            <input type="text" name="provisto" class="form-control"
-                                                value="{{ $equipo->provisto }}">
-                                        </div>
-                                    </div>
-
-
-                                    <div class="col-xs-12 col-sm-12 col-md-2">
-                                        <div class="form-group">
-                                            <label for="con_garantia">Con garantía</label>
-                                            {!! Form::checkbox('con_garantia', 'con_garantia', $equipo->con_garantia == 1 ? true : false) !!}
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-10" id="label_fecha_venc_garantia">
-                                        <div class="form-group">
-                                            <label for="fecha_venc_garantia">Fecha de vencimiento de la garantía</label>
-                                            {!! Form::date('fecha_venc_garantia', \Carbon\Carbon::now()) !!}
-                                        </div>
-                                    </div>
-                                    <!--div class="col-xs-12 col-sm-12 col-md-3">
-                                        <div class="form-group">
-                                            <label for="gps">Con GPS</label>
-                                            {!! Form::checkbox('gps', 'gps', $equipo->gps == 1 ? true : false) !!}
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="desc_gps">Descripción GPS</label>
-                                            <input type="text" name="desc_gps" class="form-control"
-                                                value="{{ $equipo->desc_gps }}">
+                                            <label for="longitud">Longitud</label>
+                                            <input type="text" name="longitud" class="form-control"
+                                            value="{{ $camara->longitud }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-3">
                                         <div class="form-group">
-                                            <label for="frente_remoto">Con Frente Remoto</label>
-                                            {!! Form::checkbox('frente_remoto', 'frente_remoto', $equipo->frente_remoto == 1 ? true : false) !!}
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="desc_frente">Descripción Frente Remoto</label>
-                                            <input type="text" name="desc_frente" class="form-control"
-                                                value="{{ $equipo->desc_frente }}">
+                                            <label for="marca">Marca</label>
+                                            <input type="text" name="marca" class="form-control"
+                                            value="{{ $camara->marca }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-3">
                                         <div class="form-group">
-                                            <label for="rf">Con Antena R.F. </label>
-                                            {!! Form::checkbox('rf', 'rf', $equipo->rf == 1 ? true : false) !!}
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="desc_rf">Descripción Antena R.F.</label>
-                                            <input type="text" name="desc_rf" class="form-control"
-                                                value="{{ $equipo->desc_rf }}">
+                                            <label for="modelo">Modelo</label>
+                                            <input type="text" name="modelo" class="form-control"
+                                            value="{{ $camara->modelo }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-3">
                                         <div class="form-group">
-                                            <label for="kit_inst">Con Kit de instalación </label>
-                                            {!! Form::checkbox('kit_inst', 'kit_inst', $equipo->kit_inst == 1 ? true : false) !!}
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="desc_kit_inst">Descripción del kit de instalación</label>
-                                            <input type="text" name="desc_kit_inst" class="form-control"
-                                                value="{{ $equipo->desc_kit_inst }}">
+                                            <label for="nro_serie">Nro. de Serie</label>
+                                            <input type="text" name="nro_serie" class="form-control"
+                                            value="{{ $camara->nro_serie }}">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="col-xs-12 col-sm-12 col-md-3">
                                         <div class="form-group">
-                                            <label for="operativo">Operativo</label>
-                                            {!! Form::checkbox('operativo', 'operativo', $equipo->operativo == 1 ? true : false) !!}
+                                            <label for="etapa">Etapa de instalación</label>
+                                            <input type="text" name="etapa" class="form-control"
+                                            value="{{ $camara->etapa }}">
                                         </div>
-                                    </div-->
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                        <div class="form-group">
+                                            <label for="tipo">Tipo (Fija - Domo)</label>
+                                            <input type="text" name="tipo" class="form-control"
+                                            value="{{ $camara->tipo }}">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                        <div class="form-group">
+                                            <label for="inteligencia">Inteligencia</label>
+                                            <input type="text" name="inteligencia" class="form-control"
+                                            value="{{ $camara->inteligencia }}">
+                                        </div>
+                                    </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>
-                                            <textarea class="form-control" name="observaciones" style="height: 100px">{{ $equipo->observaciones }}</textarea>
+                                            <textarea class="form-control" name="observaciones" style="height: 100px"
+                                            value="{{ $camara->observaciones }}"></textarea>
                                         </div>
-                                        <br>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
                                         <button type="submit" class="btn btn-primary">Guardar</button>
                                     </div>
+                                </div>
                             </form>
 
                         </div>

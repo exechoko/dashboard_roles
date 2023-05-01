@@ -163,20 +163,20 @@ class Mapacontroller extends Controller
 
         $antenas = [
             [
-                'latitud' => -31.73988,
-                'longitud' => -60.53557,
+                'latitud' => -31.72652,
+                'longitud' => -60.53293,
                 'titulo' => 'Antena 1°',
                 'numero' => 1
             ],
             [
-                'latitud' => -31.74755,
-                'longitud' => -60.5294,
+                'latitud' => -31.75109,
+                'longitud' => -60.48563,
                 'titulo' => 'Antena 2°',
                 'numero' => 2
             ],
             [
-                'latitud' => -31.747398,
-                'longitud' => -60.595877,
+                'latitud' => -31.77106,
+                'longitud' => -60.52482,
                 'titulo' => 'Antena 3°',
                 'numero' => 3
             ]

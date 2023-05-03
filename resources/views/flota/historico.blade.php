@@ -54,8 +54,6 @@
                                 </ul>
                             </div>
 
-
-
                             <div class="table-responsive">
                                 <table id="dataTable" class="table table-bordered mt-2">
                                     <thead style="background: linear-gradient(45deg,#888888, #5f5e63)">
@@ -64,13 +62,15 @@
                                         <th style="color:#fff;">Fecha de asignación</th>
                                         <th style="color:#fff;">Movil/Recurso</th>
                                         <th style="color:#fff;">Actualmente en</th>
+                                        <th style="color:#fff;">Recurso anterior</th>
+                                        <th style="color:#fff;">Vehiculo anterior</th>
                                         <th style="color:#fff;">Ticket PER</th>
                                         <th style="color:#fff;">Observaciones</th>
-
-                                        <!--th style="color:#fff;">Acciones</th-->
+                                        <th style="color:#fff;">Acciones</th>
                                     </thead>
                                     <tbody>
                                         @foreach ($hist as $h)
+                                            @include('flota.modal.editar_historico')
                                             <tr>
                                                 <td style="display: none;">{{ $h->id }}</td>
                                                 @if (is_null($h->tipoMovimiento))
@@ -85,24 +85,32 @@
                                                     <td>{{ $h->recurso->nombre }}</td>
                                                 @endif
                                                 <td>{{ $h->destino->nombre }}</td>
+                                                <td>
+                                                    @if (!is_null($h->recurso_desasignado))
+                                                        {{ $h->recurso_desasignado }}
+                                                    @else
+                                                    -
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if (!is_null($h->vehiculo_desasignado))
+                                                        {{ $h->vehiculo_desasignado }}
+                                                    @else
+                                                    -
+                                                    @endif
+                                                </td>
                                                 <td>{{ $h->ticket_per }}</td>
                                                 <td>{{ $h->observaciones }}</td>
 
-                                                {{-- <td>
-                                                    <form action="{{ route('flota.destroy', $h->id) }}"
-                                                        method="POST">
-
-                                                        @can('editar-flota')
-                                                            <a class="btn btn-info"
-                                                                href="{{ route('flota.edit', $h->id) }}">Editar</a>
-                                                        @endcan
-
-                                                        @can('borrar-flota')
-                                                            <a class="btn btn-danger" href="#" data-toggle="modal"
-                                                                data-target="#ModalDelete{{ $h->id }}">Borrar</a>
-                                                        @endcan
+                                                <td>
+                                                    <form action="#" method="POST">
+                                                        {{-- @can('editar-historico') --}}
+                                                        {{-- <a class="btn btn-info" href="#">Editar</a> --}}
+                                                        <a class="btn btn-info" href="#" data-toggle="modal"
+                                                            data-target="#ModalEditar{{ $h->id }}">Editar</a>
+                                                        {{-- @endcan --}}
                                                     </form>
-                                                </td> --}}
+                                                </td>
                                             </tr>
                                         @endforeach
                                     </tbody>

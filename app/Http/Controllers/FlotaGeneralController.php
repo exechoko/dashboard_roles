@@ -368,6 +368,34 @@ class FlotaGeneralController extends Controller
         return view('flota.historico', compact('hist', 'flota'));
     }
 
+    public function update_historico(Request $request, $id){
+        try{
+            DB::beginTransaction();
+            $historico = Historico::find($id);
+            $historico->tipo_movimiento_id = $request->tipo_movimiento;
+            $historico->fecha_asignacion = $request->fecha_asignacion;
+            $historico->recurso_id = $request->recurso;
+            $historico->destino_id = $request->dependencia;
+            $historico->ticket_per = $request->ticket_per;
+            $historico->recurso_desasignado = $request->recurso_desasignado;
+            $historico->vehiculo_desasignado = $request->vehiculo_desasignado;
+            $historico->observaciones = $request->observaciones;
+            $historico->save();
+
+            $flota = FlotaGeneral::where('equipo_id', $historico->equipo_id)->first();
+            $hist = Historico::where('equipo_id', $flota->equipo->id)->orderBy('created_at', 'desc')->get();
+            DB::commit();
+        } catch (\Exception $e){
+            DB::rollback();
+            return back()->with('error', 'Error al guardar el histórico');
+            /*return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+              ]);*/
+        }
+        return view('flota.historico', compact('hist', 'flota'));
+    }
+
     public function create()
     {
         $equipos = Equipo::all();
@@ -498,6 +526,8 @@ class FlotaGeneralController extends Controller
                 if ($tipo_de_mov->id == 7) { //7 - Desinstalacion completa
                     $flota->recurso_id = null; //quito el recurso asociado
                     $historico->recurso_id = null;
+                    $historico->recurso_desasignado = $histAnt->recurso->nombre;
+                    $historico->vehiculo_desasignado = ($histAnt->recurso->vehiculo) ? $histAnt->recurso->vehiculo->dominio : null ;
                     $flota->destino_id = $request->dependencia;
                 }
 

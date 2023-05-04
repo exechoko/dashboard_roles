@@ -13,11 +13,11 @@
         <i class="fas fa-microchip"></i><span>Equipamientos</span>
     </a>
 </li>
-<li class="{{ request()->is('accesorios*') ? 'active' : '' }}">
+<!--li class="{{ request()->is('accesorios*') ? 'active' : '' }}">
     <a class="nav-link" href="/accesorios">
         <i class="fas fa-headphones-alt"></i><span>Accesorios</span>
     </a>
-</li>
+</li-->
 <li class="{{ request()->is('recursos*') ? 'active' : '' }}">
     <a class="nav-link" href="/recursos">
         <i class="fas fa-car"></i></i><span>Recursos</span>

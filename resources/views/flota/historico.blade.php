@@ -63,7 +63,6 @@
                                         <th style="color:#fff;">Movil/Recurso</th>
                                         <th style="color:#fff;">Actualmente en</th>
                                         <th style="color:#fff;">Recurso anterior</th>
-                                        <th style="color:#fff;">Vehiculo anterior</th>
                                         <th style="color:#fff;">Ticket PER</th>
                                         <th style="color:#fff;">Observaciones</th>
                                         <th style="color:#fff;">Acciones</th>
@@ -79,26 +78,19 @@
                                                     <td>{{ $h->tipoMovimiento->nombre }}</td>
                                                 @endif
                                                 <td>{{ $h->fecha_asignacion }}</td>
-                                                @if (is_null($h->recurso))
+                                                @if (is_null($h->recurso_asignado))
                                                     <td>-</td>
                                                 @else
-                                                    <td>{{ $h->recurso->nombre }}</td>
+                                                    <td>{{ $h->recurso_asignado . ($h->vehiculo_asignado ? ' - Dom.: ' . $h->vehiculo_asignado : '') }}
+                                                    </td>
                                                 @endif
                                                 <td>{{ $h->destino->nombre }}</td>
-                                                <td>
-                                                    @if (!is_null($h->recurso_desasignado))
-                                                        {{ $h->recurso_desasignado }}
-                                                    @else
-                                                    -
-                                                    @endif
-                                                </td>
-                                                <td>
-                                                    @if (!is_null($h->vehiculo_desasignado))
-                                                        {{ $h->vehiculo_desasignado }}
-                                                    @else
-                                                    -
-                                                    @endif
-                                                </td>
+
+                                                @if (is_null($h->recurso_desasignado))
+                                                    <td>-</td>
+                                                @else
+                                                    <td>{{ $h->recurso_desasignado . ($h->vehiculo_desasignado ? ' - Dom.: ' . $h->vehiculo_desasignado : '') }}</td>
+                                                @endif
                                                 <td>{{ $h->ticket_per }}</td>
                                                 <td>{{ $h->observaciones }}</td>
 

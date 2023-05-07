@@ -30,7 +30,7 @@
 </li>
 <li class="{{ request()->is('terminales*') ? 'active' : '' }}">
     <a class="nav-link" href="/terminales">
-        <i class=" fas fa-satellite-dish"></i><span>Terminales</span>
+        <i class=" fas fa-satellite-dish"></i><span>Tipos de Terminales</span>
     </a>
 </li>
 <li class="{{ request()->is('vehiculos*') ? 'active' : '' }}">

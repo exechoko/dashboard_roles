@@ -481,6 +481,12 @@ class FlotaGeneralController extends Controller
         if (!is_null($f)) {
             return back()->with('error', 'Ya se encuentra una flota con el mismo equipo'); //->withInput();
         }
+        //Para no asignar un equipo a un recurso mas de una vez
+        $f = FlotaGeneral::where('recurso_id', $request->recurso)->first();
+        if (!is_null($f)) {
+            $r = Recurso::find($f->recurso_id);
+            return back()->with('error', "El recurso '$r->nombre' ya tiene asociado un equipo"); //->withInput();
+        }
 
         try {
             DB::beginTransaction();
@@ -557,7 +563,7 @@ class FlotaGeneralController extends Controller
             'required' => 'El campo :attribute es necesario completar.'
         ]);
 
-        if ($tipo_de_mov->id != 7) {
+        if ($tipo_de_mov->id == 1) {
             //Para no asignar un equipo a un recurso mas de una vez
             $f = FlotaGeneral::where('recurso_id', $request->recurso)->first();
             if (!is_null($f)) {

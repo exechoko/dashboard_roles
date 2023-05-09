@@ -483,9 +483,17 @@ class FlotaGeneralController extends Controller
         }
         //Para no asignar un equipo a un recurso mas de una vez
         $f = FlotaGeneral::where('recurso_id', $request->recurso)->first();
+        $id_recurso_stock = Recurso::where('nombre', 'Stock')->first();
+        //dd($id_recurso_stock);
         if (!is_null($f)) {
-            $r = Recurso::find($f->recurso_id);
-            return back()->with('error', "El recurso '$r->nombre' ya tiene asociado un equipo"); //->withInput();
+            if ($f->recurso_id != $id_recurso_stock->id) {
+                $r = Recurso::find($f->recurso_id);
+                $id_recurso_stock = Recurso::where('nombre', 'Stock')->pluck('id');
+
+                return back()->with('error',
+                    "El recurso '$r->nombre' ya tiene asociado un equipo"
+                ); //->withInput();
+            }
         }
 
         try {
@@ -563,15 +571,19 @@ class FlotaGeneralController extends Controller
             'required' => 'El campo :attribute es necesario completar.'
         ]);
 
+        //Se obtiene el id del recurso llamado Stock
+        $id_recurso_stock = Recurso::where('nombre', 'Stock')->first();
+        //dd($id_recurso_stock->id);
         if ($tipo_de_mov->id == 1) {
             //Para no asignar un equipo a un recurso mas de una vez
             $f = FlotaGeneral::where('recurso_id', $request->recurso)->first();
             if (!is_null($f)) {
-                $r = Recurso::find($f->recurso_id);
-                return back()->with('error', "El recurso '$r->nombre' ya tiene asociado un equipo"); //->withInput();
+                if ($f->recurso_id != $id_recurso_stock->id) {
+                    $r = Recurso::find($f->recurso_id);
+                    return back()->with('error', "El recurso '$r->nombre' ya tiene asociado un equipo"); //->withInput();
+                }
             }
         }
-
 
         try {
             DB::beginTransaction();

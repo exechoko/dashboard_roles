@@ -133,6 +133,7 @@ class Mapacontroller extends Controller
             'camaras.nombre',
             'camaras.tipo',
             'camaras.inteligencia',
+            'camaras.etapa',
             'camaras.latitud',
             'camaras.longitud',
             'camaras.sitio',

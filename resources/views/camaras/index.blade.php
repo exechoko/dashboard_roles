@@ -3,23 +3,33 @@
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h3 class="page__heading">Camaras</h3>
+            <h3 class="page__heading">Cámaras</h3>
         </div>
         <div class="section-body">
+
+            @can('crear-camara')
+                <div class="row">
+                    <div class="col-lg-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <a class="btn btn-success" href="{{ route('camaras.create') }}">Nuevo</a>
+                                <form method="POST" action="{{ route('camaras.import') }}" enctype="multipart/form-data">
+                                    @csrf
+                                    <div class="input-group mt-4">
+                                        <input type="file" name="excel_file" accept=".xlsx,.xls">
+                                        <button type="submit" class="btn btn-danger">Importar</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endcan
+
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-
-                            <a class="btn btn-success" href="{{ route('camaras.create') }}">Nuevo</a>
-                            <form method="POST" action="{{ route('camaras.import') }}" enctype="multipart/form-data">
-                                @csrf
-                                <div class="input-group mt-4">
-                                    <input type="file" name="excel_file" accept=".xlsx,.xls">
-                                    <button type="submit" class="btn btn-danger">Importar</button>
-                                </div>
-                            </form>
-
                             <form action="{{ route('camaras.index') }}" method="get" onsubmit="return showLoad()">
                                 <div class="input-group mt-4">
                                     <input type="text" name="texto" class="form-control" placeholder="Ingrese el sitio"
@@ -29,7 +39,9 @@
                                     </div>
                                 </div>
                             </form>
+                        </div>
 
+                        <div class="card-body">
                             <div class="table-responsive">
                                 <table id="dataTable" class="table table-striped mt-2">
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
@@ -37,7 +49,10 @@
                                         <th style="color:#fff;">IP</th>
                                         <th style="color:#fff;">Nombre</th>
                                         <th style="color:#fff;">Sitio</th>
-                                        <th style="color:#fff;">Acciones</th>
+                                        @can('ver-camara')
+                                            <th style="color:#fff;">Acciones</th>
+                                        @endcan
+
                                     </thead>
                                     <tbody>
                                         @if (count($camaras) <= 0)
@@ -61,18 +76,20 @@
                                                             {{-- <a class="btn btn-success" href="#" data-toggle="modal"
                                                             data-target="#ModalEditar{{ $equipo->id }}">Editar</a> --}}
 
-                                                            <a class="btn btn-warning" href="#" data-toggle="modal"
-                                                                data-target="#ModalDetalle{{ $camara->id }}">Detalles</a>
+                                                            @can('ver-camara')
+                                                                <a class="btn btn-warning" href="#" data-toggle="modal"
+                                                                    data-target="#ModalDetalle{{ $camara->id }}">Detalles</a>
+                                                            @endcan
 
+                                                            @can('editar-camara')
+                                                                <a class="btn btn-info"
+                                                                    href="{{ route('camaras.edit', $camara->id) }}">Editar</a>
+                                                            @endcan
 
-                                                            <a class="btn btn-info"
-                                                                href="{{ route('camaras.edit', $camara->id) }}">Editar</a>
-
-
-
-                                                            <a class="btn btn-danger" href="#" data-toggle="modal"
-                                                                data-target="#ModalDelete{{ $camara->id }}">Borrar</a>
-
+                                                            @can('borrar-camara')
+                                                                <a class="btn btn-danger" href="#" data-toggle="modal"
+                                                                    data-target="#ModalDelete{{ $camara->id }}">Borrar</a>
+                                                            @endcan
                                                         </form>
                                                     </td>
                                                 </tr>

@@ -65,7 +65,10 @@
                                         <th style="color:#fff;">Recurso anterior</th>
                                         <th style="color:#fff;">Ticket PER</th>
                                         <th style="color:#fff;">Observaciones</th>
-                                        <th style="color:#fff;">Acciones</th>
+                                        @can('editar-historico')
+                                            <th style="color:#fff;">Acciones</th>
+                                        @endcan
+
                                     </thead>
                                     <tbody>
                                         @foreach ($hist as $h)
@@ -89,20 +92,23 @@
                                                 @if (is_null($h->recurso_desasignado))
                                                     <td>-</td>
                                                 @else
-                                                    <td>{{ $h->recurso_desasignado . ($h->vehiculo_desasignado ? ' - Dom.: ' . $h->vehiculo_desasignado : '') }}</td>
+                                                    <td>{{ $h->recurso_desasignado . ($h->vehiculo_desasignado ? ' - Dom.: ' . $h->vehiculo_desasignado : '') }}
+                                                    </td>
                                                 @endif
                                                 <td>{{ $h->ticket_per }}</td>
                                                 <td>{{ $h->observaciones }}</td>
 
-                                                <td>
-                                                    <form action="#" method="POST">
-                                                        {{-- @can('editar-historico') --}}
-                                                        {{-- <a class="btn btn-info" href="#">Editar</a> --}}
-                                                        <a class="btn btn-info" href="#" data-toggle="modal"
-                                                            data-target="#ModalEditar{{ $h->id }}">Editar</a>
-                                                        {{-- @endcan --}}
-                                                    </form>
-                                                </td>
+                                                @can('editar-historico')
+                                                    <td>
+                                                        <form action="#" method="POST">
+                                                            {{-- @can('editar-historico') --}}
+                                                            {{-- <a class="btn btn-info" href="#">Editar</a> --}}
+                                                            <a class="btn btn-info" href="#" data-toggle="modal"
+                                                                data-target="#ModalEditar{{ $h->id }}">Editar</a>
+                                                            {{-- @endcan --}}
+                                                        </form>
+                                                    </td>
+                                                @endcan
                                             </tr>
                                         @endforeach
                                     </tbody>

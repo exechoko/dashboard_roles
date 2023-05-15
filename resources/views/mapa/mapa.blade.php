@@ -645,7 +645,6 @@
         var capa7 = L.layerGroup(); //Etapa 2
         var capa8 = L.layerGroup(); //Etapa 3
 
-
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(mymap);
@@ -728,9 +727,7 @@
         @foreach ($camaras as $marcador)
             var numero = "{{ $marcador['numero'] }}";
             console.log("camaras", numero);
-
             var tipo = "{{ $marcador['tipo'] }}";
-
             var cameraIcon = L.icon({
                 iconUrl: (tipo.includes("Fija")) ? "/img/cctv_icon.png" : "/img/domo_icon.png",
                 iconSize: [30, 30],
@@ -751,13 +748,6 @@
             } else {
                 markersTerceraEtapa.addLayer(marker)
             }
-            /*@if (strpos($marcador['etapa'], 1) != false)
-                markersPrimeraEtapa.addLayer(marker)
-            @elseif (strpos($marcador['etapa'], 2) != false)
-                markersSegundaEtapa.addLayer(marker)
-            @else
-                markersTerceraEtapa.addLayer(marker)
-            @endif*/
         @endforeach
         marcadores.addTo(capa2).addTo(capa5);
         markersPrimeraEtapa.addTo(capa6);
@@ -784,93 +774,31 @@
 
         // Crear el control de capas
         var controlCapas = L.control.layers({
-            'Comisarias': capa1,
-            'Camaras': capa2,
-            'Primera Etapa': capa6,
-            'Segunda Etapa': capa7,
-            'Tercera Etapa': capa8,
-            'Antenas': capa3,
+            @can('ver-dependencia') 'Comisarias': capa1, @endcan
+            @can('ver-camara') 'Camaras': capa2, @endcan
+            @can('ver-camara') 'Primera Etapa': capa6, @endcan
+            @can('ver-camara')'Segunda Etapa': capa7, @endcan
+            @can('ver-camara')'Tercera Etapa': capa8, @endcan
+            @can('ver-dependencia') 'Antenas': capa3, @endcan
             'Limpiar': capa4,
-            'Mostrar Todo': capa5
+            @can('ver-camara', 'ver-dependencia') 'Mostrar Todo': capa5 @endcan
         }).addTo(mymap);
-
-        //marcadores.addTo(mymap);
-
-        // Crear botón para ocultar/mostrar capa
-        /*var botonCapa2 = L.easyButton('fa fa-eye-slash', function() {
-            if (mymap.hasLayer(capa2)) {
-                mymap.removeLayer(capa2);
-            } else {
-                mymap.addLayer(capa2);
-            }
-        }).addTo(mymap);
-
-        var botonCapa3 = L.easyButton('fa-eye-slash', function() {
-            if (mymap.hasLayer(capa3)) {
-                mymap.removeLayer(capa3);
-            } else {
-                mymap.addLayer(capa3);
-            }
-        }).addTo(mymap);
-
-        var botonCapa4 = L.easyButton('fa-eye-slash', function() {
-            if (mymap.hasLayer(capa4)) {
-                mymap.removeLayer(capa3);
-            }
-        }).addTo(mymap);
-
-        var botonCapa5 = L.easyButton('fa-eye-slash', function() {
-            if (mymap.hasLayer(capa5)) {
-                mymap.removeLayer(capa4);
-            } else {
-                mymap.addLayer(capa5);
-            }
-        }).addTo(mymap);
-
-        var botonCapa6 = L.easyButton('fa-eye-slash', function() {
-            if (mymap.hasLayer(capa6)) {
-                mymap.removeLayer(capa5);
-            } else {
-                mymap.addLayer(capa6);
-            }
-        }).addTo(mymap);
-
-        var botonCapa7 = L.easyButton('fa-eye-slash', function() {
-            if (mymap.hasLayer(capa7)) {
-                mymap.removeLayer(capa6);
-            } else {
-                mymap.addLayer(capa7);
-            }
-        }).addTo(mymap);
-
-        var botonCapa8 = L.easyButton('fa-eye-slash', function() {
-            if (mymap.hasLayer(capa8)) {
-                mymap.removeLayer(capa7);
-            } else {
-                mymap.addLayer(capa8);
-            }
-        }).addTo(mymap);*/
 
         /*var legend = L.control({
             position: 'bottomright'
         });
-
         legend.onAdd = function(mymap) {
-
             var div = L.DomUtil.create('div', 'info legend'),
                 grades = [0, 10, 20, 50, 100, 200, 500, 1000],
                 labels = [];
-
             // loop through our density intervals and generate a label with a colored square for each interval
             for (var i = 0; i < grades.length; i++) {
                 div.innerHTML +=
                     '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
                     grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
             }
-
             return div;
         };
-
         legend.addTo(mymap);*/
     </script>
 @endsection

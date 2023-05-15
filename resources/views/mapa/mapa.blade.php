@@ -673,7 +673,7 @@
             return div;
         };
 
-        etiquetaControl.addTo(mymap);
+        //etiquetaControl.addTo(mymap);
 
         @foreach ($comisarias as $marcador)
             var numero = "{{ $marcador['numero'] }}";
@@ -729,8 +729,10 @@
             var numero = "{{ $marcador['numero'] }}";
             console.log("camaras", numero);
 
+            var tipo = "{{ $marcador['tipo'] }}";
+
             var cameraIcon = L.icon({
-                iconUrl: "/img/cctv_icon.png",
+                iconUrl: (tipo.includes("Fija")) ? "/img/cctv_icon.png" : "/img/domo_icon.png",
                 iconSize: [30, 30],
                 iconAnchor: [15, 15],
                 popupAnchor: [0, -15]

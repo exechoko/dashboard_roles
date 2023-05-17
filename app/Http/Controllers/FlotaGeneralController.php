@@ -564,7 +564,6 @@ class FlotaGeneralController extends Controller
         //dd($tipo_de_mov->id);
         request()->validate([
             'tipo_movimiento' => 'required',
-            'dependencia' => 'required',
             'equipo' => 'required',
             'fecha_asignacion' => 'required',
         ], [

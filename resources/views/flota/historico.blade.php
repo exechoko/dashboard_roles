@@ -87,7 +87,7 @@
                                                     <td>{{ $h->recurso_asignado . ($h->vehiculo_asignado ? ' - Dom.: ' . $h->vehiculo_asignado : '') }}
                                                     </td>
                                                 @endif
-                                                <td>{{ $h->destino->nombre }}</td>
+                                                <td>@if ($h->destino) {{ $h->destino->nombre }} @else - @endif</td>
 
                                                 @if (is_null($h->recurso_desasignado))
                                                     <td>-</td>

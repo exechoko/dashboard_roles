@@ -83,7 +83,7 @@
                             @endphp
                             <strong><label for="">Actualmente en</label></strong>
                             <select name="dependencia" id="" class="form-control" style="margin-bottom: 15px">
-                                <option value="{{ $h->destino->id }}">{{ $h->destino->nombre }}</option>
+                            <option value="@if ($h->destino) {{ $h->destino->id }} @else - @endif">@if ($h->destino) {{ $h->destino->nombre }} @else - @endif</option>
                                 @foreach ($dependencias as $dependencia)
                                     <option value="{{ $dependencia->id }}">
                                         {{ $dependencia->nombre . ' - ' . $dependencia->dependeDe() }}

@@ -2,11 +2,25 @@
 
     <div class="modal-dialog" role="document">
         <div class="modal-content">
-            <div class="modal-header bg-warning" >
-                <h5 class="modal-title text-white">Información de la camara</h5>
+            <div class="modal-header bg-warning">
+                <div>
+                    <h5 class="modal-title text-white">Información de la cámara</h5>
+                    <h4 class="text-white">{{ $camara->nombre }}</h4>
+                </div>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
+            </div>
+
+            <div class="modal-body">
+                <ul>
+                    <li>Sitio: <b>{{ $camara->sitio }}</b> - IP: <b>@if (!is_null($camara->ip)) {{ $camara->ip }} @else - @endif</b></li>
+                    <li>Marca: <b>{{ $camara->marca }}</b> - Modelo: <b>@if (!is_null($camara->modelo)) {{ $camara->modelo }} @else - @endif</b></li>
+                    <li>Tipo: <b>{{ $camara->tipo }}</b></li>
+                    <li>Nro de Serie: <b>@if (!is_null($camara->nro_serie)) {{ $camara->nro_serie}} @else - @endif</b></li>
+                    <li>Inteligencia: <b>{{ $camara->inteligencia }}</b></li>
+                    <li>Etapa: <b>{{ $camara->etapa }}</b> - Fecha de instalación: <b>@if (!is_null($camara->fecha_instalacion)) {{ $camara->fecha_instalacion }} @else - @endif</b></li>
+                </ul>
             </div>
 
             <div class="modal-footer">

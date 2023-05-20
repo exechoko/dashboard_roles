@@ -125,12 +125,12 @@
         }
 
         /*.etiqueta {
-                        position: absolute;
-                        top: 50px;
+                                position: absolute;
+                                top: 50px;
 
-                        left: 50%;
-                        transform: translateX(-50%);
-                    }*/
+                                left: 50%;
+                                transform: translateX(-50%);
+                            }*/
 
 
 
@@ -743,6 +743,40 @@
                 //.addTo(capa1).addTo(capa5);
                 .addTo(mymap);
             poligonoEditable.enableEdit();
+
+            poligonoEditable.on('editable:editing', function(e) {
+                var editedPolygon = e.layer;
+                //var newCoords = editedPolygon.getLatLngs()[0]; // Obtener las nuevas coordenadas
+                var polygonCoords = editedPolygon.getLatLngs()[0];
+                var newCoords = [];
+
+                for (var i = 0; i < polygonCoords.length; i++) {
+                    var coord = {
+                        lat: polygonCoords[i].lat,
+                        lng: polygonCoords[i].lng
+                    };
+                    newCoords.push(coord);
+                }
+
+                var jsonCoords = JSON.stringify(newCoords);
+
+                console.log('nuevas coord', jsonCoords);
+                // Aquí puedes hacer una llamada AJAX o enviar las coordenadas al backend para guardar los cambios
+                // Ejemplo de una llamada AJAX usando jQuery:
+                $.ajax({
+                    url: '/guardar-coordenadas',
+                    method: 'POST',
+                    data: {
+                        coordinates: newCoords
+                    },
+                    success: function(response) {
+                        console.log('Cambios guardados con éxito');
+                    },
+                    error: function(error) {
+                        console.error('Error al guardar los cambios:', error);
+                    }
+                });
+            });
 
             //console("poligon", polygon)
         @endforeach

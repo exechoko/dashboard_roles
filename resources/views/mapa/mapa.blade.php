@@ -8,7 +8,7 @@
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js"></script>
-    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.css"/> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-editable/1.1.0/Leaflet.Editable.min.js"></script>
 
     <!-- <link href="{{ asset('/plugins/bootstrap-table/bootstrap-table-reorder-rows.css') }}" rel="stylesheet"> -->
 
@@ -125,12 +125,12 @@
         }
 
         /*.etiqueta {
-                position: absolute;
-                top: 50px;
+                        position: absolute;
+                        top: 50px;
 
-                left: 50%;
-                transform: translateX(-50%);
-            }*/
+                        left: 50%;
+                        transform: translateX(-50%);
+                    }*/
 
 
 
@@ -630,7 +630,9 @@
 
 
         var zoom = 17;
-        var mymap = L.map('map').setView(new L.LatLng(-31.74275, -60.51827), zoom);
+        var mymap = L.map('map', {
+            editable: true
+        }).setView(new L.LatLng(-31.74275, -60.51827), zoom);
 
         var marcadores = L.markerClusterGroup();
         var markersPrimeraEtapa = L.markerClusterGroup();
@@ -712,6 +714,18 @@
             for (let i = 0; i < objeto.length; i++) {
                 let coord = [objeto[i].lat, objeto[i].lng]; // Creamos un arreglo [latitud, longitud]
                 polygonCoords.push(coord); // Agregamos el arreglo al arreglo de coordenadas del polígono
+                console.log("coordenada", objeto[i].lat);
+
+                //Para mostrar las coordenadas en cada punto del poligono
+                /*var lat = objeto[i].lat;
+                var lng = objeto[i].lng;
+                var markerPunto = L.marker([objeto[i].lat, objeto[i].lng], {
+
+                }) //.addTo(capa2)
+                .bindPopup(lat + "," + lng);
+                markerPunto.addTo(mymap);
+                -------------------------------------------------------------*/
+
             }
             console.log("coord", polygonCoords);
             var polygon = L.polygon(polygonCoords).setStyle({
@@ -721,6 +735,15 @@
                     weight: 2
                 })
                 .addTo(capa1).addTo(capa5);
+            //.addTo(mymap);
+            var poligonoEditable = L.polygon(polygonCoords).setStyle({
+                    color: 'black',
+                    weight: 1
+                })
+                //.addTo(capa1).addTo(capa5);
+                .addTo(mymap);
+            poligonoEditable.enableEdit();
+
             //console("poligon", polygon)
         @endforeach
 
@@ -739,11 +762,11 @@
                 }) //.addTo(capa2)
                 .bindPopup("{{ $marcador['titulo'] }}<br>{{ $marcador['tipo'] }}<br>{{ $marcador['inteligencia'] }}");
             marcadores.addLayer(marker);
-            var etapa = "{{ $marcador['etapa']}}";
+            var etapa = "{{ $marcador['etapa'] }}";
             console.log("Etapa", etapa);
-            if (etapa.includes("1")){
+            if (etapa.includes("1")) {
                 markersPrimeraEtapa.addLayer(marker)
-            } else if (etapa.includes("2")){
+            } else if (etapa.includes("2")) {
                 markersSegundaEtapa.addLayer(marker)
             } else {
                 markersTerceraEtapa.addLayer(marker)
@@ -774,14 +797,28 @@
 
         // Crear el control de capas
         var controlCapas = L.control.layers({
-            @can('ver-dependencia') 'Comisarias': capa1, @endcan
-            @can('ver-camara') 'Camaras': capa2, @endcan
-            @can('ver-camara') 'Primera Etapa': capa6, @endcan
-            @can('ver-camara')'Segunda Etapa': capa7, @endcan
-            @can('ver-camara')'Tercera Etapa': capa8, @endcan
-            @can('ver-dependencia') 'Antenas': capa3, @endcan
+            @can('ver-dependencia')
+                'Comisarias': capa1,
+            @endcan
+            @can('ver-camara')
+                'Camaras': capa2,
+            @endcan
+            @can('ver-camara')
+                'Primera Etapa': capa6,
+            @endcan
+            @can('ver-camara')
+                'Segunda Etapa': capa7,
+            @endcan
+            @can('ver-camara')
+                'Tercera Etapa': capa8,
+            @endcan
+            @can('ver-dependencia')
+                'Antenas': capa3,
+            @endcan
             'Limpiar': capa4,
-            @can('ver-camara', 'ver-dependencia') 'Mostrar Todo': capa5 @endcan
+            @can('ver-camara', 'ver-dependencia')
+                'Mostrar Todo': capa5
+            @endcan
         }).addTo(mymap);
 
         /*var legend = L.control({

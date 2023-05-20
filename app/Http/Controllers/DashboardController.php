@@ -94,6 +94,7 @@ class DashboardController extends Controller
             'tipo_terminales.marca',
             'tipo_terminales.modelo',
             'recursos.nombre',
+            DB::raw('historico.fecha_asignacion as fecha'),
             DB::raw('equipos.tei as tei'),
             DB::raw('equipos.issi as issi'),
             DB::raw('tipo_terminales.marca as marca'),

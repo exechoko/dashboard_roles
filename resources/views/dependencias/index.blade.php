@@ -6,19 +6,17 @@
             <h3 class="page__heading">Dependencias</h3>
         </div>
 
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-body">
-                        @can('crear-dependencia')
+        @can('crear-dependencia')
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-body">
                             <a class="btn btn-success" href="{{ route('dependencias.create') }}">Nuevo</a>
-                            <a class="btn btn-info ml-5" href="{{ route('dependencias.showMap') }}">Mapa</a>
-                        @endcan
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-
+        @endcan
 
         <div class="row">
             <div class="col-lg-12">
@@ -79,7 +77,9 @@
                                     <th style="color:#fff;">Nombre</th>
                                     <th style="color:#fff;">Teléfono</th>
                                     <th style="color:#fff;">Ubicación</th>
-                                    <th style="color:#fff;">Acciones</th>
+                                    @can('editar-dependencia')
+                                        <th style="color:#fff;">Acciones</th>
+                                    @endcan
                                 </thead>
                                 <tbody id="myTableDirecciones">
                                     @foreach ($direcciones as $direccion)
@@ -89,22 +89,21 @@
                                             <td style="font-weight:bold">{{ $direccion->nombre }}</td>
                                             <td>{{ $direccion->telefono }}</td>
                                             <td>{{ $direccion->ubicacion }}</td>
-                                            <td>
-                                                <form action="#" method="POST">
-                                                    @can('editar-dependencia')
+                                            @can('editar-dependencia')
+                                                <td>
+                                                    <form action="#" method="POST">
                                                         {{-- <a class="btn btn-info" href="#">Editar</a> --}}
                                                         <a class="btn btn-success" href="#" data-toggle="modal"
                                                             data-target="#ModalEditar{{ $direccion->id }}">Editar</a>
-                                                    @endcan
-
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    @can('borrar-dependencia')
-                                                        <button type="submit" onclick="return confirm('Está seguro')"
-                                                            class="btn btn-danger">Borrar</button>
-                                                    @endcan
-                                                </form>
-                                            </td>
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        @can('borrar-dependencia')
+                                                            <button type="submit" onclick="return confirm('Está seguro')"
+                                                                class="btn btn-danger">Borrar</button>
+                                                        @endcan
+                                                    </form>
+                                                </td>
+                                            @endcan
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -142,7 +141,9 @@
                                     <th style="color:#fff;">Nombre</th>
                                     <th style="color:#fff;">Teléfono</th>
                                     <th style="color:#fff;">Ubicación</th>
-                                    <th style="color:#fff;">Acciones</th>
+                                    @can('editar-dependencia')
+                                        <th style="color:#fff;">Acciones</th>
+                                    @endcan
                                 </thead>
                                 <tbody id="myTableDepartamentales">
                                     @foreach ($departamentales as $departamental)
@@ -152,22 +153,21 @@
                                             <td style="font-weight:bold">{{ $departamental->nombre }}</td>
                                             <td>{{ $departamental->telefono }}</td>
                                             <td>{{ $departamental->ubicacion }}</td>
-                                            <td>
-                                                <form action="#" method="POST">
-                                                    @can('editar-dependencia')
+                                            @can('editar-dependencia')
+                                                <td>
+                                                    <form action="#" method="POST">
                                                         {{-- <a class="btn btn-info" href="#">Editar</a> --}}
                                                         <a class="btn btn-success" href="#" data-toggle="modal"
                                                             data-target="#ModalEditarDptal{{ $departamental->id }}">Editar</a>
-                                                    @endcan
-
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    @can('borrar-dependencia')
-                                                        <button type="submit" onclick="return confirm('Está seguro')"
-                                                            class="btn btn-danger">Borrar</button>
-                                                    @endcan
-                                                </form>
-                                            </td>
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        @can('borrar-dependencia')
+                                                            <button type="submit" onclick="return confirm('Está seguro')"
+                                                                class="btn btn-danger">Borrar</button>
+                                                        @endcan
+                                                    </form>
+                                                </td>
+                                            @endcan
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -205,7 +205,9 @@
                                     <th style="color:#fff;">Nombre</th>
                                     <th style="color:#fff;">Teléfono</th>
                                     <th style="color:#fff;">Ubicación</th>
-                                    <th style="color:#fff;">Acciones</th>
+                                    @can('editar-dependencia')
+                                        <th style="color:#fff;">Acciones</th>
+                                    @endcan
                                 </thead>
                                 <tbody id="myTableDivisiones">
                                     @foreach ($divisiones as $division)
@@ -222,22 +224,21 @@
 
                                             <td>{{ $division->telefono }}</td>
                                             <td>{{ $division->ubicacion }}</td>
-                                            <td>
-                                                <form action="#" method="POST">
-                                                    @can('editar-dependencia')
+                                            @can('editar-dependencia')
+                                                <td>
+                                                    <form action="#" method="POST">
                                                         {{-- <a class="btn btn-info" href="#">Editar</a> --}}
                                                         <a class="btn btn-success" href="#" data-toggle="modal"
                                                             data-target="#ModalEditarDivision{{ $division->id }}">Editar</a>
-                                                    @endcan
-
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    @can('borrar-dependencia')
-                                                        <button type="submit" onclick="return confirm('Está seguro')"
-                                                            class="btn btn-danger">Borrar</button>
-                                                    @endcan
-                                                </form>
-                                            </td>
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        @can('borrar-dependencia')
+                                                            <button type="submit" onclick="return confirm('Está seguro')"
+                                                                class="btn btn-danger">Borrar</button>
+                                                        @endcan
+                                                    </form>
+                                                </td>
+                                            @endcan
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -274,7 +275,9 @@
                                     <th style="color:#fff;">Nombre</th>
                                     <th style="color:#fff;">Teléfono</th>
                                     <th style="color:#fff;">Ubicación</th>
-                                    <th style="color:#fff;">Acciones</th>
+                                    @can('editar-dependencia')
+                                        <th style="color:#fff;">Acciones</th>
+                                    @endcan
                                 </thead>
                                 <tbody id="myTableComisarias">
                                     @foreach ($comisarias as $comisaria)
@@ -283,7 +286,8 @@
                                             <td style="display: none;">{{ $comisaria->id }}</td>
                                             @if (!is_null($comisaria->departamental))
                                                 <td style="font-weight:bold">
-                                                    {{ $comisaria->nombre . ' - ' . $comisaria->departamental->nombre }}</td>
+                                                    {{ $comisaria->nombre . ' - ' . $comisaria->departamental->nombre }}
+                                                </td>
                                             @else
                                                 <td style="font-weight:bold">
                                                     {{ $comisaria->nombre }}</td>
@@ -291,22 +295,21 @@
 
                                             <td>{{ $comisaria->telefono }}</td>
                                             <td>{{ $comisaria->ubicacion }}</td>
-                                            <td>
-                                                <form action="#" method="POST">
-                                                    @can('editar-dependencia')
+                                            @can('editar-dependencia')
+                                                <td>
+                                                    <form action="#" method="POST">
                                                         {{-- <a class="btn btn-info" href="#">Editar</a> --}}
                                                         <a class="btn btn-success" href="#" data-toggle="modal"
                                                             data-target="#ModalEditarComisaria{{ $comisaria->id }}">Editar</a>
-                                                    @endcan
-
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    @can('borrar-dependencia')
-                                                        <button type="submit" onclick="return confirm('Está seguro')"
-                                                            class="btn btn-danger">Borrar</button>
-                                                    @endcan
-                                                </form>
-                                            </td>
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        @can('borrar-dependencia')
+                                                            <button type="submit" onclick="return confirm('Está seguro')"
+                                                                class="btn btn-danger">Borrar</button>
+                                                        @endcan
+                                                    </form>
+                                                </td>
+                                            @endcan
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -343,7 +346,9 @@
                                     <th style="color:#fff;">Nombre</th>
                                     <th style="color:#fff;">Teléfono</th>
                                     <th style="color:#fff;">Ubicación</th>
-                                    <th style="color:#fff;">Acciones</th>
+                                    @can('editar-dependencia')
+                                        <th style="color:#fff;">Acciones</th>
+                                    @endcan
                                 </thead>
                                 <tbody id="myTableSecciones">
                                     @foreach ($secciones as $seccion)
@@ -355,7 +360,7 @@
                                                     {{ $seccion->nombre . ' - ' . $seccion->comisaria->nombre }}</td>
                                             @elseif (!is_null($seccion->division))
                                                 <td style="font-weight:bold">
-                                                    {{ $seccion->nombre . ' - ' . $seccion->division->nombre}}</td>
+                                                    {{ $seccion->nombre . ' - ' . $seccion->division->nombre }}</td>
                                             @elseif (!is_null($seccion->departamental))
                                                 <td style="font-weight:bold">
                                                     {{ $seccion->nombre . ' - ' . $seccion->departamental->nombre }}</td>
@@ -366,22 +371,21 @@
 
                                             <td>{{ $seccion->telefono }}</td>
                                             <td>{{ $seccion->ubicacion }}</td>
-                                            <td>
-                                                <form action="#" method="POST">
-                                                    @can('editar-dependencia')
+                                            @can('editar-dependencia')
+                                                <td>
+                                                    <form action="#" method="POST">
                                                         {{-- <a class="btn btn-info" href="#">Editar</a> --}}
                                                         <a class="btn btn-success" href="#" data-toggle="modal"
                                                             data-target="#ModalEditarSeccion{{ $seccion->id }}">Editar</a>
-                                                    @endcan
-
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    @can('borrar-dependencia')
-                                                        <button type="submit" onclick="return confirm('Está seguro')"
-                                                            class="btn btn-danger">Borrar</button>
-                                                    @endcan
-                                                </form>
-                                            </td>
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        @can('borrar-dependencia')
+                                                            <button type="submit" onclick="return confirm('Está seguro')"
+                                                                class="btn btn-danger">Borrar</button>
+                                                        @endcan
+                                                    </form>
+                                                </td>
+                                            @endcan
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -418,7 +422,9 @@
                                     <th style="color:#fff;">Nombre</th>
                                     <th style="color:#fff;">Teléfono</th>
                                     <th style="color:#fff;">Ubicación</th>
-                                    <th style="color:#fff;">Acciones</th>
+                                    @can('editar-dependencia')
+                                        <th style="color:#fff;">Acciones</th>
+                                    @endcan
                                 </thead>
                                 <tbody id="myTableDestacamentos">
                                     @foreach ($destacamentos as $destacamento)
@@ -427,36 +433,39 @@
                                             <td style="display: none;">{{ $destacamento->id }}</td>
                                             @if (!is_null($destacamento->comisaria))
                                                 <td style="font-weight:bold">
-                                                    {{ $destacamento->nombre . ' - ' . $destacamento->comisaria->nombre }}</td>
+                                                    {{ $destacamento->nombre . ' - ' . $destacamento->comisaria->nombre }}
+                                                </td>
                                             @elseif (!is_null($destacamento->division))
                                                 <td style="font-weight:bold">
-                                                    {{ $destacamento->nombre . ' - ' . $destacamento->division->nombre}}</td>
+                                                    {{ $destacamento->nombre . ' - ' . $destacamento->division->nombre }}
+                                                </td>
                                             @elseif (!is_null($destacamento->departamental))
                                                 <td style="font-weight:bold">
-                                                    {{ $destacamento->nombre . ' - ' . $destacamento->departamental->nombre }}</td>
+                                                    {{ $destacamento->nombre . ' - ' . $destacamento->departamental->nombre }}
+                                                </td>
                                             @elseif (!is_null($destacamento->direccion))
                                                 <td style="font-weight:bold">
-                                                    {{ $destacamento->nombre . ' - ' . $destacamento->direccion->nombre }}</td>
+                                                    {{ $destacamento->nombre . ' - ' . $destacamento->direccion->nombre }}
+                                                </td>
                                             @endif
 
                                             <td>{{ $destacamento->telefono }}</td>
                                             <td>{{ $destacamento->ubicacion }}</td>
-                                            <td>
-                                                <form action="#" method="POST">
-                                                    @can('editar-dependencia')
+                                            @can('editar-dependencia')
+                                                <td>
+                                                    <form action="#" method="POST">
                                                         {{-- <a class="btn btn-info" href="#">Editar</a> --}}
                                                         <a class="btn btn-success" href="#" data-toggle="modal"
                                                             data-target="#ModalEditarDestacamento{{ $destacamento->id }}">Editar</a>
-                                                    @endcan
-
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    @can('borrar-dependencia')
-                                                        <button type="submit" onclick="return confirm('Está seguro')"
-                                                            class="btn btn-danger">Borrar</button>
-                                                    @endcan
-                                                </form>
-                                            </td>
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        @can('borrar-dependencia')
+                                                            <button type="submit" onclick="return confirm('Está seguro')"
+                                                                class="btn btn-danger">Borrar</button>
+                                                        @endcan
+                                                    </form>
+                                                </td>
+                                            @endcan
                                         </tr>
                                     @endforeach
                                 </tbody>

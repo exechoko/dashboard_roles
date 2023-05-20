@@ -13,6 +13,8 @@ use App\Http\Controllers\VehiculoController;
 use App\Http\Controllers\RecursoController;
 use App\Http\Controllers\FlotaGeneralController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CamaraController;
+use App\Http\Controllers\Mapacontroller;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,6 +45,8 @@ Route::group(['middleware' => ['auth']], function(){
     Route::resource('vehiculos', VehiculoController::class);
     Route::resource('recursos', RecursoController::class);
     Route::resource('flota', FlotaGeneralController::class);
+    Route::resource('camaras', CamaraController::class);
+    Route::resource('mapa', Mapacontroller::class);
 
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
     Route::get('get-departamentales', [App\Http\Controllers\DependenciaController::class, 'getDepartamentales'])->name('getDepartamentales');
@@ -52,10 +56,13 @@ Route::group(['middleware' => ['auth']], function(){
     Route::get('/generate-docx/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'generateDocxConTemplate'])->name('generateDocxConTemplate');
     Route::get('/generate-docx/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'generateDocxConTabla'])->name('generateDocxConTabla');
     Route::get('/ver-historico/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'verHistorico'])->name('verHistorico');
+    Route::post('/update-historico/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'update_historico'])->name('flota.update_historico');
 
     Route::post('/get-moviles-json', [App\Http\Controllers\DashboardController::class, 'getMovilesJSON'])->name('get-moviles-json');
     Route::post('/get-motos-json', [App\Http\Controllers\DashboardController::class, 'getMotosJSON'])->name('get-motos-json');
     Route::post('/get-equipos-PG-json', [App\Http\Controllers\DashboardController::class, 'getEquiposPgJSON'])->name('get-equipos-PG-json');
 
-    Route::get('/showmap', [App\Http\Controllers\DependenciaController::class, 'showMap'])->name('dependencias.showMap');
+    //Route::get('/showmap', [App\Http\Controllers\DependenciaController::class, 'showMap'])->name('dependencias.showMap');
+    Route::get('/showmap', [App\Http\Controllers\MapaController::class, 'showMap'])->name('mapa.showMap');
+    Route::post('/import-camaras', [App\Http\Controllers\CamaraController::class, 'importExcel'])->name('camaras.import');
 });

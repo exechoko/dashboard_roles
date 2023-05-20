@@ -4,30 +4,13 @@
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
 
-    <link rel="stylesheet" href="{{ asset('/plugins/JQueryUi/jquery-ui.css') }}" rel="stylesheet">
-    <link href="{{ asset('/plugins/leafletjs/geocoder/geocoder.css') }}" rel="stylesheet">
-    <link href="{{ asset('/plugins/bootstrap-dialog/bootstrap-dialog.min.css') }}" rel="stylesheet">
-    <link href="{{ asset('/plugins/bootstrap-toggle/bootstrap-toggle.min.css') }}" rel="stylesheet">
-
-
-    <link href="{{ asset('/plugins/leafletjs/lib/leaflet-dist/leaflet.css') }}" rel="stylesheet">
-    <link href="{{ asset('/plugins/leafletjs/src/Icon.Label.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js"></script>
     <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.css"/> -->
 
-    <!-- Link de respuesta LOCAL -->
-    <link href="{{ asset('/plugins/bootstrap-table/bootstrap-table.css') }}" rel="stylesheet">
-    <link href="{{ asset('/plugins/view-mapas-plugins/css/css-dispositivos.css') }}" rel="stylesheet" type="text/css" />
-
-    <link href="{{ asset('/plugins/cluster/MarkerCluster.css') }}" rel="stylesheet" />
-    <link href="{{ asset('/plugins/cluster/MarkerCluster.Default.css') }}" rel="stylesheet" />
-    <link href="{{ asset('/plugins/view-mapas-plugins/css/label.css') }}" rel="stylesheet" type="text/css" />
-    <!-- Bootstrap DatePicker -->
-    <link rel="stylesheet" href="{{ asset('plugins/bootstrap-datepicker/css/bootstrap-datepicker.css') }}">
     <!-- <link href="{{ asset('/plugins/bootstrap-table/bootstrap-table-reorder-rows.css') }}" rel="stylesheet"> -->
-    <link href="{{ asset('/css/jquery.modalLink-1.0.0.css') }}" rel="stylesheet">
 
     <style>
         html {
@@ -113,6 +96,41 @@
             -ms-flex-align: start;
             align-items: flex-start;
         }
+
+        .legend {
+            line-height: 18px;
+            color: #555;
+        }
+
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+        }
+
+        .info {
+            /*padding: 6px 8px;*/
+            /*font: 14px/16px Arial, Helvetica, sans-serif;*/
+            background: white;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+
+        .info h4 {
+            margin: 0 0 5px;
+            color: #777;
+        }
+
+        /*.etiqueta {
+                position: absolute;
+                top: 50px;
+
+                left: 50%;
+                transform: translateX(-50%);
+            }*/
 
 
 
@@ -582,19 +600,79 @@
     </section>
 
     <script>
+        function getRandomColor() { //funcion obtiene color aleatorio
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            var ok = false;
+            color += letters[Math.floor(Math.random() * 10)];
+            while (!ok) {
+                for (var i = 0; i < 5; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                if (!inArray(color, colores)) {
+                    break;
+                }
+            }
+            colores.push(color); //array para controlar que un color no se repita
+            return color;
+        }
+
+        function getColor(d) {
+            return d > 1000 ? '#800026' :
+                d > 500 ? '#BD0026' :
+                d > 200 ? '#E31A1C' :
+                d > 100 ? '#FC4E2A' :
+                d > 50 ? '#FD8D3C' :
+                d > 20 ? '#FEB24C' :
+                d > 10 ? '#FED976' :
+                '#FFEDA0';
+        }
+
+
         var zoom = 17;
         var mymap = L.map('map').setView(new L.LatLng(-31.74275, -60.51827), zoom);
 
         var marcadores = L.markerClusterGroup();
+        var markersPrimeraEtapa = L.markerClusterGroup();
+        var markersSegundaEtapa = L.markerClusterGroup();
+        var markersTerceraEtapa = L.markerClusterGroup();
         var capa1 = L.layerGroup();
         var capa2 = L.geoJSON();
         var capa3 = L.geoJSON();
         var capa4 = L.layerGroup();
-
+        var capa5 = L.layerGroup();
+        var capa6 = L.layerGroup(); //Etapa 1
+        var capa7 = L.layerGroup(); //Etapa 2
+        var capa8 = L.layerGroup(); //Etapa 3
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(mymap);
+
+        var etiquetaControl = L.control({
+            position: 'topright' /*'topright'*/ /*'bottomright'*/
+        });
+
+        etiquetaControl.onAdd = function(mymap) {
+            /*var div = L.DomUtil.create('div', 'etiqueta');
+            div.innerHTML = 'Texto de la etiqueta';
+
+            return div;*/
+            var div = L.DomUtil.create('div', 'info legend'),
+                grades = [0, 10, 20, 50, 100, 200, 500, 1000],
+                labels = [];
+
+            // loop through our density intervals and generate a label with a colored square for each interval
+            for (var i = 0; i < grades.length; i++) {
+                div.innerHTML +=
+                    '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
+                    grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+            }
+
+            return div;
+        };
+
+        //etiquetaControl.addTo(mymap);
 
         @foreach ($comisarias as $marcador)
             var numero = "{{ $marcador['numero'] }}";
@@ -610,27 +688,71 @@
             });
             var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
                     icon: markerIcon
-                }).addTo(capa1)
+                }).addTo(capa1).addTo(capa5)
                 .bindPopup("{{ $marcador['titulo'] }}");
-                //marcadores.addLayer(marker);
+            //marcadores.addLayer(marker);
+        @endforeach
+
+        var colores = ['black', 'red', 'blue', 'purple', 'brown', 'orange', 'yellow']
+        //var colores = []
+        @foreach ($jurisdicciones as $jurisdiccion)
+            var indiceAleatorio = Math.floor(Math.random() * colores.length);
+            var colorAleatorio = colores[indiceAleatorio];
+            var coordenadas =
+                @if ($jurisdiccion)
+                    {!! json_encode($jurisdiccion) !!}
+                @else
+                    []
+                @endif ;
+            console.log("jur", coordenadas)
+            var objeto = JSON.parse(coordenadas.jurisdiccion)
+            console.log("jurJSON", objeto)
+
+            var polygonCoords = [];
+            for (let i = 0; i < objeto.length; i++) {
+                let coord = [objeto[i].lat, objeto[i].lng]; // Creamos un arreglo [latitud, longitud]
+                polygonCoords.push(coord); // Agregamos el arreglo al arreglo de coordenadas del polígono
+            }
+            console.log("coord", polygonCoords);
+            var polygon = L.polygon(polygonCoords).setStyle({
+                    fillColor: colorAleatorio,
+                    fillOpacity: 0.15,
+                    color: 'black',
+                    weight: 2
+                })
+                .addTo(capa1).addTo(capa5);
+            //console("poligon", polygon)
         @endforeach
 
         @foreach ($camaras as $marcador)
             var numero = "{{ $marcador['numero'] }}";
             console.log("camaras", numero);
-
+            var tipo = "{{ $marcador['tipo'] }}";
             var cameraIcon = L.icon({
-                iconUrl: "/img/cctv_icon.png",
+                iconUrl: (tipo.includes("Fija")) ? "/img/cctv_icon.png" : "/img/domo_icon.png",
                 iconSize: [30, 30],
                 iconAnchor: [15, 15],
                 popupAnchor: [0, -15]
             });
             var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
                     icon: cameraIcon
-                }).addTo(capa2)
+                }) //.addTo(capa2)
                 .bindPopup("{{ $marcador['titulo'] }}<br>{{ $marcador['tipo'] }}<br>{{ $marcador['inteligencia'] }}");
-                marcadores.addLayer(marker);
+            marcadores.addLayer(marker);
+            var etapa = "{{ $marcador['etapa']}}";
+            console.log("Etapa", etapa);
+            if (etapa.includes("1")){
+                markersPrimeraEtapa.addLayer(marker)
+            } else if (etapa.includes("2")){
+                markersSegundaEtapa.addLayer(marker)
+            } else {
+                markersTerceraEtapa.addLayer(marker)
+            }
         @endforeach
+        marcadores.addTo(capa2).addTo(capa5);
+        markersPrimeraEtapa.addTo(capa6);
+        markersSegundaEtapa.addTo(capa7);
+        markersTerceraEtapa.addTo(capa8);
 
         @foreach ($antenas as $marcador)
             var numero = "{{ $marcador['numero'] }}";
@@ -645,45 +767,38 @@
             var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
                     icon: antenaIcon
                     //}).addTo(mymap)
-                }).addTo(capa3)
+                }).addTo(capa3).addTo(capa5)
                 .bindPopup("{{ $marcador['titulo'] }}");
-                //marcadores.addLayer(marker);
+            //marcadores.addLayer(marker);
         @endforeach
 
         // Crear el control de capas
         var controlCapas = L.control.layers({
-            'Comisarias': capa1,
-            'Camaras': capa2,
-            'Antenas': capa3,
-            'Ninguna': capa4
+            @can('ver-dependencia') 'Comisarias': capa1, @endcan
+            @can('ver-camara') 'Camaras': capa2, @endcan
+            @can('ver-camara') 'Primera Etapa': capa6, @endcan
+            @can('ver-camara')'Segunda Etapa': capa7, @endcan
+            @can('ver-camara')'Tercera Etapa': capa8, @endcan
+            @can('ver-dependencia') 'Antenas': capa3, @endcan
+            'Limpiar': capa4,
+            @can('ver-camara', 'ver-dependencia') 'Mostrar Todo': capa5 @endcan
         }).addTo(mymap);
 
-        marcadores.addTo(mymap);
-
-        // Crear botón para ocultar/mostrar capa
-        var botonCapa2 = L.easyButton('fa-eye-slash', function() {
-            if (mymap.hasLayer(capa2)) {
-                mymap.removeLayer(capa2);
-            } else {
-                mymap.addLayer(capa2);
+        /*var legend = L.control({
+            position: 'bottomright'
+        });
+        legend.onAdd = function(mymap) {
+            var div = L.DomUtil.create('div', 'info legend'),
+                grades = [0, 10, 20, 50, 100, 200, 500, 1000],
+                labels = [];
+            // loop through our density intervals and generate a label with a colored square for each interval
+            for (var i = 0; i < grades.length; i++) {
+                div.innerHTML +=
+                    '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
+                    grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
             }
-        }).addTo(mymap);
-
-        var botonCapa3 = L.easyButton('fa-eye-slash', function() {
-            if (mymap.hasLayer(capa3)) {
-                mymap.removeLayer(capa3);
-            } else {
-                mymap.addLayer(capa3);
-            }
-        }).addTo(mymap);
-
-        var botonCapa4 = L.easyButton('fa-eye-slash', function() {
-            if (mymap.hasLayer(capa4)) {
-                mymap.removeLayer(capa3);
-            }
-        }).addTo(mymap);
-
-
-
+            return div;
+        };
+        legend.addTo(mymap);*/
     </script>
 @endsection

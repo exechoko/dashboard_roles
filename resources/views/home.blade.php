@@ -636,6 +636,11 @@
             table.bootstrapTable('destroy')
 
             columns.push({
+                title: 'Fecha',
+                field: 'fecha',
+                sortable: true,
+            })
+            columns.push({
                 title: 'Marca',
                 field: 'marca',
                 sortable: true,

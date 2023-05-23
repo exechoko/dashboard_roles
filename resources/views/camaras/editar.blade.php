@@ -63,18 +63,21 @@
                                             value="{{ $camara->longitud }}">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-3">
+                                    <div class="col-xs-12 col-sm-12 col-md-8">
                                         <div class="form-group">
-                                            <label for="marca">Marca</label>
-                                            <input type="text" name="marca" class="form-control"
-                                            value="{{ $camara->marca }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-3">
-                                        <div class="form-group">
-                                            <label for="modelo">Modelo</label>
-                                            <input type="text" name="modelo" class="form-control"
-                                            value="{{ $camara->modelo }}">
+                                            <label for="">Tipo de cámaras</label>
+                                            <select name="tipo_camara_id" id="" class="form-control select2"
+                                                style="margin-bottom: 15px">
+                                                @if (!is_null($camara->tipo_camara_id))
+                                                <option value="{{ $camara->tipoCamara->id }}">{{ $camara->tipoCamara->tipo . ' - ' . $camara->tipoCamara->marca . ' - ' . $camara->tipoCamara->modelo }}</option>
+                                                @else
+                                                <option value="">Seleccione un tipo de cámara</option>
+                                                @endif
+                                                @foreach ($tipoCamara as $tipo)
+                                                    <option value="{{ $tipo->id }}">
+                                                        {{ $tipo->tipo . ' - ' . $tipo->marca . ' - ' . $tipo->modelo }}</option>
+                                                @endforeach
+                                            </select>
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-3">
@@ -84,18 +87,17 @@
                                             value="{{ $camara->nro_serie }}">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-3">
+                                    <div class="col-xs-12 col-sm-12 col-md-12" id="label_fecha_asignacion">
                                         <div class="form-group">
-                                            <label for="etapa">Etapa de instalación</label>
-                                            <input type="text" name="etapa" class="form-control"
-                                            value="{{ $camara->etapa }}">
+                                            <label for="fecha_instalacion">Fecha de Instalación</label>
+                                            {!! Form::date('fecha_instalacion', ($camara->fecha_instalacion) ? $camara->fecha_instalacion : \Carbon\Carbon::now()) !!}
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
-                                            <label for="tipo">Tipo (Fija - Domo)</label>
-                                            <input type="text" name="tipo" class="form-control"
-                                            value="{{ $camara->tipo }}">
+                                            <label for="etapa">Etapa de instalación</label>
+                                            <input type="text" name="etapa" class="form-control"
+                                            value="{{ $camara->etapa }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6">

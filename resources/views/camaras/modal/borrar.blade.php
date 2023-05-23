@@ -10,6 +10,7 @@
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
+                <div class="modal-body">Está seguro que desea eliminar la camara <b>{{$camara->nombre}}</b>?</div>
                 <div class="modal-footer">
                     <button type="button" class="btn gray btn-outline-secondary" data-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-outline-danger">Eliminar</button>

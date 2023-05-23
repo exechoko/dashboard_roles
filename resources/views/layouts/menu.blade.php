@@ -36,13 +36,6 @@
         </a>
     </li>
 @endcan
-@can('ver-terminal')
-    <li class="{{ request()->is('terminales*') ? 'active' : '' }}">
-        <a class="nav-link" href="/terminales">
-            <i class=" fas fa-satellite-dish"></i><span>Tipos de Terminales</span>
-        </a>
-    </li>
-@endcan
 @can('ver-vehiculo')
     <li class="{{ request()->is('vehiculos*') ? 'active' : '' }}">
         <a class="nav-link" href="/vehiculos">
@@ -62,6 +55,20 @@
         <i class="fas fa-map-marked"></i><span>Mapa</span>
     </a>
 </li>
+@can('ver-terminal')
+    <li class="{{ request()->is('terminales*') ? 'active' : '' }}">
+        <a class="nav-link" href="/terminales">
+            <i class=" fas fa-satellite-dish"></i><span>Tipos de Terminales</span>
+        </a>
+    </li>
+@endcan
+@can('ver-tipo-camara')
+    <li class="{{ request()->is('tipo-camara*') ? 'active' : '' }}">
+        <a class="nav-link" href="/tipo-camara">
+            <i class=" fas fa-camera-retro"></i><span>Tipos de Cámaras</span>
+        </a>
+    </li>
+@endcan
 @can('ver-rol')
     <li class="{{ request()->is('roles*') ? 'active' : '' }}">
         <a class="nav-link" href="/roles">

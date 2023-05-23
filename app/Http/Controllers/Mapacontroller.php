@@ -9,6 +9,7 @@ use App\Models\Destino;
 use App\Models\Direccion;
 use App\Models\Division;
 use App\Models\Seccion;
+use App\Models\TipoCamara;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -129,17 +130,16 @@ class Mapacontroller extends Controller
 
         //$camaras = Camara::all();
         $camaras = Camara::select(
-            'camaras.id',
-            'camaras.nombre',
-            'camaras.tipo',
-            'camaras.inteligencia',
-            'camaras.etapa',
-            'camaras.latitud',
-            'camaras.longitud',
-            'camaras.sitio',
+            'camaras.*',
+            'tipo_camara.tipo as tipo_camara',
+            'tipo_camara.imagen as imagen',
+            'tipo_camara.marca as marca',
+            'tipo_camara.modelo as modelo',
             DB::raw('camaras.id as numero'),
             DB::raw('camaras.nombre as titulo')
-        )->get()->toArray();
+        )
+        ->join('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+        ->get()->toArray();
         //dd($camaras);
         /*$camaras = [
             [
@@ -208,9 +208,40 @@ class Mapacontroller extends Controller
         // Convertir el array en formato JSON
         //$jsonUbicaciones = json_encode($ubicaciones);
 
-//dd($jurisdicciones);
 
-        return view('mapa.mapa', ['comisarias' => $comisarias, 'antenas' => $antenas, 'camaras' => $camaras, 'jurisdicciones' => $jurisdicciones]);
+        $fijas = Camara::whereHas('tipoCamara', function ($query) {
+            $query->where('tipo', 'Fija');
+        })->count();
+        $fijasFR = Camara::whereHas('tipoCamara', function ($query) {
+            $query->where('tipo', 'Fija (FR)');
+        })->count();
+        $fijasLPR = Camara::whereHas('tipoCamara', function ($query) {
+            $query->where('tipo', 'Fija (LPR)')->orWhere('tipo', 'Fija (LPR NV)');
+        })->count();
+        $domos = Camara::whereHas('tipoCamara', function ($query) {
+            $query->where('tipo', 'Domo');
+        })->count();//Camara::where('tipo', 'Domo')->count();
+        $domosDuales = Camara::whereHas('tipoCamara', function ($query) {
+            $query->where('tipo', 'Domo Dual');
+        })->count();
+        $totalCam = Camara::all()->count();
+        //dd($totalCam);
+
+        //dd($jurisdicciones);
+
+        return view('mapa.mapa',
+            [
+                'comisarias' => $comisarias,
+                'antenas' => $antenas,
+                'camaras' => $camaras,
+                'jurisdicciones' => $jurisdicciones,
+                'fijas' => $fijas,
+                'fijasFR' => $fijasFR, 'fijasLPR' => $fijasLPR,
+                'domos' => $domos,
+                'domosDuales' => $domosDuales,
+                'total' => $totalCam
+            ]
+        );
     }
 
     /**

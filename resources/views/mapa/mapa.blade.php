@@ -8,7 +8,7 @@
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js"></script>
-    <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/0.4.2/leaflet.draw.css"/> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-editable/1.1.0/Leaflet.Editable.min.js"></script>
 
     <!-- <link href="{{ asset('/plugins/bootstrap-table/bootstrap-table-reorder-rows.css') }}" rel="stylesheet"> -->
 
@@ -35,6 +35,19 @@
         .content-header {
             padding: 0px;
             margin: 0px;
+        }
+
+        .my_class {
+            position: absolute;
+            top: npx;
+            /* distancia superior */
+            left: npx;
+            /* distancia izquierda */
+            right: npx
+                /* distancia derecha */
+                bottom:npx;
+            /* distancia inferior */
+            z-index: N(valor numerico) nivel de elevacion (simil elevation de android)
         }
 
         .underline-on-hover:hover {
@@ -125,12 +138,12 @@
         }
 
         /*.etiqueta {
-                position: absolute;
-                top: 50px;
+                                        position: absolute;
+                                        top: 50px;
 
-                left: 50%;
-                transform: translateX(-50%);
-            }*/
+                                        left: 50%;
+                                        transform: translateX(-50%);
+                                    }*/
 
 
 
@@ -589,14 +602,44 @@
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h3 class="page__heading">Mapa</h3>
-        </div>
-
-        <div class="row">
-            <div class="col-lg-12">
-                <div id="map" style="height: 600px;"></div>
+            <div class="">
+                <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
+                <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
+                <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
+                <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
+                <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
+                <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
             </div>
         </div>
+
+        <!--div class="row">
+            <div class="">
+                <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
+                <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
+                <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
+                <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
+                <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
+                <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
+            </div>
+        </div-->
+        <div class="col-lg-12">
+            <div id="map" style="height: 725px;"></div>
+        </div>
+        <!--div class="row">
+            <div class="col-lg-12">
+                <div id="mapContainer" style="position: relative; height: 725px;">
+                    <div id="map" style="height: 100%;"></div>
+                    <div id="labels" style="position: absolute; top: 10px; left: 10px; z-index: 1000">
+                        <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
+                        <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
+                        <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
+                        <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
+                        <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
+                        <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
+                    </div>
+                </div>
+            </div>
+        </div-->
     </section>
 
     <script>
@@ -630,7 +673,10 @@
 
 
         var zoom = 17;
-        var mymap = L.map('map').setView(new L.LatLng(-31.74275, -60.51827), zoom);
+        var mymap = L.map('map', {
+            editable: true,
+            zoomControl: false
+        }).setView(new L.LatLng(-31.74275, -60.51827), zoom);
 
         var marcadores = L.markerClusterGroup();
         var markersPrimeraEtapa = L.markerClusterGroup();
@@ -712,6 +758,18 @@
             for (let i = 0; i < objeto.length; i++) {
                 let coord = [objeto[i].lat, objeto[i].lng]; // Creamos un arreglo [latitud, longitud]
                 polygonCoords.push(coord); // Agregamos el arreglo al arreglo de coordenadas del polígono
+                console.log("coordenada", objeto[i].lat);
+
+                //Para mostrar las coordenadas en cada punto del poligono
+                /*var lat = objeto[i].lat;
+                var lng = objeto[i].lng;
+                var markerPunto = L.marker([objeto[i].lat, objeto[i].lng], {
+
+                }) //.addTo(capa2)
+                .bindPopup(lat + "," + lng);
+                markerPunto.addTo(mymap);
+                -------------------------------------------------------------*/
+
             }
             console.log("coord", polygonCoords);
             var polygon = L.polygon(polygonCoords).setStyle({
@@ -721,29 +779,81 @@
                     weight: 2
                 })
                 .addTo(capa1).addTo(capa5);
+            //.addTo(mymap);
+
+            //------------- Para mostrar poligono editable -----------------------------------------------------------
+            /*var poligonoEditable = L.polygon(polygonCoords).setStyle({
+                    color: 'black',
+                    weight: 1
+                })
+                //.addTo(capa1).addTo(capa5);
+                .addTo(mymap);
+            poligonoEditable.enableEdit();
+            poligonoEditable.on('editable:editing', function(e) {
+                var editedPolygon = e.layer;
+                //var newCoords = editedPolygon.getLatLngs()[0]; // Obtener las nuevas coordenadas
+                var polygonCoords = editedPolygon.getLatLngs()[0];
+                var newCoords = [];
+                for (var i = 0; i < polygonCoords.length; i++) {
+                    var coord = {
+                        lat: polygonCoords[i].lat,
+                        lng: polygonCoords[i].lng
+                    };
+                    newCoords.push(coord);
+                }
+                var jsonCoords = JSON.stringify(newCoords);
+                console.log('nuevas coord', jsonCoords);
+                // Aquí puedes hacer una llamada AJAX o enviar las coordenadas al backend para guardar los cambios
+                // Ejemplo de una llamada AJAX usando jQuery:
+                $.ajax({
+                    url: '/guardar-coordenadas',
+                    method: 'POST',
+                    data: {
+                        coordinates: newCoords
+                    },
+                    success: function(response) {
+                        console.log('Cambios guardados con éxito');
+                    },
+                    error: function(error) {
+                        console.error('Error al guardar los cambios:', error);
+                    }
+                });
+            });*/
             //console("poligon", polygon)
+            //-----------------------------------------------------------------------------------------------------------------------
         @endforeach
 
         @foreach ($camaras as $marcador)
             var numero = "{{ $marcador['numero'] }}";
             console.log("camaras", numero);
-            var tipo = "{{ $marcador['tipo'] }}";
             var cameraIcon = L.icon({
-                iconUrl: (tipo.includes("Fija")) ? "/img/cctv_icon.png" : "/img/domo_icon.png",
-                iconSize: [30, 30],
+                iconUrl: "{{ $marcador['imagen'] }}", //(tipo.includes("Fija")) ? "/img/cctv_icon.png" : "/img/domo_icon.png",
+                iconSize: [50, 50],
                 iconAnchor: [15, 15],
                 popupAnchor: [0, -15]
             });
             var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
                     icon: cameraIcon
                 }) //.addTo(capa2)
-                .bindPopup("{{ $marcador['titulo'] }}<br>{{ $marcador['tipo'] }}<br>{{ $marcador['inteligencia'] }}");
+                .bindPopup(`
+                    <div>
+                        <img src='{{ $marcador['imagen'] }}' alt="" style="max-width: 200px;">
+                        <h5>{{ $marcador['titulo'] }}</h5>
+                        Tipo: <b>{{ $marcador['tipo_camara'] }}</b><br>
+                        Sitio: <b>{{ $marcador['sitio'] }}</b><br>
+                        Etapa: <b>{{ $marcador['etapa']}}</b><br>
+                        Inteligencia: <b>{{ $marcador['inteligencia'] }}</b><br>
+                        Marca: <b>{{ $marcador['marca'] }}</b> - Mod.: <b>{{ $marcador['modelo'] }}</b><br>
+                        Nº serie: <b>{{ $marcador['nro_serie']}}</b>
+                    </div>
+                `);
+            //.bindPopup("{{ $marcador['titulo'] }}<br>{{ $marcador['tipo_camara'] }}<br>{{ $marcador['inteligencia'] }}");
             marcadores.addLayer(marker);
-            var etapa = "{{ $marcador['etapa']}}";
+            var etapa = "{{ $marcador['etapa'] }}";
             console.log("Etapa", etapa);
-            if (etapa.includes("1")){
+            if (etapa.includes("1")) {
                 markersPrimeraEtapa.addLayer(marker)
-            } else if (etapa.includes("2")){
+            } else if (etapa.includes("2")) {
                 markersSegundaEtapa.addLayer(marker)
             } else {
                 markersTerceraEtapa.addLayer(marker)
@@ -774,14 +884,28 @@
 
         // Crear el control de capas
         var controlCapas = L.control.layers({
-            @can('ver-dependencia') 'Comisarias': capa1, @endcan
-            @can('ver-camara') 'Camaras': capa2, @endcan
-            @can('ver-camara') 'Primera Etapa': capa6, @endcan
-            @can('ver-camara')'Segunda Etapa': capa7, @endcan
-            @can('ver-camara')'Tercera Etapa': capa8, @endcan
-            @can('ver-dependencia') 'Antenas': capa3, @endcan
+            @can('ver-dependencia')
+                'Comisarias': capa1,
+            @endcan
+            @can('ver-camara')
+                'Camaras': capa2,
+            @endcan
+            @can('ver-camara')
+                'Primera Etapa': capa6,
+            @endcan
+            @can('ver-camara')
+                'Segunda Etapa': capa7,
+            @endcan
+            @can('ver-camara')
+                'Tercera Etapa': capa8,
+            @endcan
+            @can('ver-dependencia')
+                'Antenas': capa3,
+            @endcan
             'Limpiar': capa4,
-            @can('ver-camara', 'ver-dependencia') 'Mostrar Todo': capa5 @endcan
+            @can('ver-camara', 'ver-dependencia')
+                'Mostrar Todo': capa5
+            @endcan
         }).addTo(mymap);
 
         /*var legend = L.control({

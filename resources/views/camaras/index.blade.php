@@ -47,6 +47,7 @@
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                         <th style="display: none;">ID</th>
                                         <th style="color:#fff;">IP</th>
+                                        <th style="color:#fff;">Tipo</th>
                                         <th style="color:#fff;">Nombre</th>
                                         <th style="color:#fff;">Sitio</th>
                                         @can('ver-camara')
@@ -67,6 +68,10 @@
                                                 <tr>
                                                     <td style="display: none;">{{ $camara->id }}</td>
                                                     <td>{{ $camara->ip }}</td>
+                                                    <td><img alt="" width="70px" id="myImg" src="{{ asset($camara->tipoCamara->imagen) }}" class="img-fluid img-thumbnail">
+                                                        {{ $camara->tipoCamara->tipo }}
+                                                    </td>
+                                                    
                                                     <td>{{ $camara->nombre }}</td>
                                                     <td>{{ $camara->sitio }}</td>
                                                     <td>

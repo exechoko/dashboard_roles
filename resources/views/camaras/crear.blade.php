@@ -56,7 +56,20 @@
                                             <input type="text" name="longitud" class="form-control">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-3">
+                                    <div class="col-xs-12 col-sm-12 col-md-8">
+                                        <div class="form-group">
+                                            <label for="">Tipo de cámaras</label>
+                                            <select name="tipo_camara_id" id="" class="form-control select2"
+                                                style="margin-bottom: 15px">
+                                                <option value="">Seleccionar tipo de cámara</option>
+                                                @foreach ($tipoCamara as $tipo)
+                                                    <option value="{{ $tipo->id }}">
+                                                        {{ $tipo->tipo . ' - ' . $tipo->marca . ' - ' . $tipo->modelo }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <!--div class="col-xs-12 col-sm-12 col-md-3">
                                         <div class="form-group">
                                             <label for="marca">Marca</label>
                                             <input type="text" name="marca" class="form-control">
@@ -67,25 +80,31 @@
                                             <label for="modelo">Modelo</label>
                                             <input type="text" name="modelo" class="form-control">
                                         </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-3">
+                                    </div-->
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="nro_serie">Nro. de Serie</label>
                                             <input type="text" name="nro_serie" class="form-control">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-3">
+                                    <div class="col-xs-12 col-sm-12 col-md-12" id="label_fecha_asignacion">
+                                        <div class="form-group">
+                                            <label for="fecha_instalacion">Fecha de Instalación</label>
+                                            {!! Form::date('fecha_instalacion', \Carbon\Carbon::now()) !!}
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="etapa">Etapa de instalación</label>
                                             <input type="text" name="etapa" class="form-control">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                    <!--div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="tipo">Tipo (Fija - Domo)</label>
                                             <input type="text" name="tipo" class="form-control">
                                         </div>
-                                    </div>
+                                    </div-->
                                     <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="inteligencia">Inteligencia</label>

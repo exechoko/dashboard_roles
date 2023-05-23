@@ -11,12 +11,12 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-
             <div class="modal-body">
+                <img src="{{asset( $camara->tipoCamara->imagen )}}" class="card-img-top" alt="">
                 <ul>
                     <li>Sitio: <b>{{ $camara->sitio }}</b> - IP: <b>@if (!is_null($camara->ip)) {{ $camara->ip }} @else - @endif</b></li>
-                    <li>Marca: <b>{{ $camara->marca }}</b> - Modelo: <b>@if (!is_null($camara->modelo)) {{ $camara->modelo }} @else - @endif</b></li>
-                    <li>Tipo: <b>{{ $camara->tipo }}</b></li>
+                    <li>Marca: <b>{{ $camara->tipoCamara->marca }}</b> - Modelo: <b>@if (!is_null($camara->tipoCamara->modelo)) {{ $camara->tipoCamara->modelo }} @else - @endif</b></li>
+                    <li>Tipo: <b>{{ $camara->tipoCamara->tipo }}</b></li>
                     <li>Nro de Serie: <b>@if (!is_null($camara->nro_serie)) {{ $camara->nro_serie}} @else - @endif</b></li>
                     <li>Inteligencia: <b>{{ $camara->inteligencia }}</b></li>
                     <li>Etapa: <b>{{ $camara->etapa }}</b> - Fecha de instalación: <b>@if (!is_null($camara->fecha_instalacion)) {{ $camara->fecha_instalacion }} @else - @endif</b></li>

@@ -2,18 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TipoTerminal;
-use App\Models\TipoUso;
+use App\Models\TipoCamara;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class TipoTerminalController extends Controller
+class TipoCamaraController extends Controller
 {
     function __construct(){
-        $this->middleware('permission:ver-terminal|crear-terminal|editar-terminal|borrar-terminal')->only('index');
-        $this->middleware('permission:crear-terminal', ['only'=>['create', 'store']]);
-        $this->middleware('permission:editar-terminal', ['only'=>['edit', 'update']]);
-        $this->middleware('permission:borrar-terminal', ['only'=>['destroy']]);
+        $this->middleware('permission:ver-tipo-camara|crear-tipo-camara|editar-tipo-camara|borrar-tipo-camara')->only('index');
+        $this->middleware('permission:crear-tipo-camara', ['only'=>['create', 'store']]);
+        $this->middleware('permission:editar-tipo-camara', ['only'=>['edit', 'update']]);
+        $this->middleware('permission:borrar-tipo-camara', ['only'=>['destroy']]);
     }
     /**
      * Display a listing of the resource.
@@ -22,8 +21,8 @@ class TipoTerminalController extends Controller
      */
     public function index()
     {
-        $terminales = TipoTerminal::paginate(5);
-        return view('terminales.index', compact('terminales'));
+        $tipoCamaras = TipoCamara::paginate(10);
+        return view('tipo_camaras.index', compact('tipoCamaras'));
     }
 
     /**
@@ -33,11 +32,7 @@ class TipoTerminalController extends Controller
      */
     public function create()
     {
-        $tipo_uso = TipoUso::pluck('uso', 'uso');
-        /*$marca_terminal = TipoTerminal::pluck('marca', 'marca');
-        $modelo_terminal = TipoTerminal::pluck('modelo', 'modelo');*/
-
-        return view('terminales.crear', compact('tipo_uso'));
+        return view('tipo_camaras.crear');
     }
 
     /**
@@ -49,14 +44,12 @@ class TipoTerminalController extends Controller
     public function store(Request $request)
     {
         request()->validate([
-            'tipo_uso' => 'required|not_in:Selecciona su uso',
+            'tipo' => 'required',
             'marca' => 'required',
             'modelo' => 'required'
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
-
-        $uso = TipoUso::where('uso', $request->tipo_uso)->first();
 
         try {
             DB::beginTransaction();
@@ -70,14 +63,14 @@ class TipoTerminalController extends Controller
 
             }
 
-            $terminal = new TipoTerminal();
-            $terminal->tipo_uso_id = $uso->id;
-            $terminal->marca = $request->marca;
-            $terminal->modelo = $request->modelo;
-            $terminal->observaciones = $request->observaciones;
-            $terminal->imagen = $request->hasFile('imagen') ? $destinationPath . $filename : null;
+            $tipoCamara = new TipoCamara();
+            $tipoCamara->tipo = $request->tipo;
+            $tipoCamara->marca = $request->marca;
+            $tipoCamara->modelo = $request->modelo;
+            $tipoCamara->observaciones = $request->observaciones;
+            $tipoCamara->imagen = $request->hasFile('imagen') ? $destinationPath . $filename : null;
 
-            $terminal->save();
+            $tipoCamara->save();
             DB::commit();
         } catch (\Exception $e) {
             DB::rollback();
@@ -87,7 +80,7 @@ class TipoTerminalController extends Controller
               ]);
         }
 
-        return redirect()->route('terminales.index');
+        return redirect()->route('tipo-camara.index');
     }
 
     /**
@@ -109,9 +102,8 @@ class TipoTerminalController extends Controller
      */
     public function edit($id)
     {
-        $terminal = TipoTerminal::find($id);
-        $tipo_uso = TipoUso::pluck('uso','uso')->all();
-        return view('terminales.editar', compact('terminal','tipo_uso'));
+        $tipoCamara = TipoCamara::find($id);
+        return view('tipo_camaras.editar', compact('tipoCamara'));
     }
 
     /**
@@ -124,15 +116,15 @@ class TipoTerminalController extends Controller
     public function update(Request $request, $id)
     {
         request()->validate([
-            'tipo_uso' => 'required|not_in:Selecciona su uso',
+            'tipo' => 'required',
             'marca' => 'required',
             'modelo' => 'required'
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
 
-        $uso = TipoUso::where('uso', $request->tipo_uso)->first();
-        $terminal = TipoTerminal::find($id);
+
+        $tipoCamara = TipoCamara::find($id);
 
         try {
             DB::beginTransaction();
@@ -146,11 +138,11 @@ class TipoTerminalController extends Controller
 
             }
 
-            $terminal->tipo_uso_id = $uso->id;
-            $terminal->marca = $request->marca;
-            $terminal->modelo = $request->modelo;
-            $terminal->imagen = $request->hasFile('imagen') ? $destinationPath . $filename : $terminal->imagen;
-            $terminal->save();
+            $tipoCamara->tipo = $request->tipo;
+            $tipoCamara->marca = $request->marca;
+            $tipoCamara->modelo = $request->modelo;
+            $tipoCamara->imagen = $request->hasFile('imagen') ? $destinationPath . $filename : $tipoCamara->imagen;
+            $tipoCamara->save();
             DB::commit();
         } catch (\Exception $e){
             DB::rollback();
@@ -160,7 +152,7 @@ class TipoTerminalController extends Controller
               ]);
         }
 
-        return redirect()->route('terminales.index');
+        return redirect()->route('tipo-camara.index');
     }
 
     /**
@@ -171,8 +163,8 @@ class TipoTerminalController extends Controller
      */
     public function destroy($id)
     {
-        $terminal = TipoTerminal::find($id);
-        $terminal->delete();
-        return redirect()->route('terminales.index');
+        $tipoCamara = TipoCamara::find($id);
+        $tipoCamara->delete();
+        return redirect()->route('tipo-camara.index');
     }
 }

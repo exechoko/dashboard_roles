@@ -4,27 +4,32 @@ namespace App\Http\Controllers;
 
 use App\Imports\CamaraImport;
 use App\Models\Camara;
+use App\Models\TipoCamara;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class CamaraController extends Controller
 {
-    function __construct(){
+    function __construct()
+    {
         $this->middleware('permission:ver-camara|crear-camara|editar-camara|borrar-camara')->only('index');
-        $this->middleware('permission:crear-camara', ['only'=>['create', 'store']]);
-        $this->middleware('permission:editar-camara', ['only'=>['edit', 'update']]);
-        $this->middleware('permission:borrar-camara', ['only'=>['destroy']]);
+        $this->middleware('permission:crear-camara', ['only' => ['create', 'store']]);
+        $this->middleware('permission:editar-camara', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:borrar-camara', ['only' => ['destroy']]);
     }
 
     public function index(Request $request)
     {
         $texto = trim($request->get('texto')); //trim quita espacios vacios
-        $camaras = Camara::where('ip', 'LIKE', '%'.$texto.'%')
-                    ->orWhere('nombre', 'LIKE', '%'.$texto.'%')
-                    ->orWhere('sitio', 'LIKE', '%'.$texto.'%')
-                    ->orderBy('id','asc')
-                    ->paginate(10);
+        $camaras = Camara::where('ip', 'LIKE', '%' . $texto . '%')
+            ->orWhere('nombre', 'LIKE', '%' . $texto . '%')
+            ->orWhere('sitio', 'LIKE', '%' . $texto . '%')
+            ->orWhereHas('tipoCamara', function ($query) use ($texto) {
+                $query->where('tipo', 'LIKE', '%' . $texto . '%');
+            })
+            ->orderBy('id', 'asc')
+            ->paginate(20);
 
         //$camaras = Equipo::paginate(5);
         return view('camaras.index', compact('camaras', 'texto'));
@@ -37,7 +42,8 @@ class CamaraController extends Controller
      */
     public function create()
     {
-        return view('camaras.crear');
+        $tipoCamara = TipoCamara::all();
+        return view('camaras.crear', compact('tipoCamara'));
     }
 
     /**
@@ -49,30 +55,29 @@ class CamaraController extends Controller
     public function store(Request $request)
     {
         //dd($request->all());
-        try{
+        try {
             DB::beginTransaction();
             $camara = new Camara;
             $camara->ip = $request->ip;
+            $camara->tipo_camara_id = $request->tipo_camara_id;
             $camara->nombre = $request->nombre;
             $camara->latitud = $request->latitud;
             $camara->longitud = $request->longitud;
             $camara->sitio = $request->sitio;
-            $camara->tipo = $request->tipo;
             $camara->inteligencia = $request->inteligencia;
-            $camara->marca = $request->marca;
-            $camara->modelo = $request->modelo;
             $camara->nro_serie = $request->nro_serie;
+            $camara->fecha_instalacion = $request->fecha_instalacion;
             $camara->etapa = $request->etapa;
             $camara->observaciones = $request->observaciones;
             $camara->save();
 
             DB::commit();
-        } catch (\Exception $e){
+        } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
                 'result' => 'ERROR',
                 'message' => $e->getMessage()
-              ]);
+            ]);
         }
 
         return redirect()->route('camaras.index');
@@ -98,7 +103,8 @@ class CamaraController extends Controller
     public function edit($id)
     {
         $camara = Camara::find($id);
-        return view('camaras.editar', compact('camara'));
+        $tipoCamara = TipoCamara::all();
+        return view('camaras.editar', compact('camara', 'tipoCamara'));
     }
 
     /**
@@ -110,21 +116,26 @@ class CamaraController extends Controller
      */
     public function update(Request $request, $id)
     {
+        request()->validate([
+            'tipo_camara_id' => 'required|not_in:Selecciona un tipo de cámara',
+        ], [
+            'required' => 'El campo :attribute es necesario completar.'
+        ]);
+        //dd($request->all());
         try {
             DB::beginTransaction();
             $camara = Camara::find($id);
 
             if (!is_null($camara)) {
                 $camara->ip = $request->ip;
+                $camara->tipo_camara_id = $request->tipo_camara_id;
                 $camara->nombre = $request->nombre;
                 $camara->latitud = $request->latitud;
                 $camara->longitud = $request->longitud;
                 $camara->sitio = $request->sitio;
-                $camara->tipo = $request->tipo;
                 $camara->inteligencia = $request->inteligencia;
-                $camara->marca = $request->marca;
-                $camara->modelo = $request->modelo;
                 $camara->nro_serie = $request->nro_serie;
+                $camara->fecha_instalacion = $request->fecha_instalacion;
                 $camara->etapa = $request->etapa;
                 $camara->observaciones = $request->observaciones;
 
@@ -151,7 +162,9 @@ class CamaraController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $camara = Camara::find($id);
+        $camara->delete();
+        return redirect()->route('camaras.index');
     }
 
     public function importExcel(Request $request)

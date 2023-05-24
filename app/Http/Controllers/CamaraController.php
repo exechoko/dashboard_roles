@@ -56,6 +56,12 @@ class CamaraController extends Controller
      */
     public function store(Request $request)
     {
+        request()->validate([
+            'tipo_camara_id' => 'required|not_in:Selecciona un tipo de cámara',
+            'destino_id' => 'required|not_in:Seleccione una dependencia',
+        ], [
+            'required' => 'El campo :attribute es necesario completar.'
+        ]);
         //dd($request->all());
         try {
             DB::beginTransaction();
@@ -122,6 +128,7 @@ class CamaraController extends Controller
     {
         request()->validate([
             'tipo_camara_id' => 'required|not_in:Selecciona un tipo de cámara',
+            'destino_id' => 'required|not_in:Seleccione una dependencia',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);

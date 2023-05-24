@@ -13,4 +13,8 @@ class Camara extends Model
     public function tipoCamara(){
         return $this->belongsTo(TipoCamara::class);
     }
+
+    public function destino(){
+        return $this->belongsTo(Destino::class);
+    }
 }

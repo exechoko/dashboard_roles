@@ -22,7 +22,7 @@ class TipoTerminalController extends Controller
      */
     public function index()
     {
-        $terminales = TipoTerminal::paginate(5);
+        $terminales = TipoTerminal::paginate(20);
         return view('terminales.index', compact('terminales'));
     }
 

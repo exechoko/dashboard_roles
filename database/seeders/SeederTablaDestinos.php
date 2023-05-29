@@ -47,6 +47,7 @@ class SeederTablaDestinos extends Seeder
         foreach($comisarias as $comisaria){
             Destino::create([
                 'departamental_id' => $comisaria->departamental_id,
+                'comisaria_id' =>$comisaria->id,
                 'nombre' => $comisaria->nombre,
             ]);
         }

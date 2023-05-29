@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Imports\CamaraImport;
+use App\Exports\CamarasExport;
 use App\Models\Camara;
 use App\Models\Destino;
 use App\Models\TipoCamara;
@@ -202,5 +203,9 @@ class CamaraController extends Controller
         });*/
 
         return redirect()->back()->with('success', 'Los datos se han importado correctamente');
+    }
+
+    public function exportExcel(){
+        return Excel::download(new CamarasExport, 'ListadoCamaras.xlsx');
     }
 }

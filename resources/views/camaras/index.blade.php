@@ -20,6 +20,11 @@
                                         <button type="submit" class="btn btn-danger">Importar</button>
                                     </div>
                                 </form>
+                                <div class="text-right">
+                                    <form action="{{ route('camaras.export') }}" method="GET" style="display: inline;">
+                                        <button type="submit" class="btn btn-primary">Exportar Listado Cámaras</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -68,10 +73,12 @@
                                                 <tr>
                                                     <td style="display: none;">{{ $camara->id }}</td>
                                                     <td>{{ $camara->ip }}</td>
-                                                    <td><img alt="" width="70px" id="myImg" src="{{ asset($camara->tipoCamara->imagen) }}" class="img-fluid img-thumbnail">
+                                                    <td><img alt="" width="70px" id="myImg"
+                                                            src="{{ asset($camara->tipoCamara->imagen) }}"
+                                                            class="img-fluid img-thumbnail">
                                                         {{ $camara->tipoCamara->tipo }}
                                                     </td>
-                                                    
+
                                                     <td>{{ $camara->nombre }}</td>
                                                     <td>{{ $camara->sitio }}</td>
                                                     <td>

@@ -112,6 +112,10 @@ a:not(.btn-social-icon):not(.btn-social):not(.page-link) .fab {
     background-color: #191d21 !important;
 }
 
+.bg-blue {
+    background-color: #1b5c9c !important;
+}
+
 .text-primary, .text-primary-all *, .text-primary-all *:before, .text-primary-all *:after {
     color: #6777ef !important;
 }

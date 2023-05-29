@@ -841,6 +841,7 @@
                         <h5>{{ $marcador['titulo'] }}</h5>
                         Tipo: <b>{{ $marcador['tipo_camara'] }}</b><br>
                         Sitio: <b>{{ $marcador['sitio'] }}</b><br>
+                        Dependencia: <b>{{ $marcador['dependencia'] }}</b><br>
                         Etapa: <b>{{ $marcador['etapa']}}</b><br>
                         Inteligencia: <b>{{ $marcador['inteligencia'] }}</b><br>
                         Marca: <b>{{ $marcador['marca'] }}</b> - Mod.: <b>{{ $marcador['modelo'] }}</b><br>

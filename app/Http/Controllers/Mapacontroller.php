@@ -135,10 +135,12 @@ class Mapacontroller extends Controller
             'tipo_camara.imagen as imagen',
             'tipo_camara.marca as marca',
             'tipo_camara.modelo as modelo',
+            'destino.nombre as dependencia',
             DB::raw('camaras.id as numero'),
             DB::raw('camaras.nombre as titulo')
         )
-        ->join('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+        ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+        ->leftJoin('destino', 'camaras.destino_id', '=', 'destino.id')
         ->get()->toArray();
         //dd($camaras);
         /*$camaras = [

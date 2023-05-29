@@ -50,6 +50,10 @@ class Destino extends Model
         return $this->hasMany(Historico::class);
     }
 
+    public function camara(){
+        return $this->hasMany(Camara::class);
+    }
+
     public function dependeDe(){
         $depende = '';
         //Verificar que clase de dependencia es

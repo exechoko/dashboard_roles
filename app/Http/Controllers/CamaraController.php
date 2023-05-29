@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Imports\CamaraImport;
 use App\Models\Camara;
+use App\Models\Destino;
 use App\Models\TipoCamara;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -43,7 +44,8 @@ class CamaraController extends Controller
     public function create()
     {
         $tipoCamara = TipoCamara::all();
-        return view('camaras.crear', compact('tipoCamara'));
+        $dependencias = Destino::all();
+        return view('camaras.crear', compact('tipoCamara', 'dependencias'));
     }
 
     /**
@@ -54,6 +56,12 @@ class CamaraController extends Controller
      */
     public function store(Request $request)
     {
+        request()->validate([
+            'tipo_camara_id' => 'required|not_in:Selecciona un tipo de cámara',
+            'destino_id' => 'required|not_in:Seleccione una dependencia',
+        ], [
+            'required' => 'El campo :attribute es necesario completar.'
+        ]);
         //dd($request->all());
         try {
             DB::beginTransaction();
@@ -64,6 +72,7 @@ class CamaraController extends Controller
             $camara->latitud = $request->latitud;
             $camara->longitud = $request->longitud;
             $camara->sitio = $request->sitio;
+            $camara->destino_id = $request->destino_id;
             $camara->inteligencia = $request->inteligencia;
             $camara->nro_serie = $request->nro_serie;
             $camara->fecha_instalacion = $request->fecha_instalacion;
@@ -104,7 +113,8 @@ class CamaraController extends Controller
     {
         $camara = Camara::find($id);
         $tipoCamara = TipoCamara::all();
-        return view('camaras.editar', compact('camara', 'tipoCamara'));
+        $dependencias = Destino::all();
+        return view('camaras.editar', compact('camara', 'tipoCamara', 'dependencias'));
     }
 
     /**
@@ -118,6 +128,7 @@ class CamaraController extends Controller
     {
         request()->validate([
             'tipo_camara_id' => 'required|not_in:Selecciona un tipo de cámara',
+            'destino_id' => 'required|not_in:Seleccione una dependencia',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
@@ -133,6 +144,7 @@ class CamaraController extends Controller
                 $camara->latitud = $request->latitud;
                 $camara->longitud = $request->longitud;
                 $camara->sitio = $request->sitio;
+                $camara->destino_id = $request->destino_id;
                 $camara->inteligencia = $request->inteligencia;
                 $camara->nro_serie = $request->nro_serie;
                 $camara->fecha_instalacion = $request->fecha_instalacion;

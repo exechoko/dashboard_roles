@@ -108,6 +108,24 @@
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <label for="">Dependencia</label>
+                                            <select name="destino_id" id="" class="form-control select2"
+                                                style="margin-bottom: 15px">
+                                                @if (!is_null($camara->destino_id))
+                                                <option value="{{ $camara->destino->id }}">{{ $camara->destino->nombre . ' - ' . $camara->destino->dependeDe() }}</option>
+                                                @else
+                                                <option value="">Seleccione la dependencia</option>
+                                                @endif
+                                                <option value="">Seleccionar la dependencia</option>
+                                                @foreach ($dependencias as $d)
+                                                    <option value="{{ $d->id }}">
+                                                        {{ $d->nombre . ' - ' . $d->dependeDe() }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>
                                             <textarea class="form-control" name="observaciones" style="height: 100px"

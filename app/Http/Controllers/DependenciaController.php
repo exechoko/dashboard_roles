@@ -174,29 +174,31 @@ class DependenciaController extends Controller
     public function update(Request $request, $id)
     {
         //dd($request->all());
+        //dd($id);
         $destino = null;
         try {
             DB::beginTransaction();
             if($request->tipo_dependencia == 'direccion'){
                 $d = Direccion::find($id);
-                $destino = Destino::where('direccion_id', $d->id)->where('nombre', $d->nombre)->first();
+                $destino = Destino::where('direccion_id', $d->id)->first();
             } elseif($request->tipo_dependencia == 'departamental'){
                 $d = Departamental::find($id);
-                $destino = Destino::where('departamental_id', $d->id)->where('nombre', $d->nombre)->first();
+                $destino = Destino::where('departamental_id', $d->id)->first();
             } elseif($request->tipo_dependencia == 'division'){
                 $d = Division::find($id);
-                $destino = Destino::where('division_id', $d->id)->where('nombre', $d->nombre)->first();
+                $destino = Destino::where('division_id', $d->id)->first();
             } elseif($request->tipo_dependencia == 'comisaria'){
                 $d = Comisaria::find($id);
-                $destino = Destino::where('comisaria_id', $d->id)->where('nombre', $d->nombre)->first();
+                $destino = Destino::where('comisaria_id', $d->id)->first();
             } elseif($request->tipo_dependencia == 'seccion'){
                 $d = Seccion::find($id);
-                $destino = Destino::where('seccion_id', $d->id)->where('nombre', $d->nombre)->first();
+                $destino = Destino::where('seccion_id', $d->id)->first();
             } elseif($request->tipo_dependencia == 'destacamento'){
                 $d = Destacamento::find($id);
-                $destino = Destino::where('destacamento_id', $d->id)->where('nombre', $d->nombre)->first();
+                $destino = Destino::where('destacamento_id', $d->id)->first();
             }
 
+            //dd($destino);
             $d->nombre = $request->nombre;
             $destino->nombre = $request->nombre;
 

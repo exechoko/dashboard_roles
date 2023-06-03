@@ -7,6 +7,7 @@ use App\Exports\CamarasExport;
 use App\Models\Camara;
 use App\Models\Destino;
 use App\Models\TipoCamara;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -206,6 +207,6 @@ class CamaraController extends Controller
     }
 
     public function exportExcel(){
-        return Excel::download(new CamarasExport, 'ListadoCamaras.xlsx');
+        return Excel::download(new CamarasExport, 'ListadoCamaras_'. Carbon::now() .'.xlsx');
     }
 }

@@ -608,12 +608,14 @@ class FlotaGeneralController extends Controller
                 $historico->equipo_id = $request->equipo;
                 //$historico->recurso_id = $request->recurso;
                 $r = Recurso::find($request->recurso);
-                if ($r) {
+                $v = null;
+                //dd($r);
+                if (!is_null($r)) {
                     $v = Vehiculo::find($r->vehiculo_id);
                 }
                 //dd($v);
-                $historico->recurso_asignado = ($r) ? $r->nombre : null;
-                $historico->vehiculo_asignado = ($v) ? $v->dominio : null;
+                $historico->recurso_asignado = (!is_null($r)) ? $r->nombre : null;
+                $historico->vehiculo_asignado = (!is_null($v)) ? $v->dominio : null;
 
                 $historico->destino_id = $request->dependencia;
                 $historico->tipo_movimiento_id = $tipo_de_mov->id;

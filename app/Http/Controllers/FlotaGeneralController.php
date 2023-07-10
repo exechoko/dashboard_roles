@@ -572,12 +572,20 @@ class FlotaGeneralController extends Controller
 
         //Se obtiene el id del recurso llamado Stock
         $id_recurso_stock = Recurso::where('nombre', 'Stock')->first();
+        $id_recurso_sala_video = Recurso::where('nombre', 'Sala Video Vigilancia 911')->first();
+        $id_recurso_sala_tel = Recurso::where('nombre', 'Sala Telefonía 911')->first();
+        $id_recurso_sala_despacho = Recurso::where('nombre', 'Sala Despacho 911')->first();
+        $id_recurso_uom = Recurso::where('nombre', 'Unidad Operativa Móvil')->first();
         //dd($id_recurso_stock->id);
         if ($tipo_de_mov->id == 1) {
             //Para no asignar un equipo a un recurso mas de una vez
             $f = FlotaGeneral::where('recurso_id', $request->recurso)->first();
             if (!is_null($f)) {
-                if ($f->recurso_id != $id_recurso_stock->id) {
+                if ($f->recurso_id != $id_recurso_stock->id
+                    || $f->recurso_id != $id_recurso_sala_video->id
+                    || $f->recurso_id != $id_recurso_sala_tel->id
+                    || $f->recurso_id != $id_recurso_sala_despacho->id
+                    || $f->recurso_id != $id_recurso_uom->id) {
                     $r = Recurso::find($f->recurso_id);
                     return back()->with('error', "El recurso '$r->nombre' ya tiene asociado un equipo"); //->withInput();
                 }

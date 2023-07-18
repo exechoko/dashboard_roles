@@ -581,11 +581,13 @@ class FlotaGeneralController extends Controller
             //Para no asignar un equipo a un recurso mas de una vez
             $f = FlotaGeneral::where('recurso_id', $request->recurso)->first();
             if (!is_null($f)) {
-                if ($f->recurso_id != $id_recurso_stock->id
-                    || $f->recurso_id != $id_recurso_sala_video->id
-                    || $f->recurso_id != $id_recurso_sala_tel->id
-                    || $f->recurso_id != $id_recurso_sala_despacho->id
-                    || $f->recurso_id != $id_recurso_uom->id) {
+                if ($f->recurso_id == $id_recurso_stock->id
+                    || $f->recurso_id == $id_recurso_sala_video->id
+                    || $f->recurso_id == $id_recurso_sala_tel->id
+                    || $f->recurso_id == $id_recurso_sala_despacho->id
+                    || $f->recurso_id == $id_recurso_uom->id) {
+
+                    } else {
                     $r = Recurso::find($f->recurso_id);
                     return back()->with('error', "El recurso '$r->nombre' ya tiene asociado un equipo"); //->withInput();
                 }

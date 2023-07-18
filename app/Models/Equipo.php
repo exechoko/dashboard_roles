@@ -49,4 +49,8 @@ class Equipo extends Model
     public function historico(){
         return $this->hasMany(Historico::class);
     }
+
+    public function auditoria(){
+        return $this->hasMany(Auditoria::class);
+    }
 }

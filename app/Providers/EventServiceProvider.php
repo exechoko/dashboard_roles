@@ -2,10 +2,18 @@
 
 namespace App\Providers;
 
+use App\Models\FlotaGeneral;
+use App\Models\User;
+use App\Observers\FlotaGeneralObserver;
+use App\Observers\UserObserver;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Event;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Events\PermissionAssigned;
+use Spatie\Permission\Events\PermissionRevoked;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -27,6 +35,7 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        //
+        User::observe(UserObserver::class);
+        FlotaGeneral::observe(FlotaGeneralObserver::class);
     }
 }

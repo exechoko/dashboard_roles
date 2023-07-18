@@ -28,4 +28,8 @@ class Historico extends Model
     public function tipoMovimiento(){
         return $this->belongsTo(TipoMovimiento::class);
     }
+
+    public function auditoria(){
+        return $this->hasMany(Auditoria::class);
+    }
 }

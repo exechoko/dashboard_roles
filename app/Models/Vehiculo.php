@@ -12,4 +12,8 @@ class Vehiculo extends Model
     public function recurso(){
         return $this->hasMany(Recurso::class);
     }
+
+    public function auditoria(){
+        return $this->hasMany(Auditoria::class);
+    }
 }

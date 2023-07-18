@@ -90,4 +90,8 @@ class Destino extends Model
 
         return $depende;
     }
+
+    public function auditoria(){
+        return $this->hasMany(Auditoria::class);
+    }
 }

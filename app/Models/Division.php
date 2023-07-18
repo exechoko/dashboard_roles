@@ -32,4 +32,8 @@ class Division extends Model
         return $this->hasMany(Destino::class);
     }
 
+    public function auditoria(){
+        return $this->hasMany(Auditoria::class);
+    }
+
 }

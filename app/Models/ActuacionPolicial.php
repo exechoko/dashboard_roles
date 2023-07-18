@@ -16,5 +16,9 @@ class ActuacionPolicial extends Model
     public function equipo(){
         return $this->belongsTo(Equipo::class);
     }
+    
+    public function auditoria(){
+        return $this->hasMany(Auditoria::class);
+    }
 
 }

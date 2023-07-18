@@ -17,4 +17,8 @@ class Camara extends Model
     public function destino(){
         return $this->belongsTo(Destino::class);
     }
+
+    public function auditoria(){
+        return $this->hasMany(Auditoria::class);
+    }
 }

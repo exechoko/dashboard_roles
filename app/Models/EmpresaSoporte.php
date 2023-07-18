@@ -12,4 +12,8 @@ class EmpresaSoporte extends Model
     public function destino(){
         return $this->hasMany(Destino::class);
     }
+
+    public function auditoria(){
+        return $this->hasMany(Auditoria::class);
+    }
 }

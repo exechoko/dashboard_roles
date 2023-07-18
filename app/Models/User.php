@@ -23,8 +23,10 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'apellido',
+        'lp',
+        'dni',
         'email',
-        'password',
+        'password'
     ];
 
     /**
@@ -45,4 +47,9 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function auditoria(){
+        return $this->hasMany(Auditoria::class);
+    }
+
 }

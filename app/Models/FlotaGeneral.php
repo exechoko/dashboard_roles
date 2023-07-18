@@ -8,6 +8,15 @@ use Illuminate\Database\Eloquent\Model;
 class FlotaGeneral extends Model
 {
     protected $table = 'flota_general';
+    protected $fillable = [
+        'equipo_id',
+        'recurso_id',
+        'destino_id',
+        'fecha_asignacion',
+        'fecha_desasignacion',
+        'ticket_per',
+        'observaciones'
+    ];
 
     public function equipo(){
         return $this->belongsTo(Equipo::class);
@@ -31,5 +40,9 @@ class FlotaGeneral extends Model
             return $hist->destino->nombre . ' - ' . $hist->destino->dependeDe();
         }
         return null;
+    }
+
+    public function auditoria(){
+        return $this->hasMany(Auditoria::class);
     }
 }

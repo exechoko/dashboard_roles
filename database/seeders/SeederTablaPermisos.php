@@ -74,6 +74,16 @@ class SeederTablaPermisos extends Seeder
             'crear-camara',
             'editar-camara',
             'borrar-camara',
+
+            //tabla tipo camara
+            'ver-tipo-camara',
+            'crear-tipo-camara',
+            'editar-tipo-camara',
+            'borrar-tipo-camara',
+
+            //tabla auditoria
+            'ver-auditoria'
+
         ];
 
         foreach($permisos as $permiso){

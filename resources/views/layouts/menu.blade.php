@@ -83,3 +83,10 @@
         </a>
     </li>
 @endcan
+@can('ver-auditoria')
+    <li class="{{ request()->is('auditoria*') ? 'active' : '' }}">
+        <a class="nav-link" href="/auditoria">
+            <i class=" fas fa-search"></i><span>Auditoría</span>
+        </a>
+    </li>
+@endcan

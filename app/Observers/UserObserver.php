@@ -60,7 +60,7 @@ class UserObserver
 
             $changes = [];
             foreach ($user->getChanges() as $key => $value) {
-                $changes[] = "$key: " . $user->getOriginal($key) . ' => ' . $value;
+                $changes[] = "$key: " . (($user->getOriginal($key) == '') ? 'S/D' : $user->getOriginal($key)) . ' => ' . $value;
             }
             if (!empty($changes)) {
                 $aud->cambios = implode(", ", $changes);

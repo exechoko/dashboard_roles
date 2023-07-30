@@ -23,10 +23,11 @@
 
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table id="dataTable" class="table table-striped mt-2">
+                                <table id="dataTable" class="table table-hover mt-2">
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                         <th style="color:#fff;">Registro</th>
                                         <th style="color:#fff;">Usuario</th>
+                                        <th style="color:#fff;">Item modificado</th>
                                         <th style="color:#fff;">Nombre tabla modificada</th>
                                         <th style="color:#fff;">Acción</th>
                                         <th style="color:#fff;">Cambios</th>
@@ -39,10 +40,20 @@
                                             </tr>
                                         @else
                                             @foreach ($auditorias as $auditoria)
-
                                                 <tr>
                                                     <td>{{ $auditoria->id }}</td>
                                                     <td>{{ $auditoria->user->apellido . ' ' . $auditoria->user->name }}</td>
+                                                    @switch($auditoria->nombre_tabla)
+                                                        @case('user')
+                                                            <td>{{ $auditoria->usuarioModificado->name }}</td>
+                                                        @break
+                                                        @case('flota_general')
+                                                            <td>{{ $auditoria->flotaModificada->equipo->tei }}</td>
+                                                        @break
+                                                        @default
+                                                            <td>NN</td>
+                                                    @endswitch
+
                                                     <td>{{ $auditoria->nombre_tabla }}</td>
                                                     <td>{{ $auditoria->accion }}</td>
                                                     <td>{{ $auditoria->cambios }}</td>

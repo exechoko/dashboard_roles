@@ -32,4 +32,15 @@ class Auditoria extends Model
     public function user(){
         return $this->belongsTo(User::class);
     }
+
+    public function usuarioModificado()
+    {
+        return $this->belongsTo(User::class, 'usuario_modificado_id');
+    }
+    public function flotaModificada()
+    {
+        return $this->belongsTo(FlotaGeneral::class, 'flota_modificado_id');
+    }
+
+    //Agregar para todos las demás clases
 }

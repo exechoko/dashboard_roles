@@ -613,36 +613,43 @@
         </div>
 
         <!--div class="row">
-            <div class="">
-                <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
-                <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
-                <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
-                <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
-                <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
-                <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
-            </div>
-        </div-->
+                <div class="">
+                    <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
+                    <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
+                    <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
+                    <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
+                    <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
+                    <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
+                </div>
+            </div-->
         <div class="col-lg-12">
             <div id="map" style="height: 725px;"></div>
         </div>
         <!--div class="row">
-            <div class="col-lg-12">
-                <div id="mapContainer" style="position: relative; height: 725px;">
-                    <div id="map" style="height: 100%;"></div>
-                    <div id="labels" style="position: absolute; top: 10px; left: 10px; z-index: 1000">
-                        <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
-                        <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
-                        <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
-                        <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
-                        <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
-                        <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
+                <div class="col-lg-12">
+                    <div id="mapContainer" style="position: relative; height: 725px;">
+                        <div id="map" style="height: 100%;"></div>
+                        <div id="labels" style="position: absolute; top: 10px; left: 10px; z-index: 1000">
+                            <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
+                            <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
+                            <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
+                            <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
+                            <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
+                            <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div-->
+            </div-->
     </section>
 
     <script>
+        // Función para redirigir a la ruta de edición
+        function editCamera(camaraId) {
+            @can('editar-camara')
+                window.location.href = '/camaras/' + camaraId + '/edit';
+            @endcan
+        }
+
         function getRandomColor() { //funcion obtiene color aleatorio
             var letters = '0123456789ABCDEF';
             var color = '#';
@@ -842,10 +849,11 @@
                         Tipo: <b>{{ $marcador['tipo_camara'] }}</b><br>
                         Sitio: <b>{{ $marcador['sitio'] }}</b><br>
                         Dependencia: <b>{{ $marcador['dependencia'] }}</b><br>
-                        Etapa: <b>{{ $marcador['etapa']}}</b><br>
+                        Etapa: <b>{{ $marcador['etapa'] }}</b><br>
                         Inteligencia: <b>{{ $marcador['inteligencia'] }}</b><br>
                         Marca: <b>{{ $marcador['marca'] }}</b> - Mod.: <b>{{ $marcador['modelo'] }}</b><br>
-                        Nº serie: <b>{{ $marcador['nro_serie']}}</b>
+                        Nº serie: <b>{{ $marcador['nro_serie'] }}</b>
+                        <button onclick="editCamera(${numero})"><i class="fas fa-edit"></i></button>
                     </div>
                 `);
             //.bindPopup("{{ $marcador['titulo'] }}<br>{{ $marcador['tipo_camara'] }}<br>{{ $marcador['inteligencia'] }}");
@@ -908,22 +916,5 @@
                 'Mostrar Todo': capa5
             @endcan
         }).addTo(mymap);
-
-        /*var legend = L.control({
-            position: 'bottomright'
-        });
-        legend.onAdd = function(mymap) {
-            var div = L.DomUtil.create('div', 'info legend'),
-                grades = [0, 10, 20, 50, 100, 200, 500, 1000],
-                labels = [];
-            // loop through our density intervals and generate a label with a colored square for each interval
-            for (var i = 0; i < grades.length; i++) {
-                div.innerHTML +=
-                    '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
-                    grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
-            }
-            return div;
-        };
-        legend.addTo(mymap);*/
     </script>
 @endsection

@@ -7,8 +7,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css" />
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
+    <link href="{{ asset('leaflet/geocoder/geocoder.css') }}" rel="stylesheet">
+    <link href="{{ asset('leaflet/lib/leaflet-dist/leaflet.css') }}" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-editable/1.1.0/Leaflet.Editable.min.js"></script>
+    <script src="{{ asset('leaflet/geocoder/esri-leaflet.js') }}"></script>
+    <script src="{{ asset('leaflet/geocoder/esri-leaflet-geocoder.min.js') }}"></script>
+    <script src="{{ asset('leaflet/geocoder/gpx.min.js') }}"></script>
 
     <!-- <link href="{{ asset('/plugins/bootstrap-table/bootstrap-table-reorder-rows.css') }}" rel="stylesheet"> -->
 
@@ -138,12 +143,12 @@
         }
 
         /*.etiqueta {
-                                        position: absolute;
-                                        top: 50px;
+                                            position: absolute;
+                                            top: 50px;
 
-                                        left: 50%;
-                                        transform: translateX(-50%);
-                                    }*/
+                                            left: 50%;
+                                            transform: translateX(-50%);
+                                        }*/
 
 
 
@@ -613,33 +618,33 @@
         </div>
 
         <!--div class="row">
-                <div class="">
-                    <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
-                    <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
-                    <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
-                    <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
-                    <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
-                    <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
-                </div>
-            </div-->
+                    <div class="">
+                        <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
+                        <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
+                        <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
+                        <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
+                        <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
+                        <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
+                    </div>
+                </div-->
         <div class="col-lg-12">
             <div id="map" style="height: 725px;"></div>
         </div>
         <!--div class="row">
-                <div class="col-lg-12">
-                    <div id="mapContainer" style="position: relative; height: 725px;">
-                        <div id="map" style="height: 100%;"></div>
-                        <div id="labels" style="position: absolute; top: 10px; left: 10px; z-index: 1000">
-                            <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
-                            <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
-                            <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
-                            <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
-                            <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
-                            <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
+                    <div class="col-lg-12">
+                        <div id="mapContainer" style="position: relative; height: 725px;">
+                            <div id="map" style="height: 100%;"></div>
+                            <div id="labels" style="position: absolute; top: 10px; left: 10px; z-index: 1000">
+                                <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
+                                <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
+                                <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
+                                <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
+                                <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
+                                <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div-->
+                </div-->
     </section>
 
     <script>
@@ -705,6 +710,11 @@
         var etiquetaControl = L.control({
             position: 'topright' /*'topright'*/ /*'bottomright'*/
         });
+
+        searchControl = new L.esri.Controls.Geosearch({
+            position: 'topleft'
+        }).addTo(mymap);
+        var geocodeService = new L.esri.Services.Geocoding();
 
         etiquetaControl.onAdd = function(mymap) {
             /*var div = L.DomUtil.create('div', 'etiqueta');
@@ -840,22 +850,21 @@
                 popupAnchor: [0, -15]
             });
             var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
-                    icon: cameraIcon
-                }) //.addTo(capa2)
-                .bindPopup(`
-                    <div>
-                        <img src='{{ $marcador['imagen'] }}' alt="" style="max-width: 200px;">
-                        <h5>{{ $marcador['titulo'] }}</h5>
-                        Tipo: <b>{{ $marcador['tipo_camara'] }}</b><br>
-                        Sitio: <b>{{ $marcador['sitio'] }}</b><br>
-                        Dependencia: <b>{{ $marcador['dependencia'] }}</b><br>
-                        Etapa: <b>{{ $marcador['etapa'] }}</b><br>
-                        Inteligencia: <b>{{ $marcador['inteligencia'] }}</b><br>
-                        Marca: <b>{{ $marcador['marca'] }}</b> - Mod.: <b>{{ $marcador['modelo'] }}</b><br>
-                        Nº serie: <b>{{ $marcador['nro_serie'] }}</b>
-                        <button onclick="editCamera(${numero})"><i class="fas fa-edit"></i></button>
-                    </div>
-                `);
+                icon: cameraIcon
+            }).bindPopup(`
+                <div>
+                    <img src='{{ $marcador['imagen'] }}' alt="" style="max-width: 200px;">
+                    <h5>{{ $marcador['titulo'] }}</h5>
+                    Tipo: <b>{{ $marcador['tipo_camara'] }}</b><br>
+                    Sitio: <b>{{ $marcador['sitio'] }}</b><br>
+                    Dependencia: <b>{{ $marcador['dependencia'] }}</b><br>
+                    Etapa: <b>{{ $marcador['etapa'] }}</b><br>
+                    Inteligencia: <b>{{ $marcador['inteligencia'] }}</b><br>
+                    Marca: <b>{{ $marcador['marca'] }}</b> - Mod.: <b>{{ $marcador['modelo'] }}</b><br>
+                    Nº serie: <b>{{ $marcador['nro_serie'] }}</b>
+                    <button onclick="editCamera(${numero})"><i class="fas fa-edit"></i></button>
+                </div>
+            `);
             //.bindPopup("{{ $marcador['titulo'] }}<br>{{ $marcador['tipo_camara'] }}<br>{{ $marcador['inteligencia'] }}");
             marcadores.addLayer(marker);
             var etapa = "{{ $marcador['etapa'] }}";

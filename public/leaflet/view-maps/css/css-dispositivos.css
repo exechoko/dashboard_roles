@@ -1,0 +1,137 @@
+@charset "utf-8";
+/* CSS Document */
+#dispositivos{
+	  position:absolute;
+	  width:350px;
+	  top:50px;
+	  left:-350px;
+	  background-color:#E2E2E2;
+	  z-index:2;
+}
+.titulo{
+	  width:350px;
+	  float:right;
+	  height:25px;
+	  line-height:25px;
+	  font-size:12px;
+	  font-family:"Arial", "Lucida Console", "Lucida Sans Typewriter", Monaco, "Courier New", monospace;
+	  background-color:#666;
+	  text-align:center;
+	  color:#f6931f;
+}
+.title{
+	font-family:"Arial", "Lucida Console", "Lucida Sans Typewriter", Monaco, "Courier New", monospace;
+	font-size:24px;
+	font-weight:100;
+	text-align:center;
+	color: #f6931f;
+}
+#menu-dispositivos{
+	  width:350px;
+	  float:right;
+	  height:20px;
+	  line-height:20px;
+	  background-color:#f6931f;
+	  font-size:12px;
+	  font-family:"Arial", "Lucida Console", "Lucida Sans Typewriter", Monaco, "Courier New", monospace;
+	  text-align:center;
+	  color:#FFF;
+}
+#lista-dispositivos{
+	  overflow-y:scroll!important;
+	  overflow-x:scroll!important;
+	  background-color:#CCC;
+	  font-size:12px;
+	  font-family:"Arial", "Lucida Console", "Lucida Sans Typewriter", Monaco, "Courier New", monospace;
+}
+.col1{
+	width:50px;
+	float:left;
+}
+.col2{
+	width:50px;
+	float:left;
+}
+.col3{
+	width:50px;
+	float:left;
+}
+.col4{
+	width:200px;
+	float:left;
+}
+.fila-dispositivos{
+	width:350px;
+	height:25px;
+	line-height:25px;
+	background-image:url(../img/back-button.png); background-repeat:repeat-x;
+	text-align:center;
+}
+.fila-dispositivos:hover{
+	cursor:pointer;
+	background-image:url(../img/back-button-hover.png); background-repeat:repeat-x;
+}
+.icon-1{
+	width:50px;
+	float:left;
+}
+.icon-2{
+	width:50px;
+	float:left;
+}
+.icon-3{
+	width:50px;
+	float:left;
+}
+.icon-4{
+	float:left;
+	width:200px;
+	text-align:left;
+}
+.icon-4 img{
+	float:left;
+	margin-top:2px;
+	margin-right:5px;
+}
+
+#info{
+	position:absolute;
+	width:250px;
+	height:115px;
+	background-color:#000;
+	bottom:0;
+	right:15px;
+	z-index:99;
+	background: rgb(0, 0, 0); /* IE */
+    background: rgba(0, 0, 0, 0.5);
+	color:#FFF;
+	display:none;
+}
+.close{
+	width:98%;
+	height:20px;
+	line-height:20px;
+	text-align:right;
+	margin-right:10px;
+	margin-top:3px;
+}
+.close a{
+	text-decoration:none;
+	color:#FFF;
+	font-weight:bold;	
+}
+.filaAlerta img{
+	float:left;
+	margin-left:5px;
+}
+.filaAlerta a{
+	text-decoration:none;
+	color:#FFF;
+	font-family:"Arial", "Lucida Console", "Lucida Sans Typewriter", Monaco, "Courier New", monospace;
+	font-size:18px;
+}
+.filaAlerta{
+	width:95%;
+	margin-left:5px;
+	text-align:left;
+}

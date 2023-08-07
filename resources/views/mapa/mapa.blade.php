@@ -8,7 +8,7 @@
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
     <link href="{{ asset('leaflet/geocoder/geocoder.css') }}" rel="stylesheet">
-    <link href="{{ asset('leaflet/lib/leaflet-dist/leaflet.css') }}" rel="stylesheet">
+    <!--link href="{{ asset('leaflet/lib/leaflet-dist/leaflet.css') }}" rel="stylesheet"-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-editable/1.1.0/Leaflet.Editable.min.js"></script>
     <script src="{{ asset('leaflet/geocoder/esri-leaflet.js') }}"></script>
@@ -143,12 +143,12 @@
         }
 
         /*.etiqueta {
-                                            position: absolute;
-                                            top: 50px;
+                                                position: absolute;
+                                                top: 50px;
 
-                                            left: 50%;
-                                            transform: translateX(-50%);
-                                        }*/
+                                                left: 50%;
+                                                transform: translateX(-50%);
+                                            }*/
 
 
 
@@ -618,33 +618,33 @@
         </div>
 
         <!--div class="row">
-                    <div class="">
-                        <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
-                        <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
-                        <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
-                        <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
-                        <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
-                        <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
-                    </div>
-                </div-->
+                        <div class="">
+                            <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
+                            <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
+                            <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
+                            <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
+                            <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
+                            <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
+                        </div>
+                    </div-->
         <div class="col-lg-12">
             <div id="map" style="height: 725px;"></div>
         </div>
         <!--div class="row">
-                    <div class="col-lg-12">
-                        <div id="mapContainer" style="position: relative; height: 725px;">
-                            <div id="map" style="height: 100%;"></div>
-                            <div id="labels" style="position: absolute; top: 10px; left: 10px; z-index: 1000">
-                                <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
-                                <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
-                                <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
-                                <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
-                                <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
-                                <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
+                        <div class="col-lg-12">
+                            <div id="mapContainer" style="position: relative; height: 725px;">
+                                <div id="map" style="height: 100%;"></div>
+                                <div id="labels" style="position: absolute; top: 10px; left: 10px; z-index: 1000">
+                                    <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
+                                    <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
+                                    <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
+                                    <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
+                                    <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
+                                    <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div-->
+                    </div-->
     </section>
 
     <script>
@@ -715,6 +715,14 @@
             position: 'topleft'
         }).addTo(mymap);
         var geocodeService = new L.esri.Services.Geocoding();
+
+        // Manejar el evento de resultado de búsqueda
+        searchControl.on('results', function(data) {
+            var result = data.results[0];
+            var location = result.latlng;
+            var marker = L.marker(location).addTo(mymap);
+            marker.bindPopup(result.text);
+        });
 
         etiquetaControl.onAdd = function(mymap) {
             /*var div = L.DomUtil.create('div', 'etiqueta');

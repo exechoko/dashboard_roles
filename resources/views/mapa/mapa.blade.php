@@ -715,13 +715,24 @@
             position: 'topleft'
         }).addTo(mymap);
         var geocodeService = new L.esri.Services.Geocoding();
+        var markerResultado = null;
 
         // Manejar el evento de resultado de búsqueda
         searchControl.on('results', function(data) {
+            if (markerResultado) {
+                mymap.removeLayer(markerResultado);
+            }
             var result = data.results[0];
             var location = result.latlng;
-            var marker = L.marker(location).addTo(mymap);
-            marker.bindPopup(result.text);
+            markerResultado = L.marker(location).addTo(mymap);
+            markerResultado.bindPopup(result.text);
+        });
+
+        // Manejar el evento de clic en el mapa
+        mymap.on('click', function(event) {
+        if (markerResultado) {
+                mymap.removeLayer(markerResultado);
+            }
         });
 
         etiquetaControl.onAdd = function(mymap) {

@@ -128,8 +128,7 @@
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>
-                                            <textarea class="form-control" name="observaciones" style="height: 100px"
-                                            value="{{ $camara->observaciones }}"></textarea>
+                                            <textarea class="form-control" name="observaciones" style="height: 100px">{{ $camara->observaciones }}</textarea>
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">

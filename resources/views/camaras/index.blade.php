@@ -51,10 +51,9 @@
                                 <table id="dataTable" class="table table-striped mt-2">
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                         <th style="display: none;">ID</th>
-                                        <th style="color:#fff;">IP</th>
                                         <th style="color:#fff;">Tipo</th>
                                         <th style="color:#fff;">Nombre</th>
-                                        <th style="color:#fff;">Sitio</th>
+                                        <th style="color:#fff;">Observaciones</th>
                                         @can('ver-camara')
                                             <th style="color:#fff;">Acciones</th>
                                         @endcan
@@ -72,7 +71,6 @@
                                                 {{-- @include('equipos.modal.editar') --}}
                                                 <tr>
                                                     <td style="display: none;">{{ $camara->id }}</td>
-                                                    <td>{{ $camara->ip }}</td>
                                                     <td><img alt="" width="70px" id="myImg"
                                                             src="{{ asset($camara->tipoCamara->imagen) }}"
                                                             class="img-fluid img-thumbnail">
@@ -80,7 +78,7 @@
                                                     </td>
 
                                                     <td>{{ $camara->nombre }}</td>
-                                                    <td>{{ $camara->sitio }}</td>
+                                                    <td>{{ $camara->observaciones }}</td>
                                                     <td>
                                                         <form action="{{ route('camaras.destroy', $camara->id) }}"
                                                             method="POST">

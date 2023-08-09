@@ -39,7 +39,7 @@ class FlotaGeneralController extends Controller
             $query1->where('nombre', 'like', '%' . $texto . '%');
         })->orWhereHas('destino', function ($query2) use ($texto) {
             $query2->where('nombre', 'like', '%' . $texto . '%');
-        })->orderBy('updated_at', 'desc')->paginate(10); //->get();//->orWhere('observaciones', 'LIKE', '%' . $texto . '%')->orderBy('id', 'asc')->get();
+        })->orderBy('updated_at', 'desc')->paginate(50); //->get();//->orWhere('observaciones', 'LIKE', '%' . $texto . '%')->orderBy('id', 'asc')->get();
 
         //dd($flota);
 

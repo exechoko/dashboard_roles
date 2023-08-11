@@ -12,7 +12,7 @@
     <ul class="dropdown-menu">
         @can('ver-flota')
             <li class="{{ request()->is('flota*') ? 'active' : '' }} {{ request()->is('*historico*') ? 'active' : '' }}">
-                <a class="nav-link" href="/flota"><i class="fas fa-wrench"></i><span>Asignación</span></a>
+                <a class="nav-link" href="/flota"><i class="fas fa-wrench"></i><span>Administración</span></a>
             </li>
         @endcan
         @can('ver-equipo')

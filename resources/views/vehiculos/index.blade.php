@@ -10,10 +10,15 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                @can('crear-vehiculo')
+                                    <a class="btn btn-success" href="{{ route('vehiculos.create') }}">Nuevo</a>
+                                @endcan
+                                <label class="alert alert-dark mb-0" style="float: right;">Registros:
+                                    {{ $vehiculos->total() }}</label>
+                            </div>
 
-                            @can('crear-vehiculo')
-                                <a class="btn btn-success" href="{{ route('vehiculos.create') }}">Nuevo</a>
-                            @endcan
+
 
                             <form action="{{ route('vehiculos.index') }}" method="get" onsubmit="return showLoad()">
                                 <div class="input-group mt-4">

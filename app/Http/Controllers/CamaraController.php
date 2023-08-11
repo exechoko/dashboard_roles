@@ -34,8 +34,49 @@ class CamaraController extends Controller
             ->orderBy('id', 'asc')
             ->paginate(20);
 
+            $fijas = Camara::whereHas('tipoCamara', function ($query) {
+                $query->where('tipo', 'Fija');
+            })->count();
+            $fijasFR = Camara::whereHas('tipoCamara', function ($query) {
+                $query->where('tipo', 'Fija (FR)');
+            })->count();
+            $fijasLPR = Camara::whereHas('tipoCamara', function ($query) {
+                $query->where('tipo', 'Fija (LPR)')->orWhere('tipo', 'Fija (LPR NV)');
+            })->count();
+            $domos = Camara::whereHas('tipoCamara', function ($query) {
+                $query->where('tipo', 'Domo');
+            })->count();//Camara::where('tipo', 'Domo')->count();
+            $domosDuales = Camara::whereHas('tipoCamara', function ($query) {
+                $query->where('tipo', 'Domo Dual');
+            })->count();
+            $totalCam = Camara::all()->count();
+
+            /*return view('mapa.mapa',
+            [
+                'comisarias' => $comisarias,
+                'antenas' => $antenas,
+                'camaras' => $camaras,
+                'jurisdicciones' => $jurisdicciones,
+                'fijas' => $fijas,
+                'fijasFR' => $fijasFR, 'fijasLPR' => $fijasLPR,
+                'domos' => $domos,
+                'domosDuales' => $domosDuales,
+                'total' => $totalCam
+            ]
+        );
+*/
+
         //$camaras = Equipo::paginate(5);
-        return view('camaras.index', compact('camaras', 'texto'));
+        return view('camaras.index', compact(
+            'camaras',
+             'texto',
+             'fijas',
+             'fijasFR',
+             'fijasLPR',
+             'domos',
+             'domosDuales',
+             'totalCam'
+        ));
     }
 
     /**

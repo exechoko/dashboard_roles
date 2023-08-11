@@ -10,8 +10,11 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-
-                            <a class="btn btn-success" href="{{ route('flota.create') }}">Nuevo</a>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a class="btn btn-success" href="{{ route('flota.create') }}">Nuevo</a>
+                                <label class="alert alert-dark mb-0" style="float: right;">Registros:
+                                    {{ $flota->total() }}</label>
+                            </div>
 
                             <form action="{{ route('flota.index') }}" method="get" onsubmit="return showLoad()">
                                 <div class="input-group mt-4">
@@ -58,7 +61,9 @@
                                                     <td><a class="btn btn-dark"
                                                             href="{{ route('verHistorico', $f->id) }}">{{ $f->equipo->tei }}</a>
                                                     </td>
-                                                    <td><img alt="" width="70px" id="myImg" src="{{ asset($f->equipo->tipo_terminal->imagen) }}" class="img-fluid img-thumbnail">
+                                                    <td><img alt="" width="70px" id="myImg"
+                                                            src="{{ asset($f->equipo->tipo_terminal->imagen) }}"
+                                                            class="img-fluid img-thumbnail">
                                                         {{ $f->equipo->tipo_terminal->tipo_uso->uso . ' / ' . $f->equipo->tipo_terminal->modelo }}
                                                     </td>
                                                     {{-- <td><a href="#"data-toggle="modal" data-toggle="modal" data-target="#ModalDetalle{{ $f->id }}"></a>{{ $f->equipo->issi }}</td> --}}

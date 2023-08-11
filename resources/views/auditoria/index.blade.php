@@ -9,6 +9,12 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
+                        <div class="">
+                            <div class="">
+                                <label class="alert alert-dark mb-0" style="float: right;">Registros:
+                                    {{ $auditorias->total() }}</label>
+                            </div>
+                        </div>
                         <div class="card-body">
                             <form action="{{ route('auditoria.index') }}" method="get" onsubmit="return showLoad()">
                                 <div class="input-group mt-4">

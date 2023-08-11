@@ -10,10 +10,13 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-
-                            @can('crear-terminal')
-                                <a class="btn btn-success" href="{{ route('terminales.create') }}">Nuevo</a>
-                            @endcan
+                            <div class="d-flex justify-content-between align-items-center">
+                                @can('crear-terminal')
+                                    <a class="btn btn-success" href="{{ route('terminales.create') }}">Nuevo</a>
+                                @endcan
+                                <label class="alert alert-dark mb-0" style="float: right;">Registros:
+                                    {{ $terminales->total() }}</label>
+                            </div>
 
                             <div class="table-responsive">
                                 <table class="table table-striped mt-2">

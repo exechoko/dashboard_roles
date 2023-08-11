@@ -10,10 +10,13 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-
-                            @can('crear-rol')
-                                <a class="btn btn-success" href="{{ route('roles.create') }}">Nuevo</a>
-                            @endcan
+                            <div class="">
+                                @can('crear-rol')
+                                    <a class="btn btn-success" href="{{ route('roles.create') }}">Nuevo</a>
+                                @endcan
+                                <label class="alert alert-dark mb-0" style="float: right;">Registros:
+                                    {{ $roles->total() }}</label>
+                            </div>
 
                             <table class="table table-striped mt-2">
                                 <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">

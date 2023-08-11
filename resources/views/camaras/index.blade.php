@@ -2,8 +2,18 @@
 
 @section('content')
     <section class="section">
-        <div class="section-header">
+        <div class="section-header d-flex justify-content-between align-items-center">
             <h3 class="page__heading">Cámaras - Administración</h3>
+            <div>
+                <div class="" style="float: right;">
+                    <label class="alert alert-dark" for="">Cámaras instaladas: {{ $totalCam }}  </label>
+                    <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
+                    <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
+                    <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
+                    <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
+                    <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
+                </div>
+            </div>
         </div>
         <div class="section-body">
 
@@ -12,7 +22,11 @@
                     <div class="col-lg-12">
                         <div class="card">
                             <div class="card-body">
-                                <a class="btn btn-success" href="{{ route('camaras.create') }}">Nuevo</a>
+                                <div class="">
+                                    <a class="btn btn-success" href="{{ route('camaras.create') }}">Nuevo</a>
+                                    <label class="alert alert-secondary mb-0" style="float: right; color: black;">Registros:
+                                        {{ $camaras->total() }}</label>
+                                </div>
                                 <form method="POST" action="{{ route('camaras.import') }}" enctype="multipart/form-data">
                                     @csrf
                                     <div class="input-group mt-4">

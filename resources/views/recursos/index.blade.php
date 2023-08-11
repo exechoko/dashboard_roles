@@ -10,10 +10,13 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-
-                            @can('crear-recurso')
-                                <a class="btn btn-success" href="{{ route('recursos.create') }}">Nuevo</a>
-                            @endcan
+                            <div class="d-flex justify-content-between align-items-center">
+                                @can('crear-recurso')
+                                    <a class="btn btn-success" href="{{ route('recursos.create') }}">Nuevo</a>
+                                @endcan
+                                <label class="alert alert-dark mb-0" style="float: right;">Registros:
+                                    {{ $recursos->total() }}</label>
+                            </div>
 
                             <form action="{{ route('recursos.index') }}" method="get" onsubmit="return showLoad()">
                                 <div class="input-group mt-4">

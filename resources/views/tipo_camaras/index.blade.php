@@ -10,10 +10,13 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-
-                            @can('crear-tipo-camara')
-                                <a class="btn btn-success" href="{{ route('tipo-camara.create') }}">Nuevo</a>
-                            @endcan
+                            <div class="">
+                                @can('crear-tipo-camara')
+                                    <a class="btn btn-success" href="{{ route('tipo-camara.create') }}">Nuevo</a>
+                                @endcan
+                                <label class="alert alert-dark mb-0" style="float: right;">Registros:
+                                    {{ $tipoCamaras->total() }}</label>
+                            </div>
 
                             <div class="table-responsive">
                                 <table class="table table-striped mt-2">

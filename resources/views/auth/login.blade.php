@@ -40,7 +40,7 @@
                     </div>
                     <input aria-describedby="passwordHelpBlock" id="password" type="password"
                            value="{{ (Cookie::get('password') !== null) ? Cookie::get('password') : null }}"
-                           placeholder="Ingrese Contraseña"
+                           placeholder="Ingresar Contraseña"
                            class="form-control{{ $errors->has('password') ? ' is-invalid': '' }}" name="password"
                            tabindex="2" required>
                     <div class="invalid-feedback">

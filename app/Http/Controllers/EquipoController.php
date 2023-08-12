@@ -175,11 +175,13 @@ class EquipoController extends Controller
     public function destroy($id)
     {
         $equipo = Equipo::find($id);
-        $flota = FlotaGeneral::where('equipo_id', $equipo->id)->get();
-        dd($flota);
-        $equipo->delete();
-        $flota->delete();
-        return redirect()->route('equipos.index');
+        if (!$equipo) {
+            return redirect()->route('equipos.index')->with('error', 'Equipo no encontrado.');
+        }
+        $equipo->flota_general()->delete(); // Esto eliminará los registros relacionados en FlotaGeneral
+        $equipo->historico()->delete(); // Esto eliminará los registros relacionados en Historico
+        $equipo->delete(); // Finalmente, eliminar el equipo
+        return redirect()->route('equipos.index')->with('success', 'Equipo y registros relacionados eliminados exitosamente.');
     }
 
     public function verHistoricoDesdeEquipo($id)

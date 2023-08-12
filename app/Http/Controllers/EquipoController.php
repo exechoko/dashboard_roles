@@ -130,9 +130,10 @@ class EquipoController extends Controller
 
     public function update(Request $request,$id)
     {
+        //dd($request->all());
         $equipo = Equipo::find($id);
 
-        $estado_info = Estado::where('nombre', $request->estados)->first();
+        //$estado_info = Estado::where('nombre', $request->estados)->first();
         //dd($estado_info->id);
 
         request()->validate([
@@ -143,8 +144,8 @@ class EquipoController extends Controller
             'required' => 'El campo :attribute es necesario completar.'
         ]);
 
-        if (!is_null($estado_info)){
-            $equipo->estado_id = $estado_info->id;
+        //if (!is_null($estado_info)){
+            $equipo->estado_id = $request->estado;
             $equipo->fecha_estado = $request->fecha_estado;
             $equipo->issi = $request->issi;
             $equipo->tei = $request->tei;
@@ -165,9 +166,9 @@ class EquipoController extends Controller
             $equipo->observaciones = $request->observaciones;
 
             $equipo->save();
-        } else {
-            return redirect()->back()->with('error', 'Debe seleccionar un estado.');
-        }
+        //} else {
+        //    return redirect()->back()->with('error', 'Debe seleccionar un estado.');
+        //}
         return redirect()->route('equipos.index');
     }
 

@@ -51,10 +51,10 @@
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
-                                            <label for="">Estado</label>
+                                            <label for="estado">Estado</label>
                                             <select name="estado" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
-                                                <option value="{{ $equipo->estado_id }}">{{ $equipo->estado->nombre }}</option>
+                                                <option value="{{ $equipo->estado->id }}">{{ $equipo->estado->nombre }}</option>
                                                 @foreach ($estados as $estado)
                                                     <option value="{{ $estado->id }}">
                                                         {{ $estado->nombre }}

@@ -30,7 +30,7 @@
                                     class="text-danger">*</span>
                             <input id="email" type="email"
                                    class="form-control{{ $errors->has('email') ? ' is-invalid' : '' }}"
-                                   placeholder="Enter Email address" name="email" tabindex="1"
+                                   placeholder="Ingresar Email address" name="email" tabindex="1"
                                    value="{{ old('email') }}"
                                    required autofocus>
                             <div class="invalid-feedback">

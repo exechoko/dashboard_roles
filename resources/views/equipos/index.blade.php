@@ -31,10 +31,9 @@
                                 <table id="dataTable" class="table table-striped mt-2">
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                         <th style="display: none;">ID</th>
-                                        <th style="color:#fff;">Marca</th>
-                                        <th style="color:#fff;">Modelo</th>
-                                        <th style="color:#fff;">ISSI</th>
                                         <th style="color:#fff;">TEI</th>
+                                        <th style="color:#fff;">Tipo/Marca/Modelo</th>
+                                        <th style="color:#fff;">ISSI</th>
                                         <th style="color: #fff">Estado</th>
                                         <th style="color: #fff">Ult. Mod.</th>
                                         <th style="color:#fff;">Acciones</th>
@@ -51,10 +50,15 @@
                                             {{-- @include('equipos.modal.editar') --}}
                                             <tr>
                                                 <td style="display: none;">{{ $equipo->id }}</td>
-                                                <td>{{ $equipo->tipo_terminal->marca }}</td>
-                                                <td>{{ $equipo->tipo_terminal->modelo }}</td>
+                                                <td><a class="btn btn-dark"
+                                                    href="{{ route('verHistoricoDesdeEquipo', $equipo->id) }}">{{ $equipo->tei }}</a>
+                                                </td>
+                                                <td><img alt="" width="70px" id="myImg"
+                                                    src="{{ asset($equipo->tipo_terminal->imagen) }}"
+                                                    class="img-fluid img-thumbnail">
+                                                        {{ $equipo->tipo_terminal->tipo_uso->uso . ' / ' . $equipo->tipo_terminal->marca . ' / ' . $equipo->tipo_terminal->modelo }}
+                                                </td>
                                                 <td>{{ $equipo->issi }}</td>
-                                                <td>{{ $equipo->tei }}</td>
                                                 <td>{{ $equipo->estado->nombre }}</td>
                                                 <td>{{ \Carbon\Carbon::parse($equipo->fecha_estado)->format('d-m-Y') }}</td>
                                                 <td>

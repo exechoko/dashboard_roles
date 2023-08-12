@@ -414,12 +414,13 @@ class FlotaGeneralController extends Controller
 
     public function verHistorico($id)
     {
+        $desdeEquipo = false;
         $flota = FlotaGeneral::find($id);
 
         $hist = Historico::where('equipo_id', $flota->equipo->id)->orderBy('created_at', 'desc')->get();
         //dd($hist);
 
-        return view('flota.historico', compact('hist', 'flota'));
+        return view('flota.historico', compact('hist', 'flota', 'desdeEquipo'));
     }
 
     public function update_historico(Request $request, $id)

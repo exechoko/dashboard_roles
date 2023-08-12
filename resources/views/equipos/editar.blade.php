@@ -52,7 +52,15 @@
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="">Estado</label>
-                                            {!! Form::select('estados[]', $estados, [], ['placeholder' => 'Selecciona el estado', 'class' => 'form-control']) !!}
+                                            <select name="estado" id="" class="form-control select2"
+                                                style="margin-bottom: 15px">
+                                                <option value="{{ $equipo->estado_id }}">{{ $equipo->estado->nombre }}</option>
+                                                @foreach ($estados as $estado)
+                                                    <option value="{{ $estado->id }}">
+                                                        {{ $estado->nombre }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
                                         </div>
                                     </div>
 

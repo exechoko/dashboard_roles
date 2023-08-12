@@ -8,6 +8,7 @@ use App\Models\Equipo;
 use App\Models\Estado;
 use App\Models\FlotaGeneral;
 use App\Models\TipoTerminal;
+use App\Models\Historico;
 use App\Models\TipoUso;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -121,7 +122,7 @@ class EquipoController extends Controller
     public function edit($id)
     {
         $equipo = Equipo::find($id);
-        $estados = Estado::pluck('nombre','nombre')->all();
+        $estados = Estado::all();
         $marca_terminal = $equipo->tipo_terminal()->pluck('marca')->all();
         $modelo_terminal = $equipo->tipo_terminal()->pluck('modelo')->all();
         return view('equipos.editar', compact('equipo','marca_terminal', 'modelo_terminal', 'estados'));
@@ -178,5 +179,16 @@ class EquipoController extends Controller
         $equipo->delete();
         $flota->delete();
         return redirect()->route('equipos.index');
+    }
+
+    public function verHistoricoDesdeEquipo($id)
+    {
+        $desdeEquipo = true;
+        $flota = Equipo::find($id);
+
+        $hist = Historico::where('equipo_id', $flota->id)->orderBy('created_at', 'desc')->get();
+        //dd($hist);
+
+        return view('flota.historico', compact('hist', 'flota', 'desdeEquipo'));
     }
 }

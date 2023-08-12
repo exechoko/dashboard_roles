@@ -31,7 +31,30 @@
                     <div class="card">
                         <div class="card-body">
                             <div class="col-lg-12">
-                                <img class="mr-5" src="{{ asset($flota->equipo->tipo_terminal->imagen) }}"
+                                @if ($desdeEquipo == true)
+                                    <img class="mr-5" src="{{ asset($flota->tipo_terminal->imagen) }}"
+                                        style="float: left; width: 150px;">
+                                    <ul>
+                                        <li>
+                                            <h3>TEI: <b>{{ $flota->tei }}</b>
+                                                @if (!is_null($flota->issi))
+                                                    - ISSI: <b>{{ $flota->issi }}</b>
+                                        </li>
+                                                @else
+                                                    - ISSI: <b>Sin asignar</b></h3>
+                                        </li>
+                                                @endif
+                                <li>
+                                    <h4>Marca: <b>{{ $flota->tipo_terminal->marca }}</b> - Modelo:
+                                        <b>{{ $flota->tipo_terminal->modelo }}</b>
+                                    </h4>
+                                </li>
+                                <li>
+                                    <h4>Estado: <b>{{ $flota->estado->nombre }}</b></h4>
+                                </li>
+                                </ul>
+                            @else
+                            <img class="mr-5" src="{{ asset($flota->equipo->tipo_terminal->imagen) }}"
                                     style="float: left; width: 150px;">
                                 <ul>
                                     <li>
@@ -52,6 +75,7 @@
                                         <h4>Estado: <b>{{ $flota->equipo->estado->nombre }}</b></h4>
                                     </li>
                                 </ul>
+                                @endif
                             </div>
 
                             <div class="table-responsive">
@@ -87,7 +111,13 @@
                                                     <td>{{ $h->recurso_asignado . ($h->vehiculo_asignado ? ' - Dom.: ' . $h->vehiculo_asignado : '') }}
                                                     </td>
                                                 @endif
-                                                <td>@if ($h->destino) {{ $h->destino->nombre }} @else - @endif</td>
+                                                <td>
+                                                    @if ($h->destino)
+                                                        {{ $h->destino->nombre }}
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
 
                                                 @if (is_null($h->recurso_desasignado))
                                                     <td>-</td>

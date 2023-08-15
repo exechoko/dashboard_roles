@@ -32,7 +32,7 @@
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                         <th style="display: none;">ID</th>
                                         <th style="color:#fff;">Nombre</th>
-                                        <th style="color:#fff;">Tipo de Vehiculo</th>
+                                        <th style="color:#fff;">Tipo/Marca - Modelo/Dominio</th>
                                         <th style="color:#fff;">Dependencia</th>
                                         <th style="color:#fff;">Acciones</th>
                                     </thead>
@@ -52,7 +52,7 @@
                                                 @if (is_null($recurso->vehiculo))
                                                     <td>-</td>
                                                 @else
-                                                    <td>{{ $recurso->vehiculo->tipo_vehiculo }}</td>
+                                                    <td>{{ $recurso->vehiculo->tipo_vehiculo . '/' . $recurso->vehiculo->marca . ' ' . $recurso->vehiculo->modelo . ' Dom.: ' . $recurso->vehiculo->dominio }}</td>
                                                 @endif
                                                 <td>{{ $recurso->destino->nombre . ' - ' . $recurso->destino->dependeDe() }}</td>
                                                 <td>

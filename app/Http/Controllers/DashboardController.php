@@ -8,11 +8,39 @@ use App\Models\Recurso;
 use App\Models\Destino;
 use App\Models\Equipo;
 use App\Models\Historico;
+use App\Models\TipoMovimiento;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    public function getDesinstalacionesParcialesJSON(Request $request)
+    {
+        $records = Historico::select(
+            'historico.*',
+            DB::raw("DATE_FORMAT(historico.created_at, '%d-%m-%Y %H:%i:%s') as fecha"),
+            'equipos.tei as tei',
+            'equipos.issi as issi'
+
+        )
+        ->leftJoin('equipos', 'historico.equipo_id', '=', 'equipos.id')
+        ->where('historico.id', function ($query) {
+            $query->select(DB::raw('MAX(h2.id)'))
+            ->from('historico as h2')
+            ->whereRaw('h2.equipo_id = historico.equipo_id')
+            ->groupBy('h2.equipo_id');
+        })
+        ->where('historico.tipo_movimiento_id', function ($subquery) {
+            $subquery->select('id')
+                ->from('tipo_movimiento')
+                ->where('nombre', 'Desinstalación Parcial');
+        })
+        ->get();
+        //dd(response()->json($records));
+        return response()->json($records);
+    }
+
+
     public function getMovilesJSON(Request $request)
     {
         /*fecha = $request->fecha;

@@ -20,25 +20,25 @@
         .card-item:hover {
             transform: translateY(-5px);
             /*translate: 0 -20px;
-                    box-shadow: 5px 3px rgb(217 220 242 / 75%),
-                        10px 6px rgb(44 217 255 / 50%),
-                        15px 9px rgb(126 255 178 / 25%),*/
+                        box-shadow: 5px 3px rgb(217 220 242 / 75%),
+                            10px 6px rgb(44 217 255 / 50%),
+                            15px 9px rgb(126 255 178 / 25%),*/
         }
 
         /*.card-item::before {
-                content: '';
-                position: absolute;
-                inset: 0;
-                transform: scaleY(0.75);
-                transform-origin: bottom;
-                background: linear-gradient(transparent,
-                        rgba(0, 0, 0, 0.02), #000);
-                transition: transform 0.25s;
-            }
+                    content: '';
+                    position: absolute;
+                    inset: 0;
+                    transform: scaleY(0.75);
+                    transform-origin: bottom;
+                    background: linear-gradient(transparent,
+                            rgba(0, 0, 0, 0.02), #000);
+                    transition: transform 0.25s;
+                }
 
-            .card-item:hover::before {
-                transform: scale(1);
-            }*/
+                .card-item:hover::before {
+                    transform: scale(1);
+                }*/
     </style>
 
 @stop
@@ -108,7 +108,8 @@
                                             <h2 class="text-right"><i
                                                     class="fa fa-mobile f-left"></i><span>{{ $cant_equipos }}</span></h2>
                                             @can('ver-equipo')
-                                                <p class="m-b-0 text-right"><a href="/equipos" class="text-white" style="color: rgb(253, 253, 253)">Ver más</a>
+                                                <p class="m-b-0 text-right"><a href="/equipos" class="text-white"
+                                                        style="color: rgb(253, 253, 253)">Ver más</a>
                                                 </p>
                                             @endcan
                                         </div>
@@ -156,7 +157,8 @@
                                             @can('ver-equipo')
                                                 <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
                                                         data-target="#modal-motos{{-- $vehiculo->id --}}"
-                                                        id="btn-buscar-motopatrullas" style="color: rgb(253, 253, 253)">Ver más</a>
+                                                        id="btn-buscar-motopatrullas" style="color: rgb(253, 253, 253)">Ver
+                                                        más</a>
                                                 </p>
                                             @endcan
                                         </div>
@@ -203,11 +205,41 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="col-md-4 col-xl-4">
+                                    <div class="card-item bg-c-black order-card">
+                                        <div class="card-block">
+                                            <h5>Desinstalaciones parciales</h5>
+                                            @php
+                                                use App\Models\TipoMovimiento;
+                                                $cant_desinstalaciones = Historico::whereIn('id', function ($query) {
+                                                    $query
+                                                        ->select(DB::raw('MAX(id)'))
+                                                        ->from('historico')
+                                                        ->groupBy('equipo_id');
+                                                })
+                                                    ->where('tipo_movimiento_id', function ($subquery) {
+                                                        $subquery
+                                                            ->select('id')
+                                                            ->from('tipo_movimiento')
+                                                            ->where('nombre', 'Desinstalación Parcial');
+                                                    })
+                                                    ->count();
+                                            @endphp
+                                            <h2 class="text-right"><i
+                                                    class="fas fa-wrench f-left"></i><span>{{ $cant_desinstalaciones }}</span>
+                                            </h2>
+                                            <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                    data-target="#modal-desinstalaciones-parciales{{-- $vehiculo->id --}}"
+                                                    id="btn-buscar-desinstalaciones-parciales" style="color: rgb(253, 253, 253)">Ver más</a>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
                                 <!--div class="col-md-4 col-xl-4">
-                                                <div class="card bg-c-gren-light order-card">
-                                                    <div class="card-block">
-                                                        <h5>Equipos en la Div. 911</h5>
-                                                        {{-- @php
+                                                    <div class="card bg-c-gren-light order-card">
+                                                        <div class="card-block">
+                                                            <h5>Equipos en la Div. 911</h5>
+                                                            {{-- @php
                                                 use App\Models\FlotaGeneral;
                                                 use App\Models\Vehiculo;
 
@@ -222,14 +254,14 @@
                                                         data-target="#modal-moviles">Ver más</a>
                                                 </p>
                                             @endcan --}}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </div-->
+                                                </div-->
                                 <!--div class="col-md-4 col-xl-4">
-                                                    <div class="card bg-c-gren-light order-card">
-                                                        <div class="card-block">
-                                                            <h5>Equipos en Departamental Paraná</h5>
-                                                            {{-- @php
+                                                        <div class="card bg-c-gren-light order-card">
+                                                            <div class="card-block">
+                                                                <h5>Equipos en Departamental Paraná</h5>
+                                                                {{-- @php
                                                 $tipo_veh1 = 'Auto';
                                                 $tipo_veh2 = 'Camioneta';
                                                 $cant_moviles = Recurso::whereHas('vehiculo', function ($query) use ($tipo_veh1, $tipo_veh2) {
@@ -241,13 +273,38 @@
                                             @can('ver-equipo')
                                                 <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
                                                         data-target="#modal-moviles{{-- $vehiculo->id --}}">Ver más</a>
-                                                                </p>
-                                                            {{-- @endcan --}}
+                                                                    </p>
+                                                                {{-- @endcan --}}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </div-->
+                                                    </div-->
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-desinstalaciones-parciales" class="modal fade " data-backdrop="false" style="background-color: rgba(0, 0, 0, 0.5);"
+            role="dialog" aria-hidden="true">
+            <div id="dialog" class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header bg-success">
+                        <h4 class="modal-title text-white">Desinstalaciones Parciales</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" style="min-height: 500px">
+                        <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
+                            <table id="table-desinstalaciones-parciales" class="table table-condensed table-bordered table-stripped"></table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" data-dismiss="modal">
+                            <i class="fa fa-times"></i>
+                            <span> Cerrar</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -266,9 +323,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                <button id="btn-buscar-moviles" href="consultarMoviles"
-                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                            </div-->
+                                    <button id="btn-buscar-moviles" href="consultarMoviles"
+                                        class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-moviles" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -295,9 +352,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                <button id="btn-buscar-equipos-pg" href="consultarEquiposPG"
-                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                            </div-->
+                                    <button id="btn-buscar-equipos-pg" href="consultarEquiposPG"
+                                        class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-equipos-pg" class="table table-condensed table-bordered table-stripped">
                             </table>
@@ -325,9 +382,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                            </div-->
+                                    <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                        class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-motos" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -354,9 +411,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                            </div-->
+                                    <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                        class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-camaras" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -385,6 +442,9 @@
 
                 $('#btn-buscar-equipos-pg').click(function() {
                     consultarEquiposPG($(this).data('id'))
+                }),
+                $('#btn-buscar-desinstalaciones-parciales').click(function() {
+                    consultarDesinstalacionesParciales($(this).data('id'))
                 }),
                 $('#btn-buscar-camaras').click(function() {
                     //consultarEquiposPG($(this).data('id'))
@@ -464,6 +524,74 @@
                 }).fail(function(data) {
                 //hideShowBlockUi('box-auditoria')
                 swal('Error', 'Ocurrio un error al guardar: ' + data.responseJSON.message, 'error');
+            })
+        }
+
+        function consultarDesinstalacionesParciales(id) {
+            $.post(
+                "{{ route('get-desinstalaciones-parciales-json') }}", {
+                    _token: "{{ csrf_token() }}",
+                    //distribuidor_id: id,
+                    //fecha: $('#fecha-auditoria-historico').val()
+                },
+                function(data, textStatus, xhr) {
+
+                    //blockUi('box-auditoria-historico')
+                    setTableDesinstalacionesParciales('table-desinstalaciones-parciales', data)
+
+                }).fail(function(data) {
+                //hideShowBlockUi('box-auditoria')
+                swal('Error', 'Ocurrio un error al guardar: ' + data.responseJSON.message, 'error');
+            })
+        }
+
+        function setTableDesinstalacionesParciales(table_id, rows) {
+            var table = $('#' + table_id)
+            var columns = [];
+            table.bootstrapTable('destroy')
+
+            columns.push({
+                title: 'Fecha',
+                field: 'fecha',
+                sortable: true,
+            })
+            columns.push({
+                title: 'TEI',
+                field: 'tei',
+                sortable: true,
+            })
+            columns.push({
+                title: 'ISSI',
+                field: 'issi',
+                sortable: true,
+            })
+            columns.push({
+                title: 'Nombre recurso',
+                field: 'recurso_asignado',
+                sortable: true,
+            })
+            columns.push({
+                title: 'Vehiculo',
+                field: 'vehiculo_asignado',
+                sortable: true
+            })
+
+            console.log('ROWS', rows)
+            table.bootstrapTable({
+                striped: true,
+                fixedColumns: true,
+                fixedNumber: 1,
+                sortable: true,
+                paginationVAlign: 'both',
+                columns: columns,
+                data: rows
+            });
+
+            table.find('thead').css({
+                backgroundColor: 'white'
+            })
+            table.closest('.fixed-table-body').css({
+                height: '400px'
             })
         }
 

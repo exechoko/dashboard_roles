@@ -6,7 +6,7 @@
             <h3 class="page__heading">Cámaras - Administración</h3>
             <div>
                 <div class="" style="float: right;">
-                    <label class="alert alert-dark" for="">Cámaras instaladas: {{ $totalCam }}  </label>
+                    <label class="alert alert-dark" for="">Cámaras instaladas: {{ $totalCam }} </label>
                     <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
                     <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
                     <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
@@ -30,15 +30,26 @@
                                 <form method="POST" action="{{ route('camaras.import') }}" enctype="multipart/form-data">
                                     @csrf
                                     <div class="input-group mt-4">
+                                        <div class="custom-file">
+                                            <input type="file" name="excel_file" accept=".xlsx,.xls" class="custom-file-input" id="inputGroupFile04">
+                                            <label class="custom-file-label" for="inputGroupFile04" data-browse="Buscar">Seleccione un archivo</label>
+                                        </div>
+                                        <div class="input-group-append">
+                                            <button class="btn btn-danger" type="submit">Importar</button>
+                                        </div>
+                                    </div>
+
+                                    <!--div class="input-group mt-4">
                                         <input type="file" name="excel_file" accept=".xlsx,.xls">
                                         <button type="submit" class="btn btn-danger">Importar</button>
-                                    </div>
+                                    </div-->
                                 </form>
-                                <div class="text-right">
+                                <div class="text-right mt-4">
                                     <form action="{{ route('camaras.export') }}" method="GET" style="display: inline;">
                                         <button type="submit" class="btn btn-primary">Exportar Listado Cámaras</button>
                                     </form>
                                 </div>
+
                             </div>
                         </div>
                     </div>

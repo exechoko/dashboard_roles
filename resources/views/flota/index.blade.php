@@ -71,7 +71,11 @@
                                                     @if (is_null($f->recurso_id))
                                                         <td>-</td>
                                                     @else
-                                                        <td>{{ $f->recurso->nombre }}</td>
+                                                        @if (is_null($f->recurso))
+                                                            <td>-</td>
+                                                        @else
+                                                            <td>{{ $f->recurso->nombre }}</td>
+                                                        @endif
                                                     @endif
 
                                                     <td>{{ $f->destino->nombre }}<br>{{ $f->destino->dependeDe() }}</td>

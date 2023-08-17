@@ -122,7 +122,13 @@ class RecursoController extends Controller
     public function destroy($id)
     {
         $recurso = Recurso::find($id);
-        $recurso->delete();
+        if (!$recurso) {
+            return redirect()->route('recursos.index')->with('error', 'Equipo no encontrado.');
+        }
+        $recurso->flota_general()->delete(); // Esto eliminará los registros relacionados en FlotaGeneral
+        $recurso->historico()->delete(); // Esto eliminará los registros relacionados en Historico
+        $recurso->delete(); // Finalmente, eliminar el recurso
+
         return redirect()->route('recursos.index');
     }
 }

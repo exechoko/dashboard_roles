@@ -425,6 +425,7 @@ class FlotaGeneralController extends Controller
 
     public function update_historico(Request $request, $id)
     {
+        $desdeEquipo = false;
         try {
             DB::beginTransaction();
             $historico = Historico::find($id);
@@ -449,7 +450,7 @@ class FlotaGeneralController extends Controller
                 'message' => $e->getMessage()
               ]);*/
         }
-        return view('flota.historico', compact('hist', 'flota'));
+        return view('flota.historico', compact('hist', 'flota', 'desdeEquipo'));
     }
 
     public function create()
@@ -560,8 +561,11 @@ class FlotaGeneralController extends Controller
     public function update(Request $request, $id)
     {
         //dd($request->all());
+        $jsonData = json_decode($request->tipo_movimiento);
+        $id_tipo_movimiento = $jsonData->id;
+
         $flota = FlotaGeneral::find($id);
-        $tipo_de_mov = TipoMovimiento::where('id', $request->tipo_movimiento)->first();
+        $tipo_de_mov = TipoMovimiento::where('id', $id_tipo_movimiento)->first();
         //dd($tipo_de_mov->id);
         request()->validate([
             'tipo_movimiento' => 'required',
@@ -572,26 +576,30 @@ class FlotaGeneralController extends Controller
         ]);
 
         //Se obtiene el id del recurso llamado Stock
-        $id_recurso_stock = Recurso::where('nombre', 'Stock')->first();
-        $id_recurso_sala_video = Recurso::where('nombre', 'Sala Video Vigilancia 911')->first();
-        $id_recurso_sala_tel = Recurso::where('nombre', 'Sala Telefonía 911')->first();
-        $id_recurso_sala_despacho = Recurso::where('nombre', 'Sala Despacho 911')->first();
-        $id_recurso_uom = Recurso::where('nombre', 'Unidad Operativa Móvil')->first();
-        //dd($id_recurso_stock->id);
-        if ($tipo_de_mov->id == 1) {
-            //Para no asignar un equipo a un recurso mas de una vez
-            $f = FlotaGeneral::where('recurso_id', $request->recurso)->first();
-            if (!is_null($f)) {
-                if ($f->recurso_id == $id_recurso_stock->id
-                    || $f->recurso_id == $id_recurso_sala_video->id
-                    || $f->recurso_id == $id_recurso_sala_tel->id
-                    || $f->recurso_id == $id_recurso_sala_despacho->id
-                    || $f->recurso_id == $id_recurso_uom->id) {
+        $recurso_stock = Recurso::where('nombre', 'Stock')->first();
+        $id_recurso_sala_video = Recurso::where('nombre', 'Sala Video Vigilancia 911')->value('id');
+        $id_recurso_sala_tel = Recurso::where('nombre', 'Sala Telefonía 911')->value('id');
+        $id_recurso_sala_despacho = Recurso::where('nombre', 'Sala Despacho 911')->value('id');
+        $id_recurso_uom = Recurso::where('nombre', 'Unidad Operativa Móvil')->value('id');
 
-                    } else {
-                    $r = Recurso::find($f->recurso_id);
-                    return back()->with('error', "El recurso '$r->nombre' ya tiene asociado un equipo"); //->withInput();
-                }
+        //Se obtienen los id de los tipo de movimientos
+        $id_mov_patrimonial = TipoMovimiento::where('nombre', 'Movimiento patrimonial')->value('id');
+        $id_desinst_completa = TipoMovimiento::where('nombre', 'Desinstalación completa')->value('id');
+        $id_inst_completa = TipoMovimiento::where('nombre', 'Instalación completa')->value('id');
+
+        //Validar que permita mov patrimoniales solo en recursos que acepten muchos equipos
+        if ($tipo_de_mov->id == $id_mov_patrimonial || $tipo_de_mov->id == $id_inst_completa) {
+            $recursosAsignados = [
+                $recurso_stock->id,
+                $id_recurso_sala_video,
+                $id_recurso_sala_tel,
+                $id_recurso_sala_despacho,
+                $id_recurso_uom
+            ];
+            $f = FlotaGeneral::where('recurso_id', $request->recurso)->first();
+            if (!is_null($f) && !in_array($f->recurso_id, $recursosAsignados)) {
+                $r = Recurso::find($f->recurso_id);
+                return back()->with('error', "El recurso '$r->nombre' ya tiene asociado un equipo");
             }
         }
 
@@ -603,16 +611,13 @@ class FlotaGeneralController extends Controller
                 $flota->fecha_asignacion = $request->fecha_asignacion;
                 $flota->ticket_per = $request->ticket_per;
                 $flota->observaciones = $request->observaciones;
-
-                if ($tipo_de_mov->id == 1) { //1 - movimiento patrimonial
+                if ($tipo_de_mov->id == $id_mov_patrimonial) {
                     $flota->destino_id = $request->dependencia;
                 }
-
                 $histAnt = Historico::where('equipo_id', $request->equipo)->orderBy('created_at', 'desc')->first();
                 if (!is_null($histAnt)) {
                     //$histAnt->tipo_movimiento_id = $tipo_de_mov->id;
                     $histAnt->fecha_desasignacion = $request->fecha_asignacion;
-                    $histAnt->save();
                 }
 
                 $historico = new Historico();
@@ -625,8 +630,8 @@ class FlotaGeneralController extends Controller
                     $v = Vehiculo::find($r->vehiculo_id);
                 }
                 //dd($v);
-                $historico->recurso_asignado = (!is_null($r)) ? $r->nombre : null;
-                $historico->vehiculo_asignado = (!is_null($v)) ? $v->dominio : null;
+                $historico->recurso_asignado = !is_null($r) ? $r->nombre : null;
+                $historico->vehiculo_asignado = !is_null($v) ? $v->dominio : null;
 
                 $historico->destino_id = $request->dependencia;
                 $historico->tipo_movimiento_id = $tipo_de_mov->id;
@@ -634,21 +639,27 @@ class FlotaGeneralController extends Controller
                 $historico->ticket_per = $request->ticket_per;
                 $historico->observaciones = $request->observaciones;
 
-                if ($tipo_de_mov->id == 7) { //7 - Desinstalacion completa
-                    $flota->recurso_id = null; //quito el recurso asociado
-                    $historico->recurso_id = null;
-                    $historico->recurso_asignado = null;
+                //dd($histAnt);
+                if ($tipo_de_mov->id == $id_desinst_completa) {
+                    $flota->recurso_id =$recurso_stock->id; //asigna al stock
+                    $historico->recurso_id = $recurso_stock->id; //asigna al stock
+                    $historico->recurso_asignado = $recurso_stock->nombre; //asigna al stock;
                     $historico->vehiculo_asignado = null;
                     $historico->recurso_desasignado = ($histAnt->recurso_asignado) ? $histAnt->recurso_asignado : null;
                     $historico->vehiculo_desasignado = ($histAnt->vehiculo_asignado) ? $histAnt->vehiculo_asignado : null;
-                    $flota->destino_id = $request->dependencia;
+                    $historico->destino_id = $recurso_stock->destino->id;
+                    $flota->destino_id = $recurso_stock->destino->id;
+                    //dd($recurso_stock->destino->id);
                 }
-                if ($tipo_de_mov->id == 1) { //1 - Movimiento Patrimonial
+                if ($tipo_de_mov->id == $id_mov_patrimonial || $tipo_de_mov->id == $id_inst_completa) {
                     $historico->recurso_desasignado = ($histAnt->recurso_asignado) ? $histAnt->recurso_asignado : null;
                     $historico->vehiculo_desasignado = ($histAnt->vehiculo_asignado) ? $histAnt->vehiculo_asignado : null;
-                    $flota->destino_id = $request->dependencia;
+                    $flota->destino_id = ($tipo_de_mov->id == $id_mov_patrimonial) ? $request->dependencia : $flota->destino_id;
                 }
+                /**Al editar una flota en Desintalacion parcial o movimiento patrimonial */
+                //dd($flota);
 
+                $histAnt->save();
                 $historico->save();
                 $flota->save();
             }

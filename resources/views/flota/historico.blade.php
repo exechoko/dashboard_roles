@@ -40,10 +40,10 @@
                                                 @if (!is_null($flota->issi))
                                                     - ISSI: <b>{{ $flota->issi }}</b>
                                         </li>
-                                                @else
-                                                    - ISSI: <b>Sin asignar</b></h3>
+                                    @else
+                                        - ISSI: <b>Sin asignar</b></h3>
                                         </li>
-                                                @endif
+                                @endif
                                 <li>
                                     <h4>Marca: <b>{{ $flota->tipo_terminal->marca }}</b> - Modelo:
                                         <b>{{ $flota->tipo_terminal->modelo }}</b>
@@ -54,7 +54,7 @@
                                 </li>
                                 </ul>
                             @else
-                            <img class="mr-5" src="{{ asset($flota->equipo->tipo_terminal->imagen) }}"
+                                <img class="mr-5" src="{{ asset($flota->equipo->tipo_terminal->imagen) }}"
                                     style="float: left; width: 150px;">
                                 <ul>
                                     <li>
@@ -89,9 +89,11 @@
                                         <th style="color:#fff;">Recurso anterior</th>
                                         <th style="color:#fff;">Ticket PER</th>
                                         <th style="color:#fff;">Observaciones</th>
-                                        @can('editar-historico')
-                                            <th style="color:#fff;">Acciones</th>
-                                        @endcan
+                                        @if ($desdeEquipo == false)
+                                            @can('editar-historico')
+                                                <th style="color:#fff;">Acciones</th>
+                                            @endcan
+                                        @endif
 
                                     </thead>
                                     <tbody>
@@ -128,17 +130,19 @@
                                                 <td>{{ $h->ticket_per }}</td>
                                                 <td>{{ $h->observaciones }}</td>
 
-                                                @can('editar-historico')
-                                                    <td>
-                                                        <form action="#" method="POST">
-                                                            {{-- @can('editar-historico') --}}
-                                                            {{-- <a class="btn btn-info" href="#">Editar</a> --}}
-                                                            <a class="btn btn-info" href="#" data-toggle="modal"
-                                                                data-target="#ModalEditar{{ $h->id }}">Editar</a>
-                                                            {{-- @endcan --}}
-                                                        </form>
-                                                    </td>
-                                                @endcan
+                                                @if ($desdeEquipo == false)
+                                                    @can('editar-historico')
+                                                        <td>
+                                                            <form action="#" method="POST">
+                                                                {{-- @can('editar-historico') --}}
+                                                                {{-- <a class="btn btn-info" href="#">Editar</a> --}}
+                                                                <a class="btn btn-info" href="#" data-toggle="modal"
+                                                                    data-target="#ModalEditar{{ $h->id }}">Editar</a>
+                                                                {{-- @endcan --}}
+                                                            </form>
+                                                        </td>
+                                                    @endcan
+                                                @endif
                                             </tr>
                                         @endforeach
                                     </tbody>

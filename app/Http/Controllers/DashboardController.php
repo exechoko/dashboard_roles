@@ -18,7 +18,8 @@ class DashboardController extends Controller
     {
         $records = Historico::select(
             'historico.*',
-            DB::raw("DATE_FORMAT(historico.created_at, '%d-%m-%Y %H:%i:%s') as fecha"),
+            //DB::raw("DATE_FORMAT(historico.created_at, '%d-%m-%Y %H:%i:%s') as fecha"),
+            DB::raw("DATE_FORMAT(historico.fecha_asignacion, '%d-%m-%Y') as fecha"),
             'equipos.tei as tei',
             'equipos.issi as issi'
 

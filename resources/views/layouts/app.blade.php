@@ -21,6 +21,20 @@
 
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
         integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css" />
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
+    <link href="{{ asset('leaflet/geocoder/geocoder.css') }}" rel="stylesheet">
+    <!--link href="{{ asset('leaflet/lib/leaflet-dist/leaflet.css') }}" rel="stylesheet"-->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-editable/1.1.0/Leaflet.Editable.min.js"></script>
+    <script src="{{ asset('leaflet/geocoder/esri-leaflet.js') }}"></script>
+    <script src="{{ asset('leaflet/geocoder/esri-leaflet-geocoder.min.js') }}"></script>
+    <script src="{{ asset('leaflet/geocoder/gpx.min.js') }}"></script>
+
+    <!-- <link href="{{ asset('/plugins/bootstrap-table/bootstrap-table-reorder-rows.css') }}" rel="stylesheet"> -->
 
 
     @yield('page_css')
@@ -47,8 +61,10 @@
             <!-- Main Content -->
             <div class="main-content">
                 @include('layouts.alerts')
-                <div id="dynamic-content"></div>
-                @yield('content')
+                <div id="dynamic-content">
+                    @yield('content')
+                </div>
+
             </div>
             <footer class="main-footer">
                 @include('layouts.footer')
@@ -97,6 +113,13 @@
 </script>
 <script>
     $(document).ready(function () {
+        var activeDropdown = null; // Variable para almacenar el menú desplegable activo
+
+        $(window).on('popstate', function(event) {
+        var url = location.href;
+        loadPage(url);
+    });
+
     // Captura los enlaces del sidebar
     $('ul.sidebar-menu li a').on('click', function (event) {
         var $this = $(this);
@@ -104,22 +127,39 @@
 
         // Si es un elemento de menú con desplegable, no recargues la página
         if (hasDropdown) {
+            activeDropdown = $this.parent().hasClass('dropdown');
             return;
         }
 
         event.preventDefault();
         var url = $this.attr('href');
-        loadPage(url);
+        var menuItemId = $this.closest('li').attr('id'); // Obtener el ID del elemento del menú
+        loadPage(url, menuItemId, hasDropdown);
+        history.pushState(null, null, url); // Actualiza la URL en la barra de direcciones
     });
 });
 
-    function loadPage(url) {
+    function loadPage(url, menuItemId, hasDropdown) {
+        console.log("url: ", url);
         $.ajax({
             url: url,
             type: 'GET',
             success: function(data) {
                 console.log("data", data);
-                $('#dynamic-content').html(data);
+                // Busca el contenido de la sección 'content' en el HTML cargado
+                var content = $(data).find('#dynamic-content').html();
+                console.log("content", content);
+                // Actualiza el contenido del div 'dynamic-content'
+                $('#dynamic-content').html(content);
+
+                // Marcar el elemento del menú principal como activo
+                $('ul.sidebar-menu li').removeClass('active');
+                $('#' + menuItemId).addClass('active');
+
+                // Marcar el elemento del submenú como activo
+                $('#' + menuItemId + ' ul.dropdown-menu li').removeClass('active');
+                $('#' + menuItemId + ' ul.dropdown-menu li').addClass('active');
+
             },
             error: function(xhr, status, error) {
                 console.log(error);

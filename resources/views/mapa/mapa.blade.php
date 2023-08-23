@@ -1,22 +1,6 @@
 @extends('layouts.app')
 
 @section('css')
-
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
-
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css" />
-    <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
-    <link href="{{ asset('leaflet/geocoder/geocoder.css') }}" rel="stylesheet">
-    <!--link href="{{ asset('leaflet/lib/leaflet-dist/leaflet.css') }}" rel="stylesheet"-->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-editable/1.1.0/Leaflet.Editable.min.js"></script>
-    <script src="{{ asset('leaflet/geocoder/esri-leaflet.js') }}"></script>
-    <script src="{{ asset('leaflet/geocoder/esri-leaflet-geocoder.min.js') }}"></script>
-    <script src="{{ asset('leaflet/geocoder/gpx.min.js') }}"></script>
-
-    <!-- <link href="{{ asset('/plugins/bootstrap-table/bootstrap-table-reorder-rows.css') }}" rel="stylesheet"> -->
-
     <style>
         html {
             --border-m: darkgreen;

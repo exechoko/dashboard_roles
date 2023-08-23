@@ -21,9 +21,10 @@
 
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
         integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
 
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css" />
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css" />
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
     <link href="{{ asset('leaflet/geocoder/geocoder.css') }}" rel="stylesheet">
@@ -112,32 +113,32 @@
     }(jQuery));
 </script>
 <script>
-    $(document).ready(function () {
+    $(document).ready(function() {
         var activeDropdown = null; // Variable para almacenar el menú desplegable activo
 
         $(window).on('popstate', function(event) {
-        var url = location.href;
-        loadPage(url);
+            var url = location.href;
+            loadPage(url);
+        });
+
+        // Captura los enlaces del sidebar
+        $('ul.sidebar-menu li a').on('click', function(event) {
+            var $this = $(this);
+            var hasDropdown = $this.parent().hasClass('dropdown');
+
+            // Si es un elemento de menú con desplegable, no recargues la página
+            if (hasDropdown) {
+                activeDropdown = $this.parent().hasClass('dropdown');
+                return;
+            }
+
+            event.preventDefault();
+            var url = $this.attr('href');
+            var menuItemId = $this.closest('li').attr('id'); // Obtener el ID del elemento del menú
+            loadPage(url, menuItemId, hasDropdown);
+            history.pushState(null, null, url); // Actualiza la URL en la barra de direcciones
+        });
     });
-
-    // Captura los enlaces del sidebar
-    $('ul.sidebar-menu li a').on('click', function (event) {
-        var $this = $(this);
-        var hasDropdown = $this.parent().hasClass('dropdown');
-
-        // Si es un elemento de menú con desplegable, no recargues la página
-        if (hasDropdown) {
-            activeDropdown = $this.parent().hasClass('dropdown');
-            return;
-        }
-
-        event.preventDefault();
-        var url = $this.attr('href');
-        var menuItemId = $this.closest('li').attr('id'); // Obtener el ID del elemento del menú
-        loadPage(url, menuItemId, hasDropdown);
-        history.pushState(null, null, url); // Actualiza la URL en la barra de direcciones
-    });
-});
 
     function loadPage(url, menuItemId, hasDropdown) {
         console.log("url: ", url);

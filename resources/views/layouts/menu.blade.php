@@ -1,6 +1,7 @@
 <li id="dashboard" class="{{ request()->is('home*') ? 'active' : '' }}">
     <a  class="nav-link" href="/home">
         <i class=" fas fa-chart-line"></i><span>Dashboard</span>
+        <!--i><ion-icon name="heart-outline"></ion-icon></i><span>Dashboard</span-->
     </a>
 </li>
 

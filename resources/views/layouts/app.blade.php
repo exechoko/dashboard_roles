@@ -132,10 +132,14 @@
                 return;
             }
 
-            event.preventDefault();
             var url = $this.attr('href');
             var menuItemId = $this.closest('li').attr('id'); // Obtener el ID del elemento del menú
-            loadPage(url, menuItemId, hasDropdown);
+
+            if (menuItemId !== 'dashboard'){
+                event.preventDefault();
+                loadPage(url, menuItemId, hasDropdown);
+            }
+
             history.pushState(null, null, url); // Actualiza la URL en la barra de direcciones
         });
     });
@@ -154,8 +158,13 @@
                 $('#dynamic-content').html(content);
 
                 // Marcar el elemento del menú principal como activo
-                $('ul.sidebar-menu li').removeClass('active');
-                $('#' + menuItemId).addClass('active');
+                /*$('ul.sidebar-menu li').removeClass('active');
+                $('#' + menuItemId).addClass('active');*/
+                //console.log('hasDropdown', hasDropdown);
+                if (hasDropdown){
+                    $('ul.sidebar-menu li').removeClass('active');
+                    $('#' + menuItemId).addClass('active');
+                }
 
                 // Marcar el elemento del submenú como activo
                 $('#' + menuItemId + ' ul.dropdown-menu li').removeClass('active');
@@ -167,6 +176,10 @@
             }
         });
     }
+    iziToast.show({
+        title: 'Bienvenido ',
+        message: 'What would you like to add?'
+    });
 </script>
 
 </html>

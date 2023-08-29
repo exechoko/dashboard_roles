@@ -134,14 +134,14 @@
 
             if (menuItemId !== 'dashboard'){
                 event.preventDefault();
-                loadPage(url, menuItemId, hasDropdown);
+                loadPage(url, menuItemId, hasDropdown, activeDropdown);
             }
 
             history.pushState(null, null, url); // Actualiza la URL en la barra de direcciones
         });
     });
 
-    function loadPage(url, menuItemId, hasDropdown) {
+    function loadPage(url, menuItemId, hasDropdown, activeDropdown) {
         console.log("url: ", url);
         $.ajax({
             url: url,
@@ -150,22 +150,35 @@
                 console.log("data", data);
                 // Busca el contenido de la sección 'content' en el HTML cargado
                 var content = $(data).find('#dynamic-content').html();
-                console.log("content", content);
+                //console.log("content", content);
                 // Actualiza el contenido del div 'dynamic-content'
                 $('#dynamic-content').html(content);
 
                 // Marcar el elemento del menú principal como activo
                 /*$('ul.sidebar-menu li').removeClass('active');
                 $('#' + menuItemId).addClass('active');*/
-                //console.log('hasDropdown', hasDropdown);
-                if (hasDropdown){
-                    $('ul.sidebar-menu li').removeClass('active');
-                    $('#' + menuItemId).addClass('active');
+                console.log('Dropdown', hasDropdown, activeDropdown);
+                if (!hasDropdown){
+                    if (activeDropdown){
+                        $('ul.dropdown-menu li').removeClass('active');
+                        $('#' + menuItemId).addClass('active');
+                    } else {
+                        $('ul.sidebar-menu li').removeClass('active');
+                        $('#' + menuItemId).addClass('active');
+
+                    }
+                } else {
+                    if (activeDropdown){
+                        $('#' + menuItemId).addClass('active');
+                    } else {
+                        $('ul.sidebar-menu li').removeClass('active');
+                        $('#' + menuItemId).addClass('active');
+                    }
                 }
 
                 // Marcar el elemento del submenú como activo
-                $('#' + menuItemId + ' ul.dropdown-menu li').removeClass('active');
-                $('#' + menuItemId + ' ul.dropdown-menu li').addClass('active');
+                /*$('#' + menuItemId + ' ul.dropdown-menu li').removeClass('active');
+                $('#' + menuItemId + ' ul.dropdown-menu li').addClass('active');*/
 
             },
             error: function(xhr, status, error) {

@@ -218,7 +218,7 @@ class Mapacontroller extends Controller
             $query->where('tipo', 'Fija (FR)');
         })->count();
         $fijasLPR = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo', 'Fija (LPR)')->orWhere('tipo', 'Fija (LPR NV)');
+            $query->where('tipo', 'Fija (LPR)')->orWhere('tipo', 'Fija (LPR NV)')->orWhere('tipo', 'Fija (LPR AV)');
         })->count();
         $domos = Camara::whereHas('tipoCamara', function ($query) {
             $query->where('tipo', 'Domo');

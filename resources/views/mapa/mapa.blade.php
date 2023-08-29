@@ -2,6 +2,17 @@
 
 @section('css')
     <style>
+        #fullscreen-button {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            background-color: rgb(255, 255, 255);
+            padding: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
         html {
             --border-m: darkgreen;
             --border-t: red;
@@ -127,12 +138,12 @@
         }
 
         /*.etiqueta {
-                                                position: absolute;
-                                                top: 50px;
+                                                                position: absolute;
+                                                                top: 50px;
 
-                                                left: 50%;
-                                                transform: translateX(-50%);
-                                            }*/
+                                                                left: 50%;
+                                                                transform: translateX(-50%);
+                                                            }*/
 
 
 
@@ -602,33 +613,33 @@
         </div>
 
         <!--div class="row">
-                        <div class="">
-                            <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
-                            <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
-                            <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
-                            <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
-                            <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
-                            <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
-                        </div>
-                    </div-->
+                                        <div class="">
+                                            <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
+                                            <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
+                                            <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
+                                            <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
+                                            <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
+                                            <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
+                                        </div>
+                                    </div-->
         <div class="col-lg-12">
             <div id="map" style="height: 725px;"></div>
         </div>
         <!--div class="row">
-                        <div class="col-lg-12">
-                            <div id="mapContainer" style="position: relative; height: 725px;">
-                                <div id="map" style="height: 100%;"></div>
-                                <div id="labels" style="position: absolute; top: 10px; left: 10px; z-index: 1000">
-                                    <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
-                                    <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
-                                    <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
-                                    <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
-                                    <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
-                                    <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div-->
+                                        <div class="col-lg-12">
+                                            <div id="mapContainer" style="position: relative; height: 725px;">
+                                                <div id="map" style="height: 100%;"></div>
+                                                <div id="labels" style="position: absolute; top: 10px; left: 10px; z-index: 1000">
+                                                    <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
+                                                    <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
+                                                    <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
+                                                    <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
+                                                    <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
+                                                    <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div-->
     </section>
 
     <script>
@@ -714,7 +725,7 @@
 
         // Manejar el evento de clic en el mapa
         mymap.on('click', function(event) {
-        if (markerResultado) {
+            if (markerResultado) {
                 mymap.removeLayer(markerResultado);
             }
         });
@@ -898,7 +909,7 @@
             var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
                     icon: antenaIcon
                     //}).addTo(mymap)
-                }).addTo(capa3).addTo(capa5)
+                }).addTo(capa3)//.addTo(capa5)
                 .bindPopup("{{ $marcador['titulo'] }}");
             //marcadores.addLayer(marker);
         @endforeach
@@ -910,6 +921,9 @@
             @endcan
             @can('ver-camara')
                 'Camaras': capa2,
+            @endcan
+            @can('ver-camara', 'ver-dependencia')
+                'Cámaras y Comisarías': capa5,
             @endcan
             @can('ver-camara')
                 'Primera Etapa': capa6,
@@ -924,9 +938,58 @@
                 'Antenas': capa3,
             @endcan
             'Limpiar': capa4,
-            @can('ver-camara', 'ver-dependencia')
-                'Mostrar Todo': capa5
-            @endcan
         }).addTo(mymap);
+
+        // Agregar el control de pantalla completa al mapa
+        //mymap.addControl(new L.Control.Fullscreen());
+
+        // Agregar botón personalizado para pantalla completa
+        var fullscreenButton = L.control({
+            position: 'bottomright'
+        });
+        var isFullscreen = false; // Variable para rastrear el estado de pantalla completa
+
+        fullscreenButton.onAdd = function(map) {
+            var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+            div.innerHTML = '<div id="fullscreen-button"><i class="fas fa-expand"></i></div>';
+            div.firstChild.addEventListener('click', function() {
+                var element = map.getContainer(); // Obtener el contenedor del mapa
+                if (!isFullscreen) {
+                    if (element.requestFullscreen) {
+                        element.requestFullscreen();
+                    } else if (element.mozRequestFullScreen) {
+                        element.mozRequestFullScreen();
+                    } else if (element.webkitRequestFullscreen) {
+                        element.webkitRequestFullscreen();
+                    } else if (element.msRequestFullscreen) {
+                        element.msRequestFullscreen();
+                    }
+                    isFullscreen = true;
+                    div.firstChild.innerHTML = 'Salir'; // Cambiar el texto del botón
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.mozCancelFullScreen) {
+                        document.mozCancelFullScreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
+                    isFullscreen = false;
+                    div.firstChild.innerHTML = '<i class="fas fa-expand"></i>'; // Cambiar el texto del botón
+                }
+            });
+            return div;
+        };
+        /*fullscreenButton.onAdd = function(map) {
+            var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+            div.innerHTML = '<div id="fullscreen-button">Pantalla Completa</div>';
+            div.firstChild.addEventListener('click', function() {
+                map.toggleFullscreen();
+            });
+            return div;
+        };*/
+        fullscreenButton.addTo(mymap);
     </script>
 @endsection

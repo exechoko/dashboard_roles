@@ -912,7 +912,7 @@
             var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
                     icon: antenaIcon
                     //}).addTo(mymap)
-                }).addTo(capa3).addTo(capa5)
+                }).addTo(capa3)//.addTo(capa5)
                 .bindPopup("{{ $marcador['titulo'] }}");
             //marcadores.addLayer(marker);
         @endforeach
@@ -924,6 +924,9 @@
             @endcan
             @can('ver-camara')
                 'Camaras': capa2,
+            @endcan
+            @can('ver-camara', 'ver-dependencia')
+                'Cámaras y Comisarías': capa5,
             @endcan
             @can('ver-camara')
                 'Primera Etapa': capa6,
@@ -938,9 +941,6 @@
                 'Antenas': capa3,
             @endcan
             'Limpiar': capa4,
-            @can('ver-camara', 'ver-dependencia')
-                'Mostrar Todo': capa5
-            @endcan
         }).addTo(mymap);
 
         // Agregar el control de pantalla completa al mapa

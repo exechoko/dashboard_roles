@@ -657,7 +657,7 @@ class FlotaGeneralController extends Controller
                 if ($tipo_de_mov->id == $id_mov_patrimonial || $tipo_de_mov->id == $id_inst_completa) {
                     $historico->recurso_desasignado = ($histAnt->recurso_asignado) ? $histAnt->recurso_asignado : null;
                     $historico->vehiculo_desasignado = ($histAnt->vehiculo_asignado) ? $histAnt->vehiculo_asignado : null;
-                    $flota->destino_id = ($tipo_de_mov->id == $id_mov_patrimonial) ? $request->dependencia : $flota->destino_id;
+                    $flota->destino_id = ($tipo_de_mov->id == $id_mov_patrimonial || $tipo_de_mov->id ==  $id_inst_completa) ? $request->dependencia : $flota->destino_id;
                 }
                 /**Al editar una flota en Desintalacion parcial o movimiento patrimonial */
                 //dd($flota);

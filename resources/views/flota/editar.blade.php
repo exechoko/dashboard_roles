@@ -33,49 +33,56 @@
                                 @csrf
                                 @method('PUT')
                                 <div class="row">
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
-                                        <div class="form-group">
-                                            <label for="">Equipo</label>
-                                            <select name="equipo" id="" class="form-control select2"
-                                                style="margin-bottom: 15px">
-                                                <option value="{{ $flota->equipo_id }}">
-                                                    {{ $flota->equipo->tei . ' ' . $flota->equipo->tipo_terminal->tipo_uso->uso . ' ' . $flota->equipo->issi . ' ' . $flota->equipo->tipo_terminal->marca . ' ' . $flota->equipo->tipo_terminal->modelo }}
-                                                </option>
-                                                @foreach ($equipos as $equipo)
-                                                    <option value="{{ $equipo->id }}">
-                                                        {{ $equipo->tei . ' ' . $equipo->tipo_terminal->tipo_uso->uso . ' ' . $equipo->issi . ' - ' . $equipo->tipo_terminal->marca . ' ' . $equipo->tipo_terminal->modelo }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
-                                        <div class="form-group">
-                                            <label for="">Recurso actual</label>
-                                            <label for=""
-                                                class="form-control">{{ isset($flota->recurso->nombre) ? $flota->recurso->nombre : 'Sin recurso asignado' }}</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
-                                        <div class="form-group">
-                                            <label for="">Pertenece a</label>
-                                            <label for=""
-                                                class="form-control">{{ $flota->destino->nombre . ' - ' . $flota->destino->dependeDe() }}</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
-                                        <div class="form-group">
-                                            <label for="">Actualmente está en</label>
-                                            @if (is_null($hist->destino))
-                                                <label for=""
-                                                    class="form-control">{{ $flota->destino->nombre . ' - ' . $flota->destino->dependeDe() }}</label>
-                                            @else
-                                                <label for=""
-                                                    class="form-control">{{ $hist->destino->nombre . ' - ' . $hist->destino->dependeDe() }}</label>
-                                            @endif
+                                    <div class="card" style="background-color: #e0f5c4;">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-xs-12 col-sm-12 col-md-6">
+                                                    <div class="form-group">
+                                                        <label for="">Equipo</label>
+                                                        <select name="equipo" id="" class="form-control select2"
+                                                            style="margin-bottom: 15px">
+                                                            <option value="{{ $flota->equipo_id }}">
+                                                                {{ $flota->equipo->tei . ' ' . $flota->equipo->tipo_terminal->tipo_uso->uso . ' ' . $flota->equipo->issi . ' ' . $flota->equipo->tipo_terminal->marca . ' ' . $flota->equipo->tipo_terminal->modelo }}
+                                                            </option>
+                                                            @foreach ($equipos as $equipo)
+                                                                <option value="{{ $equipo->id }}">
+                                                                    {{ $equipo->tei . ' ' . $equipo->tipo_terminal->tipo_uso->uso . ' ' . $equipo->issi . ' - ' . $equipo->tipo_terminal->marca . ' ' . $equipo->tipo_terminal->modelo }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-12 col-sm-12 col-md-6">
+                                                    <div class="form-group">
+                                                        <label for="">Recurso actual</label>
+                                                        <label for=""
+                                                            class="form-control">{{ isset($flota->recurso->nombre) ? $flota->recurso->nombre : 'Sin recurso asignado' }}</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-12 col-sm-12 col-md-6">
+                                                    <div class="form-group">
+                                                        <label for="">Pertenece a</label>
+                                                        <label for=""
+                                                            class="form-control">{{ $flota->destino->nombre . ' - ' . $flota->destino->dependeDe() }}</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-xs-12 col-sm-12 col-md-6">
+                                                    <div class="form-group">
+                                                        <label for="">Actualmente está en</label>
+                                                        @if (is_null($hist->destino))
+                                                            <label for=""
+                                                                class="form-control">{{ $flota->destino->nombre . ' - ' . $flota->destino->dependeDe() }}</label>
+                                                        @else
+                                                            <label for=""
+                                                                class="form-control">{{ $hist->destino->nombre . ' - ' . $hist->destino->dependeDe() }}</label>
+                                                        @endif
 
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
+
                                     <div class="col-xs-12 col-sm-12 col-md-12" id="label_fecha_asignacion">
                                         <div class="form-group">
                                             <label for="fecha_asignacion">Fecha</label>

@@ -137,7 +137,7 @@
                                                         @if (is_null($recurso->vehiculo))
                                                             {{ $recurso->nombre }}
                                                         @else
-                                                            {{ $recurso->nombre . ' - ' . $recurso->vehiculo->tipo_vehiculo }}
+                                                            {{ $recurso->nombre . ' - ' . $recurso->vehiculo->dominio . ' - ' . $recurso->vehiculo->tipo_vehiculo }}
                                                         @endif
                                                     </option>
                                                 @endforeach

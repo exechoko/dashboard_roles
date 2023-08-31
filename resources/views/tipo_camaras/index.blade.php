@@ -25,6 +25,7 @@
                                         <th style="color:#fff;">Tipo</th>
                                         <th style="color:#fff;">Marca</th>
                                         <th style="color:#fff;">Modelo</th>
+                                        <th style="color:#fff;">Canales</th>
                                         <th style="color: #fff;">Imagen</th>
                                         <th style="color:#fff;">Acciones</th>
                                     </thead>
@@ -35,6 +36,7 @@
                                                 <td>{{ $tipoCam->tipo }}</td>
                                                 <td>{{ $tipoCam->marca }}</td>
                                                 <td>{{ $tipoCam->modelo }}</td>
+                                                <td>{{ $tipoCam->canales }}</td>
                                                 <td><img alt="" width="70px" id="myImg"
                                                         src="{{ asset($tipoCam->imagen) }}"
                                                         class="img-fluid img-thumbnail"></td>

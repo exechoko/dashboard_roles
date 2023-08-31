@@ -26,23 +26,29 @@
                             <form action="{{ route('tipo-camara.store') }}" method="POST" enctype="multipart/form-data">
                                 @csrf
                                 <div class="row">
-                                    <div class="col-xs-12 col-sm-12 col-md-8">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
                                             <label for="tipo">Tipo</label>
-                                            <label class="alert alert-light ml-3" for="tipo">Fija - Fija (FR) - Fija (LPR) - Fija (LPR NV) - Domo - Domo Dual</label>
+                                            <label class="alert alert-light ml-3" for="tipo">Fija - Fija FR - Fija LPR - Domo - Domo Dual - Múltiples canales</label>
                                             <input type="text" name="tipo" class="form-control">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="marca">Marca</label>
                                             <input type="text" name="marca" class="form-control">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="modelo">Modelo</label>
                                             <input type="text" name="modelo" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                        <div class="form-group">
+                                            <label for="canales">Cantidad de canales</label>
+                                            <input type="number" name="canales" class="form-control">
                                         </div>
                                     </div>
                                     <div class="form-group col-sm-6 d-flex">

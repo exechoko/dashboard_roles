@@ -46,7 +46,8 @@ class TipoCamaraController extends Controller
         request()->validate([
             'tipo' => 'required',
             'marca' => 'required',
-            'modelo' => 'required'
+            'modelo' => 'required',
+            'canales' =>'required'
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
@@ -67,6 +68,7 @@ class TipoCamaraController extends Controller
             $tipoCamara->tipo = $request->tipo;
             $tipoCamara->marca = $request->marca;
             $tipoCamara->modelo = $request->modelo;
+            $tipoCamara->canales = $request->canales;
             $tipoCamara->observaciones = $request->observaciones;
             $tipoCamara->imagen = $request->hasFile('imagen') ? $destinationPath . $filename : null;
 
@@ -141,6 +143,7 @@ class TipoCamaraController extends Controller
             $tipoCamara->tipo = $request->tipo;
             $tipoCamara->marca = $request->marca;
             $tipoCamara->modelo = $request->modelo;
+            $tipoCamara->canales = $request->canales;
             $tipoCamara->imagen = $request->hasFile('imagen') ? $destinationPath . $filename : $tipoCamara->imagen;
             $tipoCamara->save();
             DB::commit();

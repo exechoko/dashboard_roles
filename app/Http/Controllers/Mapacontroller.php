@@ -227,8 +227,21 @@ class Mapacontroller extends Controller
             $query->where('tipo', 'Domo Dual');
         })->count();
         $totalCam = Camara::all()->count();
-        //dd($totalCam);
-
+        $totalCamaras = Camara::select(
+            'camaras.id',
+            'tipo_camara.canales as canales'
+        )
+        ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+        ->get();
+        $cantidadCanales = 0;
+        foreach ($totalCamaras as $camara) {
+            //dd($camara);
+            //$tipoCamara = $camara->tipoCamara;
+            $cantidadCanales += $camara->canales;
+            //dd($cantidadCanales);
+            //$totalMultiplicado += $cantidadCanales;
+        }
+        //dd($cantidadCanales);
         //dd($jurisdicciones);
 
         return view('mapa.mapa',
@@ -236,6 +249,7 @@ class Mapacontroller extends Controller
                 'comisarias' => $comisarias,
                 'antenas' => $antenas,
                 'camaras' => $camaras,
+                'canales' => $cantidadCanales,
                 'jurisdicciones' => $jurisdicciones,
                 'fijas' => $fijas,
                 'fijasFR' => $fijasFR, 'fijasLPR' => $fijasLPR,

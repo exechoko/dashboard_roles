@@ -606,7 +606,7 @@
     <section class="section">
         <div class="section-header">
             <div class="">
-                <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
+                <label class="alert alert-dark" for="">Cámaras: {{ $total }} / {{ $canales }}</label>
                 <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
                 <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
                 <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>

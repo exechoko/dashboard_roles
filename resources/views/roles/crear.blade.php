@@ -37,8 +37,11 @@
                                         <label for="">Permisos para este Rol:</label>
                                         <br />
                                         @foreach ($permission as $value)
-                                            <label>{{ Form::checkbox('permission[]', $value->id, false, ['class' => 'name']) }}
-                                                {{ $value->name }}</label>
+                                            <div class="custom-switch">
+                                                {{ Form::hidden('permission[]', 0) }} <!-- Valor predeterminado (desactivado) -->
+                                                {{ Form::checkbox('permission[]', $value->id, false, ['class' => 'custom-control-input', 'id' => 'permission_'.$value->id]) }}
+                                                <label class="custom-control-label" for="permission_{{ $value->id }}">{{ $value->name }}</label>
+                                            </div>
                                             <br />
                                         @endforeach
                                     </div>

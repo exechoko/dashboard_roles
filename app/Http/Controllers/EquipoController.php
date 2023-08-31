@@ -189,7 +189,7 @@ class EquipoController extends Controller
         $desdeEquipo = true;
         $flota = Equipo::find($id);
 
-        $hist = Historico::where('equipo_id', $flota->id)->orderBy('created_at', 'desc')->get();
+        $hist = Historico::where('equipo_id', $flota->id)->orderBy('fecha_asignacion', 'desc')->get();
         //dd($hist);
 
         return view('flota.historico', compact('hist', 'flota', 'desdeEquipo'));

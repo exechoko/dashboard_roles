@@ -417,7 +417,7 @@ class FlotaGeneralController extends Controller
         $desdeEquipo = false;
         $flota = FlotaGeneral::find($id);
 
-        $hist = Historico::where('equipo_id', $flota->equipo->id)->orderBy('created_at', 'desc')->get();
+        $hist = Historico::where('equipo_id', $flota->equipo->id)->orderBy('fecha_asignacion', 'desc')->get();
         //dd($hist);
 
         return view('flota.historico', compact('hist', 'flota', 'desdeEquipo'));

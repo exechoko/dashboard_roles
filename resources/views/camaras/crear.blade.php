@@ -64,7 +64,8 @@
                                                 <option value="">Seleccionar tipo de cámara</option>
                                                 @foreach ($tipoCamara as $tipo)
                                                     <option value="{{ $tipo->id }}">
-                                                        {{ $tipo->tipo . ' - ' . $tipo->marca . ' - ' . $tipo->modelo }}</option>
+                                                        {{ $tipo->tipo . ' - ' . $tipo->marca . ' - ' . $tipo->modelo }}
+                                                    </option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -101,7 +102,7 @@
                                                 <option value="">Seleccionar la dependencia</option>
                                                 @foreach ($dependencias as $d)
                                                     <option value="{{ $d->id }}">
-                                                        {{ $d->nombre . ' - ' . $d->dependeDe()}}</option>
+                                                        {{ $d->nombre . ' - ' . $d->dependeDe() }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -112,9 +113,11 @@
                                             <textarea class="form-control" name="observaciones" style="height: 100px"></textarea>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
-                                        <button type="submit" class="btn btn-primary">Guardar</button>
-                                    </div>
+                                    @can('editar-camara')
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <button type="submit" class="btn btn-primary">Guardar</button>
+                                        </div>
+                                    @endcan
                                 </div>
                             </form>
                         </div>

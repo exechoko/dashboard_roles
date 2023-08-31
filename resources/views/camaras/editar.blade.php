@@ -32,35 +32,35 @@
                                         <div class="form-group">
                                             <label for="nombre">Nombre</label>
                                             <input type="text" name="nombre" class="form-control"
-                                            value="{{ $camara->nombre }}">
+                                                value="{{ $camara->nombre }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="ip">IP</label>
                                             <input type="text" name="ip" class="form-control"
-                                            value="{{ $camara->ip }}">
+                                                value="{{ $camara->ip }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="sitio">Sitio</label>
                                             <input type="text" name="sitio" class="form-control"
-                                            value="{{ $camara->sitio }}">
+                                                value="{{ $camara->sitio }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="latitud">Latitud</label>
                                             <input type="text" name="latitud" class="form-control"
-                                            value="{{ $camara->latitud }}">
+                                                value="{{ $camara->latitud }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="longitud">Longitud</label>
                                             <input type="text" name="longitud" class="form-control"
-                                            value="{{ $camara->longitud }}">
+                                                value="{{ $camara->longitud }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-8">
@@ -69,13 +69,16 @@
                                             <select name="tipo_camara_id" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 @if (!is_null($camara->tipo_camara_id))
-                                                <option value="{{ $camara->tipoCamara->id }}">{{ $camara->tipoCamara->tipo . ' - ' . $camara->tipoCamara->marca . ' - ' . $camara->tipoCamara->modelo }}</option>
+                                                    <option value="{{ $camara->tipoCamara->id }}">
+                                                        {{ $camara->tipoCamara->tipo . ' - ' . $camara->tipoCamara->marca . ' - ' . $camara->tipoCamara->modelo }}
+                                                    </option>
                                                 @else
-                                                <option value="">Seleccione un tipo de cámara</option>
+                                                    <option value="">Seleccione un tipo de cámara</option>
                                                 @endif
                                                 @foreach ($tipoCamara as $tipo)
                                                     <option value="{{ $tipo->id }}">
-                                                        {{ $tipo->tipo . ' - ' . $tipo->marca . ' - ' . $tipo->modelo }}</option>
+                                                        {{ $tipo->tipo . ' - ' . $tipo->marca . ' - ' . $tipo->modelo }}
+                                                    </option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -84,27 +87,30 @@
                                         <div class="form-group">
                                             <label for="nro_serie">Nro. de Serie</label>
                                             <input type="text" name="nro_serie" class="form-control"
-                                            value="{{ $camara->nro_serie }}">
+                                                value="{{ $camara->nro_serie }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12" id="label_fecha_asignacion">
                                         <div class="form-group">
                                             <label for="fecha_instalacion">Fecha de Instalación</label>
-                                            {!! Form::date('fecha_instalacion', ($camara->fecha_instalacion) ? $camara->fecha_instalacion : \Carbon\Carbon::now()) !!}
+                                            {!! Form::date(
+                                                'fecha_instalacion',
+                                                $camara->fecha_instalacion ? $camara->fecha_instalacion : \Carbon\Carbon::now(),
+                                            ) !!}
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="etapa">Etapa de instalación</label>
                                             <input type="text" name="etapa" class="form-control"
-                                            value="{{ $camara->etapa }}">
+                                                value="{{ $camara->etapa }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="inteligencia">Inteligencia</label>
                                             <input type="text" name="inteligencia" class="form-control"
-                                            value="{{ $camara->inteligencia }}">
+                                                value="{{ $camara->inteligencia }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
@@ -113,9 +119,11 @@
                                             <select name="destino_id" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 @if (!is_null($camara->destino_id))
-                                                <option value="{{ $camara->destino->id }}">{{ $camara->destino->nombre . ' - ' . $camara->destino->dependeDe() }}</option>
+                                                    <option value="{{ $camara->destino->id }}">
+                                                        {{ $camara->destino->nombre . ' - ' . $camara->destino->dependeDe() }}
+                                                    </option>
                                                 @else
-                                                <option value="">Seleccione la dependencia</option>
+                                                    <option value="">Seleccione la dependencia</option>
                                                 @endif
                                                 <option value="">Seleccionar la dependencia</option>
                                                 @foreach ($dependencias as $d)
@@ -131,9 +139,11 @@
                                             <textarea class="form-control" name="observaciones" style="height: 100px">{{ $camara->observaciones }}</textarea>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
-                                        <button type="submit" class="btn btn-primary">Guardar</button>
-                                    </div>
+                                    @can('editar-camara')
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <button type="submit" class="btn btn-primary">Guardar</button>
+                                        </div>
+                                    @endcan
                                 </div>
                             </form>
 
@@ -146,8 +156,8 @@
 @endsection
 
 <!--script>
-    var msg = '{{Session::get('alert')}}';
-    var exist = '{{Session::has('alert')}}';
+    var msg = '{{ Session::get('alert') }}';
+    var exist = '{{ Session::has('alert') }}';
     if(exist){
       alert(msg);
     }

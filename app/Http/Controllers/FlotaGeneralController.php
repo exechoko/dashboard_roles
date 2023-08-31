@@ -599,7 +599,10 @@ class FlotaGeneralController extends Controller
             $f = FlotaGeneral::where('recurso_id', $request->recurso)->first();
             if (!is_null($f) && !in_array($f->recurso_id, $recursosAsignados)) {
                 $r = Recurso::find($f->recurso_id);
-                return back()->with('error', "El recurso '$r->nombre' ya tiene asociado un equipo");
+                $e_asociado_id = FlotaGeneral::where('recurso_id', $r->id)->value('equipo_id');
+                $equipo_asociado = Equipo::where('id', $e_asociado_id)->first();
+                //dd($equipo_asociado->tei);
+                return back()->with('error', "El recurso '$r->nombre' ya tiene asociado el equipo TEI: " . $equipo_asociado->tei . " ISSI: " . $equipo_asociado->issi);
             }
         }
 

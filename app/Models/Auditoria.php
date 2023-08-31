@@ -41,6 +41,14 @@ class Auditoria extends Model
     {
         return $this->belongsTo(FlotaGeneral::class, 'flota_modificado_id');
     }
+    public function historicoModificado()
+    {
+        return $this->belongsTo(Historico::class, 'historico_modificado_id');
+    }
+    public function recursoModificado()
+    {
+        return $this->belongsTo(Recurso::class, 'recurso_modificado_id');
+    }
 
     //Agregar para todos las demás clases
 }

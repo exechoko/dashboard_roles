@@ -31,13 +31,13 @@
                             <div class="table-responsive">
                                 <table id="dataTable" class="table table-hover mt-2">
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
-                                        <th style="color:#fff;">Registro</th>
-                                        <th style="color:#fff;">Usuario</th>
+                                        <th style="color:#fff; width: 5%;">Registro</th>
+                                        <th style="color:#fff; width: 10%;">Fecha</th>
+                                        <th style="color:#fff; width: 5%;">Usuario</th>
                                         <th style="color:#fff;">Item modificado</th>
-                                        <th style="color:#fff;">Nombre tabla modificada</th>
+                                        <th style="color:#fff;">Tabla modificada</th>
                                         <th style="color:#fff;">Acción</th>
                                         <th style="color:#fff;">Cambios</th>
-                                        <th style="color:#fff;">Fecha</th>
                                     </thead>
                                     <tbody>
                                         @if (count($auditorias) <= 0)
@@ -48,6 +48,7 @@
                                             @foreach ($auditorias as $auditoria)
                                                 <tr>
                                                     <td>{{ $auditoria->id }}</td>
+                                                    <td>{{ $auditoria->created_at }}</td>
                                                     <td>{{ $auditoria->user->apellido . ' ' . $auditoria->user->name }}</td>
                                                     @switch($auditoria->nombre_tabla)
                                                         @case('user')
@@ -56,6 +57,12 @@
                                                         @case('flota_general')
                                                             <td>{{ $auditoria->flotaModificada->equipo->tei }}</td>
                                                         @break
+                                                        @case('historico')
+                                                            <td>{{ $auditoria->historicoModificado->equipo->tei }}</td>
+                                                        @break
+                                                        @case('recursos')
+                                                            <td>{{ $auditoria->recursoModificado->nombre }}</td>
+                                                        @break
                                                         @default
                                                             <td>NN</td>
                                                     @endswitch
@@ -63,7 +70,6 @@
                                                     <td>{{ $auditoria->nombre_tabla }}</td>
                                                     <td>{{ $auditoria->accion }}</td>
                                                     <td>{{ $auditoria->cambios }}</td>
-                                                    <td>{{ $auditoria->created_at }}</td>
                                                 </tr>
                                             @endforeach
                                         @endif

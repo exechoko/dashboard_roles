@@ -3,8 +3,12 @@
 namespace App\Providers;
 
 use App\Models\FlotaGeneral;
+use App\Models\Historico;
+use App\Models\Recurso;
 use App\Models\User;
 use App\Observers\FlotaGeneralObserver;
+use App\Observers\HistoricoObserver;
+use App\Observers\RecursoObserver;
 use App\Observers\UserObserver;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
@@ -37,5 +41,7 @@ class EventServiceProvider extends ServiceProvider
     {
         User::observe(UserObserver::class);
         FlotaGeneral::observe(FlotaGeneralObserver::class);
+        Historico::observe(HistoricoObserver::class);
+        Recurso::observe(RecursoObserver::class);
     }
 }

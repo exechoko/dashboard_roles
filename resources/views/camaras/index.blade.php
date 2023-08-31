@@ -6,7 +6,7 @@
             <h3 class="page__heading">Cámaras - Administración</h3>
             <div>
                 <div class="" style="float: right;">
-                    <label class="alert alert-dark" for="">Cámaras instaladas: {{ $totalCam }}  </label>
+                    <label class="alert alert-dark" for="">Cámaras: {{ $totalCam }} / {{ $cantidadCanales }}  </label>
                     <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
                     <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
                     <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>

@@ -50,6 +50,16 @@ class CamaraController extends Controller
                 $query->where('tipo', 'Domo Dual');
             })->count();
             $totalCam = Camara::all()->count();
+            $totalCamaras = Camara::select(
+                'camaras.id',
+                'tipo_camara.canales as canales'
+            )
+            ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+            ->get();
+            $cantidadCanales = 0;
+            foreach ($totalCamaras as $camara) {
+                $cantidadCanales += $camara->canales;
+            }
 
             /*return view('mapa.mapa',
             [
@@ -69,6 +79,7 @@ class CamaraController extends Controller
         //$camaras = Equipo::paginate(5);
         return view('camaras.index', compact(
             'camaras',
+            'cantidadCanales',
              'texto',
              'fijas',
              'fijasFR',

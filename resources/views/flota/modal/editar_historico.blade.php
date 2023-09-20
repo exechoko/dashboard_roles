@@ -4,6 +4,7 @@
     <div class="modal fade" id="ModalEditar{{ $h->id }}" tabindex="-1" data-backdrop="false" role="dialog"
         aria-hidden="true">
         <div class="modal-dialog" role="document">
+
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">Editar Histórico</h4>
@@ -109,7 +110,7 @@
                         </div>
                     </div>
                     <div class="col-xs-12 col-sm-12 col-md-12">
-                        <button type="submit" class="btn btn-success">Editar</button>
+                        <button type="submit" class="btn btn-success">Guardar</button>
                     </div>
                 </div>
             </div>

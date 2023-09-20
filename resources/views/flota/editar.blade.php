@@ -3,7 +3,7 @@
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h3 class="page__heading">Editar Flota</h3>
+            <h3 class="page__heading">Agregar movimiento</h3>
         </div>
         <div class="section-body">
             <div class="row">
@@ -86,7 +86,7 @@
                                     <div class="col-xs-12 col-sm-12 col-md-12" id="label_fecha_asignacion">
                                         <div class="form-group">
                                             <label for="fecha_asignacion">Fecha</label>
-                                            {!! Form::date('fecha_asignacion', $flota->fecha_asignacion) !!}
+                                            {!! Form::date('fecha_asignacion', '') !!}
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6">
@@ -107,7 +107,7 @@
                                         <div class="form-group">
                                             <label for="ticket_per">Ticket PER</label>
                                             <input type="text" name="ticket_per" class="form-control"
-                                                value="{{ $flota->ticket_per }}">
+                                                value="">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6" id="dependenciaDestino">
@@ -129,7 +129,7 @@
                                             <label for="">Recurso al que se asigna</label>
                                             <select name="recurso" class="form-control select2"
                                                 style="margin-bottom: 15px; width: 100%;">
-                                                <option value="{{ $flota->recurso_id }}">
+                                                <option value="">
                                                     {{ isset($flota->recurso->nombre) ? $flota->recurso->nombre : 'Seleccionar recurso' }}
                                                 </option>
                                                 @foreach ($recursos as $recurso)
@@ -147,7 +147,7 @@
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>
-                                            <textarea class="form-control" name="observaciones" style="height: 100px">{{ $flota->observaciones }}</textarea>
+                                            <textarea class="form-control" name="observaciones" style="height: 100px"></textarea>
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">

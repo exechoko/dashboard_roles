@@ -96,9 +96,9 @@
                                                             data-target="#ModalDetalle{{ $f->id }}">Detalles</a> --}}
 
                                                             @can('editar-flota')
-                                                                <a class="btn btn-info"
+                                                                <a class="btn btn-success"
                                                                     href="{{ route('flota.edit', $f->id) }}"><i
-                                                                        class="far fa-edit"></i></a>
+                                                                        class="fas fa-plus"></i></a>
                                                             @endcan
 
                                                             @can('borrar-flota')

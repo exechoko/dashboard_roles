@@ -425,14 +425,15 @@ class FlotaGeneralController extends Controller
 
     public function update_historico(Request $request, $id)
     {
+        dd($request->all());
         $desdeEquipo = false;
         try {
             DB::beginTransaction();
             $historico = Historico::find($id);
-            $historico->tipo_movimiento_id = $request->tipo_movimiento;
+            $historico->tipo_movimiento_id = ($request->tipo_movimiento != '-') ? $request->tipo_movimiento : null;
             $historico->fecha_asignacion = $request->fecha_asignacion;
-            $historico->recurso_id = $request->recurso;
-            $historico->destino_id = $request->dependencia;
+            $historico->recurso_id = ($request->recurso != '-') ? $request->recurso : null;
+            $historico->destino_id = ($request->dependencia != '-') ? $request->dependencia : null;
             $historico->ticket_per = $request->ticket_per;
             $historico->recurso_desasignado = $request->recurso_desasignado;
             $historico->vehiculo_desasignado = $request->vehiculo_desasignado;
@@ -455,7 +456,10 @@ class FlotaGeneralController extends Controller
 
     public function create()
     {
-        $equipos = Equipo::all();
+        //Equipos que no tiene flota asociada
+        $equipos = Equipo::doesntHave('flota_general')->get();
+        /*$equipos = Equipo::all();
+        dd($equipos->count());*/
         $tipos_movimiento = TipoMovimiento::all();
         $dependencias = Destino::all();
         $recursos = Recurso::all();
@@ -466,35 +470,29 @@ class FlotaGeneralController extends Controller
 
     public function store(Request $request)
     {
-        //dd($request->all());
-
         request()->validate([
             'tipo_movimiento' => 'required',
             'dependencia' => 'required',
             'equipo' => 'required',
             'fecha_asignacion' => 'required',
-            //'ticket_per' => 'required',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
-
-        //Para no guardar el mismo equipo 2 veces
-        $f = FlotaGeneral::where('equipo_id', $request->equipo)->first();
-        if (!is_null($f)) {
-            return back()->with('error', 'Ya se encuentra una flota con el mismo equipo'); //->withInput();
-        }
-        //Para no asignar un equipo a un recurso mas de una vez
-        $f = FlotaGeneral::where('recurso_id', $request->recurso)->first();
-        $id_recurso_stock = Recurso::where('nombre', 'Stock')->first();
-        //dd($id_recurso_stock);
-        if (!is_null($f)) {
-            if ($f->recurso_id != $id_recurso_stock->id) {
+        $id_tipo_movimiento = $request->tipo_movimiento;
+        $tipo_de_mov = TipoMovimiento::where('id', $id_tipo_movimiento)->first();
+        //Recursos que permiten multiples equipos y devolver en un array
+        $recursos_con_multiples_equipos = Recurso::where('multi_equipos', true)->pluck('id')->toArray();
+        //Se obtienen los id de los tipo de movimientos
+        $id_mov_patrimonial = TipoMovimiento::where('nombre', 'Movimiento patrimonial')->value('id');
+        $id_inst_completa = TipoMovimiento::where('nombre', 'Instalación completa')->value('id');
+        //Validar que permita mov patrimoniales solo en recursos que acepten muchos equipos
+        if ($tipo_de_mov->id == $id_mov_patrimonial || $tipo_de_mov->id == $id_inst_completa) {
+            $f = FlotaGeneral::where('recurso_id', $request->recurso)->first();
+            if (!is_null($f) && !in_array($f->recurso_id, $recursos_con_multiples_equipos)) {
                 $r = Recurso::find($f->recurso_id);
-                $id_recurso_stock = Recurso::where('nombre', 'Stock')->pluck('id');
-
-                return back()->with('error',
-                    "El recurso '$r->nombre' ya tiene asociado un equipo"
-                ); //->withInput();
+                $e_asociado_id = FlotaGeneral::where('recurso_id', $r->id)->value('equipo_id');
+                $equipo_asociado = Equipo::where('id', $e_asociado_id)->first();
+                return back()->with('error', "El recurso '$r->nombre' ya tiene asociado el equipo TEI: " . $equipo_asociado->tei . " ISSI: " . $equipo_asociado->issi);
             }
         }
 
@@ -511,12 +509,11 @@ class FlotaGeneralController extends Controller
             $flota->save();
 
             $historico->equipo_id = $request->equipo;
-            //$historico->recurso_id = $request->recurso;
+            $historico->recurso_id = $request->recurso;
             $r = Recurso::find($request->recurso);
             if ($r) {
                 $v = Vehiculo::find($r->vehiculo_id);
             }
-            //dd($v);
             $historico->recurso_asignado = ($r) ? $r->nombre : null;
             $historico->vehiculo_asignado = ($v) ? $v->dominio : null;
 
@@ -560,13 +557,6 @@ class FlotaGeneralController extends Controller
 
     public function update(Request $request, $id)
     {
-        //dd($request->all());
-        $jsonData = json_decode($request->tipo_movimiento);
-        $id_tipo_movimiento = $jsonData->id;
-
-        $flota = FlotaGeneral::find($id);
-        $tipo_de_mov = TipoMovimiento::where('id', $id_tipo_movimiento)->first();
-        //dd($tipo_de_mov->id);
         request()->validate([
             'tipo_movimiento' => 'required',
             'equipo' => 'required',
@@ -574,14 +564,13 @@ class FlotaGeneralController extends Controller
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
-
-        //Se obtiene el id del recurso llamado Stock
-        $recurso_stock = Recurso::where('nombre', 'Stock')->first();
-        $id_recurso_sala_video = Recurso::where('nombre', 'Sala Video Vigilancia 911')->value('id');
-        $id_recurso_sala_tel = Recurso::where('nombre', 'Sala Telefonía 911')->value('id');
-        $id_recurso_sala_despacho = Recurso::where('nombre', 'Sala Despacho 911')->value('id');
-        $id_recurso_uom = Recurso::where('nombre', 'Unidad Operativa Móvil')->value('id');
-
+        $jsonData = json_decode($request->tipo_movimiento);
+        $id_tipo_movimiento = $jsonData->id;
+        $flota = FlotaGeneral::find($id);
+        $tipo_de_mov = TipoMovimiento::where('id', $id_tipo_movimiento)->first();
+        //Recursos que permiten multiples equipos y devolver en un array
+        $recursos_con_multiples_equipos = Recurso::where('multi_equipos', true)->pluck('id')->toArray();
+        $recurso_stock = Recurso::where('nombre', 'Stock 911')->first();
         //Se obtienen los id de los tipo de movimientos
         $id_mov_patrimonial = TipoMovimiento::where('nombre', 'Movimiento patrimonial')->value('id');
         $id_desinst_completa = TipoMovimiento::where('nombre', 'Desinstalación completa')->value('id');
@@ -589,19 +578,11 @@ class FlotaGeneralController extends Controller
 
         //Validar que permita mov patrimoniales solo en recursos que acepten muchos equipos
         if ($tipo_de_mov->id == $id_mov_patrimonial || $tipo_de_mov->id == $id_inst_completa) {
-            $recursosAsignados = [
-                $recurso_stock->id,
-                $id_recurso_sala_video,
-                $id_recurso_sala_tel,
-                $id_recurso_sala_despacho,
-                $id_recurso_uom
-            ];
             $f = FlotaGeneral::where('recurso_id', $request->recurso)->first();
-            if (!is_null($f) && !in_array($f->recurso_id, $recursosAsignados)) {
+            if (!is_null($f) && !in_array($f->recurso_id, $recursos_con_multiples_equipos)) {
                 $r = Recurso::find($f->recurso_id);
                 $e_asociado_id = FlotaGeneral::where('recurso_id', $r->id)->value('equipo_id');
                 $equipo_asociado = Equipo::where('id', $e_asociado_id)->first();
-                //dd($equipo_asociado->tei);
                 return back()->with('error', "El recurso '$r->nombre' ya tiene asociado el equipo TEI: " . $equipo_asociado->tei . " ISSI: " . $equipo_asociado->issi);
             }
         }
@@ -622,27 +603,22 @@ class FlotaGeneralController extends Controller
                     //$histAnt->tipo_movimiento_id = $tipo_de_mov->id;
                     $histAnt->fecha_desasignacion = $request->fecha_asignacion;
                 }
-
                 $historico = new Historico();
                 $historico->equipo_id = $request->equipo;
                 //$historico->recurso_id = $request->recurso;
                 $r = Recurso::find($request->recurso);
                 $v = null;
-                //dd($r);
                 if (!is_null($r)) {
                     $v = Vehiculo::find($r->vehiculo_id);
                 }
-                //dd($v);
                 $historico->recurso_asignado = !is_null($r) ? $r->nombre : null;
                 $historico->vehiculo_asignado = !is_null($v) ? $v->dominio : null;
-
                 $historico->destino_id = $request->dependencia;
                 $historico->tipo_movimiento_id = $tipo_de_mov->id;
                 $historico->fecha_asignacion = $request->fecha_asignacion;
                 $historico->ticket_per = $request->ticket_per;
                 $historico->observaciones = $request->observaciones;
 
-                //dd($histAnt);
                 if ($tipo_de_mov->id == $id_desinst_completa) {
                     $flota->recurso_id =$recurso_stock->id; //asigna al stock
                     $historico->recurso_id = $recurso_stock->id; //asigna al stock

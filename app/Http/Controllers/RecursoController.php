@@ -58,6 +58,7 @@ class RecursoController extends Controller
             $recurso->vehiculo_id = $request->vehiculo;
             $recurso->destino_id = $request->dependencia;
             $recurso->nombre = $request->nombre;
+            $recurso->multi_equipos = (isset($request->multi_equipos)) ? true : false;
             $recurso->observaciones = $request->observaciones;
             $recurso->save();
             DB::commit();
@@ -87,7 +88,7 @@ class RecursoController extends Controller
 
     public function update(Request $request, $id)
     {
-        //dd($request);
+        //dd($request->all());
         request()->validate([
             'dependencia' => 'required',
             'nombre' => 'required',
@@ -103,6 +104,7 @@ class RecursoController extends Controller
             $recurso->vehiculo_id = $request->vehiculo;
             $recurso->destino_id = $request->dependencia;
             $recurso->nombre = $request->nombre;
+            $recurso->multi_equipos = (isset($request->multi_equipos)) ? true : false;
             $recurso->observaciones = $request->observaciones;
             $recurso->save();
             DB::commit();

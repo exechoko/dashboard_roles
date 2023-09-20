@@ -33,7 +33,8 @@
                                             <label for="">Dependencia</label>
                                             <select name="dependencia" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
-                                                <option value="{{ $recurso->destino_id }}">{{ $recurso->destino->nombre }}</option>
+                                                <option value="{{ $recurso->destino_id }}">{{ $recurso->destino->nombre }}
+                                                </option>
                                                 @foreach ($dependencias as $dependencia)
                                                     <option value="{{ $dependencia->id }}">
                                                         {{ $dependencia->nombre }}</option>
@@ -44,7 +45,8 @@
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="nombre">Nombre</label>
-                                            <input type="text" name="nombre" class="form-control" value="{{ $recurso->nombre }}">
+                                            <input type="text" name="nombre" class="form-control"
+                                                value="{{ $recurso->nombre }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
@@ -55,7 +57,9 @@
                                                 @if (is_null($recurso->vehiculo_id))
                                                     <option value="">-</option>
                                                 @else
-                                                    <option value="{{ $recurso->vehiculo_id }}">{{ $recurso->vehiculo->marca . ' ' . $recurso->vehiculo->modelo . ' ' . $recurso->vehiculo->dominio }}</option>
+                                                    <option value="{{ $recurso->vehiculo_id }}">
+                                                        {{ $recurso->vehiculo->marca . ' ' . $recurso->vehiculo->modelo . ' ' . $recurso->vehiculo->dominio }}
+                                                    </option>
                                                 @endif
                                                 @foreach ($vehiculos as $vehiculo)
                                                     <option value="{{ $vehiculo->id }}">
@@ -67,13 +71,27 @@
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
-                                        <div class="form-floating">
-                                            <label for="observaciones">Observaciones</label>
-                                            <textarea class="form-control" name="observaciones" style="height: 100px">{{ $recurso->observaciones }}</textarea>
+                                        <div class="form-group">
+                                            <div class="control-label">Permite múltiples equipos</div>
+                                            <label class="custom-switch mt-2">
+                                                <input type="checkbox" name="multi_equipos"
+                                                    class="custom-switch-input"
+                                                    @if ($recurso->multi_equipos)
+                                                        checked
+                                                    @endif>
+                                                <span class="custom-switch-indicator"></span>
+                                            </label>
                                         </div>
-                                        <br>
-                                        <button type="submit" class="btn btn-primary">Guardar</button>
                                     </div>
+                                </div>
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="form-floating">
+                                        <label for="observaciones">Observaciones</label>
+                                        <textarea class="form-control" name="observaciones" style="height: 100px">{{ $recurso->observaciones }}</textarea>
+                                    </div>
+                                    <br>
+                                    <button type="submit" class="btn btn-primary">Guardar</button>
+                                </div>
                             </form>
 
                         </div>
@@ -85,8 +103,8 @@
 @endsection
 
 <!--script>
-    var msg = '{{Session::get('alert')}}';
-    var exist = '{{Session::has('alert')}}';
+    var msg = '{{ Session::get('alert') }}';
+    var exist = '{{ Session::has('alert') }}';
     if(exist){
       alert(msg);
     }

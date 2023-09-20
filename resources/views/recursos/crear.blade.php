@@ -59,6 +59,16 @@
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <div class="control-label">Permite múltiples equipos</div>
+                                            <label class="custom-switch mt-2">
+                                                <input type="checkbox" name="multi_equipos"
+                                                    class="custom-switch-input">
+                                                <span class="custom-switch-indicator"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>
                                             <textarea class="form-control" name="observaciones" style="height: 100px"></textarea>

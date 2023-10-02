@@ -17,6 +17,7 @@ use App\Http\Controllers\CamaraController;
 use App\Http\Controllers\Mapacontroller;
 use App\Http\Controllers\TipoCamaraController;
 use App\Http\Controllers\AuditoriaController;
+use App\Http\Controllers\SitioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,6 +52,7 @@ Route::group(['middleware' => ['auth']], function(){
     Route::resource('mapa', Mapacontroller::class);
     Route::resource('tipo-camara', TipoCamaraController::class);
     Route::resource('auditoria', AuditoriaController::class);
+    Route::resource('sitios', SitioController::class);
 
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
     Route::get('get-departamentales', [App\Http\Controllers\DependenciaController::class, 'getDepartamentales'])->name('getDepartamentales');

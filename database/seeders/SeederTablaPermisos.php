@@ -82,7 +82,13 @@ class SeederTablaPermisos extends Seeder
             'borrar-tipo-camara',
 
             //tabla auditoria
-            'ver-auditoria'
+            'ver-auditoria',
+
+            //tabla sitio
+            'ver-sitio',
+            'crear-sitio',
+            'editar-sitio',
+            'borrar-sitio'
 
         ];
 

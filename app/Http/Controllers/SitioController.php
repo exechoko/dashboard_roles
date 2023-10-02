@@ -3,18 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sitio;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class SitioController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+    function __construct()
+    {
+        $this->middleware('permission:ver-sitio|crear-sitio|editar-sitio|borrar-sitio')->only('index');
+        $this->middleware('permission:crear-sitio', ['only' => ['create', 'store']]);
+        $this->middleware('permission:editar-sitio', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:borrar-sitio', ['only' => ['destroy']]);
+    }
+
     public function index()
     {
-        //
+        dd('sitio controller');
     }
 
     /**

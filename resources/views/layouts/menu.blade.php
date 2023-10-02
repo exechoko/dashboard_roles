@@ -66,6 +66,13 @@
                 </a>
             </li>
         @endcan
+        @can('ver-sitio')
+            <li class="{{ request()->is('sitio*') ? 'active' : '' }}">
+                <a class="nav-link" href="/sitios">
+                    <i class="fas fa-map-marker-alt"></i><span>Sitios</span>
+                </a>
+            </li>
+        @endcan
     </ul>
 </li>
 

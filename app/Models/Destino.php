@@ -54,6 +54,10 @@ class Destino extends Model
         return $this->hasMany(Camara::class);
     }
 
+    public function sitio(){
+        return $this->hasMany(Sitio::class);
+    }
+
     public function dependeDe(){
         $depende = '';
         //Verificar que clase de dependencia es

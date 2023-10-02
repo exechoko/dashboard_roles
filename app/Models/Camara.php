@@ -21,4 +21,8 @@ class Camara extends Model
     public function auditoria(){
         return $this->hasMany(Auditoria::class);
     }
+
+    public function sitio(){
+        return $this->belongsTo(Sitio::class);
+    }
 }

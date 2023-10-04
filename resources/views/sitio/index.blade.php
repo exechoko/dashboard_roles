@@ -17,18 +17,18 @@
                                     <label class="alert alert-secondary mb-0" style="float: right; color: black;">Registros:
                                         {{ $sitios->total() }}</label>
                                 </div>
-                                <form method="POST" action="{{ route('sitios.import') }}" enctype="multipart/form-data">
+                                <!--form method="POST" action="{{ route('sitios.import') }}" enctype="multipart/form-data">
                                     @csrf
                                     <div class="input-group mt-4">
                                         <input type="file" name="excel_file" accept=".xlsx,.xls">
                                         <button type="submit" class="btn btn-danger">Importar</button>
                                     </div>
-                                </form>
-                                <div class="text-right">
+                                </form-->
+                                <!--div class="text-right">
                                     <form action="{{ route('sitios.export') }}" method="GET" style="display: inline;">
-                                        <button type="submit" class="btn btn-primary">Exportar Listado Cámaras</button>
+                                        <button type="submit" class="btn btn-primary">Exportar Listado Sitios</button>
                                     </form>
-                                </div>
+                                </div-->
                             </div>
                         </div>
                     </div>
@@ -38,7 +38,7 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
-                        <div class="card-body">
+                        <!--div class="card-body">
                             <form action="{{ route('sitios.index') }}" method="get" onsubmit="return showLoad()">
                                 <div class="input-group mt-4">
                                     <input type="text" name="texto" class="form-control" placeholder="Ingrese el sitio"
@@ -48,7 +48,7 @@
                                     </div>
                                 </div>
                             </form>
-                        </div>
+                        </div-->
 
                         <div class="card-body">
                             <div class="table-responsive">

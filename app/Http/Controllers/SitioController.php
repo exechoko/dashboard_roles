@@ -18,7 +18,8 @@ class SitioController extends Controller
 
     public function index()
     {
-        dd('sitio controller');
+        $sitios = Sitio::paginate(50);
+        return view('sitio.index', compact('sitios'));
     }
 
     /**

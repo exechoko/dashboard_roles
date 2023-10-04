@@ -85,8 +85,8 @@
 
                                     <div class="col-xs-12 col-sm-12 col-md-12" id="label_fecha_asignacion">
                                         <div class="form-group">
-                                            <label for="fecha_asignacion">Fecha</label>
-                                            {!! Form::date('fecha_asignacion', '') !!}
+                                            <label for="fecha_asignacion">Fecha y Hora</label>
+                                            {!! Form::datetimeLocal('fecha_asignacion', '') !!}
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6">

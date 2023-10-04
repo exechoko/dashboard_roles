@@ -12,6 +12,7 @@ use App\Models\Vehiculo;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Calculation\Engine\BranchPruner;
 use PhpOffice\PhpWord\Element\TextRun;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\TemplateProcessor;
@@ -575,6 +576,7 @@ class FlotaGeneralController extends Controller
         $id_mov_patrimonial = TipoMovimiento::where('nombre', 'Movimiento patrimonial')->value('id');
         $id_desinst_completa = TipoMovimiento::where('nombre', 'Desinstalación completa')->value('id');
         $id_inst_completa = TipoMovimiento::where('nombre', 'Instalación completa')->value('id');
+        $id_provisorio = TipoMovimiento::where('nombre', 'Provisorio')->value('id');
 
         //Validar que permita mov patrimoniales solo en recursos que acepten muchos equipos
         if ($tipo_de_mov->id == $id_mov_patrimonial || $tipo_de_mov->id == $id_inst_completa) {
@@ -590,54 +592,72 @@ class FlotaGeneralController extends Controller
         try {
             DB::beginTransaction();
             if (!is_null($flota)) {
-                $flota->equipo_id = $request->equipo;
-                $flota->recurso_id = $request->recurso;
-                $flota->fecha_asignacion = $request->fecha_asignacion;
-                $flota->ticket_per = $request->ticket_per;
-                $flota->observaciones = $request->observaciones;
-                if ($tipo_de_mov->id == $id_mov_patrimonial) {
-                    $flota->destino_id = $request->dependencia;
-                }
+                $historico = new Historico();
                 $histAnt = Historico::where('equipo_id', $request->equipo)->orderBy('created_at', 'desc')->first();
                 if (!is_null($histAnt)) {
-                    //$histAnt->tipo_movimiento_id = $tipo_de_mov->id;
                     $histAnt->fecha_desasignacion = $request->fecha_asignacion;
                 }
-                $historico = new Historico();
+                //Datos que siempre se insertarán
+                $flota->equipo_id = $request->equipo;
                 $historico->equipo_id = $request->equipo;
-                //$historico->recurso_id = $request->recurso;
-                $r = Recurso::find($request->recurso);
-                $v = null;
-                if (!is_null($r)) {
-                    $v = Vehiculo::find($r->vehiculo_id);
-                }
-                $historico->recurso_asignado = !is_null($r) ? $r->nombre : null;
-                $historico->vehiculo_asignado = !is_null($v) ? $v->dominio : null;
-                $historico->destino_id = $request->dependencia;
-                $historico->tipo_movimiento_id = $tipo_de_mov->id;
-                $historico->fecha_asignacion = $request->fecha_asignacion;
+                $flota->ticket_per = $request->ticket_per;
                 $historico->ticket_per = $request->ticket_per;
+                $flota->observaciones = $request->observaciones;
                 $historico->observaciones = $request->observaciones;
 
-                if ($tipo_de_mov->id == $id_desinst_completa) {
-                    $flota->recurso_id =$recurso_stock->id; //asigna al stock
-                    $historico->recurso_id = $recurso_stock->id; //asigna al stock
-                    $historico->recurso_asignado = $recurso_stock->nombre; //asigna al stock;
-                    $historico->vehiculo_asignado = null;
-                    $historico->recurso_desasignado = ($histAnt->recurso_asignado) ? $histAnt->recurso_asignado : null;
-                    $historico->vehiculo_desasignado = ($histAnt->vehiculo_asignado) ? $histAnt->vehiculo_asignado : null;
-                    $historico->destino_id = $recurso_stock->destino->id;
-                    $flota->destino_id = $recurso_stock->destino->id;
-                    //dd($recurso_stock->destino->id);
-                }
-                if ($tipo_de_mov->id == $id_mov_patrimonial || $tipo_de_mov->id == $id_inst_completa) {
-                    $historico->recurso_desasignado = ($histAnt->recurso_asignado) ? $histAnt->recurso_asignado : null;
-                    $historico->vehiculo_desasignado = ($histAnt->vehiculo_asignado) ? $histAnt->vehiculo_asignado : null;
-                    $flota->destino_id = ($tipo_de_mov->id == $id_mov_patrimonial || $tipo_de_mov->id ==  $id_inst_completa) ? $request->dependencia : $flota->destino_id;
-                }
-                /**Al editar una flota en Desintalacion parcial o movimiento patrimonial */
-                //dd($flota);
+                $historico->tipo_movimiento_id = $tipo_de_mov->id;
+                $historico->fecha_asignacion = $request->fecha_asignacion;
+                $historico->destino_id = $request->dependencia;
 
+                switch ($tipo_de_mov->id) {
+                    case $id_mov_patrimonial:
+                    case $id_inst_completa:
+                        $r = Recurso::find($request->recurso);
+                        $v = null;
+                        if (!is_null($r)) {
+                            $v = Vehiculo::find($r->vehiculo_id);
+                        }
+                        $historico->recurso_asignado = !is_null($r) ? $r->nombre : null;
+                        $historico->vehiculo_asignado = !is_null($v) ? $v->dominio : null;
+                        $historico->recurso_desasignado = ($histAnt->recurso_asignado) ? $histAnt->recurso_asignado : null;
+                        $historico->vehiculo_desasignado = ($histAnt->vehiculo_asignado) ? $histAnt->vehiculo_asignado : null;
+                        $flota->destino_id = $request->dependencia;
+                        $flota->recurso_id = $request->recurso;
+                        break;
+
+                    case $id_desinst_completa:
+                        $flota->recurso_id =$recurso_stock->id; //asigna al stock
+                        $historico->recurso_id = $recurso_stock->id; //asigna al stock
+                        $historico->recurso_asignado = $recurso_stock->nombre; //asigna al stock;
+                        $historico->vehiculo_asignado = null;
+                        $historico->recurso_desasignado = ($histAnt->recurso_asignado) ? $histAnt->recurso_asignado : null;
+                        $historico->vehiculo_desasignado = ($histAnt->vehiculo_asignado) ? $histAnt->vehiculo_asignado : null;
+                        $historico->destino_id = $recurso_stock->destino->id;
+                        $flota->destino_id = $recurso_stock->destino->id;
+                        break;
+
+                    case $id_provisorio:
+                        $r = Recurso::find($request->recurso);
+                        $v = null;
+                        if (!is_null($r)) {
+                            $v = Vehiculo::find($r->vehiculo_id);
+                        }
+                        $historico->recurso_asignado = !is_null($r) ? $r->nombre : null;
+                        $historico->vehiculo_asignado = !is_null($v) ? $v->dominio : null;
+                        $flota->recurso_id = $request->recurso;
+                        break;
+
+                    default:
+                        $historico->destino_id = $flota->destino_id;
+                        $r = Recurso::find($flota->recurso_id);
+                        $v = null;
+                        if (!is_null($r)) {
+                            $v = Vehiculo::find($r->vehiculo_id);
+                        }
+                        $historico->recurso_asignado = !is_null($r) ? $r->nombre : null;
+                        $historico->vehiculo_asignado = !is_null($v) ? $v->dominio : null;
+                        break;
+                }
                 $histAnt->save();
                 $historico->save();
                 $flota->save();

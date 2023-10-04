@@ -106,7 +106,7 @@
                                                 @else
                                                     <td>{{ $h->tipoMovimiento->nombre }}</td>
                                                 @endif
-                                                <td>{{ $h->fecha_asignacion }}</td>
+                                                <td>{{ Carbon\Carbon::parse($h->fecha_asignacion)->format('d/m/Y H:i') }}</td>
                                                 @if (is_null($h->recurso_asignado))
                                                     <td>-</td>
                                                 @else

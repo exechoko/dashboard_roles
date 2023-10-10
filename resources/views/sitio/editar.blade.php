@@ -3,7 +3,7 @@
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h3 class="page__heading">Editar cámara</h3>
+            <h3 class="page__heading">Editar sitio</h3>
         </div>
         <div class="section-body">
             <div class="row">
@@ -24,93 +24,42 @@
                             @endif
 
 
-                            <form action="{{ route('camaras.update', $camara->id) }}" method="POST">
+                            <form action="{{ route('sitios.update', $sitio->id) }}" method="POST">
                                 @csrf
                                 @method('PUT')
                                 <div class="row">
-                                    <div class="col-xs-12 col-sm-12 col-md-8">
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
                                             <label for="nombre">Nombre</label>
                                             <input type="text" name="nombre" class="form-control"
-                                                value="{{ $camara->nombre }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
-                                        <div class="form-group">
-                                            <label for="ip">IP</label>
-                                            <input type="text" name="ip" class="form-control"
-                                                value="{{ $camara->ip }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
-                                        <div class="form-group">
-                                            <label for="sitio">Sitio</label>
-                                            <input type="text" name="sitio" class="form-control"
-                                                value="{{ $camara->sitio }}">
+                                                value="{{ $sitio->nombre }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="latitud">Latitud</label>
                                             <input type="text" name="latitud" class="form-control"
-                                                value="{{ $camara->latitud }}">
+                                                value="{{ $sitio->latitud }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="longitud">Longitud</label>
                                             <input type="text" name="longitud" class="form-control"
-                                                value="{{ $camara->longitud }}">
+                                                value="{{ $sitio->longitud }}">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-8">
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
-                                            <label for="">Tipo de cámaras</label>
-                                            <select name="tipo_camara_id" id="" class="form-control select2"
+                                            <label for="">Localidad</label>
+                                            <select name="localidad" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
-                                                @if (!is_null($camara->tipo_camara_id))
-                                                    <option value="{{ $camara->tipoCamara->id }}">
-                                                        {{ $camara->tipoCamara->tipo . ' - ' . $camara->tipoCamara->marca . ' - ' . $camara->tipoCamara->modelo }}
-                                                    </option>
-                                                @else
-                                                    <option value="">Seleccione un tipo de cámara</option>
-                                                @endif
-                                                @foreach ($tipoCamara as $tipo)
-                                                    <option value="{{ $tipo->id }}">
-                                                        {{ $tipo->tipo . ' - ' . $tipo->marca . ' - ' . $tipo->modelo }}
-                                                    </option>
+                                                <option value="{{ $sitio->localidad }}">{{ $sitio->localidad }}</option>
+                                                @foreach ($localidades as $l)
+                                                    <option value="{{ $l }}">
+                                                        {{ $l }}</option>
                                                 @endforeach
                                             </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-3">
-                                        <div class="form-group">
-                                            <label for="nro_serie">Nro. de Serie</label>
-                                            <input type="text" name="nro_serie" class="form-control"
-                                                value="{{ $camara->nro_serie }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12" id="label_fecha_asignacion">
-                                        <div class="form-group">
-                                            <label for="fecha_instalacion">Fecha de Instalación</label>
-                                            {!! Form::date(
-                                                'fecha_instalacion',
-                                                $camara->fecha_instalacion ? $camara->fecha_instalacion : \Carbon\Carbon::now(),
-                                            ) !!}
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
-                                        <div class="form-group">
-                                            <label for="etapa">Etapa de instalación</label>
-                                            <input type="text" name="etapa" class="form-control"
-                                                value="{{ $camara->etapa }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-6">
-                                        <div class="form-group">
-                                            <label for="inteligencia">Inteligencia</label>
-                                            <input type="text" name="inteligencia" class="form-control"
-                                                value="{{ $camara->inteligencia }}">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
@@ -118,14 +67,13 @@
                                             <label for="">Dependencia</label>
                                             <select name="destino_id" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
-                                                @if (!is_null($camara->destino_id))
-                                                    <option value="{{ $camara->destino->id }}">
-                                                        {{ $camara->destino->nombre . ' - ' . $camara->destino->dependeDe() }}
+                                                @if (!is_null($sitio->destino_id))
+                                                    <option value="{{ $sitio->destino->id }}">
+                                                        {{ $sitio->destino->nombre . ' - ' . $sitio->destino->dependeDe() }}
                                                     </option>
                                                 @else
                                                     <option value="">Seleccione la dependencia</option>
                                                 @endif
-                                                <option value="">Seleccionar la dependencia</option>
                                                 @foreach ($dependencias as $d)
                                                     <option value="{{ $d->id }}">
                                                         {{ $d->nombre . ' - ' . $d->dependeDe() }}</option>
@@ -136,10 +84,10 @@
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>
-                                            <textarea class="form-control" name="observaciones" style="height: 100px">{{ $camara->observaciones }}</textarea>
+                                            <textarea class="form-control" name="observaciones" style="height: 100px">{{ $sitio->observaciones }}</textarea>
                                         </div>
                                     </div>
-                                    @can('editar-camara')
+                                    @can('editar-sitio')
                                         <div class="col-xs-12 col-sm-12 col-md-12">
                                             <button type="submit" class="btn btn-primary">Guardar</button>
                                         </div>

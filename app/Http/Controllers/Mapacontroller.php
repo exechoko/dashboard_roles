@@ -131,38 +131,23 @@ class Mapacontroller extends Controller
         //$camaras = Camara::all();
         $camaras = Camara::select(
             'camaras.*',
+            'sitio.*',
             'tipo_camara.tipo as tipo_camara',
             'tipo_camara.imagen as imagen',
             'tipo_camara.marca as marca',
             'tipo_camara.modelo as modelo',
             'destino.nombre as dependencia',
+            DB::raw('sitio.nombre as sitio'),
+            DB::raw('sitio.latitud as latitud'),
+            DB::raw('sitio.longitud as longitud'),
             DB::raw('camaras.id as numero'),
             DB::raw('camaras.nombre as titulo')
         )
+        ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
         ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
-        ->leftJoin('destino', 'camaras.destino_id', '=', 'destino.id')
+        ->leftJoin('destino', 'sitio.destino_id', '=', 'destino.id')
         ->get()->toArray();
         //dd($camaras);
-        /*$camaras = [
-            [
-                'latitud' => -31.72988,
-                'longitud' => -60.53557,
-                'titulo' => 'Camara 1°',
-                'numero' => 1
-            ],
-            [
-                'latitud' => -31.73755,
-                'longitud' => -60.5294,
-                'titulo' => 'Camara 2°',
-                'numero' => 2
-            ],
-            [
-                'latitud' => -31.757398,
-                'longitud' => -60.595877,
-                'titulo' => 'Camara 3°',
-                'numero' => 3
-            ]
-        ];*/
 
         $antenas = [
             [
@@ -188,28 +173,6 @@ class Mapacontroller extends Controller
         $jurisdicciones = Comisaria::select(
             'comisarias.jurisdiccion'
         )->get();
-
-        /*$coordenadas = array();
-        foreach ($jurisdicciones as $j) {
-            $objetos = json_decode($j);
-
-            // Iterar sobre los objetos y agregarlos al arreglo de coordenadas
-            foreach ($objetos as $objeto) {
-                // Obtener los valores de latitud, longitud y orden
-                $latitud = $objeto->latitud;
-                $longitud = $objeto->longitud;
-                $orden = $objeto->orden;
-
-                // Agregar las coordenadas al arreglo
-                $coordenadas[$orden] = array('latitud' => $latitud, 'longitud' => $longitud);
-            }
-        }*/
-
-        //dd(json_encode($jurisdicciones));
-
-        // Convertir el array en formato JSON
-        //$jsonUbicaciones = json_encode($ubicaciones);
-
 
         $fijas = Camara::whereHas('tipoCamara', function ($query) {
             $query->where('tipo', 'Fija');

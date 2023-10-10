@@ -14,8 +14,8 @@
             <div class="modal-body">
                 <img src="{{asset( $camara->tipoCamara->imagen )}}" class="card-img-top" alt="">
                 <ul>
-                    <li>Sitio: <b>{{ $camara->sitio }}</b> - IP: <b>@if (!is_null($camara->ip)) {{ $camara->ip }} @else - @endif</b></li>
-                    <li>Dependencia: <b>@if (!is_null($camara->destino_id)) {{ $camara->destino->nombre . ' - ' . $camara->destino->dependeDe() }} @else - @endif</b></li>
+                    <li>Sitio: <b>@if(!is_null($camara->sitio)) {{ $camara->sitio->nombre }} @else - @endif</b> - IP: <b>@if (!is_null($camara->ip)) {{ $camara->ip }} @else - @endif</b></li>
+                    <li>Dependencia: <b>@if (!is_null($camara->sitio)) {{ $camara->sitio->destino->nombre . ' - ' . $camara->sitio->destino->dependeDe() }} @else - @endif</b></li>
                     <li>Marca: <b>{{ $camara->tipoCamara->marca }}</b> - Modelo: <b>@if (!is_null($camara->tipoCamara->modelo)) {{ $camara->tipoCamara->modelo }} @else - @endif</b></li>
                     <li>Tipo: <b>{{ $camara->tipoCamara->tipo }}</b></li>
                     <li>Nro de Serie: <b>@if (!is_null($camara->nro_serie)) {{ $camara->nro_serie}} @else - @endif</b></li>

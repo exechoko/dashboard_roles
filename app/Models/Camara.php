@@ -8,21 +8,39 @@ use Illuminate\Database\Eloquent\Model;
 class Camara extends Model
 {
     protected $table = 'camaras';
-    protected $fillable = ['nombre', 'ip', 'tipo', 'inteligencia','marca', 'modelo', 'nro_serie', 'etapa', 'sitio', 'latitud', 'longitud'];
+    protected $fillable = [
+        'tipo_camara_id',
+        'sitio_id',
+        'nombre',
+        'ip',
+        'tipo',
+        'inteligencia',
+        'marca',
+        'modelo',
+        'nro_serie',
+        'etapa',
+        'sitio',
+        'latitud',
+        'longitud'
+    ];
 
-    public function tipoCamara(){
+    public function tipoCamara()
+    {
         return $this->belongsTo(TipoCamara::class);
     }
 
-    public function destino(){
+    public function destino()
+    {
         return $this->belongsTo(Destino::class);
     }
 
-    public function auditoria(){
+    public function auditoria()
+    {
         return $this->hasMany(Auditoria::class);
     }
 
-    public function sitio(){
-        return $this->belongsTo(Sitio::class);
+    public function sitio()
+    {
+        return $this->belongsTo(Sitio::class, 'sitio_id');
     }
 }

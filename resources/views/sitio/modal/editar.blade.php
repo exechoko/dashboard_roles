@@ -1,7 +1,7 @@
-<form action="{{ route('camaras.update', $camara->id) }}" method="post" enctype="multipart/form-data">
+<form action="{{ route('sitios.update', $sitio->id) }}" method="post" enctype="multipart/form-data">
     {{ method_field('patch') }}
     {{ csrf_field() }}
-    <div class="modal fade" id="ModalEditar{{ $camara->id }}" tabindex="-1" data-backdrop="false" role="dialog"
+    <div class="modal fade" id="ModalEditar{{ $sitio->id }}" tabindex="-1" data-backdrop="false" role="dialog"
         aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -15,7 +15,7 @@
                     <div class="col-xs-12 col-sm-12 col-md-12">
 
                     </div>
-                    @can('editar-camara')
+                    @can('editar-sitio')
                         <div class="col-xs-12 col-sm-12 col-md-12">
                             <button type="submit" class="btn btn-warning">Editar</button>
                         </div>

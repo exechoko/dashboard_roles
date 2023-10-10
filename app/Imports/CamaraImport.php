@@ -20,10 +20,10 @@ class CamaraImport implements ToModel,WithStartRow
             'marca' => $row[4],
             'modelo' => $row[5],
             'nro_serie' => $row[6],
-            'etapa' => $row[7],
+            /*'etapa' => $row[7],
             'sitio' => $row[8],
             'latitud' => $row[9],
-            'longitud' => $row[10],
+            'longitud' => $row[10],*/
         ]);
     }
 

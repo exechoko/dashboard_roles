@@ -17,18 +17,6 @@
                                     <label class="alert alert-secondary mb-0" style="float: right; color: black;">Registros:
                                         {{ $sitios->total() }}</label>
                                 </div>
-                                <!--form method="POST" action="{{ route('sitios.import') }}" enctype="multipart/form-data">
-                                    @csrf
-                                    <div class="input-group mt-4">
-                                        <input type="file" name="excel_file" accept=".xlsx,.xls">
-                                        <button type="submit" class="btn btn-danger">Importar</button>
-                                    </div>
-                                </form-->
-                                <!--div class="text-right">
-                                    <form action="{{ route('sitios.export') }}" method="GET" style="display: inline;">
-                                        <button type="submit" class="btn btn-primary">Exportar Listado Sitios</button>
-                                    </form>
-                                </div-->
                             </div>
                         </div>
                     </div>
@@ -38,25 +26,13 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
-                        <!--div class="card-body">
-                            <form action="{{ route('sitios.index') }}" method="get" onsubmit="return showLoad()">
-                                <div class="input-group mt-4">
-                                    <input type="text" name="texto" class="form-control" placeholder="Ingrese el sitio"
-                                        value="{{ $texto }}">
-                                    <div class="input-group-append">
-                                        <button type="submit" class="btn btn-info">Buscar</button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div-->
-
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table id="dataTable" class="table table-striped mt-2">
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                         <th style="display: none;">ID</th>
                                         <th style="color:#fff;">Nombre</th>
-                                        <th style="color:#fff;">Observaciones</th>
+                                        <th style="color:#fff;">Localidad</th>
                                         @can('ver-sitio')
                                             <th style="color:#fff;">Acciones</th>
                                         @endcan
@@ -69,13 +45,13 @@
                                             </tr>
                                         @else
                                             @foreach ($sitios as $sitio)
-                                                @include('sitios.modal.detalle')
-                                                @include('sitios.modal.borrar')
+                                                @include('sitio.modal.detalle')
+                                                @include('sitio.modal.borrar')
                                                 {{-- @include('equipos.modal.editar') --}}
                                                 <tr>
                                                     <td style="display: none;">{{ $sitio->id }}</td>
                                                     <td>{{ $sitio->nombre }}</td>
-                                                    <td>{{ $sitio->observaciones }}</td>
+                                                    <td>{{ $sitio->localidad }}</td>
                                                     <td>
                                                         <form action="{{ route('sitios.destroy', $sitio->id) }}"
                                                             method="POST">

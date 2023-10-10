@@ -6,6 +6,7 @@ use App\Imports\CamaraImport;
 use App\Exports\CamarasExport;
 use App\Models\Camara;
 use App\Models\Destino;
+use App\Models\Sitio;
 use App\Models\TipoCamara;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -27,41 +28,43 @@ class CamaraController extends Controller
         $texto = trim($request->get('texto')); //trim quita espacios vacios
         $camaras = Camara::where('ip', 'LIKE', '%' . $texto . '%')
             ->orWhere('nombre', 'LIKE', '%' . $texto . '%')
-            ->orWhere('sitio', 'LIKE', '%' . $texto . '%')
+            ->orWhereHas('sitio', function ($query) use ($texto) {
+                $query->where('nombre', 'LIKE', '%' . $texto . '%');
+            })
             ->orWhereHas('tipoCamara', function ($query) use ($texto) {
                 $query->where('tipo', 'LIKE', '%' . $texto . '%');
             })
             ->orderBy('id', 'asc')
             ->paginate(20);
 
-            $fijas = Camara::whereHas('tipoCamara', function ($query) {
-                $query->where('tipo', 'Fija');
-            })->count();
-            $fijasFR = Camara::whereHas('tipoCamara', function ($query) {
-                $query->where('tipo', 'Fija (FR)');
-            })->count();
-            $fijasLPR = Camara::whereHas('tipoCamara', function ($query) {
-                $query->where('tipo', 'Fija (LPR)')->orWhere('tipo', 'Fija (LPR NV)')->orWhere('tipo', 'Fija (LPR AV)');
-            })->count();
-            $domos = Camara::whereHas('tipoCamara', function ($query) {
-                $query->where('tipo', 'Domo');
-            })->count();//Camara::where('tipo', 'Domo')->count();
-            $domosDuales = Camara::whereHas('tipoCamara', function ($query) {
-                $query->where('tipo', 'Domo Dual');
-            })->count();
-            $totalCam = Camara::all()->count();
-            $totalCamaras = Camara::select(
-                'camaras.id',
-                'tipo_camara.canales as canales'
-            )
+        $fijas = Camara::whereHas('tipoCamara', function ($query) {
+            $query->where('tipo', 'Fija');
+        })->count();
+        $fijasFR = Camara::whereHas('tipoCamara', function ($query) {
+            $query->where('tipo', 'Fija (FR)');
+        })->count();
+        $fijasLPR = Camara::whereHas('tipoCamara', function ($query) {
+            $query->where('tipo', 'Fija (LPR)')->orWhere('tipo', 'Fija (LPR NV)')->orWhere('tipo', 'Fija (LPR AV)');
+        })->count();
+        $domos = Camara::whereHas('tipoCamara', function ($query) {
+            $query->where('tipo', 'Domo');
+        })->count(); //Camara::where('tipo', 'Domo')->count();
+        $domosDuales = Camara::whereHas('tipoCamara', function ($query) {
+            $query->where('tipo', 'Domo Dual');
+        })->count();
+        $totalCam = Camara::all()->count();
+        $totalCamaras = Camara::select(
+            'camaras.id',
+            'tipo_camara.canales as canales'
+        )
             ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
             ->get();
-            $cantidadCanales = 0;
-            foreach ($totalCamaras as $camara) {
-                $cantidadCanales += $camara->canales;
-            }
+        $cantidadCanales = 0;
+        foreach ($totalCamaras as $camara) {
+            $cantidadCanales += $camara->canales;
+        }
 
-            /*return view('mapa.mapa',
+        /*return view('mapa.mapa',
             [
                 'comisarias' => $comisarias,
                 'antenas' => $antenas,
@@ -80,13 +83,13 @@ class CamaraController extends Controller
         return view('camaras.index', compact(
             'camaras',
             'cantidadCanales',
-             'texto',
-             'fijas',
-             'fijasFR',
-             'fijasLPR',
-             'domos',
-             'domosDuales',
-             'totalCam'
+            'texto',
+            'fijas',
+            'fijasFR',
+            'fijasLPR',
+            'domos',
+            'domosDuales',
+            'totalCam'
         ));
     }
 
@@ -99,7 +102,8 @@ class CamaraController extends Controller
     {
         $tipoCamara = TipoCamara::all();
         $dependencias = Destino::all();
-        return view('camaras.crear', compact('tipoCamara', 'dependencias'));
+        $sitios = Sitio::all();
+        return view('camaras.crear', compact('tipoCamara', 'dependencias', 'sitios'));
     }
 
     /**
@@ -112,6 +116,7 @@ class CamaraController extends Controller
     {
         request()->validate([
             'tipo_camara_id' => 'required|not_in:Selecciona un tipo de cámara',
+            'sitio_id' => 'required|not_in:Seleccionar',
             'destino_id' => 'required|not_in:Seleccione una dependencia',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
@@ -119,14 +124,14 @@ class CamaraController extends Controller
         //dd($request->all());
         try {
             DB::beginTransaction();
+            $s = Sitio::find($request->sitio_id);
             $camara = new Camara;
             $camara->ip = $request->ip;
             $camara->tipo_camara_id = $request->tipo_camara_id;
             $camara->nombre = $request->nombre;
-            $camara->latitud = $request->latitud;
-            $camara->longitud = $request->longitud;
-            $camara->sitio = $request->sitio;
-            $camara->destino_id = $request->destino_id;
+            $camara->sitio_id = $request->sitio_id;
+            $camara->latitud = (string) $s->latitud;
+            $camara->longitud = (string) $s->longitud;
             $camara->inteligencia = $request->inteligencia;
             $camara->nro_serie = $request->nro_serie;
             $camara->fecha_instalacion = $request->fecha_instalacion;
@@ -168,7 +173,8 @@ class CamaraController extends Controller
         $camara = Camara::find($id);
         $tipoCamara = TipoCamara::all();
         $dependencias = Destino::all();
-        return view('camaras.editar', compact('camara', 'tipoCamara', 'dependencias'));
+        $sitios = Sitio::all();
+        return view('camaras.editar', compact('camara', 'tipoCamara', 'dependencias', 'sitios'));
     }
 
     /**
@@ -180,25 +186,25 @@ class CamaraController extends Controller
      */
     public function update(Request $request, $id)
     {
+        //dd($request->all());
         request()->validate([
+            'sitio_id' => 'required|not_in:Seleccionar',
             'tipo_camara_id' => 'required|not_in:Selecciona un tipo de cámara',
-            'destino_id' => 'required|not_in:Seleccione una dependencia',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
-        //dd($request->all());
         try {
             DB::beginTransaction();
             $camara = Camara::find($id);
+            $s = Sitio::find($request->sitio_id);
 
             if (!is_null($camara)) {
                 $camara->ip = $request->ip;
                 $camara->tipo_camara_id = $request->tipo_camara_id;
                 $camara->nombre = $request->nombre;
-                $camara->latitud = $request->latitud;
-                $camara->longitud = $request->longitud;
-                $camara->sitio = $request->sitio;
-                $camara->destino_id = $request->destino_id;
+                $camara->sitio_id = $request->sitio_id;
+                $camara->latitud = (string) $s->latitud;
+                $camara->longitud = (string) $s->longitud;
                 $camara->inteligencia = $request->inteligencia;
                 $camara->nro_serie = $request->nro_serie;
                 $camara->fecha_instalacion = $request->fecha_instalacion;
@@ -208,7 +214,7 @@ class CamaraController extends Controller
                 $camara->save();
                 DB::commit();
             } else {
-                return redirect()->back()->with('error', 'Debe seleccionar un estado.');
+                return redirect()->back()->with('error', 'Error al actualizar cámara.');
             }
         } catch (\Exception $e) {
             DB::rollback();
@@ -258,7 +264,8 @@ class CamaraController extends Controller
         return redirect()->back()->with('success', 'Los datos se han importado correctamente');
     }
 
-    public function exportExcel(){
-        return Excel::download(new CamarasExport, 'ListadoCamaras_'. Carbon::now() .'.xlsx');
+    public function exportExcel()
+    {
+        return Excel::download(new CamarasExport, 'ListadoCamaras_' . Carbon::now() . '.xlsx');
     }
 }

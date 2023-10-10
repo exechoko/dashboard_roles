@@ -38,25 +38,20 @@
                                             <input type="text" name="ip" class="form-control">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
-                                            <label for="sitio">Sitio</label>
-                                            <input type="text" name="sitio" class="form-control">
+                                            <label for="">Sitio</label>
+                                            <select name="sitio_id" id="" class="form-control select2"
+                                                style="margin-bottom: 15px">
+                                                <option value="">Seleccionar</option>
+                                                @foreach ($sitios as $s)
+                                                    <option value="{{ $s->id }}">
+                                                        {{ $s->nombre . ' - ' . $s->localidad . ' - ' . $s->destino->nombre . ' '. $s->destino->dependeDe() }}</option>
+                                                @endforeach
+                                            </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
-                                        <div class="form-group">
-                                            <label for="latitud">Latitud</label>
-                                            <input type="text" name="latitud" class="form-control">
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
-                                        <div class="form-group">
-                                            <label for="longitud">Longitud</label>
-                                            <input type="text" name="longitud" class="form-control">
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-8">
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="">Tipo de cámaras</label>
                                             <select name="tipo_camara_id" id="" class="form-control select2"
@@ -92,19 +87,6 @@
                                         <div class="form-group">
                                             <label for="inteligencia">Inteligencia</label>
                                             <input type="text" name="inteligencia" class="form-control">
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
-                                        <div class="form-group">
-                                            <label for="">Dependencia</label>
-                                            <select name="destino_id" id="" class="form-control select2"
-                                                style="margin-bottom: 15px">
-                                                <option value="">Seleccionar la dependencia</option>
-                                                @foreach ($dependencias as $d)
-                                                    <option value="{{ $d->id }}">
-                                                        {{ $d->nombre . ' - ' . $d->dependeDe() }}</option>
-                                                @endforeach
-                                            </select>
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">

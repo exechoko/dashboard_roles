@@ -42,28 +42,27 @@
                                                 value="{{ $camara->ip }}">
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
-                                            <label for="sitio">Sitio</label>
-                                            <input type="text" name="sitio" class="form-control"
-                                                value="{{ $camara->sitio }}">
+                                            <label for="">Sitio</label>
+                                            <select name="sitio_id" id="" class="form-control select2"
+                                                style="margin-bottom: 15px">
+                                                @if (!is_null($camara->sitio_id))
+                                                    <option value="{{ $camara->sitio->id }}">
+                                                        {{ $camara->sitio->nombre . ' - ' . $camara->sitio->localidad . ' - ' . $camara->sitio->destino->nombre . ' ' . $camara->sitio->destino->dependeDe() }}
+                                                    </option>
+                                                @else
+                                                    <option value="">Seleccionar</option>
+                                                @endif
+                                                <option value="">Seleccionar</option>
+                                                @foreach ($sitios as $s)
+                                                    <option value="{{ $s->id }}">
+                                                        {{ $s->nombre . ' - ' . $s->localidad . ' - ' . $s->destino->nombre . ' '. $s->destino->dependeDe() }}</option>
+                                                @endforeach
+                                            </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
-                                        <div class="form-group">
-                                            <label for="latitud">Latitud</label>
-                                            <input type="text" name="latitud" class="form-control"
-                                                value="{{ $camara->latitud }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
-                                        <div class="form-group">
-                                            <label for="longitud">Longitud</label>
-                                            <input type="text" name="longitud" class="form-control"
-                                                value="{{ $camara->longitud }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-8">
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="">Tipo de cámaras</label>
                                             <select name="tipo_camara_id" id="" class="form-control select2"
@@ -114,26 +113,6 @@
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
-                                        <div class="form-group">
-                                            <label for="">Dependencia</label>
-                                            <select name="destino_id" id="" class="form-control select2"
-                                                style="margin-bottom: 15px">
-                                                @if (!is_null($camara->destino_id))
-                                                    <option value="{{ $camara->destino->id }}">
-                                                        {{ $camara->destino->nombre . ' - ' . $camara->destino->dependeDe() }}
-                                                    </option>
-                                                @else
-                                                    <option value="">Seleccione la dependencia</option>
-                                                @endif
-                                                <option value="">Seleccionar la dependencia</option>
-                                                @foreach ($dependencias as $d)
-                                                    <option value="{{ $d->id }}">
-                                                        {{ $d->nombre . ' - ' . $d->dependeDe() }}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>
                                             <textarea class="form-control" name="observaciones" style="height: 100px">{{ $camara->observaciones }}</textarea>
@@ -154,11 +133,3 @@
         </div>
     </section>
 @endsection
-
-<!--script>
-    var msg = '{{ Session::get('alert') }}';
-    var exist = '{{ Session::has('alert') }}';
-    if(exist){
-      alert(msg);
-    }
-</script-->

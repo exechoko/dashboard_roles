@@ -577,6 +577,8 @@ class FlotaGeneralController extends Controller
         $id_desinst_completa = TipoMovimiento::where('nombre', 'Desinstalación completa')->value('id');
         $id_inst_completa = TipoMovimiento::where('nombre', 'Instalación completa')->value('id');
         $id_provisorio = TipoMovimiento::where('nombre', 'Provisorio')->value('id');
+        $id_revision = TipoMovimiento::where('nombre', 'Revisión')->value('id');
+        $id_devolucion = TipoMovimiento::where('nombre', 'Devolución')->value('id');
 
         //Validar que permita mov patrimoniales solo en recursos que acepten muchos equipos
         if ($tipo_de_mov->id == $id_mov_patrimonial || $tipo_de_mov->id == $id_inst_completa) {
@@ -637,6 +639,18 @@ class FlotaGeneralController extends Controller
                         break;
 
                     case $id_provisorio:
+                        $r = Recurso::find($request->recurso);
+                        $v = null;
+                        if (!is_null($r)) {
+                            $v = Vehiculo::find($r->vehiculo_id);
+                        }
+                        $historico->recurso_asignado = !is_null($r) ? $r->nombre : null;
+                        $historico->vehiculo_asignado = !is_null($v) ? $v->dominio : null;
+                        $flota->recurso_id = $request->recurso;
+                        break;
+
+                    case $id_devolucion:
+                    case $id_revision:
                         $r = Recurso::find($request->recurso);
                         $v = null;
                         if (!is_null($r)) {

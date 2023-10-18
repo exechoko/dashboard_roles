@@ -106,14 +106,13 @@
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="ticket_per">Ticket PER</label>
-                                            <input type="text" name="ticket_per" class="form-control"
-                                                value="">
+                                            <input type="text" name="ticket_per" class="form-control" value="">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6" id="dependenciaDestino">
                                         <div class="form-group">
                                             <label for="">Dependencia o lugar al que se asigna</label>
-                                            <select name="dependencia" class="form-control select2"
+                                            <select name="dependencia" id="dependencia" class="form-control select2"
                                                 style="margin-bottom: 15px; width: 100%;">
                                                 <option value="">Seleccionar destino/dependencia</option>
                                                 @foreach ($dependencias as $dependencia)
@@ -126,22 +125,9 @@
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6" id="recursoDestino">
                                         <div class="form-group">
-                                            <label for="">Recurso al que se asigna</label>
-                                            <select name="recurso" class="form-control select2"
-                                                style="margin-bottom: 15px; width: 100%;">
-                                                <option value="">
-                                                    {{ isset($flota->recurso->nombre) ? $flota->recurso->nombre : 'Seleccionar recurso' }}
-                                                </option>
-                                                @foreach ($recursos as $recurso)
-                                                    <option value="{{ $recurso->id }}">
-                                                        @if (is_null($recurso->vehiculo))
-                                                            {{ $recurso->nombre }}
-                                                        @else
-                                                            {{ $recurso->nombre . ' - ' . $recurso->vehiculo->dominio . ' - ' . $recurso->vehiculo->tipo_vehiculo }}
-                                                        @endif
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                            <label for="recurso">Recurso al que se asigna</label>
+                                            <select class="form-control select2" name="recurso" id="recurso"
+                                                style="margin-bottom: 15px; width: 100%;"></select>
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
@@ -163,6 +149,32 @@
     </section>
     <script type="text/javascript">
         $(document).ready(function() {
+            $('#dependencia').on('change', function() {
+                var dependenciaId = this.value;
+                $('#recurso').html('');
+                $.ajax({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    url: '{{ route('getRecursosJSON') }}?destino_id=' + dependenciaId,
+                    type: 'get',
+                    success: function(res) {
+                        $('#recurso').html('<option value="">Seleccionar Recurso</option>');
+                        $.each(res, function(key, value) {
+                            // Verificar si el recurso tiene un vehículo asociado
+                            if (value.vehiculo) {
+                                var label = value.nombre + ' - ' + value.vehiculo.marca + ' ' + value.vehiculo.modelo +': ' + value.vehiculo.dominio;
+                                $('#recurso').append('<option value="' + value.id + '">' + label + '</option>');
+                            } else {
+                                $('#recurso').append('<option value="' + value.id +
+                                    '">' + value.nombre + '</option>');
+                            }
+                        });
+                    }
+                });
+            });
+
+
             var dependenciaSelect = $("#dependenciaDestino");
             var recursoSelect = $("#recursoDestino");
             var tipoMovimientoSelect = $("#tipoMovimiento");

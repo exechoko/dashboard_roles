@@ -693,4 +693,9 @@ class FlotaGeneralController extends Controller
         $flota->delete();
         return redirect()->route('flota.index');
     }
+
+    public function getRecursosJSON(Request $request){
+        $recursos = Recurso::with('vehiculo')->where('destino_id', $request->destino_id)->get();
+        return response()->json($recursos);
+    }
 }

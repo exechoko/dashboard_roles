@@ -58,12 +58,14 @@ Route::group(['middleware' => ['auth']], function(){
     Route::get('get-departamentales', [App\Http\Controllers\DependenciaController::class, 'getDepartamentales'])->name('getDepartamentales');
     Route::get('get-divisiones', [App\Http\Controllers\DependenciaController::class, 'getDivisiones'])->name('getDivisiones');
     Route::get('get-comisarias', [App\Http\Controllers\DependenciaController::class, 'getComisarias'])->name('getComisarias');
+
     Route::get('/generate-docx/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'generateDocx'])->name('generateDocx');
     Route::get('/generate-docx/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'generateDocxConTemplate'])->name('generateDocxConTemplate');
     Route::get('/generate-docx/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'generateDocxConTabla'])->name('generateDocxConTabla');
     Route::get('/ver-historico/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'verHistorico'])->name('verHistorico');
     Route::get('/ver-historico-desde-equipo/{id}',[App\Http\Controllers\EquipoController::class, 'verHistoricoDesdeEquipo'])->name('verHistoricoDesdeEquipo');
     Route::post('/update-historico/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'update_historico'])->name('flota.update_historico');
+    Route::get('get-recursos', [App\Http\Controllers\FlotaGeneralController::class, 'getRecursosJSON'])->name('getRecursosJSON');
 
     Route::post('/get-moviles-json', [App\Http\Controllers\DashboardController::class, 'getMovilesJSON'])->name('get-moviles-json');
     Route::post('/get-motos-json', [App\Http\Controllers\DashboardController::class, 'getMotosJSON'])->name('get-motos-json');

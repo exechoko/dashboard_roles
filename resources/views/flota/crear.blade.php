@@ -54,7 +54,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                    <!--div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="">Recurso</label>
                                             <select name="recurso" id="" class="form-control select2"
@@ -71,11 +71,11 @@
                                                 @endforeach
                                             </select>
                                         </div>
-                                    </div>
+                                    </div-->
                                     <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="">Dependencia</label>
-                                            <select name="dependencia" id="" class="form-control select2"
+                                            <select name="dependencia" id="dependencia" class="form-control select2"
                                                 style="margin-bottom: 15px">
                                                 <option value="">Seleccionar Dependencia</option>
                                                 @foreach ($dependencias as $dependencia)
@@ -83,6 +83,12 @@
                                                         {{ $dependencia->nombre . ' - ' . $dependencia->dependeDe() }}</option>
                                                 @endforeach
                                             </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                        <div class="form-group">
+                                            <label for="">Recurso</label>
+                                            <select class="form-control select2" name="recurso" id="recurso"></select>
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6">
@@ -114,4 +120,26 @@
             </div>
         </div>
     </section>
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+
+            $('#dependencia').on('change', function() {
+                var dependenciaId = this.value;
+                $('#recurso').html('');
+                $.ajax({
+                    headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                    url: '{{ route('getRecursosJSON') }}?destino_id=' + dependenciaId,
+                    type: 'get',
+                    success: function(res) {
+                        $('#recurso').html('<option value="">Seleccionar Recurso</option>');
+                        $.each(res, function(key, value) {
+                            $('#recurso').append('<option value="' + value
+                                .id + '">' + value.nombre + '</option>');
+                        });
+                    }
+                });
+            });
+        });
+    </script>
 @endsection

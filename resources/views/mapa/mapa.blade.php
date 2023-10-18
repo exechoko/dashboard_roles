@@ -859,6 +859,8 @@
 
         @foreach ($camaras as $marcador)
             var numero = "{{ $marcador['numero'] }}";
+            var latitud = "{{ $marcador['latitud'] }}";
+            var longitud = "{{ $marcador['longitud'] }}";
             console.log("camaras", numero);
             var cameraIcon = L.icon({
                 iconUrl: "{{ $marcador['imagen'] }}", //(tipo.includes("Fija")) ? "/img/cctv_icon.png" : "/img/domo_icon.png",
@@ -866,7 +868,7 @@
                 iconAnchor: [15, 15],
                 popupAnchor: [0, -15]
             });
-            var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
+            var marker = L.marker([latitud, longitud], {
                 icon: cameraIcon
             }).bindPopup(`
                 <div>

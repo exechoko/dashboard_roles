@@ -35,6 +35,7 @@
                                         <th style="color:#fff;">Tipo/Marca/Modelo</th>
                                         <th style="color:#fff;">ISSI</th>
                                         <th style="color: #fff">Estado</th>
+                                        <th style="color: #fff">Obs.</th>
                                         <th style="color: #fff">Ult. Mod.</th>
                                         <th style="color:#fff;">Acciones</th>
                                     </thead>
@@ -60,6 +61,7 @@
                                                 </td>
                                                 <td>{{ $equipo->issi }}</td>
                                                 <td>{{ $equipo->estado->nombre }}</td>
+                                                <td>{{ $equipo->observaciones }}</td>
                                                 <td>{{ \Carbon\Carbon::parse($equipo->fecha_estado)->format('d-m-Y') }}</td>
                                                 <td>
                                                     <form action="{{ route('equipos.destroy', $equipo->id) }}"
@@ -69,16 +71,17 @@
                                                             data-target="#ModalEditar{{ $equipo->id }}">Editar</a>--}}
 
                                                         <a class="btn btn-warning" href="#" data-toggle="modal"
-                                                            data-target="#ModalDetalle{{ $equipo->id }}">Detalles</a>
+                                                            data-target="#ModalDetalle{{ $equipo->id }}"><i class="fas fa-eye"></i></a>
 
                                                         @can('editar-equipo')
                                                             <a class="btn btn-info"
-                                                                href="{{ route('equipos.edit', $equipo->id) }}">Editar</a>
+                                                                href="{{ route('equipos.edit', $equipo->id) }}"><i class="fas fa-edit"></i></a>
                                                         @endcan
 
                                                         @can('borrar-equipo')
                                                             <a class="btn btn-danger" href="#" data-toggle="modal"
-                                                                data-target="#ModalDelete{{ $equipo->id }}">Borrar</a>
+                                                                data-target="#ModalDelete{{ $equipo->id }}"><i
+                                                                class="far fa-trash-alt"></i></a>
                                                         @endcan
                                                     </form>
                                                 </td>

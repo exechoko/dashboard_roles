@@ -35,8 +35,9 @@
                                         <th style="color:#fff;">Tipo/Modelo</th>
                                         <th style="color:#fff;">Recurso asignado</th>
                                         <th style="color:#fff;">Dependencia</th>
+                                        <th style="color:#fff;">Obs.</th>
                                         <!--th style="color:#fff;">Actualmente en</th-->
-                                        <th style="color:#fff;">Acciones</th>
+                                        <th style="color:#fff; width: 150px;">Acciones</th>
                                     </thead>
                                     <tbody>
                                         @if (count($flota) <= 0)
@@ -79,6 +80,7 @@
                                                     @endif
 
                                                     <td>{{ $f->destino->nombre }}<br>{{ $f->destino->dependeDe() }}</td>
+                                                    <td>{{ $f->observaciones }}</td>
                                                     {{-- @if (is_null($f->ultimoLugar()))
                                                     <td>Sin movimientos</td>
                                                 @else

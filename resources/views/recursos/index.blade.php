@@ -34,6 +34,7 @@
                                         <th style="color:#fff;">Nombre</th>
                                         <th style="color:#fff;">Tipo/Marca - Modelo/Dominio</th>
                                         <th style="color:#fff;">Dependencia</th>
+                                        <th style="color:#fff;">Observaciones</th>
                                         <th style="color:#fff;">Acciones</th>
                                     </thead>
                                     <tbody>
@@ -55,6 +56,7 @@
                                                     <td>{{ $recurso->vehiculo->tipo_vehiculo . '/' . $recurso->vehiculo->marca . ' ' . $recurso->vehiculo->modelo . ' Dom.: ' . $recurso->vehiculo->dominio }}</td>
                                                 @endif
                                                 <td>{{ $recurso->destino->nombre . ' - ' . $recurso->destino->dependeDe() }}</td>
+                                                <td>{{ $recurso->observaciones }}</td>
                                                 <td>
                                                     <form action="{{ route('recursos.destroy', $recurso->id) }}"
                                                         method="POST">
@@ -63,16 +65,17 @@
                                                             data-target="#ModalEditar{{ $recurso->id }}">Editar</a>--}}
 
                                                         <a class="btn btn-warning" href="#" data-toggle="modal"
-                                                            data-target="#ModalDetalle{{ $recurso->id }}">Detalles</a>
+                                                            data-target="#ModalDetalle{{ $recurso->id }}"><i class="fas fa-eye"></i></a>
 
                                                         @can('editar-recurso')
                                                             <a class="btn btn-info"
-                                                                href="{{ route('recursos.edit', $recurso->id) }}">Editar</a>
+                                                                href="{{ route('recursos.edit', $recurso->id) }}"><i class="fas fa-edit"></i></a>
                                                         @endcan
 
                                                         @can('borrar-recurso')
                                                             <a class="btn btn-danger" href="#" data-toggle="modal"
-                                                                data-target="#ModalDelete{{ $recurso->id }}">Borrar</a>
+                                                                data-target="#ModalDelete{{ $recurso->id }}"><i
+                                                                class="far fa-trash-alt"></i></a>
                                                         @endcan
                                                     </form>
                                                 </td>

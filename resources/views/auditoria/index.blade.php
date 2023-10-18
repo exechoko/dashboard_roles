@@ -52,17 +52,37 @@
                                                     <td>{{ $auditoria->user->apellido . ' ' . $auditoria->user->name }}</td>
                                                     @switch($auditoria->nombre_tabla)
                                                         @case('user')
-                                                            <td>{{ $auditoria->usuarioModificado->name }}</td>
+                                                            @if (!is_null($auditoria->usuarioModificado))
+                                                                <td>{{ $auditoria->usuarioModificado->name }}</td>
+                                                            @else
+                                                                <td>-</td>
+                                                            @endif
                                                         @break
+
                                                         @case('flota_general')
-                                                            <td>{{ $auditoria->flotaModificada->equipo->tei }}</td>
+                                                            @if (!is_null($auditoria->flotaModificada))
+                                                                <td>{{ $auditoria->flotaModificada->equipo->tei }}</td>
+                                                            @else
+                                                                <td>-</td>
+                                                            @endif
                                                         @break
+
                                                         @case('historico')
-                                                            <td>{{ $auditoria->historicoModificado->equipo->tei }}</td>
+                                                            @if (!is_null($auditoria->historicoModificado))
+                                                                <td>{{ $auditoria->historicoModificado->equipo->tei }}</td>
+                                                            @else
+                                                                <td>-</td>
+                                                            @endif
                                                         @break
+
                                                         @case('recursos')
-                                                            <td>{{ $auditoria->recursoModificado->nombre }}</td>
+                                                            @if (!is_null($auditoria->recursoModificado))
+                                                                <td>{{ $auditoria->recursoModificado->nombre }}</td>
+                                                            @else
+                                                                <td>-</td>
+                                                            @endif
                                                         @break
+
                                                         @default
                                                             <td>NN</td>
                                                     @endswitch

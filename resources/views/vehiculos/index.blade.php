@@ -36,6 +36,7 @@
                                         <th class="col-1" style="color:#fff;">Marca</th>
                                         <th class="col-2" style="color:#fff;">Modelo</th>
                                         <th class="col-3" style="color:#fff;">Dominio</th>
+                                        <th class="col-3" style="color:#fff;">Observaciones</th>
                                         <th class="col-4" style="color:#fff;">Acciones</th>
                                     </thead>
                                     <tbody>
@@ -53,6 +54,7 @@
                                                 <td>{{ $vehiculo->marca }}</td>
                                                 <td>{{ $vehiculo->modelo }}</td>
                                                 <td>{{ $vehiculo->dominio }}</td>
+                                                <td>{{ $vehiculo->observaciones }}</td>
                                                 <td>
                                                     <form action="{{ route('vehiculos.destroy', $vehiculo->id) }}"
                                                         method="POST">
@@ -61,16 +63,17 @@
                                                             data-target="#ModalEditar{{ $equipo->id }}">Editar</a>--}}
 
                                                         <a class="btn btn-warning" href="#" data-toggle="modal"
-                                                            data-target="#ModalDetalle{{ $vehiculo->id }}">Detalles</a>
+                                                            data-target="#ModalDetalle{{ $vehiculo->id }}"><i class="fas fa-eye"></i></a>
 
                                                         @can('editar-vehiculo')
                                                             <a class="btn btn-info"
-                                                                href="{{ route('vehiculos.edit', $vehiculo->id) }}">Editar</a>
+                                                                href="{{ route('vehiculos.edit', $vehiculo->id) }}"><i class="fas fa-edit"></i></a>
                                                         @endcan
 
                                                         @can('borrar-vehiculo')
                                                             <a class="btn btn-danger" href="#" data-toggle="modal"
-                                                                data-target="#ModalDelete{{ $vehiculo->id }}">Borrar</a>
+                                                                data-target="#ModalDelete{{ $vehiculo->id }}"><i
+                                                                class="far fa-trash-alt"></i></a>
                                                         @endcan
                                                     </form>
                                                 </td>

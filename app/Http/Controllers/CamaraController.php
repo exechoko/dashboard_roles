@@ -35,7 +35,7 @@ class CamaraController extends Controller
                 $query->where('tipo', 'LIKE', '%' . $texto . '%');
             })
             ->orderBy('id', 'asc')
-            ->paginate(20);
+            ->paginate(100);
 
         $fijas = Camara::whereHas('tipoCamara', function ($query) {
             $query->where('tipo', 'Fija');

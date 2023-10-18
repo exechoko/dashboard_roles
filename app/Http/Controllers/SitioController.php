@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\SitiosExport;
 use App\Models\Destino;
 use App\Models\Sitio;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 
 class SitioController extends Controller
@@ -17,10 +20,19 @@ class SitioController extends Controller
         $this->middleware('permission:borrar-sitio', ['only' => ['destroy']]);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $sitios = Sitio::paginate(50);
-        return view('sitio.index', compact('sitios'));
+        //$sitios = Sitio::paginate(50);
+        $texto = trim($request->get('texto')); //trim quita espacios vacios
+        $sitios = Sitio::where('localidad', 'LIKE', '%' . $texto . '%')
+            ->orWhere('nombre', 'LIKE', '%' . $texto . '%')
+            ->orWhereHas('destino', function ($query) use ($texto) {
+                $query->where('nombre', 'LIKE', '%' . $texto . '%');
+            })
+            ->orderBy('id', 'asc')
+            ->paginate(100);
+
+        return view('sitio.index', compact('sitios', 'texto'));
     }
 
     /**
@@ -129,5 +141,10 @@ class SitioController extends Controller
     public function destroy(Sitio $sitio)
     {
         //
+    }
+
+    public function exportExcel()
+    {
+        return Excel::download(new SitiosExport, 'ListadoSitios_' . Carbon::now() . '.xlsx');
     }
 }

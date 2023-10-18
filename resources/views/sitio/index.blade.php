@@ -12,10 +12,15 @@
                     <div class="col-lg-12">
                         <div class="card">
                             <div class="card-body">
-                                <div class="">
+                                <div class="mb-5">
                                     <a class="btn btn-success" href="{{ route('sitios.create') }}">Nuevo</a>
                                     <label class="alert alert-secondary mb-0" style="float: right; color: black;">Registros:
                                         {{ $sitios->total() }}</label>
+                                </div>
+                                <div class="">
+                                    <form action="{{ route('sitios.export') }}" method="GET" style="display: inline;">
+                                        <button type="submit" class="btn btn-primary">Exportar Listado Sitios</button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -26,6 +31,17 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
+                        <div class="card-body">
+                            <form action="{{ route('sitios.index') }}" method="get" onsubmit="return showLoad()">
+                                <div class="input-group mt-4">
+                                    <input type="text" name="texto" class="form-control" placeholder="Ingrese el sitio"
+                                        value="{{ $texto }}">
+                                    <div class="input-group-append">
+                                        <button type="submit" class="btn btn-info">Buscar</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table id="dataTable" class="table table-striped mt-2">

@@ -695,7 +695,10 @@ class FlotaGeneralController extends Controller
     }
 
     public function getRecursosJSON(Request $request){
-        $recursos = Recurso::with('vehiculo')->where('destino_id', $request->destino_id)->get();
+        $recursos = Recurso::with('vehiculo')
+            ->where('destino_id', $request->destino_id)
+            ->orderBy('nombre', 'asc')
+            ->get();
         return response()->json($recursos);
     }
 }

@@ -650,6 +650,16 @@ class FlotaGeneralController extends Controller
                         break;
 
                     case $id_devolucion:
+                        $flota->recurso_id =$recurso_stock->id; //asigna al stock
+                        $historico->recurso_id = $recurso_stock->id; //asigna al stock
+                        $historico->recurso_asignado = $recurso_stock->nombre; //asigna al stock;
+                        $historico->vehiculo_asignado = null;
+                        $historico->recurso_desasignado = ($histAnt->recurso_asignado) ? $histAnt->recurso_asignado : null;
+                        $historico->vehiculo_desasignado = ($histAnt->vehiculo_asignado) ? $histAnt->vehiculo_asignado : null;
+                        $historico->destino_id = $recurso_stock->destino->id;
+                        $flota->destino_id = $recurso_stock->destino->id;
+                        break;
+                        
                     case $id_revision:
                         $r = Recurso::find($request->recurso);
                         $v = null;

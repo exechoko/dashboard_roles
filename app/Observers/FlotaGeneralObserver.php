@@ -31,7 +31,7 @@ class FlotaGeneralObserver
                 'Flota creada: ID: %d - EQUIPO TEI: %s - RECURSO: %s - DESTINO: %s',
                 $flotaGeneral->id,
                 $flotaGeneral->equipo->tei,
-                $flotaGeneral->recurso->nombre,
+                ($flotaGeneral->recurso) ? $flotaGeneral->recurso->nombre : null,
                 $flotaGeneral->destino->nombre
             );
             $aud->cambios = $changes;

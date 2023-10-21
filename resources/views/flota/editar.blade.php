@@ -109,6 +109,19 @@
                                             <input type="text" name="ticket_per" class="form-control" value="">
                                         </div>
                                     </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12" id="equipoReemplazo">
+                                        <div class="form-group">
+                                            <label for="equipoReemplazo">Equipo por el que se reemplaza</label>
+                                            <select name="equipoReemplazo" id="equipoReemplazo" class="form-control select2" style="width: 100%; margin-bottom: 15px">
+                                                <option value="">Seleccionar un equipo que estan en stock</option>
+                                                @foreach ($flotas_stock as $flota)
+                                                    <option value="{{ $flota->equipo->id }}">
+                                                        {{ $flota->equipo->tei . ' ' . $flota->equipo->tipo_terminal->tipo_uso->uso . ' ' . $flota->equipo->issi . ' - ' . $flota->equipo->tipo_terminal->marca . ' ' . $flota->equipo->tipo_terminal->modelo }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6" id="dependenciaDestino">
                                         <div class="form-group">
                                             <label for="">Dependencia o lugar al que se asigna</label>
@@ -163,8 +176,11 @@
                         $.each(res, function(key, value) {
                             // Verificar si el recurso tiene un vehículo asociado
                             if (value.vehiculo) {
-                                var label = value.nombre + ' - ' + value.vehiculo.marca + ' ' + value.vehiculo.modelo +': ' + value.vehiculo.dominio;
-                                $('#recurso').append('<option value="' + value.id + '">' + label + '</option>');
+                                var label = value.nombre + ' - ' + value.vehiculo
+                                    .marca + ' ' + value.vehiculo.modelo + ': ' + value
+                                    .vehiculo.dominio;
+                                $('#recurso').append('<option value="' + value.id +
+                                    '">' + label + '</option>');
                             } else {
                                 $('#recurso').append('<option value="' + value.id +
                                     '">' + value.nombre + '</option>');
@@ -177,6 +193,7 @@
 
             var dependenciaSelect = $("#dependenciaDestino");
             var recursoSelect = $("#recursoDestino");
+            var equipoReemplazoSelect = $("#equipoReemplazo");
             var tipoMovimientoSelect = $("#tipoMovimiento");
 
             console.log("tipo_movimiento", dependenciaSelect);
@@ -185,14 +202,22 @@
                 // Convertir el JSON en un objeto JavaScript
                 var tipoMovimiento = JSON.parse(selectedTipoMovimiento);
 
-                if (tipoMovimiento.habilita_campos === 1) { // Cambia este valor según tus necesidades
-                    console.log("entro al if", "SI");
-                    dependenciaSelect.show();
-                    recursoSelect.show();
-                } else {
-                    console.log("entro al else", "SI");
+                if (tipoMovimiento.nombre === "Reemplazo") {
+                    console.log("entro al if reemplazo", "SI");
+                    equipoReemplazoSelect.show();
                     dependenciaSelect.hide();
                     recursoSelect.hide();
+                } else {
+                    equipoReemplazoSelect.hide();
+                    if (tipoMovimiento.habilita_campos === 1) { // Cambia este valor según tus necesidades
+                        console.log("entro al if", "SI");
+                        dependenciaSelect.show();
+                        recursoSelect.show();
+                    } else {
+                        console.log("entro al else", "SI");
+                        dependenciaSelect.hide();
+                        recursoSelect.hide();
+                    }
                 }
             }
 

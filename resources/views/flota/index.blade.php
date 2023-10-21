@@ -80,7 +80,9 @@
                                                     @endif
 
                                                     <td>{{ $f->destino->nombre }}<br>{{ $f->destino->dependeDe() }}</td>
-                                                    <td>{{ $f->observaciones }}</td>
+                                                    <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">
+                                                        {{ $f->observaciones }}
+                                                    </td>
                                                     {{-- @if (is_null($f->ultimoLugar()))
                                                     <td>Sin movimientos</td>
                                                 @else

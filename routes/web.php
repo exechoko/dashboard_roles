@@ -18,6 +18,7 @@ use App\Http\Controllers\Mapacontroller;
 use App\Http\Controllers\TipoCamaraController;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\SitioController;
+use App\Http\Controllers\CecocoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -76,4 +77,7 @@ Route::group(['middleware' => ['auth']], function(){
     Route::post('/import-camaras', [App\Http\Controllers\CamaraController::class, 'importExcel'])->name('camaras.import');
     Route::get('/export-camaras', [App\Http\Controllers\CamaraController::class, 'exportExcel'])->name('camaras.export');
     Route::get('/export-sitios', [App\Http\Controllers\SitioController::class, 'exportExcel'])->name('sitios.export');
+
+    Route::get('/get-llamadas', [App\Http\Controllers\CecocoController::class, 'getLlamadas'])->name('get-llamadas');
+
 });

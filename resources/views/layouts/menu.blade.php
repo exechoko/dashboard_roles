@@ -76,6 +76,36 @@
     </ul>
 </li>
 
+<li
+    class="dropdown">
+    <a class="nav-link has-dropdown" href="#">
+        <i class="fas fa-video"></i><span>CeCoCo</span>
+    </a>
+    <ul class="dropdown-menu">
+        @can('ver-camara')
+            <li class="">
+                <a class="nav-link" href="/get-llamadas">
+                    <i class="fas fa-cog"></i><span>Llamadas</span>
+                </a>
+            </li>
+        @endcan
+        @can('ver-tipo-camara')
+            <li class="">
+                <a class="nav-link" href="/tipo-camara">
+                    <i class=" fas fa-camera-retro"></i><span>Móviles</span>
+                </a>
+            </li>
+        @endcan
+        @can('ver-sitio')
+            <li class="">
+                <a class="nav-link" href="/sitios">
+                    <i class="fas fa-map-marker-alt"></i><span>Eventos</span>
+                </a>
+            </li>
+        @endcan
+    </ul>
+</li>
+
 
 <!--li class="{{ request()->is('accesorios*') ? 'active' : '' }}">
     <a class="nav-link" href="/accesorios">

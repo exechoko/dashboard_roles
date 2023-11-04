@@ -29,14 +29,18 @@ class CecocoController extends Controller
             // Convertir las coordenadas de radianes a grados decimales
             $result->latitud = $result->latitud / 0.0174533;
             $result->longitud = $result->longitud / 0.0174533;
+            // Convertir la fecha al formato deseado
+            $result->fecha = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $result->fecha)->format('d/m/Y H:i:s');
         }
-        dd($results);
-        return 
-        /*// Convierte los resultados a JSON
-        $jsonResults = json_encode($results);
+
+        // Convierte los resultados a JSON
+        //$movil801 = json_encode($results);
 
         // Devuelve el JSON
-        return response()->json($jsonResults);*/
+        //return response()->json($movil801);
+        //dd($results);
+        return view('cecoco.moviles.index', compact('results'));
+
     }
 
     public function getEventos(){

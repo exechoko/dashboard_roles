@@ -91,14 +91,14 @@
         @endcan
         @can('ver-tipo-camara')
             <li class="">
-                <a class="nav-link" href="/tipo-camara">
+                <a class="nav-link" href="/get-moviles">
                     <i class=" fas fa-camera-retro"></i><span>Móviles</span>
                 </a>
             </li>
         @endcan
         @can('ver-sitio')
             <li class="">
-                <a class="nav-link" href="/sitios">
+                <a class="nav-link" href="/get-eventos">
                     <i class="fas fa-map-marker-alt"></i><span>Eventos</span>
                 </a>
             </li>

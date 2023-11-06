@@ -91,7 +91,7 @@
         @endcan
         @can('ver-tipo-camara')
             <li class="">
-                <a class="nav-link" href="/get-moviles">
+                <a class="nav-link" href="/indexMoviles">
                     <i class=" fas fa-camera-retro"></i><span>Móviles</span>
                 </a>
             </li>

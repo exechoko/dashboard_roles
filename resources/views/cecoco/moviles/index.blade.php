@@ -35,15 +35,16 @@
                                 <div class="col-xs-12 col-sm-12 col-md-3" id="label_fecha_desde">
                                     <div class="form-group">
                                         <label for="fecha_desde">Desde</label>
-                                        {!! Form::datetimeLocal('fecha_desde', '') !!}
+                                        {!! Form::datetimeLocal('fecha_desde', null, ['id' => 'fecha_desde', 'name' => 'fecha_desde']) !!}
                                     </div>
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-3" id="label_fecha_hasta">
                                     <div class="form-group">
                                         <label for="fecha_hasta">Hasta</label>
-                                        {!! Form::datetimeLocal('fecha_hasta', '') !!}
+                                        {!! Form::datetimeLocal('fecha_hasta', null, ['id' => 'fecha_hasta', 'name' => 'fecha_hasta']) !!}
                                     </div>
                                 </div>
+
                             </div>
 
                             <div class="col-lg-1">
@@ -90,7 +91,7 @@
                     <div class="card">
                         <div id="control-moviles" class="col-lg-12" style="margin-top: 20px;">
                             <div class="row">
-                                <div class="col-lg-12" style="text-align: center; color: red">
+                                <div class="col-lg-12" style="text-align: center; color: rgb(0, 0, 0)">
                                     <h3 class="vertical-space">Control de Móviles</h3>
                                 </div>
                             </div>
@@ -103,12 +104,13 @@
                                     data-resizable="true" data-method="post">
                                     <thead>
                                         <tr>
-                                            <th data-field="id">ID</th>
+                                            <th data-field="id" data-visible="false">ID</th>
                                             <th data-field="recurso">Recurso</th>
                                             <th data-field="latitud">Latitud</th>
                                             <th data-field="longitud">Longitud</th>
                                             <th data-field="velocidad">Velocidad</th>
                                             <th data-field="fecha">Fecha</th>
+                                            <th data-field="direccion">Direccion</th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -149,6 +151,10 @@
                     {
                         field: 'fecha',
                         title: 'Fecha'
+                    },
+                    {
+                        field: 'direccion',
+                        title: 'Direccion'
                     }
                 ]
             });

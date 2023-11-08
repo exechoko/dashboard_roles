@@ -58,17 +58,17 @@
 
 
                             <!--div class="table-responsive">
-                                                                    <table class="table table-striped mt-2">
-                                                                        <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
-                                                                            <th style="display: none;">ID</th>
-                                                                            <th style="color:#fff;">Recurso</th>
-                                                                            <th style="color:#fff;">Latitud</th>
-                                                                            <th style="color:#fff;">Longitud</th>
-                                                                            <th style="color:#fff;">Velocidad</th>
-                                                                            <th style="color: #fff;">Fecha</th>
-                                                                        </thead>
-                                                                        <tbody>
-                                                                            {{-- @foreach ($results as $movil)
+                                                                            <table class="table table-striped mt-2">
+                                                                                <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
+                                                                                    <th style="display: none;">ID</th>
+                                                                                    <th style="color:#fff;">Recurso</th>
+                                                                                    <th style="color:#fff;">Latitud</th>
+                                                                                    <th style="color:#fff;">Longitud</th>
+                                                                                    <th style="color:#fff;">Velocidad</th>
+                                                                                    <th style="color: #fff;">Fecha</th>
+                                                                                </thead>
+                                                                                <tbody>
+                                                                                    {{-- @foreach ($results as $movil)
                                             <tr>
                                                 <td style="display: none;">{{ $movil->id }}</td>
                                                 <td>{{ $movil->recurso }}</td>
@@ -78,9 +78,9 @@
                                                 <td>{{ $movil->fecha }}</td>
                                             </tr>
                                         @endforeach --}}
-                                                                        </tbody>
-                                                                    </table>
-                                                                </div-->
+                                                                                </tbody>
+                                                                            </table>
+                                                                        </div-->
                         </div>
                     </div>
                 </div>
@@ -122,7 +122,9 @@
         </div>
     </section>
 
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
+
         $(document).ready(function() {
             var $table_moviles = $('#table_moviles');
 
@@ -164,6 +166,25 @@
                 buscarMoviles();
             });
 
+            function obtenerDireccion(coordinates) {
+                console.log('es la l', L);
+                var geocoder = L.Control.Geocoder.nominatim();
+                console.log(geocoder);
+                var direcciones = [];
+                $.each(coordinates, function(i, coordenada) {
+                    var latlng = L.latLng(coordenada.latitud, coordenada.longitud);
+
+                    geocoder.reverse(latlng, map.options.crs.scale(map.getZoom()), function(results) {
+                        var address = results[0].name;
+                        direcciones.push(address);
+                        //var listItem = document.createElement("li");
+                        //listItem.textContent = address;
+                        //addressesList.appendChild(listItem);
+                    });
+                });
+                console.log('direcciones', direcciones);
+            }
+
             function buscarMoviles() {
                 $.ajax({
                     type: 'POST',
@@ -177,6 +198,7 @@
                     success: function(data) {
                         console.log('Data', data);
                         $table_moviles.bootstrapTable('load', data.moviles);
+                        //obtenerDireccion(data.moviles);
                     },
                     error: function(data) {
                         console.log('DataError', data);

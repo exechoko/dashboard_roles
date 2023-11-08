@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\GeocodificacionInversa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -33,7 +34,69 @@ class CecocoController extends Controller
 
     public function getRecorridosMoviles(Request $request)
     {
-        set_time_limit(300); // Establece un tiempo máximo de ejecución de 150 segundos (2.5 minutos)
+        // ...
+        try {
+            $fecha_desde = \Carbon\Carbon::parse($request->fecha_desde)->format('Y-m-d H:i:s');
+            $fecha_hasta = \Carbon\Carbon::parse($request->fecha_hasta)->format('Y-m-d H:i:s');
+            $results = DB::connection('mysql_second')
+                ->table('posicionesgps')
+                ->where('recurso', $request->recurso)
+                ->whereBetween('fecha', [$fecha_desde, $fecha_hasta])
+                ->get();
+
+            $coordinates = [];
+
+            foreach ($results as $result) {
+                // Convertir las coordenadas de radianes a grados decimales
+                $result->latitud = round($result->latitud / 0.0174533, 7);
+                $result->longitud = round($result->longitud / 0.0174533, 7);
+                $coordinates[] = ['lat' => $result->latitud, 'lng' => $result->longitud];
+                // Convertir la fecha al formato deseado
+                $result->fecha = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $result->fecha)->format('d/m/Y H:i:s');
+            }
+
+            // Obtener las direcciones desde la tabla GeocodificacionInversa si están disponibles
+            $data = [];
+            foreach ($results as $result) {
+                $geocoding = GeocodificacionInversa::where('latitud', round($result->latitud, 7))
+                    ->where('longitud', round($result->longitud, 7))
+                    ->first();
+
+                if ($geocoding) {
+                    // Dirección encontrada en la tabla GeocodificacionInversa
+                    $result->direccion = $geocoding->direccion;
+                } else {
+                    // Dirección no encontrada en la tabla, obtenerla a través de Google Maps
+                    $result->direccion = $this->getAddressGoogle($result->latitud, $result->longitud);
+                    // Guardar la dirección en la tabla GeocodificacionInversa para futuras consultas
+                    GeocodificacionInversa::create([
+                        'latitud' => $result->latitud,
+                        'longitud' => $result->longitud,
+                        'direccion' => $result->direccion,
+                    ]);
+                }
+
+                $data[] = [
+                    'id' => $result->id,
+                    'recurso' => $result->recurso,
+                    'latitud' => $result->latitud,
+                    'longitud' => $result->longitud,
+                    'velocidad' => (float) $result->velocidad,
+                    'fecha' => $result->fecha,
+                    'direccion' => (($result->latitud == 0) && ($result->longitud == 0)) ? 'Dirección no encontrada' : $result->direccion,
+                ];
+            }
+
+            return response()->json(["moviles" => $data]);
+        } catch (\Exception $ex) {
+            return response()->json(["status" => "error", "message" => $ex->getMessage()], 200);
+        }
+    }
+
+
+    /*public function getRecorridosMoviles(Request $request)
+    {
+        //set_time_limit(300); // Establece un tiempo máximo de ejecución de 150 segundos (2.5 minutos)
         try {
             $fecha_desde = \Carbon\Carbon::parse($request->fecha_desde)->format('Y-m-d H:i:s');
             $fecha_hasta = \Carbon\Carbon::parse($request->fecha_hasta)->format('Y-m-d H:i:s');
@@ -56,7 +119,7 @@ class CecocoController extends Controller
             }
 
             // Obtener las direcciones en lotes
-            $addresses = $this->getAddressesInBatchGoogle($coordinates);
+            $addresses = $this->getAddressesInBatchOpenStreetMap($coordinates);
 
             $data = [];
             foreach ($results as $key => $result) {
@@ -78,13 +141,13 @@ class CecocoController extends Controller
         } catch (\Exception $ex) {
             return response()->json(["status" => "error", "message" => $ex->getMessage()], 200);
         }
-    }
+    }*/
 
 
     // Función para obtener la dirección a partir de las coordenadas
     private function getAddressGoogle($lat, $lng)
     {
-        $apiKey = 'TU_CLAVE_DE_API_GOOGLE'; // Reemplaza con tu clave de API de Google Maps
+        $apiKey = 'API_GOOGLE'; // Reemplaza con tu clave de API de Google Maps
 
         // Realizar solicitud a la API de geocodificación
         $url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$apiKey";
@@ -233,8 +296,6 @@ class CecocoController extends Controller
 
         return $addresses;
     }
-
-
 
 
     // Función para obtener la dirección a partir de las coordenadas usando cURL

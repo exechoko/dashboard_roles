@@ -147,7 +147,7 @@ class CecocoController extends Controller
     // Función para obtener la dirección a partir de las coordenadas
     private function getAddressGoogle($lat, $lng)
     {
-        $apiKey = 'AIzaSyDHCwd1Btzh0xFM2ksZKbkrmhDQ9uIHFvE'; // Reemplaza con tu clave de API de Google Maps
+        $apiKey = ''; // Reemplaza con tu clave de API de Google Maps
 
         // Realizar solicitud a la API de geocodificación
         $url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$apiKey";

@@ -17,8 +17,21 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
+
+                            @if ($errors->any())
+                                <div class="alert alert-dark alert-dismissible fade show" role="alert">
+                                    <strong>¡Revise los campos!</strong>
+                                    @foreach ($errors->all() as $error)
+                                        <span class="badge badge-danger">{{ $error }}</span>
+                                    @endforeach
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                            @endif
+
                             <div class="row">
-                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                <div class="col-xs-12 col-sm-12 col-md-4">
                                     <div class="form-group">
                                         <label for="recurso">Móvil</label>
                                         <select name="recurso" id="recurso" class="form-control select2">
@@ -32,8 +45,10 @@
                                     </div>
                                 </div>
 
-                                <div id="selectedResources" style="margin-bottom: 10px;">
-                                    <!-- Aquí se agregarán los badges -->
+                                <div class="col-xs-12 col-sm-12 col-md-12 mb-3">
+                                    <div id="selectedResources" style="margin-bottom: 10px;">
+                                        <!-- Aquí se agregarán los badges -->
+                                    </div>
                                 </div>
 
                                 <div class="col-xs-12 col-sm-12 col-md-3" id="label_fecha_desde">
@@ -66,6 +81,14 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div id="control-moviles" class="col-lg-12" style="margin-top: 20px;">
+                            <div class="col-xs-12 col-sm-12 col-md-6">
+                                <div class="form-group">
+                                    <label for="filtroRecursos">Filtro por recurso</label>
+                                    <select name="filtroRecursos" id="filtroRecursos" class="form-control select2">
+                                        <!-- Las opciones se cargarán dinámicamente después -->
+                                    </select>
+                                </div>
+                            </div>
                             <div class="row">
                                 <div class="col-lg-12" style="text-align: center; color: rgb(0, 0, 0)">
                                     <h3 class="vertical-space">Control de Móviles</h3>
@@ -91,6 +114,9 @@
                                     </thead>
                                 </table>
                             </div>
+                            <div id="loading-indicator" style="display: none;">
+                                <i class="fa fa-spinner fa-spin"></i> Cargando...
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -100,9 +126,11 @@
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/spin.js/2.3.2/spin.min.js"></script>
     <script>
         $(document).ready(function() {
             var $table_moviles = $('#table_moviles');
+            var $loadingIndicator = $('#loading-indicator');
 
             // Inicializa la tabla
             $table_moviles.bootstrapTable({
@@ -156,7 +184,7 @@
                     // Agrega el recurso a la lista de recursos seleccionados
                     selectedResources.push(selectedResource);
                     // Agrega el badge al contenedor
-                    var badgeItem = $('<span class="badge badge-primary badge-pill">' +
+                    var badgeItem = $('<span class="badge badge-info badge-pill mr-2 mt-1">' +
                         selectedResource +
                         '<i class="fa fa-times ml-2 cursor-pointer"></i>' +
                         '</span>')
@@ -187,37 +215,9 @@
 
             // Agrega un evento de clic al botón "Buscar"
             $("#buscarMoviles").click(function() {
+                $loadingIndicator.show();
                 buscarMoviles(selectedResources);
-                // Realiza consultas para cada recurso seleccionado
-                /*selectedResources.forEach(function(resource) {
-                    // Realiza la consulta para el recurso actual
-
-                });*/
             });
-
-            // Agrega un evento de clic al botón "Buscar"
-            /*$("#buscarMoviles").click(function() {
-                buscarMoviles();
-            });*/
-
-            function obtenerDireccion(coordinates) {
-                console.log('es la l', L);
-                var geocoder = L.Control.Geocoder.nominatim();
-                console.log(geocoder);
-                var direcciones = [];
-                $.each(coordinates, function(i, coordenada) {
-                    var latlng = L.latLng(coordenada.latitud, coordenada.longitud);
-
-                    geocoder.reverse(latlng, map.options.crs.scale(map.getZoom()), function(results) {
-                        var address = results[0].name;
-                        direcciones.push(address);
-                        //var listItem = document.createElement("li");
-                        //listItem.textContent = address;
-                        //addressesList.appendChild(listItem);
-                    });
-                });
-                console.log('direcciones', direcciones);
-            }
 
             function buscarMoviles(recursos) {
                 $.ajax({
@@ -231,35 +231,65 @@
                     },
                     success: function(data) {
                         console.log('Data', data);
-                        var movil = [];
-                        $.each(data.moviles, function(i, m) {
-                            if (m.recurso == 'P1014') {
-                                movil.push(m);
-                            }
-                        })
-                        console.log('movil', movil);
-                        $table_moviles.bootstrapTable('load', movil);
-                        //obtenerDireccion(data.moviles);
+                        // Verificar si hay al menos un grupo de recursos
+                        if (data.moviles.length > 0) {
+                            // Cargar automáticamente los datos del primer grupo en la tabla
+                            var movil = data.moviles[0].datos;
+                            $table_moviles.bootstrapTable('load', movil);
+                            console.log('movil', movil);
+                            actualizarSelectFiltro(data.moviles);
+                        } else {
+                            // Manejar el caso en que no hay grupos de recursos
+                            console.log('No hay datos de moviles disponibles.');
+                        }
                     },
                     error: function(data) {
                         console.log('DataError para ' + recurso, data);
+                    },
+                    complete: function() {
+                        // Oculta el indicador de carga después de completar la solicitud
+                        $loadingIndicator.hide();
                     }
                 });
             }
 
-            // Función para remover un badge
-            function removeBadge(resource) {
-                // Remueve el badge del contenedor
-                $('#selectedResources .badge[data-resource="' + resource + '"]').remove();
+            // Función para actualizar el select2 de filtroRecursos
+            function actualizarSelectFiltro(recursos) {
+                // Limpiar opciones actuales
+                $('#filtroRecursos').empty();
 
-                // Remueve el recurso de la lista de recursos seleccionados
-                selectedResources = selectedResources.filter(function(selectedResource) {
-                    return selectedResource !== resource;
+                // Agregar una opción por cada recurso
+                console.log('recursos', recursos);
+                recursos.forEach(function(recurso) {
+                    console.log('recurso', recurso);
+                    var option = new Option(recurso.recurso, recurso.recurso, true, true);
+                    $('#filtroRecursos').append(option).trigger('change');
                 });
 
-                // Deselecciona el recurso en el select2
-                $('#recurso option:contains("' + resource + '")').prop('selected', false);
-                $('#recurso').trigger('change');
+                // Inicializar Select2
+                $('#filtroRecursos').select2({
+                    placeholder: 'Filtrar por Recurso',
+                    allowClear: false
+                });
+
+                // Manejar el evento de cambio en el select2 de filtroRecursos
+                $('#filtroRecursos').on('change', function() {
+                    var recursoSeleccionado = $(this).val();
+                    console.log('recurso_selec', recursoSeleccionado);
+
+                    // Filtrar y cargar datos en la tabla según el recurso seleccionado
+                    var datosFiltrados = filtrarDatosPorRecurso(recursos, recursoSeleccionado);
+                    console.log('datos_filtrados', datosFiltrados);
+                    $table_moviles.bootstrapTable('load', datosFiltrados);
+                });
+            }
+
+            // Función para filtrar datos por recurso
+            function filtrarDatosPorRecurso(datos, recurso) {
+                return datos.filter(function(item) {
+                    console.log('item', item);
+                    return item.recurso === recurso;
+                })[0].datos;
             }
         });
     </script>

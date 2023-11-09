@@ -34,63 +34,92 @@ class CecocoController extends Controller
 
     public function getRecorridosMoviles(Request $request)
     {
-        // ...
+        request()->validate([
+            'recursos' => 'required|not_in:Seleccionar recurso',
+            'fecha_desde' => 'required',
+            'fecha_hasta' => 'required',
+        ], [
+            'required' => 'El campo :attribute es necesario completar.'
+        ]);
         try {
             $fecha_desde = \Carbon\Carbon::parse($request->fecha_desde)->format('Y-m-d H:i:s');
             $fecha_hasta = \Carbon\Carbon::parse($request->fecha_hasta)->format('Y-m-d H:i:s');
+            $coordinates = [];
             $results = DB::connection('mysql_second')
                 ->table('posicionesgps')
                 ->whereIn('recurso', json_decode($request->recursos))
                 ->whereBetween('fecha', [$fecha_desde, $fecha_hasta])
-                ->get();
+                ->get()
+                ->map(function ($result) use (&$coordinates) {
+                    // Convertir las coordenadas de radianes a grados decimales
+                    $result->latitud = round($result->latitud / 0.0174533, 7);
+                    $result->longitud = round($result->longitud / 0.0174533, 7);
 
-                //dd($results);
-            $coordinates = [];
+                    // Convertir la fecha al formato deseado
+                    $result->fecha = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $result->fecha)->format('d/m/Y H:i:s');
 
-            foreach ($results as $result) {
-                // Convertir las coordenadas de radianes a grados decimales
-                $result->latitud = round($result->latitud / 0.0174533, 7);
-                $result->longitud = round($result->longitud / 0.0174533, 7);
-                $coordinates[] = ['lat' => $result->latitud, 'lng' => $result->longitud];
-                // Convertir la fecha al formato deseado
-                $result->fecha = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $result->fecha)->format('d/m/Y H:i:s');
-            }
+                    $coordinates[] = ['lat' => $result->latitud, 'lng' => $result->longitud];
+                    return $result;
+                });
 
-            // Obtener las direcciones desde la tabla GeocodificacionInversa si están disponibles
-            $data = [];
-            foreach ($results as $result) {
-                $geocoding = GeocodificacionInversa::where('latitud', round($result->latitud, 7))
-                    ->where('longitud', round($result->longitud, 7))
-                    ->first();
 
-                if ($geocoding) {
-                    // Dirección encontrada en la tabla GeocodificacionInversa
-                    $result->direccion = $geocoding->direccion;
-                } else {
-                    // Dirección no encontrada en la tabla, obtenerla a través de Google Maps
-                    $result->direccion = $this->getAddressGoogle($result->latitud, $result->longitud);
-                    // Guardar la dirección en la tabla GeocodificacionInversa para futuras consultas
-                    GeocodificacionInversa::create([
+            // Agrupar los resultados por recurso
+            $groupedResults = collect($results)->groupBy('recurso');
+            // Estructura final de datos
+            $finalData = [];
+            // Iterar sobre los grupos y agregarlos a $finalData
+            foreach ($groupedResults as $recurso => $group) {
+
+                $data = [];
+
+                foreach ($group as $result) {
+
+                    // Realizar la geocodificación inversa
+                    $result->direccion = $this->getDireccion($result->latitud, $result->longitud);
+                    $data[] = [
+                        'id' => $result->id,
+                        'recurso' => $result->recurso,
                         'latitud' => $result->latitud,
                         'longitud' => $result->longitud,
-                        'direccion' => $result->direccion,
-                    ]);
+                        'velocidad' => (float) $result->velocidad,
+                        'fecha' => $result->fecha,
+                        'direccion' => (($result->latitud == 0) && ($result->longitud == 0)) ? 'Dirección no encontrada' : $result->direccion,
+                    ];
                 }
 
-                $data[] = [
-                    'id' => $result->id,
-                    'recurso' => $result->recurso,
-                    'latitud' => $result->latitud,
-                    'longitud' => $result->longitud,
-                    'velocidad' => (float) $result->velocidad,
-                    'fecha' => $result->fecha,
-                    'direccion' => (($result->latitud == 0) && ($result->longitud == 0)) ? 'Dirección no encontrada' : $result->direccion,
+                $finalData[] = [
+                    'recurso' => $recurso,
+                    'datos' => $data,
                 ];
             }
-
-            return response()->json(["moviles" => $data]);
+            return response()->json(['moviles' => $finalData]);
         } catch (\Exception $ex) {
-            return response()->json(["status" => "error", "message" => $ex->getMessage()], 200);
+            return response()->json(['status' => 'error', 'message' => $ex->getMessage()], 200);
+        }
+    }
+
+    // Función para obtener la dirección mediante geocodificación inversa
+    private function getDireccion($latitud, $longitud)
+    {
+        $geocoding = GeocodificacionInversa::where('latitud', round($latitud, 7))
+            ->where('longitud', round($longitud, 7))
+            ->first();
+
+        if ($geocoding) {
+            // Dirección encontrada en la tabla GeocodificacionInversa
+            return $geocoding->direccion;
+        } else {
+            // Dirección no encontrada en la tabla, obtenerla a través de Google Maps
+            $direccion = $this->getAddressGoogle($latitud, $longitud);
+
+            // Guardar la dirección en la tabla GeocodificacionInversa para futuras consultas
+            GeocodificacionInversa::create([
+                'latitud' => $latitud,
+                'longitud' => $longitud,
+                'direccion' => $direccion,
+            ]);
+
+            return $direccion;
         }
     }
 
@@ -148,7 +177,7 @@ class CecocoController extends Controller
     // Función para obtener la dirección a partir de las coordenadas
     private function getAddressGoogle($lat, $lng)
     {
-        $apiKey = ''; // Reemplaza con tu clave de API de Google Maps
+        $apiKey = 'AIzaSyDHCwd1Btzh0xFM2ksZKbkrmhDQ9uIHFvE'; // Reemplaza con tu clave de API de Google Maps
 
         // Realizar solicitud a la API de geocodificación
         $url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$apiKey";

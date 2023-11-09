@@ -24,8 +24,8 @@
                                         <select name="recurso" id="recurso" class="form-control select2">
                                             <option value="">Seleccionar recurso</option>
                                             @foreach ($recursos as $recurso)
-                                                <option value="{{ $recurso }}">
-                                                    {{ $recurso }}
+                                                <option value="{{ trim($recurso) }}">
+                                                    {{ trim($recurso) }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -147,19 +147,28 @@
 
             // Maneja el evento de selección en el select2
             $('#recurso').on('select2:select', function(e) {
-                var selectedResource = e.params.data.text;
+                //$('#recurso').change(function(e) {
+                console.log('texto', e.params.data.id);
+                var selectedResource = e.params.data.id;
 
                 // Verifica si el recurso ya está seleccionado
                 if (!selectedResources.includes(selectedResource)) {
-                    // Agrega el badge al contenedor
-                    $('#selectedResources').append('<span class="badge badge-primary badge-pill">' +
-                        selectedResource +
-                        '<i class="fa fa-times ml-2 cursor-pointer" onclick="removeBadge(\'' +
-                        selectedResource + '\')"></i>' +
-                        '</span>');
-
                     // Agrega el recurso a la lista de recursos seleccionados
                     selectedResources.push(selectedResource);
+                    // Agrega el badge al contenedor
+                    var badgeItem = $('<span class="badge badge-primary badge-pill">' +
+                        selectedResource +
+                        '<i class="fa fa-times ml-2 cursor-pointer"></i>' +
+                        '</span>')
+                    badgeItem.find('i').click(function(event) {
+                            var index = parseInt($(this).data('index'))
+                            console.log('index', index)
+                            selectedResources.splice(index, 1)
+                            $(this).closest('.badge').remove()
+                        })
+                        .data('index', selectedResources.length - 1)
+                    $('#selectedResources').append(badgeItem);
+
                 }
             });
 
@@ -178,11 +187,12 @@
 
             // Agrega un evento de clic al botón "Buscar"
             $("#buscarMoviles").click(function() {
+                buscarMoviles(selectedResources);
                 // Realiza consultas para cada recurso seleccionado
-                selectedResources.forEach(function(resource) {
+                /*selectedResources.forEach(function(resource) {
                     // Realiza la consulta para el recurso actual
-                    buscarMoviles(resource);
-                });
+
+                });*/
             });
 
             // Agrega un evento de clic al botón "Buscar"
@@ -209,19 +219,26 @@
                 console.log('direcciones', direcciones);
             }
 
-            function buscarMoviles(recurso) {
+            function buscarMoviles(recursos) {
                 $.ajax({
                     type: 'POST',
                     url: "{{ route('get-moviles') }}",
                     data: {
-                        recurso: recurso /*$('#recurso').val()*/ ,
+                        recursos: JSON.stringify(recursos) /*$('#recurso').val()*/ ,
                         fecha_desde: $('#fecha_desde').val(),
                         fecha_hasta: $('#fecha_hasta').val(),
                         _token: '{{ csrf_token() }}'
                     },
                     success: function(data) {
                         console.log('Data', data);
-                        $table_moviles.bootstrapTable('load', data.moviles);
+                        var movil = [];
+                        $.each(data.moviles, function(i, m) {
+                            if (m.recurso == 'P1014') {
+                                movil.push(m);
+                            }
+                        })
+                        console.log('movil', movil);
+                        $table_moviles.bootstrapTable('load', movil);
                         //obtenerDireccion(data.moviles);
                     },
                     error: function(data) {

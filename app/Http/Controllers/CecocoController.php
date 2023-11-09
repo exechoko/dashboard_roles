@@ -40,10 +40,11 @@ class CecocoController extends Controller
             $fecha_hasta = \Carbon\Carbon::parse($request->fecha_hasta)->format('Y-m-d H:i:s');
             $results = DB::connection('mysql_second')
                 ->table('posicionesgps')
-                ->where('recurso', $request->recurso)
+                ->whereIn('recurso', json_decode($request->recursos))
                 ->whereBetween('fecha', [$fecha_desde, $fecha_hasta])
                 ->get();
 
+                //dd($results);
             $coordinates = [];
 
             foreach ($results as $result) {

@@ -32,6 +32,10 @@
                                     </div>
                                 </div>
 
+                                <div id="selectedResources" style="margin-bottom: 10px;">
+                                    <!-- Aquí se agregarán los badges -->
+                                </div>
+
                                 <div class="col-xs-12 col-sm-12 col-md-3" id="label_fecha_desde">
                                     <div class="form-group">
                                         <label for="fecha_desde">Desde</label>
@@ -53,34 +57,6 @@
                                         class="btn btn-primary">Buscar</button>
                                 </div>
                             </div>
-
-
-
-
-                            <!--div class="table-responsive">
-                                                                            <table class="table table-striped mt-2">
-                                                                                <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
-                                                                                    <th style="display: none;">ID</th>
-                                                                                    <th style="color:#fff;">Recurso</th>
-                                                                                    <th style="color:#fff;">Latitud</th>
-                                                                                    <th style="color:#fff;">Longitud</th>
-                                                                                    <th style="color:#fff;">Velocidad</th>
-                                                                                    <th style="color: #fff;">Fecha</th>
-                                                                                </thead>
-                                                                                <tbody>
-                                                                                    {{-- @foreach ($results as $movil)
-                                            <tr>
-                                                <td style="display: none;">{{ $movil->id }}</td>
-                                                <td>{{ $movil->recurso }}</td>
-                                                <td>{{ $movil->latitud }}</td>
-                                                <td>{{ $movil->longitud }}</td>
-                                                <td>{{ $movil->velocidad }}</td>
-                                                <td>{{ $movil->fecha }}</td>
-                                            </tr>
-                                        @endforeach --}}
-                                                                                </tbody>
-                                                                            </table>
-                                                                        </div-->
                         </div>
                     </div>
                 </div>
@@ -123,8 +99,8 @@
     </section>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
     <script>
-
         $(document).ready(function() {
             var $table_moviles = $('#table_moviles');
 
@@ -161,10 +137,58 @@
                 ]
             });
 
+            var selectedResources = [];
+
+            // Inicializa Select2 en el select
+            $('#recurso').select2({
+                placeholder: 'Seleccionar recurso',
+                allowClear: true
+            });
+
+            // Maneja el evento de selección en el select2
+            $('#recurso').on('select2:select', function(e) {
+                var selectedResource = e.params.data.text;
+
+                // Verifica si el recurso ya está seleccionado
+                if (!selectedResources.includes(selectedResource)) {
+                    // Agrega el badge al contenedor
+                    $('#selectedResources').append('<span class="badge badge-primary badge-pill">' +
+                        selectedResource +
+                        '<i class="fa fa-times ml-2 cursor-pointer" onclick="removeBadge(\'' +
+                        selectedResource + '\')"></i>' +
+                        '</span>');
+
+                    // Agrega el recurso a la lista de recursos seleccionados
+                    selectedResources.push(selectedResource);
+                }
+            });
+
+            // Maneja el evento de deselección en el select2
+            $('#recurso').on('select2:unselect', function(e) {
+                var unselectedResource = e.params.data.text;
+
+                // Remueve el badge del contenedor
+                $('#selectedResources .badge:contains("' + unselectedResource + '")').remove();
+
+                // Remueve el recurso de la lista de recursos seleccionados
+                selectedResources = selectedResources.filter(function(resource) {
+                    return resource !== unselectedResource;
+                });
+            });
+
             // Agrega un evento de clic al botón "Buscar"
             $("#buscarMoviles").click(function() {
-                buscarMoviles();
+                // Realiza consultas para cada recurso seleccionado
+                selectedResources.forEach(function(resource) {
+                    // Realiza la consulta para el recurso actual
+                    buscarMoviles(resource);
+                });
             });
+
+            // Agrega un evento de clic al botón "Buscar"
+            /*$("#buscarMoviles").click(function() {
+                buscarMoviles();
+            });*/
 
             function obtenerDireccion(coordinates) {
                 console.log('es la l', L);
@@ -185,12 +209,12 @@
                 console.log('direcciones', direcciones);
             }
 
-            function buscarMoviles() {
+            function buscarMoviles(recurso) {
                 $.ajax({
                     type: 'POST',
                     url: "{{ route('get-moviles') }}",
                     data: {
-                        recurso: $('#recurso').val(),
+                        recurso: recurso /*$('#recurso').val()*/ ,
                         fecha_desde: $('#fecha_desde').val(),
                         fecha_hasta: $('#fecha_hasta').val(),
                         _token: '{{ csrf_token() }}'
@@ -201,9 +225,24 @@
                         //obtenerDireccion(data.moviles);
                     },
                     error: function(data) {
-                        console.log('DataError', data);
+                        console.log('DataError para ' + recurso, data);
                     }
                 });
+            }
+
+            // Función para remover un badge
+            function removeBadge(resource) {
+                // Remueve el badge del contenedor
+                $('#selectedResources .badge[data-resource="' + resource + '"]').remove();
+
+                // Remueve el recurso de la lista de recursos seleccionados
+                selectedResources = selectedResources.filter(function(selectedResource) {
+                    return selectedResource !== resource;
+                });
+
+                // Deselecciona el recurso en el select2
+                $('#recurso option:contains("' + resource + '")').prop('selected', false);
+                $('#recurso').trigger('change');
             }
         });
     </script>

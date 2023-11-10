@@ -123,7 +123,7 @@
                                             <th data-field="velocidad">Velocidad</th>
                                             <th data-field="fecha">Fecha</th>
                                             <th data-field="direccion">Direccion</th>
-                                            <th data-field="mapa">Mapa</th>
+                                            <th data-field="mapa"></th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -141,8 +141,8 @@
             role="dialog" aria-labelledby="mapModalLabel" aria-hidden="true">
             <div class="modal-dialog" role="document">
                 <div class="modal-content">
-                    <div class="modal-header bg-primary">
-                        <h5 class="modal-title" id="mapModalLabel">Mapa</h5>
+                    <div class="modal-header bg-secondary">
+                        <h5 class="modal-title" id="mapModalLabel">Ubicación</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -236,9 +236,9 @@
                         field: 'mapa',
                         title: 'Mapa',
                         formatter: function(value, row) {
-                            return '<button class="btn btn-info btn-sm mapa-btn" data-latitud="' +
+                            return '<button class="btn btn-dark btn-sm mapa-btn" data-latitud="' +
                                 row.latitud + '" data-longitud="' + row.longitud +
-                                '"><i class="fa fa-globe"></i> Mapa</button>';
+                                '"><i class="fa fa-globe"></i></button>';
                         }
                     }
                 ]

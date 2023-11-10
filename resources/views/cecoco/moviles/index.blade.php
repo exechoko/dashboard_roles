@@ -5,6 +5,19 @@
     <link rel="stylesheet" href="{{ asset('/plugins/JQueryUi/jquery-ui.css') }}" rel="stylesheet">
     <link href="{{ asset('/plugins/bootstrap-dialog/bootstrap-dialog.min.css') }}" rel="stylesheet">
     <link href="{{ asset('/plugins/bootstrap-toggle/bootstrap-toggle.min.css') }}" rel="stylesheet">
+
+    <style>
+        /* redondear modal
+        #mapModal .modal-dialog {
+            border-radius: 100% !important;
+            overflow: hidden;
+        }*/
+
+        #map-modal {
+            height: 400px;
+            width: 100%;
+        }
+    </style>
 @stop
 
 @section('content')
@@ -110,6 +123,7 @@
                                             <th data-field="velocidad">Velocidad</th>
                                             <th data-field="fecha">Fecha</th>
                                             <th data-field="direccion">Direccion</th>
+                                            <th data-field="mapa">Mapa</th>
                                         </tr>
                                     </thead>
                                 </table>
@@ -122,15 +136,71 @@
                 </div>
             </div>
         </div>
+        <!-- Modal para mostrar el mapa -->
+        <div id="mapModal" class="modal fade" data-backdrop="false" style="background-color: rgba(0, 0, 0, 0.5);"
+            role="dialog" aria-labelledby="mapModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary">
+                        <h5 class="modal-title" id="mapModalLabel">Mapa</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="map-modal"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" data-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </section>
 
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/spin.js/2.3.2/spin.min.js"></script>
     <script>
+        var map;
+        var markerResultado;
+
+        function initMap() {
+            if (map == null) {
+                // Inicializa el mapa una vez al cargar la página
+                map = L.map('map-modal', {
+                    editable: true
+                });
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+                /*L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);*/
+            }
+
+            setTimeout(() => {
+                var latitud = parseFloat($('#mapModal').data('latitud'))
+                var longitud = parseFloat($('#mapModal').data('longitud'))
+                if (markerResultado) {
+                    map.removeLayer(markerResultado);
+                }
+                markerResultado = L.marker([latitud, longitud]).addTo(map);
+                // Centra el mapa en las coordenadas del marcador
+                map.setView([latitud, longitud], 17);
+
+            }, 1000);
+
+        }
+
         $(document).ready(function() {
             var $table_moviles = $('#table_moviles');
             var $loadingIndicator = $('#loading-indicator');
+
+            $('#mapModal').on('show.bs.modal', function() {
+                initMap()
+            })
 
             // Inicializa la tabla
             $table_moviles.bootstrapTable({
@@ -161,6 +231,15 @@
                     {
                         field: 'direccion',
                         title: 'Direccion'
+                    },
+                    {
+                        field: 'mapa',
+                        title: 'Mapa',
+                        formatter: function(value, row) {
+                            return '<button class="btn btn-info btn-sm mapa-btn" data-latitud="' +
+                                row.latitud + '" data-longitud="' + row.longitud +
+                                '"><i class="fa fa-globe"></i> Mapa</button>';
+                        }
                     }
                 ]
             });
@@ -184,7 +263,7 @@
                     // Agrega el recurso a la lista de recursos seleccionados
                     selectedResources.push(selectedResource);
                     // Agrega el badge al contenedor
-                    var badgeItem = $('<span class="badge badge-info badge-pill mr-2 mt-1">' +
+                    var badgeItem = $('<span class="badge badge-info badge-pill m-2">' +
                         selectedResource +
                         '<i class="fa fa-times ml-2 cursor-pointer"></i>' +
                         '</span>')
@@ -217,6 +296,14 @@
             $("#buscarMoviles").click(function() {
                 $loadingIndicator.show();
                 buscarMoviles(selectedResources);
+            });
+
+            // Agrega un evento de clic al botón "Mapa"
+            $('#table_moviles').on('click', '.mapa-btn', function() {
+                var latitud = $(this).data('latitud');
+                var longitud = $(this).data('longitud');
+                console.log('coord', latitud + '-' + longitud);
+                abrirModalMapa(latitud, longitud);
             });
 
             function buscarMoviles(recursos) {
@@ -290,6 +377,17 @@
                     console.log('item', item);
                     return item.recurso === recurso;
                 })[0].datos;
+            }
+
+            // Función para abrir la modal y mostrar el mapa
+            function abrirModalMapa(latitud, longitud) {
+
+                $('#mapModal').data({
+                    latitud: latitud,
+                    longitud: longitud
+                });
+
+                $('#mapModal').modal('show');
             }
         });
     </script>

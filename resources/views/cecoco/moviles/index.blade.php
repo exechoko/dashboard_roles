@@ -8,10 +8,10 @@
 
     <style>
         /* redondear modal
-        #mapModal .modal-dialog {
-            border-radius: 100% !important;
-            overflow: hidden;
-        }*/
+                    #mapModal .modal-dialog {
+                        border-radius: 100% !important;
+                        overflow: hidden;
+                    }*/
 
         #map-modal {
             height: 400px;
@@ -254,12 +254,11 @@
 
             // Maneja el evento de selección en el select2
             $('#recurso').on('select2:select', function(e) {
-                //$('#recurso').change(function(e) {
                 console.log('texto', e.params.data.id);
                 var selectedResource = e.params.data.id;
 
                 // Verifica si el recurso ya está seleccionado
-                if (!selectedResources.includes(selectedResource)) {
+                if (!selectedResources.includes(selectedResource) || selectedResource != '') {
                     // Agrega el recurso a la lista de recursos seleccionados
                     selectedResources.push(selectedResource);
                     // Agrega el badge al contenedor
@@ -268,15 +267,17 @@
                         '<i class="fa fa-times ml-2 cursor-pointer"></i>' +
                         '</span>')
                     badgeItem.find('i').click(function(event) {
-                            var index = parseInt($(this).data('index'))
-                            console.log('index', index)
-                            selectedResources.splice(index, 1)
-                            $(this).closest('.badge').remove()
-                        })
-                        .data('index', selectedResources.length - 1)
-                    $('#selectedResources').append(badgeItem);
+                        // Obtén el índice correcto antes de eliminar el elemento
+                        var index = selectedResources.indexOf(selectedResource);
+                        console.log('index', index)
+                        selectedResources.splice(index, 1)
+                        $(this).closest('.badge').remove()
+                        console.log('rec_select', selectedResources);
+                    });
 
+                    $('#selectedResources').append(badgeItem);
                 }
+                console.log('rec_select', selectedResources);
             });
 
             // Maneja el evento de deselección en el select2
@@ -294,6 +295,10 @@
 
             // Agrega un evento de clic al botón "Buscar"
             $("#buscarMoviles").click(function() {
+                if (selectedResources.length == 0 || !$('#fecha_desde').val() || !$('#fecha_hasta').val()) {
+                    swal('¡ATENCION!', 'Todos los campos son requeridos', 'warning');
+                    return;
+                }
                 $loadingIndicator.show();
                 buscarMoviles(selectedResources);
             });
@@ -371,12 +376,18 @@
                 });
             }
 
-            // Función para filtrar datos por recurso
             function filtrarDatosPorRecurso(datos, recurso) {
-                return datos.filter(function(item) {
-                    console.log('item', item);
+                var datosFiltrados = datos.find(function(item) {
                     return item.recurso === recurso;
-                })[0].datos;
+                });
+
+                // Verifica si se encontraron datos
+                if (datosFiltrados) {
+                    return datosFiltrados.datos;
+                } else {
+                    // Si no se encontraron datos, puedes devolver un array vacío o manejarlo según tus necesidades
+                    return [];
+                }
             }
 
             // Función para abrir la modal y mostrar el mapa

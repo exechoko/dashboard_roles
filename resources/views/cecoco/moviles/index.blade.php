@@ -8,10 +8,10 @@
 
     <style>
         /* redondear modal
-                    #mapModal .modal-dialog {
-                        border-radius: 100% !important;
-                        overflow: hidden;
-                    }*/
+                            #mapModal .modal-dialog {
+                                border-radius: 100% !important;
+                                overflow: hidden;
+                            }*/
 
         #map-modal {
             height: 400px;
@@ -94,12 +94,19 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div id="control-moviles" class="col-lg-12" style="margin-top: 20px;">
-                            <div class="col-xs-12 col-sm-12 col-md-6">
-                                <div class="form-group">
-                                    <label for="filtroRecursos">Filtro por recurso</label>
-                                    <select name="filtroRecursos" id="filtroRecursos" class="form-control select2">
-                                        <!-- Las opciones se cargarán dinámicamente después -->
-                                    </select>
+                            <div class="row">
+                                <div class="col-xs-12 col-sm-12 col-md-6">
+                                    <div class="form-group">
+                                        <label for="filtroRecursos">Filtro por recurso</label>
+                                        <select name="filtroRecursos" id="filtroRecursos" class="form-control select2">
+                                            <!-- Las opciones se cargarán dinámicamente después -->
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 col-sm-12 col-md-6 text-right">
+                                    <div class="form-group">
+                                        <button id="exportarExcel" class="btn btn-success">Exportar a Excel</button>
+                                    </div>
                                 </div>
                             </div>
                             <div class="row">
@@ -373,6 +380,46 @@
                     var datosFiltrados = filtrarDatosPorRecurso(recursos, recursoSeleccionado);
                     console.log('datos_filtrados', datosFiltrados);
                     $table_moviles.bootstrapTable('load', datosFiltrados);
+                });
+
+                // Agrega un evento de clic al botón "Exportar a Excel"
+                $("#exportarExcel").click(function() {
+                    // Obtiene el recurso seleccionado en el filtro
+                    var recursoSeleccionado = $('#filtroRecursos').val();
+                    var fechaDesde = $('#fecha_desde').val();
+                    var fechaHasta = $('#fecha_hasta').val();
+
+                    // Filtra los datos según el recurso seleccionado
+                    var datosFiltrados = filtrarDatosPorRecurso(recursos, recursoSeleccionado);
+
+                    // Verifica si hay datos para exportar
+                    if (datosFiltrados.length > 0) {
+                        // Convierte los datos a un formato compatible con xlsx
+                        var data = datosFiltrados.map(function(item) {
+                            return {
+                                ID: item.id,
+                                Recurso: item.recurso,
+                                Latitud: item.latitud,
+                                Longitud: item.longitud,
+                                Velocidad: item.velocidad,
+                                Fecha: item.fecha,
+                                Direccion: item.direccion
+                            };
+                        });
+
+                        // Crea un objeto de trabajo de libro de Excel
+                        var ws = XLSX.utils.json_to_sheet(data);
+
+                        // Crea un libro y agrega la hoja de trabajo
+                        var wb = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(wb, ws, 'Historico');
+
+                        // Guarda el archivo Excel con un nombre específico
+                        XLSX.writeFile(wb, 'historico_'+ recursoSeleccionado +'.xlsx');
+                    } else {
+                        // Muestra un mensaje si no hay datos para exportar
+                        swal('¡ATENCIÓN!', 'No hay datos para exportar.', 'warning');
+                    }
                 });
             }
 

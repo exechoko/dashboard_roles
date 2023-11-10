@@ -112,13 +112,14 @@ class CecocoController extends Controller
             // Dirección no encontrada en la tabla, obtenerla a través de Google Maps
             $direccion = $this->getAddressGoogle($latitud, $longitud);
 
-            // Guardar la dirección en la tabla GeocodificacionInversa para futuras consultas
-            GeocodificacionInversa::create([
-                'latitud' => $latitud,
-                'longitud' => $longitud,
-                'direccion' => $direccion,
-            ]);
-
+            if ($direccion != 'Dirección no encontrada') {
+                // Guardar la dirección en la tabla GeocodificacionInversa para futuras consultas
+                GeocodificacionInversa::create([
+                    'latitud' => $latitud,
+                    'longitud' => $longitud,
+                    'direccion' => $direccion,
+                ]);
+            }
             return $direccion;
         }
     }
@@ -177,7 +178,7 @@ class CecocoController extends Controller
     // Función para obtener la dirección a partir de las coordenadas
     private function getAddressGoogle($lat, $lng)
     {
-        $apiKey = 'YOUR_API_GOOGLE'; // Reemplaza con tu clave de API de Google Maps
+        $apiKey = 'AIzaSyDHCwd1Btzh0xFM2ksZKbkrmhDQ9uIHFvE'; // Reemplaza con tu clave de API de Google Maps
 
         // Realizar solicitud a la API de geocodificación
         $url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$apiKey";

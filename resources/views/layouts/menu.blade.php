@@ -47,7 +47,7 @@
 </li>
 
 <li
-    class="dropdown {{ request()->is('tipo-camara*') ? 'active' : '' }} {{ request()->is('camaras*') ? 'active' : '' }}">
+    class="dropdown {{ request()->is('tipo-camara*') ? 'active' : '' }} {{ request()->is('camaras*') ? 'active' : '' }} {{ request()->is('sitios*') ? 'active' : '' }}">
     <a class="nav-link has-dropdown" href="#">
         <i class="fas fa-video"></i><span>Cámaras</span>
     </a>
@@ -77,29 +77,29 @@
 </li>
 
 <li
-    class="dropdown">
+    class="dropdown {{ request()->is('indexMoviles*') ? 'active' : '' }} {{ request()->is('indexLlamadas*') ? 'active' : '' }}">
     <a class="nav-link has-dropdown" href="#">
-        <i class="fas fa-video"></i><span>CeCoCo</span>
+        <i class="fas fa-life-ring"></i><span>CeCoCo</span>
     </a>
     <ul class="dropdown-menu">
         @can('ver-camara')
             <li class="">
                 <a class="nav-link" href="/get-llamadas">
-                    <i class="fas fa-cog"></i><span>Llamadas</span>
+                    <i class="fas fa-phone-alt"></i><span>Llamadas</span>
                 </a>
             </li>
         @endcan
         @can('ver-tipo-camara')
             <li class="">
                 <a class="nav-link" href="/indexMoviles">
-                    <i class=" fas fa-camera-retro"></i><span>Móviles</span>
+                    <i class="fas fa-car"></i></i><span>Móviles</span>
                 </a>
             </li>
         @endcan
         @can('ver-sitio')
             <li class="">
                 <a class="nav-link" href="/get-eventos">
-                    <i class="fas fa-map-marker-alt"></i><span>Eventos</span>
+                    <i class="far fa-file-alt"></i><span>Eventos</span>
                 </a>
             </li>
         @endcan
@@ -126,8 +126,7 @@
     </a>
 </li>
 
-<li
-    class="dropdown {{ request()->is('usuarios*') ? 'active' : '' }} {{ request()->is('roles*') ? 'active' : '' }}">
+<li class="dropdown {{ request()->is('usuarios*') ? 'active' : '' }} {{ request()->is('roles*') ? 'active' : '' }}">
     <a class="nav-link has-dropdown" href="#">
         <i class="fas fa-users"></i><span>Usuarios</span>
     </a>

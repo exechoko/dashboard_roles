@@ -107,6 +107,9 @@
                                     <h3 class="vertical-space">Control de Móviles</h3>
                                 </div>
                             </div>
+                            <div id="loading-indicator" style="display: none;">
+                                <i class="fa fa-spinner fa-spin"></i> Cargando...
+                            </div>
                             <div id="box-table_moviles">
                                 <table table id="table_moviles" class="table-condensed" data-toggle="table"
                                     data-height="100%" style="background-color:#FFF;" data-sort-name="id"
@@ -127,9 +130,6 @@
                                         </tr>
                                     </thead>
                                 </table>
-                            </div>
-                            <div id="loading-indicator" style="display: none;">
-                                <i class="fa fa-spinner fa-spin"></i> Cargando...
                             </div>
                         </div>
                     </div>
@@ -190,7 +190,7 @@
                 // Centra el mapa en las coordenadas del marcador
                 map.setView([latitud, longitud], 17);
 
-            }, 1000);
+            }, 2000);
 
         }
 

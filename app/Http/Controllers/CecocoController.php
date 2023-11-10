@@ -178,7 +178,7 @@ class CecocoController extends Controller
     // Función para obtener la dirección a partir de las coordenadas
     private function getAddressGoogle($lat, $lng)
     {
-        $apiKey = 'YOUR_API'; // Reemplaza con tu clave de API de Google Maps
+        $apiKey = env('API_GOOGLE'); // Reemplaza con tu clave de API de Google Maps
 
         // Realizar solicitud a la API de geocodificación
         $url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$apiKey";
@@ -195,7 +195,7 @@ class CecocoController extends Controller
     // Función para obtener la dirección a partir de las coordenadas usando cURL
     private function getAddress($lat, $lng)
     {
-        $apiKey = 'API_ROUTE_SERVICE'; // Reemplaza con tu clave de API de OpenRouteService
+        $apiKey = env('API_ROUTE_SERVICE'); // Reemplaza con tu clave de API de OpenRouteService
 
         $url = "https://api.openrouteservice.org/geocode/reverse?api_key=$apiKey&point.lon=$lng&point.lat=$lat";
 

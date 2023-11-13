@@ -8,13 +8,18 @@
 
     <style>
         /* redondear modal
-                            #mapModal .modal-dialog {
-                                border-radius: 100% !important;
-                                overflow: hidden;
-                            }*/
+                                                                                            #mapModal .modal-dialog {
+                                                                                                border-radius: 100% !important;
+                                                                                                overflow: hidden;
+                                                                                            }*/
 
         #map-modal {
             height: 400px;
+            width: 100%;
+        }
+
+        #recorrido-modal {
+            height: 600px;
             width: 100%;
         }
     </style>
@@ -105,6 +110,9 @@
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-6 text-right">
                                     <div class="form-group">
+                                        <button id="verRecorrido" class="btn btn-warning">Recorrido</button>
+                                    </div>
+                                    <div class="form-group">
                                         <button id="exportarExcel" class="btn btn-success">Exportar a Excel</button>
                                     </div>
                                 </div>
@@ -163,6 +171,26 @@
                 </div>
             </div>
         </div>
+        <!-- Modal para mostrar el recorrido en el mapa -->
+        <div id="recorridoModal" class="modal fade" data-backdrop="false" style="background-color: rgba(0, 0, 0, 0.5);"
+            role="dialog" aria-labelledby="recorridoModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-secondary">
+                        <h5 class="modal-title" id="mapModalLabel">Recorrido</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="recorrido-modal"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" data-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </section>
 
 
@@ -170,7 +198,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/spin.js/2.3.2/spin.min.js"></script>
     <script>
         var map;
+        var recorridoMap;
         var markerResultado;
+        var polyline;
 
         function initMap() {
             if (map == null) {
@@ -199,6 +229,87 @@
 
             }, 2000);
 
+        }
+
+        function initMapRecorrido(info) {
+            if (recorridoMap == null) {
+                // Inicializa el mapa una vez al cargar la página
+                recorridoMap = L.map('recorrido-modal', {
+                    editable: true
+                });
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(recorridoMap);
+            }
+
+            setTimeout(() => {
+                if (capaCirculos) {
+                    recorridoMap.removeLayer(capaCirculos);
+                } else {
+                    // Crear la capa para los círculos
+                    var capaCirculos = L.layerGroup().addTo(recorridoMap);
+                }
+
+
+                // Eliminar círculos existentes
+                //capaCirculos.clearLayers();
+
+
+                // Insertar círculos en la capa
+                info.forEach(function(data) {
+                    if (data.latitud !== 0 || data.longitud !== 0) {
+                        var circle = L.marker([data.latitud, data.longitud], {
+                            color: 'red',
+                            fillColor: '#f03',
+                            fillOpacity: 0.5,
+                            radius: 10
+                        });
+
+                        var popupContent = "Fecha: " + data.fecha + "<br>Dirección: " + data.direccion +
+                            "<br>Velocidad: " + data.velocidad;
+                        circle.bindPopup(popupContent);
+
+                        capaCirculos.addLayer(circle);
+                    }
+                });
+
+                if (polyline) {
+                    recorridoMap.removeLayer(polyline);
+                }
+
+                // Insertar círculos en la capa
+                /*info.forEach(function(data) {
+                    if (data.latitud !== 0 || data.longitud !== 0) {
+                        var circle = L.circle([data.latitud, data.longitud], {
+                            color: 'red',
+                            fillColor: '#f03',
+                            fillOpacity: 0.5,
+                            radius: 10
+                        }).addTo(recorridoMap);
+
+                        var popupContent = "Fecha: " + data.fecha + "<br>Dirección: " + data.direccion +
+                            "<br>Velocidad: " + data.velocidad;
+                        circle.bindPopup(popupContent);
+                    }
+                });*/
+
+
+                // Crear la polyline y ajustar el mapa al recorrido
+                var coordenadas = info.map(function(data) {
+                    if (data.latitud !== 0 || data.longitud !== 0) {
+                        return [data.latitud, data.longitud];
+                    }
+                }).filter(function(coordenada) {
+                    return coordenada !== undefined;
+                });
+
+                polyline = L.polyline(coordenadas, {
+                    color: 'red'
+                }).addTo(recorridoMap);
+
+                recorridoMap.fitBounds(polyline.getBounds());
+            }, 2000);
         }
 
         $(document).ready(function() {
@@ -382,6 +493,26 @@
                     $table_moviles.bootstrapTable('load', datosFiltrados);
                 });
 
+                $("#verRecorrido").click(function() {
+                    // Obtiene el recurso seleccionado en el filtro
+                    var recursoSeleccionado = $('#filtroRecursos').val();
+                    var fechaDesde = $('#fecha_desde').val();
+                    var fechaHasta = $('#fecha_hasta').val();
+
+                    // Filtra los datos según el recurso seleccionado
+                    var datosFiltrados = filtrarDatosPorRecurso(recursos, recursoSeleccionado);
+                    if (datosFiltrados.length > 0) {
+                        console.log('datos_para_recorrido', datosFiltrados);
+                        initMapRecorrido(datosFiltrados);
+                        $('#recorridoModal').modal('show');
+                    }
+                    /*else {
+                                           // Muestra un mensaje si no hay datos para exportar
+                                           swal('¡ATENCIÓN!', 'No hay recorrido para mostrar.', 'warning');
+                                       }*/
+
+                });
+
                 // Agrega un evento de clic al botón "Exportar a Excel"
                 $("#exportarExcel").click(function() {
                     // Obtiene el recurso seleccionado en el filtro
@@ -415,7 +546,7 @@
                         XLSX.utils.book_append_sheet(wb, ws, 'Historico');
 
                         // Guarda el archivo Excel con un nombre específico
-                        XLSX.writeFile(wb, 'historico_'+ recursoSeleccionado +'.xlsx');
+                        XLSX.writeFile(wb, 'historico_' + recursoSeleccionado + '.xlsx');
                     } else {
                         // Muestra un mensaje si no hay datos para exportar
                         swal('¡ATENCIÓN!', 'No hay datos para exportar.', 'warning');

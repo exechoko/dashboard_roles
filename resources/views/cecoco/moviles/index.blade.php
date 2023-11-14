@@ -8,10 +8,10 @@
 
     <style>
         /* redondear modal
-                                                                                            #mapModal .modal-dialog {
-                                                                                                border-radius: 100% !important;
-                                                                                                overflow: hidden;
-                                                                                            }*/
+        #mapModal .modal-dialog {
+            border-radius: 100% !important;
+            overflow: hidden;
+        }*/
 
         #map-modal {
             height: 400px;
@@ -28,7 +28,7 @@
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h3 class="page__heading">Moviles</h3>
+            <h3 class="page__heading">Móviles</h3>
         </div>
         <div class="section-body">
             <div class="row">
@@ -51,7 +51,7 @@
                             <div class="row">
                                 <div class="col-xs-12 col-sm-12 col-md-4">
                                     <div class="form-group">
-                                        <label for="recurso">Móvil</label>
+                                        <label for="recurso">Recursos desde CeCoCo</label>
                                         <select name="recurso" id="recurso" class="form-control select2">
                                             <option value="">Seleccionar recurso</option>
                                             @foreach ($recursos as $recurso)
@@ -201,6 +201,7 @@
         var recorridoMap;
         var markerResultado;
         var polyline;
+        var MARKERS = [];
 
         function initMap() {
             if (map == null) {
@@ -244,56 +245,16 @@
             }
 
             setTimeout(() => {
-                if (capaCirculos) {
-                    recorridoMap.removeLayer(capaCirculos);
-                } else {
-                    // Crear la capa para los círculos
-                    var capaCirculos = L.layerGroup().addTo(recorridoMap);
+
+                for (var m = 0; m < MARKERS.length; m++) {
+                    console.log('marker', MARKERS);
+                    recorridoMap.removeLayer(MARKERS[m])
                 }
-
-
-                // Eliminar círculos existentes
-                //capaCirculos.clearLayers();
-
-
-                // Insertar círculos en la capa
-                info.forEach(function(data) {
-                    if (data.latitud !== 0 || data.longitud !== 0) {
-                        var circle = L.marker([data.latitud, data.longitud], {
-                            color: 'red',
-                            fillColor: '#f03',
-                            fillOpacity: 0.5,
-                            radius: 10
-                        });
-
-                        var popupContent = "Fecha: " + data.fecha + "<br>Dirección: " + data.direccion +
-                            "<br>Velocidad: " + data.velocidad;
-                        circle.bindPopup(popupContent);
-
-                        capaCirculos.addLayer(circle);
-                    }
-                });
+                MARKERS = [];
 
                 if (polyline) {
                     recorridoMap.removeLayer(polyline);
                 }
-
-                // Insertar círculos en la capa
-                /*info.forEach(function(data) {
-                    if (data.latitud !== 0 || data.longitud !== 0) {
-                        var circle = L.circle([data.latitud, data.longitud], {
-                            color: 'red',
-                            fillColor: '#f03',
-                            fillOpacity: 0.5,
-                            radius: 10
-                        }).addTo(recorridoMap);
-
-                        var popupContent = "Fecha: " + data.fecha + "<br>Dirección: " + data.direccion +
-                            "<br>Velocidad: " + data.velocidad;
-                        circle.bindPopup(popupContent);
-                    }
-                });*/
-
 
                 // Crear la polyline y ajustar el mapa al recorrido
                 var coordenadas = info.map(function(data) {
@@ -308,6 +269,32 @@
                     color: 'red'
                 }).addTo(recorridoMap);
 
+                //Agrega los circulos de cada coordenada
+                info.forEach(function(data, index) {
+                    if (data.latitud !== 0 || data.longitud !== 0) {
+                        var circleColor = 'red';
+                        if (index === 0) {
+                            circleColor = 'gray'; // Primer círculo en gris
+                        } else if (index === info.length - 1) {
+                            circleColor = 'green'; // Último círculo en verde
+                        }
+
+                        var circle = L.circle([data.latitud, data.longitud], {
+                            color: circleColor,
+                            fillColor: circleColor,
+                            fillOpacity: 0.5,
+                            radius: 10
+                        });
+
+                        var popupContent = "Fecha: " + data.fecha + "<br>Dirección: " + data.direccion +
+                            "<br>Velocidad: " + data.velocidad;
+                        circle.bindPopup(popupContent);
+                        MARKERS.push(circle);
+                        circle.addTo(recorridoMap);
+                    }
+                });
+
+                //centra el mapa en el recorrido completo
                 recorridoMap.fitBounds(polyline.getBounds());
             }, 2000);
         }

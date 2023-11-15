@@ -8,10 +8,10 @@
 
     <style>
         /* redondear modal
-        #mapModal .modal-dialog {
-            border-radius: 100% !important;
-            overflow: hidden;
-        }*/
+                #mapModal .modal-dialog {
+                    border-radius: 100% !important;
+                    overflow: hidden;
+                }*/
 
         #map-modal {
             height: 400px;
@@ -515,13 +515,13 @@
                         // Convierte los datos a un formato compatible con xlsx
                         var data = datosFiltrados.map(function(item) {
                             return {
-                                ID: item.id,
-                                Recurso: item.recurso,
+                                //ID: item.id,
+                                //Recurso: item.recurso,
                                 Latitud: item.latitud,
                                 Longitud: item.longitud,
+                                Direccion: item.direccion,
                                 Velocidad: item.velocidad,
-                                Fecha: item.fecha,
-                                Direccion: item.direccion
+                                Fecha: item.fecha
                             };
                         });
 
@@ -531,9 +531,24 @@
                         // Crea un libro y agrega la hoja de trabajo
                         var wb = XLSX.utils.book_new();
                         XLSX.utils.book_append_sheet(wb, ws, 'Historico');
+                        /* fix headers */
+                        XLSX.utils.sheet_add_aoa(ws, [
+                            ["Latitud", "Longitud", "Dirección", "Velocidad",
+                                "Fecha"
+                            ]
+                        ], {
+                            origin: "A1",
+                            bold: true
+                        });
 
                         // Guarda el archivo Excel con un nombre específico
-                        XLSX.writeFile(wb, 'historico_' + recursoSeleccionado + '.xlsx');
+                        XLSX.writeFile(wb, 'historico_' +
+                            recursoSeleccionado +
+                            '_' +
+                            fechaDesde.replace('T', '_') +
+                            '__' +
+                            fechaHasta.replace('T', '_') +
+                            '.xlsx');
                     } else {
                         // Muestra un mensaje si no hay datos para exportar
                         swal('¡ATENCIÓN!', 'No hay datos para exportar.', 'warning');

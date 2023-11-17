@@ -8,10 +8,10 @@
 
     <style>
         /* redondear modal
-                #mapModal .modal-dialog {
-                    border-radius: 100% !important;
-                    overflow: hidden;
-                }*/
+                                            #mapModal .modal-dialog {
+                                                border-radius: 100% !important;
+                                                overflow: hidden;
+                                            }*/
 
         #map-modal {
             height: 400px;
@@ -21,6 +21,16 @@
         #recorrido-modal {
             height: 600px;
             width: 100%;
+        }
+
+        .circulo-rojo {
+            background-color: red;
+            border-radius: 50%;
+            width: 10px;
+            height: 10px;
+            text-align: center;
+            line-height: 10px;
+            color: white;
         }
     </style>
 @stop
@@ -186,6 +196,8 @@
                         <div id="recorrido-modal"></div>
                     </div>
                     <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" id="recrearRecorridoBtn">Recrear
+                            Recorrido</button>
                         <button type="button" class="btn btn-success" data-dismiss="modal">Cerrar</button>
                     </div>
                 </div>
@@ -269,33 +281,146 @@
                     color: 'red'
                 }).addTo(recorridoMap);
 
-                //Agrega los circulos de cada coordenada
+                // Agrega los marcadores de cada coordenada
                 info.forEach(function(data, index) {
                     if (data.latitud !== 0 || data.longitud !== 0) {
-                        var circleColor = 'red';
+                        var markerIcon;
+
                         if (index === 0) {
-                            circleColor = 'gray'; // Primer círculo en gris
+                            // Primer marcador con bandera verde
+                            markerIcon = L.icon({
+                                iconUrl: "/img/flag_init.svg",
+                                iconSize: [32, 32], // Ajusta el tamaño según tu necesidad
+                                iconAnchor: [16, 32],
+                                popupAnchor: [0, -32]
+                            });
                         } else if (index === info.length - 1) {
-                            circleColor = 'green'; // Último círculo en verde
+                            // Último marcador con bandera de llegada (a cuadros)
+                            markerIcon = L.icon({
+                                iconUrl: "/img/flag_finish.svg",
+                                iconSize: [32, 32], // Ajusta el tamaño según tu necesidad
+                                iconAnchor: [16, 32],
+                                popupAnchor: [0, -32]
+                            });
+                        } else {
+                            // Círculo intermedio en rojo (creado con CSS)
+                            markerIcon = L.divIcon({
+                                className: 'circulo-rojo',
+                                iconSize: [10, 10],
+                                iconAnchor: [5, 5]
+                            });
                         }
 
-                        var circle = L.circle([data.latitud, data.longitud], {
-                            color: circleColor,
-                            fillColor: circleColor,
-                            fillOpacity: 0.5,
-                            radius: 10
+                        var marker = L.marker([data.latitud, data.longitud], {
+                            icon: markerIcon
                         });
 
                         var popupContent = "Fecha: " + data.fecha + "<br>Dirección: " + data.direccion +
                             "<br>Velocidad: " + data.velocidad;
-                        circle.bindPopup(popupContent);
-                        MARKERS.push(circle);
-                        circle.addTo(recorridoMap);
+                        marker.bindPopup(popupContent);
+                        MARKERS.push(marker);
+                        marker.addTo(recorridoMap);
                     }
                 });
 
                 //centra el mapa en el recorrido completo
                 recorridoMap.fitBounds(polyline.getBounds());
+            }, 2000);
+        }
+
+        function initMapRecorridoAnimado(info) {
+            console.log('animado', info)
+            if (recorridoMap == null) {
+                // Inicializa el mapa una vez al cargar la página
+                recorridoMap = L.map('recorrido-modal', {
+                    editable: true
+                });
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(recorridoMap);
+            }
+
+            setTimeout(() => {
+
+                for (var m = 0; m < MARKERS.length; m++) {
+                    recorridoMap.removeLayer(MARKERS[m]);
+                }
+                MARKERS = [];
+
+                if (polyline) {
+                    recorridoMap.removeLayer(polyline);
+                }
+
+                // Crear la polyline y ajustar el mapa al recorrido
+                var coordenadas = info.map(function(data) {
+                    if (data.latitud !== 0 || data.longitud !== 0) {
+                        return [data.latitud, data.longitud];
+                    }
+                }).filter(function(coordenada) {
+                    return coordenada !== undefined;
+                });
+
+                polyline = L.polyline([], {
+                    color: 'red'
+                }).addTo(recorridoMap);
+
+                // Función para agregar un marcador con un retraso
+                function agregarMarcadorConRetraso(data, index) {
+                    setTimeout(function() {
+                        var markerIcon;
+
+                        if (index === 0) {
+                            // Primer marcador con bandera verde
+                            markerIcon = L.icon({
+                                iconUrl: "/img/flag_init.svg",
+                                iconSize: [32, 32], // Ajusta el tamaño según tu necesidad
+                                iconAnchor: [16, 32],
+                                popupAnchor: [0, -32]
+                            });
+                        } else if (index === info.length - 1) {
+                            // Último marcador con bandera de llegada (a cuadros)
+                            markerIcon = L.icon({
+                                iconUrl: "/img/flag_finish.svg",
+                                iconSize: [32, 32], // Ajusta el tamaño según tu necesidad
+                                iconAnchor: [16, 32],
+                                popupAnchor: [0, -32]
+                            });
+                        } else {
+                            // Círculo intermedio en rojo (creado con CSS)
+                            markerIcon = L.divIcon({
+                                className: 'circulo-rojo',
+                                iconSize: [10, 10],
+                                iconAnchor: [5, 5]
+                            });
+                        }
+
+                        var marker = L.marker([data.latitud, data.longitud], {
+                            icon: markerIcon
+                        });
+
+                        var popupContent = "Fecha: " + data.fecha + "<br>Dirección: " + data.direccion +
+                            "<br>Velocidad: " + data.velocidad;
+                        marker.bindPopup(popupContent);
+                        MARKERS.push(marker);
+                        marker.addTo(recorridoMap);
+
+                        // Agregar coordenadas a la lista para la polyline
+                        polyline.addLatLng([data.latitud, data.longitud]);
+
+                        // Ajustar el mapa al recorrido completo
+                        recorridoMap.fitBounds(polyline.getBounds());
+                    }, index * 250); // Ajusta el valor (en milisegundos) según la velocidad deseada
+                }
+
+                // Agrega los marcadores de cada coordenada con retraso
+                info.forEach(function(data, index) {
+                    if (data.latitud !== 0 || data.longitud !== 0) {
+                        agregarMarcadorConRetraso(data, index);
+                    }
+                    // Ajustar el mapa al recorrido completo
+                    //recorridoMap.fitBounds(polyline.getBounds());
+                });
             }, 2000);
         }
 
@@ -552,6 +677,19 @@
                     } else {
                         // Muestra un mensaje si no hay datos para exportar
                         swal('¡ATENCIÓN!', 'No hay datos para exportar.', 'warning');
+                    }
+                });
+
+                $('#recrearRecorridoBtn').click(function() {
+                    var recursoSeleccionado = $('#filtroRecursos').val();
+                    var fechaDesde = $('#fecha_desde').val();
+                    var fechaHasta = $('#fecha_hasta').val();
+
+                    // Filtra los datos según el recurso seleccionado
+                    var datosFiltrados = filtrarDatosPorRecurso(recursos, recursoSeleccionado);
+                    if (datosFiltrados.length > 0) {
+                        console.log('datos_para_recorrido', datosFiltrados);
+                        initMapRecorridoAnimado(datosFiltrados);
                     }
                 });
             }

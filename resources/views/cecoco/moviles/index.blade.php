@@ -187,7 +187,7 @@
             <div class="modal-dialog modal-xl" role="document">
                 <div class="modal-content">
                     <div class="modal-header bg-secondary">
-                        <h5 class="modal-title" id="mapModalLabel">Recorrido</h5>
+                        <h5 class="modal-title" id="recorridoModalLabel">Recorrido</h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -616,6 +616,8 @@
                     if (datosFiltrados.length > 0) {
                         console.log('datos_para_recorrido', datosFiltrados);
                         initMapRecorrido(datosFiltrados);
+                        // Agrega el nombre del recurso al título de la modal
+                        $('#recorridoModalLabel').html('Recorrido - ' + recursoSeleccionado);
                         $('#recorridoModal').modal('show');
                     }
                     /*else {

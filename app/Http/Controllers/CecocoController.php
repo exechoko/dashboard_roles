@@ -49,6 +49,7 @@ class CecocoController extends Controller
                 ->table('posicionesgps')
                 ->whereIn('recurso', json_decode($request->recursos))
                 ->whereBetween('fecha', [$fecha_desde, $fecha_hasta])
+                //->whereRaw('SECOND(fecha) % 600 = 0') // Filtra las posiciones cada 10 minutos
                 ->get()
                 ->map(function ($result) use (&$coordinates) {
                     // Convertir las coordenadas de radianes a grados decimales

@@ -78,8 +78,9 @@ Route::group(['middleware' => ['auth']], function(){
     Route::get('/export-camaras', [App\Http\Controllers\CamaraController::class, 'exportExcel'])->name('camaras.export');
     Route::get('/export-sitios', [App\Http\Controllers\SitioController::class, 'exportExcel'])->name('sitios.export');
 
-    Route::get('/get-llamadas', [App\Http\Controllers\CecocoController::class, 'getLlamadas'])->name('get-llamadas');
     Route::get('/indexMoviles', [App\Http\Controllers\CecocoController::class, 'indexMoviles'])->name('indexMoviles');
+    Route::get('/indexLlamadas', [App\Http\Controllers\CecocoController::class, 'indexLlamadas'])->name('indexLlamadas');
+    Route::post('/get-llamadas', [App\Http\Controllers\CecocoController::class, 'getLlamadas'])->name('get-llamadas');
     Route::post('/get-moviles', [App\Http\Controllers\CecocoController::class, 'getRecorridosMoviles'])->name('get-moviles');
     Route::get('/get-eventos', [App\Http\Controllers\CecocoController::class, 'getEventos'])->name('get-eventos');
 

@@ -84,7 +84,7 @@
     <ul class="dropdown-menu">
         @can('ver-camara')
             <li class="">
-                <a class="nav-link" href="/get-llamadas">
+                <a class="nav-link" href="/indexLlamadas">
                     <i class="fas fa-phone-alt"></i><span>Llamadas</span>
                 </a>
             </li>

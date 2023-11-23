@@ -21,15 +21,32 @@ class CecocoController extends Controller
         return view('cecoco.moviles.index', compact('recursos'));
     }
 
-
-    public function getLlamadas()
+    public function indexLlamadas()
     {
-        //dd('entro');
-        $results = DB::connection('mysql_second')
-            ->table('llamadas')
-            ->where('protocolo', 5)
-            ->limit(50)->get();
-        dd($results);
+        $protocolos = DB::connection('mysql_second')
+            ->table('protocoloscomunicaciones')
+            ->get();
+
+        return view('cecoco.llamadas.index', compact('protocolos'));
+    }
+
+    public function getLlamadas(Request $request)
+    {
+        //dd($request->all());
+        try {
+            $fecha_desde = \Carbon\Carbon::parse($request->fecha_desde)->format('Y-m-d H:i:s');
+            $fecha_hasta = \Carbon\Carbon::parse($request->fecha_hasta)->format('Y-m-d H:i:s');
+            $llamadas = DB::connection('mysql_second')
+                ->table('llamadas')
+                ->where('protocolo', $request->protocolo)
+                ->where('numero', 'like', '%' . $request->telefono . '%')
+                ->whereBetween('fechaInicio', [$fecha_desde, $fecha_hasta])
+                ->orderBy('fechaInicio', 'DESC')
+                ->get();
+            return response()->json(['llamadas' => $llamadas]);
+        } catch (\Exception $ex) {
+            return response()->json(['status' => 'error', 'message' => $ex->getMessage()], 200);
+        }
     }
 
     public function getRecorridosMoviles(Request $request)

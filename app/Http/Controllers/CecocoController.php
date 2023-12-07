@@ -32,6 +32,29 @@ class CecocoController extends Controller
 
     public function getLlamadas(Request $request)
     {
+        try {
+            $fecha_desde = \Carbon\Carbon::parse($request->fecha_desde)->format('Y-m-d H:i:s');
+            $fecha_hasta = \Carbon\Carbon::parse($request->fecha_hasta)->format('Y-m-d H:i:s');
+
+            $llamadas = DB::connection('mysql_second')
+                ->table('llamadas')
+                ->select('llamadas.*', 'grabacionesoperador.rutaFichero', 'grabacionesoperador.nombreFichero')
+                ->join('grabacionesoperador', 'llamadas.operadorInicio', '=', 'grabacionesoperador.operador')
+                ->where('grabacionesoperador.nombreFichero', 'like', '%' . $request->telefono . '%')
+                ->whereBetween('llamadas.fechaInicio', [$fecha_desde, $fecha_hasta])
+                ->orderBy('llamadas.fechaInicio', 'DESC')
+                ->distinct()
+                ->get();
+
+            return response()->json(['llamadas' => $llamadas]);
+        } catch (\Exception $ex) {
+            return response()->json(['status' => 'error', 'message' => $ex->getMessage()], 200);
+        }
+    }
+
+
+    /*public function getLlamadas(Request $request)
+    {
         //dd($request->all());
         try {
             $fecha_desde = \Carbon\Carbon::parse($request->fecha_desde)->format('Y-m-d H:i:s');
@@ -47,7 +70,7 @@ class CecocoController extends Controller
         } catch (\Exception $ex) {
             return response()->json(['status' => 'error', 'message' => $ex->getMessage()], 200);
         }
-    }
+    }*/
 
     public function getRecorridosMoviles(Request $request)
     {

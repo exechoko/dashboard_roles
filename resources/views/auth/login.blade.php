@@ -1,6 +1,6 @@
 @extends('layouts.auth_app')
 @section('title')
-    Sistema 911 - Login
+    911 C.A.R. - Login
 @endsection
 @section('content')
     <div class="card card-primary">

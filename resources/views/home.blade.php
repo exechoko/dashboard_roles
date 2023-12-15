@@ -20,25 +20,25 @@
         .card-item:hover {
             transform: translateY(-5px);
             /*translate: 0 -20px;
-                                box-shadow: 5px 3px rgb(217 220 242 / 75%),
-                                    10px 6px rgb(44 217 255 / 50%),
-                                    15px 9px rgb(126 255 178 / 25%),*/
+                                                                                    box-shadow: 5px 3px rgb(217 220 242 / 75%),
+                                                                                        10px 6px rgb(44 217 255 / 50%),
+                                                                                        15px 9px rgb(126 255 178 / 25%),*/
         }
 
         /*.card-item::before {
-                            content: '';
-                            position: absolute;
-                            inset: 0;
-                            transform: scaleY(0.75);
-                            transform-origin: bottom;
-                            background: linear-gradient(transparent,
-                                    rgba(0, 0, 0, 0.02), #000);
-                            transition: transform 0.25s;
-                        }
+                                                                                content: '';
+                                                                                position: absolute;
+                                                                                inset: 0;
+                                                                                transform: scaleY(0.75);
+                                                                                transform-origin: bottom;
+                                                                                background: linear-gradient(transparent,
+                                                                                        rgba(0, 0, 0, 0.02), #000);
+                                                                                transition: transform 0.25s;
+                                                                            }
 
-                        .card-item:hover::before {
-                            transform: scale(1);
-                        }*/
+                                                                            .card-item:hover::before {
+                                                                                transform: scale(1);
+                                                                            }*/
     </style>
 
 @stop
@@ -53,233 +53,165 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-                            <div class="row">
-                                {{--
-                                @can('ver-usuario')
+                            @php
+                                use App\Models\Equipo;
+                                use App\Models\Historico;
+                                use App\Models\Destino;
+                                use App\Models\Recurso;
+                                use App\Models\TipoMovimiento;
+                                use App\Models\Camara;
+                                $cant_equipos = Equipo::where('estado_id', 3)->count();
+                                $cant_equipos = Equipo::where('estado_id', '<>', 3)->count();
+                                $id_pg = Destino::where('nombre', 'Patagonia Green')->first();
+                                $cant_equipos_en_pg = Historico::where('destino_id', $id_pg->id)
+                                    ->where('fecha_desasignacion', null)
+                                    ->count();
+                                //dd($cant_equipos_en_pg);
+
+                                $veh = 'Moto';
+                                $cant_motos = Recurso::whereHas('vehiculo', function ($query) use ($veh) {
+                                    $query->where('tipo_vehiculo', '=', $veh);
+                                })->count();
+
+                                $tipo_veh1 = 'Auto';
+                                $tipo_veh2 = 'Camioneta';
+                                $cant_moviles = Recurso::whereHas('vehiculo', function ($query) use ($tipo_veh1, $tipo_veh2) {
+                                    $query->where('tipo_vehiculo', '=', $tipo_veh1)->orWhere('tipo_vehiculo', '=', $tipo_veh2);
+                                })->count();
+
+                                $cant_camaras = Camara::all()->count();
+
+                                $cant_desinstalaciones = Historico::whereIn('id', function ($query) {
+                                    $query
+                                        ->select(DB::raw('MAX(id)'))
+                                        ->from('historico')
+                                        ->groupBy('equipo_id');
+                                })
+                                    ->where('tipo_movimiento_id', function ($subquery) {
+                                        $subquery
+                                            ->select('id')
+                                            ->from('tipo_movimiento')
+                                            ->where('nombre', 'Desinstalación Parcial');
+                                    })
+                                    ->count();
+                            @endphp
+                            @can('ver-menu-dashboard')
+                                <div class="row">
                                     <div class="col-md-4 col-xl-4">
-                                        <div class="card bg-c-blue order-card">
+                                        <div class="card-item bg-c-green order-card">
                                             <div class="card-block">
-                                                <h5>Usuarios</h5>
+                                                <h5>Equipos sin funcionar</h5>
+
                                                 <h2 class="text-right"><i
-                                                        class="fa fa-users f-left"></i><span>{{ $cant_usuarios }}</span></h2>
-                                                <p class="m-b-0 text-right"><a href="/usuarios" class="text-white">Ver más</a>
-                                                </p>
+                                                        class="fa fa-mobile f-left"></i><span>{{ $cant_equipos }}</span></h2>
+                                                @can('ver-equipo')
+                                                    <p class="m-b-0 text-right"><a href="/equipos" class="text-white">Ver más</a>
+                                                    </p>
+                                                @endcan
                                             </div>
                                         </div>
                                     </div>
-                                @endcan
-                                @can('ver-rol')
                                     <div class="col-md-4 col-xl-4">
-                                        <div class="card bg-c-green order-card">
+                                        <div class="card-item bg-c-violet order-card">
                                             <div class="card-block">
-                                                <h5>Roles</h5>
+                                                <h5>Equipos funcionales</h5>
+
                                                 <h2 class="text-right"><i
-                                                        class="fa fa-user-lock f-left"></i><span>{{ $cant_roles }}</span></h2>
-                                                <p class="m-b-0 text-right"><a href="/roles" class="text-white">Ver más</a></p>
+                                                        class="fa fa-mobile f-left"></i><span>{{ $cant_equipos }}</span></h2>
+                                                @can('ver-equipo')
+                                                    <p class="m-b-0 text-right"><a href="/equipos" class="text-white"
+                                                            style="color: rgb(253, 253, 253)">Ver más</a>
+                                                    </p>
+                                                @endcan
                                             </div>
                                         </div>
                                     </div>
-                                @endcan
-                                --}}
-                                <div class="col-md-4 col-xl-4">
-                                    <div class="card-item bg-c-green order-card">
-                                        <div class="card-block">
-                                            <h5>Equipos sin funcionar</h5>
-                                            @php
-                                                use App\Models\Equipo;
-                                                $cant_equipos = Equipo::where('estado_id', 3)->count();
-                                            @endphp
-                                            <h2 class="text-right"><i
-                                                    class="fa fa-mobile f-left"></i><span>{{ $cant_equipos }}</span></h2>
-                                            @can('ver-equipo')
-                                                <p class="m-b-0 text-right"><a href="/equipos" class="text-white">Ver más</a>
-                                                </p>
-                                            @endcan
+                                    <div class="col-md-4 col-xl-4">
+                                        <div class="card-item bg-c-orange order-card">
+                                            <div class="card-block">
+                                                <h5>Equipos derivados a P.G.</h5>
+
+                                                <h2 class="text-right"><i
+                                                        class="fa fa-mobile f-left"></i><span>{{ $cant_equipos_en_pg }}</span>
+                                                </h2>
+                                                @can('ver-equipo')
+                                                    <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                            data-target="#modal-equipos-pg{{-- $vehiculo->id --}}"
+                                                            id="btn-buscar-equipos-pg" style="color: rgb(253, 253, 253)">Ver más</a>
+                                                    </p>
+                                                @endcan
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="col-md-4 col-xl-4">
-                                    <div class="card-item bg-c-violet order-card">
-                                        <div class="card-block">
-                                            <h5>Equipos funcionales</h5>
-                                            @php
-                                                $cant_equipos = Equipo::where('estado_id', '<>', 3)->count();
-                                            @endphp
-                                            <h2 class="text-right"><i
-                                                    class="fa fa-mobile f-left"></i><span>{{ $cant_equipos }}</span></h2>
-                                            @can('ver-equipo')
-                                                <p class="m-b-0 text-right"><a href="/equipos" class="text-white"
+                                    <div class="col-md-4 col-xl-4">
+                                        <div class="card-item bg-c-red order-card">
+                                            <div class="card-block">
+                                                <h5>Moto Patrulla</h5>
+
+                                                <h2 class="text-right"><i
+                                                        class="fas fa-motorcycle f-left"></i><span>{{ $cant_motos }}</span>
+                                                </h2>
+                                                @can('ver-equipo')
+                                                    <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                            data-target="#modal-motos{{-- $vehiculo->id --}}"
+                                                            id="btn-buscar-motopatrullas" style="color: rgb(253, 253, 253)">Ver
+                                                            más</a>
+                                                    </p>
+                                                @endcan
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-xl-4">
+                                        <div class="card-item bg-c-gren-light order-card">
+                                            <div class="card-block">
+                                                <h5>Móviles</h5>
+
+                                                <h2 class="text-right"><i
+                                                        class="fas fa-car f-left"></i><span>{{ $cant_moviles }}</span></h2>
+                                                @can('ver-equipo')
+                                                    <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                            data-target="#modal-moviles{{-- $vehiculo->id --}}"
+                                                            id="btn-buscar-moviles" style="color: rgb(253, 253, 253)">Ver más</a>
+                                                    </p>
+                                                @endcan
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-xl-4">
+                                        <div class="card-item bg-c-blue order-card">
+                                            <div class="card-block">
+                                                <h5>Cámaras instaladas</h5>
+
+                                                <h2 class="text-right"><i
+                                                        class="fas fa-video f-left"></i><span>{{ $cant_camaras }}</span></h2>
+                                                @can('ver-camara')
+                                                    <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                            data-target="#modal-camaras{{-- $vehiculo->id --}}"
+                                                            id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a>
+                                                    </p>
+                                                @endcan
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 col-xl-4">
+                                        <div class="card-item bg-c-black order-card">
+                                            <div class="card-block">
+                                                <h5>Desinstalaciones parciales</h5>
+
+                                                <h2 class="text-right"><i
+                                                        class="fas fa-wrench f-left"></i><span>{{ $cant_desinstalaciones }}</span>
+                                                </h2>
+                                                <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                        data-target="#modal-desinstalaciones-parciales{{-- $vehiculo->id --}}"
+                                                        id="btn-buscar-desinstalaciones-parciales"
                                                         style="color: rgb(253, 253, 253)">Ver más</a>
                                                 </p>
-                                            @endcan
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4 col-xl-4">
-                                    <div class="card-item bg-c-orange order-card">
-                                        <div class="card-block">
-                                            <h5>Equipos derivados a P.G.</h5>
-                                            @php
-                                                use App\Models\Historico;
-                                                use App\Models\Destino;
-                                                $id_pg = Destino::where('nombre', 'Patagonia Green')->first();
-                                                $cant_equipos_en_pg = Historico::where('destino_id', $id_pg->id)
-                                                    ->where('fecha_desasignacion', null)
-                                                    ->count();
-                                                //dd($cant_equipos_en_pg);
-                                            @endphp
-                                            <h2 class="text-right"><i
-                                                    class="fa fa-mobile f-left"></i><span>{{ $cant_equipos_en_pg }}</span>
-                                            </h2>
-                                            @can('ver-equipo')
-                                                <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                        data-target="#modal-equipos-pg{{-- $vehiculo->id --}}"
-                                                        id="btn-buscar-equipos-pg" style="color: rgb(253, 253, 253)">Ver más</a>
-                                                </p>
-                                            @endcan
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4 col-xl-4">
-                                    <div class="card-item bg-c-red order-card">
-                                        <div class="card-block">
-                                            <h5>Moto Patrulla</h5>
-                                            @php
-                                                use App\Models\Recurso;
-                                                $veh = 'Moto';
-                                                $cant_motos = Recurso::whereHas('vehiculo', function ($query) use ($veh) {
-                                                    $query->where('tipo_vehiculo', '=', $veh);
-                                                })->count();
-                                            @endphp
-                                            <h2 class="text-right"><i
-                                                    class="fas fa-motorcycle f-left"></i><span>{{ $cant_motos }}</span>
-                                            </h2>
-                                            @can('ver-equipo')
-                                                <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                        data-target="#modal-motos{{-- $vehiculo->id --}}"
-                                                        id="btn-buscar-motopatrullas" style="color: rgb(253, 253, 253)">Ver
-                                                        más</a>
-                                                </p>
-                                            @endcan
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4 col-xl-4">
-                                    <div class="card-item bg-c-gren-light order-card">
-                                        <div class="card-block">
-                                            <h5>Móviles</h5>
-                                            @php
-                                                $tipo_veh1 = 'Auto';
-                                                $tipo_veh2 = 'Camioneta';
-                                                $cant_moviles = Recurso::whereHas('vehiculo', function ($query) use ($tipo_veh1, $tipo_veh2) {
-                                                    $query->where('tipo_vehiculo', '=', $tipo_veh1)->orWhere('tipo_vehiculo', '=', $tipo_veh2);
-                                                })->count();
-                                            @endphp
-                                            <h2 class="text-right"><i
-                                                    class="fas fa-car f-left"></i><span>{{ $cant_moviles }}</span></h2>
-                                            @can('ver-equipo')
-                                                <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                        data-target="#modal-moviles{{-- $vehiculo->id --}}"
-                                                        id="btn-buscar-moviles" style="color: rgb(253, 253, 253)">Ver más</a>
-                                                </p>
-                                            @endcan
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4 col-xl-4">
-                                    <div class="card-item bg-c-blue order-card">
-                                        <div class="card-block">
-                                            <h5>Cámaras instaladas</h5>
-                                            @php
-                                                use App\Models\Camara;
-                                                $cant_camaras = Camara::all()->count();
-                                            @endphp
-                                            <h2 class="text-right"><i
-                                                    class="fas fa-video f-left"></i><span>{{ $cant_camaras }}</span></h2>
-                                            @can('ver-camara')
-                                                <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                        data-target="#modal-camaras{{-- $vehiculo->id --}}"
-                                                        id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a>
-                                                </p>
-                                            @endcan
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4 col-xl-4">
-                                    <div class="card-item bg-c-black order-card">
-                                        <div class="card-block">
-                                            <h5>Desinstalaciones parciales</h5>
-                                            @php
-                                                use App\Models\TipoMovimiento;
-                                                $cant_desinstalaciones = Historico::whereIn('id', function ($query) {
-                                                    $query
-                                                        ->select(DB::raw('MAX(id)'))
-                                                        ->from('historico')
-                                                        ->groupBy('equipo_id');
-                                                })
-                                                    ->where('tipo_movimiento_id', function ($subquery) {
-                                                        $subquery
-                                                            ->select('id')
-                                                            ->from('tipo_movimiento')
-                                                            ->where('nombre', 'Desinstalación Parcial');
-                                                    })
-                                                    ->count();
-                                            @endphp
-                                            <h2 class="text-right"><i
-                                                    class="fas fa-wrench f-left"></i><span>{{ $cant_desinstalaciones }}</span>
-                                            </h2>
-                                            <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                    data-target="#modal-desinstalaciones-parciales{{-- $vehiculo->id --}}"
-                                                    id="btn-buscar-desinstalaciones-parciales"
-                                                    style="color: rgb(253, 253, 253)">Ver más</a>
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!--div class="col-md-4 col-xl-4">
-                                                            <div class="card bg-c-gren-light order-card">
-                                                                <div class="card-block">
-                                                                    <h5>Equipos en la Div. 911</h5>
-                                                                    {{-- @php
-                                                use App\Models\FlotaGeneral;
-                                                use App\Models\Vehiculo;
+                            @endcan
 
-
-                                                $cant_equipos_911 = FlotaGeneral::whereIn('destino_id', [42, 229, 230, 231])
-                                                ->count();
-                                            @endphp
-                                            <h2 class="text-right"><i
-                                                    class="fas fa-car f-left"></i><span>{{ $cant_equipos_911 }}</span></h2>
-                                            @can('ver-equipo')
-                                                <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                        data-target="#modal-moviles">Ver más</a>
-                                                </p>
-                                            @endcan --}}
-                                                                </div>
-                                                            </div>
-                                                        </div-->
-                                <!--div class="col-md-4 col-xl-4">
-                                                                <div class="card bg-c-gren-light order-card">
-                                                                    <div class="card-block">
-                                                                        <h5>Equipos en Departamental Paraná</h5>
-                                                                        {{-- @php
-                                                $tipo_veh1 = 'Auto';
-                                                $tipo_veh2 = 'Camioneta';
-                                                $cant_moviles = Recurso::whereHas('vehiculo', function ($query) use ($tipo_veh1, $tipo_veh2) {
-                                                    $query->where('tipo_vehiculo', '=', $tipo_veh1)->orWhere('tipo_vehiculo', '=', $tipo_veh2);
-                                                })->count();
-                                            @endphp
-                                            <h2 class="text-right"><i
-                                                    class="fas fa-car f-left"></i><span>{{ $cant_moviles }}</span></h2>
-                                            @can('ver-equipo')
-                                                <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                        data-target="#modal-moviles{{-- $vehiculo->id --}}">Ver más</a>
-                                                                            </p>
-                                                                        {{-- @endcan --}}
-                                                                    </div>
-                                                                </div>
-                                                            </div-->
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -325,9 +257,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                            <button id="btn-buscar-moviles" href="consultarMoviles"
-                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                        </div-->
+                                                                                                <button id="btn-buscar-moviles" href="consultarMoviles"
+                                                                                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                            </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-moviles" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -354,9 +286,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                            <button id="btn-buscar-equipos-pg" href="consultarEquiposPG"
-                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                        </div-->
+                                                                                                <button id="btn-buscar-equipos-pg" href="consultarEquiposPG"
+                                                                                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                            </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-equipos-pg" class="table table-condensed table-bordered table-stripped">
                             </table>
@@ -384,9 +316,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                            <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                        </div-->
+                                                                                                <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                            </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-motos" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -413,9 +345,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                            <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                        </div-->
+                                                                                                <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                            </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-camaras" class="table table-condensed table-bordered table-stripped"></table>
                         </div>

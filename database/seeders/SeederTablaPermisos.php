@@ -88,7 +88,16 @@ class SeederTablaPermisos extends Seeder
             'ver-sitio',
             'crear-sitio',
             'editar-sitio',
-            'borrar-sitio'
+            'borrar-sitio',
+
+            //Menu Izquierdo
+            'ver-menu-dashboard',
+            'ver-menu-equipamientos',
+            'ver-menu-camaras',
+            'ver-menu-dependencias',
+            'ver-menu-mapa',
+            'ver-menu-usuarios',
+            'ver-menu-auditoria'
 
         ];
 

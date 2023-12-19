@@ -612,7 +612,7 @@
                         @foreach ($camaras as $camara)
                             <option value="{{ $camara['numero'] }}" data-lat="{{ $camara['latitud'] }}"
                                 data-lng="{{ $camara['longitud'] }}">
-                                {{ $camara['sitio'] . ' - ' . $camara['titulo'] }}</option>
+                                {{ $camara['titulo'] }}</option>
                         @endforeach
                     </select>
                 </div>

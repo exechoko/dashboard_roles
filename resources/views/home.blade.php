@@ -20,25 +20,25 @@
         .card-item:hover {
             transform: translateY(-5px);
             /*translate: 0 -20px;
-                                                                                                                box-shadow: 5px 3px rgb(217 220 242 / 75%),
-                                                                                                                    10px 6px rgb(44 217 255 / 50%),
-                                                                                                                    15px 9px rgb(126 255 178 / 25%),*/
+                                                                                                                                                                    box-shadow: 5px 3px rgb(217 220 242 / 75%),
+                                                                                                                                                                        10px 6px rgb(44 217 255 / 50%),
+                                                                                                                                                                        15px 9px rgb(126 255 178 / 25%),*/
         }
 
         /*.card-item::before {
-                                                                                                            content: '';
-                                                                                                            position: absolute;
-                                                                                                            inset: 0;
-                                                                                                            transform: scaleY(0.75);
-                                                                                                            transform-origin: bottom;
-                                                                                                            background: linear-gradient(transparent,
-                                                                                                                    rgba(0, 0, 0, 0.02), #000);
-                                                                                                            transition: transform 0.25s;
-                                                                                                        }
+                                                                                                                                                                content: '';
+                                                                                                                                                                position: absolute;
+                                                                                                                                                                inset: 0;
+                                                                                                                                                                transform: scaleY(0.75);
+                                                                                                                                                                transform-origin: bottom;
+                                                                                                                                                                background: linear-gradient(transparent,
+                                                                                                                                                                        rgba(0, 0, 0, 0.02), #000);
+                                                                                                                                                                transition: transform 0.25s;
+                                                                                                                                                            }
 
-                                                                                                        .card-item:hover::before {
-                                                                                                            transform: scale(1);
-                                                                                                        }*/
+                                                                                                                                                            .card-item:hover::before {
+                                                                                                                                                                transform: scale(1);
+                                                                                                                                                            }*/
     </style>
 
 @stop
@@ -63,7 +63,7 @@
                                 use App\Models\TipoMovimiento;
                                 use App\Models\Camara;
                                 use App\Models\FlotaGeneral;
-                                
+
                                 $veh = 'Moto';
                                 $cant_motos = Recurso::whereHas('vehiculo', function ($query) use ($veh) {
                                     $query->where('tipo_vehiculo', '=', $veh);
@@ -188,10 +188,11 @@
                                                 <h5>Equipos sin funcionar</h5>
 
                                                 <h2 class="text-right"><i
-                                                        class="fa fa-mobile f-left"></i><span>{{ $cant_equipos_sin_funcionar }}</span></h2>
+                                                        class="fa fa-mobile f-left"></i><span>{{ $cant_equipos_sin_funcionar }}</span>
+                                                </h2>
                                                 @can('ver-equipo')
                                                     <!--p class="m-b-0 text-right"><a href="/equipos" class="text-white">Ver más</a>
-                                                    </p-->
+                                                                                                                                                                                                                </p-->
                                                 @endcan
                                             </div>
                                         </div>
@@ -202,49 +203,50 @@
                                                 <h5>Equipos funcionales</h5>
 
                                                 <h2 class="text-right"><i
-                                                        class="fa fa-mobile f-left"></i><span>{{ $cant_equipos_funcionales }}</span></h2>
+                                                        class="fa fa-mobile f-left"></i><span>{{ $cant_equipos_funcionales }}</span>
+                                                </h2>
                                                 @can('ver-equipo')
                                                     <!--p class="m-b-0 text-right"><a href="/equipos" class="text-white"
-                                                            style="color: rgb(253, 253, 253)">Ver más</a>
-                                                    </p-->
+                                                                                                                                                                                                                        style="color: rgb(253, 253, 253)">Ver más</a>
+                                                                                                                                                                                                                </p-->
                                                 @endcan
                                             </div>
                                         </div>
                                     </div>
                                     <!--div class="col-md-4 col-xl-4">
-                                        <div class="card-item bg-c-red order-card">
-                                            <div class="card-block">
-                                                <h5>Moto Patrulla</h5>
+                                                                                                                                                <div class="card-item bg-c-red order-card">
+                                                                                                                                                    <div class="card-block">
+                                                                                                                                                        <h5>Moto Patrulla</h5>
 
-                                                <h2 class="text-right"><i
-                                                        class="fas fa-motorcycle f-left"></i><span>{{ $cant_motos }}</span>
-                                                </h2>
-                                                @can('ver-equipo')
-                                                    <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                            data-target="#modal-motos{{-- $vehiculo->id --}}"
-                                                            id="btn-buscar-motopatrullas" style="color: rgb(253, 253, 253)">Ver
-                                                            más</a>
-                                                    </p>
-                                                @endcan
-                                            </div>
-                                        </div>
-                                    </div-->
+                                                                                                                                                        <h2 class="text-right"><i
+                                                                                                                                                                class="fas fa-motorcycle f-left"></i><span>{{ $cant_motos }}</span>
+                                                                                                                                                        </h2>
+                                                                                                                                                        @can('ver-equipo')
+            <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                                                                                                                                                                                        data-target="#modal-motos{{-- $vehiculo->id --}}"
+                                                                                                                                                                                                                        id="btn-buscar-motopatrullas" style="color: rgb(253, 253, 253)">Ver
+                                                                                                                                                                                                                        más</a>
+                                                                                                                                                                                                                </p>
+        @endcan
+                                                                                                                                                    </div>
+                                                                                                                                                </div>
+                                                                                                                                            </div-->
                                     <!--div class="col-md-4 col-xl-4">
-                                        <div class="card-item bg-c-gren-light order-card">
-                                            <div class="card-block">
-                                                <h5>Móviles</h5>
+                                                                                                                                                <div class="card-item bg-c-gren-light order-card">
+                                                                                                                                                    <div class="card-block">
+                                                                                                                                                        <h5>Móviles</h5>
 
-                                                <h2 class="text-right"><i
-                                                        class="fas fa-car f-left"></i><span>{{ $cant_moviles }}</span></h2>
-                                                @can('ver-equipo')
-                                                    <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                            data-target="#modal-moviles{{-- $vehiculo->id --}}"
-                                                            id="btn-buscar-moviles" style="color: rgb(253, 253, 253)">Ver más</a>
-                                                    </p>
-                                                @endcan
-                                            </div>
-                                        </div>
-                                    </div-->
+                                                                                                                                                        <h2 class="text-right"><i
+                                                                                                                                                                class="fas fa-car f-left"></i><span>{{ $cant_moviles }}</span></h2>
+                                                                                                                                                        @can('ver-equipo')
+            <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                                                                                                                                                                                        data-target="#modal-moviles{{-- $vehiculo->id --}}"
+                                                                                                                                                                                                                        id="btn-buscar-moviles" style="color: rgb(253, 253, 253)">Ver más</a>
+                                                                                                                                                                                                                </p>
+        @endcan
+                                                                                                                                                    </div>
+                                                                                                                                                </div>
+                                                                                                                                            </div-->
                                     <div class="col-md-4 col-xl-4">
                                         <div class="card-item bg-c-blue order-card">
                                             <div class="card-block">
@@ -254,9 +256,9 @@
                                                         class="fas fa-video f-left"></i><span>{{ $cant_camaras }}</span></h2>
                                                 @can('ver-camara')
                                                     <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                            data-target="#modal-camaras{{-- $vehiculo->id --}}"
-                                                            id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a>
-                                                    </p-->
+                                                                                                                                                                                                                        data-target="#modal-camaras{{-- $vehiculo->id --}}"
+                                                                                                                                                                                                                        id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a>
+                                                                                                                                                                                                                </p-->
                                                 @endcan
                                             </div>
                                         </div>
@@ -308,9 +310,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                            <button id="btn-buscar-moviles" href="consultarMoviles"
-                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                        </div-->
+                                                                                                                                                                                <button id="btn-buscar-moviles" href="consultarMoviles"
+                                                                                                                                                                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                            </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-moviles" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -336,10 +338,11 @@
                         </button>
                     </div>
                     <div class="modal-body" style="min-height: 500px">
-                        <!--div class="col-lg-2">
-                                                                                                                            <button id="btn-buscar-equipos-pg" href="consultarEquiposPG"
-                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                        </div-->
+                        <div class="col-lg-2">
+                            <button id="exportar-a-excel-equipos-pg" class="btn btn-success">
+                                <i class="fa fa-file-excel"></i>
+                            </button>
+                        </div>
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-equipos-pg" class="table table-condensed table-bordered table-stripped">
                             </table>
@@ -366,10 +369,11 @@
                         </button>
                     </div>
                     <div class="modal-body" style="min-height: 500px">
-                        <!--div class="col-lg-2">
-                                                                                                                            <button id="btn-buscar-equipos-pg" href="consultarEquiposPG"
-                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                        </div-->
+                        <div class="col-lg-2">
+                            <button id="exportar-a-excel-equipos-stock" class="btn btn-success">
+                                <i class="fa fa-file-excel"></i>
+                            </button>
+                        </div>
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-equipos-stock" class="table table-condensed table-bordered table-stripped">
                             </table>
@@ -396,10 +400,11 @@
                         </button>
                     </div>
                     <div class="modal-body" style="min-height: 500px">
-                        <!--div class="col-lg-2">
-                                                                                                                            <button id="btn-buscar-equipos-pg" href="consultarEquiposPG"
-                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                        </div-->
+                        <div class="col-lg-2">
+                            <button id="exportar-a-excel-equipos-departamental" class="btn btn-success">
+                                <i class="fa fa-file-excel"></i>
+                            </button>
+                        </div>
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-equipos-departamental"
                                 class="table table-condensed table-bordered table-stripped">
@@ -427,10 +432,11 @@
                         </button>
                     </div>
                     <div class="modal-body" style="min-height: 500px">
-                        <!--div class="col-lg-2">
-                                                                                                                            <button id="btn-buscar-equipos-pg" href="consultarEquiposPG"
-                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                        </div-->
+                        <div class="col-lg-2">
+                            <button id="exportar-a-excel-equipos-division-911" class="btn btn-success">
+                                <i class="fa fa-file-excel"></i>
+                            </button>
+                        </div>
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-equipos-division-911"
                                 class="table table-condensed table-bordered table-stripped">
@@ -458,10 +464,11 @@
                         </button>
                     </div>
                     <div class="modal-body" style="min-height: 500px">
-                        <!--div class="col-lg-2">
-                                                                                                                            <button id="btn-buscar-equipos-pg" href="consultarEquiposPG"
-                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                        </div-->
+                        <div class="col-lg-2">
+                            <button id="exportar-a-excel-equipos-division-bancaria" class="btn btn-success">
+                                <i class="fa fa-file-excel"></i>
+                            </button>
+                        </div>
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-equipos-division-bancaria"
                                 class="table table-condensed table-bordered table-stripped">
@@ -490,9 +497,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                            <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                        </div-->
+                                                                                                                                                                                <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                                                                                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                            </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-motos" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -519,9 +526,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                            <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                        </div-->
+                                                                                                                                                                                <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                                                                                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                            </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-camaras" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -538,56 +545,85 @@
 
     </section>
 
+
+
     <script>
         $(document).ready(function() {
-            $('#btn-buscar-moviles').click(function() {
-                    consultarMoviles($(this).data('id'))
-                }),
+            // Definir funciones de manejo de eventos
+            function handleClickEvent(id, consultarFunction) {
+                $(id).click(function() {
+                    consultarFunction($(this).data('id'));
+                });
+            }
 
-                $('#btn-buscar-motopatrullas').click(function() {
-                    consultarMotopatrullas($(this).data('id'))
-                }),
+            // Asignar manejadores de eventos
+            handleClickEvent('#btn-buscar-moviles', consultarMoviles);
+            handleClickEvent('#btn-buscar-motopatrullas', consultarMotopatrullas);
+            handleClickEvent('#btn-buscar-equipos-pg', consultarEquiposPG);
+            handleClickEvent('#btn-buscar-equipos-stock', consultarEquiposStock);
+            handleClickEvent('#btn-buscar-equipos-departamental', consultarEquiposDepartamental);
+            handleClickEvent('#btn-buscar-equipos-division-911', consultarEquiposDivision911);
+            handleClickEvent('#btn-buscar-equipos-division-bancaria', consultarEquiposDivisionBancaria);
+            handleClickEvent('#btn-buscar-desinstalaciones-parciales', consultarDesinstalacionesParciales);
+            handleClickEvent('#btn-buscar-camaras', function() {
+                // Tu función de consulta para cámaras, si es diferente
+            });
 
-                $('#btn-buscar-equipos-pg').click(function() {
-                    consultarEquiposPG($(this).data('id'))
-                }),
-                $('#btn-buscar-equipos-stock').click(function() {
-                    consultarEquiposStock($(this).data('id'))
-                }),
-                $('#btn-buscar-equipos-departamental').click(function() {
-                    consultarEquiposDepartamental($(this).data('id'))
-                }),
-                $('#btn-buscar-equipos-division-911').click(function() {
-                    consultarEquiposDivision911($(this).data('id'))
-                }),
-                $('#btn-buscar-equipos-division-bancaria').click(function() {
-                    consultarEquiposDivisionBancaria($(this).data('id'))
-                }),
-                $('#btn-buscar-desinstalaciones-parciales').click(function() {
-                    consultarDesinstalacionesParciales($(this).data('id'))
-                }),
-                $('#btn-buscar-camaras').click(function() {
-                    //consultarEquiposPG($(this).data('id'))
-                })
+            $('#exportar-a-excel-equipos-departamental').click(function() {
+                exportarAExcel('table-equipos-departamental', 'equipos_departamental', ['fecha', 'marca',
+                    'modelo', 'issi', 'tei', 'nombre_recurso', 'ticket_per', 'observaciones'
+                ]);
+            });
+            $('#exportar-a-excel-equipos-stock').click(function() {
+                exportarAExcel('table-equipos-stock', 'equipos_stock',['fecha', 'marca',
+                    'modelo', 'issi', 'tei', 'nombre_recurso', 'ticket_per', 'observaciones'
+                ]);
+            });
+            $('#exportar-a-excel-equipos-pg').click(function() {
+                exportarAExcel('table-equipos-pg', 'equipos_pg',['fecha', 'marca',
+                    'modelo', 'issi', 'tei', 'nombre_recurso', 'ticket_per', 'observaciones'
+                ]);
+            });
+            $('#exportar-a-excel-equipos-division-911').click(function() {
+                exportarAExcel('table-equipos-division-911', 'equipos_911',['fecha', 'marca',
+                    'modelo', 'issi', 'tei', 'nombre_recurso', 'ticket_per', 'observaciones'
+                ]);
+            });
+            $('#exportar-a-excel-equipos-division-bancaria').click(function() {
+                exportarAExcel('table-equipos-division-bancaria', 'equipos_bancaria',['fecha', 'marca',
+                    'modelo', 'issi', 'tei', 'nombre_recurso', 'ticket_per', 'observaciones'
+                ]);
+            });
         });
 
-        /*function destino(i, row){
-          var destino = false;
-          if(row.destino_id != null){
+        function exportarAExcel(idTabla, nombreArchivo, camposExportar) {
+            // Obtén los datos de la tabla
+            var tableData = $('#' + idTabla).bootstrapTable('getData');
 
+            // Filtra los datos para incluir solo los campos seleccionados
+            var filteredData = tableData.map(function(row) {
+                var filteredRow = {};
+                camposExportar.forEach(function(campo) {
+                    filteredRow[campo] = row[campo];
+                });
+                return filteredRow;
+            });
 
-          }
-          if(!geo){
-            return '<label class="label label-danger">DESCONOCIDO</label>';
-          }
+            // Crea un nuevo libro de Excel
+            var workbook = XLSX.utils.book_new();
+            var worksheet = XLSX.utils.json_to_sheet(filteredData);
 
-          var latlon = [row.latitud, row.longitud];
-          var url = 'https://www.google.es/maps?q=' + latlon.join(',');
-            return '<a href="' + url + '" target="_blank" class="btn btn-primary btn-xs">\
-                      <i class="fa fa-map-marker"></i>\
-                      <span style="margin-left:5px">MAPA</span>\
-                    </a>';
-        }*/
+            // Ajusta el formato de las celdas para evitar la notación científica
+            worksheet['!doctype'] = 'html';
+            worksheet['!format'] = 'html';
+
+            // Agrega la hoja al libro
+            XLSX.utils.book_append_sheet(workbook, worksheet, nombreArchivo);
+
+            // Guarda el libro como un archivo Excel
+            XLSX.writeFile(workbook, nombreArchivo + '.xlsx');
+        }
+
         function consultarCamaras(id) {
             $.post(
                 "{{ route('get-equipos-PG-json') }}", {

@@ -1,25 +1,29 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="UTF-8">
-    <meta name="csrf-token" content="{{ csrf_token() }}"/>
+    <meta name="csrf-token" content="{{ csrf_token() }}" />
     <title>C.A.R. 911</title>
     <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
     <!-- Bootstrap 4.1.1 -->
-    <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css"/>
+    <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css" />
     <!-- Ionicons -->
     <link href="//fonts.googleapis.com/css?family=Lato&display=swap" rel="stylesheet">
     <link href="{{ asset('assets/css/@fortawesome/fontawesome-free/css/all.css') }}" rel="stylesheet" type="text/css">
     <link rel="stylesheet" href="{{ asset('assets/css/iziToast.min.css') }}">
-    <link href="{{ asset('assets/css/sweetalert.css') }}" rel="stylesheet" type="text/css"/>
-    <link href="{{ asset('assets/css/select2.min.css') }}" rel="stylesheet" type="text/css"/>
+    <link href="{{ asset('assets/css/sweetalert.css') }}" rel="stylesheet" type="text/css" />
+    <link href="{{ asset('assets/css/select2.min.css') }}" rel="stylesheet" type="text/css" />
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin=""/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+        integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
 
-    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js" integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+        integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css" />
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css" />
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
     <link href="{{ asset('leaflet/geocoder/geocoder.css') }}" rel="stylesheet">
@@ -33,39 +37,40 @@
     <script src="https://unpkg.com/leaflet-fullscreen@1.6.0/dist/Leaflet.fullscreen.min.js"></script>
 
 
-@yield('page_css')
-<!-- Template CSS -->
+    @yield('page_css')
+    <!-- Template CSS -->
     <link rel="stylesheet" href="{{ asset('web/css/style.css') }}">
-    <link rel="stylesheet" href="{{ asset('web/css/components.css')}}">
+    <link rel="stylesheet" href="{{ asset('web/css/components.css') }}">
     @yield('page_css')
 
     @yield('css')
 </head>
+
 <body>
 
-<div id="app">
-    <div class="main-wrapper main-wrapper-1">
-        <div class="navbar-bg"></div>
-        <nav class="navbar navbar-expand-lg main-navbar">
-            @include('layouts.header')
+    <div id="app">
+        <div class="main-wrapper main-wrapper-1">
+            <div class="navbar-bg"></div>
+            <nav class="navbar navbar-expand-lg main-navbar">
+                @include('layouts.header')
 
-        </nav>
-        <div class="main-sidebar main-sidebar-postion">
-            @include('layouts.sidebar')
+            </nav>
+            <div class="main-sidebar main-sidebar-postion">
+                @include('layouts.sidebar')
+            </div>
+            <!-- Main Content -->
+            <div class="main-content">
+                @include('layouts.alerts')
+                @yield('content')
+            </div>
+            <footer class="main-footer">
+                @include('layouts.footer')
+            </footer>
         </div>
-        <!-- Main Content -->
-        <div class="main-content">
-            @include('layouts.alerts')
-            @yield('content')
-        </div>
-        <footer class="main-footer">
-            @include('layouts.footer')
-        </footer>
     </div>
-</div>
 
-@include('profile.change_password')
-@include('profile.edit_profile')
+    @include('profile.change_password')
+    @include('profile.edit_profile')
 
 </body>
 <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
@@ -79,6 +84,11 @@
 <script src="https://unpkg.com/bootstrap-table@1.21.2/dist/bootstrap-table.min.js"></script>
 
 <script type="text/javascript" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
+<script src="https://unpkg.com/tableexport.jquery.plugin/tableExport.min.js"></script>
+<script type="text/javascript" src="libs/FileSaver/FileSaver.min.js"></script>
+<script type="text/javascript" src="libs/js-xlsx/xlsx.core.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+
 
 <!-- Template JS File -->
 <script src="{{ asset('web/js/stisla.js') }}"></script>
@@ -88,12 +98,12 @@
 @yield('page_js')
 @yield('scripts')
 <script>
-    let loggedInUser =@json(\Illuminate\Support\Facades\Auth::user());
+    let loggedInUser = @json(\Illuminate\Support\Facades\Auth::user());
     let loginUrl = '{{ route('login') }}';
-    const userUrl = '{{url('users')}}';
+    const userUrl = '{{ url('users') }}';
     // Loading button plugin (removed from BS4)
-    (function ($) {
-        $.fn.button = function (action) {
+    (function($) {
+        $.fn.button = function(action) {
             if (action === 'loading' && this.data('loading-text')) {
                 this.data('original-text', this.html()).html(this.data('loading-text')).prop('disabled', true);
             }
@@ -103,4 +113,5 @@
         };
     }(jQuery));
 </script>
+
 </html>

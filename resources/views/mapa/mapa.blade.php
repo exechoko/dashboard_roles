@@ -682,11 +682,11 @@
         }
 
 
-        var zoom = 17;
+        var zoom = 13;
         var mymap = L.map('map', {
             editable: true,
             zoomControl: false
-        }).setView(new L.LatLng(-31.74275, -60.51827), zoom);
+        }).setView(new L.LatLng(-31.75899,-60.47825), zoom);
 
         var marcadores = L.markerClusterGroup();
         var markersPrimeraEtapa = L.markerClusterGroup();

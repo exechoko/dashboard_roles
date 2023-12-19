@@ -617,7 +617,7 @@
                     </select>
                 </div>
             </div>
-            <div class="" style="float: right;">
+            <div class="ml-5" style="float: right;">
                 <label class="alert alert-info" for="">Fijas: {{ $fijas }}</label>
                 <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
                 <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>

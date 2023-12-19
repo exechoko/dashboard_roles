@@ -618,7 +618,7 @@
                 </div>
             </div>
             <div class="" style="float: right;">
-                <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
+                <label class="alert alert-info" for="">Fijas: {{ $fijas }}</label>
                 <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
                 <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
                 <label class="alert alert-success" for="">Domos: {{ $domos }}</label>

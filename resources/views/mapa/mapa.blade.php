@@ -141,12 +141,12 @@
         }
 
         /*.etiqueta {
-                                                                                        position: absolute;
-                                                                                        top: 50px;
+                                                                                                                                position: absolute;
+                                                                                                                                top: 50px;
 
-                                                                                        left: 50%;
-                                                                                        transform: translateX(-50%);
-                                                                                    }*/
+                                                                                                                                left: 50%;
+                                                                                                                                transform: translateX(-50%);
+                                                                                                                            }*/
 
 
 
@@ -640,6 +640,16 @@
             @endcan
         }
 
+        function openGoogleMaps(latitud, longitud) {
+            // Abre Google Maps en una nueva pestaña con la ubicación especificada
+            window.open(`https://www.google.com/maps?q=${latitud},${longitud}`, '_blank');
+        }
+
+        function openStreetView(latitud, longitud) {
+            // Abre Google Maps en una nueva pestaña con el enlace directo a Street View
+            window.open(`https://www.google.com/maps?q=&layer=c&cbll=${latitud},${longitud}`, '_blank');
+        }
+
         function getRandomColor() { //funcion obtiene color aleatorio
             var letters = '0123456789ABCDEF';
             var color = '#';
@@ -886,8 +896,12 @@
                     Etapa: <b>{{ $marcador['etapa'] }}</b><br>
                     Inteligencia: <b>{{ $marcador['inteligencia'] }}</b><br>
                     Marca: <b>{{ $marcador['marca'] }}</b> - Mod.: <b>{{ $marcador['modelo'] }}</b><br>
-                    Nº serie: <b>{{ $marcador['nro_serie'] }}</b>
-                    <button onclick="editCamera(${numero})"><i class="fas fa-edit"></i></button>
+                    Nº serie: <b>{{ $marcador['nro_serie'] }}</b><br>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-icon btn-primary" title="Editar cámara" onclick="editCamera(${numero})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-icon btn-info" title="Abrir en Google Maps" onclick="openGoogleMaps(${latitud}, ${longitud})"><i class="fas fa-globe-americas"></i></button>
+                        <button class="btn btn-icon btn-warning" title="Abrir en Street View" onclick="openStreetView(${latitud}, ${longitud})"><i class="fas fa-street-view"></i></button>
+                    </div>
                 </div>
             `);
             //.bindPopup("{{ $marcador['titulo'] }}<br>{{ $marcador['tipo_camara'] }}<br>{{ $marcador['inteligencia'] }}");

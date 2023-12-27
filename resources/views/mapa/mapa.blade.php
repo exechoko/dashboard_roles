@@ -992,7 +992,7 @@
                         element.msRequestFullscreen();
                     }
                     isFullscreen = true;
-                    div.firstChild.innerHTML = 'Salir'; // Cambiar el texto del botón
+                    //div.firstChild.innerHTML = 'Salir'; // Cambiar el texto del botón
                 } else {
                     if (document.exitFullscreen) {
                         document.exitFullscreen();

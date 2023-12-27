@@ -29,12 +29,14 @@ class HomeController extends Controller
     public function index()
     {
         $dashboardController = new DashboardController();
-        
+
         $cant_usuarios = User::count();
         $cant_roles = Role::count();
         $cant_camaras = Camara::all()->count();
         $cant_equipos_sin_funcionar = Equipo::where('estado_id', 3)->count();
         $cant_equipos_funcionales = Equipo::where('estado_id', '<>', 3)->count();
+        $cant_equipos_provisto_por_pg = Equipo::where('provisto', 'Patagonia Green')->count();
+        $cant_equipos_provisto_por_telecom = Equipo::where('provisto', 'Telecom')->count();
 
         $responseStock = $dashboardController->getCantidadEquiposEnStockJSON(request());
         $responseDepa = $dashboardController->getCantidadEquiposEnDepartamentalJSON(request());
@@ -55,6 +57,8 @@ class HomeController extends Controller
             'cant_equipos_en_stock',
             'cant_equipos_en_departamental',
             'cant_equipos_en_pg',
+            'cant_equipos_provisto_por_pg',
+            'cant_equipos_provisto_por_telecom',
             'cant_camaras',
             'cant_desinstalaciones',
             'cant_equipos_en_div_911',

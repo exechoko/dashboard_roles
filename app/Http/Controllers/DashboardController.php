@@ -14,6 +14,70 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    public function getCantidadEquiposSinFuncionarJSON(Request $request)
+    {
+        $records = Equipo::select(
+            'tipo_terminales.marca as marca',
+            'tipo_terminales.modelo as modelo',
+            'equipos.provisto as provisto',
+            DB::raw('COUNT(equipos.id) as cantidad')
+        )
+            ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
+            ->where('equipos.estado_id', 3) // Estado "no funciona"
+            ->groupBy('tipo_terminales.id', 'equipos.provisto')
+            ->get();
+
+        return response()->json($records);
+    }
+
+    public function getCantidadEquiposFuncionalesJSON(Request $request)
+    {
+        $records = Equipo::select(
+            'tipo_terminales.marca as marca',
+            'tipo_terminales.modelo as modelo',
+            'equipos.provisto as provisto',
+            DB::raw('COUNT(equipos.id) as cantidad')
+        )
+            ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
+            ->where('equipos.provisto', '<>', 3) // Estado distintos a "no funciona"
+            ->groupBy('tipo_terminales.id', 'equipos.provisto')
+            ->get();
+
+        return response()->json($records);
+    }
+
+    public function getCantidadEquiposProvistosPorPGJSON(Request $request)
+    {
+        $records = Equipo::select(
+            'tipo_terminales.marca as marca',
+            'tipo_terminales.modelo as modelo',
+            'equipos.provisto as provisto',
+            DB::raw('COUNT(equipos.id) as cantidad')
+        )
+            ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
+            ->where('equipos.provisto', 'Patagonia Green')
+            ->groupBy('tipo_terminales.id', 'tipo_terminales.marca', 'tipo_terminales.modelo', 'equipos.provisto')
+            ->get();
+
+        return response()->json($records);
+    }
+
+    public function getCantidadEquiposProvistosPorTELECOMJSON(Request $request)
+    {
+        $records = Equipo::select(
+            'tipo_terminales.marca as marca',
+            'tipo_terminales.modelo as modelo',
+            'equipos.provisto as provisto',
+            DB::raw('COUNT(equipos.id) as cantidad')
+        )
+            ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
+            ->where('equipos.provisto', 'Telecom')
+            ->groupBy('tipo_terminales.id', 'tipo_terminales.marca', 'tipo_terminales.modelo', 'equipos.provisto')
+            ->get();
+
+        return response()->json($records);
+    }
+
     public function getDesinstalacionesParcialesJSON(Request $request)
     {
         $records = Historico::select(

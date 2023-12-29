@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Recurso;
 use App\Models\Destino;
 use App\Models\Equipo;
+use App\Models\Estado;
 use App\Models\Historico;
 use App\Models\TipoMovimiento;
 use Carbon\Carbon;
@@ -32,6 +33,9 @@ class DashboardController extends Controller
 
     public function getCantidadEquiposFuncionalesJSON(Request $request)
     {
+        $idEstadoNuevo = Estado::where('nombre', 'Nuevo')->value('id');
+        $idEstadoUsado = Estado::where('nombre', 'Usado')->value('id');
+        $idEstadoReparado = Estado::where('nombre', 'Reparado')->value('id');
         $records = Equipo::select(
             'tipo_terminales.marca as marca',
             'tipo_terminales.modelo as modelo',
@@ -39,7 +43,7 @@ class DashboardController extends Controller
             DB::raw('COUNT(equipos.id) as cantidad')
         )
             ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
-            ->where('equipos.provisto', '<>', 3) // Estado distintos a "no funciona"
+            ->whereIn('equipos.estado_id', [$idEstadoNuevo, $idEstadoUsado, $idEstadoReparado]) // Estados "Nuevo", "Usado" y "Reparado"
             ->groupBy('tipo_terminales.id', 'equipos.provisto')
             ->get();
 
@@ -52,11 +56,15 @@ class DashboardController extends Controller
             'tipo_terminales.marca as marca',
             'tipo_terminales.modelo as modelo',
             'equipos.provisto as provisto',
+            'estados.nombre as estado',
             DB::raw('COUNT(equipos.id) as cantidad')
         )
             ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
+            ->leftJoin('estados', 'equipos.estado_id', '=', 'estados.id')
             ->where('equipos.provisto', 'Patagonia Green')
-            ->groupBy('tipo_terminales.id', 'tipo_terminales.marca', 'tipo_terminales.modelo', 'equipos.provisto')
+            ->groupBy('tipo_terminales.id', 'tipo_terminales.marca', 'tipo_terminales.modelo', 'equipos.estado_id', 'equipos.provisto', 'estados.nombre')
+            ->orderBy('tipo_terminales.marca')
+            ->orderBy('tipo_terminales.modelo')
             ->get();
 
         return response()->json($records);
@@ -68,15 +76,20 @@ class DashboardController extends Controller
             'tipo_terminales.marca as marca',
             'tipo_terminales.modelo as modelo',
             'equipos.provisto as provisto',
+            'estados.nombre as estado',
             DB::raw('COUNT(equipos.id) as cantidad')
         )
             ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
+            ->leftJoin('estados', 'equipos.estado_id', '=', 'estados.id')
             ->where('equipos.provisto', 'Telecom')
-            ->groupBy('tipo_terminales.id', 'tipo_terminales.marca', 'tipo_terminales.modelo', 'equipos.provisto')
+            ->groupBy('tipo_terminales.id', 'tipo_terminales.marca', 'tipo_terminales.modelo', 'equipos.estado_id', 'equipos.provisto', 'estados.nombre')
+            ->orderBy('tipo_terminales.marca')
+            ->orderBy('tipo_terminales.modelo')
             ->get();
 
         return response()->json($records);
     }
+
 
     public function getDesinstalacionesParcialesJSON(Request $request)
     {

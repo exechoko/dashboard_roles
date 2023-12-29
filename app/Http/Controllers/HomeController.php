@@ -8,6 +8,7 @@ use Spatie\Permission\Models\Role;
 use App\Http\Controllers\DashboardController;
 use App\Models\Camara;
 use App\Models\Equipo;
+use App\Models\Estado;
 
 class HomeController extends Controller
 {
@@ -28,13 +29,22 @@ class HomeController extends Controller
      */
     public function index()
     {
+        //ID estados
+        $idEstadoNuevo = Estado::where('nombre', 'Nuevo')->value('id');
+        $idEstadoUsado = Estado::where('nombre', 'Usado')->value('id');
+        $idEstadoReparado = Estado::where('nombre', 'Reparado')->value('id');
+        $idEstadoBaja = Estado::where('nombre', 'Baja')->value('id');
+        $idEstadoNoFunciona = Estado::where('nombre', 'No funciona')->value('id');
+        $idEstadoPerdido = Estado::where('nombre', 'Perdido')->value('id');
+        $idEstadoRecambio = Estado::where('nombre', 'Recambio')->value('id');
+
         $dashboardController = new DashboardController();
 
         $cant_usuarios = User::count();
         $cant_roles = Role::count();
         $cant_camaras = Camara::all()->count();
         $cant_equipos_sin_funcionar = Equipo::where('estado_id', 3)->count();
-        $cant_equipos_funcionales = Equipo::where('estado_id', '<>', 3)->count();
+        $cant_equipos_funcionales = Equipo::whereIn('estado_id', [$idEstadoNuevo, $idEstadoUsado, $idEstadoReparado])->count();
         $cant_equipos_provisto_por_pg = Equipo::where('provisto', 'Patagonia Green')->count();
         $cant_equipos_provisto_por_telecom = Equipo::where('provisto', 'Telecom')->count();
 

@@ -31,6 +31,23 @@ class DashboardController extends Controller
         return response()->json($records);
     }
 
+    public function getCantidadEquiposBajaJSON(Request $request)
+    {
+        $idEstadoBaja = Estado::where('nombre', 'Baja')->value('id');
+        $records = Equipo::select(
+            'tipo_terminales.marca as marca',
+            'tipo_terminales.modelo as modelo',
+            'equipos.provisto as provisto',
+            DB::raw('COUNT(equipos.id) as cantidad')
+        )
+            ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
+            ->where('equipos.estado_id', $idEstadoBaja) // Estado "Baja"
+            ->groupBy('tipo_terminales.id', 'equipos.provisto')
+            ->get();
+
+        return response()->json($records);
+    }
+
     public function getCantidadEquiposFuncionalesJSON(Request $request)
     {
         $idEstadoNuevo = Estado::where('nombre', 'Nuevo')->value('id');

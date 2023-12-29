@@ -20,18 +20,18 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
      */
     public function collection()
     {
-        $equipos = FlotaGeneral::select(
-            'flota_general.id',
+        $equipos = Equipo::select(
+            'equipos.id',
             DB::raw("CONCAT(tipo_terminales.marca, ' ', tipo_terminales.modelo) AS terminal"),
             'estados.nombre as estado',
             'equipos.tei as tei',
             'equipos.issi as issi',
-            'equipos.nombre_issi as id_issi',
             'equipos.provisto as provisto',
+            'flota_general.id as flota_id',
             'recursos.nombre as recurso',
             'destino.nombre as dependencia'
         )
-            ->leftJoin('equipos', 'flota_general.equipo_id', '=', 'equipos.id')
+            ->leftJoin('flota_general', 'equipos.id', '=', 'flota_general.equipo_id')
             ->leftJoin('recursos', 'flota_general.recurso_id', '=', 'recursos.id')
             ->leftJoin('destino', 'flota_general.destino_id', '=', 'destino.id')
             ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')

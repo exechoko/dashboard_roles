@@ -50,7 +50,7 @@ class DashboardController extends Controller
         return response()->json($records);
     }
 
-    public function getCantidadEquiposProvistosPorPGJSON(Request $request)
+    /*public function getCantidadEquiposProvistosPorPGJSON(Request $request)
     {
         $records = Equipo::select(
             'tipo_terminales.marca as marca',
@@ -68,15 +68,53 @@ class DashboardController extends Controller
             ->get();
 
         return response()->json($records);
+    }*/
+    public function getCantidadEquiposProvistosPorPGJSON(Request $request)
+    {
+        // Obtener cantidades agrupadas por estado
+        $recordsPorEstado = Equipo::select(
+            'tipo_terminales.marca as marca',
+            'tipo_terminales.modelo as modelo',
+            'estados.nombre as estado',
+            'equipos.provisto as provisto',
+            DB::raw('COUNT(equipos.id) as cantidad')
+        )
+            ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
+            ->leftJoin('estados', 'equipos.estado_id', '=', 'estados.id')
+            ->where('equipos.provisto', 'Patagonia Green')
+            ->groupBy('tipo_terminales.id', 'tipo_terminales.marca', 'tipo_terminales.modelo', 'equipos.estado_id', 'equipos.provisto', 'estados.nombre')
+            ->orderBy('tipo_terminales.marca')
+            ->orderBy('tipo_terminales.modelo')
+            ->get();
+
+        // Obtener cantidades totales sin importar el estado
+        $recordsTotales = Equipo::select(
+            'tipo_terminales.marca as marca',
+            'tipo_terminales.modelo as modelo',
+            'equipos.provisto as provisto',
+            DB::raw('COUNT(equipos.id) as cantidad')
+        )
+            ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
+            ->where('equipos.provisto', 'Patagonia Green')
+            ->groupBy('tipo_terminales.id', 'tipo_terminales.marca', 'tipo_terminales.modelo', 'equipos.provisto')
+            ->orderBy('tipo_terminales.marca')
+            ->orderBy('tipo_terminales.modelo')
+            ->get();
+
+        // Combinar los resultados y devolver como respuesta JSON
+        $mergedRecords = $recordsPorEstado->merge($recordsTotales);
+
+        return response()->json(['records' => $recordsPorEstado, 'recordsTotales' => $recordsTotales]);
     }
 
     public function getCantidadEquiposProvistosPorTELECOMJSON(Request $request)
     {
-        $records = Equipo::select(
+        // Obtener cantidades agrupadas por estado
+        $recordsPorEstado = Equipo::select(
             'tipo_terminales.marca as marca',
             'tipo_terminales.modelo as modelo',
-            'equipos.provisto as provisto',
             'estados.nombre as estado',
+            'equipos.provisto as provisto',
             DB::raw('COUNT(equipos.id) as cantidad')
         )
             ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
@@ -87,7 +125,24 @@ class DashboardController extends Controller
             ->orderBy('tipo_terminales.modelo')
             ->get();
 
-        return response()->json($records);
+        // Obtener cantidades totales sin importar el estado
+        $recordsTotales = Equipo::select(
+            'tipo_terminales.marca as marca',
+            'tipo_terminales.modelo as modelo',
+            'equipos.provisto as provisto',
+            DB::raw('COUNT(equipos.id) as cantidad')
+        )
+            ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
+            ->where('equipos.provisto', 'Telecom')
+            ->groupBy('tipo_terminales.id', 'tipo_terminales.marca', 'tipo_terminales.modelo', 'equipos.provisto')
+            ->orderBy('tipo_terminales.marca')
+            ->orderBy('tipo_terminales.modelo')
+            ->get();
+
+        // Combinar los resultados y devolver como respuesta JSON
+        $mergedRecords = $recordsPorEstado->merge($recordsTotales);
+
+        return response()->json(['records' => $recordsPorEstado, 'recordsTotales' => $recordsTotales]);
     }
 
 

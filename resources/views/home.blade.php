@@ -20,25 +20,25 @@
         .card-item:hover {
             transform: translateY(-5px);
             /*translate: 0 -20px;
-                                                                                                                                                                                                            box-shadow: 5px 3px rgb(217 220 242 / 75%),
-                                                                                                                                                                                                                10px 6px rgb(44 217 255 / 50%),
-                                                                                                                                                                                                                15px 9px rgb(126 255 178 / 25%),*/
+                                                                                                                                                                                                                            box-shadow: 5px 3px rgb(217 220 242 / 75%),
+                                                                                                                                                                                                                                10px 6px rgb(44 217 255 / 50%),
+                                                                                                                                                                                                                                15px 9px rgb(126 255 178 / 25%),*/
         }
 
         /*.card-item::before {
-                                                                                                                                                                                                        content: '';
-                                                                                                                                                                                                        position: absolute;
-                                                                                                                                                                                                        inset: 0;
-                                                                                                                                                                                                        transform: scaleY(0.75);
-                                                                                                                                                                                                        transform-origin: bottom;
-                                                                                                                                                                                                        background: linear-gradient(transparent,
-                                                                                                                                                                                                                rgba(0, 0, 0, 0.02), #000);
-                                                                                                                                                                                                        transition: transform 0.25s;
-                                                                                                                                                                                                    }
+                                                                                                                                                                                                                        content: '';
+                                                                                                                                                                                                                        position: absolute;
+                                                                                                                                                                                                                        inset: 0;
+                                                                                                                                                                                                                        transform: scaleY(0.75);
+                                                                                                                                                                                                                        transform-origin: bottom;
+                                                                                                                                                                                                                        background: linear-gradient(transparent,
+                                                                                                                                                                                                                                rgba(0, 0, 0, 0.02), #000);
+                                                                                                                                                                                                                        transition: transform 0.25s;
+                                                                                                                                                                                                                    }
 
-                                                                                                                                                                                                    .card-item:hover::before {
-                                                                                                                                                                                                        transform: scale(1);
-                                                                                                                                                                                                    }*/
+                                                                                                                                                                                                                    .card-item:hover::before {
+                                                                                                                                                                                                                        transform: scale(1);
+                                                                                                                                                                                                                    }*/
     </style>
 
 @stop
@@ -300,7 +300,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -369,19 +369,25 @@
             </div>
         </div>
 
-        <div id="modal-equipos-provistos-por-pg" class="modal fade " data-backdrop="false"
+        <div id="modal-equipos-provistos-por-pg" class="modal fade" data-backdrop="false"
             style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
             <div id="dialog" class="modal-dialog modal-xs">
                 <div class="modal-content">
                     <div class="modal-header bg-c-violet">
-                        <h4 class="modal-title text-white">Equipos provistos por PG</h4>
+                        <h4 class="modal-title text-white">Equipos provistos</h4>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body" style="min-height: 500px">
+                        <h5>Totales por Marca y Modelo</h5>
+                        <ul id="cantidadesTotalesPorMarcaYModeloListPG" class="mt-3">
+                            <!-- Lista de cantidades totales por marca y modelo -->
+                        </ul>
+                        <hr>
+                        <h5>Equipos por Estado</h5>
                         <ul id="equiposProvistosPorPgList" class="mt-3">
-                            <!-- La lista de equipos se agregará aquí dinámicamente -->
+                            <!-- Lista de equipos provistos por PG -->
                         </ul>
                     </div>
                     <div class="modal-footer">
@@ -394,7 +400,7 @@
             </div>
         </div>
 
-        <div id="modal-equipos-provistos-por-telecom" class="modal fade " data-backdrop="false"
+        <div id="modal-equipos-provistos-por-telecom" class="modal fade" data-backdrop="false"
             style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
             <div id="dialog" class="modal-dialog modal-xs">
                 <div class="modal-content">
@@ -405,8 +411,14 @@
                         </button>
                     </div>
                     <div class="modal-body" style="min-height: 500px">
+                        <h5>Totales por Marca y Modelo</h5>
+                        <ul id="cantidadesTotalesPorMarcaYModeloList" class="mt-3">
+                            <!-- La lista de cantidades totales se agregará aquí dinámicamente -->
+                        </ul>
+                        <hr>
+                        <h5>Equipos por Estado</h5>
                         <ul id="equiposProvistosPorTelecomList" class="mt-3">
-                            <!-- La lista de equipos se agregará aquí dinámicamente -->
+                            <!-- La lista de equipos por estado se agregará aquí dinámicamente -->
                         </ul>
                     </div>
                     <div class="modal-footer">
@@ -457,9 +469,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                        <button id="btn-buscar-moviles" href="consultarMoviles"
-                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                    </div-->
+                                                                                                                                                                                                                                        <button id="btn-buscar-moviles" href="consultarMoviles"
+                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                    </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-moviles" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -644,9 +656,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                        <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                    </div-->
+                                                                                                                                                                                                                                        <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                    </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-motos" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -673,9 +685,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                        <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                    </div-->
+                                                                                                                                                                                                                                        <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                    </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-camaras" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -833,8 +845,10 @@
                 },
                 function(data, textStatus, xhr) {
                     console.log('data', data);
+
+                    // Mostrar equipos provistos por PG
                     $("#equiposProvistosPorPgList").empty();
-                    data.forEach(function(equipo) {
+                    data.records.forEach(function(equipo) {
                         var listItem = $("<li>");
                         listItem.append(
                             $("<span>").css({
@@ -851,6 +865,22 @@
                         );
                         $("#equiposProvistosPorPgList").append(listItem);
                     });
+
+                    // Mostrar cantidades totales por marca y modelo
+                    $("#cantidadesTotalesPorMarcaYModeloListPG").empty();
+                    data.recordsTotales.forEach(function(equipo) {
+                        var listItem = $("<li>");
+                        listItem.append(
+                            $("<span>").css({
+                                'font-size': 'larger'
+                            }).text(equipo.marca + " " + equipo.modelo + ": "),
+                            $("<span>").css({
+                                'font-weight': 'bold',
+                                'font-size': 'larger'
+                            }).text(equipo.cantidad)
+                        );
+                        $("#cantidadesTotalesPorMarcaYModeloListPG").append(listItem);
+                    });
                 }).fail(function(data) {
                 swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');
             });
@@ -863,8 +893,9 @@
                 },
                 function(data, textStatus, xhr) {
                     console.log('data', data);
+
                     $("#equiposProvistosPorTelecomList").empty();
-                    data.forEach(function(equipo) {
+                    data.records.forEach(function(equipo) {
                         var listItem = $("<li>");
                         listItem.append(
                             $("<span>").css({
@@ -880,6 +911,22 @@
                             }).text(equipo.cantidad)
                         );
                         $("#equiposProvistosPorTelecomList").append(listItem);
+                    });
+
+                    // Mostrar cantidades totales
+                    $("#cantidadesTotalesPorMarcaYModeloList").empty();
+                    data.recordsTotales.forEach(function(equipo) {
+                        var listItem = $("<li>");
+                        listItem.append(
+                            $("<span>").css({
+                                'font-size': 'larger'
+                            }).text(equipo.marca + " " + equipo.modelo + ": "),
+                            $("<span>").css({
+                                'font-weight': 'bold',
+                                'font-size': 'larger'
+                            }).text(equipo.cantidad)
+                        );
+                        $("#cantidadesTotalesPorMarcaYModeloList").append(listItem);
                     });
                 }).fail(function(data) {
                 swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');

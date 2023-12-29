@@ -85,4 +85,5 @@ Route::group(['middleware' => ['auth']], function(){
     Route::post('/import-camaras', [App\Http\Controllers\CamaraController::class, 'importExcel'])->name('camaras.import');
     Route::get('/export-camaras', [App\Http\Controllers\CamaraController::class, 'exportExcel'])->name('camaras.export');
     Route::get('/export-sitios', [App\Http\Controllers\SitioController::class, 'exportExcel'])->name('sitios.export');
+    Route::get('/export-equipos', [App\Http\Controllers\EquipoController::class, 'exportExcel'])->name('equipos.export');
 });

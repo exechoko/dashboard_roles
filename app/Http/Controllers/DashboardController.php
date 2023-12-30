@@ -34,6 +34,7 @@ class DashboardController extends Controller
     public function getCantidadEquiposBajaJSON(Request $request)
     {
         $idEstadoBaja = Estado::where('nombre', 'Baja')->value('id');
+        $idEstadoRecambio = Estado::where('nombre', 'Recambio')->value('id');
         $records = Equipo::select(
             'tipo_terminales.marca as marca',
             'tipo_terminales.modelo as modelo',
@@ -41,7 +42,7 @@ class DashboardController extends Controller
             DB::raw('COUNT(equipos.id) as cantidad')
         )
             ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
-            ->where('equipos.estado_id', $idEstadoBaja) // Estado "Baja"
+            ->whereIn('equipos.estado_id', [$idEstadoBaja, $idEstadoRecambio]) // Estado "Baja" "Recambio
             ->groupBy('tipo_terminales.id', 'equipos.provisto')
             ->get();
 

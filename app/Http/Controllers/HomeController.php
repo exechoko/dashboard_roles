@@ -44,7 +44,7 @@ class HomeController extends Controller
         $cant_roles = Role::count();
         $cant_camaras = Camara::all()->count();
         $cant_equipos_sin_funcionar = Equipo::where('estado_id', $idEstadoNoFunciona)->count();
-        $cant_equipos_baja = Equipo::where('estado_id', $idEstadoBaja)->count();
+        $cant_equipos_baja = Equipo::whereIn('estado_id', [$idEstadoBaja, $idEstadoRecambio])->count();
         $cant_equipos_funcionales = Equipo::whereIn('estado_id', [$idEstadoNuevo, $idEstadoUsado, $idEstadoReparado])->count();
         $cant_equipos_provisto_por_pg = Equipo::where('provisto', 'Patagonia Green')->count();
         $cant_equipos_provisto_por_telecom = Equipo::where('provisto', 'Telecom')->count();

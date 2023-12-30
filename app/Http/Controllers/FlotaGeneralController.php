@@ -575,7 +575,8 @@ class FlotaGeneralController extends Controller
         //Recursos que permiten multiples equipos y devolver en un array
         $recursos_con_multiples_equipos = Recurso::where('multi_equipos', true)->pluck('id')->toArray();
         $recurso_stock = Recurso::where('nombre', 'Stock 911')->first();
-        $recurso_soporte_pg = Recurso::where('nombre','Soporte 1er Nivel - PG')->first();
+        $recurso_soporte_pg = Recurso::where('nombre', 'Soporte 1er Nivel - PG')->first();
+        $recurso_lote_temporal_pg = Recurso::where('nombre', 'Lote Temporal PG')->first();
         //Se obtienen los id de los tipo de movimientos
         $id_mov_patrimonial = TipoMovimiento::where('nombre', 'Movimiento patrimonial')->value('id');
         $id_desinst_completa = TipoMovimiento::where('nombre', 'Desinstalación completa')->value('id');
@@ -584,7 +585,7 @@ class FlotaGeneralController extends Controller
         $id_revision = TipoMovimiento::where('nombre', 'Revisión')->value('id');
         $id_devolucion = TipoMovimiento::where('nombre', 'Devolución')->value('id');
         $id_reemplazo = TipoMovimiento::where('nombre', 'Reemplazo')->value('id');
-
+        $id_devolver_equipo_temporal = TipoMovimiento::where('nombre', 'Devolver equipo temporal')->value('id');
         //Validar que permita mov patrimoniales solo en recursos que acepten muchos equipos
         if ($tipo_de_mov->id == $id_mov_patrimonial || $tipo_de_mov->id == $id_inst_completa) {
             $f = FlotaGeneral::where('recurso_id', $request->recurso)->first();
@@ -635,7 +636,7 @@ class FlotaGeneralController extends Controller
                         break;
 
                     case $id_desinst_completa:
-                        $flota->recurso_id =$recurso_stock->id; //asigna al stock
+                        $flota->recurso_id = $recurso_stock->id; //asigna al stock
                         $historico->recurso_id = $recurso_stock->id; //asigna al stock
                         $historico->recurso_asignado = $recurso_stock->nombre; //asigna al stock;
                         $historico->vehiculo_asignado = null;
@@ -656,8 +657,19 @@ class FlotaGeneralController extends Controller
                         $flota->recurso_id = $request->recurso;
                         break;
 
+                    case $id_devolver_equipo_temporal:
+                        $flota->recurso_id = $recurso_lote_temporal_pg->id; //asigna al lote temporal PG
+                        $historico->recurso_id = $recurso_lote_temporal_pg->id; //asigna al lote temporal PG
+                        $historico->recurso_asignado = $recurso_lote_temporal_pg->nombre; //asigna al lote temporal PG
+                        $historico->vehiculo_asignado = null;
+                        $historico->recurso_desasignado = ($histAnt->recurso_asignado) ? $histAnt->recurso_asignado : null;
+                        $historico->vehiculo_desasignado = ($histAnt->vehiculo_asignado) ? $histAnt->vehiculo_asignado : null;
+                        $historico->destino_id = $recurso_lote_temporal_pg->destino->id; //asigna al lote temporal PG
+                        $flota->destino_id = $recurso_lote_temporal_pg->destino->id; //asigna al lote temporal PG
+                        break;
+
                     case $id_devolucion:
-                        $flota->recurso_id =$recurso_stock->id; //asigna al stock
+                        $flota->recurso_id = $recurso_stock->id; //asigna al stock
                         $historico->recurso_id = $recurso_stock->id; //asigna al stock
                         $historico->recurso_asignado = $recurso_stock->nombre; //asigna al stock;
                         $historico->vehiculo_asignado = null;
@@ -758,7 +770,8 @@ class FlotaGeneralController extends Controller
         return redirect()->route('flota.index');
     }
 
-    public function getRecursosJSON(Request $request){
+    public function getRecursosJSON(Request $request)
+    {
         $recursos = Recurso::with('vehiculo')
             ->where('destino_id', $request->destino_id)
             ->orderBy('nombre', 'asc')

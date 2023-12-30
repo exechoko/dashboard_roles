@@ -60,7 +60,7 @@
                                                 <tr>
                                                     <td style="display: none;">{{ $f->id }}</td>
                                                     <td><a class="btn btn-dark"
-                                                            href="{{ route('verHistorico', $f->id) }}">{{ $f->equipo->tei }}</a>
+                                                            href="{{ route('verHistorico', $f->id) }}" target="_blank">{{ $f->equipo->tei }}</a>
                                                     </td>
                                                     <td><img alt="" width="70px" id="myImg"
                                                             src="{{ asset($f->equipo->tipo_terminal->imagen) }}"

@@ -37,6 +37,7 @@ class HomeController extends Controller
         $idEstadoNoFunciona = Estado::where('nombre', 'No funciona')->value('id');
         $idEstadoPerdido = Estado::where('nombre', 'Perdido')->value('id');
         $idEstadoRecambio = Estado::where('nombre', 'Recambio')->value('id');
+        $idEstadoTemporal = Estado::where('nombre', 'Temporal')->value('id');
 
         $dashboardController = new DashboardController();
 
@@ -44,6 +45,7 @@ class HomeController extends Controller
         $cant_roles = Role::count();
         $cant_camaras = Camara::all()->count();
         $cant_equipos_sin_funcionar = Equipo::where('estado_id', $idEstadoNoFunciona)->count();
+        $cant_equipos_temporales = Equipo::where('estado_id', $idEstadoTemporal)->count();
         $cant_equipos_baja = Equipo::whereIn('estado_id', [$idEstadoBaja, $idEstadoRecambio])->count();
         $cant_equipos_funcionales = Equipo::whereIn('estado_id', [$idEstadoNuevo, $idEstadoUsado, $idEstadoReparado])->count();
         $cant_equipos_provisto_por_pg = Equipo::where('provisto', 'Patagonia Green')->count();
@@ -75,6 +77,7 @@ class HomeController extends Controller
             'cant_equipos_en_div_911',
             'cant_equipos_sin_funcionar',
             'cant_equipos_funcionales',
+            'cant_equipos_temporales',
             'cant_equipos_baja',
             'cant_equipos_en_div_bancaria'
         ));

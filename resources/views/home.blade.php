@@ -20,25 +20,25 @@
         .card-item:hover {
             transform: translateY(-5px);
             /*translate: 0 -20px;
-                                                                                                                                                                                                                                                            box-shadow: 5px 3px rgb(217 220 242 / 75%),
-                                                                                                                                                                                                                                                                10px 6px rgb(44 217 255 / 50%),
-                                                                                                                                                                                                                                                                15px 9px rgb(126 255 178 / 25%),*/
+                                                                                                                                                                                                                                                                box-shadow: 5px 3px rgb(217 220 242 / 75%),
+                                                                                                                                                                                                                                                                    10px 6px rgb(44 217 255 / 50%),
+                                                                                                                                                                                                                                                                    15px 9px rgb(126 255 178 / 25%),*/
         }
 
         /*.card-item::before {
-                                                                                                                                                                                                                                                        content: '';
-                                                                                                                                                                                                                                                        position: absolute;
-                                                                                                                                                                                                                                                        inset: 0;
-                                                                                                                                                                                                                                                        transform: scaleY(0.75);
-                                                                                                                                                                                                                                                        transform-origin: bottom;
-                                                                                                                                                                                                                                                        background: linear-gradient(transparent,
-                                                                                                                                                                                                                                                                rgba(0, 0, 0, 0.02), #000);
-                                                                                                                                                                                                                                                        transition: transform 0.25s;
-                                                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                                                            content: '';
+                                                                                                                                                                                                                                                            position: absolute;
+                                                                                                                                                                                                                                                            inset: 0;
+                                                                                                                                                                                                                                                            transform: scaleY(0.75);
+                                                                                                                                                                                                                                                            transform-origin: bottom;
+                                                                                                                                                                                                                                                            background: linear-gradient(transparent,
+                                                                                                                                                                                                                                                                    rgba(0, 0, 0, 0.02), #000);
+                                                                                                                                                                                                                                                            transition: transform 0.25s;
+                                                                                                                                                                                                                                                        }
 
-                                                                                                                                                                                                                                                    .card-item:hover::before {
-                                                                                                                                                                                                                                                        transform: scale(1);
-                                                                                                                                                                                                                                                    }*/
+                                                                                                                                                                                                                                                        .card-item:hover::before {
+                                                                                                                                                                                                                                                            transform: scale(1);
+                                                                                                                                                                                                                                                        }*/
     </style>
 
 @stop
@@ -152,13 +152,29 @@
                                                 </div>
                                             </div>
                                             <div class="col-md-4 col-xl-3">
+                                                <div class="card-item bg-c-green order-card">
+                                                    <div class="card-block">
+                                                        <h5>Temporales</h5>
+                                                        <h2 class="text-right"><i
+                                                                class="fas fa-wind f-left"></i><span>{{ $cant_equipos_temporales }}</span>
+                                                        </h2>
+                                                        @can('ver-equipo')
+                                                            <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                                    data-target="#" id="btn-buscar-equipos-baja"
+                                                                    style="color: rgb(253, 253, 253)">Ver
+                                                                    más</a>
+                                                            </p>
+                                                        @endcan
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 col-xl-3">
                                                 <div class="card-item bg-c-orange order-card">
                                                     <div class="card-block">
                                                         <h5>Provistos por P.G.</h5>
-                                                        <h2 class="text-right"><img
-                                                            src="{{ asset('img/patagonia_logo.png') }}"
-                                                            alt="Telecom Logo" class="f-left" width="40"
-                                                            height="40"><span>{{ $cant_equipos_provisto_por_pg }}</span>
+                                                        <h2 class="text-right"><img src="{{ asset('img/patagonia_logo.png') }}"
+                                                                alt="Telecom Logo" class="f-left" width="40"
+                                                                height="40"><span>{{ $cant_equipos_provisto_por_pg }}</span>
                                                         </h2>
                                                         @can('ver-equipo')
                                                             <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
@@ -177,7 +193,8 @@
                                                         <h5>Provistos por TELECOM</h5>
                                                         <h2 class="text-right"><img
                                                                 src="{{ asset('img/telecom_logo_202.png') }}"
-                                                                alt="Telecom Logo" class="f-left" width="60"><span>{{ $cant_equipos_provisto_por_telecom }}</span>
+                                                                alt="Telecom Logo" class="f-left"
+                                                                width="60"><span>{{ $cant_equipos_provisto_por_telecom }}</span>
                                                         </h2>
                                                         @can('ver-equipo')
                                                             <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
@@ -329,7 +346,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                     data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -523,9 +540,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                        <button id="btn-buscar-moviles" href="consultarMoviles"
-                                                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                    </div-->
+                                                                                                                                                                                                                                                                            <button id="btn-buscar-moviles" href="consultarMoviles"
+                                                                                                                                                                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                        </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-moviles" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -710,9 +727,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                        <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                    </div-->
+                                                                                                                                                                                                                                                                            <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                                                                                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                        </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-motos" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -739,9 +756,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                        <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                    </div-->
+                                                                                                                                                                                                                                                                            <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                                                                                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                        </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-camaras" class="table table-condensed table-bordered table-stripped"></table>
                         </div>

@@ -152,11 +152,13 @@
                                                 </div>
                                             </div>
                                             <div class="col-md-4 col-xl-3">
-                                                <div class="card-item bg-c-green order-card">
+                                                <div class="card-item bg-c-orange order-card">
                                                     <div class="card-block">
                                                         <h5>Provistos por P.G.</h5>
-                                                        <h2 class="text-right"><i
-                                                                class="fa fa-mobile f-left"></i><span>{{ $cant_equipos_provisto_por_pg }}</span>
+                                                        <h2 class="text-right"><img
+                                                            src="{{ asset('img/patagonia_logo.png') }}"
+                                                            alt="Telecom Logo" class="f-left" width="40"
+                                                            height="40"><span>{{ $cant_equipos_provisto_por_pg }}</span>
                                                         </h2>
                                                         @can('ver-equipo')
                                                             <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
@@ -174,9 +176,8 @@
                                                     <div class="card-block">
                                                         <h5>Provistos por TELECOM</h5>
                                                         <h2 class="text-right"><img
-                                                                src="{{ asset('img/telecom_argentina_logo.svg') }}"
-                                                                alt="Telecom Logo" class="f-left" width="40"
-                                                                height="40"><span>{{ $cant_equipos_provisto_por_telecom }}</span>
+                                                                src="{{ asset('img/telecom_logo_202.png') }}"
+                                                                alt="Telecom Logo" class="f-left" width="60"><span>{{ $cant_equipos_provisto_por_telecom }}</span>
                                                         </h2>
                                                         @can('ver-equipo')
                                                             <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
@@ -426,8 +427,8 @@
             style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
             <div id="dialog" class="modal-dialog modal-xs">
                 <div class="modal-content">
-                    <div class="modal-header bg-c-violet">
-                        <h4 class="modal-title text-white">Equipos provistos</h4>
+                    <div class="modal-header bg-c-orange">
+                        <h4 class="modal-title text-white">Equipos provistos por P.G.</h4>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>

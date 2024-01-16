@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Destino;
 use App\Models\Equipo;
+use App\Models\Estado;
 use App\Models\FlotaGeneral;
 use App\Models\Recurso;
 use App\Models\Historico;
@@ -586,6 +587,7 @@ class FlotaGeneralController extends Controller
         $id_devolucion = TipoMovimiento::where('nombre', 'Devolución')->value('id');
         $id_reemplazo = TipoMovimiento::where('nombre', 'Reemplazo')->value('id');
         $id_devolver_equipo_temporal = TipoMovimiento::where('nombre', 'Devolver equipo temporal')->value('id');
+
         //Validar que permita mov patrimoniales solo en recursos que acepten muchos equipos
         if ($tipo_de_mov->id == $id_mov_patrimonial || $tipo_de_mov->id == $id_inst_completa) {
             $f = FlotaGeneral::where('recurso_id', $request->recurso)->first();
@@ -699,6 +701,7 @@ class FlotaGeneralController extends Controller
                         $flotaReemplazo->fecha_asignacion = $request->fecha_asignacion;
                         $flotaReemplazo->ticket_per = $request->ticket_per;
                         $flotaReemplazo->observaciones = $request->observaciones;
+
                         $r = Recurso::find($flota->recurso_id);
                         $v = null;
                         if (!is_null($r)) {
@@ -751,6 +754,8 @@ class FlotaGeneralController extends Controller
                 $histAnt->save();
                 $historico->save();
                 $flota->save();
+                //Cambiar estado al equipo
+                $this->cambiarEstadoAlEquipo($request->equipo, $tipo_de_mov->id);
             }
             DB::commit();
         } catch (\Exception $e) {
@@ -761,6 +766,43 @@ class FlotaGeneralController extends Controller
             ]);
         }
         return redirect()->route('flota.index');
+    }
+
+    private function cambiarEstadoAlEquipo($id, $tipo_de_mov_id)
+    {
+        try {
+            DB::beginTransaction();
+            //Obtener ids de estados
+            $id_estado_en_revision = Estado::where('nombre', 'En revision')->value('id');
+            $id_estado_usado = Estado::where('nombre', 'Usado')->value('id');
+            $id_estado_baja = Estado::where('nombre', 'Baja')->value('id');
+            $id_estado_temporal = Estado::where('nombre', 'Temporal')->value('id');
+            $id_estado_no_funciona = Estado::where('nombre', 'No funciona')->value('id');
+            //Se obtienen los id de los tipo de movimientos
+            $id_mov_patrimonial = TipoMovimiento::where('nombre', 'Movimiento patrimonial')->value('id');
+            $id_desinst_completa = TipoMovimiento::where('nombre', 'Desinstalación completa')->value('id');
+            $id_inst_completa = TipoMovimiento::where('nombre', 'Instalación completa')->value('id');
+            $id_provisorio = TipoMovimiento::where('nombre', 'Provisorio')->value('id');
+            $id_revision = TipoMovimiento::where('nombre', 'Revisión')->value('id');
+            $id_devolucion = TipoMovimiento::where('nombre', 'Devolución')->value('id');
+            $id_reemplazo = TipoMovimiento::where('nombre', 'Reemplazo')->value('id');
+            $id_devolver_equipo_temporal = TipoMovimiento::where('nombre', 'Devolver equipo temporal')->value('id');
+
+            $e = Equipo::find($id);
+            if ($e) {
+                if ($tipo_de_mov_id == $id_revision || $tipo_de_mov_id == $id_reemplazo) {
+                    $e->estado_id = $id_estado_en_revision;
+                    $e->save();
+                }
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 
     public function destroy($id)

@@ -49,7 +49,7 @@ class DashboardController extends Controller
         return response()->json($records);
     }
 
-    public function getCantidadEquiposFuncionalesJSON(Request $request)
+    /*public function getCantidadEquiposFuncionalesJSON(Request $request)
     {
         $idEstadoNuevo = Estado::where('nombre', 'Nuevo')->value('id');
         $idEstadoUsado = Estado::where('nombre', 'Usado')->value('id');
@@ -66,27 +66,34 @@ class DashboardController extends Controller
             ->get();
 
         return response()->json($records);
-    }
-
-    /*public function getCantidadEquiposProvistosPorPGJSON(Request $request)
+    }*/
+    public function getCantidadEquiposFuncionalesJSON(Request $request)
     {
+        $stock911 = Recurso::where('nombre', 'Stock 911')->first();
+
+        $idEstadoNuevo = Estado::where('nombre', 'Nuevo')->value('id');
+        $idEstadoUsado = Estado::where('nombre', 'Usado')->value('id');
+        $idEstadoReparado = Estado::where('nombre', 'Reparado')->value('id');
+
         $records = Equipo::select(
             'tipo_terminales.marca as marca',
             'tipo_terminales.modelo as modelo',
             'equipos.provisto as provisto',
-            'estados.nombre as estado',
-            DB::raw('COUNT(equipos.id) as cantidad')
+            'tipo_uso.uso as categoria',
+            DB::raw('COUNT(equipos.id) as cantidad'),
+            DB::raw('SUM(CASE WHEN flota_general.recurso_id = ' . $stock911->id . ' THEN 1 ELSE 0 END) as cantidad_en_stock'),
+            DB::raw('SUM(CASE WHEN flota_general.recurso_id IS NULL OR flota_general.recurso_id != ' . $stock911->id . ' THEN 1 ELSE 0 END) as cantidad_en_uso')
         )
             ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
-            ->leftJoin('estados', 'equipos.estado_id', '=', 'estados.id')
-            ->where('equipos.provisto', 'Patagonia Green')
-            ->groupBy('tipo_terminales.id', 'tipo_terminales.marca', 'tipo_terminales.modelo', 'equipos.estado_id', 'equipos.provisto', 'estados.nombre')
-            ->orderBy('tipo_terminales.marca')
-            ->orderBy('tipo_terminales.modelo')
+            ->leftJoin('tipo_uso', 'tipo_terminales.tipo_uso_id', '=', 'tipo_uso.id')
+            ->leftJoin('flota_general', 'equipos.id', '=', 'flota_general.equipo_id')
+            ->whereIn('equipos.estado_id', [$idEstadoNuevo, $idEstadoUsado, $idEstadoReparado])
+            ->groupBy('tipo_terminales.id', 'tipo_uso.uso', 'equipos.provisto')
             ->get();
 
         return response()->json($records);
-    }*/
+    }
+
     public function getCantidadEquiposProvistosPorPGJSON(Request $request)
     {
         // Obtener cantidades agrupadas por estado

@@ -89,6 +89,8 @@ class DashboardController extends Controller
             ->leftJoin('flota_general', 'equipos.id', '=', 'flota_general.equipo_id')
             ->whereIn('equipos.estado_id', [$idEstadoNuevo, $idEstadoUsado, $idEstadoReparado])
             ->groupBy('tipo_terminales.id', 'tipo_uso.uso', 'equipos.provisto')
+            ->orderBy('tipo_terminales.marca', 'DESC')
+            ->orderBy('tipo_terminales.modelo', 'DESC')
             ->get();
 
         return response()->json($records);

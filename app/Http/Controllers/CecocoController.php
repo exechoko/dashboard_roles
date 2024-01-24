@@ -201,6 +201,8 @@ class CecocoController extends Controller
                                         'recurso' => $recurso,
                                         'inicio_parado' => $inicioParada->format('H:i:s'),
                                         'fin_parado' => $finParada->format('H:i:s'),
+                                        'latitud' => $prevPosition->latitud,
+                                        'longitud' => $prevPosition->longitud,
                                         'lugar' => $this->getDireccion($prevPosition->latitud, $prevPosition->longitud),
                                         'tiempo_parado' => $tiempoParado,
                                     ];

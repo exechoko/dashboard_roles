@@ -134,11 +134,12 @@
                                         <thead>
                                             <tr>
                                                 <th data-field="id" data-visible="false">ID</th>
-                                                <th data-field="recurso" data-width="20%">Recurso</th>
-                                                <th data-field="inicio_parado" data-width="20%">Inicio</th>
-                                                <th data-field="fin_parado" data-width="20%">Fin</th>
-                                                <th data-field="tiempo_parado" data-width="15%">Tiempo parado</th>
-                                                <th data-field="direccion" data-width="25%">Dirección</th>
+                                                <th data-field="recurso">Recurso</th>
+                                                <th data-field="inicio_parado">Inicio</th>
+                                                <th data-field="fin_parado">Fin</th>
+                                                <th data-field="tiempo_parado">Tiempo parado</th>
+                                                <th data-field="direccion">Dirección</th>
+                                                <th data-field="mapa"></th>
                                             </tr>
                                         </thead>
                                     </table>
@@ -502,6 +503,14 @@
                     {
                         field: 'lugar',
                         title: 'Lugar'
+                    },{
+                        field: 'mapa',
+                        title: 'Mapa',
+                        formatter: function(value, row) {
+                            return '<button class="btn btn-dark btn-sm mapa-btn" data-latitud="' +
+                                row.latitud + '" data-longitud="' + row.longitud +
+                                '"><i class="fa fa-globe"></i></button>';
+                        }
                     }
                 ]
             });
@@ -618,6 +627,13 @@
 
             // Agrega un evento de clic al botón "Mapa"
             $('#table_moviles').on('click', '.mapa-btn', function() {
+                var latitud = $(this).data('latitud');
+                var longitud = $(this).data('longitud');
+                console.log('coord', latitud + '-' + longitud);
+                abrirModalMapa(latitud, longitud);
+            });
+            // Agrega un evento de clic al botón "Mapa"
+            $('#table_moviles_parados').on('click', '.mapa-btn', function() {
                 var latitud = $(this).data('latitud');
                 var longitud = $(this).data('longitud');
                 console.log('coord', latitud + '-' + longitud);

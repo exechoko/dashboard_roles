@@ -20,6 +20,7 @@
         "phpoffice/phpspreadsheet": "^1.28",
         "phpoffice/phpword": "^0.18.3",
         "psr/simple-cache": "1.0",
+        "select2/select2": "^4.0",
         "spatie/laravel-permission": "^5.5"
     },
     "require-dev": {

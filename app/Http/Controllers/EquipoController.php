@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\EquiposExport;
 use App\Models\Accesorio;
 use Illuminate\Http\Request;
 use App\Models\Equipo;
@@ -13,6 +14,7 @@ use App\Models\TipoUso;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
 
 class EquipoController extends Controller
 {
@@ -193,5 +195,10 @@ class EquipoController extends Controller
         //dd($hist);
 
         return view('flota.historico', compact('hist', 'flota', 'desdeEquipo'));
+    }
+
+    public function exportExcel()
+    {
+        return Excel::download(new EquiposExport, 'ListadoEquipos_' . Carbon::now() . '.xlsx');
     }
 }

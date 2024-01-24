@@ -36,7 +36,6 @@
                                         <th style="color:#fff;">ISSI</th>
                                         <th style="color: #fff">Estado</th>
                                         <th style="color: #fff">Obs.</th>
-                                        <th style="color: #fff">Ult. Mod.</th>
                                         <th style="color:#fff;">Acciones</th>
                                     </thead>
                                     <tbody>
@@ -52,7 +51,7 @@
                                             <tr>
                                                 <td style="display: none;">{{ $equipo->id }}</td>
                                                 <td><a class="btn btn-dark"
-                                                    href="{{ route('verHistoricoDesdeEquipo', $equipo->id) }}">{{ $equipo->tei }}</a>
+                                                    href="{{ route('verHistoricoDesdeEquipo', $equipo->id) }}" target="_blank">{{ $equipo->tei }}</a>
                                                 </td>
                                                 <td><img alt="" width="70px" id="myImg"
                                                     src="{{ asset($equipo->tipo_terminal->imagen) }}"
@@ -62,7 +61,6 @@
                                                 <td>{{ $equipo->issi }}</td>
                                                 <td>{{ $equipo->estado->nombre }}</td>
                                                 <td>{{ $equipo->observaciones }}</td>
-                                                <td>{{ \Carbon\Carbon::parse($equipo->fecha_estado)->format('d-m-Y') }}</td>
                                                 <td>
                                                     <form action="{{ route('equipos.destroy', $equipo->id) }}"
                                                         method="POST">

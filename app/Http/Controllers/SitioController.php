@@ -129,7 +129,33 @@ class SitioController extends Controller
      */
     public function update(Request $request, Sitio $sitio)
     {
-        //
+        request()->validate([
+            'nombre' => 'required',
+            'localidad' => 'required|not_in:Seleccionar localidad',
+            'destino_id' => 'required|not_in:Seleccionar la dependencia',
+        ], [
+            'required' => 'El campo :attribute es necesario completar.'
+        ]);
+        try {
+            DB::beginTransaction();
+            $sitio = Sitio::find($sitio->id);
+            $sitio->nombre = $request->nombre;
+            $sitio->latitud = $request->latitud;
+            $sitio->longitud = $request->longitud;
+            $sitio->localidad = $request->localidad;
+            $sitio->destino_id = $request->destino_id;
+            $sitio->observaciones = $request->observaciones;
+            $sitio->save();
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+            ]);
+        }
+
+        return redirect()->route('sitios.index');
     }
 
     /**

@@ -141,12 +141,12 @@
         }
 
         /*.etiqueta {
-                                                                position: absolute;
-                                                                top: 50px;
+                                                                                                                                position: absolute;
+                                                                                                                                top: 50px;
 
-                                                                left: 50%;
-                                                                transform: translateX(-50%);
-                                                            }*/
+                                                                                                                                left: 50%;
+                                                                                                                                transform: translateX(-50%);
+                                                                                                                            }*/
 
 
 
@@ -604,45 +604,32 @@
 
 @section('content')
     <section class="section">
-        <div class="section-header">
+        <div class="section-header d-flex justify-content-between align-items-center">
             <div class="">
-                <label class="alert alert-dark" for="">Cámaras: {{ $total }} / {{ $canales }}</label>
-                <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
+                <div class="form-group">
+                    <select name="camara_select" id="camara_select" class="form-control select2" style="margin-bottom: 15px">
+                        <option value="">Buscar cámara</option>
+                        @foreach ($camaras as $camara)
+                            <option value="{{ $camara['numero'] }}" data-lat="{{ $camara['latitud'] }}"
+                                data-lng="{{ $camara['longitud'] }}">
+                                {{ $camara['titulo'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <div class="ml-5" style="float: right;">
+                <label class="alert alert-info" for="">Fijas: {{ $fijas }}</label>
                 <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
                 <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
                 <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
                 <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
+                <label class="alert alert-dark" for="">Cámaras: {{ $total }} / Canales:
+                    {{ $canales }}</label>
             </div>
         </div>
-
-        <!--div class="row">
-                                        <div class="">
-                                            <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
-                                            <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
-                                            <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
-                                            <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
-                                            <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
-                                            <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
-                                        </div>
-                                    </div-->
         <div class="col-lg-12">
             <div id="map" style="height: 725px;"></div>
         </div>
-        <!--div class="row">
-                                        <div class="col-lg-12">
-                                            <div id="mapContainer" style="position: relative; height: 725px;">
-                                                <div id="map" style="height: 100%;"></div>
-                                                <div id="labels" style="position: absolute; top: 10px; left: 10px; z-index: 1000">
-                                                    <label class="alert alert-dark" for="">Cámaras instaladas: {{ $total }}</label>
-                                                    <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
-                                                    <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
-                                                    <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
-                                                    <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
-                                                    <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div-->
     </section>
 
     <script>
@@ -651,6 +638,16 @@
             @can('editar-camara')
                 window.location.href = '/camaras/' + camaraId + '/edit';
             @endcan
+        }
+
+        function openGoogleMaps(latitud, longitud) {
+            // Abre Google Maps en una nueva pestaña con la ubicación especificada
+            window.open(`https://www.google.com/maps?q=${latitud},${longitud}`, '_blank');
+        }
+
+        function openStreetView(latitud, longitud) {
+            // Abre Google Maps en una nueva pestaña con el enlace directo a Street View
+            window.open(`https://www.google.com/maps?q=&layer=c&cbll=${latitud},${longitud}`, '_blank');
         }
 
         function getRandomColor() { //funcion obtiene color aleatorio
@@ -682,11 +679,30 @@
         }
 
 
-        var zoom = 17;
+        var zoom = 13;
         var mymap = L.map('map', {
             editable: true,
             zoomControl: false
-        }).setView(new L.LatLng(-31.74275, -60.51827), zoom);
+        }).setView(new L.LatLng(-31.75899, -60.47825), zoom);
+
+        // Maneja el evento de cambio en el elemento select
+        $(document).ready(function() {
+            $('#camara_select').on('change', function() {
+                // Obtén el elemento select y la opción seleccionada
+                var selectElement = this;
+                var selectedOption = selectElement.options[selectElement.selectedIndex];
+
+                // Imprime la información de la opción seleccionada en la consola
+                console.log('item_select', selectedOption);
+
+                // Obtiene las coordenadas de los atributos de datos del elemento seleccionado
+                var lat = parseFloat(selectedOption.getAttribute('data-lat'));
+                var lng = parseFloat(selectedOption.getAttribute('data-lng'));
+
+                // Centra y hace zoom en el mapa a las coordenadas seleccionadas
+                mymap.setView([lat, lng], 20);
+            });
+        });
 
         var marcadores = L.markerClusterGroup();
         var markersPrimeraEtapa = L.markerClusterGroup();
@@ -880,8 +896,12 @@
                     Etapa: <b>{{ $marcador['etapa'] }}</b><br>
                     Inteligencia: <b>{{ $marcador['inteligencia'] }}</b><br>
                     Marca: <b>{{ $marcador['marca'] }}</b> - Mod.: <b>{{ $marcador['modelo'] }}</b><br>
-                    Nº serie: <b>{{ $marcador['nro_serie'] }}</b>
-                    <button onclick="editCamera(${numero})"><i class="fas fa-edit"></i></button>
+                    Nº serie: <b>{{ $marcador['nro_serie'] }}</b><br>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-icon btn-primary" title="Editar cámara" onclick="editCamera(${numero})"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-icon btn-info" title="Abrir en Google Maps" onclick="openGoogleMaps(${latitud}, ${longitud})"><i class="fas fa-globe-americas"></i></button>
+                        <button class="btn btn-icon btn-warning" title="Abrir en Street View" onclick="openStreetView(${latitud}, ${longitud})"><i class="fas fa-street-view"></i></button>
+                    </div>
                 </div>
             `);
             //.bindPopup("{{ $marcador['titulo'] }}<br>{{ $marcador['tipo_camara'] }}<br>{{ $marcador['inteligencia'] }}");
@@ -914,7 +934,7 @@
             var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
                     icon: antenaIcon
                     //}).addTo(mymap)
-                }).addTo(capa3)//.addTo(capa5)
+                }).addTo(capa3) //.addTo(capa5)
                 .bindPopup("{{ $marcador['titulo'] }}");
             //marcadores.addLayer(marker);
         @endforeach
@@ -945,6 +965,8 @@
             'Limpiar': capa4,
         }).addTo(mymap);
 
+        capa2.addTo(mymap);
+
         // Agregar el control de pantalla completa al mapa
         //mymap.addControl(new L.Control.Fullscreen());
 
@@ -970,7 +992,7 @@
                         element.msRequestFullscreen();
                     }
                     isFullscreen = true;
-                    div.firstChild.innerHTML = 'Salir'; // Cambiar el texto del botón
+                    //div.firstChild.innerHTML = 'Salir'; // Cambiar el texto del botón
                 } else {
                     if (document.exitFullscreen) {
                         document.exitFullscreen();

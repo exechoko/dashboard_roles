@@ -96,6 +96,7 @@
     </li>
 @endcan
 
+@can('ver-menu-cecoco')
 <li
     class="dropdown {{ request()->is('indexMoviles*') ? 'active' : '' }} {{ request()->is('indexLlamadas*') ? 'active' : '' }}">
     <a class="nav-link has-dropdown" href="#">
@@ -125,6 +126,7 @@
         @endcan
     </ul>
 </li>
+@endcan
 
 @can('ver-menu-mapa')
     <li class="{{ request()->is('mapa*') ? 'active' : '' }}">

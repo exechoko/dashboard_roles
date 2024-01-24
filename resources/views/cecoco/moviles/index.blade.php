@@ -8,10 +8,10 @@
 
     <style>
         /* redondear modal
-                                            #mapModal .modal-dialog {
-                                                border-radius: 100% !important;
-                                                overflow: hidden;
-                                            }*/
+                                                                        #mapModal .modal-dialog {
+                                                                            border-radius: 100% !important;
+                                                                            overflow: hidden;
+                                                                        }*/
 
         #map-modal {
             height: 400px;
@@ -91,13 +91,57 @@
                                         {!! Form::datetimeLocal('fecha_hasta', null, ['id' => 'fecha_hasta', 'name' => 'fecha_hasta']) !!}
                                     </div>
                                 </div>
-
+                            </div>
+                            <div class="form-group col-lg-12">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <button style="margin-top:25px;" id="buscarMoviles" type="button"
+                                            class="btn btn-primary">Buscar</button>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="col-md-12">
+                                            <button id="buscarMovilesParados" type="button"
+                                                class="btn btn-danger">Buscar tiempo detenido</button>
+                                            <input id="tiempo_permitido" type="text" name="tiempo_permitido"
+                                                class="form-control" placeholder="Tiempo permitido parar (minutos)" value="">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="col-lg-1">
-                                <div class="form-group">
-                                    <button style="margin-top:25px;" id="buscarMoviles" type="button"
-                                        class="btn btn-primary">Buscar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div id="control-moviles-parados" class="col-lg-12" style="margin-top: 20px;">
+                            <div class="row">
+                                <div class="col-lg-12" style="text-align: center; color: rgb(0, 0, 0)">
+                                    <h3 class="vertical-space">Control de Móviles parados</h3>
+                                </div>
+                                <div id="loading-indicator" style="display: none;">
+                                    <i class="fa fa-spinner fa-spin"></i> Cargando...
+                                </div>
+                                <div id="box-table_moviles" class="col-lg-12">
+                                    <table table id="table_moviles_parados" class="table-condensed" data-toggle="table"
+                                        data-height="100%" style="background-color:#FFF; width: 100%;" data-sort-name="id"
+                                        data-sort-order="asc" data-query-params="queryParams"
+                                        data-content-type="application/x-www-form-urlencoded" data-pagination="true"
+                                        data-page-size="100" data-page-list="[10,20,50,100,200]" data-unique-id="id"
+                                        data-resizable="true" data-method="post">
+                                        <thead>
+                                            <tr>
+                                                <th data-field="id" data-visible="false">ID</th>
+                                                <th data-field="recurso" data-width="20%">Recurso</th>
+                                                <th data-field="inicio_parado" data-width="20%">Inicio</th>
+                                                <th data-field="fin_parado" data-width="20%">Fin</th>
+                                                <th data-field="tiempo_parado" data-width="15%">Tiempo parado</th>
+                                                <th data-field="direccion" data-width="25%">Dirección</th>
+                                            </tr>
+                                        </thead>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -426,12 +470,41 @@
 
         $(document).ready(function() {
             var $table_moviles = $('#table_moviles');
+            var $table_moviles_parados = $('#table_moviles_parados');
             var $loadingIndicator = $('#loading-indicator');
 
             $('#mapModal').on('show.bs.modal', function() {
                 initMap()
             })
 
+            // Inicializa la tabla
+            $table_moviles_parados.bootstrapTable({
+                columns: [{
+                        field: 'id',
+                        title: 'ID'
+                    },
+                    {
+                        field: 'recurso',
+                        title: 'Recurso'
+                    },
+                    {
+                        field: 'inicio_parado',
+                        title: 'Inicio'
+                    },
+                    {
+                        field: 'fin_parado',
+                        title: 'Fin'
+                    },
+                    {
+                        field: 'tiempo_parado',
+                        title: 'Tiempo parado'
+                    },
+                    {
+                        field: 'lugar',
+                        title: 'Lugar'
+                    }
+                ]
+            });
             // Inicializa la tabla
             $table_moviles.bootstrapTable({
                 columns: [{
@@ -533,6 +606,16 @@
                 buscarMoviles(selectedResources);
             });
 
+            // Agrega un evento de clic al botón "Buscar"
+            $("#buscarMovilesParados").click(function() {
+                if (selectedResources.length == 0 || !$('#fecha_desde').val() || !$('#fecha_hasta').val() || !$('#tiempo_permitido').val()) {
+                    swal('¡ATENCION!', 'Todos los campos son requeridos', 'warning');
+                    return;
+                }
+                $loadingIndicator.show();
+                buscarMovilesParados(selectedResources);
+            });
+
             // Agrega un evento de clic al botón "Mapa"
             $('#table_moviles').on('click', '.mapa-btn', function() {
                 var latitud = $(this).data('latitud');
@@ -567,6 +650,34 @@
                     },
                     error: function(data) {
                         console.log('DataError para ' + recurso, data);
+                    },
+                    complete: function() {
+                        // Oculta el indicador de carga después de completar la solicitud
+                        $loadingIndicator.hide();
+                    }
+                });
+            }
+
+
+            function buscarMovilesParados(recursos) {
+                $.ajax({
+                    type: 'POST',
+                    url: "{{ route('get-moviles-parados') }}",
+                    data: {
+                        recursos: JSON.stringify(recursos) /*$('#recurso').val()*/ ,
+                        fecha_desde: $('#fecha_desde').val(),
+                        fecha_hasta: $('#fecha_hasta').val(),
+                        tiempo_permitido: $('#tiempo_permitido').val(),
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function(data) {
+                        console.log('Data', data);
+                        var movil = data.intervalos_parado;
+                        $table_moviles_parados.bootstrapTable('load', movil);
+                    },
+                    error: function(data) {
+                        console.log('DataError para ' + recurso, data);
+                        swal('Error!', 'Vuelva a intentar', 'warning');
                     },
                     complete: function() {
                         // Oculta el indicador de carga después de completar la solicitud

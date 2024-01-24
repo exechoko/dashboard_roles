@@ -139,6 +139,110 @@ class CecocoController extends Controller
         }
     }
 
+    public function obtenerIntervalosParado(Request $request)
+    {
+        //dd($request->all());
+        $request->validate([
+            'recursos' => 'required|string',
+            'fecha_desde' => 'required',
+            'fecha_hasta' => 'required',
+            'tiempo_permitido' => 'required|numeric',
+        ], [
+            'required' => 'El campo :attribute es necesario completar.',
+        ]);
+
+        try {
+            $recursos = json_decode($request->recursos, true);
+            $tiempoPermitidoParar = $request->tiempo_permitido; //tiempo que se puede parar
+
+            if (!is_array($recursos)) {
+                throw new \Exception('Formato de recursos no válido.');
+            }
+
+            $fecha_desde = \Carbon\Carbon::parse($request->fecha_desde)->format('Y-m-d H:i:s');
+            $fecha_hasta = \Carbon\Carbon::parse($request->fecha_hasta)->format('Y-m-d H:i:s');
+
+            $intervalosParado = [];
+
+            foreach ($recursos as $recurso) {
+                $results = DB::connection('mysql_second')
+                    ->table('posicionesgps')
+                    ->where('recurso', trim($recurso))
+                    ->whereBetween('fecha', [$fecha_desde, $fecha_hasta])
+                    ->orderBy('fecha')
+                    ->get();
+                //dd($results);
+
+                $prevPosition = null;
+                $inicioParada = null;
+
+                foreach ($results as $result) {
+                    // Convertir las coordenadas de radianes a grados decimales
+                    $result->latitud = round($result->latitud / 0.0174533, 7);
+                    $result->longitud = round($result->longitud / 0.0174533, 7);
+
+                    // Realizar la geocodificación inversa
+                    $result->direccion = $this->getDireccion($result->latitud, $result->longitud);
+
+                    if ($prevPosition) {
+                        $distance = $this->calcularDistancia($prevPosition->latitud, $prevPosition->longitud, $result->latitud, $result->longitud);
+
+                        if ($distance < 0.02) {
+                            if (!$inicioParada) {
+                                $inicioParada = \Carbon\Carbon::parse($result->fecha);
+                            }
+                        } else {
+                            if ($inicioParada) {
+                                $finParada = \Carbon\Carbon::parse($result->fecha);
+                                $tiempoParado = $finParada->diffInMinutes($inicioParada);
+
+                                if ($tiempoParado > $tiempoPermitidoParar) {
+                                    $intervalosParado[] = [
+                                        'recurso' => $recurso,
+                                        'inicio_parado' => $inicioParada->format('H:i:s'),
+                                        'fin_parado' => $finParada->format('H:i:s'),
+                                        'lugar' => $this->getDireccion($prevPosition->latitud, $prevPosition->longitud),
+                                        'tiempo_parado' => $tiempoParado,
+                                    ];
+                                }
+
+                                $inicioParada = null;
+                            }
+                        }
+                    }
+
+                    $prevPosition = $result;
+                }
+            }
+            //dd($intervalosParado);
+
+            return response()->json(['intervalos_parado' => $intervalosParado]);
+        } catch (\Exception $ex) {
+            return response()->json(['status' => 'error', 'message' => $ex->getMessage()], 200);
+        }
+    }
+
+    private function calcularDistancia($lat1, $lon1, $lat2, $lon2)
+    {
+        // Fórmula de Haversine para calcular la distancia entre dos puntos en la Tierra
+        $lat1Rad = deg2rad($lat1);
+        $lon1Rad = deg2rad($lon1);
+        $lat2Rad = deg2rad($lat2);
+        $lon2Rad = deg2rad($lon2);
+
+        $deltaLat = $lat2Rad - $lat1Rad;
+        $deltaLon = $lon2Rad - $lon1Rad;
+
+        $a = sin($deltaLat / 2) * sin($deltaLat / 2) + cos($lat1Rad) * cos($lat2Rad) * sin($deltaLon / 2) * sin($deltaLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        $earthRadius = 6371; // Radio de la Tierra en kilómetros
+
+        $distance = $earthRadius * $c;
+
+        return $distance;
+    }
+
     // Función para obtener la dirección mediante geocodificación inversa
     private function getDireccion($latitud, $longitud)
     {

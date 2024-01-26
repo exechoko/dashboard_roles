@@ -8,10 +8,10 @@
 
     <style>
         /* redondear modal
-                                                                        #mapModal .modal-dialog {
-                                                                            border-radius: 100% !important;
-                                                                            overflow: hidden;
-                                                                        }*/
+                                                                                        #mapModal .modal-dialog {
+                                                                                            border-radius: 100% !important;
+                                                                                            overflow: hidden;
+                                                                                        }*/
 
         #map-modal {
             height: 400px;
@@ -95,24 +95,31 @@
                             <div class="form-group col-lg-12">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <button style="margin-top:25px;" id="buscarMoviles" type="button"
-                                            class="btn btn-primary">Buscar</button>
+                                        @can('buscar-moviles-recorridos')
+                                            <button style="margin-top:25px;" id="buscarMoviles" type="button"
+                                                class="btn btn-primary">Buscar</button>
+                                        @endcan
                                     </div>
                                     <div class="col-md-6">
                                         <div class="col-md-12">
-                                            <button id="buscarMovilesParados" type="button"
-                                                class="btn btn-danger">Buscar tiempo detenido</button>
-                                            <input id="tiempo_permitido" type="text" name="tiempo_permitido"
-                                                class="form-control" placeholder="Tiempo permitido parar (minutos)" value="">
-                                        </div>
+                                            @can('buscar-moviles-parados')
+                                                <button id="buscarMovilesParados" type="button" class="btn btn-danger">Buscar
+                                                    tiempo detenido</button>
+                                                <input id="tiempo_permitido" type="text" name="tiempo_permitido"
+                                                    class="form-control" placeholder="Tiempo permitido parar (minutos)"
+                                                    value="">
+                                            </div>
+                                        @endcan
                                     </div>
                                 </div>
                             </div>
-
                         </div>
+
                     </div>
                 </div>
             </div>
+        </div>
+        @can('buscar-moviles-parados')
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
@@ -149,7 +156,9 @@
                     </div>
                 </div>
             </div>
+        @endcan
 
+        @can('buscar-moviles-recorridos')
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
@@ -205,7 +214,8 @@
                     </div>
                 </div>
             </div>
-        </div>
+        @endcan
+
         <!-- Modal para mostrar el mapa -->
         <div id="mapModal" class="modal fade" data-backdrop="false" style="background-color: rgba(0, 0, 0, 0.5);"
             role="dialog" aria-labelledby="mapModalLabel" aria-hidden="true">
@@ -503,7 +513,7 @@
                     {
                         field: 'lugar',
                         title: 'Lugar'
-                    },{
+                    }, {
                         field: 'mapa',
                         title: 'Mapa',
                         formatter: function(value, row) {
@@ -617,7 +627,8 @@
 
             // Agrega un evento de clic al botón "Buscar"
             $("#buscarMovilesParados").click(function() {
-                if (selectedResources.length == 0 || !$('#fecha_desde').val() || !$('#fecha_hasta').val() || !$('#tiempo_permitido').val()) {
+                if (selectedResources.length == 0 || !$('#fecha_desde').val() || !$('#fecha_hasta').val() ||
+                    !$('#tiempo_permitido').val()) {
                     swal('¡ATENCION!', 'Todos los campos son requeridos', 'warning');
                     return;
                 }

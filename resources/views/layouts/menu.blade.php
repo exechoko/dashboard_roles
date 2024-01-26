@@ -103,21 +103,21 @@
         <i class="fas fa-life-ring"></i><span>CeCoCo</span>
     </a>
     <ul class="dropdown-menu">
-        @can('ver-camara')
+        @can('ver-llamadas-cecoco')
             <li class="">
                 <a class="nav-link" href="/indexLlamadas">
                     <i class="fas fa-phone-alt"></i><span>Llamadas</span>
                 </a>
             </li>
         @endcan
-        @can('ver-tipo-camara')
+        @can('ver-moviles-cecoco')
             <li class="">
                 <a class="nav-link" href="/indexMoviles">
                     <i class="fas fa-car"></i></i><span>Móviles</span>
                 </a>
             </li>
         @endcan
-        @can('ver-sitio')
+        @can('ver-eventos-cecoco')
             <li class="">
                 <a class="nav-link" href="/get-eventos">
                     <i class="far fa-file-alt"></i><span>Eventos</span>

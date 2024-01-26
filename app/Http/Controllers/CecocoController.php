@@ -8,6 +8,16 @@ use Illuminate\Support\Facades\DB;
 
 class CecocoController extends Controller
 {
+    function __construct()
+    {
+        $this->middleware('permission:ver-moviles-cecoco')->only('indexMoviles');
+        $this->middleware('permission:ver-llamadas-cecoco')->only('indexLlamadas');
+        $this->middleware('permission:ver-eventos-cecoco')->only('indexLlamadas');
+        /*$this->middleware('permission:crear-camara', ['only' => ['create', 'store']]);
+        $this->middleware('permission:editar-camara', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:borrar-camara', ['only' => ['destroy']]);*/
+    }
+
     public function indexMoviles()
     {
 

@@ -97,12 +97,23 @@ class SeederTablaPermisos extends Seeder
             'ver-menu-dependencias',
             'ver-menu-mapa',
             'ver-menu-usuarios',
-            'ver-menu-auditoria'
+            'ver-menu-auditoria',
+            'ver-menu-cecoco',
 
+            //CeCoCo
+            'ver-llamadas-cecoco',
+            'ver-moviles-cecoco',
+            'buscar-moviles-parados',
+            'buscar-moviles-recorridos',
+            'ver-eventos-cecoco',
         ];
 
-        foreach($permisos as $permiso){
-            Permission::create(['name' => $permiso]);
+        // Looping and Inserting Array's Permissions into Permission Table
+        foreach ($permisos as $permission) {
+            // Verificar si el permiso ya existe antes de crearlo
+            if (!Permission::where('name', $permission)->exists()) {
+                Permission::create(['name' => $permission]);
+            }
         }
     }
 }

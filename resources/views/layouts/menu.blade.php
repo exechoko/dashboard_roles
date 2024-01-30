@@ -103,6 +103,11 @@
         <i class="fas fa-life-ring"></i><span>CeCoCo</span>
     </a>
     <ul class="dropdown-menu">
+        <li class="">
+            <a class="nav-link" href="/indexMapaCalor">
+                <i class="fas fa-fire"></i><span>Mapa de calor</span>
+            </a>
+        </li>
         @can('ver-llamadas-cecoco')
             <li class="">
                 <a class="nav-link" href="/indexLlamadas">

@@ -94,5 +94,7 @@ Route::group(['middleware' => ['auth']], function(){
     Route::post('/get-moviles', [App\Http\Controllers\CecocoController::class, 'getRecorridosMoviles'])->name('get-moviles');
     Route::post('/get-moviles-parados', [App\Http\Controllers\CecocoController::class, 'obtenerIntervalosParado'])->name('get-moviles-parados');
     Route::get('/get-eventos', [App\Http\Controllers\CecocoController::class, 'getEventos'])->name('get-eventos');
+    Route::get('/indexMapaCalor', [App\Http\Controllers\CecocoController::class, 'indexMapaCalor'])->name('indexMapaCalor');
+    Route::get('/getServiciosCecoco', [App\Http\Controllers\CecocoController::class, 'getServicios'])->name('getServiciosCecoco');
 
 });

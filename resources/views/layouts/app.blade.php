@@ -35,6 +35,7 @@
     <script src="{{ asset('leaflet/geocoder/esri-leaflet.js') }}"></script>
     <script src="{{ asset('leaflet/geocoder/esri-leaflet-geocoder.min.js') }}"></script>
     <script src="{{ asset('leaflet/geocoder/gpx.min.js') }}"></script>
+    <script src="{{ asset('leaflet/leaflet-heat.js') }}"></script>
     <!-- Enlace a la biblioteca de pantalla completa -->
     <script src="https://unpkg.com/leaflet-fullscreen@1.6.0/dist/Leaflet.fullscreen.min.js"></script>
 

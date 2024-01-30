@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\GeocodificacionInversa;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -38,6 +39,78 @@ class CecocoController extends Controller
             ->get();
 
         return view('cecoco.llamadas.index', compact('protocolos'));
+    }
+
+    public function indexMapaCalor()
+    {
+        /*$servicios = [
+            ['latitud' => -31.72978, 'longitud' => -60.53547, 'tipo' => 'Robo'],
+            ['latitud' => -31.72981, 'longitud' => -60.53548, 'tipo' => 'Robo'],
+            ['latitud' => -31.72982, 'longitud' => -60.53547, 'tipo' => 'Robo'],
+            ['latitud' => -31.73771, 'longitud' => -60.51383, 'tipo' => 'Robo'],
+            ['latitud' => -31.73001, 'longitud' => -60.54851, 'tipo' => 'Hurto'],
+            ['latitud' => -31.74674, 'longitud' => -60.5364, 'tipo' => 'Hurto'],
+            ['latitud' => -31.73711, 'longitud' => -60.45818, 'tipo' => 'Arrebato'],
+            ['latitud' => -31.72208, 'longitud' => -60.51665, 'tipo' => 'Arrebato'],
+            ['latitud' => -31.74051, 'longitud' => -60.55312, 'tipo' => 'Robo'],
+            ['latitud' => -31.75655, 'longitud' => -60.51133, 'tipo' => 'Hurto'],
+            ['latitud' => -31.70670, 'longitud' => -60.56671, 'tipo' => 'Accidente'],
+            ['latitud' => -31.75109, 'longitud' => -60.48563, 'tipo' => 'Accidente'],
+            ['latitud' => -31.77106, 'longitud' => -60.52482, 'tipo' => 'Hurto'],
+            ['latitud' => -31.73017, 'longitud' => -60.49726, 'tipo' => 'Hurto'],
+            ['latitud' => -31.77032, 'longitud' => -60.48219, 'tipo' => 'Robo'],
+            ['latitud' => -31.73434, 'longitud' => -60.55248, 'tipo' => 'Accidente'],
+            ['latitud' => -31.72189, 'longitud' => -60.54260, 'tipo' => 'Accidente']
+        ];*/
+
+        $tipificaciones = DB::connection('mysql_second')
+        ->table('tiposservicio')
+        ->distinct()
+        ->pluck('nombre')
+        ->toArray();
+
+        //dd($servicios);
+
+        return view('cecoco.mapas.mapa_de_calor', compact('tipificaciones'));
+    }
+
+    public function getServicios(Request $request)
+    {
+        /*$fecha = Carbon::parse('2023-11-01 09:21:08');
+        $fecha_actual = $fecha->copy(); // Clonar el objeto original
+        $fecha_hace_una_semana = $fecha->subWeek();
+        $fecha_un_mes_antes = $fecha->copy()->subMonth(); // Obtener la fecha de un mes antes
+
+        $fecha_actual_formateada = $fecha_actual->format('Y-m-d H:i:s');
+        $fecha_hace_una_semana_formateada = $fecha_hace_una_semana->format('Y-m-d H:i:s');
+        $fecha_un_mes_antes_formateada = $fecha_un_mes_antes->format('Y-m-d H:i:s');*/
+        $fecha_desde = \Carbon\Carbon::parse($request->fecha_desde)->format('Y-m-d H:i:s');
+        $fecha_hasta = \Carbon\Carbon::parse($request->fecha_hasta)->format('Y-m-d H:i:s');
+        $tipificacion = $request->tipificacion;
+        try {
+            $servicios = DB::connection('mysql_second')
+                ->table('servicios_historico')
+                ->select(
+                    'servicios_historico.*',
+                    'posicionamientosmapaservicio_historico.*',
+                    'sucesosservicio_policia_historico.descripcion',
+                    'sucesosservicio_policia_historico.direccion',
+                    'relacion_tiposservicio_servicios_historico.*',
+                )
+                ->join('posicionamientosmapaservicio_historico', function ($join) {
+                    $join->on('servicios_historico.id', '=', 'posicionamientosmapaservicio_historico.idServicio')
+                        ->where('posicionamientosmapaservicio_historico.latitud', '!=', '0.0')
+                        ->where('posicionamientosmapaservicio_historico.longitud', '!=', '0.0');
+                })
+                ->join('sucesosservicio_policia_historico', 'servicios_historico.id', '=', 'sucesosservicio_policia_historico.idServicio')
+                ->join('relacion_tiposservicio_servicios_historico', 'servicios_historico.id', '=', 'relacion_tiposservicio_servicios_historico.servicios_id')
+                ->whereBetween('servicios_historico.fechaCreacion', [$fecha_desde, $fecha_hasta])
+                ->where('relacion_tiposservicio_servicios_historico.tiposservicio_nombre', 'like', '%' . $tipificacion .'%') //para filtrar por tipificacion
+                ->get();
+            return response()->json(['servicios' => $servicios]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 200);
+        }
     }
 
     public function getLlamadas(Request $request)

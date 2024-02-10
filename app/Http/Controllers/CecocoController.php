@@ -64,14 +64,79 @@ class CecocoController extends Controller
         ];*/
 
         $tipificaciones = DB::connection('mysql_second')
-        ->table('tiposservicio')
-        ->distinct()
-        ->pluck('nombre')
-        ->toArray();
+            ->table('tiposservicio')
+            ->distinct()
+            ->pluck('nombre')
+            ->toArray();
 
         //dd($servicios);
 
         return view('cecoco.mapas.mapa_de_calor', compact('tipificaciones'));
+    }
+
+    public function indexMapaCecocoEnVivo()
+    {
+        //dd($recursos);
+        return view('cecoco.mapas.mapa_cecoco_en_vivo');
+    }
+
+    public function getRecursosCecoco()
+    {
+        $fecha = Carbon::parse('2023-11-01 09:21:08');
+        $fecha_actual = $fecha->copy();
+        $fecha_desde = $fecha->subMinutes(100); // Restar 10 minutos a la fecha actual
+        $fecha_hasta = $fecha_actual->copy(); // La fecha actual
+
+        try {
+            $recursos = DB::connection('mysql_second')
+                ->table('ultimasposicionesgps')
+                ->select(
+                    'ultimasposicionesgps.*',
+                    'recursos.*',
+                    'tiposrecurso.nombre as tipo_recurso',
+                )
+                ->join('recursos', 'recursos.id', '=', 'ultimasposicionesgps.recursos_id')
+                ->join('tiposrecurso', 'tiposrecurso.id', '=', 'recursos.idTipo')
+                ->whereBetween('ultimasposicionesgps.fecha', [$fecha_desde, $fecha_hasta])
+                ->where('ultimasposicionesgps.latitud', '!=', '0.0')
+                ->where('ultimasposicionesgps.longitud', '!=', '0.0')
+                ->get()
+                ->map(function ($result) {
+                    // Convertir las coordenadas de radianes a grados decimales
+                    $result->latitud_decimal = round($result->latitud / 0.0174533, 7);
+                    $result->longitud_decimal = round($result->longitud / 0.0174533, 7);
+                    return $result;
+                });
+
+            $servicios = DB::connection('mysql_second')
+                ->table('servicios')
+                ->select(
+                    'servicios.*',
+                    'posicionamientosmapaservicio.*',
+                    'sucesosservicio_policia.descripcion',
+                    'sucesosservicio_policia.direccion',
+                    'relacion_tiposservicio_servicios.*',
+                    'tiposservicio.nombre as tipo_servicio',
+                )
+                ->join('posicionamientosmapaservicio', function ($join) {
+                    $join->on('servicios.id', '=', 'posicionamientosmapaservicio.idServicio')
+                        ->where('posicionamientosmapaservicio.latitud', '!=', '0.0')
+                        ->where('posicionamientosmapaservicio.longitud', '!=', '0.0');
+                })
+                ->join('sucesosservicio_policia', 'servicios.id', '=', 'sucesosservicio_policia.idServicio')
+                ->join('relacion_tiposservicio_servicios', 'servicios.id', '=', 'relacion_tiposservicio_servicios.servicios_id')
+                ->join('tiposservicio', 'tiposservicio.id', '=', 'relacion_tiposservicio_servicios.tiposservicio_id')
+                ->whereBetween('servicios.fechaCreacion', [$fecha_desde, $fecha_hasta])
+                ->get();
+            //dd($servicios);
+
+            return response()->json([
+                'recursos' => $recursos,
+                'servicios' => $servicios
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 200);
+        }
     }
 
     public function getServicios(Request $request)
@@ -105,7 +170,7 @@ class CecocoController extends Controller
                 ->join('sucesosservicio_policia_historico', 'servicios_historico.id', '=', 'sucesosservicio_policia_historico.idServicio')
                 ->join('relacion_tiposservicio_servicios_historico', 'servicios_historico.id', '=', 'relacion_tiposservicio_servicios_historico.servicios_id')
                 ->whereBetween('servicios_historico.fechaCreacion', [$fecha_desde, $fecha_hasta])
-                ->where('relacion_tiposservicio_servicios_historico.tiposservicio_nombre', 'like', '%' . $tipificacion .'%') //para filtrar por tipificacion
+                ->where('relacion_tiposservicio_servicios_historico.tiposservicio_nombre', 'like', '%' . $tipificacion . '%') //para filtrar por tipificacion
                 ->get();
             return response()->json(['servicios' => $servicios]);
         } catch (\Exception $e) {

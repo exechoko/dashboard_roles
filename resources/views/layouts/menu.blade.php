@@ -103,10 +103,17 @@
         <i class="fas fa-life-ring"></i><span>CeCoCo</span>
     </a>
     <ul class="dropdown-menu">
+        @can('ver-mapa-cecoco-en-vivo')
+        <li class="">
+            <a class="nav-link" href="/indexMapaCecocoEnVivo">
+                <i class="fas fa-globe"></i><span>Mapa CeCoCo</span>
+            </a>
+        </li>
+        @endcan
         @can('ver-mapa-calor-servicios-cecoco')
         <li class="">
             <a class="nav-link" href="/indexMapaCalor">
-                <i class="fas fa-fire"></i><span>Mapa de calor</span>
+                <i class="fas fa-fire"></i><span>Mapa de eventos</span>
             </a>
         </li>
         @endcan

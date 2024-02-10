@@ -106,7 +106,8 @@ class SeederTablaPermisos extends Seeder
             'buscar-moviles-parados',
             'buscar-moviles-recorridos',
             'ver-eventos-cecoco',
-            'ver-mapa-calor-servicios-cecoco'
+            'ver-mapa-calor-servicios-cecoco',
+            'ver-mapa-cecoco-en-vivo'
         ];
 
         // Looping and Inserting Array's Permissions into Permission Table

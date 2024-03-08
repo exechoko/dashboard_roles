@@ -776,6 +776,7 @@ class FlotaGeneralController extends Controller
             $id_estado_en_revision = Estado::where('nombre', 'En revision')->value('id');
             $id_estado_usado = Estado::where('nombre', 'Usado')->value('id');
             $id_estado_baja = Estado::where('nombre', 'Baja')->value('id');
+            $id_estado_perdido = Estado::where('nombre', 'Perdido')->value('id');
             $id_estado_temporal = Estado::where('nombre', 'Temporal')->value('id');
             $id_estado_no_funciona = Estado::where('nombre', 'No funciona')->value('id');
             //Se obtienen los id de los tipo de movimientos
@@ -787,11 +788,19 @@ class FlotaGeneralController extends Controller
             $id_devolucion = TipoMovimiento::where('nombre', 'Devolución')->value('id');
             $id_reemplazo = TipoMovimiento::where('nombre', 'Reemplazo')->value('id');
             $id_devolver_equipo_temporal = TipoMovimiento::where('nombre', 'Devolver equipo temporal')->value('id');
+            $id_baja = TipoMovimiento::where('nombre', 'Baja')->value('id');
+            $id_alta = TipoMovimiento::where('nombre', 'Alta')->value('id');
 
             $e = Equipo::find($id);
             if ($e) {
                 if ($tipo_de_mov_id == $id_revision || $tipo_de_mov_id == $id_reemplazo) {
                     $e->estado_id = $id_estado_en_revision;
+                    $e->save();
+                } else if ($tipo_de_mov_id == $id_inst_completa || $tipo_de_mov_id == $id_mov_patrimonial || $tipo_de_mov_id == $id_provisorio) {
+                    $e->estado_id = $id_estado_usado;
+                    $e->save();
+                } else if ($tipo_de_mov_id == $id_baja) {
+                    $e->estado_id = $id_estado_baja;
                     $e->save();
                 }
             }

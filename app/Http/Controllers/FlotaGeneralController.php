@@ -561,7 +561,7 @@ class FlotaGeneralController extends Controller
 
     public function update(Request $request, $id)
     {
-        //dd($request->all());
+        //dd($request->all(), $id);
         request()->validate([
             'tipo_movimiento' => 'required',
             'equipo' => 'required',
@@ -586,6 +586,7 @@ class FlotaGeneralController extends Controller
         $id_revision = TipoMovimiento::where('nombre', 'Revisión')->value('id');
         $id_devolucion = TipoMovimiento::where('nombre', 'Devolución')->value('id');
         $id_reemplazo = TipoMovimiento::where('nombre', 'Reemplazo')->value('id');
+        $id_recambio = TipoMovimiento::where('nombre', 'Recambio')->value('id');
         $id_devolver_equipo_temporal = TipoMovimiento::where('nombre', 'Devolver equipo temporal')->value('id');
 
         //Validar que permita mov patrimoniales solo en recursos que acepten muchos equipos
@@ -694,7 +695,8 @@ class FlotaGeneralController extends Controller
 
                     case $id_reemplazo:
                         //Nueva flota para asignar el equipo desinstalado a Soporte 1er nivel - PG
-                        $flotaReemplazo = new FlotaGeneral();
+                        //$flotaReemplazo = new FlotaGeneral();
+                        $flotaReemplazo = FlotaGeneral::where('equipo_id', $request->equipoReemplazo)->first();
                         $flotaReemplazo->equipo_id = $request->equipo;
                         $flotaReemplazo->recurso_id = $recurso_soporte_pg->id;
                         $flotaReemplazo->destino_id = $recurso_soporte_pg->destino->id;
@@ -734,6 +736,55 @@ class FlotaGeneralController extends Controller
                         $historico->recurso_desasignado = ($histAnt->recurso_asignado) ? $histAnt->recurso_asignado : null;
                         $historico->vehiculo_desasignado = ($histAnt->vehiculo_asignado) ? $histAnt->vehiculo_asignado : null;
                         $historico->destino_id = $recurso_soporte_pg->destino->id;
+
+                        $flotaReemplazo->save();
+                        $historicoReemplazo->save();
+                        $histAntReemplazo->save();
+
+                        break;
+                    case $id_recambio:
+                        //Nueva flota para asignar el equipo desinstalado a Stock 911
+                        //$flotaReemplazo = new FlotaGeneral();
+                        $flotaReemplazo = FlotaGeneral::where('equipo_id', $request->equipoReemplazo)->first();
+                        $flotaReemplazo->equipo_id = $request->equipo;
+                        $flotaReemplazo->recurso_id = $recurso_stock->id;
+                        $flotaReemplazo->destino_id = $recurso_stock->destino->id;
+                        $flotaReemplazo->fecha_asignacion = $request->fecha_asignacion;
+                        $flotaReemplazo->ticket_per = $request->ticket_per;
+                        $flotaReemplazo->observaciones = $request->observaciones;
+
+                        $r = Recurso::find($flota->recurso_id);
+                        $v = null;
+                        if (!is_null($r)) {
+                            $v = Vehiculo::find($r->vehiculo_id);
+                        }
+                        $flota->equipo_id = $request->equipoReemplazo;
+                        //Historico del nuevo equipo instalado
+                        $historicoReemplazo = new Historico();
+                        $histAntReemplazo = Historico::where('equipo_id', $request->equipoReemplazo)->orderBy('created_at', 'desc')->first();
+                        if (!is_null($histAntReemplazo)) {
+                            $histAntReemplazo->fecha_desasignacion = $request->fecha_asignacion;
+                        }
+                        $historicoReemplazo->equipo_id = $request->equipoReemplazo;
+                        $historicoReemplazo->ticket_per = $request->ticket_per;
+                        $historicoReemplazo->observaciones = $request->observaciones;
+                        $historicoReemplazo->tipo_movimiento_id = $tipo_de_mov->id;
+                        $historicoReemplazo->fecha_asignacion = $request->fecha_asignacion;
+                        $historicoReemplazo->recurso_id = $flota->recurso_id;
+                        $historicoReemplazo->recurso_asignado = $flota->recurso->nombre;
+                        $historicoReemplazo->vehiculo_asignado = !is_null($v) ? $v->dominio : null;
+                        $historicoReemplazo->recurso_desasignado = ($histAntReemplazo->recurso_asignado) ? $histAntReemplazo->recurso_asignado : null;
+                        $historicoReemplazo->vehiculo_desasignado = ($histAntReemplazo->vehiculo_asignado) ? $histAntReemplazo->vehiculo_asignado : null;
+                        $historicoReemplazo->destino_id = $flota->destino->id;
+
+                        //Historico del equipo que se desinstala
+                        $historicoReemplazo->tipo_movimiento_id = $tipo_de_mov->id;
+                        $historico->recurso_id = $recurso_stock->id; //asigna al Stock 911
+                        $historico->recurso_asignado = $recurso_stock->nombre; //asigna al Stock 911;
+                        $historico->vehiculo_asignado = null;
+                        $historico->recurso_desasignado = ($histAnt->recurso_asignado) ? $histAnt->recurso_asignado : null;
+                        $historico->vehiculo_desasignado = ($histAnt->vehiculo_asignado) ? $histAnt->vehiculo_asignado : null;
+                        $historico->destino_id = $recurso_stock->destino->id;
 
                         $flotaReemplazo->save();
                         $historicoReemplazo->save();
@@ -787,6 +838,7 @@ class FlotaGeneralController extends Controller
             $id_revision = TipoMovimiento::where('nombre', 'Revisión')->value('id');
             $id_devolucion = TipoMovimiento::where('nombre', 'Devolución')->value('id');
             $id_reemplazo = TipoMovimiento::where('nombre', 'Reemplazo')->value('id');
+            $id_recambio = TipoMovimiento::where('nombre', 'Recambio')->value('id');
             $id_devolver_equipo_temporal = TipoMovimiento::where('nombre', 'Devolver equipo temporal')->value('id');
             $id_baja = TipoMovimiento::where('nombre', 'Baja')->value('id');
             $id_alta = TipoMovimiento::where('nombre', 'Alta')->value('id');
@@ -796,7 +848,7 @@ class FlotaGeneralController extends Controller
                 if ($tipo_de_mov_id == $id_revision || $tipo_de_mov_id == $id_reemplazo) {
                     $e->estado_id = $id_estado_en_revision;
                     $e->save();
-                } else if ($tipo_de_mov_id == $id_inst_completa || $tipo_de_mov_id == $id_mov_patrimonial || $tipo_de_mov_id == $id_provisorio) {
+                } else if ($tipo_de_mov_id == $id_inst_completa || $tipo_de_mov_id == $id_mov_patrimonial || $tipo_de_mov_id == $id_provisorio || $tipo_de_mov_id == $id_recambio) {
                     $e->estado_id = $id_estado_usado;
                     $e->save();
                 } else if ($tipo_de_mov_id == $id_baja) {

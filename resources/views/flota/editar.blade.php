@@ -202,7 +202,7 @@
                 // Convertir el JSON en un objeto JavaScript
                 var tipoMovimiento = JSON.parse(selectedTipoMovimiento);
 
-                if (tipoMovimiento.nombre === "Reemplazo") {
+                if (tipoMovimiento.nombre === "Reemplazo" || tipoMovimiento.nombre === "Recambio") {
                     console.log("entro al if reemplazo", "SI");
                     equipoReemplazoSelect.show();
                     dependenciaSelect.hide();

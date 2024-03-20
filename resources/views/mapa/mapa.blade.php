@@ -894,6 +894,7 @@
                     Sitio: <b>{{ $marcador['sitio'] }}</b><br>
                     Dependencia: <b>{{ $marcador['dependencia'] }}</b><br>
                     Etapa: <b>{{ $marcador['etapa'] }}</b><br>
+                    Instalación: <b>{{ $marcador['fecha_instalacion'] }}</b><br>
                     Inteligencia: <b>{{ $marcador['inteligencia'] }}</b><br>
                     Marca: <b>{{ $marcador['marca'] }}</b> - Mod.: <b>{{ $marcador['modelo'] }}</b><br>
                     Nº serie: <b>{{ $marcador['nro_serie'] }}</b><br>

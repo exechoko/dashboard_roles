@@ -117,7 +117,6 @@ class CamaraController extends Controller
         request()->validate([
             'tipo_camara_id' => 'required|not_in:Selecciona un tipo de cámara',
             'sitio_id' => 'required|not_in:Seleccionar',
-            'destino_id' => 'required|not_in:Seleccione una dependencia',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);

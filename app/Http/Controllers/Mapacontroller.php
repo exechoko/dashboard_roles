@@ -189,6 +189,7 @@ class Mapacontroller extends Controller
         $domosDuales = Camara::whereHas('tipoCamara', function ($query) {
             $query->where('tipo', 'Domo Dual');
         })->count();
+        
         $totalCam = Camara::all()->count();
         $totalCamaras = Camara::select(
             'camaras.id',

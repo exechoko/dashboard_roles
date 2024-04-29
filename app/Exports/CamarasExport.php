@@ -29,13 +29,19 @@ class CamarasExport implements FromCollection, WithHeadings, WithEvents, ShouldA
             'sitio.longitud as longitud',
             'camaras.fecha_instalacion',
             'destino.nombre as dependencia',
-            'sitio.localidad as localidad'
+            'sitio.localidad as localidad',
+            'sitio.cartel as cartel'
         )
         ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
         ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
         ->leftJoin('destino', 'sitio.destino_id', '=', 'destino.id')
         ->get();
-        //dd($camaras->all());
+
+        // Mapear la colección para cambiar los valores booleanos
+        $camaras->map(function ($sitio) {
+            $sitio->cartel = $sitio->cartel ? 'SI' : 'NO';
+            return $sitio;
+        });
 
         return $camaras;
         //return Camara::all();
@@ -57,6 +63,7 @@ class CamarasExport implements FromCollection, WithHeadings, WithEvents, ShouldA
             'Fecha de Instalación',
             'Dependencia',
             'Localidad',
+            'Cartel'
         ];
     }
 

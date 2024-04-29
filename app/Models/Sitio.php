@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Sitio extends Model
 {
     protected $table = 'sitio';
-    protected $fillable = ['nombre', 'latitud', 'longitud', 'localidad'];
+    protected $fillable = ['nombre', 'latitud', 'longitud', 'localidad', 'cartel'];
 
     public function destino(){
         return $this->belongsTo(Destino::class);

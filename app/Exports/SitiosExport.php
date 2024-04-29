@@ -21,6 +21,7 @@ class SitiosExport implements FromCollection, WithHeadings, WithEvents, ShouldAu
         $sitios = Sitio::select(
             'sitio.id',
             'sitio.nombre',
+            'sitio.cartel',
             'sitio.latitud',
             'sitio.longitud',
             'destino.nombre as dependencia',
@@ -28,6 +29,11 @@ class SitiosExport implements FromCollection, WithHeadings, WithEvents, ShouldAu
         )
         ->leftJoin('destino', 'sitio.destino_id', '=', 'destino.id')
         ->get();
+        // Mapear la colección para cambiar los valores booleanos
+        $sitios->map(function ($sitio) {
+            $sitio->cartel = $sitio->cartel ? 'SI' : 'NO';
+            return $sitio;
+        });
         return $sitios;
     }
 
@@ -36,6 +42,7 @@ class SitiosExport implements FromCollection, WithHeadings, WithEvents, ShouldAu
         return [
             'ID',
             'Nombre',
+            'Cartel',
             'Latitud',
             'Longitud',
             'Dependencia',

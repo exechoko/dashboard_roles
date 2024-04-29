@@ -138,6 +138,7 @@ class Mapacontroller extends Controller
             'tipo_camara.modelo as modelo',
             'destino.nombre as dependencia',
             DB::raw('sitio.nombre as sitio'),
+            DB::raw('sitio.cartel as cartel'),
             DB::raw('sitio.latitud as latitud'),
             DB::raw('sitio.longitud as longitud'),
             DB::raw('camaras.id as numero'),
@@ -189,7 +190,7 @@ class Mapacontroller extends Controller
         $domosDuales = Camara::whereHas('tipoCamara', function ($query) {
             $query->where('tipo', 'Domo Dual');
         })->count();
-        
+
         $totalCam = Camara::all()->count();
         $totalCamaras = Camara::select(
             'camaras.id',

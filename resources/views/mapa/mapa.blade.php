@@ -892,6 +892,7 @@
                     <h5>{{ $marcador['titulo'] }}</h5>
                     Tipo: <b>{{ $marcador['tipo_camara'] }}</b><br>
                     Sitio: <b>{{ $marcador['sitio'] }}</b><br>
+                    Cartel: <b>{{ ($marcador['cartel']) ? 'SI' : 'NO' }}</b><br>
                     Dependencia: <b>{{ $marcador['dependencia'] }}</b><br>
                     Etapa: <b>{{ $marcador['etapa'] }}</b><br>
                     Instalación: <b>{{ $marcador['fecha_instalacion'] }}</b><br>

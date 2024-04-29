@@ -62,7 +62,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
                                             <label for="">Dependencia</label>
                                             <select name="destino_id" id="" class="form-control select2"
@@ -77,6 +77,19 @@
                                                 @foreach ($dependencias as $d)
                                                     <option value="{{ $d->id }}">
                                                         {{ $d->nombre . ' - ' . $d->dependeDe() }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                        <div class="form-group">
+                                            <label for="">Cartel señalizador</label>
+                                            <select name="cartel" id="" class="form-control select2"
+                                                style="margin-bottom: 15px">
+                                                <option value="{{ $sitio->cartel }}">{{ ($sitio->cartel) ? 'SI' : 'NO' }}</option>
+                                                @foreach ($con_carteles as $cc)
+                                                    <option value="{{ $cc }}">
+                                                        {{ $cc }}</option>
                                                 @endforeach
                                             </select>
                                         </div>

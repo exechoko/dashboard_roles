@@ -49,7 +49,11 @@ class SitioController extends Controller
             'Oro Verde',
             'San Benito'
         ];
-        return view('sitio.crear', compact('dependencias', 'localidades'));
+        $con_carteles = [
+            'SI',
+            'NO'
+        ];
+        return view('sitio.crear', compact('dependencias', 'localidades', 'con_carteles'));
     }
 
     /**
@@ -75,6 +79,7 @@ class SitioController extends Controller
             $sitio->latitud = $request->latitud;
             $sitio->longitud = $request->longitud;
             $sitio->localidad = $request->localidad;
+            $sitio->cartel = ($request->cartel == 'SI') ? true : false;
             $sitio->destino_id = $request->destino_id;
             $sitio->observaciones = $request->observaciones;
             $sitio->save();
@@ -117,7 +122,11 @@ class SitioController extends Controller
             'Oro Verde',
             'San Benito'
         ];
-        return view('sitio.editar', compact('dependencias', 'localidades', 'sitio'));
+        $con_carteles = [
+            'SI',
+            'NO'
+        ];
+        return view('sitio.editar', compact('dependencias', 'localidades', 'sitio', 'con_carteles'));
     }
 
     /**
@@ -143,6 +152,7 @@ class SitioController extends Controller
             $sitio->latitud = $request->latitud;
             $sitio->longitud = $request->longitud;
             $sitio->localidad = $request->localidad;
+            $sitio->cartel = ($request->cartel == 'SI') ? true : false;
             $sitio->destino_id = $request->destino_id;
             $sitio->observaciones = $request->observaciones;
             $sitio->save();
@@ -166,7 +176,8 @@ class SitioController extends Controller
      */
     public function destroy(Sitio $sitio)
     {
-        //
+        $sitio->delete();
+        return redirect()->route('sitios.index');
     }
 
     public function exportExcel()

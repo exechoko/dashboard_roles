@@ -705,17 +705,21 @@
         });
 
         var marcadores = L.markerClusterGroup();
-        var markersPrimeraEtapa = L.markerClusterGroup();
-        var markersSegundaEtapa = L.markerClusterGroup();
-        var markersTerceraEtapa = L.markerClusterGroup();
+        var markersCamarasLPR = L.markerClusterGroup();
+        var markersCamarasFR = L.markerClusterGroup();
+        var markersCamarasFijas = L.markerClusterGroup();
+        var markersCamarasDomos = L.markerClusterGroup();
+        var markersCamarasDomosDuales = L.markerClusterGroup();
         var capa1 = L.layerGroup();
         var capa2 = L.geoJSON();
         var capa3 = L.geoJSON();
         var capa4 = L.layerGroup();
         var capa5 = L.layerGroup();
-        var capa6 = L.layerGroup(); //Etapa 1
-        var capa7 = L.layerGroup(); //Etapa 2
-        var capa8 = L.layerGroup(); //Etapa 3
+        var capaLPR = L.layerGroup();
+        var capaFR = L.layerGroup();
+        var capaFija = L.layerGroup();
+        var capaDomo = L.layerGroup();
+        var capaDomoDual = L.layerGroup();
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
@@ -908,20 +912,25 @@
             `);
             //.bindPopup("{{ $marcador['titulo'] }}<br>{{ $marcador['tipo_camara'] }}<br>{{ $marcador['inteligencia'] }}");
             marcadores.addLayer(marker);
-            var etapa = "{{ $marcador['etapa'] }}";
-            console.log("Etapa", etapa);
-            if (etapa.includes("1")) {
-                markersPrimeraEtapa.addLayer(marker)
-            } else if (etapa.includes("2")) {
-                markersSegundaEtapa.addLayer(marker)
-            } else {
-                markersTerceraEtapa.addLayer(marker)
+            var tipo_camara = "{{ $marcador['tipo_camara'] }}";
+            if (tipo_camara === "Fija (LPR)" || tipo_camara === "Fija (LPR AV)" || tipo_camara === "Fija (LPR NV)") {
+                markersCamarasLPR.addLayer(marker)
+            } else if (tipo_camara === "Fija (FR)") {
+                markersCamarasFR.addLayer(marker)
+            } else if (tipo_camara === "Fija") {
+                markersCamarasFijas.addLayer(marker)
+            } else if (tipo_camara === "Domo") {
+                markersCamarasDomos.addLayer(marker)
+            } else if (tipo_camara === "Domo Dual") {
+                markersCamarasDomosDuales.addLayer(marker)
             }
         @endforeach
         marcadores.addTo(capa2).addTo(capa5);
-        markersPrimeraEtapa.addTo(capa6);
-        markersSegundaEtapa.addTo(capa7);
-        markersTerceraEtapa.addTo(capa8);
+        markersCamarasLPR.addTo(capaLPR);
+        markersCamarasFR.addTo(capaFR);
+        markersCamarasFijas.addTo(capaFija);
+        markersCamarasDomos.addTo(capaDomo);
+        markersCamarasDomosDuales.addTo(capaDomoDual);
 
         @foreach ($antenas as $marcador)
             var numero = "{{ $marcador['numero'] }}";
@@ -953,13 +962,19 @@
                 'Cámaras y Comisarías': capa5,
             @endcan
             @can('ver-camara')
-                'Primera Etapa': capa6,
+                'Cámaras Fijas': capaFija,
             @endcan
             @can('ver-camara')
-                'Segunda Etapa': capa7,
+                'Cámaras FR': capaFR,
             @endcan
             @can('ver-camara')
-                'Tercera Etapa': capa8,
+                'Cámaras LPR': capaLPR,
+            @endcan
+            @can('ver-camara')
+                'Cámaras Domos': capaDomo,
+            @endcan
+            @can('ver-camara')
+                'Cámaras Domos DUALES': capaDomoDual,
             @endcan
             @can('ver-dependencia')
                 'Antenas': capa3,

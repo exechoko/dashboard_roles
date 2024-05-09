@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
+    <link rel="shortcut icon" type="image/ico" href="{{ asset('/img/logo.ico') }}">
+    <link rel="shortcut icon" sizes="192x192" href="{{ asset('/img/logo.ico') }}">
     <title>@yield('title')</title>
 
     <!-- General CSS Files -->

@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <link rel="shortcut icon" type="image/ico" href="{{ asset('/img/logo.ico') }}">
+    <link rel="shortcut icon" sizes="192x192" href="{{ asset('/img/logo.ico') }}">
     <title>C.A.R. 911</title>
     <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
     <!-- Bootstrap 4.1.1 -->

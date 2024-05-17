@@ -84,10 +84,18 @@ class CamarasExport implements FromCollection, WithHeadings, WithEvents, ShouldA
                 //Filtros en cabecera
                 $sheet->setAutoFilter('A1:' . $event->sheet->getDelegate()->getHighestColumn() . '1');
                 // Recorrer todas las columnas
-                /*foreach ($sheet->getColumnIterator() as $column) {
+                foreach ($sheet->getColumnIterator() as $column) {
                     // Establecer el ancho automático para cada columna
                     $sheet->getColumnDimension($column->getColumnIndex())->setAutoSize(true);
-                }*/
+                }
+                // Centrar el contenido de todas las celdas
+                $highestRow = $sheet->getHighestRow();
+                for ($row = 1; $row <= $highestRow; $row++) {
+                    for ($col = 'A'; $col!== 'Z'; $col++) { // Corregido para iterar hasta 'Z'
+                        $cell = $sheet->getCell($col. $row);
+                        $cell->getStyle()->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+                    }
+                }
             }
         ];
     }

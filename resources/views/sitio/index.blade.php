@@ -4,6 +4,15 @@
     <section class="section">
         <div class="section-header d-flex justify-content-between align-items-center">
             <h3 class="page__heading">Sitios</h3>
+            <div>
+                <div class="" style="float: right;">
+                    <label class="alert alert-dark" for="">Total: {{ $sitios->total() }} </label>
+                    <label class="alert alert-info ml-5" for="">Paraná: {{ $sitiosParana }}</label>
+                    <label class="alert alert-warning" for="">Cnia. Avellaneda: {{ $sitiosCniaAvellaneda }}</label>
+                    <label class="alert alert-danger" for="">San Benito: {{ $sitiosSanBenito }}</label>
+                    <label class="alert alert-success" for="">Oro Verde: {{ $sitiosOroVerde }}</label>
+                </div>
+            </div>
         </div>
         <div class="section-body">
 
@@ -14,8 +23,6 @@
                             <div class="card-body">
                                 <div class="mb-5">
                                     <a class="btn btn-success" href="{{ route('sitios.create') }}">Nuevo</a>
-                                    <label class="alert alert-secondary mb-0" style="float: right; color: black;">Registros:
-                                        {{ $sitios->total() }}</label>
                                 </div>
                                 <div class="">
                                     <form action="{{ route('sitios.export') }}" method="GET" style="display: inline;">

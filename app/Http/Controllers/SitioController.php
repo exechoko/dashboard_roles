@@ -32,7 +32,19 @@ class SitioController extends Controller
             ->orderBy('id', 'asc')
             ->paginate(100);
 
-        return view('sitio.index', compact('sitios', 'texto'));
+        $sitiosParana = Sitio::where('localidad', 'Paraná')->count();
+        $sitiosCniaAvellaneda = Sitio::where('localidad', 'Colonia Avellaneda')->count();
+        $sitiosSanBenito = Sitio::where('localidad', 'San Benito')->count();
+        $sitiosOroVerde = Sitio::where('localidad', 'Oro Verde')->count();
+
+        return view('sitio.index', compact(
+            'sitios',
+            'texto',
+            'sitiosParana',
+            'sitiosCniaAvellaneda',
+            'sitiosSanBenito',
+            'sitiosOroVerde'
+        ));
     }
 
     /**

@@ -21,8 +21,8 @@
                 @else
                     - ISSI: <b>Sin asignar</b></li>
                     @endif
-                    <!--li>GPS: <b>{{ $equipo->gps == '1' ? 'Posee' : 'No posee' }}</b></li>
-                    <li>Antena R.F.: <b>{{ $equipo->rf == '1' ? 'Posee' : 'No posee' }}</b></li-->
+                    <li>Observaciones: {{ $equipo->observaciones }}</li>
+                    <!--li>Antena R.F.: <b>{{ $equipo->rf == '1' ? 'Posee' : 'No posee' }}</b></li-->
 
 
                 </ul>

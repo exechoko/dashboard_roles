@@ -97,7 +97,7 @@
                                                 <option value="">Seleccionar tipo de movimiento</option>
                                                 @foreach ($tipos_movimiento as $tipo_movimiento)
                                                     <option value="{{ $tipo_movimiento }}">
-                                                        {{ $tipo_movimiento->nombre }}
+                                                        {{ $tipo_movimiento->nombre . ' (' . $tipo_movimiento->detalles . ')' }}
                                                     </option>
                                                 @endforeach
                                             </select>

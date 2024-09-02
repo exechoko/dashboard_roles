@@ -43,7 +43,10 @@ class FlotaGeneralController extends Controller
             $query2->where('nombre', 'like', '%' . $texto . '%');
         })->orderBy('updated_at', 'desc')->paginate(50); //->get();//->orWhere('observaciones', 'LIKE', '%' . $texto . '%')->orderBy('id', 'asc')->get();
 
-        //dd($flota);
+        // Itera sobre cada flota para obtener su último movimiento
+        foreach ($flota as $f) {
+            $f->ultimo_movimiento = $f->ultimoMovimiento();
+        }
 
         return view('flota.index', compact('flota', 'texto'));
     }

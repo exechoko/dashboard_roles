@@ -42,6 +42,11 @@ class FlotaGeneral extends Model
         return null;
     }
 
+    public function ultimoMovimiento(){
+        $hist = Historico::where('equipo_id', $this->equipo_id)->orderBy('created_at', 'desc')->first();
+        return $hist ? $hist->tipoMovimiento->nombre : null;
+    }
+
     public function auditoria(){
         return $this->hasMany(Auditoria::class);
     }

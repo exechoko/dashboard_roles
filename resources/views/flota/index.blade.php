@@ -1,5 +1,29 @@
 @extends('layouts.app')
 
+@push('styles')
+    <style>
+        /* Aquí puedes agregar tus estilos CSS */
+        .tooltip-text {
+            position: absolute;
+            white-space: normal;
+            background-color: #333;
+            color: #fff;
+            padding: 5px;
+            border-radius: 4px;
+            max-width: 400px;
+            display: none;
+            z-index: 10;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        td:hover .tooltip-text {
+            display: block;
+        }
+    </style>
+@endpush
+
 @section('content')
     <section class="section">
         <div class="section-header">
@@ -28,16 +52,17 @@
                             </form>
 
                             <div class="table-responsive">
-                                <table id="dataTable" class="table table-striped mt-2 display">
+                                <table id="dataTable" class="table table-hover mt-2 display">
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                         <th style="display: none;">ID</th>
                                         <th style="color:#fff;">TEI</th>
                                         <th style="color:#fff;">Tipo/Modelo</th>
+                                        <th style="color:#fff;">Último mov.</th>
                                         <th style="color:#fff;">Recurso asignado</th>
                                         <th style="color:#fff;">Dependencia</th>
                                         <th style="color:#fff;">Obs.</th>
                                         <!--th style="color:#fff;">Actualmente en</th-->
-                                        <th style="color:#fff; width: 150px;">Acciones</th>
+                                        <th style="color:#fff; width: 150px;"></th>
                                     </thead>
                                     <tbody>
                                         @if (count($flota) <= 0)
@@ -59,16 +84,19 @@
                                                 {{-- @include('flota.modal.editar') --}}
                                                 <tr>
                                                     <td style="display: none;">{{ $f->id }}</td>
-                                                    <td><a class="btn btn-dark"
-                                                            href="{{ route('verHistorico', $f->id) }}" target="_blank">{{ $f->equipo->tei }}</a>
+                                                    <td><a class="btn btn-dark" href="{{ route('verHistorico', $f->id) }}"
+                                                            target="_blank">{{ $f->equipo->tei }}</a>
                                                     </td>
-                                                    <td><img alt="" width="70px" id="myImg"
-                                                            src="{{ asset($f->equipo->tipo_terminal->imagen) }}"
-                                                            class="img-fluid img-thumbnail">
-                                                        {{ $f->equipo->tipo_terminal->tipo_uso->uso . ' / ' . $f->equipo->tipo_terminal->modelo }}
+                                                    <td>
+                                                        <div class="d-flex flex-column align-items-center">
+                                                            <img alt="" width="60px" id="myImg"
+                                                                src="{{ asset($f->equipo->tipo_terminal->imagen) }}"
+                                                                class="img-fluid img-thumbnail">
+                                                            <span
+                                                                style="font-size: 12px;">{{ $f->equipo->tipo_terminal->tipo_uso->uso . '/' . $f->equipo->tipo_terminal->modelo }}</span>
+                                                        </div>
                                                     </td>
-                                                    {{-- <td><a href="#"data-toggle="modal" data-toggle="modal" data-target="#ModalDetalle{{ $f->id }}"></a>{{ $f->equipo->issi }}</td> --}}
-                                                    {{-- <td>{{ $f->equipo->issi }}</td> --}}
+                                                    <td>{{ $f->ultimo_movimiento ? $f->ultimo_movimiento : '-' }}</td>
                                                     @if (is_null($f->recurso_id))
                                                         <td>-</td>
                                                     @else
@@ -80,8 +108,8 @@
                                                     @endif
 
                                                     <td>{{ $f->destino->nombre }}<br>{{ $f->destino->dependeDe() }}</td>
-                                                    <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;">
-                                                        {{ $f->observaciones }}
+                                                    <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; position: relative;" title="{{ $f->observaciones }}">
+                                                        <span class="tooltip-text">{{ $f->observaciones }}</span>
                                                     </td>
                                                     {{-- @if (is_null($f->ultimoLugar()))
                                                     <td>Sin movimientos</td>

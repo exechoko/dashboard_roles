@@ -41,10 +41,10 @@ class CamaraController extends Controller
             $query->where('tipo', 'Fija');
         })->count();
         $fijasFR = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo', 'Fija (FR)');
+            $query->where('tipo', 'Fija - FR');
         })->count();
         $fijasLPR = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo', 'Fija (LPR)')->orWhere('tipo', 'Fija (LPR NV)')->orWhere('tipo', 'Fija (LPR AV)');
+            $query->where('tipo', 'Fija - LPR')->orWhere('tipo', 'Fija - LPR NV')->orWhere('tipo', 'Fija - LPR AV');
         })->count();
         $domos = Camara::whereHas('tipoCamara', function ($query) {
             $query->where('tipo', 'Domo');

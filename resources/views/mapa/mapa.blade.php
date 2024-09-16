@@ -628,7 +628,7 @@
             </div>
         </div>
         <div class="col-lg-12">
-            <div id="map" style="height: 725px;"></div>
+            <div id="map" style="height: 525px;"></div>
         </div>
     </section>
 
@@ -913,9 +913,9 @@
             //.bindPopup("{{ $marcador['titulo'] }}<br>{{ $marcador['tipo_camara'] }}<br>{{ $marcador['inteligencia'] }}");
             marcadores.addLayer(marker);
             var tipo_camara = "{{ $marcador['tipo_camara'] }}";
-            if (tipo_camara === "Fija (LPR)" || tipo_camara === "Fija (LPR AV)" || tipo_camara === "Fija (LPR NV)") {
+            if (tipo_camara === "Fija - LPR" || tipo_camara === "Fija - LPR AV" || tipo_camara === "Fija - LPR NV") {
                 markersCamarasLPR.addLayer(marker)
-            } else if (tipo_camara === "Fija (FR)") {
+            } else if (tipo_camara === "Fija - FR") {
                 markersCamarasFR.addLayer(marker)
             } else if (tipo_camara === "Fija") {
                 markersCamarasFijas.addLayer(marker)

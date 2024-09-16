@@ -141,12 +141,12 @@
         }
 
         /*.etiqueta {
-                                                                                                                                position: absolute;
-                                                                                                                                top: 50px;
+                                                                                                                                                position: absolute;
+                                                                                                                                                top: 50px;
 
-                                                                                                                                left: 50%;
-                                                                                                                                transform: translateX(-50%);
-                                                                                                                            }*/
+                                                                                                                                                left: 50%;
+                                                                                                                                                transform: translateX(-50%);
+                                                                                                                                            }*/
 
 
 
@@ -721,9 +721,50 @@
         var capaDomo = L.layerGroup();
         var capaDomoDual = L.layerGroup();
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // Define las capas para el mapa común y el híbrido
+        var mapaComun = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(mymap);
+        });
+
+        var mapaHibrido = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        });
+        // Añade el mapa común por defecto
+        mymap.addLayer(mapaComun);
+        // Estado inicial del mapa
+        var esHibrido = false;
+        // Crear el botón y posicionarlo en la parte inferior izquierda
+        var toggleControl = L.control({
+            position: 'bottomleft'
+        });
+
+        toggleControl.onAdd = function() {
+            var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+            div.innerHTML = '<button id="toggleMapBtn" class="btn btn-primary">Mapa Híbrido</button>';
+            div.style.backgroundColor = 'white';
+            div.style.padding = '5px';
+            // Previene que el mapa se desplace cuando haces clic en el botón
+            L.DomEvent.disableClickPropagation(div);
+            return div;
+        };
+
+        // Añadir el control al mapa
+        toggleControl.addTo(mymap);
+        // Maneja el evento de clic en el botón toggle
+        document.getElementById('toggleMapBtn').addEventListener('click', function() {
+            if (esHibrido) {
+                // Cambia al mapa común
+                mymap.removeLayer(mapaHibrido);
+                mymap.addLayer(mapaComun);
+                this.textContent = 'Mapa Híbrido'; // Cambia el texto del botón
+            } else {
+                // Cambia al mapa híbrido
+                mymap.removeLayer(mapaComun);
+                mymap.addLayer(mapaHibrido);
+                this.textContent = 'Mapa Común'; // Cambia el texto del botón
+            }
+            esHibrido = !esHibrido; // Alterna el estado
+        });
 
         var etiquetaControl = L.control({
             position: 'topright' /*'topright'*/ /*'bottomright'*/
@@ -896,7 +937,7 @@
                     <h5>{{ $marcador['titulo'] }}</h5>
                     Tipo: <b>{{ $marcador['tipo_camara'] }}</b><br>
                     Sitio: <b>{{ $marcador['sitio'] }}</b><br>
-                    Señalizado: <b>{{ ($marcador['cartel']) ? 'SI' : 'NO' }}</b><br>
+                    Señalizado: <b>{{ $marcador['cartel'] ? 'SI' : 'NO' }}</b><br>
                     Dependencia: <b>{{ $marcador['dependencia'] }}</b><br>
                     Etapa: <b>{{ $marcador['etapa'] }}</b><br>
                     Instalación: <b>{{ $marcador['fecha_instalacion'] }}</b><br>

@@ -430,18 +430,10 @@ class FlotaGeneralController extends Controller
 
     public function update_historico(Request $request, $id)
     {
-        dd($request->all());
         $desdeEquipo = false;
         try {
             DB::beginTransaction();
             $historico = Historico::find($id);
-            $historico->tipo_movimiento_id = ($request->tipo_movimiento != '-') ? $request->tipo_movimiento : null;
-            $historico->fecha_asignacion = $request->fecha_asignacion;
-            $historico->recurso_id = ($request->recurso != '-') ? $request->recurso : null;
-            $historico->destino_id = ($request->dependencia != '-') ? $request->dependencia : null;
-            $historico->ticket_per = $request->ticket_per;
-            $historico->recurso_desasignado = $request->recurso_desasignado;
-            $historico->vehiculo_desasignado = $request->vehiculo_desasignado;
             $historico->observaciones = $request->observaciones;
             $historico->save();
 
@@ -451,10 +443,6 @@ class FlotaGeneralController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
             return back()->with('error', 'Error al guardar el histórico');
-            /*return response()->json([
-                'result' => 'ERROR',
-                'message' => $e->getMessage()
-              ]);*/
         }
         return view('flota.historico', compact('hist', 'flota', 'desdeEquipo'));
     }

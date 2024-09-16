@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\Camara;
 use App\Models\Comisaria;
 use App\Models\Departamental;
@@ -9,6 +10,7 @@ use App\Models\Destino;
 use App\Models\Direccion;
 use App\Models\Division;
 use App\Models\Seccion;
+use App\Models\Sitio;
 use App\Models\TipoCamara;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -144,10 +146,10 @@ class Mapacontroller extends Controller
             DB::raw('camaras.id as numero'),
             DB::raw('camaras.nombre as titulo')
         )
-        ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
-        ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
-        ->leftJoin('destino', 'sitio.destino_id', '=', 'destino.id')
-        ->get()->toArray();
+            ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+            ->leftJoin('destino', 'sitio.destino_id', '=', 'destino.id')
+            ->get()->toArray();
         //dd($camaras);
 
         $antenas = [
@@ -186,7 +188,7 @@ class Mapacontroller extends Controller
         })->count();
         $domos = Camara::whereHas('tipoCamara', function ($query) {
             $query->where('tipo', 'Domo');
-        })->count();//Camara::where('tipo', 'Domo')->count();
+        })->count(); //Camara::where('tipo', 'Domo')->count();
         $domosDuales = Camara::whereHas('tipoCamara', function ($query) {
             $query->where('tipo', 'Domo Dual');
         })->count();
@@ -196,20 +198,38 @@ class Mapacontroller extends Controller
             'camaras.id',
             'tipo_camara.canales as canales'
         )
-        ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
-        ->get();
+            ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+            ->get();
         $cantidadCanales = 0;
         foreach ($totalCamaras as $camara) {
-            //dd($camara);
-            //$tipoCamara = $camara->tipoCamara;
             $cantidadCanales += $camara->canales;
-            //dd($cantidadCanales);
-            //$totalMultiplicado += $cantidadCanales;
         }
-        //dd($cantidadCanales);
-        //dd($jurisdicciones);
 
-        return view('mapa.mapa',
+        // Contar las cámaras en Paraná
+        $camarasParana = Camara::join('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->where('sitio.localidad', 'Paraná')
+            ->count();
+        // Contar las cámaras en San Benito
+        $camarasSanBenito = Camara::join('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->where('sitio.localidad', 'San Benito')
+            ->count();
+        // Contar las cámaras en Colonia Avellaneda
+        $camarasCniaAvellaneda = Camara::join('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->where('sitio.localidad', 'Colonia Avellaneda')
+            ->count();
+        // Contar las cámaras en Oro Verde
+        $camarasOroVerde = Camara::join('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->where('sitio.localidad', 'Oro Verde')
+            ->count();
+
+        $sitios = Sitio::count();
+        $sitiosParana = Sitio::where('localidad', 'Paraná')->count();
+        $sitiosCniaAvellaneda = Sitio::where('localidad', 'Colonia Avellaneda')->count();
+        $sitiosSanBenito = Sitio::where('localidad', 'San Benito')->count();
+        $sitiosOroVerde = Sitio::where('localidad', 'Oro Verde')->count();
+
+        return response()->view(
+            'mapa.mapa',
             [
                 'comisarias' => $comisarias,
                 'antenas' => $antenas,
@@ -217,10 +237,20 @@ class Mapacontroller extends Controller
                 'canales' => $cantidadCanales,
                 'jurisdicciones' => $jurisdicciones,
                 'fijas' => $fijas,
-                'fijasFR' => $fijasFR, 'fijasLPR' => $fijasLPR,
+                'fijasFR' => $fijasFR,
+                'fijasLPR' => $fijasLPR,
                 'domos' => $domos,
                 'domosDuales' => $domosDuales,
-                'total' => $totalCam
+                'total' => $totalCam,
+                'sitios' => $sitios,
+                'sitiosParana' => $sitiosParana,
+                'sitiosCniaAvellaneda' => $sitiosCniaAvellaneda,
+                'sitiosSanBenito' => $sitiosSanBenito,
+                'sitiosOroVerde' => $sitiosOroVerde,
+                'camarasParana' => $camarasParana, // Agrega esta línea
+                'camarasSanBenito' => $camarasSanBenito, // Agrega esta línea
+                'camarasCniaAvellaneda' => $camarasCniaAvellaneda, // Agrega esta línea
+                'camarasOroVerde' => $camarasOroVerde // Agrega esta línea
             ]
         );
     }

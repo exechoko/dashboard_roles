@@ -141,12 +141,12 @@
         }
 
         /*.etiqueta {
-                                                                                                                                                position: absolute;
-                                                                                                                                                top: 50px;
+                                                                                                                                                        position: absolute;
+                                                                                                                                                        top: 50px;
 
-                                                                                                                                                left: 50%;
-                                                                                                                                                transform: translateX(-50%);
-                                                                                                                                            }*/
+                                                                                                                                                        left: 50%;
+                                                                                                                                                        transform: translateX(-50%);
+                                                                                                                                                    }*/
 
 
 
@@ -604,10 +604,10 @@
 
 @section('content')
     <section class="section">
-        <div class="section-header d-flex justify-content-between align-items-center">
-            <div class="">
+        <div class="section-header d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
+            <div class="w-100">
                 <div class="form-group">
-                    <select name="camara_select" id="camara_select" class="form-control select2" style="margin-bottom: 15px">
+                    <select name="camara_select" id="camara_select" class="form-control select2 mb-3">
                         <option value="">Buscar cámara</option>
                         @foreach ($camaras as $camara)
                             <option value="{{ $camara['numero'] }}" data-lat="{{ $camara['latitud'] }}"
@@ -616,18 +616,45 @@
                         @endforeach
                     </select>
                 </div>
-            </div>
-            <div class="ml-5" style="float: right;">
-                <label class="alert alert-info" for="">Fijas: {{ $fijas }}</label>
-                <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
-                <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
-                <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
-                <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
-                <label class="alert alert-dark" for="">Cámaras: {{ $total }} / Canales:
-                    {{ $canales }}</label>
+                <!-- Línea 1: Cámaras por tipo -->
+                <div class="mt-2">
+                    <h6>Cámaras por tipo</h6>
+                    <div class="d-flex flex-wrap">
+                        <span class="badge badge-info p-2 m-1">Fijas {{ $fijas }}</span>
+                        <span class="badge badge-warning p-2 m-1">Fijas FR {{ $fijasFR }}</span>
+                        <span class="badge badge-danger p-2 m-1">Fijas LPR {{ $fijasLPR }}</span>
+                        <span class="badge badge-success p-2 m-1">Domos {{ $domos }}</span>
+                        <span class="badge badge-primary p-2 m-1">Domos Duales {{ $domosDuales }}</span>
+                        <span class="badge badge-dark p-2 m-1">Cámaras {{ $total }}</span>
+                        <span class="badge badge-dark p-2 m-1">Canales {{ $canales }}</span>
+                    </div>
+                </div>
+                <!-- Línea 2: Cámaras por ciudad -->
+                <div class="mt-2">
+                    <h6>Cámaras por ciudad</h6>
+                    <div class="d-flex flex-wrap">
+                        <span class="badge badge-info p-2 m-1">Paraná: {{ $camarasParana }}</span>
+                        <span class="badge badge-warning p-2 m-1">Cnia. Avellaneda: {{ $camarasCniaAvellaneda }}</span>
+                        <span class="badge badge-danger p-2 m-1">San Benito: {{ $camarasSanBenito }}</span>
+                        <span class="badge badge-success p-2 m-1">Oro Verde: {{ $camarasOroVerde }}</span>
+                    </div>
+                </div>
+                <!-- Línea 3: Sitios por ciudad -->
+                <div class="mt-2">
+                    <h6>Sitios</h6>
+                    <div class="d-flex flex-wrap">
+                        <span class="badge badge-info p-2 m-1">Paraná: {{ $sitiosParana }}</span>
+                        <span class="badge badge-warning p-2 m-1">Cnia. Avellaneda: {{ $sitiosCniaAvellaneda }}</span>
+                        <span class="badge badge-danger p-2 m-1">San Benito: {{ $sitiosSanBenito }}</span>
+                        <span class="badge badge-success p-2 m-1">Oro Verde: {{ $sitiosOroVerde }}</span>
+                        <span class="badge badge-dark p-2 m-1">Total sitios: {{ $sitios }}</span>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="col-lg-12">
+
+        <!-- El mapa -->
+        <div class="col-lg-12 mt-3">
             <div id="map" style="height: 525px;"></div>
         </div>
     </section>

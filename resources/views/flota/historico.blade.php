@@ -79,7 +79,7 @@
                             </div>
 
                             <div class="table-responsive">
-                                <table id="dataTable" class="table table-bordered mt-2">
+                                <table id="dataTable" class="table table-hover mt-2 display">
                                     <thead style="background: linear-gradient(45deg,#888888, #5f5e63)">
                                         <th style="display: none;">ID</th>
                                         <th style="color:#fff;">Movimiento</th>
@@ -104,7 +104,7 @@
                                                 @if (is_null($h->tipoMovimiento))
                                                     <td>-</td>
                                                 @else
-                                                    <td>{{ $h->tipoMovimiento->nombre }}</td>
+                                                    <td><span class="badge badge-success">{{ $h->tipoMovimiento->nombre }}</span></td>
                                                 @endif
                                                 <td>{{ Carbon\Carbon::parse($h->fecha_asignacion)->format('d/m/Y H:i') }}</td>
                                                 @if (is_null($h->recurso_asignado))

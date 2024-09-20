@@ -1,10 +1,8 @@
 <form action="{{ route('flota.update_historico', $h->id) }}" method="post" enctype="multipart/form-data">
-
     {{ csrf_field() }}
     <div class="modal fade" id="ModalEditar{{ $h->id }}" tabindex="-1" data-backdrop="false" role="dialog"
         aria-hidden="true">
         <div class="modal-dialog modal-lg" role="document">
-
             <div class="modal-content">
                 <div class="modal-header">
                     <h4 class="modal-title">Editar Histórico</h4>
@@ -16,7 +14,9 @@
                     <div class="col-xs-12">
                         <div class="form-group">
                             <strong>Observaciones</strong>
-                            {!! Form::textarea('observaciones', $h->observaciones, ['placeholder' => $h->observaciones, 'class' => 'form-control']) !!}
+                            <textarea name="observaciones" id="observaciones{{ $h->id }}" class="form-control"
+                                      placeholder="{{ $h->observaciones }}"
+                                      style="min-height: 200px;">{{ $h->observaciones }}</textarea>
                         </div>
                     </div>
                     <div class="col-xs-12 col-sm-12 col-md-12">
@@ -27,3 +27,4 @@
         </div>
     </div>
 </form>
+

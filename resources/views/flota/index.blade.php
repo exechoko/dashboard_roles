@@ -57,6 +57,7 @@
                                         <th style="display: none;">ID</th>
                                         <th style="color:#fff;">TEI</th>
                                         <th style="color:#fff;">Tipo/Modelo</th>
+                                        <th style="color:#fff;">Fecha</th>
                                         <th style="color:#fff;">Último mov.</th>
                                         <th style="color:#fff;">Recurso asignado</th>
                                         <th style="color:#fff;">Dependencia</th>
@@ -96,6 +97,7 @@
                                                                 style="font-size: 12px;">{{ $f->equipo->tipo_terminal->tipo_uso->uso . '/' . $f->equipo->tipo_terminal->modelo }}</span>
                                                         </div>
                                                     </td>
+                                                    <td>{{ $f->fecha_ultimo_mov ? $f->fecha_ultimo_mov : '-' }}</td>
                                                     <td>{{ $f->ultimo_movimiento ? $f->ultimo_movimiento : '-' }}</td>
                                                     @if (is_null($f->recurso_id))
                                                         <td>-</td>

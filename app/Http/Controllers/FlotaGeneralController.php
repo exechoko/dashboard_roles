@@ -45,7 +45,9 @@ class FlotaGeneralController extends Controller
 
         // Itera sobre cada flota para obtener su último movimiento
         foreach ($flota as $f) {
-            $f->ultimo_movimiento = $f->ultimoMovimiento();
+            //dd('aca');
+            $f->ultimo_movimiento = $f->ultimoMovimiento()->tipoMovimiento->nombre;
+            $f->fecha_ultimo_mov = Carbon::parse($f->ultimoMovimiento()->fecha_asignacion)->format('d/m/Y H:i');
         }
 
         return view('flota.index', compact('flota', 'texto'));

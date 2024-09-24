@@ -83,10 +83,19 @@
                                         </div>
                                     </div>
 
-                                    <div class="col-xs-12 col-sm-12 col-md-12" id="label_fecha_asignacion">
+                                    <div class="col-xs-12 col-sm-12 col-md-6" id="label_fecha_asignacion">
                                         <div class="form-group">
                                             <label for="fecha_asignacion">Fecha y Hora</label>
                                             {!! Form::datetimeLocal('fecha_asignacion', '') !!}
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                        <div class="form-group d-flex align-items-center">
+                                            <label class="mr-2">Solo modificar historico</label>
+                                            <label class="custom-switch mt-2 mb-0">
+                                                <input type="checkbox" name="solo_modificar_historico" class="custom-switch-input">
+                                                <span class="custom-switch-indicator"></span>
+                                            </label>
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6">

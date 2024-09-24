@@ -111,7 +111,7 @@
 
                                                     <td>{{ $f->destino->nombre }}<br>{{ $f->destino->dependeDe() }}</td>
                                                     <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; position: relative;" title="{{ $f->observaciones }}">
-                                                        <span class="tooltip-text">{{ $f->observaciones }}</span>
+                                                        <span class="tooltip-text">{{ $f->observaciones_ultimo_mov }}</span>
                                                     </td>
                                                     {{-- @if (is_null($f->ultimoLugar()))
                                                     <td>Sin movimientos</td>

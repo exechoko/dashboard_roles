@@ -93,7 +93,8 @@
                                         <div class="form-group d-flex align-items-center">
                                             <label class="mr-2">Solo modificar historico</label>
                                             <label class="custom-switch mt-2 mb-0">
-                                                <input type="checkbox" name="solo_modificar_historico" class="custom-switch-input">
+                                                <input type="checkbox" name="solo_modificar_historico"
+                                                    class="custom-switch-input">
                                                 <span class="custom-switch-indicator"></span>
                                             </label>
                                         </div>
@@ -121,7 +122,8 @@
                                     <div class="col-xs-12 col-sm-12 col-md-12" id="equipoReemplazo">
                                         <div class="form-group">
                                             <label for="equipoReemplazo">Equipo por el que se reemplaza</label>
-                                            <select name="equipoReemplazo" id="equipoReemplazo" class="form-control select2" style="width: 100%; margin-bottom: 15px">
+                                            <select name="equipoReemplazo" id="equipoReemplazo" class="form-control select2"
+                                                style="width: 100%; margin-bottom: 15px">
                                                 <option value="">Seleccionar un equipo que estan en stock</option>
                                                 @foreach ($flotas_stock as $flota)
                                                     <option value="{{ $flota->equipo->id }}">
@@ -171,6 +173,16 @@
     </section>
     <script type="text/javascript">
         $(document).ready(function() {
+            $('.select2').select2({
+                width: '100%'
+            });
+            // Forzar el foco en el campo de búsqueda cuando se abre el Select2
+            $(document).on('select2:open', () => {
+                let select2Field = document.querySelector('.select2-search__field');
+                if (select2Field) {
+                    select2Field.focus();
+                }
+            });
             $('#dependencia').on('change', function() {
                 var dependenciaId = this.value;
                 $('#recurso').html('');

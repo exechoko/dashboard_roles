@@ -54,7 +54,8 @@
                                             <label for="estado">Estado</label>
                                             <select name="estado" id="" class="form-control select2"
                                                 style="margin-bottom: 15px">
-                                                <option value="{{ $equipo->estado->id }}">{{ $equipo->estado->nombre }}</option>
+                                                <option value="{{ $equipo->estado->id }}">{{ $equipo->estado->nombre }}
+                                                </option>
                                                 @foreach ($estados as $estado)
                                                     <option value="{{ $estado->id }}">
                                                         {{ $estado->nombre }}
@@ -93,55 +94,55 @@
                                         </div>
                                     </div>
                                     <!--div class="col-xs-12 col-sm-12 col-md-3">
-                                        <div class="form-group">
-                                            <label for="gps">Con GPS</label>
-                                            {!! Form::checkbox('gps', 'gps', $equipo->gps == 1 ? true : false) !!}
+                                            <div class="form-group">
+                                                <label for="gps">Con GPS</label>
+                                                {!! Form::checkbox('gps', 'gps', $equipo->gps == 1 ? true : false) !!}
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="desc_gps">Descripción GPS</label>
+                                                <input type="text" name="desc_gps" class="form-control"
+                                                    value="{{ $equipo->desc_gps }}">
+                                            </div>
                                         </div>
-                                        <div class="form-group">
-                                            <label for="desc_gps">Descripción GPS</label>
-                                            <input type="text" name="desc_gps" class="form-control"
-                                                value="{{ $equipo->desc_gps }}">
+                                        <div class="col-xs-12 col-sm-12 col-md-3">
+                                            <div class="form-group">
+                                                <label for="frente_remoto">Con Frente Remoto</label>
+                                                {!! Form::checkbox('frente_remoto', 'frente_remoto', $equipo->frente_remoto == 1 ? true : false) !!}
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="desc_frente">Descripción Frente Remoto</label>
+                                                <input type="text" name="desc_frente" class="form-control"
+                                                    value="{{ $equipo->desc_frente }}">
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-3">
-                                        <div class="form-group">
-                                            <label for="frente_remoto">Con Frente Remoto</label>
-                                            {!! Form::checkbox('frente_remoto', 'frente_remoto', $equipo->frente_remoto == 1 ? true : false) !!}
+                                        <div class="col-xs-12 col-sm-12 col-md-3">
+                                            <div class="form-group">
+                                                <label for="rf">Con Antena R.F. </label>
+                                                {!! Form::checkbox('rf', 'rf', $equipo->rf == 1 ? true : false) !!}
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="desc_rf">Descripción Antena R.F.</label>
+                                                <input type="text" name="desc_rf" class="form-control"
+                                                    value="{{ $equipo->desc_rf }}">
+                                            </div>
                                         </div>
-                                        <div class="form-group">
-                                            <label for="desc_frente">Descripción Frente Remoto</label>
-                                            <input type="text" name="desc_frente" class="form-control"
-                                                value="{{ $equipo->desc_frente }}">
+                                        <div class="col-xs-12 col-sm-12 col-md-3">
+                                            <div class="form-group">
+                                                <label for="kit_inst">Con Kit de instalación </label>
+                                                {!! Form::checkbox('kit_inst', 'kit_inst', $equipo->kit_inst == 1 ? true : false) !!}
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="desc_kit_inst">Descripción del kit de instalación</label>
+                                                <input type="text" name="desc_kit_inst" class="form-control"
+                                                    value="{{ $equipo->desc_kit_inst }}">
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-3">
-                                        <div class="form-group">
-                                            <label for="rf">Con Antena R.F. </label>
-                                            {!! Form::checkbox('rf', 'rf', $equipo->rf == 1 ? true : false) !!}
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="desc_rf">Descripción Antena R.F.</label>
-                                            <input type="text" name="desc_rf" class="form-control"
-                                                value="{{ $equipo->desc_rf }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-3">
-                                        <div class="form-group">
-                                            <label for="kit_inst">Con Kit de instalación </label>
-                                            {!! Form::checkbox('kit_inst', 'kit_inst', $equipo->kit_inst == 1 ? true : false) !!}
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="desc_kit_inst">Descripción del kit de instalación</label>
-                                            <input type="text" name="desc_kit_inst" class="form-control"
-                                                value="{{ $equipo->desc_kit_inst }}">
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
-                                        <div class="form-group">
-                                            <label for="operativo">Operativo</label>
-                                            {!! Form::checkbox('operativo', 'operativo', $equipo->operativo == 1 ? true : false) !!}
-                                        </div>
-                                    </div-->
+                                        <div class="col-xs-12 col-sm-12 col-md-12">
+                                            <div class="form-group">
+                                                <label for="operativo">Operativo</label>
+                                                {!! Form::checkbox('operativo', 'operativo', $equipo->operativo == 1 ? true : false) !!}
+                                            </div>
+                                        </div-->
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>
@@ -158,12 +159,20 @@
             </div>
         </div>
     </section>
-@endsection
 
-<!--script>
-    var msg = '{{Session::get('alert')}}';
-    var exist = '{{Session::has('alert')}}';
-    if(exist){
-      alert(msg);
-    }
-</script-->
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2({
+                width: '100%'
+            });
+
+            // Forzar el foco en el campo de búsqueda cuando se abre el Select2
+            $(document).on('select2:open', () => {
+                let select2Field = document.querySelector('.select2-search__field');
+                if (select2Field) {
+                    select2Field.focus();
+                }
+            });
+        });
+    </script>
+@endsection

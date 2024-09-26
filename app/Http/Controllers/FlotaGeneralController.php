@@ -425,8 +425,16 @@ class FlotaGeneralController extends Controller
         $desdeEquipo = false;
         $flota = FlotaGeneral::find($id);
 
-        $hist = Historico::where('equipo_id', $flota->equipo->id)->orderBy('fecha_asignacion', 'desc')->get();
-        //dd($hist);
+        $hist = Historico::where('equipo_id', $flota->equipo->id)
+            ->orderBy('fecha_asignacion', 'desc')
+            ->get();
+
+        // Decodificar las rutas de las imágenes si están en formato JSON
+        foreach ($hist as $h) {
+            if ($h->rutas_imagenes) {
+                $h->rutas_imagenes = json_decode($h->rutas_imagenes);
+            }
+        }
 
         return view('flota.historico', compact('hist', 'flota', 'desdeEquipo'));
     }
@@ -555,14 +563,35 @@ class FlotaGeneralController extends Controller
 
     public function update(Request $request, $id)
     {
-        //dd($request->all(), $id);
         request()->validate([
             'tipo_movimiento' => 'required',
             'equipo' => 'required',
             'fecha_asignacion' => 'required',
+            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
+
+        $rutasImagenes = [];
+        // Manejo de la imagen 1
+        if ($request->hasFile('imagen1')) {
+            $rutaImagen1 = $request->file('imagen1')->store('anexos', 'public');
+            $rutasImagenes[] = 'storage/' . $rutaImagen1;
+        }
+
+        // Manejo de la imagen 2
+        if ($request->hasFile('imagen2')) {
+            $rutaImagen2 = $request->file('imagen2')->store('anexos', 'public');
+            $rutasImagenes[] = 'storage/' . $rutaImagen2;
+        }
+
+        // Manejo del archivo adjunto
+        if ($request->hasFile('archivo')) {
+            $rutaArchivo = $request->file('archivo')->store('anexos', 'public');
+            $rutasImagenes[] = 'storage/' . $rutaArchivo; // Esto guardará la ruta del archivo en el mismo campo JSON
+        }
         $soloModificaHistorico = (isset($request->solo_modificar_historico)) ? true : false;
         $jsonData = json_decode($request->tipo_movimiento);
         $id_tipo_movimiento = $jsonData->id;
@@ -614,6 +643,7 @@ class FlotaGeneralController extends Controller
                 $historico->observaciones = $request->observaciones;
                 $historico->tipo_movimiento_id = $tipo_de_mov->id;
                 $historico->fecha_asignacion = $request->fecha_asignacion;
+                $historico->rutas_imagenes = json_encode($rutasImagenes);
                 if ($tipo_de_mov->id != $id_reemplazo) {
                     $historico->destino_id = $request->dependencia;
                 }
@@ -833,7 +863,7 @@ class FlotaGeneralController extends Controller
 
     private function cambiarEstadoAlEquipo($id, $tipo_de_mov_id, $soloModificaHistorico)
     {
-        if($soloModificaHistorico){
+        if ($soloModificaHistorico) {
             return;
         }
         try {

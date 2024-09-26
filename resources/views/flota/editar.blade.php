@@ -29,7 +29,7 @@
                                 </div>
                             @endif
 
-                            <form action="{{ route('flota.update', $flota->id) }}" method="POST">
+                            <form action="{{ route('flota.update', $flota->id) }}" method="POST" enctype="multipart/form-data">
                                 @csrf
                                 @method('PUT')
                                 <div class="row">
@@ -152,6 +152,24 @@
                                             <label for="recurso">Recurso al que se asigna</label>
                                             <select class="form-control select2" name="recurso" id="recurso"
                                                 style="margin-bottom: 15px; width: 100%;"></select>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                        <div class="form-group">
+                                            <label for="imagen1">Imagen 1</label>
+                                            <input type="file" name="imagen1" class="form-control" accept="image/*">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                        <div class="form-group">
+                                            <label for="imagen2">Imagen 2</label>
+                                            <input type="file" name="imagen2" class="form-control" accept="image/*">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                        <div class="form-group">
+                                            <label for="archivo">Archivo adjunto</label>
+                                            <input type="file" name="archivo" class="form-control" accept=".pdf,.doc,.docx,.xlsx,.zip,.rar">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">

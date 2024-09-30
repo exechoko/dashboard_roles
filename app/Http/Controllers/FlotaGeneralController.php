@@ -467,22 +467,22 @@ class FlotaGeneralController extends Controller
             // Manejo de la imagen 1
             if ($request->hasFile('imagen1')) {
                 // Almacenar en el disco 'anexos' y obtener la ruta
-                $rutaImagen1 = $request->file('imagen1')->store('anexos', 'anexos'); // Cambiar 'public' por 'anexos'
-                $rutasImagenes[] = 'storage/anexos/' . $rutaImagen1; // Asegúrate de que la ruta esté bien construida
+                $rutaImagen1 = $request->file('imagen1')->store('anexos', 'public'); // Cambiar 'public' por 'anexos'
+                $rutasImagenes[] = 'storage/' . $rutaImagen1; // Asegúrate de que la ruta esté bien construida
             }
 
             // Manejo de la imagen 2
             if ($request->hasFile('imagen2')) {
                 // Almacenar en el disco 'anexos' y obtener la ruta
-                $rutaImagen2 = $request->file('imagen2')->store('anexos', 'anexos'); // Cambiar 'public' por 'anexos'
-                $rutasImagenes[] = 'storage/anexos/' . $rutaImagen2; // Asegúrate de que la ruta esté bien construida
+                $rutaImagen2 = $request->file('imagen2')->store('anexos', 'public'); // Cambiar 'public' por 'anexos'
+                $rutasImagenes[] = 'storage/' . $rutaImagen2; // Asegúrate de que la ruta esté bien construida
             }
 
             // Manejo del archivo adjunto
             if ($request->hasFile('archivo')) {
                 // Almacenar en el disco 'anexos' y obtener la ruta
-                $rutaArchivo = $request->file('archivo')->store('anexos', 'anexos'); // Cambiar 'public' por 'anexos'
-                $rutasImagenes[] = 'storage/anexos/' . $rutaArchivo; // Asegúrate de que la ruta esté bien construida
+                $rutaArchivo = $request->file('archivo')->store('anexos', 'public'); // Cambiar 'public' por 'anexos'
+                $rutasImagenes[] = 'storage/' . $rutaArchivo; // Asegúrate de que la ruta esté bien construida
             }
 
             // Guardar las rutas de archivos en la base de datos

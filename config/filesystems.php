@@ -45,7 +45,7 @@ return [
         'anexos' => [
             'driver' => 'local',
             'root' => env('ANEXOS_PATH', storage_path('app/public/anexos')),
-            'url' => env('APP_URL') . '/storage/anexos',
+            'url' => env('APP_URL') . '/anexos',
             'visibility' => 'public',
         ],
 

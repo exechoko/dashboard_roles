@@ -467,22 +467,22 @@ class FlotaGeneralController extends Controller
             // Manejo de la imagen 1
             if ($request->hasFile('imagen1')) {
                 // Almacenar en el disco 'anexos' y obtener la ruta
-                $rutaImagen1 = $request->file('imagen1')->store('anexos', 'public'); // Cambiar 'public' por 'anexos'
-                $rutasImagenes[] = 'storage/' . $rutaImagen1; // Asegúrate de que la ruta esté bien construida
+                $rutaImagen1 = $request->file('imagen1')->store('', 'anexos'); // Cambiar 'public' por 'anexos'
+                $rutasImagenes[] = 'anexos/' . $rutaImagen1; // Asegúrate de que la ruta esté bien construida
             }
 
             // Manejo de la imagen 2
             if ($request->hasFile('imagen2')) {
                 // Almacenar en el disco 'anexos' y obtener la ruta
-                $rutaImagen2 = $request->file('imagen2')->store('anexos', 'public'); // Cambiar 'public' por 'anexos'
-                $rutasImagenes[] = 'storage/' . $rutaImagen2; // Asegúrate de que la ruta esté bien construida
+                $rutaImagen2 = $request->file('imagen2')->store('', 'anexos'); // Cambiar 'public' por 'anexos'
+                $rutasImagenes[] = 'anexos/' . $rutaImagen2; // Asegúrate de que la ruta esté bien construida
             }
 
             // Manejo del archivo adjunto
             if ($request->hasFile('archivo')) {
                 // Almacenar en el disco 'anexos' y obtener la ruta
-                $rutaArchivo = $request->file('archivo')->store('anexos', 'public'); // Cambiar 'public' por 'anexos'
-                $rutasImagenes[] = 'storage/' . $rutaArchivo; // Asegúrate de que la ruta esté bien construida
+                $rutaArchivo = $request->file('archivo')->store('', 'anexos'); // Cambiar 'public' por 'anexos'
+                $rutasImagenes[] = 'anexos/' . $rutaArchivo; // Asegúrate de que la ruta esté bien construida
             }
 
             // Guardar las rutas de archivos en la base de datos
@@ -550,15 +550,15 @@ class FlotaGeneralController extends Controller
         for ($i = 1; $i <= 10; $i++) {
             $inputName = 'imagen' . $i;
             if ($request->hasFile($inputName)) {
-                $rutaImagen = $request->file($inputName)->store('anexos', 'public');
-                $rutasImagenes[] = 'storage/' . $rutaImagen;
+                $rutaImagen = $request->file($inputName)->store('', 'anexos');
+                $rutasImagenes[] = 'anexos/' . $rutaImagen;
             }
         }
 
         // Manejo del archivo adjunto
         if ($request->hasFile('archivo')) {
-            $rutaArchivo = $request->file('archivo')->store('anexos', 'public');
-            $rutasImagenes[] = 'storage/' . $rutaArchivo; // Esto guardará la ruta del archivo en el mismo campo JSON
+            $rutaArchivo = $request->file('archivo')->store('', 'anexos');
+            $rutasImagenes[] = 'anexos/' . $rutaArchivo; // Esto guardará la ruta del archivo en el mismo campo JSON
         }
 
         $id_tipo_movimiento = $request->tipo_movimiento;
@@ -667,15 +667,15 @@ class FlotaGeneralController extends Controller
         for ($i = 1; $i <= 10; $i++) {
             $inputName = 'imagen' . $i;
             if ($request->hasFile($inputName)) {
-                $rutaImagen = $request->file($inputName)->store('anexos', 'public');
-                $rutasImagenes[] = 'storage/' . $rutaImagen;
+                $rutaImagen = $request->file($inputName)->store('', 'anexos');
+                $rutasImagenes[] = 'anexos/' . $rutaImagen;
             }
         }
 
         // Manejo del archivo adjunto
         if ($request->hasFile('archivo')) {
-            $rutaArchivo = $request->file('archivo')->store('anexos', 'public');
-            $rutasImagenes[] = 'storage/' . $rutaArchivo; // Esto guardará la ruta del archivo en el mismo campo JSON
+            $rutaArchivo = $request->file('archivo')->store('', 'anexos');
+            $rutasImagenes[] = 'anexos/' . $rutaArchivo; // Esto guardará la ruta del archivo en el mismo campo JSON
         }
         $soloModificaHistorico = (isset($request->solo_modificar_historico)) ? true : false;
         $jsonData = json_decode($request->tipo_movimiento);

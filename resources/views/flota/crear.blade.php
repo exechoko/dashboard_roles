@@ -23,7 +23,7 @@
                                 </div>
                             @endif
 
-                            <form action="{{ route('flota.store') }}" method="POST">
+                            <form action="{{ route('flota.store') }}" method="POST" enctype="multipart/form-data">
                                 @csrf
                                 <div class="row">
                                     <div class="col-xs-12 col-sm-12 col-md-4">
@@ -100,8 +100,28 @@
                                     <div class="col-xs-12 col-sm-12 col-md-12" id="label_fecha_asignacion">
                                         <div class="form-group">
                                             <label for="fecha_asignacion">Fecha de asignación</label>
-                                            {!! Form::date('fecha_asignacion', \Carbon\Carbon::now()) !!}
+                                            {!! Form::datetimeLocal('fecha_asignacion', '') !!}
                                         </div>
+                                    </div>
+                                    <div class="container col-xs-12 col-sm-12 col-md-12">
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-6">
+                                                <div class="form-group">
+                                                    <label for="archivo">Archivo adjunto</label>
+                                                    <input type="file" name="archivo" class="form-control"
+                                                        accept=".pdf,.doc,.docx,.xlsx,.zip,.rar">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <button type="button" id="addImage" class="btn btn-success">
+                                                    <i class="fas fa-plus"></i> Agregar imagen
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="row" id="imageContainer"></div>
+                                        <!-- Aquí se añadirán los nuevos campos -->
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
@@ -132,6 +152,22 @@
                 if (select2Field) {
                     select2Field.focus();
                 }
+            });
+            let imageCount = 0;
+
+            document.getElementById('addImage').addEventListener('click', function() {
+                imageCount++;
+                const newImageDiv = document.createElement('div');
+                newImageDiv.classList.add('col-xs-12', 'col-sm-12', 'col-md-4');
+
+                newImageDiv.innerHTML = `
+                    <div class="form-group">
+                        <label for="imagen${imageCount}">Imagen ${imageCount}</label>
+                        <input type="file" name="imagen${imageCount}" class="form-control" accept="image/*">
+                    </div>
+                `;
+
+                document.getElementById('imageContainer').appendChild(newImageDiv);
             });
             $('#dependencia').on('change', function() {
                 var dependenciaId = this.value;

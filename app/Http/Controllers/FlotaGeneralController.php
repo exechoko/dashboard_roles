@@ -441,20 +441,73 @@ class FlotaGeneralController extends Controller
 
     public function update_historico(Request $request, $id)
     {
+        //dd($request->all(), $id);
         $desdeEquipo = false;
         try {
             DB::beginTransaction();
+
+            // Validación de archivos
+            $request->validate([
+                'observaciones' => 'required',
+                'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048',
+                'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            ], [
+                'required' => 'El campo :attribute es necesario completar.',
+                'mimes' => 'El archivo :attribute debe ser de tipo: :values.',
+                'max' => 'El archivo :attribute no debe ser mayor a :max kilobytes.'
+            ]);
+
             $historico = Historico::find($id);
             $historico->observaciones = $request->observaciones;
+
+            // Array para guardar rutas de imágenes y archivos
+            $rutasImagenes = $historico->rutas_imagenes ? json_decode($historico->rutas_imagenes) : [];
+
+            // Manejo de la imagen 1
+            if ($request->hasFile('imagen1')) {
+                // Almacenar en el disco 'anexos' y obtener la ruta
+                $rutaImagen1 = $request->file('imagen1')->store('anexos', 'anexos'); // Cambiar 'public' por 'anexos'
+                $rutasImagenes[] = 'storage/anexos/' . $rutaImagen1; // Asegúrate de que la ruta esté bien construida
+            }
+
+            // Manejo de la imagen 2
+            if ($request->hasFile('imagen2')) {
+                // Almacenar en el disco 'anexos' y obtener la ruta
+                $rutaImagen2 = $request->file('imagen2')->store('anexos', 'anexos'); // Cambiar 'public' por 'anexos'
+                $rutasImagenes[] = 'storage/anexos/' . $rutaImagen2; // Asegúrate de que la ruta esté bien construida
+            }
+
+            // Manejo del archivo adjunto
+            if ($request->hasFile('archivo')) {
+                // Almacenar en el disco 'anexos' y obtener la ruta
+                $rutaArchivo = $request->file('archivo')->store('anexos', 'anexos'); // Cambiar 'public' por 'anexos'
+                $rutasImagenes[] = 'storage/anexos/' . $rutaArchivo; // Asegúrate de que la ruta esté bien construida
+            }
+
+            // Guardar las rutas de archivos en la base de datos
+            $historico->rutas_imagenes = json_encode($rutasImagenes);
             $historico->save();
 
-            $flota = FlotaGeneral::where('equipo_id', $historico->equipo_id)->first();
-            $hist = Historico::where('equipo_id', $flota->equipo->id)->orderBy('fecha_asignacion', 'desc')->get();
             DB::commit();
         } catch (\Exception $e) {
             DB::rollback();
-            return back()->with('error', 'Error al guardar el histórico');
+            return back()->with('error', 'Error al guardar el histórico: ' . $e->getMessage());
         }
+
+        // Cargar nuevamente los datos para la vista
+        $flota = FlotaGeneral::where('equipo_id', $historico->equipo_id)->first();
+        $hist = Historico::where('equipo_id', $flota->equipo->id)
+            ->orderBy('fecha_asignacion', 'desc')
+            ->get();
+
+        // Decodificar las rutas de las imágenes si están en formato JSON
+        foreach ($hist as $h) {
+            if ($h->rutas_imagenes) {
+                $h->rutas_imagenes = json_decode($h->rutas_imagenes);
+            }
+        }
+
         return view('flota.historico', compact('hist', 'flota', 'desdeEquipo'));
     }
 
@@ -479,9 +532,35 @@ class FlotaGeneralController extends Controller
             'dependencia' => 'required',
             'equipo' => 'required',
             'fecha_asignacion' => 'required',
+            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen4' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen5' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen6' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen7' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen8' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen9' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen10' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
+        $rutasImagenes = [];
+        for ($i = 1; $i <= 10; $i++) {
+            $inputName = 'imagen' . $i;
+            if ($request->hasFile($inputName)) {
+                $rutaImagen = $request->file($inputName)->store('anexos', 'public');
+                $rutasImagenes[] = 'storage/' . $rutaImagen;
+            }
+        }
+
+        // Manejo del archivo adjunto
+        if ($request->hasFile('archivo')) {
+            $rutaArchivo = $request->file('archivo')->store('anexos', 'public');
+            $rutasImagenes[] = 'storage/' . $rutaArchivo; // Esto guardará la ruta del archivo en el mismo campo JSON
+        }
+
         $id_tipo_movimiento = $request->tipo_movimiento;
         $tipo_de_mov = TipoMovimiento::where('id', $id_tipo_movimiento)->first();
         //Recursos que permiten multiples equipos y devolver en un array
@@ -525,6 +604,7 @@ class FlotaGeneralController extends Controller
             $historico->fecha_asignacion = $request->fecha_asignacion;
             $historico->tipo_movimiento_id = $request->tipo_movimiento;
             $historico->ticket_per = $request->ticket_per;
+            $historico->rutas_imagenes = json_encode($rutasImagenes);
             $historico->observaciones = $request->observaciones;
             $historico->save();
 
@@ -563,28 +643,33 @@ class FlotaGeneralController extends Controller
 
     public function update(Request $request, $id)
     {
+        //dd($request->all());
         request()->validate([
             'tipo_movimiento' => 'required',
             'equipo' => 'required',
             'fecha_asignacion' => 'required',
             'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen4' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen5' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen6' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen7' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen8' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen9' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen10' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
 
         $rutasImagenes = [];
-        // Manejo de la imagen 1
-        if ($request->hasFile('imagen1')) {
-            $rutaImagen1 = $request->file('imagen1')->store('anexos', 'public');
-            $rutasImagenes[] = 'storage/' . $rutaImagen1;
-        }
-
-        // Manejo de la imagen 2
-        if ($request->hasFile('imagen2')) {
-            $rutaImagen2 = $request->file('imagen2')->store('anexos', 'public');
-            $rutasImagenes[] = 'storage/' . $rutaImagen2;
+        for ($i = 1; $i <= 10; $i++) {
+            $inputName = 'imagen' . $i;
+            if ($request->hasFile($inputName)) {
+                $rutaImagen = $request->file($inputName)->store('anexos', 'public');
+                $rutasImagenes[] = 'storage/' . $rutaImagen;
+            }
         }
 
         // Manejo del archivo adjunto

@@ -29,7 +29,8 @@
                                 </div>
                             @endif
 
-                            <form action="{{ route('flota.update', $flota->id) }}" method="POST" enctype="multipart/form-data">
+                            <form action="{{ route('flota.update', $flota->id) }}" method="POST"
+                                enctype="multipart/form-data">
                                 @csrf
                                 @method('PUT')
                                 <div class="row">
@@ -154,25 +155,28 @@
                                                 style="margin-bottom: 15px; width: 100%;"></select>
                                         </div>
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
-                                        <div class="form-group">
-                                            <label for="imagen1">Imagen 1</label>
-                                            <input type="file" name="imagen1" class="form-control" accept="image/*">
+                                    <div class="container col-xs-12 col-sm-12 col-md-12">
+                                        <div class="row">
+                                            <div class="col-xs-12 col-sm-12 col-md-6">
+                                                <div class="form-group">
+                                                    <label for="archivo">Archivo adjunto</label>
+                                                    <input type="file" name="archivo" class="form-control"
+                                                        accept=".pdf,.doc,.docx,.xlsx,.zip,.rar">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                                <button type="button" id="addImage" class="btn btn-success">
+                                                    <i class="fas fa-plus"></i> Agregar imagen
+                                                </button>
+                                            </div>
                                         </div>
+
+                                        <div class="row" id="imageContainer"></div>
+                                        <!-- Aquí se añadirán los nuevos campos -->
                                     </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
-                                        <div class="form-group">
-                                            <label for="imagen2">Imagen 2</label>
-                                            <input type="file" name="imagen2" class="form-control" accept="image/*">
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-4">
-                                        <div class="form-group">
-                                            <label for="archivo">Archivo adjunto</label>
-                                            <input type="file" name="archivo" class="form-control" accept=".pdf,.doc,.docx,.xlsx,.zip,.rar">
-                                        </div>
-                                    </div>
-                                    <div class="col-xs-12 col-sm-12 col-md-12">
+
+                                    <div class="col-xs-12 col-sm-12 col-md-12 mt-3">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>
                                             <textarea class="form-control" name="observaciones" style="height: 100px"></textarea>
@@ -200,6 +204,22 @@
                 if (select2Field) {
                     select2Field.focus();
                 }
+            });
+            let imageCount = 0;
+
+            document.getElementById('addImage').addEventListener('click', function() {
+                imageCount++;
+                const newImageDiv = document.createElement('div');
+                newImageDiv.classList.add('col-xs-12', 'col-sm-12', 'col-md-4');
+
+                newImageDiv.innerHTML = `
+                    <div class="form-group">
+                        <label for="imagen${imageCount}">Imagen ${imageCount}</label>
+                        <input type="file" name="imagen${imageCount}" class="form-control" accept="image/*">
+                    </div>
+                `;
+
+                document.getElementById('imageContainer').appendChild(newImageDiv);
             });
             $('#dependencia').on('change', function() {
                 var dependenciaId = this.value;

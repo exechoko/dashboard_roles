@@ -441,51 +441,38 @@ class FlotaGeneralController extends Controller
 
     public function update_historico(Request $request, $id)
     {
-        //dd($request->all(), $id);
+        //dd($request->all());
         $desdeEquipo = false;
         try {
             DB::beginTransaction();
 
-            // Validación de archivos
             $request->validate([
                 'observaciones' => 'required',
                 'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048',
-                'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-                'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            ], [
-                'required' => 'El campo :attribute es necesario completar.',
-                'mimes' => 'El archivo :attribute debe ser de tipo: :values.',
-                'max' => 'El archivo :attribute no debe ser mayor a :max kilobytes.'
+                'nuevas_imagenes.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
 
             $historico = Historico::find($id);
             $historico->observaciones = $request->observaciones;
 
-            // Array para guardar rutas de imágenes y archivos
-            $rutasImagenes = $historico->rutas_imagenes ? json_decode($historico->rutas_imagenes) : [];
+            // Array para guardar rutas de imágenes
+            $rutasImagenes = json_decode($request->input('imagenes_actuales', '[]'));
 
-            // Manejo de la imagen 1
-            if ($request->hasFile('imagen1')) {
-                // Almacenar en el disco 'anexos' y obtener la ruta
-                $rutaImagen1 = $request->file('imagen1')->store('', 'anexos'); // Cambiar 'public' por 'anexos'
-                $rutasImagenes[] = 'anexos/' . $rutaImagen1; // Asegúrate de que la ruta esté bien construida
+            // Subir nuevas imágenes
+            if ($request->hasFile('nuevas_imagenes')) {
+                foreach ($request->file('nuevas_imagenes') as $nuevaImagen) {
+                    $ruta = $nuevaImagen->store('', 'anexos');
+                    $rutasImagenes[] = 'anexos/' . $ruta;
+                }
             }
 
-            // Manejo de la imagen 2
-            if ($request->hasFile('imagen2')) {
-                // Almacenar en el disco 'anexos' y obtener la ruta
-                $rutaImagen2 = $request->file('imagen2')->store('', 'anexos'); // Cambiar 'public' por 'anexos'
-                $rutasImagenes[] = 'anexos/' . $rutaImagen2; // Asegúrate de que la ruta esté bien construida
-            }
-
-            // Manejo del archivo adjunto
+            // Subir archivo adjunto si existe
             if ($request->hasFile('archivo')) {
-                // Almacenar en el disco 'anexos' y obtener la ruta
-                $rutaArchivo = $request->file('archivo')->store('', 'anexos'); // Cambiar 'public' por 'anexos'
-                $rutasImagenes[] = 'anexos/' . $rutaArchivo; // Asegúrate de que la ruta esté bien construida
+                $rutaArchivo = $request->file('archivo')->store('', 'anexos');
+                $rutasImagenes[] = 'anexos/' . $rutaArchivo;
             }
 
-            // Guardar las rutas de archivos en la base de datos
+            // Actualizar rutas en la base de datos
             $historico->rutas_imagenes = json_encode($rutasImagenes);
             $historico->save();
 

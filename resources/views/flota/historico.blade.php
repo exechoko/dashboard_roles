@@ -99,7 +99,9 @@
                                     </thead>
                                     <tbody>
                                         @foreach ($hist as $h)
-                                            @include('flota.modal.editar_historico')
+                                            @include('flota.modal.editar_historico', ['h' => $h])
+                                        @endforeach
+                                        @foreach ($hist as $h)
                                             <tr>
                                                 <td style="display: none;">{{ $h->id }}</td>
                                                 @if (is_null($h->tipoMovimiento))
@@ -140,23 +142,32 @@
                                                             @foreach ($h->rutas_imagenes as $ruta)
                                                                 @if (strpos($ruta, '.jpg') !== false || strpos($ruta, '.png') !== false || strpos($ruta, '.jpeg') !== false)
                                                                     <a href="{{ asset($ruta) }}" target="_blank">
-                                                                        <img src="{{ asset($ruta) }}" alt="Miniatura" style="width: 25px; height: auto; margin-right: 5px;">
+                                                                        <img src="{{ asset($ruta) }}" alt="Miniatura"
+                                                                            style="width: 25px; height: auto; margin-right: 5px;">
                                                                     </a>
                                                                 @elseif (strpos($ruta, '.pdf') !== false)
                                                                     <a href="{{ asset($ruta) }}" target="_blank">
-                                                                        <i class="fas fa-file-pdf" style="font-size: 24px; color: #e74c3c; margin-right: 5px;" title="PDF"></i>
+                                                                        <i class="fas fa-file-pdf"
+                                                                            style="font-size: 24px; color: #e74c3c; margin-right: 5px;"
+                                                                            title="PDF"></i>
                                                                     </a>
                                                                 @elseif (strpos($ruta, '.doc') !== false || strpos($ruta, '.docx') !== false)
                                                                     <a href="{{ asset($ruta) }}" target="_blank">
-                                                                        <i class="fas fa-file-word" style="font-size: 24px; color: #007aff; margin-right: 5px;" title="Word Document"></i>
+                                                                        <i class="fas fa-file-word"
+                                                                            style="font-size: 24px; color: #007aff; margin-right: 5px;"
+                                                                            title="Word Document"></i>
                                                                     </a>
                                                                 @elseif (strpos($ruta, '.xlsx') !== false)
                                                                     <a href="{{ asset($ruta) }}" target="_blank">
-                                                                        <i class="fas fa-file-excel" style="font-size: 24px; color: #28a745; margin-right: 5px;" title="Excel Spreadsheet"></i>
+                                                                        <i class="fas fa-file-excel"
+                                                                            style="font-size: 24px; color: #28a745; margin-right: 5px;"
+                                                                            title="Excel Spreadsheet"></i>
                                                                     </a>
                                                                 @elseif (strpos($ruta, '.zip') !== false || strpos($ruta, '.rar') !== false)
                                                                     <a href="{{ asset($ruta) }}" target="_blank">
-                                                                        <i class="fas fa-file-archive" style="font-size: 24px; color: #6f42c1; margin-right: 5px;" title="Compressed File"></i>
+                                                                        <i class="fas fa-file-archive"
+                                                                            style="font-size: 24px; color: #6f42c1; margin-right: 5px;"
+                                                                            title="Compressed File"></i>
                                                                     </a>
                                                                 @endif
                                                             @endforeach

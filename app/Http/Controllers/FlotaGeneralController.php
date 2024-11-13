@@ -674,6 +674,7 @@ class FlotaGeneralController extends Controller
         $recurso_stock = Recurso::where('nombre', 'Stock 911')->first();
         $recurso_soporte_pg = Recurso::where('nombre', 'Soporte 1er Nivel - PG')->first();
         $recurso_lote_temporal_pg = Recurso::where('nombre', 'Lote Temporal PG')->first();
+        $recurso_equipos_extraviados = Recurso::where('nombre', 'Equipos extraviados')->first();
         //Se obtienen los id de los tipo de movimientos
         $id_mov_patrimonial = TipoMovimiento::where('nombre', 'Movimiento patrimonial')->value('id');
         $id_desinst_completa = TipoMovimiento::where('nombre', 'Desinstalación completa')->value('id');
@@ -684,6 +685,10 @@ class FlotaGeneralController extends Controller
         $id_reemplazo = TipoMovimiento::where('nombre', 'Reemplazo')->value('id');
         $id_recambio = TipoMovimiento::where('nombre', 'Recambio')->value('id');
         $id_devolver_equipo_temporal = TipoMovimiento::where('nombre', 'Devolver equipo temporal')->value('id');
+        $id_devolver_a_dependencia = TipoMovimiento::where('nombre', 'Devolución a dependencia')->value('id');
+        $id_baja = TipoMovimiento::where('nombre', 'Baja')->value('id');
+        $id_extraviado = TipoMovimiento::where('nombre', 'Extraviado')->value('id');
+        $id_recuperado = TipoMovimiento::where('nombre', 'Recuperado')->value('id');
 
         //Validar que permita mov patrimoniales solo en recursos que acepten muchos equipos
         if ($tipo_de_mov->id == $id_mov_patrimonial || $tipo_de_mov->id == $id_inst_completa) {
@@ -751,6 +756,15 @@ class FlotaGeneralController extends Controller
                         $historico->destino_id = $recurso_stock->destino->id;
                         break;
 
+                    case $id_extraviado:
+                        $historico->recurso_id = $recurso_equipos_extraviados->id;
+                        $historico->recurso_asignado = $recurso_equipos_extraviados->nombre;
+                        $historico->vehiculo_asignado = null;
+                        $historico->recurso_desasignado = ($histAnt->recurso_asignado) ? $histAnt->recurso_asignado : null;
+                        $historico->vehiculo_desasignado = ($histAnt->vehiculo_asignado) ? $histAnt->vehiculo_asignado : null;
+                        $historico->destino_id = $recurso_equipos_extraviados->destino->id;
+                        break;
+
                     case $id_provisorio:
                         $r = Recurso::find($request->recurso);
                         $v = null;
@@ -790,6 +804,8 @@ class FlotaGeneralController extends Controller
                         $historico->destino_id = $recurso_stock->destino->id;
                         break;
 
+                    case $id_devolver_a_dependencia:
+                    case $id_recuperado:
                     case $id_revision:
                         $r = Recurso::find($request->recurso);
                         $v = null;
@@ -959,6 +975,7 @@ class FlotaGeneralController extends Controller
             $id_devolver_equipo_temporal = TipoMovimiento::where('nombre', 'Devolver equipo temporal')->value('id');
             $id_baja = TipoMovimiento::where('nombre', 'Baja')->value('id');
             $id_alta = TipoMovimiento::where('nombre', 'Alta')->value('id');
+            $id_extraviado = TipoMovimiento::where('nombre', 'Extraviado')->value('id');
 
             $e = Equipo::find($id);
             if ($e) {
@@ -970,6 +987,9 @@ class FlotaGeneralController extends Controller
                     $e->save();
                 } else if ($tipo_de_mov_id == $id_baja) {
                     $e->estado_id = $id_estado_baja;
+                    $e->save();
+                } else if ($tipo_de_mov_id == $id_extraviado) {
+                    $e->estado_id = $id_estado_perdido;
                     $e->save();
                 }
             }

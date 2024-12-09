@@ -9,6 +9,7 @@ use App\Models\FlotaGeneral;
 use App\Models\Recurso;
 use App\Models\Historico;
 use App\Models\TipoMovimiento;
+use App\Models\TipoTerminal;
 use App\Models\Vehiculo;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -31,27 +32,90 @@ class FlotaGeneralController extends Controller
 
     public function index(Request $request)
     {
-        $texto = trim($request->get('texto')); //trim quita espacios vacios
+        $texto = trim($request->get('texto'));
+        $equipoId = $request->get('equipo_id');
+        $recursoId = $request->get('recurso_id');
+        $destinoId = $request->get('destino_id');
+        $destinoActualId = $request->get('destino_actual_id');
+        $tipoTerminalId = $request->get('tipo_terminal_id');
+        $fechaAsignacion = $request->get('fecha_asignacion');
+        $fechaDesasignacion = $request->get('fecha_desasignacion');
+        $ticketPer = $request->get('ticket_per');
+        $observaciones = $request->get('observaciones');
 
-        //Busqueda por ISSI, TEI, Movil o Destino
-        $flota = FlotaGeneral::whereHas('equipo', function ($query) use ($texto) {
-            $query->where('issi', 'like', '%' . $texto . '%')
-                ->orWhere('tei', 'like', '%' . $texto . '%');
-        })->orWhereHas('recurso', function ($query1) use ($texto) {
-            $query1->where('nombre', 'like', '%' . $texto . '%');
-        })->orWhereHas('destino', function ($query2) use ($texto) {
-            $query2->where('nombre', 'like', '%' . $texto . '%');
-        })->orderBy('updated_at', 'desc')->paginate(50); //->get();//->orWhere('observaciones', 'LIKE', '%' . $texto . '%')->orderBy('id', 'asc')->get();
+        // Obtener equipos, recursos y otros datos necesarios.
+        $equipos = Equipo::all(); // Ajusta según tu modelo
+        $recursos = Recurso::all(); // Si es necesario, agrega esta línea
+        $destinos = Destino::all(); // Si es necesario, agrega esta línea
+        $tiposTerminal = TipoTerminal::all();
 
-        // Itera sobre cada flota para obtener su último movimiento
-        foreach ($flota as $f) {
-            //dd('aca');
-            $f->ultimo_movimiento = $f->ultimoMovimiento()->tipoMovimiento->nombre;
-            $f->fecha_ultimo_mov = Carbon::parse($f->ultimoMovimiento()->fecha_asignacion)->format('d/m/Y H:i');
-            $f->observaciones_ultimo_mov = $f->ultimoMovimiento()->observaciones;
+        $flota = FlotaGeneral::query();
+
+        if ($texto) {
+            $flota->whereHas('equipo', function ($query) use ($texto) {
+                $query->where('issi', 'like', '%' . $texto . '%')
+                    ->orWhere('tei', 'like', '%' . $texto . '%');
+            })->orWhereHas('recurso', function ($query1) use ($texto) {
+                $query1->where('nombre', 'like', '%' . $texto . '%');
+            })->orWhereHas('destino', function ($query2) use ($texto) {
+                $query2->where('nombre', 'like', '%' . $texto . '%');
+            });
         }
 
-        return view('flota.index', compact('flota', 'texto'));
+        if ($equipoId) {
+            $flota->where('equipo_id', $equipoId);
+        }
+        if ($recursoId) {
+            $flota->where('recurso_id', $recursoId);
+        }
+        if ($destinoActualId) {
+            $flota->whereHas('equipo.historico', function ($query) use ($destinoActualId) {
+                    $query->where('destino_id', $destinoActualId)
+                          ->where('fecha_desasignacion', null);
+                });
+        }
+        if ($destinoId) {
+            $flota->where('destino_id', $destinoId)
+                 ->orWhereHas('equipo.historico', function ($query) use ($destinoId) {
+                     $query->whereExists(function($existsQuery) use ($destinoId) {
+                         $existsQuery->select(DB::raw(1))
+                             ->from('historicos')
+                             ->whereRaw("historicos.destino_id = ? AND historicos.equipo_id = equipos.id", [$destinoId])
+                             ->whereRaw("historicos.fecha_desasignacion IS NULL");
+                     });
+                 });
+        }
+        /*if ($destinoId) {
+            $flota->where('destino_id', $destinoId);
+        }*/
+        if ($tipoTerminalId) {
+            $flota->whereHas('equipo', function ($query) use ($tipoTerminalId) {
+                $query->where('tipo_terminal_id', $tipoTerminalId);
+            });
+        }
+        if ($fechaAsignacion) {
+            $flota->whereDate('fecha_asignacion', $fechaAsignacion);
+        }
+        if ($fechaDesasignacion) {
+            $flota->whereDate('fecha_desasignacion', $fechaDesasignacion);
+        }
+        if ($ticketPer) {
+            $flota->where('ticket_per', 'like', '%' . $ticketPer . '%');
+        }
+        if ($observaciones) {
+            $flota->where('observaciones', 'like', '%' . $observaciones . '%');
+        }
+
+        $flota = $flota->orderBy('updated_at', 'desc')->paginate(50);
+
+        foreach ($flota as $f) {
+            $ultimoMovimiento = $f->ultimoMovimiento();
+            $f->ultimo_movimiento = $ultimoMovimiento ? $ultimoMovimiento->tipoMovimiento->nombre : '-';
+            $f->fecha_ultimo_mov = $ultimoMovimiento ? Carbon::parse($ultimoMovimiento->fecha_asignacion)->format('d/m/Y H:i') : '-';
+            $f->observaciones_ultimo_mov = $ultimoMovimiento ? $ultimoMovimiento->observaciones : '-';
+        }
+
+        return view('flota.index', compact('flota', 'texto', 'equipos', 'recursos', 'destinos', 'tiposTerminal','equipoId', 'recursoId', 'destinoId', 'fechaAsignacion', 'fechaDesasignacion', 'ticketPer', 'observaciones'));
     }
 
     function obtenerNombreMes($mes)

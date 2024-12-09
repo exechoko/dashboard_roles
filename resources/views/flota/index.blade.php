@@ -39,14 +39,93 @@
                                 <label class="alert alert-dark mb-0" style="float: right;">Registros:
                                     {{ $flota->total() }}</label>
                             </div>
-
-                            <form action="{{ route('flota.index') }}" method="get" onsubmit="return showLoad()">
-                                <div class="input-group mt-4">
-                                    <input type="text" name="texto" class="form-control"
-                                        placeholder="Ingrese el nombre del flota que desea buscar"
-                                        value="{{ $texto }}">
-                                    <div class="input-group-append">
-                                        <button type="submit" class="btn btn-info">Buscar</button>
+                            <form action="{{ route('flota.index') }}" method="get">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <input type="text" name="texto" class="form-control"
+                                            placeholder="Buscar por texto" value="{{ $texto }}">
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-4">
+                                        <select name="tipo_terminal_id" class="form-control select2">
+                                            <option value="">Seleccionar Tipo de Terminal</option>
+                                            @foreach ($tiposTerminal as $tipo)
+                                                <option value="{{ $tipo->id }}"
+                                                    {{ request('tipo_terminal_id') == $tipo->id ? 'selected' : '' }}>
+                                                    {{ $tipo->marca . ' ' . $tipo->modelo }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select name="equipo_id" class="form-control select2">
+                                            <option value="">Seleccionar Equipo</option>
+                                            @foreach ($equipos as $equipo)
+                                                <option value="{{ $equipo->id }}"
+                                                    {{ request('equipo_id') == $equipo->id ? 'selected' : '' }}>
+                                                    {{ $equipo->tipo_terminal->marca . ' ' . $equipo->tipo_terminal->modelo . ' - ' . $equipo->tipo_terminal->tipo_uso->uso . ' - ' . $equipo->tei . ' ' . $equipo->issi }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select name="recurso_id" class="form-control select2">
+                                            <option value="">Seleccionar Recurso</option>
+                                            @foreach ($recursos as $recurso)
+                                                <option value="{{ $recurso->id }}"
+                                                    {{ request('recurso_id') == $recurso->id ? 'selected' : '' }}>
+                                                    {{ $recurso->nombre }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-6">
+                                        <select name="destino_actual_id" class="form-control select2">
+                                            <option value="">Seleccionar Dependencia Actual</option>
+                                            @foreach ($destinos as $destino)
+                                                <option value="{{ $destino->id }}"
+                                                    {{ request('destino_actual_id') == $destino->id ? 'selected' : '' }}>
+                                                    {{ $destino->nombre }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <select name="destino_id" class="form-control select2">
+                                            <option value="">Seleccionar Dependencia Patrimonial</option>
+                                            @foreach ($destinos as $destino)
+                                                <option value="{{ $destino->id }}"
+                                                    {{ request('destino_id') == $destino->id ? 'selected' : '' }}>
+                                                    {{ $destino->nombre }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-3">
+                                        <input type="date" name="fecha_asignacion" class="form-control"
+                                            value="{{ $fechaAsignacion }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="date" name="fecha_desasignacion" class="form-control"
+                                            value="{{ $fechaDesasignacion }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="text" name="ticket_per" class="form-control"
+                                            placeholder="Ticket PER" value="{{ $ticketPer }}">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="text" name="observaciones" class="form-control"
+                                            placeholder="Observaciones" value="{{ $observaciones }}">
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-12">
+                                        <button type="submit" class="btn btn-primary">Buscar</button>
                                     </div>
                                 </div>
                             </form>
@@ -110,8 +189,10 @@
                                                     @endif
 
                                                     <td>{{ $f->destino->nombre }}<br>{{ $f->destino->dependeDe() }}</td>
-                                                    <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; position: relative;" title="{{ $f->observaciones }}">
-                                                        <span class="tooltip-text">{{ $f->observaciones_ultimo_mov }}</span>
+                                                    <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; position: relative;"
+                                                        title="{{ $f->observaciones }}">
+                                                        <span
+                                                            class="tooltip-text">{{ $f->observaciones_ultimo_mov }}</span>
                                                     </td>
                                                     {{-- @if (is_null($f->ultimoLugar()))
                                                     <td>Sin movimientos</td>
@@ -119,7 +200,8 @@
                                                     <td>{{ $f->ultimoLugar() }}</td>
                                                 @endif --}}
                                                     <td>
-                                                        <form action="{{ route('flota.destroy', $f->id) }}" method="POST">
+                                                        <form action="{{ route('flota.destroy', $f->id) }}"
+                                                            method="POST">
 
                                                             {{-- <a class="btn btn-success" href="#" data-toggle="modal"
                                                             data-target="#ModalEditar{{ $flota->id }}">Editar</a> --}}
@@ -159,4 +241,19 @@
             </div>
         </div>
     </section>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $('.select2').select2({
+                width: '100%'
+            });
+
+            // Forzar el foco en el campo de búsqueda cuando se abre el Select2
+            $(document).on('select2:open', () => {
+                let select2Field = document.querySelector('.select2-search__field');
+                if (select2Field) {
+                    select2Field.focus();
+                }
+            });
+        });
+    </script>
 @endsection

@@ -40,6 +40,7 @@ class FlotaGeneralController extends Controller
         $tipoTerminalId = $request->get('tipo_terminal_id');
         $fechaAsignacion = $request->get('fecha_asignacion');
         $fechaDesasignacion = $request->get('fecha_desasignacion');
+        $fechaRango = $request->get('fecha_rango');
         $ticketPer = $request->get('ticket_per');
         $observaciones = $request->get('observaciones');
 
@@ -70,24 +71,13 @@ class FlotaGeneralController extends Controller
         }
         if ($destinoActualId) {
             $flota->whereHas('equipo.historico', function ($query) use ($destinoActualId) {
-                    $query->where('destino_id', $destinoActualId)
-                          ->where('fecha_desasignacion', null);
-                });
+                $query->where('destino_id', $destinoActualId)
+                    ->where('fecha_desasignacion', null);
+            });
         }
         if ($destinoId) {
-            $flota->where('destino_id', $destinoId)
-                 ->orWhereHas('equipo.historico', function ($query) use ($destinoId) {
-                     $query->whereExists(function($existsQuery) use ($destinoId) {
-                         $existsQuery->select(DB::raw(1))
-                             ->from('historicos')
-                             ->whereRaw("historicos.destino_id = ? AND historicos.equipo_id = equipos.id", [$destinoId])
-                             ->whereRaw("historicos.fecha_desasignacion IS NULL");
-                     });
-                 });
-        }
-        /*if ($destinoId) {
             $flota->where('destino_id', $destinoId);
-        }*/
+        }
         if ($tipoTerminalId) {
             $flota->whereHas('equipo', function ($query) use ($tipoTerminalId) {
                 $query->where('tipo_terminal_id', $tipoTerminalId);
@@ -99,6 +89,20 @@ class FlotaGeneralController extends Controller
         if ($fechaDesasignacion) {
             $flota->whereDate('fecha_desasignacion', $fechaDesasignacion);
         }
+        // Filtrar por rango de fechas en la tabla historico
+        if ($fechaRango) {
+            list($fechaInicio, $fechaFin) = explode(' - ', $fechaRango);
+
+            // Convertir las fechas a objetos Carbon
+            $fechaInicio = Carbon::parse($fechaInicio)->startOfDay();
+            $fechaFin = Carbon::parse($fechaFin)->endOfDay();
+
+            // Filtrar por rango de fechas en la tabla historico y fecha_desasignacion null
+            $flota->whereHas('equipo.historico', function ($query) use ($fechaInicio, $fechaFin) {
+                $query->whereBetween('fecha_asignacion', [$fechaInicio, $fechaFin])
+                    ->whereNull('fecha_desasignacion');
+            });
+        }
         if ($ticketPer) {
             $flota->where('ticket_per', 'like', '%' . $ticketPer . '%');
         }
@@ -106,7 +110,7 @@ class FlotaGeneralController extends Controller
             $flota->where('observaciones', 'like', '%' . $observaciones . '%');
         }
 
-        $flota = $flota->orderBy('updated_at', 'desc')->paginate(50);
+        $flota = $flota->orderBy('updated_at', 'desc')->paginate(500);
 
         foreach ($flota as $f) {
             $ultimoMovimiento = $f->ultimoMovimiento();
@@ -115,7 +119,25 @@ class FlotaGeneralController extends Controller
             $f->observaciones_ultimo_mov = $ultimoMovimiento ? $ultimoMovimiento->observaciones : '-';
         }
 
-        return view('flota.index', compact('flota', 'texto', 'equipos', 'recursos', 'destinos', 'tiposTerminal','equipoId', 'recursoId', 'destinoId', 'fechaAsignacion', 'fechaDesasignacion', 'ticketPer', 'observaciones'));
+        return view(
+            'flota.index',
+            compact(
+                'flota',
+                'texto',
+                'equipos',
+                'recursos',
+                'destinos',
+                'tiposTerminal',
+                'equipoId',
+                'recursoId',
+                'destinoId',
+                'fechaAsignacion',
+                'fechaDesasignacion',
+                'fechaRango',
+                'ticketPer',
+                'observaciones'
+            )
+        );
     }
 
     function obtenerNombreMes($mes)

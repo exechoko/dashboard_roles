@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @push('styles')
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         /* Aquí puedes agregar tus estilos CSS */
         .tooltip-text {
@@ -40,7 +42,7 @@
                                     {{ $flota->total() }}</label>
                             </div>
                             <form action="{{ route('flota.index') }}" method="get">
-                                <div class="row">
+                                <div class="row mt-2">
                                     <div class="col-md-12">
                                         <input type="text" name="texto" class="form-control"
                                             placeholder="Buscar por texto" value="{{ $texto }}">
@@ -106,26 +108,29 @@
                                     </div>
                                 </div>
                                 <div class="row mt-2">
-                                    <div class="col-md-3">
-                                        <input type="date" name="fecha_asignacion" class="form-control"
-                                            value="{{ $fechaAsignacion }}">
+                                    <div class="col-md-4">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <div class="input-group-text">
+                                                    <i class="fas fa-calendar"></i>
+                                                </div>
+                                            </div>
+                                            <input name="fecha_rango" type="text" class="form-control daterange-cus"
+                                                placeholder="Fecha de asignación">
+                                        </div>
                                     </div>
-                                    <div class="col-md-3">
-                                        <input type="date" name="fecha_desasignacion" class="form-control"
-                                            value="{{ $fechaDesasignacion }}">
-                                    </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <input type="text" name="ticket_per" class="form-control"
                                             placeholder="Ticket PER" value="{{ $ticketPer }}">
                                     </div>
-                                    <div class="col-md-3">
+                                    <div class="col-md-4">
                                         <input type="text" name="observaciones" class="form-control"
                                             placeholder="Observaciones" value="{{ $observaciones }}">
                                     </div>
                                 </div>
                                 <div class="row mt-3">
                                     <div class="col-md-12">
-                                        <button type="submit" class="btn btn-primary">Buscar</button>
+                                        <button type="submit" class="btn btn-info">Buscar</button>
                                     </div>
                                 </div>
                             </form>
@@ -243,6 +248,29 @@
     </section>
     <script type="text/javascript">
         $(document).ready(function() {
+            $('.daterange-cus').daterangepicker({
+                locale: {
+                    format: 'DD-MM-YYYY'
+                },
+                drops: 'down',
+                opens: 'right',
+                autoUpdateInput: false, // Evita que se establezca un valor inicial
+            }, function(start, end, label) {
+                // Actualiza el campo con el rango de fechas seleccionado
+                $(this).val(start.format('DD-MM-YYYY') + ' - ' + end.format('DD-MM-YYYY'));
+            });
+
+            // Manejar el evento "apply" para actualizar el campo cuando se selecciona un rango
+            $('.daterange-cus').on('apply.daterangepicker', function(ev, picker) {
+                $(this).val(picker.startDate.format('DD-MM-YYYY') + ' - ' + picker.endDate.format(
+                    'DD-MM-YYYY'));
+            });
+
+            // Manejar el evento "cancel" para limpiar el campo si el usuario cancela la selección
+            $('.daterange-cus').on('cancel.daterangepicker', function(ev, picker) {
+                $(this).val('');
+            });
+
             $('.select2').select2({
                 width: '100%'
             });

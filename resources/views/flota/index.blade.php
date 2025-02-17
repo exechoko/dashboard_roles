@@ -90,7 +90,7 @@
                                             @foreach ($destinos as $destino)
                                                 <option value="{{ $destino->id }}"
                                                     {{ request('destino_actual_id') == $destino->id ? 'selected' : '' }}>
-                                                    {{ $destino->nombre }}
+                                                    {{ $destino->nombre . ' - ' . $destino->dependeDe() }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -101,7 +101,7 @@
                                             @foreach ($destinos as $destino)
                                                 <option value="{{ $destino->id }}"
                                                     {{ request('destino_id') == $destino->id ? 'selected' : '' }}>
-                                                    {{ $destino->nombre }}
+                                                    {{ $destino->nombre . ' - ' . $destino->dependeDe() }}
                                                 </option>
                                             @endforeach
                                         </select>

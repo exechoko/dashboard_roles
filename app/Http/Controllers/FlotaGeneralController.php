@@ -19,6 +19,7 @@ use PhpOffice\PhpWord\Element\TextRun;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\TemplateProcessor;
 use PhpOffice\PhpWord\Writer\Word2007;
+use Str;
 
 class FlotaGeneralController extends Controller
 {
@@ -76,8 +77,28 @@ class FlotaGeneralController extends Controller
             });
         }
         if ($destinoId) {
-            $flota->where('destino_id', $destinoId);
+            $destino = Destino::find($destinoId);
+            $categoria = null;
+            $nombre = $destino->nombre;
+            if (strpos($nombre, 'Dirección') === 0) {
+                $categoria = 'direccion';
+            } elseif (strpos($nombre, 'Departamental') === 0) {
+                $categoria = 'departamental';
+            } elseif (strpos($nombre, 'División') === 0) {
+                $categoria = 'division';
+            } elseif (strpos($nombre, 'Comisaría') === 0) {
+                $categoria = 'comisaria';
+            } elseif (strpos($nombre, 'Sección') === 0) {
+                $categoria = 'seccion';
+            }
+            if ($categoria) {
+                $destinosDependientes = $destino->destinosDependientes($categoria, $destinoId);
+                $flota->whereIn('destino_id', $destinosDependientes);
+            }
         }
+        /*if ($destinoId) {
+            $flota->where('destino_id', $destinoId);
+        }*/
         if ($tipoTerminalId) {
             $flota->whereHas('equipo', function ($query) use ($tipoTerminalId) {
                 $query->where('tipo_terminal_id', $tipoTerminalId);

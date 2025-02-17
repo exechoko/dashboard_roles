@@ -33,6 +33,31 @@ class FlotaGeneralController extends Controller
 
     public function index(Request $request)
     {
+        $texto = trim($request->get('texto')); //trim quita espacios vacios
+
+        //Busqueda por ISSI, TEI, Movil o Destino
+        $flota = FlotaGeneral::whereHas('equipo', function ($query) use ($texto) {
+            $query->where('issi', 'like', '%' . $texto . '%')
+                ->orWhere('tei', 'like', '%' . $texto . '%');
+        })->orWhereHas('recurso', function ($query1) use ($texto) {
+            $query1->where('nombre', 'like', '%' . $texto . '%');
+        })->orWhereHas('destino', function ($query2) use ($texto) {
+            $query2->where('nombre', 'like', '%' . $texto . '%');
+        })->orderBy('updated_at', 'desc')->paginate(50); //->get();//->orWhere('observaciones', 'LIKE', '%' . $texto . '%')->orderBy('id', 'asc')->get();
+
+        // Itera sobre cada flota para obtener su último movimiento
+        foreach ($flota as $f) {
+            //dd('aca');
+            $f->ultimo_movimiento = $f->ultimoMovimiento()->tipoMovimiento->nombre;
+            $f->fecha_ultimo_mov = Carbon::parse($f->ultimoMovimiento()->fecha_asignacion)->format('d/m/Y H:i');
+            $f->observaciones_ultimo_mov = $f->ultimoMovimiento()->observaciones;
+        }
+
+        return view('flota.index', compact('flota', 'texto'));
+    }
+
+    public function busquedaAvanzada(Request $request)
+    {
         $texto = trim($request->get('texto'));
         $equipoId = $request->get('equipo_id');
         $recursoId = $request->get('recurso_id');
@@ -141,7 +166,7 @@ class FlotaGeneralController extends Controller
         }
 
         return view(
-            'flota.index',
+            'flota.busqueda_avanzada',
             compact(
                 'flota',
                 'texto',

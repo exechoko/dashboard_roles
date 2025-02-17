@@ -8,7 +8,7 @@
 
 @can('ver-menu-equipamientos')
     <li
-        class="dropdown {{ request()->is('equipos*') ? 'active' : '' }} {{ request()->is('flota*') ? 'active' : '' }} {{ request()->is('recursos*') ? 'active' : '' }} {{ request()->is('vehiculos*') ? 'active' : '' }} {{ request()->is('terminales*') ? 'active' : '' }}">
+        class="dropdown {{ request()->is('equipos*') ? 'active' : '' }} {{ request()->is('busqueda-avanzada*') ? 'active' : '' }} {{ request()->is('flota*') ? 'active' : '' }} {{ request()->is('recursos*') ? 'active' : '' }} {{ request()->is('vehiculos*') ? 'active' : '' }} {{ request()->is('terminales*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-cog"></i><span>Equipamientos</span>
         </a>
@@ -16,6 +16,11 @@
             @can('ver-flota')
                 <li class="{{ request()->is('flota*') ? 'active' : '' }} {{ request()->is('*historico*') ? 'active' : '' }}">
                     <a class="nav-link" href="/flota"><i class="fas fa-wrench"></i><span>Administración</span></a>
+                </li>
+            @endcan
+            @can('ver-flota')
+                <li class="{{ request()->is('busqueda-avanzada*') ? 'active' : '' }}">
+                    <a class="nav-link" href="/busqueda-avanzada"><i class="fas fa-search"></i><span>Búsq. Avanzada</span></a>
                 </li>
             @endcan
             @can('ver-equipo')

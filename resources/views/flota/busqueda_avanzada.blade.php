@@ -40,7 +40,7 @@
                                 <label class="alert alert-dark mb-0" style="float: right;">Registros:
                                     {{ $flota->total() }}</label>
                             </div>
-                            <form action="{{ route('flota.index') }}" method="get">
+                            <form action="{{ route('flota.busquedaAvanzada') }}" method="get">
                                 <div class="row mt-2">
                                     <div class="col-md-12">
                                         <input type="text" name="texto" class="form-control"

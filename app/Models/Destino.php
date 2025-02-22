@@ -74,41 +74,56 @@ class Destino extends Model
 
     public function dependeDe()
     {
-        $depende = '';
-
         if (Str::contains($this->nombre, 'Direcc')) {
             return 'Jefatura Policia de Entre Ríos';
         }
         if (Str::contains($this->nombre, 'Departamental') && !is_null($this->direccion_id)) {
-            return $this->nombre . ' - Jefatura Policia de Entre Ríos';
+            return $this->direccion->nombre;
         }
         if (Str::contains($this->nombre, 'Divis')) {
-            if (!is_null($this->direccion_id)) {
-                return $this->nombre . ' - ' . $this->direccion->nombre;
-            } elseif (!is_null($this->departamental_id)) {
-                return $this->nombre . ' - ' . $this->departamental->nombre;
+            $depende = [];
+            // Primero agregamos la Departamental si existe
+            if (!is_null($this->departamental_id)) {
+                $depende[] = $this->departamental->nombre;
             }
+            // Luego agregamos la Dirección si existe
+            if (!is_null($this->direccion_id)) {
+                $depende[] = $this->direccion->nombre;
+            }
+            return implode(' - ', $depende);
         }
         if (Str::contains($this->nombre, 'Comisar')) {
-            return $this->nombre . ' - ' . $this->departamental->nombre;
+            $depende = [];
+            // Primero agregamos la Departamental si existe
+            if (!is_null($this->departamental_id)) {
+                $depende[] = $this->departamental->nombre;
+            }
+            // Luego agregamos la Dirección si existe
+            if (!is_null($this->direccion_id)) {
+                $depende[] = $this->direccion->nombre;
+            }
+            return implode(' - ', $depende);
         }
         if (Str::contains($this->nombre, 'Secci')) {
-            if (!is_null($this->departamental_id)) {
-                $depende = $this->departamental->nombre;
-                if (!is_null($this->comisaria_id)) {
-                    $depende .= ' - ' . $this->comisaria->nombre;
-                }
-                return $this->nombre . ' - ' . $depende;
-            } else {
-                $depende = $this->direccion->nombre;
-                if (!is_null($this->division_id)) {
-                    $depende .= ' - ' . $this->division->nombre;
-                }
-                return $this->nombre . ' - ' . $depende;
+            $depende = [];
+            //Primero Comisaria
+            if (!is_null($this->comisaria_id)) {
+                $depende[] = $this->comisaria->nombre;
             }
+            // Al mismmo nivel la División
+            if (!is_null($this->division_id)) {
+                $depende[] = $this->division->nombre;
+            }
+            // Luego agregamos la Departamental si existe
+            if (!is_null($this->departamental_id)) {
+                $depende[] = $this->departamental->nombre;
+            }
+            // Luego agregamos la Dirección si existe
+            if (!is_null($this->direccion_id)) {
+                $depende[] = $this->direccion->nombre;
+            }
+            return implode(' - ', $depende);
         }
-
-        return $this->nombre;
     }
 
 

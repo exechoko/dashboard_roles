@@ -12,9 +12,9 @@ class Direccion extends Model
         'nombre'
     ];
 
-    /*public function departamental(){
+    public function departamental(){
         return $this->hasMany(Departamental::class);
-    }*/
+    }
 
     public function division(){
         return $this->hasMany(Division::class);

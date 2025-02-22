@@ -12,9 +12,9 @@ class Departamental extends Model
         'nombre'
     ];
 
-    /*public function direccion(){
+    public function direccion(){
         return $this->belongsTo(Direccion::class);
-    }*/
+    }
 
     public function comisaria(){
         return $this->hasMany(Comisaria::class);

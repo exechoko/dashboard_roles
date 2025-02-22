@@ -81,9 +81,9 @@ class Destino extends Model
         if (Str::contains($this->nombre, 'Direcc')) {
             $depende .= 'Jefatura Policia de Entre Ríos';
         }
-        /*if (Str::contains($this->nombre, 'Departamental')) {
-            $depende .= 'Jefatura Policia de Entre Ríos';
-        }*/
+        if (Str::contains($this->nombre, 'Departamental' ) && (!is_null($this->direccion_id))) {
+            $depende .= $this->direccion->nombre .'';
+        }
         if ((Str::contains($this->nombre, 'Divis')) && (!is_null($this->direccion_id))) {
             $depende .= $this->direccion->nombre . '';
         }

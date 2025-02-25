@@ -57,7 +57,7 @@
 
 @can('ver-menu-camaras')
     <li
-        class="dropdown {{ request()->is('tipo-camara*') ? 'active' : '' }} {{ request()->is('camaras*') ? 'active' : '' }}">
+        class="dropdown {{ request()->is('tipo-camara*') ? 'active' : '' }} {{ request()->is('camaras*') ? 'active' : '' }} {{ request()->is('sitio*') ? 'active' : '' }} {{ request()->is('camaras_fisicas*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-video"></i><span>Cámaras</span>
         </a>
@@ -83,6 +83,13 @@
                     </a>
                 </li>
             @endcan
+            @can('ver-camara')
+                <li class="{{ request()->is('camaras_fisicas*') ? 'active' : '' }}">
+                    <a class="nav-link" href="/camaras_fisicas">
+                        <i class="fas fa-cog"></i><span>Cámaras Fisicas</span>
+                    </a>
+                </li>
+            @endcan
         </ul>
     </li>
 @endcan
@@ -102,49 +109,49 @@
 @endcan
 
 @can('ver-menu-cecoco')
-<li
-    class="dropdown {{ request()->is('indexMoviles*') ? 'active' : '' }} {{ request()->is('indexLlamadas*') ? 'active' : '' }}">
-    <a class="nav-link has-dropdown" href="#">
-        <i class="fas fa-life-ring"></i><span>CeCoCo</span>
-    </a>
-    <ul class="dropdown-menu">
-        @can('ver-mapa-cecoco-en-vivo')
-        <li class="">
-            <a class="nav-link" href="/indexMapaCecocoEnVivo">
-                <i class="fas fa-globe"></i><span>Mapa CeCoCo</span>
-            </a>
-        </li>
-        @endcan
-        @can('ver-mapa-calor-servicios-cecoco')
-        <li class="">
-            <a class="nav-link" href="/indexMapaCalor">
-                <i class="fas fa-fire"></i><span>Mapa de eventos</span>
-            </a>
-        </li>
-        @endcan
-        @can('ver-llamadas-cecoco')
-            <li class="">
-                <a class="nav-link" href="/indexLlamadas">
-                    <i class="fas fa-phone-alt"></i><span>Llamadas</span>
-                </a>
-            </li>
-        @endcan
-        @can('ver-moviles-cecoco')
-            <li class="">
-                <a class="nav-link" href="/indexMoviles">
-                    <i class="fas fa-car"></i></i><span>Móviles</span>
-                </a>
-            </li>
-        @endcan
-        @can('ver-eventos-cecoco')
-            <li class="">
-                <a class="nav-link" href="/get-eventos">
-                    <i class="far fa-file-alt"></i><span>Eventos</span>
-                </a>
-            </li>
-        @endcan
-    </ul>
-</li>
+    <li
+        class="dropdown {{ request()->is('indexMoviles*') ? 'active' : '' }} {{ request()->is('indexLlamadas*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-life-ring"></i><span>CeCoCo</span>
+        </a>
+        <ul class="dropdown-menu">
+            @can('ver-mapa-cecoco-en-vivo')
+                <li class="">
+                    <a class="nav-link" href="/indexMapaCecocoEnVivo">
+                        <i class="fas fa-globe"></i><span>Mapa CeCoCo</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-mapa-calor-servicios-cecoco')
+                <li class="">
+                    <a class="nav-link" href="/indexMapaCalor">
+                        <i class="fas fa-fire"></i><span>Mapa de eventos</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-llamadas-cecoco')
+                <li class="">
+                    <a class="nav-link" href="/indexLlamadas">
+                        <i class="fas fa-phone-alt"></i><span>Llamadas</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-moviles-cecoco')
+                <li class="">
+                    <a class="nav-link" href="/indexMoviles">
+                        <i class="fas fa-car"></i></i><span>Móviles</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-eventos-cecoco')
+                <li class="">
+                    <a class="nav-link" href="/get-eventos">
+                        <i class="far fa-file-alt"></i><span>Eventos</span>
+                    </a>
+                </li>
+            @endcan
+        </ul>
+    </li>
 @endcan
 
 @can('ver-menu-mapa')

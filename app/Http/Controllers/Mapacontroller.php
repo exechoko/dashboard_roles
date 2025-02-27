@@ -156,20 +156,32 @@ class Mapacontroller extends Controller
             [
                 'latitud' => -31.72652,
                 'longitud' => -60.53293,
-                'titulo' => 'Antena 1°',
+                'titulo' => 'SBS 1',
                 'numero' => 1
             ],
             [
                 'latitud' => -31.75109,
                 'longitud' => -60.48563,
-                'titulo' => 'Antena 2°',
+                'titulo' => 'SBS 2',
                 'numero' => 2
             ],
             [
                 'latitud' => -31.77106,
                 'longitud' => -60.52482,
-                'titulo' => 'Antena 3°',
+                'titulo' => 'SBS 3',
                 'numero' => 3
+            ],
+            [
+                'latitud' => -31.324043,
+                'longitud' => -58.012072,
+                'titulo' => 'SBS 11',
+                'numero' => 11
+            ],
+            [
+                'latitud' => -31.391542,
+                'longitud' => -58.032703,
+                'titulo' => 'SBS 12',
+                'numero' => 12
             ]
         ];
 

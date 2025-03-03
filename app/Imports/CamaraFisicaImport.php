@@ -13,34 +13,35 @@ class CamaraFisicaImport implements ToModel, WithStartRow
 {
     public function model(array $row): ?CamaraFisica
     {
+        // Verificar si el número de serie ya existe
+        if (CamaraFisica::where('numero_serie', $row[1])->exists()) {
+            return null; // Evita agregar duplicados
+        }
+
         // Convertir fecha de Excel (número serial o texto)
         $fechaRemito = null;
-
         try {
-            // Si es un número serial de Excel
             if (is_numeric($row[4])) {
                 $fechaRemito = Carbon::instance(
                     ExcelDate::excelToDateTimeObject($row[4])
                 )->format('Y-m-d');
-            }
-            // Si es una cadena de texto (ej: "16/10/2021")
-            else {
+            } else {
                 $fechaRemito = Carbon::createFromFormat('d/m/Y', $row[4])->format('Y-m-d');
             }
         } catch (\Exception $e) {
-            // Manejar errores (opcional: registrar el error)
             $fechaRemito = null;
         }
 
         return new CamaraFisica([
             'tipo_camara_id' => $row[0] ?? null,
-            'numero_serie' => $row[1], // Campo único
+            'numero_serie' => $row[1],
             'estado' => $row[2] ?? 'disponible',
             'remito' => $row[3],
             'fecha_remito' => $fechaRemito,
             'observacion' => $row[5] ?? null,
         ]);
     }
+
 
     public function startRow(): int
     {

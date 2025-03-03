@@ -153,6 +153,7 @@ class Mapacontroller extends Controller
         //dd($camaras);
 
         $antenas = [
+            //PARANA
             [
                 'latitud' => -31.72652,
                 'longitud' => -60.53293,
@@ -171,6 +172,7 @@ class Mapacontroller extends Controller
                 'titulo' => 'SBS 3',
                 'numero' => 3
             ],
+            //CONCORDIA
             [
                 'latitud' => -31.324043,
                 'longitud' => -58.012072,

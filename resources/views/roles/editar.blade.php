@@ -34,15 +34,17 @@
                                 <div class="col-xs-12 col-sm-12 col-md-12">
                                     <div class="form-group">
                                         <label for="">Permisos para este Rol:</label>
-                                        <br />
-                                        @foreach ($permission as $value)
-                                            <div class="custom-switch">
-                                                {{ Form::hidden('permission[]', 0) }} <!-- Valor predeterminado (desactivado) -->
-                                                {{ Form::checkbox('permission[]', $value->id, in_array($value->id, $rolePermissions), ['class' => 'custom-control-input', 'id' => 'permission_'.$value->id]) }}
-                                                <label class="custom-control-label" for="permission_{{ $value->id }}">{{ $value->name }}</label>
-                                            </div>
-                                            <br />
-                                        @endforeach
+                                        <div class="row">
+                                            @foreach ($permission as $value)
+                                                <div class="col-md-4"> <!-- Ajusta el tamaño de la columna según necesites -->
+                                                    <div class="custom-control custom-switch">
+                                                        {{ Form::hidden('permission[]', 0) }} <!-- Valor predeterminado (desactivado) -->
+                                                        {{ Form::checkbox('permission[]', $value->id, in_array($value->id, $rolePermissions), ['class' => 'custom-control-input', 'id' => 'permission_'.$value->id]) }}
+                                                        <label class="custom-control-label" for="permission_{{ $value->id }}">{{ $value->name }}</label>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
                                     </div>
                                 </div>
 

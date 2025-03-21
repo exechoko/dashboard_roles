@@ -193,4 +193,13 @@
         </a>
     </li>
 @endcan
+@can('ver-menu-documentacion')
+    <li class="{{ request()->is('manual_usuario*') ? 'active' : '' }}">
+        <a class="nav-link"
+            href="https://docs.google.com/document/d/1QSVj5kHVp7UL5eUn2zTJeg1Dsn_KmTCtThKPMHXrf2I/edit?usp=sharing"
+            target="_blank">
+            <i class="fas fa-book"></i><span>Manual de usuario</span>
+        </a>
+    </li>
+@endcan
 <!--Documentacion en GetStisla-->

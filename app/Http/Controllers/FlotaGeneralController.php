@@ -1146,6 +1146,13 @@ class FlotaGeneralController extends Controller
     {
         $recursos = Recurso::with('vehiculo')
             ->where('destino_id', $request->destino_id)
+            ->where(function ($query) {
+                $query->where('multi_equipos', true)
+                    ->orWhere(function ($q) {
+                        $q->where('multi_equipos', false)
+                            ->whereDoesntHave('flota_general');
+                    });
+            })
             ->orderBy('nombre', 'asc')
             ->get();
         return response()->json($recursos);

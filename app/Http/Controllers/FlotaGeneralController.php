@@ -571,6 +571,19 @@ class FlotaGeneralController extends Controller
         return view('flota.historico', compact('hist', 'flota', 'desdeEquipo'));
     }
 
+    public function imprimirHistorico($id)
+    {
+        $flota = FlotaGeneral::findOrFail($id);
+        $flota = FlotaGeneral::find($id);
+        $desdeEquipo = false;
+
+        $hist = Historico::where('equipo_id', $flota->equipo->id)
+            ->orderBy('fecha_asignacion', 'desc')
+            ->get();
+
+        return view('flota.imprimir_historico', compact('flota', 'desdeEquipo', 'hist'));
+    }
+
     public function update_historico(Request $request, $id)
     {
         //dd($request->all());

@@ -1,29 +1,48 @@
 @extends('layouts.app')
 
 @section('css')
-    <style>
-        #cabecera {
+<style>
+    #cabecera {
+        background: #FFFBB9;
+        border: 2px solid #0a3fee;
+        padding: 10px;
+    }
 
-            background: #FFFBB9;
-            border: 2px solid #0a3fee;
-            padding: 10px;
-        }
+    .logo {
+        width: 200px;
+        height: 200px;
+        border: 2px solid #ee930a;
+        margin: none;
+    }
 
-        .logo {
-            width: 200px;
-            height: 200px;
-            border: 2px solid #ee930a;
-            margin: none;
+    /* Estilo para el contenedor del botón */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
 
-        }
-    </style>
-
+    .print-btn-container {
+        margin-left: auto;
+        /* Empuja el botón a la derecha */
+    }
+</style>
 @stop
 
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h3 class="page__heading">Historico</h3>
+            <div class="header-container">
+                <h3 class="page__heading">Historico</h3>
+                @if ($desdeEquipo == false)
+                    <div class="print-btn-container">
+                        <a href="{{ route('flota.historico.imprimir', $flota->id) }}" target="_blank" class="btn btn-primary">
+                            <i class="fas fa-print"></i> Imprimir
+                        </a>
+                    </div>
+                @endif
+            </div>
         </div>
         <div class="section-body">
             <div class="row">
@@ -38,43 +57,43 @@
                                         <li>
                                             <h3>TEI: <b>{{ $flota->tei }}</b>
                                                 @if (!is_null($flota->issi))
-                                                    - ISSI: <b>{{ $flota->issi }}</b>
+                                                            - ISSI: <b>{{ $flota->issi }}</b>
+                                                    </li>
+                                                @else
+                                                    - ISSI: <b>Sin asignar</b></h3>
+                                                    </li>
+                                                @endif
+                                        <li>
+                                            <h4>Marca: <b>{{ $flota->tipo_terminal->marca }}</b> - Modelo:
+                                                <b>{{ $flota->tipo_terminal->modelo }}</b>
+                                            </h4>
                                         </li>
-                                    @else
-                                        - ISSI: <b>Sin asignar</b></h3>
+                                        <li>
+                                            <h4>Estado: <b>{{ $flota->estado->nombre }}</b></h4>
                                         </li>
-                                @endif
-                                <li>
-                                    <h4>Marca: <b>{{ $flota->tipo_terminal->marca }}</b> - Modelo:
-                                        <b>{{ $flota->tipo_terminal->modelo }}</b>
-                                    </h4>
-                                </li>
-                                <li>
-                                    <h4>Estado: <b>{{ $flota->estado->nombre }}</b></h4>
-                                </li>
-                                </ul>
-                            @else
-                                <img class="mr-5" src="{{ asset($flota->equipo->tipo_terminal->imagen) }}"
-                                    style="float: left; width: 150px;">
-                                <ul>
-                                    <li>
-                                        <h3>TEI: <b>{{ $flota->equipo->tei }}</b>
-                                            @if (!is_null($flota->equipo->issi))
-                                                - ISSI: <b>{{ $flota->equipo->issi }}</b>
-                                    </li>
+                                    </ul>
                                 @else
-                                    - ISSI: <b>Sin asignar</b></h3>
-                                    </li>
-                                    @endif
-                                    <li>
-                                        <h4>Marca: <b>{{ $flota->equipo->tipo_terminal->marca }}</b> - Modelo:
-                                            <b>{{ $flota->equipo->tipo_terminal->modelo }}</b>
-                                        </h4>
-                                    </li>
-                                    <li>
-                                        <h4>Estado: <b>{{ $flota->equipo->estado->nombre }}</b></h4>
-                                    </li>
-                                </ul>
+                                    <img class="mr-5" src="{{ asset($flota->equipo->tipo_terminal->imagen) }}"
+                                        style="float: left; width: 150px;">
+                                    <ul>
+                                        <li>
+                                            <h3>TEI: <b>{{ $flota->equipo->tei }}</b>
+                                                @if (!is_null($flota->equipo->issi))
+                                                            - ISSI: <b>{{ $flota->equipo->issi }}</b>
+                                                    </li>
+                                                @else
+                                                    - ISSI: <b>Sin asignar</b></h3>
+                                                    </li>
+                                                @endif
+                                        <li>
+                                            <h4>Marca: <b>{{ $flota->equipo->tipo_terminal->marca }}</b> - Modelo:
+                                                <b>{{ $flota->equipo->tipo_terminal->modelo }}</b>
+                                            </h4>
+                                        </li>
+                                        <li>
+                                            <h4>Estado: <b>{{ $flota->equipo->estado->nombre }}</b></h4>
+                                        </li>
+                                    </ul>
                                 @endif
                             </div>
 
@@ -89,13 +108,12 @@
                                         <th style="color:#fff;">Recurso anterior</th>
                                         <th style="color:#fff;">Ticket PER</th>
                                         <th style="color:#fff;">Observaciones</th>
-                                        <th style="color:#fff;">Anexo</th> <!-- Nueva columna -->
+                                        <th style="color:#fff;">Anexo</th>
                                         @if ($desdeEquipo == false)
                                             @can('editar-historico')
                                                 <th style="color:#fff;"></th>
                                             @endcan
                                         @endif
-
                                     </thead>
                                     <tbody>
                                         @foreach ($hist as $h)
@@ -107,8 +125,7 @@
                                                 @if (is_null($h->tipoMovimiento))
                                                     <td>-</td>
                                                 @else
-                                                    <td><span
-                                                            class="badge badge-success">{{ $h->tipoMovimiento->nombre }}</span>
+                                                    <td><span class="badge badge-success">{{ $h->tipoMovimiento->nombre }}</span>
                                                     </td>
                                                 @endif
                                                 <td>{{ Carbon\Carbon::parse($h->fecha_asignacion)->format('d/m/Y H:i') }}
@@ -135,7 +152,6 @@
                                                 @endif
                                                 <td>{{ $h->ticket_per }}</td>
                                                 <td>{{ $h->observaciones }}</td>
-                                                <!-- Nueva columna para mostrar miniaturas -->
                                                 <td>
                                                     @if (!empty($h->rutas_imagenes))
                                                         <div style="display: flex; flex-wrap: wrap; align-items: center;">
@@ -180,11 +196,8 @@
                                                     @can('editar-historico')
                                                         <td>
                                                             <form action="#" method="POST">
-                                                                {{-- @can('editar-historico') --}}
-                                                                {{-- <a class="btn btn-info" href="#">Editar</a> --}}
                                                                 <a class="btn btn-info" href="#" data-toggle="modal"
                                                                     data-target="#ModalEditar{{ $h->id }}">Editar</a>
-                                                                {{-- @endcan --}}
                                                             </form>
                                                         </td>
                                                     @endcan
@@ -195,7 +208,6 @@
                                 </table>
                             </div>
 
-                            <!-- Ubicamos la paginacion a la derecha -->
                             <div class="pagination justify-content-end">
                                 {{-- !! $flota->links() !! --}}
                             </div>

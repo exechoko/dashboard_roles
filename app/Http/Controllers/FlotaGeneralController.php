@@ -1102,6 +1102,7 @@ class FlotaGeneralController extends Controller
             $id_provisorio = TipoMovimiento::where('nombre', 'Provisorio')->value('id');
             $id_revision = TipoMovimiento::where('nombre', 'Revisión')->value('id');
             $id_devolucion = TipoMovimiento::where('nombre', 'Devolución')->value('id');
+            $id_devolucion_dependencia = TipoMovimiento::where('nombre', 'Devolución a dependencia')->value('id');
             $id_reemplazo = TipoMovimiento::where('nombre', 'Reemplazo')->value('id');
             $id_recambio = TipoMovimiento::where('nombre', 'Recambio')->value('id');
             $id_devolver_equipo_temporal = TipoMovimiento::where('nombre', 'Devolver equipo temporal')->value('id');
@@ -1122,6 +1123,9 @@ class FlotaGeneralController extends Controller
                     $e->save();
                 } else if ($tipo_de_mov_id == $id_extraviado) {
                     $e->estado_id = $id_estado_perdido;
+                    $e->save();
+                } else if ($tipo_de_mov_id == $id_devolucion_dependencia) {
+                    $e->estado_id = $id_estado_usado;
                     $e->save();
                 }
             }

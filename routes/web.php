@@ -20,6 +20,7 @@ use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\CamaraFisicaController;
 use App\Http\Controllers\SitioController;
 use App\Http\Controllers\CecocoController;
+use App\Http\Controllers\TranscripcionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -104,5 +105,8 @@ Route::group(['middleware' => ['auth']], function(){
     Route::get('/indexMapaCecocoEnVivo', [App\Http\Controllers\CecocoController::class, 'indexMapaCecocoEnVivo'])->name('indexMapaCecocoEnVivo');
     Route::get('/getServiciosCecoco', [App\Http\Controllers\CecocoController::class, 'getServicios'])->name('getServiciosCecoco');
     Route::get('/getRecursosCecoco', [App\Http\Controllers\CecocoController::class, 'getRecursosCecoco'])->name('getRecursosCecoco');
+
+    Route::get('/transcribir', [TranscripcionController::class, 'index'])->name('transcribe.index');
+    Route::post('/transcribir', [TranscripcionController::class, 'transcribe'])->name('transcribe.audio');
 
 });

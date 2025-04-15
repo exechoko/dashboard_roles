@@ -16,6 +16,8 @@ class TranscripcionController extends Controller
 
     public function transcribe(Request $request)
     {
+        //set_time_limit(3600);
+
         $request->validate([
             'audio' => 'required|file|mimes:mp3,wav,m4a,ogg|max:10240' // 10MB max
         ]);
@@ -24,7 +26,8 @@ class TranscripcionController extends Controller
             $audio = $request->file('audio');
 
             // Enviar el archivo al microservicio Whisper
-            $response = Http::attach(
+            $response = Http::timeout(300)
+                ->attach(
                 'file',
                 fopen($audio->getRealPath(), 'r'),
                 $audio->getClientOriginalName()

@@ -78,7 +78,7 @@
                                         </div>
                                         <div class="card-body">
                                             <textarea id="transcription-result" class="form-control" rows="15"
-                                                placeholder="El texto transcrito aparecerá aquí..." readonly></textarea>
+                                                placeholder="El texto transcrito aparecerá aquí..." ></textarea>
                                             <button id="copy-btn" class="btn btn-outline-primary btn-block mt-3" disabled>
                                                 <i class="fas fa-copy mr-2"></i>Copiar texto
                                             </button>

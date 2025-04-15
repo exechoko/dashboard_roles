@@ -202,4 +202,11 @@
         </a>
     </li>
 @endcan
+@can('ver-menu-transcripcion')
+    <li class="{{ request()->is('transcribir*') ? 'active' : '' }}">
+        <a class="nav-link" href="/transcribir">
+            <i class="fas fa-microphone-alt"></i><span>Transcribir audio</span>
+        </a>
+    </li>
+@endcan
 <!--Documentacion en GetStisla-->

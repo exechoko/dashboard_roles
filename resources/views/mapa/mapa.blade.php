@@ -651,7 +651,7 @@
                     </div>
                 </div>
                 <div class="text-right">
-                    <form action="{{ route('mapa.export') }}" method="GET" style="display: inline;">
+                    <form action="{{ route('mapa.exportar') }}" method="GET" style="display: inline;">
                         <button type="submit" class="btn btn-primary">Exportar Listado Cámaras</button>
                     </form>
                 </div>

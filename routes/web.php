@@ -106,7 +106,7 @@ Route::group(['middleware' => ['auth']], function(){
     Route::get('/getServiciosCecoco', [App\Http\Controllers\CecocoController::class, 'getServicios'])->name('getServiciosCecoco');
     Route::get('/getRecursosCecoco', [App\Http\Controllers\CecocoController::class, 'getRecursosCecoco'])->name('getRecursosCecoco');
 
-    Route::get('/export-camaras', [App\Http\Controllers\MapaController::class, 'exportExcel'])->name('mapa.export');
+    Route::get('/exportarCamaras', [App\Http\Controllers\MapaController::class, 'exportarExcel'])->name('mapa.exportar');
 
     Route::get('/transcribir', [TranscripcionController::class, 'index'])->name('transcribe.index');
     Route::post('/transcribir', [TranscripcionController::class, 'transcribe'])->name('transcribe.audio');

@@ -507,8 +507,10 @@ class Mapacontroller extends Controller
         return view('mapa.mapa', ['comisarias' => $comisarias, 'antenas' => $antenas, 'camaras' => $camaras]);
     }
 
-    public function exportExcel()
+    public function exportarExcel()
     {
-        return Excel::download(new CamarasExport, 'ListadoCamaras_' . Carbon::now() . '.xlsx');
+        $cc = new CamaraController;
+        return $cc->exportExcel();
+        //return Excel::download(new CamarasExport, 'ListadoCamaras_' . Carbon::now() . '.xlsx');
     }
 }

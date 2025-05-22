@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\CamarasExport;
 use App\Models\Camara;
 use App\Models\Comisaria;
 use App\Models\Departamental;
@@ -12,9 +13,11 @@ use App\Models\Division;
 use App\Models\Seccion;
 use App\Models\Sitio;
 use App\Models\TipoCamara;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class Mapacontroller extends Controller
 {
@@ -502,5 +505,10 @@ class Mapacontroller extends Controller
 
 
         return view('mapa.mapa', ['comisarias' => $comisarias, 'antenas' => $antenas, 'camaras' => $camaras]);
+    }
+
+    public function exportExcel()
+    {
+        return Excel::download(new CamarasExport, 'ListadoCamaras_' . Carbon::now() . '.xlsx');
     }
 }

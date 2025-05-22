@@ -650,6 +650,11 @@
                         <span class="badge badge-dark p-2 m-1">Total sitios: {{ $sitios }}</span>
                     </div>
                 </div>
+                <div class="text-right">
+                    <form action="{{ route('mapa.export') }}" method="GET" style="display: inline;">
+                        <button type="submit" class="btn btn-primary">Exportar Listado Cámaras</button>
+                    </form>
+                </div>
             </div>
         </div>
 

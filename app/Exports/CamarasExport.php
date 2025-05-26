@@ -18,6 +18,7 @@ class CamarasExport implements FromCollection, WithHeadings, WithEvents, ShouldA
         //return Camara::select('id', 'nombre', 'sitio', 'inteligencia', 'marca', 'modelo', 'etapa', 'latitud', 'longitud', 'fecha_instalacion')->get();
         $camaras = Camara::select(
             'camaras.id',
+            'camaras.ip',
             'camaras.nombre',
             'sitio.nombre as sitio',
             'camaras.inteligencia',
@@ -51,6 +52,7 @@ class CamarasExport implements FromCollection, WithHeadings, WithEvents, ShouldA
     {
         return [
             'Nro',
+            'IP',
             'Nombre',
             'Sitio',
             'Inteligencia',

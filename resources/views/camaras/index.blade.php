@@ -67,7 +67,7 @@
                                         <th style="display: none;">ID</th>
                                         <th style="color:#fff;">Tipo</th>
                                         <th style="color:#fff;">Nombre</th>
-                                        <th style="color:#fff;">Observaciones</th>
+                                        <th style="color:#fff;">Modelo</th>
                                         @can('ver-camara')
                                             <th style="color:#fff;">Acciones</th>
                                         @endcan
@@ -92,7 +92,7 @@
                                                     </td>
 
                                                     <td>{{ $camara->nombre }}</td>
-                                                    <td>{{ $camara->observaciones }}</td>
+                                                    <td>{{ $camara->modelo }}</td>
                                                     <td>
                                                         <form action="{{ route('camaras.destroy', $camara->id) }}"
                                                             method="POST">
@@ -100,19 +100,29 @@
                                                             {{-- <a class="btn btn-success" href="#" data-toggle="modal"
                                                             data-target="#ModalEditar{{ $equipo->id }}">Editar</a> --}}
 
+                                                            @can('reiniciar-camara') {{-- Asegúrate de tener esta política en tus permisos --}}
+                                                                <a class="btn btn-secondary" href="#" data-toggle="modal" data-target="#ModalReiniciar{{ $camara->id }}"
+                                                                    title="Reiniciar">
+                                                                    <i class="fas fa-sync-alt"></i>
+                                                                </a>
+                                                            @endcan
+
                                                             @can('ver-camara')
-                                                                <a class="btn btn-warning" href="#" data-toggle="modal"
-                                                                    data-target="#ModalDetalle{{ $camara->id }}">Detalles</a>
+                                                                <a class="btn btn-warning" href="#" data-toggle="modal" data-target="#ModalDetalle{{ $camara->id }}" title="Detalles">
+                                                                    <i class="fas fa-eye"></i>
+                                                                </a>
                                                             @endcan
 
                                                             @can('editar-camara')
-                                                                <a class="btn btn-info"
-                                                                    href="{{ route('camaras.edit', $camara->id) }}">Editar</a>
+                                                                <a class="btn btn-info" href="{{ route('camaras.edit', $camara->id) }}" title="Editar">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </a>
                                                             @endcan
 
                                                             @can('borrar-camara')
-                                                                <a class="btn btn-danger" href="#" data-toggle="modal"
-                                                                    data-target="#ModalDelete{{ $camara->id }}">Borrar</a>
+                                                                <a class="btn btn-danger" href="#" data-toggle="modal" data-target="#ModalDelete{{ $camara->id }}" title="Borrar">
+                                                                    <i class="fas fa-trash-alt"></i>
+                                                                </a>
                                                             @endcan
                                                         </form>
                                                     </td>

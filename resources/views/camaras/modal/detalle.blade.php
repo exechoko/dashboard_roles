@@ -21,6 +21,7 @@
                     <li>Nro de Serie: <b>@if (!is_null($camara->nro_serie)) {{ $camara->nro_serie}} @else - @endif</b></li>
                     <li>Inteligencia: <b>{{ $camara->inteligencia }}</b></li>
                     <li>Etapa: <b>{{ $camara->etapa }}</b> - Fecha de instalación: <b>@if (!is_null($camara->fecha_instalacion)) {{ $camara->fecha_instalacion }} @else - @endif</b></li>
+                    <li>Observaciones: <b>@if (!is_null($camara->observaciones)) {{ $camara->observaciones }} @else - @endif</b></li>
                 </ul>
             </div>
 

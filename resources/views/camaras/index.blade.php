@@ -6,7 +6,8 @@
             <h3 class="page__heading">Cámaras - Administración</h3>
             <div>
                 <div class="" style="float: right;">
-                    <label class="alert alert-dark" for="">Cámaras: {{ $totalCam }} / Canales: {{ $cantidadCanales }}  </label>
+                    <label class="alert alert-dark" for="">Cámaras: {{ $totalCam }} / Canales: {{ $cantidadCanales }}
+                    </label>
                     <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>
                     <label class="alert alert-warning" for="">Fijas FR: {{ $fijasFR }}</label>
                     <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
@@ -94,38 +95,45 @@
                                                     <td>{{ $camara->nombre }}</td>
                                                     <td>{{ $camara->modelo }}</td>
                                                     <td>
-                                                        <form action="{{ route('camaras.destroy', $camara->id) }}"
-                                                            method="POST">
-
-                                                            {{-- <a class="btn btn-success" href="#" data-toggle="modal"
-                                                            data-target="#ModalEditar{{ $equipo->id }}">Editar</a> --}}
-
-                                                            @can('reiniciar-camara') {{-- Asegúrate de tener esta política en tus permisos --}}
-                                                                <a class="btn btn-secondary" href="#" data-toggle="modal" data-target="#ModalReiniciar{{ $camara->id }}"
-                                                                    title="Reiniciar">
+                                                        {{-- Formulario de reinicio --}}
+                                                        @can('reiniciar-camara')
+                                                            <form action="{{ route('camaras.reiniciar', $camara->id) }}" method="POST"
+                                                                style="display:inline;">
+                                                                @csrf
+                                                                <button class="btn btn-secondary" title="Reiniciar"
+                                                                    onclick="return confirm('¿Seguro que desea reiniciar la cámara?')">
                                                                     <i class="fas fa-sync-alt"></i>
-                                                                </a>
-                                                            @endcan
+                                                                </button>
+                                                            </form>
+                                                        @endcan
 
-                                                            @can('ver-camara')
-                                                                <a class="btn btn-warning" href="#" data-toggle="modal" data-target="#ModalDetalle{{ $camara->id }}" title="Detalles">
-                                                                    <i class="fas fa-eye"></i>
-                                                                </a>
-                                                            @endcan
+                                                        {{-- Botón de detalles --}}
+                                                        @can('ver-camara')
+                                                            <a class="btn btn-warning" href="#" data-toggle="modal"
+                                                                data-target="#ModalDetalle{{ $camara->id }}" title="Detalles">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                        @endcan
 
-                                                            @can('editar-camara')
-                                                                <a class="btn btn-info" href="{{ route('camaras.edit', $camara->id) }}" title="Editar">
-                                                                    <i class="fas fa-edit"></i>
-                                                                </a>
-                                                            @endcan
+                                                        {{-- Botón de editar --}}
+                                                        @can('editar-camara')
+                                                            <a class="btn btn-info" href="{{ route('camaras.edit', $camara->id) }}"
+                                                                title="Editar">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                        @endcan
 
-                                                            @can('borrar-camara')
-                                                                <a class="btn btn-danger" href="#" data-toggle="modal" data-target="#ModalDelete{{ $camara->id }}" title="Borrar">
-                                                                    <i class="fas fa-trash-alt"></i>
-                                                                </a>
-                                                            @endcan
+                                                        <form action="{{ route('camaras.destroy', $camara->id) }}" method="POST"
+                                                            style="display:inline;">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button class="btn btn-danger"
+                                                                onclick="return confirm('¿Seguro que desea borrar esta cámara?')">
+                                                                <i class="fas fa-trash-alt"></i>
+                                                            </button>
                                                         </form>
                                                     </td>
+
                                                 </tr>
                                             @endforeach
                                         @endif

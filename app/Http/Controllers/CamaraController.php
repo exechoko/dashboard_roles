@@ -11,6 +11,7 @@ use App\Models\TipoCamara;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Maatwebsite\Excel\Facades\Excel;
 
 class CamaraController extends Controller
@@ -236,6 +237,29 @@ class CamaraController extends Controller
         $camara = Camara::find($id);
         $camara->delete();
         return redirect()->route('camaras.index');
+    }
+
+    public function reiniciar($id)
+    {
+        $camara = Camara::findOrFail($id);
+        $ip = $camara->ip;
+
+        $user = env('CAMARA_USER');
+        $pass = env('CAMARA_PASS');
+
+        $url = "http://{$user}:{$pass}@{$ip}/cgi-bin/magicBox.cgi?action=reboot";
+
+        try {
+            $response = Http::withoutVerifying()->get($url);
+
+            if ($response->successful()) {
+                return back()->with('success', 'Cámara reiniciada correctamente.');
+            } else {
+                return back()->with('error', 'No se pudo reiniciar la cámara. Código: ' . $response->status());
+            }
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error al intentar reiniciar la cámara: ' . $e->getMessage());
+        }
     }
 
     public function importExcel(Request $request)

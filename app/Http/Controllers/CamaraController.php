@@ -249,17 +249,11 @@ class CamaraController extends Controller
 
         $url = "http://{$user}:{$pass}@{$ip}/cgi-bin/magicBox.cgi?action=reboot";
 
-        try {
-            $response = Http::withoutVerifying()->get($url);
-
-            if ($response->successful()) {
-                return back()->with('success', 'Cámara reiniciada correctamente.');
-            } else {
-                return back()->with('error', 'No se pudo reiniciar la cámara. Código: ' . $response->status());
-            }
-        } catch (\Exception $e) {
-            return back()->with('error', 'Error al intentar reiniciar la cámara: ' . $e->getMessage());
-        }
+        // Retornar con la URL para abrir en nueva pestaña
+        return back()->with([
+            'success' => 'Abriendo pestaña para reiniciar cámara...',
+            'open_url' => $url
+        ]);
     }
 
     public function importExcel(Request $request)

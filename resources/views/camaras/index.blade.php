@@ -151,4 +151,12 @@
             </div>
         </div>
     </section>
+    
+    {{-- Script para abrir nueva pestaña cuando se reinicia cámara --}}
+    @if(session('open_url'))
+        <script>
+            // Abrir nueva pestaña con la URL de reinicio
+            window.open('{{ session('open_url') }}', '_blank');
+        </script>
+    @endif
 @endsection

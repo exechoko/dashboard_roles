@@ -25,7 +25,7 @@ class DashboardController extends Controller
         )
             ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
             ->where('equipos.estado_id', 3) // Estado "no funciona"
-            ->groupBy('tipo_terminales.id', 'equipos.provisto')
+            ->groupBy('tipo_terminales.id', 'tipo_terminales.marca', 'tipo_terminales.modelo', 'equipos.provisto')
             ->get();
 
         return response()->json($records);
@@ -43,7 +43,7 @@ class DashboardController extends Controller
         )
             ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
             ->whereIn('equipos.estado_id', [$idEstadoBaja, $idEstadoRecambio]) // Estado "Baja" "Recambio
-            ->groupBy('tipo_terminales.id', 'equipos.provisto')
+            ->groupBy('tipo_terminales.id', 'tipo_terminales.marca', 'tipo_terminales.modelo', 'equipos.provisto')
             ->get();
 
         return response()->json($records);
@@ -88,7 +88,13 @@ class DashboardController extends Controller
             ->leftJoin('tipo_uso', 'tipo_terminales.tipo_uso_id', '=', 'tipo_uso.id')
             ->leftJoin('flota_general', 'equipos.id', '=', 'flota_general.equipo_id')
             ->whereIn('equipos.estado_id', [$idEstadoNuevo, $idEstadoUsado, $idEstadoReparado])
-            ->groupBy('tipo_terminales.id', 'tipo_uso.uso', 'equipos.provisto')
+            ->groupBy(
+                'tipo_terminales.id',
+                'tipo_terminales.marca',
+                'tipo_terminales.modelo',
+                'tipo_uso.uso',
+                'equipos.provisto'
+            )
             ->orderBy('tipo_terminales.marca', 'DESC')
             ->orderBy('tipo_terminales.modelo', 'DESC')
             ->get();

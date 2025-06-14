@@ -72,77 +72,77 @@
                                             </tr>
                                         @else
                                             @foreach ($flota as $f)
-                                                {{-- <tr>
-                                            <td>
-                                                @if ($f->equipo == null)
-                                                $f->id
-                                                @endif
-                                            </td>
-                                        </tr> --}}
-
-                                                @include('flota.modal.detalle')
-                                                @include('flota.modal.borrar')
-                                                {{-- @include('flota.modal.editar') --}}
-                                                <tr>
-                                                    <td style="display: none;">{{ $f->id }}</td>
-                                                    <td><a class="btn btn-dark" href="{{ route('verHistorico', $f->id) }}"
-                                                            target="_blank">{{ $f->equipo->tei }}</a>
-                                                    </td>
+                                                        {{-- <tr>
                                                     <td>
-                                                        <div class="d-flex flex-column align-items-center">
-                                                            <img alt="" width="60px" id="myImg"
-                                                                src="{{ asset($f->equipo->tipo_terminal->imagen) }}"
-                                                                class="img-fluid img-thumbnail">
-                                                            <span
-                                                                style="font-size: 12px;">{{ $f->equipo->tipo_terminal->tipo_uso->uso . '/' . $f->equipo->tipo_terminal->modelo }}</span>
-                                                        </div>
-                                                    </td>
-                                                    <td>{{ $f->fecha_ultimo_mov ? $f->fecha_ultimo_mov : '-' }}</td>
-                                                    <td>{{ $f->ultimo_movimiento ? $f->ultimo_movimiento : '-' }}</td>
-                                                    @if (is_null($f->recurso_id))
-                                                        <td>-</td>
-                                                    @else
-                                                        @if (is_null($f->recurso))
-                                                            <td>-</td>
-                                                        @else
-                                                            <td>{{ $f->recurso->nombre }}</td>
+                                                        @if ($f->equipo == null)
+                                                        $f->id
                                                         @endif
-                                                    @endif
-
-                                                    <td>{{ $f->destino->nombre }}<br>{{ $f->destino->dependeDe() }}</td>
-                                                    <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; position: relative;" title="{{ $f->observaciones }}">
-                                                        <span class="tooltip-text">{{ $f->observaciones_ultimo_mov }}</span>
                                                     </td>
-                                                    {{-- @if (is_null($f->ultimoLugar()))
-                                                    <td>Sin movimientos</td>
-                                                @else
-                                                    <td>{{ $f->ultimoLugar() }}</td>
-                                                @endif --}}
-                                                    <td>
-                                                        <form action="{{ route('flota.destroy', $f->id) }}" method="POST">
+                                                </tr> --}}
 
-                                                            {{-- <a class="btn btn-success" href="#" data-toggle="modal"
-                                                            data-target="#ModalEditar{{ $flota->id }}">Editar</a> --}}
+                                                        @include('flota.modal.detalle')
+                                                        @include('flota.modal.borrar')
+                                                        {{-- @include('flota.modal.editar') --}}
+                                                        <tr>
+                                                            <td style="display: none;">{{ $f->id }}</td>
+                                                            <td><a class="btn btn-dark" href="{{ route('verHistorico', $f->id) }}"
+                                                                    target="_blank">{{ $f->equipo->tei }}</a>
+                                                            </td>
+                                                            <td>
+                                                                <div class="d-flex flex-column align-items-center">
+                                                                    <img alt="" width="60px" id="myImg"
+                                                                        src="{{ asset($f->equipo->tipo_terminal->imagen) }}"
+                                                                        class="img-fluid img-thumbnail">
+                                                                    <span
+                                                                        style="font-size: 12px;">{{ $f->equipo->tipo_terminal->tipo_uso->uso . '/' . $f->equipo->tipo_terminal->modelo }}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td>{{ $f->fecha_ultimo_mov ? $f->fecha_ultimo_mov : '-' }}</td>
+                                                            <td>{{ $f->ultimo_movimiento ? $f->ultimo_movimiento : '-' }}</td>
+                                                            @if (is_null($f->recurso_id))
+                                                                <td>-</td>
+                                                            @else
+                                                                @if (is_null($f->recurso))
+                                                                    <td>-</td>
+                                                                @else
+                                                                    <td>{{ $f->recurso->nombre }}</td>
+                                                                @endif
+                                                            @endif
 
-                                                            {{-- <a class="btn btn-success" href="{{ route('generateDocxConTabla', $f->id) }}">Acta de entrega</a> --}}
+                                                            <td>{{ $f->destino->nombre }}<br>{{ $f->destino->dependeDe() }}</td>
+                                                            <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; position: relative;" title="{{ $f->observaciones }}">
+                                                                <span class="tooltip-text">{{ $f->observaciones_ultimo_mov }}</span>
+                                                            </td>
+                                                            {{-- @if (is_null($f->ultimoLugar()))
+                                                            <td>Sin movimientos</td>
+                                                        @else
+                                                            <td>{{ $f->ultimoLugar() }}</td>
+                                                        @endif --}}
+                                                            <td>
+                                                                <form action="{{ route('flota.destroy', $f->id) }}" method="POST">
 
-                                                            {{-- <a class="btn btn-warning" href="#" data-toggle="modal"
-                                                            data-target="#ModalDetalle{{ $f->id }}">Detalles</a> --}}
+                                                                    {{-- <a class="btn btn-success" href="#" data-toggle="modal"
+                                                                    data-target="#ModalEditar{{ $flota->id }}">Editar</a> --}}
 
-                                                            @can('editar-flota')
-                                                                <a class="btn btn-success"
-                                                                    href="{{ route('flota.edit', $f->id) }}"><i
-                                                                        class="fas fa-plus"></i></a>
-                                                            @endcan
+                                                                    {{-- <a class="btn btn-success" href="{{ route('generateDocxConTabla', $f->id) }}">Acta de entrega</a> --}}
 
-                                                            @can('borrar-flota')
-                                                                <a class="btn btn-danger" href="#" data-toggle="modal"
-                                                                    data-target="#ModalDelete{{ $f->id }}"><i
-                                                                        class="far fa-trash-alt"></i></a>
-                                                            @endcan
-                                                        </form>
-                                                    </td>
-                                                </tr>
+                                                                    <a class="btn btn-warning" href="#" data-toggle="modal" data-target="#ModalDetalle{{ $f->id }}"><i
+                                                                            class="far fa-eye"></i></a>
+
+                                                                    @can('editar-flota')
+                                                                        <a class="btn btn-success"
+                                                                            href="{{ route('flota.edit', $f->id) }}"><i
+                                                                                class="fas fa-plus"></i></a>
+                                                                    @endcan
+
+                                                                    @can('borrar-flota')
+                                                                        <a class="btn btn-danger" href="#" data-toggle="modal"
+                                                                            data-target="#ModalDelete{{ $f->id }}"><i
+                                                                                class="far fa-trash-alt"></i></a>
+                                                                    @endcan
+                                                                </form>
+                                                            </td>
+                                                        </tr>
                                             @endforeach
                                         @endif
                                     </tbody>

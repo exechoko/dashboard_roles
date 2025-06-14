@@ -23,12 +23,13 @@
                             <div class="col-md-4">
                                 <h5>Información del Equipo</h5>
                                 <ul class="list-unstyled">
-                                    <li><strong>TEI:</strong> {{ $f->equipo->tei ?? '-' }}</li>
-                                    <li><strong>Tipo:</strong> {{ $f->equipo->tipo_terminal->tipo_uso->uso ?? '-' }}</li>
-                                    <li><strong>Modelo:</strong> {{ $f->equipo->tipo_terminal->modelo ?? '-' }}</li>
                                     <li><strong>Marca:</strong> {{ $f->equipo->tipo_terminal->marca ?? '-' }}</li>
+                                    <li><strong>Modelo:</strong> {{ $f->equipo->tipo_terminal->modelo ?? '-' }}</li>
+                                    <li><strong>Proveedor:</strong> {{ $f->equipo->provisto ?? '-' }}</li>
+                                    <li><strong>TEI:</strong> {{ $f->equipo->tei ?? '-' }}</li>
                                     <li><strong>ISSI:</strong> {{ $f->equipo->issi ?? '-' }}</li>
                                     <li><strong>ID ISSI:</strong> {{ $f->equipo->nombre_issi ?? '-' }}</li>
+                                    <li><strong>Tipo:</strong> {{ $f->equipo->tipo_terminal->tipo_uso->uso ?? '-' }}</li>
                                     <li><strong>Estado:</strong> {{ $f->equipo->estado->nombre ?? '-' }}</li>
                                 </ul>
                             </div>

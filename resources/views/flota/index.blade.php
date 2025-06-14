@@ -63,7 +63,7 @@
                                         <th style="color:#fff;">Dependencia</th>
                                         <th style="color:#fff;">Obs.</th>
                                         <!--th style="color:#fff;">Actualmente en</th-->
-                                        <th style="color:#fff; width: 150px;"></th>
+                                        <th style="color:#fff; width: 200px;"></th>
                                     </thead>
                                     <tbody>
                                         @if (count($flota) <= 0)

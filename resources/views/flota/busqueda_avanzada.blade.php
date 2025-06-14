@@ -146,7 +146,7 @@
                                         <th style="color:#fff;">Dependencia</th>
                                         <th style="color:#fff;">Obs.</th>
                                         <!--th style="color:#fff;">Actualmente en</th-->
-                                        <th style="color:#fff; width: 150px;"></th>
+                                        <th style="color:#fff; width: 200px;"></th>
                                     </thead>
                                     <tbody>
                                         @if (count($flota) <= 0)
@@ -212,8 +212,8 @@
 
                                                             {{-- <a class="btn btn-success" href="{{ route('generateDocxConTabla', $f->id) }}">Acta de entrega</a> --}}
 
-                                                            {{-- <a class="btn btn-warning" href="#" data-toggle="modal"
-                                                            data-target="#ModalDetalle{{ $f->id }}">Detalles</a> --}}
+                                                            <a class="btn btn-warning" href="#" data-toggle="modal" data-target="#ModalDetalle{{ $f->id }}"><i
+                                                                            class="far fa-eye"></i></a>
 
                                                             @can('editar-flota')
                                                                 <a class="btn btn-success"

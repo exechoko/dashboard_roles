@@ -58,97 +58,95 @@ class FlotaGeneralController extends Controller
 
     public function busquedaAvanzada(Request $request)
     {
+        // Obtener parámetros como arrays
         $texto = trim($request->get('texto'));
-        $equipoId = $request->get('equipo_id');
-        $recursoId = $request->get('recurso_id');
-        $destinoId = $request->get('destino_id');
-        $destinoActualId = $request->get('destino_actual_id');
-        $tipoTerminalId = $request->get('tipo_terminal_id');
-        $fechaAsignacion = $request->get('fecha_asignacion');
-        $fechaDesasignacion = $request->get('fecha_desasignacion');
+        $equipoIds = (array) $request->input('equipo_id', []);
+        $recursoIds = (array) $request->input('recurso_id', []);
+        $destinoIds = (array) $request->input('destino_id', []);
+        $destinoActualIds = (array) $request->input('destino_actual_id', []);
+        $tipoTerminalIds = (array) $request->input('tipo_terminal_id', []);
         $fechaRango = $request->get('fecha_rango');
         $ticketPer = $request->get('ticket_per');
         $observaciones = $request->get('observaciones');
 
-        // Obtener equipos, recursos y otros datos necesarios.
-        $equipos = Equipo::all(); // Ajusta según tu modelo
-        $recursos = Recurso::all(); // Si es necesario, agrega esta línea
-        $destinos = Destino::all(); // Si es necesario, agrega esta línea
+        // Obtener datos para los dropdowns
+        $equipos = Equipo::all();
+        $recursos = Recurso::all();
+        $destinos = Destino::all();
         $tiposTerminal = TipoTerminal::all();
 
         $flota = FlotaGeneral::query();
 
+        // Filtro de texto
         if ($texto) {
-            $flota->whereHas('equipo', function ($query) use ($texto) {
-                $query->where('issi', 'like', '%' . $texto . '%')
-                    ->orWhere('tei', 'like', '%' . $texto . '%');
-            })->orWhereHas('recurso', function ($query1) use ($texto) {
-                $query1->where('nombre', 'like', '%' . $texto . '%');
-            })->orWhereHas('destino', function ($query2) use ($texto) {
-                $query2->where('nombre', 'like', '%' . $texto . '%');
+            $flota->where(function ($q) use ($texto) {
+                $q->whereHas('equipo', function ($query) use ($texto) {
+                    $query->where('issi', 'like', '%' . $texto . '%')
+                        ->orWhere('tei', 'like', '%' . $texto . '%');
+                })->orWhereHas('recurso', function ($query) use ($texto) {
+                    $query->where('nombre', 'like', '%' . $texto . '%');
+                })->orWhereHas('destino', function ($query) use ($texto) {
+                    $query->where('nombre', 'like', '%' . $texto . '%');
+                });
             });
         }
 
-        if ($equipoId) {
-            $flota->where('equipo_id', $equipoId);
+        // Filtro por equipos (multiselect)
+        if (!empty($equipoIds)) {
+            $flota->whereIn('equipo_id', $equipoIds);
         }
-        if ($recursoId) {
-            $flota->where('recurso_id', $recursoId);
+
+        // Filtro por recursos (multiselect)
+        if (!empty($recursoIds)) {
+            $flota->whereIn('recurso_id', $recursoIds);
         }
-        if ($destinoActualId) {
-            $flota->whereHas('equipo.historico', function ($query) use ($destinoActualId) {
-                $query->where('destino_id', $destinoActualId)
-                    ->where('fecha_desasignacion', null);
+
+        // Filtro por destino actual (multiselect)
+        if (!empty($destinoActualIds)) {
+            $flota->whereHas('equipo.historico', function ($query) use ($destinoActualIds) {
+                $query->whereIn('destino_id', $destinoActualIds)
+                    ->whereNull('fecha_desasignacion');
             });
         }
-        if ($destinoId) {
-            $destino = Destino::find($destinoId);
-            $categoria = null;
-            $nombre = $destino->nombre;
-            if (strpos($nombre, 'Dirección') === 0) {
-                $categoria = 'direccion';
-            } elseif (strpos($nombre, 'Departamental') === 0) {
-                $categoria = 'departamental';
-            } elseif (strpos($nombre, 'División') === 0) {
-                $categoria = 'division';
-            } elseif (strpos($nombre, 'Comisaría') === 0) {
-                $categoria = 'comisaria';
-            } elseif (strpos($nombre, 'Sección') === 0) {
-                $categoria = 'seccion';
+
+        // Filtro por destino patrimonial (multiselect)
+        if (!empty($destinoIds)) {
+            $allDependientes = collect();
+
+            foreach ($destinoIds as $destinoId) {
+                $destino = Destino::find($destinoId);
+                if ($destino) {
+                    $categoria = $this->determinarCategoria($destino->nombre);
+                    if ($categoria) {
+                        $dependientes = $destino->destinosDependientes($categoria, $destinoId);
+                        $allDependientes = $allDependientes->merge($dependientes);
+                    }
+                }
             }
-            if ($categoria) {
-                $destinosDependientes = $destino->destinosDependientes($categoria, $destinoId);
-                $flota->whereIn('destino_id', $destinosDependientes);
-            }
+
+            $flota->whereIn('destino_id', $allDependientes->unique());
         }
-        /*if ($destinoId) {
-            $flota->where('destino_id', $destinoId);
-        }*/
-        if ($tipoTerminalId) {
-            $flota->whereHas('equipo', function ($query) use ($tipoTerminalId) {
-                $query->where('tipo_terminal_id', $tipoTerminalId);
+
+        // Filtro por tipos de terminal (multiselect)
+        if (!empty($tipoTerminalIds)) {
+            $flota->whereHas('equipo', function ($query) use ($tipoTerminalIds) {
+                $query->whereIn('tipo_terminal_id', $tipoTerminalIds);
             });
         }
-        if ($fechaAsignacion) {
-            $flota->whereDate('fecha_asignacion', $fechaAsignacion);
-        }
-        if ($fechaDesasignacion) {
-            $flota->whereDate('fecha_desasignacion', $fechaDesasignacion);
-        }
-        // Filtrar por rango de fechas en la tabla historico
+
+        // Filtro por rango de fechas
         if ($fechaRango) {
             list($fechaInicio, $fechaFin) = explode(' - ', $fechaRango);
-
-            // Convertir las fechas a objetos Carbon
             $fechaInicio = Carbon::parse($fechaInicio)->startOfDay();
             $fechaFin = Carbon::parse($fechaFin)->endOfDay();
 
-            // Filtrar por rango de fechas en la tabla historico y fecha_desasignacion null
             $flota->whereHas('equipo.historico', function ($query) use ($fechaInicio, $fechaFin) {
                 $query->whereBetween('fecha_asignacion', [$fechaInicio, $fechaFin])
                     ->whereNull('fecha_desasignacion');
             });
         }
+
+        // Otros filtros
         if ($ticketPer) {
             $flota->where('ticket_per', 'like', '%' . $ticketPer . '%');
         }
@@ -156,8 +154,10 @@ class FlotaGeneralController extends Controller
             $flota->where('observaciones', 'like', '%' . $observaciones . '%');
         }
 
-        $flota = $flota->orderBy('updated_at', 'desc')->paginate(500);
+        // Paginación con todos los parámetros
+        $flota = $flota->orderBy('updated_at', 'desc')->paginate(500)->appends($request->query());
 
+        // Procesar cada registro
         foreach ($flota as $f) {
             $ultimoMovimiento = $f->ultimoMovimiento();
             $f->ultimo_movimiento = $ultimoMovimiento ? $ultimoMovimiento->tipoMovimiento->nombre : '-';
@@ -165,25 +165,38 @@ class FlotaGeneralController extends Controller
             $f->observaciones_ultimo_mov = $ultimoMovimiento ? $ultimoMovimiento->observaciones : '-';
         }
 
-        return view(
-            'flota.busqueda_avanzada',
-            compact(
-                'flota',
-                'texto',
-                'equipos',
-                'recursos',
-                'destinos',
-                'tiposTerminal',
-                'equipoId',
-                'recursoId',
-                'destinoId',
-                'fechaAsignacion',
-                'fechaDesasignacion',
-                'fechaRango',
-                'ticketPer',
-                'observaciones'
-            )
-        );
+        return view('flota.busqueda_avanzada', compact(
+            'flota',
+            'texto',
+            'equipos',
+            'recursos',
+            'destinos',
+            'tiposTerminal',
+            'equipoIds',
+            'recursoIds',
+            'destinoIds',
+            'destinoActualIds',
+            'tipoTerminalIds',
+            'fechaRango',
+            'ticketPer',
+            'observaciones'
+        ));
+    }
+
+    // Función auxiliar para determinar categoría
+    private function determinarCategoria($nombre)
+    {
+        if (strpos($nombre, 'Dirección') === 0)
+            return 'direccion';
+        if (strpos($nombre, 'Departamental') === 0)
+            return 'departamental';
+        if (strpos($nombre, 'División') === 0)
+            return 'division';
+        if (strpos($nombre, 'Comisaría') === 0)
+            return 'comisaria';
+        if (strpos($nombre, 'Sección') === 0)
+            return 'seccion';
+        return null;
     }
 
     function obtenerNombreMes($mes)

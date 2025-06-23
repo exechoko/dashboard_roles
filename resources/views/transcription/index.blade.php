@@ -379,22 +379,26 @@
                         try {
                             const transcriptionObj = JSON.parse(data.transcription);
 
-                            // Construir texto de transcripción a partir de los diálogos
+                            // Construir HTML con formato de chat
                             transcriptionText = transcriptionObj.dialogos.map(dialogo => {
-                                const roleClass = dialogo.rol === 'AGENTE_911' ? 'role-agente' :
-                                    dialogo.rol === 'DENUNCIANTE' ? 'role-denunciante' : '';
-                                return `<span class="timestamp">[${dialogo.timestamp}]</span>
-                                                <span class="${roleClass}">${dialogo.rol}:</span>
-                                                ${dialogo.texto}`;
-                            }).join('\n\n');
+                                const alignClass = dialogo.rol === 'AGENTE_911'
+                                    ? 'align-left'
+                                    : 'align-right';
 
-                            // Usar un div para mostrar texto formateado
-                            const transcriptionResult = document.getElementById('transcriptionResult');
-                            transcriptionResult.innerHTML = transcriptionText;
+                                return `<div class="message ${alignClass}">
+                                    <div class="speaker">${dialogo.rol}:</div>
+                                    <div class="bubble">
+                                        <span class="timestamp">[${dialogo.timestamp}]</span>
+                                        ${dialogo.texto}
+                                    </div>
+                                </div>`;
+                            }).join('');
+
+                            document.getElementById('transcriptionResult').innerHTML = transcriptionText;
+
                         } catch (e) {
-                            console.error('Error parsing transcription JSON:', e);
-                            transcriptionText = data.transcription;
-                            document.getElementById('transcriptionResult').textContent = transcriptionText;
+                            console.error('Error parsing JSON:', e);
+                            // Manejo de error (mantener formato original)
                         }
                     } else {
                         transcriptionText = data.transcripcion || data.texto_completo || "No se pudo obtener la transcripción";
@@ -411,15 +415,15 @@
                     // Primero mostrar el resumen si está disponible
                     if (data.resumen) {
                         structuredHTML += `
-                                    <div class="card mb-3">
-                                        <div class="card-header bg-info text-white">
-                                            <i class="fas fa-file-alt me-2"></i> Resumen del Audio
-                                        </div>
-                                        <div class="card-body">
-                                            <p class="lead">${data.resumen}</p>
-                                        </div>
-                                    </div>
-                                `;
+                                                <div class="card mb-3">
+                                                    <div class="card-header bg-info text-white">
+                                                        <i class="fas fa-file-alt me-2"></i> Resumen del Audio
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <p class="lead">${data.resumen}</p>
+                                                    </div>
+                                                </div>
+                                            `;
                     }
 
                     // Luego mostrar datos extraídos si están disponibles
@@ -427,70 +431,70 @@
                         const de = data.datos_extraidos;
 
                         structuredHTML += `
-                                    <div class="card">
-                                        <div class="card-header bg-primary text-white">
-                                            <i class="fas fa-info-circle me-2"></i> Datos Extraídos
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="row">
-                                                ${de.nombres && de.nombres.length > 0 ? `
-                                                    <div class="col-md-6">
-                                                        <h6><i class="fas fa-user me-2"></i> Nombres</h6>
-                                                        <ul class="list-group">
-                                                            ${de.nombres.map(name => `<li class="list-group-item">${name}</li>`).join('')}
-                                                        </ul>
+                                                <div class="card">
+                                                    <div class="card-header bg-primary text-white">
+                                                        <i class="fas fa-info-circle me-2"></i> Datos Extraídos
                                                     </div>
-                                                ` : ''}
+                                                    <div class="card-body">
+                                                        <div class="row">
+                                                            ${de.nombres && de.nombres.length > 0 ? `
+                                                                <div class="col-md-6">
+                                                                    <h6><i class="fas fa-user me-2"></i> Nombres</h6>
+                                                                    <ul class="list-group">
+                                                                        ${de.nombres.map(name => `<li class="list-group-item">${name}</li>`).join('')}
+                                                                    </ul>
+                                                                </div>
+                                                            ` : ''}
 
-                                                ${de.direcciones && de.direcciones.length > 0 ? `
-                                                    <div class="col-md-6">
-                                                        <h6><i class="fas fa-map-marker-alt me-2"></i> Direcciones</h6>
-                                                        <ul class="list-group">
-                                                            ${de.direcciones.map(addr => `<li class="list-group-item">${addr}</li>`).join('')}
-                                                        </ul>
+                                                            ${de.direcciones && de.direcciones.length > 0 ? `
+                                                                <div class="col-md-6">
+                                                                    <h6><i class="fas fa-map-marker-alt me-2"></i> Direcciones</h6>
+                                                                    <ul class="list-group">
+                                                                        ${de.direcciones.map(addr => `<li class="list-group-item">${addr}</li>`).join('')}
+                                                                    </ul>
+                                                                </div>
+                                                            ` : ''}
+
+                                                            ${de.telefonos && de.telefonos.length > 0 ? `
+                                                                <div class="col-md-6 mt-3">
+                                                                    <h6><i class="fas fa-phone me-2"></i> Teléfonos</h6>
+                                                                    <ul class="list-group">
+                                                                        ${de.telefonos.map(phone => `<li class="list-group-item">${phone}</li>`).join('')}
+                                                                    </ul>
+                                                                </div>
+                                                            ` : ''}
+
+                                                            ${de.documentos && de.documentos.length > 0 ? `
+                                                                <div class="col-md-6 mt-3">
+                                                                    <h6><i class="fas fa-id-card me-2"></i> Documentos</h6>
+                                                                    <ul class="list-group">
+                                                                        ${de.documentos.map(doc => `<li class="list-group-item">${doc}</li>`).join('')}
+                                                                    </ul>
+                                                                </div>
+                                                            ` : ''}
+                                                        </div>
+
+                                                        ${de.otros && de.otros.length > 0 ? `
+                                                            <div class="mt-3">
+                                                                <h6><i class="fas fa-tags me-2"></i> Otros datos relevantes</h6>
+                                                                <ul class="list-group">
+                                                                    ${de.otros.map(other => `<li class="list-group-item">${other}</li>`).join('')}
+                                                                </ul>
+                                                            </div>
+                                                        ` : ''}
                                                     </div>
-                                                ` : ''}
-
-                                                ${de.telefonos && de.telefonos.length > 0 ? `
-                                                    <div class="col-md-6 mt-3">
-                                                        <h6><i class="fas fa-phone me-2"></i> Teléfonos</h6>
-                                                        <ul class="list-group">
-                                                            ${de.telefonos.map(phone => `<li class="list-group-item">${phone}</li>`).join('')}
-                                                        </ul>
-                                                    </div>
-                                                ` : ''}
-
-                                                ${de.documentos && de.documentos.length > 0 ? `
-                                                    <div class="col-md-6 mt-3">
-                                                        <h6><i class="fas fa-id-card me-2"></i> Documentos</h6>
-                                                        <ul class="list-group">
-                                                            ${de.documentos.map(doc => `<li class="list-group-item">${doc}</li>`).join('')}
-                                                        </ul>
-                                                    </div>
-                                                ` : ''}
-                                            </div>
-
-                                            ${de.otros && de.otros.length > 0 ? `
-                                                <div class="mt-3">
-                                                    <h6><i class="fas fa-tags me-2"></i> Otros datos relevantes</h6>
-                                                    <ul class="list-group">
-                                                        ${de.otros.map(other => `<li class="list-group-item">${other}</li>`).join('')}
-                                                    </ul>
                                                 </div>
-                                            ` : ''}
-                                        </div>
-                                    </div>
-                                `;
+                                            `;
                     }
 
                     // Si no hay datos estructurados ni resumen
                     if (!structuredHTML) {
                         structuredHTML = `
-                                    <div class="alert alert-warning">
-                                        <i class="fas fa-exclamation-triangle me-2"></i>
-                                        No se encontraron datos estructurados en la transcripción.
-                                    </div>
-                                `;
+                                                <div class="alert alert-warning">
+                                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                                    No se encontraron datos estructurados en la transcripción.
+                                                </div>
+                                            `;
                     }
 
                     document.getElementById('structuredResults').innerHTML = structuredHTML;
@@ -514,71 +518,71 @@
                     };
 
                     let html = `
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="card h-100">
-                                            <div class="card-body">
-                                                <h5><i class="fas fa-file-audio me-2"></i> Información del Archivo</h5>
-                                                <div class="mt-3">
-                                                    <p><strong>Nombre:</strong> ${data.nombre_archivo || "N/A"}</p>
-                                                    <p><strong>Ruta:</strong> ${data.ruta_archivo || "N/A"}</p>
-                                                    <p><strong>Recibido:</strong> ${data.recibido ? 'Sí' : 'No'}</p>
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="card h-100">
+                                                        <div class="card-body">
+                                                            <h5><i class="fas fa-file-audio me-2"></i> Información del Archivo</h5>
+                                                            <div class="mt-3">
+                                                                <p><strong>Nombre:</strong> ${data.nombre_archivo || "N/A"}</p>
+                                                                <p><strong>Ruta:</strong> ${data.ruta_archivo || "N/A"}</p>
+                                                                <p><strong>Recibido:</strong> ${data.recibido ? 'Sí' : 'No'}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="card h-100">
+                                                        <div class="card-body">
+                                                            <h5><i class="fas fa-tachometer-alt me-2"></i> Estado del Procesamiento</h5>
+                                                            <div class="mt-3">
+                                                                <ul class="list-group list-group-flush">
+                                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                        Transcripción
+                                                                        <span class="badge bg-${data.transcripto ? 'success' : 'danger'}">
+                                                                            ${data.transcripto ? 'Completa' : 'Pendiente'}
+                                                                        </span>
+                                                                    </li>
+                                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                        Procesamiento IA
+                                                                        <span class="badge bg-${data.procesamiento_ia ? 'success' : 'danger'}">
+                                                                            ${data.procesamiento_ia ? 'Completo' : 'Pendiente'}
+                                                                        </span>
+                                                                    </li>
+                                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                        Reporte Generado
+                                                                        <span class="badge bg-${data.reporte_generado ? 'success' : 'danger'}">
+                                                                            ${data.reporte_generado ? 'Sí' : 'No'}
+                                                                        </span>
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="card h-100">
+                                                        <div class="card-body">
+                                                            <h5><i class="fas fa-history me-2"></i> Historial</h5>
+                                                            <ul class="list-group list-group-flush mt-3">
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    <span>Recibido</span>
+                                                                    <small>${formatUnixTime(data.recibido_fecha)}</small>
+                                                                </li>
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    <span>Transcripción</span>
+                                                                    <small>${formatUnixTime(data.transcripto_fecha)}</small>
+                                                                </li>
+                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                    <span>Procesamiento IA</span>
+                                                                    <small>${formatUnixTime(data.procesamiento_ia_fecha)}</small>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="card h-100">
-                                            <div class="card-body">
-                                                <h5><i class="fas fa-tachometer-alt me-2"></i> Estado del Procesamiento</h5>
-                                                <div class="mt-3">
-                                                    <ul class="list-group list-group-flush">
-                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                            Transcripción
-                                                            <span class="badge bg-${data.transcripto ? 'success' : 'danger'}">
-                                                                ${data.transcripto ? 'Completa' : 'Pendiente'}
-                                                            </span>
-                                                        </li>
-                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                            Procesamiento IA
-                                                            <span class="badge bg-${data.procesamiento_ia ? 'success' : 'danger'}">
-                                                                ${data.procesamiento_ia ? 'Completo' : 'Pendiente'}
-                                                            </span>
-                                                        </li>
-                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                            Reporte Generado
-                                                            <span class="badge bg-${data.reporte_generado ? 'success' : 'danger'}">
-                                                                ${data.reporte_generado ? 'Sí' : 'No'}
-                                                            </span>
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="card h-100">
-                                            <div class="card-body">
-                                                <h5><i class="fas fa-history me-2"></i> Historial</h5>
-                                                <ul class="list-group list-group-flush mt-3">
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        <span>Recibido</span>
-                                                        <small>${formatUnixTime(data.recibido_fecha)}</small>
-                                                    </li>
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        <span>Transcripción</span>
-                                                        <small>${formatUnixTime(data.transcripto_fecha)}</small>
-                                                    </li>
-                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                        <span>Procesamiento IA</span>
-                                                        <small>${formatUnixTime(data.procesamiento_ia_fecha)}</small>
-                                                    </li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
+                                        `;
 
                     document.getElementById('detailedResults').innerHTML = html;
                 }
@@ -667,29 +671,77 @@
         </script>
 
         <style>
-            .transcription-text {
-                font-family: 'Courier New', monospace;
-                line-height: 1.6;
-                white-space: pre-wrap;
-                background-color: #f8f9fa;
-                padding: 15px;
-                border-radius: 5px;
-                border: 1px solid #dee2e6;
+            :root {
+                --agente-color: #e6e6e6;
+                --denunciante-color: #97cdff;
+                --timestamp-color: #6c757d;
+            }
+            /* Contenedor principal compacto */
+            #transcriptionResult {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                /* Espacio vertical reducido */
+                margin-top: 20px;
             }
 
+            /* Mensaje individual compacto */
+            .message {
+                display: flex;
+                flex-direction: column;
+                max-width: 85%;
+            }
+
+            /* Alineación izquierda (Agente) */
+            .align-left {
+                align-items: flex-start;
+                text-align: left;
+                margin-right: auto;
+            }
+
+            /* Alineación derecha (Denunciante) */
+            .align-right {
+                align-items: flex-end;
+                text-align: right;
+                margin-left: auto;
+            }
+
+            /* Burbujas compactas */
+            .bubble {
+                padding: 8px 12px;
+                /* Padding reducido */
+                border-radius: 14px;
+                position: relative;
+                word-wrap: break-word;
+                line-height: 1.4;
+            }
+
+            /* Burbuja agente */
+            .align-left .bubble {
+                background: var(--agente-color);
+                border-bottom-left-radius: 4px;
+            }
+
+            /* Burbuja denunciante */
+            .align-right .bubble {
+                background: var(--denunciante-color);
+                border-bottom-right-radius: 4px;
+            }
+
+            /* Speaker más compacto */
+            .speaker {
+                font-weight: bold;
+                font-size: 0.85em;
+                margin-bottom: 3px;
+            }
+
+            /* Timestamp debajo de la burbuja */
             .timestamp {
-                color: #6c757d;
-                font-weight: bold;
-            }
-
-            .role-agente {
-                color: #0d6efd;
-                font-weight: bold;
-            }
-
-            .role-denunciante {
-                color: #dc3545;
-                font-weight: bold;
+                display: block;
+                font-size: 0.65em;
+                color: var(--timestamp-color);
+                margin-top: 3px;
+                opacity: 0.85;
             }
 
             .gradient-bg {

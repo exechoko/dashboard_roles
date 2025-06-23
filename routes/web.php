@@ -114,11 +114,10 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/transcribir', [TranscripcionController::class, 'transcribe'])->name('transcribe.audio');
 
     Route::get('/transcription', [AudioTranscriptionController::class, 'index'])->name('transcription.index');
-    Route::prefix('transcription')->group(function () {
-        Route::post('/generate-upload-url', [AudioTranscriptionController::class, 'generateUploadUrl']);
-        Route::post('/upload-file', [AudioTranscriptionController::class, 'uploadFile']);
-        Route::get('/results', [AudioTranscriptionController::class, 'getResults']);
-        Route::get('/results-by-file', [AudioTranscriptionController::class, 'getResultsByFileName']);
-    });
+    Route::post('/generate-upload-url', [AudioTranscriptionController::class, 'generateUploadUrl']);
+    Route::post('/upload-file', [AudioTranscriptionController::class, 'uploadFile']);
+    Route::get('/get-results', [AudioTranscriptionController::class, 'getResults']);
+    Route::get('/get-results-by-filename', [AudioTranscriptionController::class, 'getResultsByFileName']);
+
 
 });

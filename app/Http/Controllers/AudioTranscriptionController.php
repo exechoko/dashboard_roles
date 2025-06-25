@@ -248,6 +248,16 @@ class AudioTranscriptionController extends Controller
             }
 
             $historial = json_decode($response, true);
+            // Ordenar por nombre de archivo
+            if (is_array($historial)) {
+                usort($historial, function ($a, $b) {
+                    // Ajusta el nombre de la propiedad según tu estructura de datos
+                    $nombreA = $a['nombre_archivo'] ?? $a['archivo'] ?? $a['filename'] ?? '';
+                    $nombreB = $b['nombre_archivo'] ?? $b['archivo'] ?? $b['filename'] ?? '';
+
+                    return strcasecmp($nombreB, $nombreA);
+                });
+            }
             return response()->json($historial);
 
         } catch (\Exception $e) {

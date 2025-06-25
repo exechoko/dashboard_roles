@@ -209,7 +209,7 @@
                                 const card = $(`
                                             <div class="card mb-3">
                                                 <div class="card-body">
-                                                    <h5 class="card-title">${item.nombre_archivo}</h5>
+                                                    <h5 class="card-title">Fecha: ${recibidoFecha} - ${item.nombre_archivo}</h5>
                                                     <p class="card-text">${item.resumen || 'Sin resumen'}</p>
                                                     <button class="btn btn-primary view-details" data-index="${index}">
                                                         Mostrar detalles

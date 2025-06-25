@@ -7,134 +7,175 @@
         </div>
         <div class="section-body">
             <div class="row">
-                <!-- Columna izquierda: Subida de archivos -->
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4 class="mb-0"><i class="fas fa-upload me-2"></i>Subir Archivo de Audio</h4>
-                        </div>
-                        <div class="card-body">
-                            <!-- Área de subida de archivos -->
-                            <div class="upload-area" id="uploadArea" onclick="document.getElementById('audioFile').click()">
-                                <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
-                                <h5>Arrastra tu archivo de audio aquí o haz clic para seleccionar</h5>
-                                <p class="text-muted">Formatos soportados: MP3, WAV, M4A, OGG (máximo 50MB)</p>
-                                <input type="file" id="audioFile" class="d-none" accept="audio/*">
-                            </div>
-
-                            <!-- Información del archivo seleccionado -->
-                            <div class="file-info" id="fileInfo" style="display: none;">
-                                <h6><i class="fas fa-file-audio"></i> Archivo seleccionado:</h6>
-                                <p id="fileName" class="mb-2"></p>
-                                <div class="d-flex">
-                                    <button type="button" class="btn btn-success flex-fill me-2" id="uploadBtn">
-                                        <i class="fas fa-upload me-2"></i> Subir y Transcribir
-                                    </button>
-                                    <button type="button" class="btn btn-secondary" id="cancelBtn">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Vista previa del audio -->
-                            <div class="audio-preview mt-3" id="audioPreview" style="display: none;">
-                                <h6><i class="fas fa-music me-2"></i> Vista Previa</h6>
-                                <audio id="audioPlayer" class="audio-player w-100" controls></audio>
-                                <div class="playback-controls mt-2 d-flex justify-content-center">
-                                    <button class="btn btn-sm btn-success me-2" id="playBtn">
-                                        <i class="fas fa-play me-1"></i> Reproducir
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" id="stopBtn">
-                                        <i class="fas fa-stop me-1"></i> Detener
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Barra de progreso -->
-                            <div class="progress-container mt-3" id="progressContainer" style="display: none;">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span id="progressText">Subiendo archivo...</span>
-                                    <span id="progressPercent">0%</span>
-                                </div>
-                                <div class="progress" style="height: 10px;">
-                                    <div class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar"
-                                        role="progressbar" style="width: 0%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="col-lg-12">
+                    <ul class="nav nav-pills" id="myTabTranscription" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="transcribir-tab3" data-toggle="tab" href="#transcribir3"
+                                role="tab" aria-controls="home" aria-selected="true">Transcribir audio</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="historial-tab3" data-toggle="tab" href="#historial3" role="tab"
+                                aria-controls="profile" aria-selected="false">Historial</a>
+                        </li>
+                    </ul>
                 </div>
-
-                <!-- Columna derecha: Resultados -->
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4 class="mb-0"><i class="fas fa-file-alt me-2"></i>Resultados de Transcripción</h4>
-                        </div>
-                        <div class="card-body">
-                            <ul class="nav nav-tabs" id="resultsTab" role="tablist">
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link active" id="transcription-tab" data-bs-toggle="tab"
-                                        data-bs-target="#transcription" type="button" role="tab"
-                                        aria-controls="transcription" aria-selected="true">
-                                        <i class="fas fa-align-left me-1"></i> Texto Completo
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="structured-tab" data-bs-toggle="tab"
-                                        data-bs-target="#structured" type="button" role="tab" aria-controls="structured"
-                                        aria-selected="false">
-                                        <i class="fas fa-cube me-1"></i> Resultados Estructurados
-                                    </button>
-                                </li>
-                            </ul>
-                            <div class="tab-content mt-3" id="resultsTabContent">
-                                <div class="tab-pane fade show active" id="transcription" role="tabpanel"
-                                    aria-labelledby="transcription-tab">
-                                    <div id="transcriptionResult" class="form-control transcription-text"
-                                        style="height: 300px; overflow-y: auto;">
-                                        <!-- El texto transcrito aparecerá aquí con formato -->
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="tab-content" id="myTabContent2">
+                    <!-- TAB Transcripcion -->
+                    <div class="tab-pane fade show active" id="transcribir3" role="tabpanel"
+                        aria-labelledby="transcribir-tab3">
+                        <div class="row">
+                            <!-- Columna izquierda: Subida de archivos -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="mb-0"><i class="fas fa-upload me-2"></i>Subir Archivo de Audio</h4>
                                     </div>
-                                    <div class="mt-3 d-flex justify-content-between">
-                                        <button id="copyBtn" class="btn btn-outline-primary" disabled>
-                                            <i class="fas fa-copy me-2"></i> Copiar Texto
-                                        </button>
-                                        <button id="saveBtn" class="btn btn-outline-success" disabled>
-                                            <i class="fas fa-save me-2"></i> Guardar como TXT
-                                        </button>
+                                    <div class="card-body">
+                                        <!-- Área de subida de archivos -->
+                                        <div class="upload-area" id="uploadArea"
+                                            onclick="document.getElementById('audioFile').click()">
+                                            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                            <h5>Arrastra tu archivo de audio aquí o haz clic para seleccionar</h5>
+                                            <p class="text-muted">Formatos soportados: MP3, WAV, M4A, OGG (máximo 50MB)</p>
+                                            <input type="file" id="audioFile" class="d-none" accept="audio/*">
+                                        </div>
+
+                                        <!-- Información del archivo seleccionado -->
+                                        <div class="file-info" id="fileInfo" style="display: none;">
+                                            <h6><i class="fas fa-file-audio"></i> Archivo seleccionado:</h6>
+                                            <p id="fileName" class="mb-2"></p>
+                                            <div class="d-flex">
+                                                <button type="button" class="btn btn-success flex-fill me-2" id="uploadBtn">
+                                                    <i class="fas fa-upload me-2"></i> Subir y Transcribir
+                                                </button>
+                                                <button type="button" class="btn btn-secondary" id="cancelBtn">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Vista previa del audio -->
+                                        <div class="audio-preview mt-3" id="audioPreview" style="display: none;">
+                                            <h6><i class="fas fa-music me-2"></i> Vista Previa</h6>
+                                            <audio id="audioPlayer" class="audio-player w-100" controls></audio>
+                                            <div class="playback-controls mt-2 d-flex justify-content-center">
+                                                <button class="btn btn-sm btn-success me-2" id="playBtn">
+                                                    <i class="fas fa-play me-1"></i> Reproducir
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" id="stopBtn">
+                                                    <i class="fas fa-stop me-1"></i> Detener
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Barra de progreso -->
+                                        <div class="progress-container mt-3" id="progressContainer" style="display: none;">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span id="progressText">Subiendo archivo...</span>
+                                                <span id="progressPercent">0%</span>
+                                            </div>
+                                            <div class="progress" style="height: 10px;">
+                                                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                                    id="progressBar" role="progressbar" style="width: 0%"></div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="tab-pane fade" id="structured" role="tabpanel" aria-labelledby="structured-tab">
-                                    <div id="structuredResults" class="mt-2" style="height: 300px; overflow-y: auto;">
-                                        <div class="alert alert-info">
-                                            <i class="fas fa-info-circle me-2"></i>
-                                            Los resultados estructurados se mostrarán aquí después de la
-                                            transcripción.
+                            </div>
+
+                            <!-- Columna derecha: Resultados -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="mb-0"><i class="fas fa-file-alt me-2"></i>Resultados de Transcripción
+                                        </h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <ul class="nav nav-tabs" id="resultsTab" role="tablist">
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link active" id="transcription-tab" data-bs-toggle="tab"
+                                                    data-bs-target="#transcription" type="button" role="tab"
+                                                    aria-controls="transcription" aria-selected="true">
+                                                    <i class="fas fa-align-left me-1"></i> Texto Completo
+                                                </button>
+                                            </li>
+                                            <li class="nav-item" role="presentation">
+                                                <button class="nav-link" id="structured-tab" data-bs-toggle="tab"
+                                                    data-bs-target="#structured" type="button" role="tab"
+                                                    aria-controls="structured" aria-selected="false">
+                                                    <i class="fas fa-cube me-1"></i> Resultados Estructurados
+                                                </button>
+                                            </li>
+                                        </ul>
+                                        <div class="tab-content mt-3" id="resultsTabContent">
+                                            <div class="tab-pane fade show active" id="transcription" role="tabpanel"
+                                                aria-labelledby="transcription-tab">
+                                                <div id="transcriptionResult" class="form-control transcription-text"
+                                                    style="height: 300px; overflow-y: auto;">
+                                                    <!-- El texto transcrito aparecerá aquí con formato -->
+                                                </div>
+                                                <div class="mt-3 d-flex justify-content-between">
+                                                    <button id="copyBtn" class="btn btn-outline-primary" disabled>
+                                                        <i class="fas fa-copy me-2"></i> Copiar Texto
+                                                    </button>
+                                                    <button id="saveBtn" class="btn btn-outline-success" disabled>
+                                                        <i class="fas fa-save me-2"></i> Guardar como TXT
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div class="tab-pane fade" id="structured" role="tabpanel"
+                                                aria-labelledby="structured-tab">
+                                                <div id="structuredResults" class="mt-2"
+                                                    style="height: 300px; overflow-y: auto;">
+                                                    <div class="alert alert-info">
+                                                        <i class="fas fa-info-circle me-2"></i>
+                                                        Los resultados estructurados se mostrarán aquí después de la
+                                                        transcripción.
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Sección de resultados detallados -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Detalles del Procesamiento</h4>
-                </div>
-                <div class="card-body">
-                    <div id="detailedResults">
-                        <div class="text-center py-4">
-                            <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">Los detalles del procesamiento aparecerán aquí después de la
-                                transcripción.</p>
+                        <!-- Sección de resultados detallados -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h4 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Detalles del Procesamiento</h4>
+                            </div>
+                            <div class="card-body">
+                                <div id="detailedResults">
+                                    <div class="text-center py-4">
+                                        <i class="fas fa-chart-pie fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted">Los detalles del procesamiento aparecerán aquí después de la
+                                            transcripción.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- TAB Historial -->
+                    <div class="tab-pane fade" id="historial3" role="tabpanel" aria-labelledby="historial-tab3">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="mb-0"><i class="fas fa-history me-2"></i>Historial de Transcripción</h4>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
 
         <!-- Modal de error -->
         <div class="modal fade" id="errorModal" tabindex="-1">
@@ -386,12 +427,12 @@
                                     : 'align-right';
 
                                 return `<div class="message ${alignClass}">
-                                    <div class="speaker">${dialogo.rol}:</div>
-                                    <div class="bubble">
-                                        <span class="timestamp">[${dialogo.timestamp}]</span>
-                                        ${dialogo.texto}
-                                    </div>
-                                </div>`;
+                                            <div class="speaker">${dialogo.rol}:</div>
+                                            <div class="bubble">
+                                                <span class="timestamp">[${dialogo.timestamp}]</span>
+                                                ${dialogo.texto}
+                                            </div>
+                                        </div>`;
                             }).join('');
 
                             document.getElementById('transcriptionResult').innerHTML = transcriptionText;
@@ -415,15 +456,15 @@
                     // Primero mostrar el resumen si está disponible
                     if (data.resumen) {
                         structuredHTML += `
-                                                <div class="card mb-3">
-                                                    <div class="card-header bg-info text-white">
-                                                        <i class="fas fa-file-alt me-2"></i> Resumen del Audio
-                                                    </div>
-                                                    <div class="card-body">
-                                                        <p class="lead">${data.resumen}</p>
-                                                    </div>
-                                                </div>
-                                            `;
+                                                        <div class="card mb-3">
+                                                            <div class="card-header bg-info text-white">
+                                                                <i class="fas fa-file-alt me-2"></i> Resumen del Audio
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <p class="lead">${data.resumen}</p>
+                                                            </div>
+                                                        </div>
+                                                    `;
                     }
 
                     // Luego mostrar datos extraídos si están disponibles
@@ -431,70 +472,70 @@
                         const de = data.datos_extraidos;
 
                         structuredHTML += `
-                                                <div class="card">
-                                                    <div class="card-header bg-primary text-white">
-                                                        <i class="fas fa-info-circle me-2"></i> Datos Extraídos
-                                                    </div>
-                                                    <div class="card-body">
-                                                        <div class="row">
-                                                            ${de.nombres && de.nombres.length > 0 ? `
-                                                                <div class="col-md-6">
-                                                                    <h6><i class="fas fa-user me-2"></i> Nombres</h6>
-                                                                    <ul class="list-group">
-                                                                        ${de.nombres.map(name => `<li class="list-group-item">${name}</li>`).join('')}
-                                                                    </ul>
-                                                                </div>
-                                                            ` : ''}
-
-                                                            ${de.direcciones && de.direcciones.length > 0 ? `
-                                                                <div class="col-md-6">
-                                                                    <h6><i class="fas fa-map-marker-alt me-2"></i> Direcciones</h6>
-                                                                    <ul class="list-group">
-                                                                        ${de.direcciones.map(addr => `<li class="list-group-item">${addr}</li>`).join('')}
-                                                                    </ul>
-                                                                </div>
-                                                            ` : ''}
-
-                                                            ${de.telefonos && de.telefonos.length > 0 ? `
-                                                                <div class="col-md-6 mt-3">
-                                                                    <h6><i class="fas fa-phone me-2"></i> Teléfonos</h6>
-                                                                    <ul class="list-group">
-                                                                        ${de.telefonos.map(phone => `<li class="list-group-item">${phone}</li>`).join('')}
-                                                                    </ul>
-                                                                </div>
-                                                            ` : ''}
-
-                                                            ${de.documentos && de.documentos.length > 0 ? `
-                                                                <div class="col-md-6 mt-3">
-                                                                    <h6><i class="fas fa-id-card me-2"></i> Documentos</h6>
-                                                                    <ul class="list-group">
-                                                                        ${de.documentos.map(doc => `<li class="list-group-item">${doc}</li>`).join('')}
-                                                                    </ul>
-                                                                </div>
-                                                            ` : ''}
-                                                        </div>
-
-                                                        ${de.otros && de.otros.length > 0 ? `
-                                                            <div class="mt-3">
-                                                                <h6><i class="fas fa-tags me-2"></i> Otros datos relevantes</h6>
-                                                                <ul class="list-group">
-                                                                    ${de.otros.map(other => `<li class="list-group-item">${other}</li>`).join('')}
-                                                                </ul>
+                                                        <div class="card">
+                                                            <div class="card-header bg-primary text-white">
+                                                                <i class="fas fa-info-circle me-2"></i> Datos Extraídos
                                                             </div>
-                                                        ` : ''}
-                                                    </div>
-                                                </div>
-                                            `;
+                                                            <div class="card-body">
+                                                                <div class="row">
+                                                                    ${de.nombres && de.nombres.length > 0 ? `
+                                                                        <div class="col-md-6">
+                                                                            <h6><i class="fas fa-user me-2"></i> Nombres</h6>
+                                                                            <ul class="list-group">
+                                                                                ${de.nombres.map(name => `<li class="list-group-item">${name}</li>`).join('')}
+                                                                            </ul>
+                                                                        </div>
+                                                                    ` : ''}
+
+                                                                    ${de.direcciones && de.direcciones.length > 0 ? `
+                                                                        <div class="col-md-6">
+                                                                            <h6><i class="fas fa-map-marker-alt me-2"></i> Direcciones</h6>
+                                                                            <ul class="list-group">
+                                                                                ${de.direcciones.map(addr => `<li class="list-group-item">${addr}</li>`).join('')}
+                                                                            </ul>
+                                                                        </div>
+                                                                    ` : ''}
+
+                                                                    ${de.telefonos && de.telefonos.length > 0 ? `
+                                                                        <div class="col-md-6 mt-3">
+                                                                            <h6><i class="fas fa-phone me-2"></i> Teléfonos</h6>
+                                                                            <ul class="list-group">
+                                                                                ${de.telefonos.map(phone => `<li class="list-group-item">${phone}</li>`).join('')}
+                                                                            </ul>
+                                                                        </div>
+                                                                    ` : ''}
+
+                                                                    ${de.documentos && de.documentos.length > 0 ? `
+                                                                        <div class="col-md-6 mt-3">
+                                                                            <h6><i class="fas fa-id-card me-2"></i> Documentos</h6>
+                                                                            <ul class="list-group">
+                                                                                ${de.documentos.map(doc => `<li class="list-group-item">${doc}</li>`).join('')}
+                                                                            </ul>
+                                                                        </div>
+                                                                    ` : ''}
+                                                                </div>
+
+                                                                ${de.otros && de.otros.length > 0 ? `
+                                                                    <div class="mt-3">
+                                                                        <h6><i class="fas fa-tags me-2"></i> Otros datos relevantes</h6>
+                                                                        <ul class="list-group">
+                                                                            ${de.otros.map(other => `<li class="list-group-item">${other}</li>`).join('')}
+                                                                        </ul>
+                                                                    </div>
+                                                                ` : ''}
+                                                            </div>
+                                                        </div>
+                                                    `;
                     }
 
                     // Si no hay datos estructurados ni resumen
                     if (!structuredHTML) {
                         structuredHTML = `
-                                                <div class="alert alert-warning">
-                                                    <i class="fas fa-exclamation-triangle me-2"></i>
-                                                    No se encontraron datos estructurados en la transcripción.
-                                                </div>
-                                            `;
+                                                        <div class="alert alert-warning">
+                                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                                            No se encontraron datos estructurados en la transcripción.
+                                                        </div>
+                                                    `;
                     }
 
                     document.getElementById('structuredResults').innerHTML = structuredHTML;
@@ -518,71 +559,71 @@
                     };
 
                     let html = `
-                                            <div class="row">
-                                                <div class="col-md-4">
-                                                    <div class="card h-100">
-                                                        <div class="card-body">
-                                                            <h5><i class="fas fa-file-audio me-2"></i> Información del Archivo</h5>
-                                                            <div class="mt-3">
-                                                                <p><strong>Nombre:</strong> ${data.nombre_archivo || "N/A"}</p>
-                                                                <p><strong>Ruta:</strong> ${data.ruta_archivo || "N/A"}</p>
-                                                                <p><strong>Recibido:</strong> ${data.recibido ? 'Sí' : 'No'}</p>
+                                                    <div class="row">
+                                                        <div class="col-md-4">
+                                                            <div class="card h-100">
+                                                                <div class="card-body">
+                                                                    <h5><i class="fas fa-file-audio me-2"></i> Información del Archivo</h5>
+                                                                    <div class="mt-3">
+                                                                        <p><strong>Nombre:</strong> ${data.nombre_archivo || "N/A"}</p>
+                                                                        <p><strong>Ruta:</strong> ${data.ruta_archivo || "N/A"}</p>
+                                                                        <p><strong>Recibido:</strong> ${data.recibido ? 'Sí' : 'No'}</p>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="card h-100">
+                                                                <div class="card-body">
+                                                                    <h5><i class="fas fa-tachometer-alt me-2"></i> Estado del Procesamiento</h5>
+                                                                    <div class="mt-3">
+                                                                        <ul class="list-group list-group-flush">
+                                                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                                Transcripción
+                                                                                <span class="badge bg-${data.transcripto ? 'success' : 'danger'}">
+                                                                                    ${data.transcripto ? 'Completa' : 'Pendiente'}
+                                                                                </span>
+                                                                            </li>
+                                                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                                Procesamiento IA
+                                                                                <span class="badge bg-${data.procesamiento_ia ? 'success' : 'danger'}">
+                                                                                    ${data.procesamiento_ia ? 'Completo' : 'Pendiente'}
+                                                                                </span>
+                                                                            </li>
+                                                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                                Reporte Generado
+                                                                                <span class="badge bg-${data.reporte_generado ? 'success' : 'danger'}">
+                                                                                    ${data.reporte_generado ? 'Sí' : 'No'}
+                                                                                </span>
+                                                                            </li>
+                                                                        </ul>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <div class="card h-100">
+                                                                <div class="card-body">
+                                                                    <h5><i class="fas fa-history me-2"></i> Historial</h5>
+                                                                    <ul class="list-group list-group-flush mt-3">
+                                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                            <span>Recibido</span>
+                                                                            <small>${formatUnixTime(data.recibido_fecha)}</small>
+                                                                        </li>
+                                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                            <span>Transcripción</span>
+                                                                            <small>${formatUnixTime(data.transcripto_fecha)}</small>
+                                                                        </li>
+                                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                            <span>Procesamiento IA</span>
+                                                                            <small>${formatUnixTime(data.procesamiento_ia_fecha)}</small>
+                                                                        </li>
+                                                                    </ul>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <div class="card h-100">
-                                                        <div class="card-body">
-                                                            <h5><i class="fas fa-tachometer-alt me-2"></i> Estado del Procesamiento</h5>
-                                                            <div class="mt-3">
-                                                                <ul class="list-group list-group-flush">
-                                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                        Transcripción
-                                                                        <span class="badge bg-${data.transcripto ? 'success' : 'danger'}">
-                                                                            ${data.transcripto ? 'Completa' : 'Pendiente'}
-                                                                        </span>
-                                                                    </li>
-                                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                        Procesamiento IA
-                                                                        <span class="badge bg-${data.procesamiento_ia ? 'success' : 'danger'}">
-                                                                            ${data.procesamiento_ia ? 'Completo' : 'Pendiente'}
-                                                                        </span>
-                                                                    </li>
-                                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                        Reporte Generado
-                                                                        <span class="badge bg-${data.reporte_generado ? 'success' : 'danger'}">
-                                                                            ${data.reporte_generado ? 'Sí' : 'No'}
-                                                                        </span>
-                                                                    </li>
-                                                                </ul>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <div class="card h-100">
-                                                        <div class="card-body">
-                                                            <h5><i class="fas fa-history me-2"></i> Historial</h5>
-                                                            <ul class="list-group list-group-flush mt-3">
-                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                    <span>Recibido</span>
-                                                                    <small>${formatUnixTime(data.recibido_fecha)}</small>
-                                                                </li>
-                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                    <span>Transcripción</span>
-                                                                    <small>${formatUnixTime(data.transcripto_fecha)}</small>
-                                                                </li>
-                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                    <span>Procesamiento IA</span>
-                                                                    <small>${formatUnixTime(data.procesamiento_ia_fecha)}</small>
-                                                                </li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        `;
+                                                `;
 
                     document.getElementById('detailedResults').innerHTML = html;
                 }
@@ -676,6 +717,7 @@
                 --denunciante-color: #97cdff;
                 --timestamp-color: #6c757d;
             }
+
             /* Contenedor principal compacto */
             #transcriptionResult {
                 display: flex;

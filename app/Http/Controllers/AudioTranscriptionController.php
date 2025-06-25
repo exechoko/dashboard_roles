@@ -211,4 +211,47 @@ class AudioTranscriptionController extends Controller
             return response()->json(['error' => 'Error interno del servidor: ' . $e->getMessage()], 500);
         }
     }
+
+    /*
+     * Obtener el historial de archivos procesados con
+     * sus respectivas transcripciones.
+     */
+    public function getHistorial(Request $request)
+    {
+        try {
+            $url = $this->apiBaseUrl . '/results?' . http_build_query([
+                'getAll' => 'true'
+            ]);
+
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json'
+            ]);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $error = curl_error($ch);
+
+            curl_close($ch);
+
+            if ($error) {
+                throw new \Exception("cURL Error: " . $error);
+            }
+
+            $decodedResponse = json_decode($response, true);
+            if (!$decodedResponse) {
+                throw new \Exception("Invalid JSON response: " . $response);
+            }
+
+            return response()->json($decodedResponse, $httpCode);
+
+        } catch (\Exception $e) {
+            Log::error('Error obteniendo historial completo: ' . $e->getMessage());
+            return response()->json(['error' => 'Error interno del servidor: ' . $e->getMessage()], 500);
+        }
+    }
 }

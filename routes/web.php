@@ -118,6 +118,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/upload-file', [AudioTranscriptionController::class, 'uploadFile']);
     Route::get('/get-results', [AudioTranscriptionController::class, 'getResults']);
     Route::get('/get-results-by-filename', [AudioTranscriptionController::class, 'getResultsByFileName']);
+    Route::get('/get-historial', [AudioTranscriptionController::class, 'getHistorial'])->name('transcription.historial');
 
 
 });

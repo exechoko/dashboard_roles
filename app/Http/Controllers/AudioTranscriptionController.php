@@ -247,7 +247,8 @@ class AudioTranscriptionController extends Controller
                 throw new \Exception("Invalid JSON response: " . $response);
             }
 
-            return response()->json($decodedResponse, $httpCode);
+            $historial = json_decode($response, true);
+            return response()->json($historial);
 
         } catch (\Exception $e) {
             Log::error('Error obteniendo historial completo: ' . $e->getMessage());

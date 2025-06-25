@@ -162,16 +162,10 @@
                     </div>
                     <!-- TAB Historial -->
                     <div class="tab-pane fade" id="historial3" role="tabpanel" aria-labelledby="historial-tab3">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <h4 class="mb-0"><i class="fas fa-history me-2"></i>Historial de Transcripción</h4>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        <button class="btn btn-primary" id="cargar-historial">Cargar Historial</button>
+                        <div id="historial-container"></div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -198,6 +192,96 @@
         </div>
 
         <script>
+            $(document).ready(function () {
+                $('#cargar-historial').on('click', function () {
+                    $.ajax({
+                        type: 'GET',
+                        url: '{{ route('getHistorial') }}',
+                        success: function (historial) { // Elimina JSON.parse
+                            $('#historial-container').html('');
+
+                            $.each(historial, function (index, item) {
+                                // Convertir datos_extraidos a array de strings
+                                const datosArray = [];
+
+                                if (item.datos_extraidos) {
+                                    Object.values(item.datos_extraidos).forEach(categoria => {
+                                        if (Array.isArray(categoria)) {
+                                            categoria.forEach(valor => {
+                                                if (valor) datosArray.push(valor);
+                                            });
+                                        }
+                                    });
+                                }
+
+                                // Formatear fechas
+                                const recibidoFecha = item.recibido_fecha
+                                    ? new Date(item.recibido_fecha * 1000).toLocaleString()
+                                    : 'N/A';
+
+                                const transcriptoFecha = item.transcripto_fecha
+                                    ? new Date(item.transcripto_fecha * 1000).toLocaleString()
+                                    : 'N/A';
+
+                                $('#historial-container').append(`
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <h5 class="card-title">${item.nombre_archivo}</h5>
+                                <p class="card-text">${item.resumen || 'Sin resumen'}</p>
+                                <button class="btn btn-primary" data-toggle="modal" data-target="#modal-${index}">
+                                    Mostrar detalles
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="modal fade" id="modal-${index}" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">${item.nombre_archivo}</h5>
+                                        <button type="button" class="close" data-dismiss="modal">
+                                            <span>&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <h6>Transcripción:</h6>
+                                        <div class="border p-2 mb-3" style="max-height: 200px; overflow-y: auto;">
+                                            ${item.transcription || 'No disponible'}
+                                        </div>
+
+                                        <h6>Datos extraídos:</h6>
+                                        <ul class="mb-3">
+                                            ${datosArray.length > 0
+                                        ? datosArray.map(d => `<li>${d}</li>`).join('')
+                                        : '<li>No hay datos extraídos</li>'}
+                                        </ul>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><strong>Ruta del archivo:</strong><br> ${item.ruta_archivo || 'N/A'}</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p><strong>Recibido:</strong> ${recibidoFecha}</p>
+                                                <p><strong>Transcrito:</strong> ${transcriptoFecha}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                            });
+                        },
+                        error: function (xhr) {
+                            console.error('Error cargando historial:', xhr.responseText);
+                            alert('Error al cargar el historial');
+                        }
+                    });
+                });
+            });
             document.addEventListener('DOMContentLoaded', function () {
                 const audioInput = document.getElementById('audioFile');
                 const fileNameDisplay = document.getElementById('fileName');
@@ -427,12 +511,12 @@
                                     : 'align-right';
 
                                 return `<div class="message ${alignClass}">
-                                            <div class="speaker">${dialogo.rol}:</div>
-                                            <div class="bubble">
-                                                <span class="timestamp">[${dialogo.timestamp}]</span>
-                                                ${dialogo.texto}
-                                            </div>
-                                        </div>`;
+                                                                                    <div class="speaker">${dialogo.rol}:</div>
+                                                                                    <div class="bubble">
+                                                                                        <span class="timestamp">[${dialogo.timestamp}]</span>
+                                                                                        ${dialogo.texto}
+                                                                                    </div>
+                                                                                </div>`;
                             }).join('');
 
                             document.getElementById('transcriptionResult').innerHTML = transcriptionText;
@@ -456,15 +540,15 @@
                     // Primero mostrar el resumen si está disponible
                     if (data.resumen) {
                         structuredHTML += `
-                                                        <div class="card mb-3">
-                                                            <div class="card-header bg-info text-white">
-                                                                <i class="fas fa-file-alt me-2"></i> Resumen del Audio
-                                                            </div>
-                                                            <div class="card-body">
-                                                                <p class="lead">${data.resumen}</p>
-                                                            </div>
-                                                        </div>
-                                                    `;
+                                                                                                <div class="card mb-3">
+                                                                                                    <div class="card-header bg-info text-white">
+                                                                                                        <i class="fas fa-file-alt me-2"></i> Resumen del Audio
+                                                                                                    </div>
+                                                                                                    <div class="card-body">
+                                                                                                        <p class="lead">${data.resumen}</p>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            `;
                     }
 
                     // Luego mostrar datos extraídos si están disponibles
@@ -472,70 +556,70 @@
                         const de = data.datos_extraidos;
 
                         structuredHTML += `
-                                                        <div class="card">
-                                                            <div class="card-header bg-primary text-white">
-                                                                <i class="fas fa-info-circle me-2"></i> Datos Extraídos
-                                                            </div>
-                                                            <div class="card-body">
-                                                                <div class="row">
-                                                                    ${de.nombres && de.nombres.length > 0 ? `
-                                                                        <div class="col-md-6">
-                                                                            <h6><i class="fas fa-user me-2"></i> Nombres</h6>
-                                                                            <ul class="list-group">
-                                                                                ${de.nombres.map(name => `<li class="list-group-item">${name}</li>`).join('')}
-                                                                            </ul>
-                                                                        </div>
-                                                                    ` : ''}
+                                                                                                <div class="card">
+                                                                                                    <div class="card-header bg-primary text-white">
+                                                                                                        <i class="fas fa-info-circle me-2"></i> Datos Extraídos
+                                                                                                    </div>
+                                                                                                    <div class="card-body">
+                                                                                                        <div class="row">
+                                                                                                            ${de.nombres && de.nombres.length > 0 ? `
+                                                                                                                <div class="col-md-6">
+                                                                                                                    <h6><i class="fas fa-user me-2"></i> Nombres</h6>
+                                                                                                                    <ul class="list-group">
+                                                                                                                        ${de.nombres.map(name => `<li class="list-group-item">${name}</li>`).join('')}
+                                                                                                                    </ul>
+                                                                                                                </div>
+                                                                                                            ` : ''}
 
-                                                                    ${de.direcciones && de.direcciones.length > 0 ? `
-                                                                        <div class="col-md-6">
-                                                                            <h6><i class="fas fa-map-marker-alt me-2"></i> Direcciones</h6>
-                                                                            <ul class="list-group">
-                                                                                ${de.direcciones.map(addr => `<li class="list-group-item">${addr}</li>`).join('')}
-                                                                            </ul>
-                                                                        </div>
-                                                                    ` : ''}
+                                                                                                            ${de.direcciones && de.direcciones.length > 0 ? `
+                                                                                                                <div class="col-md-6">
+                                                                                                                    <h6><i class="fas fa-map-marker-alt me-2"></i> Direcciones</h6>
+                                                                                                                    <ul class="list-group">
+                                                                                                                        ${de.direcciones.map(addr => `<li class="list-group-item">${addr}</li>`).join('')}
+                                                                                                                    </ul>
+                                                                                                                </div>
+                                                                                                            ` : ''}
 
-                                                                    ${de.telefonos && de.telefonos.length > 0 ? `
-                                                                        <div class="col-md-6 mt-3">
-                                                                            <h6><i class="fas fa-phone me-2"></i> Teléfonos</h6>
-                                                                            <ul class="list-group">
-                                                                                ${de.telefonos.map(phone => `<li class="list-group-item">${phone}</li>`).join('')}
-                                                                            </ul>
-                                                                        </div>
-                                                                    ` : ''}
+                                                                                                            ${de.telefonos && de.telefonos.length > 0 ? `
+                                                                                                                <div class="col-md-6 mt-3">
+                                                                                                                    <h6><i class="fas fa-phone me-2"></i> Teléfonos</h6>
+                                                                                                                    <ul class="list-group">
+                                                                                                                        ${de.telefonos.map(phone => `<li class="list-group-item">${phone}</li>`).join('')}
+                                                                                                                    </ul>
+                                                                                                                </div>
+                                                                                                            ` : ''}
 
-                                                                    ${de.documentos && de.documentos.length > 0 ? `
-                                                                        <div class="col-md-6 mt-3">
-                                                                            <h6><i class="fas fa-id-card me-2"></i> Documentos</h6>
-                                                                            <ul class="list-group">
-                                                                                ${de.documentos.map(doc => `<li class="list-group-item">${doc}</li>`).join('')}
-                                                                            </ul>
-                                                                        </div>
-                                                                    ` : ''}
-                                                                </div>
+                                                                                                            ${de.documentos && de.documentos.length > 0 ? `
+                                                                                                                <div class="col-md-6 mt-3">
+                                                                                                                    <h6><i class="fas fa-id-card me-2"></i> Documentos</h6>
+                                                                                                                    <ul class="list-group">
+                                                                                                                        ${de.documentos.map(doc => `<li class="list-group-item">${doc}</li>`).join('')}
+                                                                                                                    </ul>
+                                                                                                                </div>
+                                                                                                            ` : ''}
+                                                                                                        </div>
 
-                                                                ${de.otros && de.otros.length > 0 ? `
-                                                                    <div class="mt-3">
-                                                                        <h6><i class="fas fa-tags me-2"></i> Otros datos relevantes</h6>
-                                                                        <ul class="list-group">
-                                                                            ${de.otros.map(other => `<li class="list-group-item">${other}</li>`).join('')}
-                                                                        </ul>
-                                                                    </div>
-                                                                ` : ''}
-                                                            </div>
-                                                        </div>
-                                                    `;
+                                                                                                        ${de.otros && de.otros.length > 0 ? `
+                                                                                                            <div class="mt-3">
+                                                                                                                <h6><i class="fas fa-tags me-2"></i> Otros datos relevantes</h6>
+                                                                                                                <ul class="list-group">
+                                                                                                                    ${de.otros.map(other => `<li class="list-group-item">${other}</li>`).join('')}
+                                                                                                                </ul>
+                                                                                                            </div>
+                                                                                                        ` : ''}
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            `;
                     }
 
                     // Si no hay datos estructurados ni resumen
                     if (!structuredHTML) {
                         structuredHTML = `
-                                                        <div class="alert alert-warning">
-                                                            <i class="fas fa-exclamation-triangle me-2"></i>
-                                                            No se encontraron datos estructurados en la transcripción.
-                                                        </div>
-                                                    `;
+                                                                                                <div class="alert alert-warning">
+                                                                                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                                                                                    No se encontraron datos estructurados en la transcripción.
+                                                                                                </div>
+                                                                                            `;
                     }
 
                     document.getElementById('structuredResults').innerHTML = structuredHTML;
@@ -559,71 +643,71 @@
                     };
 
                     let html = `
-                                                    <div class="row">
-                                                        <div class="col-md-4">
-                                                            <div class="card h-100">
-                                                                <div class="card-body">
-                                                                    <h5><i class="fas fa-file-audio me-2"></i> Información del Archivo</h5>
-                                                                    <div class="mt-3">
-                                                                        <p><strong>Nombre:</strong> ${data.nombre_archivo || "N/A"}</p>
-                                                                        <p><strong>Ruta:</strong> ${data.ruta_archivo || "N/A"}</p>
-                                                                        <p><strong>Recibido:</strong> ${data.recibido ? 'Sí' : 'No'}</p>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-md-4">
-                                                            <div class="card h-100">
-                                                                <div class="card-body">
-                                                                    <h5><i class="fas fa-tachometer-alt me-2"></i> Estado del Procesamiento</h5>
-                                                                    <div class="mt-3">
-                                                                        <ul class="list-group list-group-flush">
-                                                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                                Transcripción
-                                                                                <span class="badge bg-${data.transcripto ? 'success' : 'danger'}">
-                                                                                    ${data.transcripto ? 'Completa' : 'Pendiente'}
-                                                                                </span>
-                                                                            </li>
-                                                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                                Procesamiento IA
-                                                                                <span class="badge bg-${data.procesamiento_ia ? 'success' : 'danger'}">
-                                                                                    ${data.procesamiento_ia ? 'Completo' : 'Pendiente'}
-                                                                                </span>
-                                                                            </li>
-                                                                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                                Reporte Generado
-                                                                                <span class="badge bg-${data.reporte_generado ? 'success' : 'danger'}">
-                                                                                    ${data.reporte_generado ? 'Sí' : 'No'}
-                                                                                </span>
-                                                                            </li>
-                                                                        </ul>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-md-4">
-                                                            <div class="card h-100">
-                                                                <div class="card-body">
-                                                                    <h5><i class="fas fa-history me-2"></i> Historial</h5>
-                                                                    <ul class="list-group list-group-flush mt-3">
-                                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                            <span>Recibido</span>
-                                                                            <small>${formatUnixTime(data.recibido_fecha)}</small>
-                                                                        </li>
-                                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                            <span>Transcripción</span>
-                                                                            <small>${formatUnixTime(data.transcripto_fecha)}</small>
-                                                                        </li>
-                                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                            <span>Procesamiento IA</span>
-                                                                            <small>${formatUnixTime(data.procesamiento_ia_fecha)}</small>
-                                                                        </li>
-                                                                    </ul>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                `;
+                                                                                            <div class="row">
+                                                                                                <div class="col-md-4">
+                                                                                                    <div class="card h-100">
+                                                                                                        <div class="card-body">
+                                                                                                            <h5><i class="fas fa-file-audio me-2"></i> Información del Archivo</h5>
+                                                                                                            <div class="mt-3">
+                                                                                                                <p><strong>Nombre:</strong> ${data.nombre_archivo || "N/A"}</p>
+                                                                                                                <p><strong>Ruta:</strong> ${data.ruta_archivo || "N/A"}</p>
+                                                                                                                <p><strong>Recibido:</strong> ${data.recibido ? 'Sí' : 'No'}</p>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                                <div class="col-md-4">
+                                                                                                    <div class="card h-100">
+                                                                                                        <div class="card-body">
+                                                                                                            <h5><i class="fas fa-tachometer-alt me-2"></i> Estado del Procesamiento</h5>
+                                                                                                            <div class="mt-3">
+                                                                                                                <ul class="list-group list-group-flush">
+                                                                                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                                                                        Transcripción
+                                                                                                                        <span class="badge bg-${data.transcripto ? 'success' : 'danger'}">
+                                                                                                                            ${data.transcripto ? 'Completa' : 'Pendiente'}
+                                                                                                                        </span>
+                                                                                                                    </li>
+                                                                                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                                                                        Procesamiento IA
+                                                                                                                        <span class="badge bg-${data.procesamiento_ia ? 'success' : 'danger'}">
+                                                                                                                            ${data.procesamiento_ia ? 'Completo' : 'Pendiente'}
+                                                                                                                        </span>
+                                                                                                                    </li>
+                                                                                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                                                                        Reporte Generado
+                                                                                                                        <span class="badge bg-${data.reporte_generado ? 'success' : 'danger'}">
+                                                                                                                            ${data.reporte_generado ? 'Sí' : 'No'}
+                                                                                                                        </span>
+                                                                                                                    </li>
+                                                                                                                </ul>
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                                <div class="col-md-4">
+                                                                                                    <div class="card h-100">
+                                                                                                        <div class="card-body">
+                                                                                                            <h5><i class="fas fa-history me-2"></i> Historial</h5>
+                                                                                                            <ul class="list-group list-group-flush mt-3">
+                                                                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                                                                    <span>Recibido</span>
+                                                                                                                    <small>${formatUnixTime(data.recibido_fecha)}</small>
+                                                                                                                </li>
+                                                                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                                                                    <span>Transcripción</span>
+                                                                                                                    <small>${formatUnixTime(data.transcripto_fecha)}</small>
+                                                                                                                </li>
+                                                                                                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                                                                                    <span>Procesamiento IA</span>
+                                                                                                                    <small>${formatUnixTime(data.procesamiento_ia_fecha)}</small>
+                                                                                                                </li>
+                                                                                                            </ul>
+                                                                                                        </div>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        `;
 
                     document.getElementById('detailedResults').innerHTML = html;
                 }

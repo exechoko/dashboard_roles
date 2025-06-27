@@ -123,6 +123,7 @@
                                                             </a>
                                                         @endcan
 
+                                                        @can('borrar-camara')
                                                         <form action="{{ route('camaras.destroy', $camara->id) }}" method="POST"
                                                             style="display:inline;">
                                                             @csrf
@@ -132,6 +133,7 @@
                                                                 <i class="fas fa-trash-alt"></i>
                                                             </button>
                                                         </form>
+                                                        @endcan
                                                     </td>
 
                                                 </tr>
@@ -151,7 +153,7 @@
             </div>
         </div>
     </section>
-    
+
     {{-- Script para abrir nueva pestaña cuando se reinicia cámara --}}
     @if(session('open_url'))
         <script>

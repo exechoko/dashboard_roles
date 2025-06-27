@@ -33,152 +33,211 @@
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-12">
                                     <div class="form-group">
-                                        <label for="">Permisos para este Rol:</label>
-
                                         <div class="permissions-tree">
+                                            <!-- Controles globales -->
+                                            <div class="mt-4 text-center">
+                                                <button type="button" class="btn btn-success" id="select-all-permissions">
+                                                    <i class="fas fa-check-double"></i> Seleccionar Todos
+                                                </button>
+                                                <button type="button" class="btn btn-secondary ml-2" id="deselect-all-permissions">
+                                                    <i class="fas fa-times"></i> Deseleccionar Todos
+                                                </button>
+                                            </div>
                                             @php
-                                                // Agrupar permisos por categorías
+                                                // Agrupar permisos por categorías principales
+                                                $mainGroups = [
+                                                    'Menús' => [
+                                                        'menu-dashboard',
+                                                        'menu-equipamientos',
+                                                        'menu-camaras',
+                                                        'menu-dependencias',
+                                                        'menu-mapa',
+                                                        'menu-usuarios',
+                                                        'menu-auditoria',
+                                                        'menu-cecoco',
+                                                        'menu-documentacion',
+                                                        'menu-transcripcion',
+                                                        'menu-transcripcion-aws'
+                                                    ],
+                                                    'Administración' => [
+                                                        'rol',
+                                                        'usuario',
+                                                        'auditoria'
+                                                    ],
+                                                    'Equipamientos' => [
+                                                        'equipo',
+                                                        'terminal',
+                                                        'dependencia',
+                                                        'recurso'
+                                                    ],
+                                                    'Vehículos' => [
+                                                        'vehiculo',
+                                                        'historico',
+                                                        'flota'
+                                                    ],
+                                                    'Cámaras' => [
+                                                        'camara',
+                                                        'tipo-camara',
+                                                        'sitio'
+                                                    ],
+                                                    'Cecoco' => [
+                                                        'llamadas-cecoco',
+                                                        'moviles-cecoco',
+                                                        'eventos-cecoco',
+                                                        'mapa-calor-servicios-cecoco',
+                                                        'mapa-cecoco-en-vivo'
+                                                    ],
+                                                    'Operaciones' => [
+                                                        'buscar-moviles-parados',
+                                                        'buscar-moviles-recorridos',
+                                                        'reiniciar-camara'
+                                                    ]
+                                                ];
+
                                                 $groupedPermissions = [];
-                                                foreach ($permission as $perm) {
-                                                    $parts = explode('-', $perm->name);
-                                                    $action = $parts[0]; // ver, crear, editar, borrar
-                                                    $module = implode('-', array_slice($parts, 1)); // resto del nombre
+                                                $assignedPermissionIds = [];
 
-                                                    // Mover permisos de auditoría al grupo 'menu-auditoria'
-                                                    if ($module === 'auditoria') {
-                                                        $module = 'menu-auditoria';
-                                                    }
+                                                // Primero procesar grupos principales
+                                                foreach ($mainGroups as $groupName => $modules) {
+                                                    foreach ($modules as $module) {
+                                                        foreach ($permission as $perm) {
+                                                            // Evitar asignar duplicados
+                                                            if (in_array($perm->id, $assignedPermissionIds)) continue;
 
-                                                    if (!isset($groupedPermissions[$module])) {
-                                                        $groupedPermissions[$module] = [];
+                                                            // Verificar si el permiso pertenece a este módulo
+                                                            $pattern = '/^([^-]+-)?' . preg_quote($module, '/') . '$/';
+                                                            if (preg_match($pattern, $perm->name)) {
+                                                                if (!isset($groupedPermissions[$groupName][$module])) {
+                                                                    $groupedPermissions[$groupName][$module] = [];
+                                                                }
+                                                                $parts = explode('-', $perm->name, 2);
+                                                                $action = $parts[0];
+                                                                if (!isset($groupedPermissions[$groupName][$module][$action])) {
+                                                                    $groupedPermissions[$groupName][$module][$action] = [];
+                                                                }
+                                                                $groupedPermissions[$groupName][$module][$action][] = $perm;
+                                                                $assignedPermissionIds[] = $perm->id;
+                                                            }
+                                                        }
                                                     }
-                                                    $groupedPermissions[$module][$action] = $perm;
                                                 }
 
-                                                // Ordenar las categorías
-                                                ksort($groupedPermissions);
+                                                // Agregar permisos no asignados en "Otros"
+                                                foreach ($permission as $perm) {
+                                                    if (!in_array($perm->id, $assignedPermissionIds)) {
+                                                        if (!isset($groupedPermissions['Otros'])) {
+                                                            $groupedPermissions['Otros'] = [];
+                                                        }
+                                                        $groupedPermissions['Otros'][] = $perm;
+                                                    }
+                                                }
                                             @endphp
 
-                                            <div class="row">
-                                                @foreach ($groupedPermissions as $module => $actions)
-                                                    <div class="col-xl-6 col-lg-12 col-md-12 col-sm-12 mb-3">
-                                                        <div class="permission-group h-100">
-                                                            <div class="card border-left-primary h-100">
-                                                                <div class="card-header bg-light">
-                                                                    <div class="d-flex justify-content-between align-items-center flex-wrap">
-                                                                        <h6 class="mb-0 text-primary">
-                                                                            <i class="fas fa-folder"></i>
-                                                                            {{ ucfirst(str_replace('-', ' ', $module)) }}
-                                                                        </h6>
-                                                                        <div class="group-controls mt-1">
-                                                                            <button type="button" class="btn btn-sm btn-outline-success select-all-group" data-group="{{ $module }}">
-                                                                                <i class="fas fa-check-double"></i> <span class="d-none d-lg-inline">Seleccionar Todo</span>
-                                                                            </button>
-                                                                            <button type="button" class="btn btn-sm btn-outline-secondary deselect-all-group" data-group="{{ $module }}">
-                                                                                <i class="fas fa-times"></i> <span class="d-none d-lg-inline">Deseleccionar Todo</span>
-                                                                            </button>
+                                            @foreach ($groupedPermissions as $groupName => $modules)
+                                                <div class="group-section mb-4">
+                                                    <h5 class="text-primary mb-3">
+                                                        <i class="fas fa-folder-open"></i> {{ $groupName }}
+                                                    </h5>
+                                                    <div class="row">
+                                                        @if ($groupName === 'Otros')
+                                                            <div class="col-12">
+                                                                <div class="permission-group">
+                                                                    <div class="card border-left-info">
+                                                                        <div class="card-header bg-light py-2">
+                                                                            <h6 class="mb-0 text-info">
+                                                                                <i class="fas fa-cog"></i> Permisos varios
+                                                                            </h6>
+                                                                        </div>
+                                                                        <div class="card-body py-2">
+                                                                            <div class="row">
+                                                                                @foreach ($modules as $perm)
+                                                                                    <div class="col-lg-4 col-md-6 col-sm-12">
+                                                                                        <div class="custom-control custom-switch mb-3">
+                                                                                            {{ Form::hidden('permission[]', 0) }}
+                                                                                            {{ Form::checkbox('permission[]', $perm->id, in_array($perm->id, $rolePermissions), [
+                                                                                                'class' => 'custom-control-input',
+                                                                                                'id' => 'permission_'.$perm->id
+                                                                                            ]) }}
+                                                                                            <label class="custom-control-label" for="permission_{{ $perm->id }}">
+                                                                                                <i class="fas fa-key text-info mr-1"></i>
+                                                                                                {{ $perm->name }}
+                                                                                            </label>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                @endforeach
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                                <div class="card-body">
-                                                                    <div class="row">
-                                                                        @php
-                                                                            $actionOrder = ['ver', 'crear', 'editar', 'borrar'];
-                                                                            $actionIcons = [
-                                                                                'ver' => 'fas fa-eye text-info',
-                                                                                'crear' => 'fas fa-plus text-success',
-                                                                                'editar' => 'fas fa-edit text-warning',
-                                                                                'borrar' => 'fas fa-trash text-danger'
-                                                                            ];
-                                                                        @endphp
-
-                                                                        @foreach ($actionOrder as $action)
-                                                                            @if (isset($actions[$action]))
-                                                                                @php $perm = $actions[$action]; @endphp
-                                                                                <div class="col-lg-6 col-md-12 col-sm-12">
-                                                                                    <div class="custom-control custom-switch mb-2">
-                                                                                        {{ Form::hidden('permission[]', 0) }}
-                                                                                        {{ Form::checkbox('permission[]', $perm->id, in_array($perm->id, $rolePermissions), [
-                                                                                            'class' => 'custom-control-input permission-checkbox',
-                                                                                            'id' => 'permission_'.$perm->id,
-                                                                                            'data-group' => $module
-                                                                                        ]) }}
-                                                                                        <label class="custom-control-label" for="permission_{{ $perm->id }}">
-                                                                                            <i class="{{ $actionIcons[$action] ?? 'fas fa-cog' }}"></i>
-                                                                                            {{ ucfirst($action) }}
-                                                                                        </label>
+                                                            </div>
+                                                        @else
+                                                            @foreach ($modules as $module => $actions)
+                                                                <div class="col-xl-4 col-lg-6 col-md-6 col-sm-12 mb-3">
+                                                                    <div class="permission-group h-100">
+                                                                        <div class="card border-left-primary h-100">
+                                                                            <div class="card-header bg-light py-2">
+                                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                                    <h6 class="mb-0 text-danger">
+                                                                                        <i class="fa fa-certificate"></i>
+                                                                                        {{ ucfirst(str_replace('-', ' ', $module)) }}
+                                                                                    </h6>
+                                                                                    <div class="group-controls">
+                                                                                        <button type="button" class="btn btn-xs btn-outline-success select-all-group" data-group="{{ $module }}">
+                                                                                            <i class="fas fa-check"></i>
+                                                                                        </button>
+                                                                                        <button type="button" class="btn btn-xs btn-outline-danger deselect-all-group" data-group="{{ $module }}">
+                                                                                            <i class="fas fa-times"></i>
+                                                                                        </button>
                                                                                     </div>
                                                                                 </div>
-                                                                            @endif
-                                                                        @endforeach
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                @endforeach
-                                            </div>
+                                                                            </div>
+                                                                            <div class="card-body py-2">
+                                                                                <div class="row">
+                                                                                    @php
+                                                                                        $actionIcons = [
+                                                                                            'ver-menu' => 'fas fa-eye text-danger',
+                                                                                            'ver' => 'fas fa-eye text-info',
+                                                                                            'crear' => 'fas fa-plus text-success',
+                                                                                            'editar' => 'fas fa-edit text-warning',
+                                                                                            'borrar' => 'fas fa-trash text-danger',
+                                                                                            'buscar' => 'fas fa-search text-info',
+                                                                                            'reiniciar' => 'fas fa-sync-alt text-primary'
+                                                                                        ];
+                                                                                    @endphp
 
-                                            <!-- Permisos que no siguen el patrón estándar -->
-                                            @php
-                                                $specialPermissions = [];
-                                                foreach ($permission as $perm) {
-                                                    $parts = explode('-', $perm->name);
-                                                    if (count($parts) < 2 || !in_array($parts[0], ['ver', 'crear', 'editar', 'borrar'])) {
-                                                        $specialPermissions[] = $perm;
-                                                    }
-                                                }
-                                            @endphp
-
-                                            @if (count($specialPermissions) > 0)
-                                                <div class="row">
-                                                    <div class="col-12">
-                                                        <div class="permission-group mb-3">
-                                                            <div class="card border-left-info">
-                                                                <div class="card-header bg-light">
-                                                                    <h6 class="mb-0 text-info">
-                                                                        <i class="fas fa-cogs"></i> Permisos Especiales
-                                                                    </h6>
-                                                                </div>
-                                                                <div class="card-body">
-                                                                    <div class="row">
-                                                                        @foreach ($specialPermissions as $perm)
-                                                                            <div class="col-lg-6 col-md-12 col-sm-12">
-                                                                                <div class="custom-control custom-switch mb-2">
-                                                                                    {{ Form::hidden('permission[]', 0) }}
-                                                                                    {{ Form::checkbox('permission[]', $perm->id, in_array($perm->id, $rolePermissions), [
-                                                                                        'class' => 'custom-control-input',
-                                                                                        'id' => 'permission_'.$perm->id
-                                                                                    ]) }}
-                                                                                    <label class="custom-control-label" for="permission_{{ $perm->id }}">
-                                                                                        <i class="fas fa-key text-info"></i>
-                                                                                        {{ $perm->name }}
-                                                                                    </label>
+                                                                                    @foreach ($actions as $action => $permissions)
+                                                                                        @foreach ($permissions as $perm)
+                                                                                            <div class="col-12">
+                                                                                                <div class="custom-control custom-switch mb-2">
+                                                                                                    {{ Form::hidden('permission[]', 0) }}
+                                                                                                    {{ Form::checkbox('permission[]', $perm->id, in_array($perm->id, $rolePermissions), [
+                                                                                                        'class' => 'custom-control-input permission-checkbox',
+                                                                                                        'id' => 'permission_'.$perm->id,
+                                                                                                        'data-group' => $module
+                                                                                                    ]) }}
+                                                                                                    <label class="custom-control-label d-block" for="permission_{{ $perm->id }}">
+                                                                                                        <i class="{{ $actionIcons[$action] ?? 'fas fa-cog' }} mr-1"></i>
+                                                                                                        {{ ucfirst($action) }} - {{ ucfirst(str_replace('-', ' ', $module)) }}
+                                                                                                    </label>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        @endforeach
+                                                                                    @endforeach
                                                                                 </div>
                                                                             </div>
-                                                                        @endforeach
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                        </div>
+                                                            @endforeach
+                                                        @endif
                                                     </div>
                                                 </div>
-                                            @endif
-                                        </div>
-
-                                        <!-- Controles globales -->
-                                        <div class="mt-3 mb-3">
-                                            <button type="button" class="btn btn-success" id="select-all-permissions">
-                                                <i class="fas fa-check-double"></i> Seleccionar Todos los Permisos
-                                            </button>
-                                            <button type="button" class="btn btn-secondary ml-2" id="deselect-all-permissions">
-                                                <i class="fas fa-times"></i> Deseleccionar Todos los Permisos
-                                            </button>
+                                            @endforeach
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="col-12">
+                                <div class="col-12 text-right mt-4">
                                     <button type="submit" class="btn btn-primary">
                                         <i class="fas fa-save"></i> Guardar
                                     </button>
@@ -199,64 +258,50 @@
 
     <style>
         .permissions-tree .card {
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            border: 1px solid rgba(0, 0, 0, 0.125);
+            border-radius: 8px;
+            transition: transform 0.2s;
         }
-
-        .border-left-primary {
-            border-left: 3px solid #007bff !important;
+        .permissions-tree .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-
-        .border-left-info {
-            border-left: 3px solid #17a2b8 !important;
+        .group-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
         }
-
-        .custom-control-label {
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        .group-controls .btn {
-            font-size: 0.8rem;
-            padding: 0.25rem 0.5rem;
-        }
-
         .permission-group .card-header {
-            padding: 0.75rem 1rem;
+            padding: 0.5rem 1rem;
         }
-
-        .permission-group .card-body {
-            padding: 1rem;
+        .group-controls .btn {
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+            line-height: 1.2;
         }
-
-        .permission-group .h-100 {
-            height: 100% !important;
-        }
-
-        @media (max-width: 991px) {
-            .group-controls .btn span {
-                display: none !important;
-            }
+        .custom-control-label {
+            font-weight: 500;
+            color: #495057;
         }
     </style>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Seleccionar todos los permisos
+            // Controles globales
             document.getElementById('select-all-permissions').addEventListener('click', function() {
                 document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
                     checkbox.checked = true;
                 });
             });
 
-            // Deseleccionar todos los permisos
             document.getElementById('deselect-all-permissions').addEventListener('click', function() {
                 document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
                     checkbox.checked = false;
                 });
             });
 
-            // Seleccionar todos los permisos de un grupo
+            // Controles por grupo
             document.querySelectorAll('.select-all-group').forEach(button => {
                 button.addEventListener('click', function() {
                     const group = this.getAttribute('data-group');
@@ -266,7 +311,6 @@
                 });
             });
 
-            // Deseleccionar todos los permisos de un grupo
             document.querySelectorAll('.deselect-all-group').forEach(button => {
                 button.addEventListener('click', function() {
                     const group = this.getAttribute('data-group');

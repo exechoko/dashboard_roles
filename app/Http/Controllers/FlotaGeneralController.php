@@ -58,62 +58,105 @@ class FlotaGeneralController extends Controller
 
     public function busquedaAvanzada(Request $request)
     {
-        // Obtener parámetros como arrays
-        $texto = trim($request->get('texto'));
-        $equipoIds = (array) $request->input('equipo_id', []);
-        $recursoIds = (array) $request->input('recurso_id', []);
-        $destinoIds = (array) $request->input('destino_id', []);
-        $destinoActualIds = (array) $request->input('destino_actual_id', []);
-        $tipoTerminalIds = (array) $request->input('tipo_terminal_id', []);
-        $fechaRango = $request->get('fecha_rango');
-        $ticketPer = $request->get('ticket_per');
-        $observaciones = $request->get('observaciones');
+        // Obtener datos para los dropdowns (solo estos se cargan siempre)
+        $equipos = Equipo::select('id', 'tei', 'issi', 'tipo_terminal_id')
+            ->with('tipo_terminal:id,marca,modelo,tipo_uso_id')
+            ->with('tipo_terminal.tipo_uso:id,uso')
+            ->orderBy('tei', 'desc')
+            ->get();
 
-        // Obtener datos para los dropdowns
-        $equipos = Equipo::all();
-        $recursos = Recurso::all();
+        $recursos = Recurso::select('id', 'nombre')->orderBy('nombre')->get();
+        //$destinos = Destino::select('id', 'nombre')->orderBy('nombre')->get();
         $destinos = Destino::all();
-        $tiposTerminal = TipoTerminal::all();
+        $tiposTerminal = TipoTerminal::select('id', 'marca', 'modelo')->orderBy('marca', 'desc')->get();
 
-        $flota = FlotaGeneral::query();
+        // Inicializar variables
+        $flota = collect(); // Colección vacía por defecto
+        $totalRegistros = 0;
+        $hayBusqueda = false;
+
+        // Solo realizar búsqueda si hay parámetros o si se presionó el botón buscar
+        $parametrosBusqueda = [
+            'texto' => trim($request->get('texto')),
+            'equipo_id' => (array) $request->input('equipo_id', []),
+            'recurso_id' => (array) $request->input('recurso_id', []),
+            'destino_id' => (array) $request->input('destino_id', []),
+            'destino_actual_id' => (array) $request->input('destino_actual_id', []),
+            'tipo_terminal_id' => (array) $request->input('tipo_terminal_id', []),
+            'fecha_rango' => $request->get('fecha_rango'),
+            'ticket_per' => $request->get('ticket_per'),
+            'observaciones' => $request->get('observaciones')
+        ];
+
+
+        // Verificar si hay algún parámetro de búsqueda
+        $hayBusqueda = !empty(array_filter($parametrosBusqueda, function ($value) {
+            return !empty($value);
+        }));
+
+        if ($hayBusqueda) {
+            $flota = $this->ejecutarBusqueda($parametrosBusqueda, $request);
+            $totalRegistros = $flota->total();
+        }
+
+        return view('flota.busqueda_avanzada', array_merge($parametrosBusqueda, [
+            'flota' => $flota,
+            'equipos' => $equipos,
+            'recursos' => $recursos,
+            'destinos' => $destinos,
+            'tiposTerminal' => $tiposTerminal,
+            'totalRegistros' => $totalRegistros,
+            'hayBusqueda' => $hayBusqueda
+        ]));
+    }
+
+    private function ejecutarBusqueda(array $parametros, Request $request)
+    {
+        $query = FlotaGeneral::query()
+            ->with([
+                'equipo:id,tei,issi,tipo_terminal_id',
+                'equipo.tipo_terminal:id,marca,modelo,imagen,tipo_uso_id',
+                'equipo.tipo_terminal.tipo_uso:id,uso',
+                'recurso:id,nombre',
+                'destino:id,nombre'
+            ]);
 
         // Filtro de texto
-        if ($texto) {
-            $flota->where(function ($q) use ($texto) {
-                $q->whereHas('equipo', function ($query) use ($texto) {
-                    $query->where('issi', 'like', '%' . $texto . '%')
-                        ->orWhere('tei', 'like', '%' . $texto . '%');
-                })->orWhereHas('recurso', function ($query) use ($texto) {
-                    $query->where('nombre', 'like', '%' . $texto . '%');
-                })->orWhereHas('destino', function ($query) use ($texto) {
-                    $query->where('nombre', 'like', '%' . $texto . '%');
+        if ($parametros['texto']) {
+            $query->where(function ($q) use ($parametros) {
+                $q->whereHas('equipo', function ($subQuery) use ($parametros) {
+                    $subQuery->where('issi', 'like', '%' . $parametros['texto'] . '%')
+                        ->orWhere('tei', 'like', '%' . $parametros['texto'] . '%');
+                })->orWhereHas('recurso', function ($subQuery) use ($parametros) {
+                    $subQuery->where('nombre', 'like', '%' . $parametros['texto'] . '%');
+                })->orWhereHas('destino', function ($subQuery) use ($parametros) {
+                    $subQuery->where('nombre', 'like', '%' . $parametros['texto'] . '%');
                 });
             });
         }
 
-        // Filtro por equipos (multiselect)
-        if (!empty($equipoIds)) {
-            $flota->whereIn('equipo_id', $equipoIds);
+        // Filtro por equipos
+        if (!empty($parametros['equipo_id'])) {
+            $query->whereIn('equipo_id', $parametros['equipo_id']);
         }
 
-        // Filtro por recursos (multiselect)
-        if (!empty($recursoIds)) {
-            $flota->whereIn('recurso_id', $recursoIds);
+        // Filtro por recursos
+        if (!empty($parametros['recurso_id'])) {
+            $query->whereIn('recurso_id', $parametros['recurso_id']);
         }
 
-        // Filtro por destino actual (multiselect)
-        if (!empty($destinoActualIds)) {
-            $flota->whereHas('equipo.historico', function ($query) use ($destinoActualIds) {
-                $query->whereIn('destino_id', $destinoActualIds)
+        // Filtro por destino actual
+        if (!empty($parametros['destino_actual_id'])) {
+            $query->whereHas('equipo.historico', function ($subQuery) use ($parametros) {
+                $subQuery->whereIn('destino_id', $parametros['destino_actual_id'])
                     ->whereNull('fecha_desasignacion');
             });
         }
 
-        // Filtro por destino patrimonial (multiselect)
-        if (!empty($destinoIds)) {
+        // Filtro por destino patrimonial
+        if (!empty($parametros['destino_id'])) {
             $allDependientes = collect();
-
-            foreach ($destinoIds as $destinoId) {
+            foreach ($parametros['destino_id'] as $destinoId) {
                 $destino = Destino::find($destinoId);
                 if ($destino) {
                     $categoria = $this->determinarCategoria($destino->nombre);
@@ -123,64 +166,51 @@ class FlotaGeneralController extends Controller
                     }
                 }
             }
-
-            $flota->whereIn('destino_id', $allDependientes->unique());
+            $query->whereIn('destino_id', $allDependientes->unique());
         }
 
-        // Filtro por tipos de terminal (multiselect)
-        if (!empty($tipoTerminalIds)) {
-            $flota->whereHas('equipo', function ($query) use ($tipoTerminalIds) {
-                $query->whereIn('tipo_terminal_id', $tipoTerminalIds);
+        // Filtro por tipos de terminal
+        if (!empty($parametros['tipo_terminal_id'])) {
+            $query->whereHas('equipo', function ($subQuery) use ($parametros) {
+                $subQuery->whereIn('tipo_terminal_id', $parametros['tipo_terminal_id']);
             });
         }
 
         // Filtro por rango de fechas
-        if ($fechaRango) {
-            list($fechaInicio, $fechaFin) = explode(' - ', $fechaRango);
+        if ($parametros['fecha_rango']) {
+            list($fechaInicio, $fechaFin) = explode(' - ', $parametros['fecha_rango']);
             $fechaInicio = Carbon::parse($fechaInicio)->startOfDay();
             $fechaFin = Carbon::parse($fechaFin)->endOfDay();
 
-            $flota->whereHas('equipo.historico', function ($query) use ($fechaInicio, $fechaFin) {
-                $query->whereBetween('fecha_asignacion', [$fechaInicio, $fechaFin])
+            $query->whereHas('equipo.historico', function ($subQuery) use ($fechaInicio, $fechaFin) {
+                $subQuery->whereBetween('fecha_asignacion', [$fechaInicio, $fechaFin])
                     ->whereNull('fecha_desasignacion');
             });
         }
 
         // Otros filtros
-        if ($ticketPer) {
-            $flota->where('ticket_per', 'like', '%' . $ticketPer . '%');
-        }
-        if ($observaciones) {
-            $flota->where('observaciones', 'like', '%' . $observaciones . '%');
+        if ($parametros['ticket_per']) {
+            $query->where('ticket_per', 'like', '%' . $parametros['ticket_per'] . '%');
         }
 
-        // Paginación con todos los parámetros
-        $flota = $flota->orderBy('updated_at', 'desc')->paginate(500)->appends($request->query());
+        if ($parametros['observaciones']) {
+            $query->where('observaciones', 'like', '%' . $parametros['observaciones'] . '%');
+        }
 
-        // Procesar cada registro
-        foreach ($flota as $f) {
+        // Ejecutar consulta con paginación
+        $resultados = $query->orderBy('updated_at', 'desc')
+            ->paginate(500)
+            ->appends($request->query());
+
+        // Procesar cada registro para obtener último movimiento
+        foreach ($resultados as $f) {
             $ultimoMovimiento = $f->ultimoMovimiento();
             $f->ultimo_movimiento = $ultimoMovimiento ? $ultimoMovimiento->tipoMovimiento->nombre : '-';
             $f->fecha_ultimo_mov = $ultimoMovimiento ? Carbon::parse($ultimoMovimiento->fecha_asignacion)->format('d/m/Y H:i') : '-';
             $f->observaciones_ultimo_mov = $ultimoMovimiento ? $ultimoMovimiento->observaciones : '-';
         }
 
-        return view('flota.busqueda_avanzada', compact(
-            'flota',
-            'texto',
-            'equipos',
-            'recursos',
-            'destinos',
-            'tiposTerminal',
-            'equipoIds',
-            'recursoIds',
-            'destinoIds',
-            'destinoActualIds',
-            'tipoTerminalIds',
-            'fechaRango',
-            'ticketPer',
-            'observaciones'
-        ));
+        return $resultados;
     }
 
     // Función auxiliar para determinar categoría

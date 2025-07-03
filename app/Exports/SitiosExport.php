@@ -22,6 +22,7 @@ class SitiosExport implements FromCollection, WithHeadings, WithEvents, ShouldAu
         $sitios = Sitio::select(
             'sitio.nombre',
             'sitio.cartel',
+            'sitio.activo',
             'sitio.latitud',
             'sitio.longitud',
             'destino.nombre as dependencia',
@@ -36,6 +37,7 @@ class SitiosExport implements FromCollection, WithHeadings, WithEvents, ShouldAu
                 'nro' => $key + 1,  // Numeración secuencial comenzando en 1
                 'nombre' => $sitio->nombre,
                 'cartel' => $sitio->cartel ? 'SI' : 'NO',
+                'activo' => $sitio->activo ? 'Activo' : 'Inactivo', // Convertir booleano a texto
                 'latitud' => $sitio->latitud,
                 'longitud' => $sitio->longitud,
                 'dependencia' => $sitio->dependencia,
@@ -52,6 +54,7 @@ class SitiosExport implements FromCollection, WithHeadings, WithEvents, ShouldAu
             'NRO',
             'Nombre',
             'Cartel',
+            'Activo',
             'Latitud',
             'Longitud',
             'Dependencia',

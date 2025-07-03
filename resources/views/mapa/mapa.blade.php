@@ -785,7 +785,7 @@
 
         toggleControl.onAdd = function() {
             var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-            div.innerHTML = '<button id="toggleMapBtn" class="btn btn-primary">Mapa Híbrido</button>';
+            div.innerHTML = '<button id="toggleMapBtn" class="btn btn-primary">Mapa Satelital</button>';
             div.style.backgroundColor = 'white';
             div.style.padding = '5px';
             // Previene que el mapa se desplace cuando haces clic en el botón
@@ -801,7 +801,7 @@
                 // Cambia al mapa común
                 mymap.removeLayer(mapaHibrido);
                 mymap.addLayer(mapaComun);
-                this.textContent = 'Mapa Híbrido'; // Cambia el texto del botón
+                this.textContent = 'Mapa Satelital'; // Cambia el texto del botón
             } else {
                 // Cambia al mapa híbrido
                 mymap.removeLayer(mapaComun);

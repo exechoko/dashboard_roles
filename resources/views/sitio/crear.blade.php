@@ -83,6 +83,19 @@
                                             </select>
                                         </div>
                                     </div>
+                                    <!-- Toggle Switch para Estado Activo -->
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
+                                            <div class="d-flex align-items-center">
+                                                <label class="form-label mb-0 mr-3">Sitio activo</label>
+                                                <div class="custom-control custom-switch">
+                                                    <input type="hidden" name="activo" value="0">
+                                                    <input type="checkbox" name="activo" value="1" class="custom-control-input" id="activo_switch" {{ old('activo', 1) ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="activo_switch"></label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>
@@ -102,6 +115,25 @@
             </div>
         </div>
     </section>
+
+    <style>
+        .custom-control-input:checked ~ .custom-control-label::before {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+
+        .custom-control-input:focus ~ .custom-control-label::before {
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+
+        .text-success {
+            color: #28a745 !important;
+        }
+
+        .text-danger {
+            color: #dc3545 !important;
+        }
+    </style>
 
     <script>
         $(document).ready(function() {

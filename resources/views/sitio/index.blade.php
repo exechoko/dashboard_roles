@@ -55,6 +55,7 @@
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                         <th style="display: none;">ID</th>
                                         <th style="color:#fff;">Nombre</th>
+                                        <th style="color:#fff;">Activo</th>
                                         <th style="color:#fff;">Localidad</th>
                                         @can('ver-sitio')
                                             <th style="color:#fff;">Acciones</th>
@@ -74,6 +75,12 @@
                                                 <tr>
                                                     <td style="display: none;">{{ $sitio->id }}</td>
                                                     <td>{{ $sitio->nombre }}</td>
+                                                    <td>
+                                                        @if ($sitio->activo)
+                                                            <span class="badge badge-success">Activo</span>
+                                                        @else
+                                                            <span class="badge badge-danger">Inactivo</span>
+                                                        @endif
                                                     <td>{{ $sitio->localidad }}</td>
                                                     <td>
                                                         <form action="{{ route('sitios.destroy', $sitio->id) }}"

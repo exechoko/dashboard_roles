@@ -153,8 +153,14 @@ class MapaController extends Controller
             ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
             ->leftJoin('destino', 'sitio.destino_id', '=', 'destino.id')
             ->get()->toArray();
-        //dd($camaras);
 
+        $sitios = Sitio::select(
+            '*',
+            DB::raw('sitio.id as numero'),
+            DB::raw('sitio.nombre as titulo')
+        )->get()->toArray();
+
+        //dd($sitios);
         $antenas = [
             //PARANA
             [
@@ -239,7 +245,7 @@ class MapaController extends Controller
             ->where('sitio.localidad', 'Oro Verde')
             ->count();
 
-        $sitios = Sitio::count();
+        $cantidadSitios = Sitio::where('activo', 1)->count();
         $sitiosParana = Sitio::where('localidad', 'Paraná')->count();
         $sitiosCniaAvellaneda = Sitio::where('localidad', 'Colonia Avellaneda')->count();
         $sitiosSanBenito = Sitio::where('localidad', 'San Benito')->count();
@@ -260,6 +266,7 @@ class MapaController extends Controller
                 'domosDuales' => $domosDuales,
                 'total' => $totalCam,
                 'sitios' => $sitios,
+                'cantidadSitios' => $cantidadSitios,
                 'sitiosParana' => $sitiosParana,
                 'sitiosCniaAvellaneda' => $sitiosCniaAvellaneda,
                 'sitiosSanBenito' => $sitiosSanBenito,
@@ -457,27 +464,6 @@ class MapaController extends Controller
             DB::raw('camaras.id as numero'),
             DB::raw('camaras.nombre as titulo')
         )->get()->toArray();
-        //dd($camaras);
-        /*$camaras = [
-            [
-                'latitud' => -31.72988,
-                'longitud' => -60.53557,
-                'titulo' => 'Camara 1°',
-                'numero' => 1
-            ],
-            [
-                'latitud' => -31.73755,
-                'longitud' => -60.5294,
-                'titulo' => 'Camara 2°',
-                'numero' => 2
-            ],
-            [
-                'latitud' => -31.757398,
-                'longitud' => -60.595877,
-                'titulo' => 'Camara 3°',
-                'numero' => 3
-            ]
-        ];*/
 
         $antenas = [
             [
@@ -503,8 +489,14 @@ class MapaController extends Controller
         // Convertir el array en formato JSON
         //$jsonUbicaciones = json_encode($ubicaciones);
 
-
-        return view('mapa.mapa', ['comisarias' => $comisarias, 'antenas' => $antenas, 'camaras' => $camaras]);
+        return view(
+            'mapa.mapa',
+            [
+                'comisarias' => $comisarias,
+                'antenas' => $antenas,
+                'camaras' => $camaras
+            ]
+        );
     }
 
     public function exportarExcel()

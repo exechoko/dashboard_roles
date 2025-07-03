@@ -647,7 +647,7 @@
                         <span class="badge badge-warning p-2 m-1">Cnia. Avellaneda: {{ $sitiosCniaAvellaneda }}</span>
                         <span class="badge badge-danger p-2 m-1">San Benito: {{ $sitiosSanBenito }}</span>
                         <span class="badge badge-success p-2 m-1">Oro Verde: {{ $sitiosOroVerde }}</span>
-                        <span class="badge badge-dark p-2 m-1">Total sitios: {{ $sitios }}</span>
+                        <span class="badge badge-dark p-2 m-1">Total sitios: {{ $cantidadSitios }}</span>
                     </div>
                 </div>
                 <div class="text-right">
@@ -753,6 +753,8 @@
         var markersCamarasFijas = L.markerClusterGroup();
         var markersCamarasDomos = L.markerClusterGroup();
         var markersCamarasDomosDuales = L.markerClusterGroup();
+        var marcadoresSitios = L.markerClusterGroup();
+        var capaSitios = L.layerGroup();
         var capa1 = L.layerGroup();
         var capa2 = L.geoJSON();
         var capa3 = L.geoJSON();
@@ -1034,6 +1036,44 @@
             //marcadores.addLayer(marker);
         @endforeach
 
+        @foreach ($sitios as $sitio)
+            @if($sitio['activo'] == 0) //Solo mostrar sitios inactivos
+                var numeroSitio = "{{ $sitio['numero'] }}";
+                var latitudSitio = "{{ $sitio['latitud'] }}";
+                var longitudSitio = "{{ $sitio['longitud'] }}";
+                console.log("sitio inactivo", numeroSitio);
+
+                // Crear icono personalizado para sitio inactivo (círculo rojo con X)
+                var sitioInactivoIcon = L.divIcon({
+                    className: 'transparent',
+                    labelAnchor: [0, 0],
+                    popupAnchor: [0, -15],
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15],
+                    html: '<div style="width: 30px; height: 30px; background-color: #dc3545; border: 2px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"><i class="fas fa-times" style="color: white; font-size: 16px;"></i></div>'
+                });
+
+                var markerSitio = L.marker([latitudSitio, longitudSitio], {
+                    icon: sitioInactivoIcon
+                }).bindPopup(`
+                    <div>
+                        <h5>{{ $sitio['titulo'] }}</h5>
+                        <strong>Estado:</strong> <span style="color: #dc3545;">INACTIVO</span><br>
+                        @if(isset($sitio['cartel']))
+                            <strong>Cartel:</strong> <b>{{ $sitio['cartel'] ? 'SI' : 'NO' }}</b><br>
+                        @endif
+                        <div class="btn-group" role="group">
+                        <button class="btn btn-icon btn-info" title="Abrir en Google Maps" onclick="openGoogleMaps(${latitudSitio}, ${longitudSitio})"><i class="fas fa-globe-americas"></i></button>
+                        <button class="btn btn-icon btn-warning" title="Abrir en Street View" onclick="openStreetView(${latitudSitio}, ${longitudSitio})"><i class="fas fa-street-view"></i></button>
+                    </div>
+                    </div>
+                `);
+
+                marcadoresSitios.addLayer(markerSitio);
+            @endif
+        @endforeach
+        marcadoresSitios.addTo(capaSitios);
+
         // Crear el control de capas
         var controlCapas = L.control.layers({
             @can('ver-dependencia')
@@ -1063,6 +1103,7 @@
             @can('ver-dependencia')
                 'Antenas': capa3,
             @endcan
+            'Sitios Inactivos': capaSitios,
             'Limpiar': capa4,
         }).addTo(mymap);
 

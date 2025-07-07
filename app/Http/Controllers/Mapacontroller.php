@@ -149,6 +149,7 @@ class MapaController extends Controller
             DB::raw('camaras.id as numero'),
             DB::raw('camaras.nombre as titulo')
         )
+            ->where('sitio.activo', 1)
             ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
             ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
             ->leftJoin('destino', 'sitio.destino_id', '=', 'destino.id')
@@ -216,11 +217,22 @@ class MapaController extends Controller
             $query->where('tipo', 'Domo Dual');
         })->count();
 
-        $totalCam = Camara::all()->count();
+        //$totalCam = Camara::all()->count();
+        $totalCam = Camara::select(
+            'camaras.id',
+            'sitio.activo'
+        )
+            ->where('sitio.activo', 1)
+            ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->get()->count();
+
         $totalCamaras = Camara::select(
             'camaras.id',
-            'tipo_camara.canales as canales'
+            'tipo_camara.canales as canales',
+            'sitio.activo'
         )
+            ->where('sitio.activo', 1)
+            ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
             ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
             ->get();
         $cantidadCanales = 0;
@@ -230,27 +242,36 @@ class MapaController extends Controller
 
         // Contar las cámaras en Paraná
         $camarasParana = Camara::join('sitio', 'camaras.sitio_id', '=', 'sitio.id')
-            ->where('sitio.localidad', 'Paraná')
+        ->where('sitio.activo', 1)
+        ->where('sitio.localidad', 'Paraná')
             ->count();
         // Contar las cámaras en San Benito
         $camarasSanBenito = Camara::join('sitio', 'camaras.sitio_id', '=', 'sitio.id')
-            ->where('sitio.localidad', 'San Benito')
+        ->where('sitio.activo', 1)
+        ->where('sitio.localidad', 'San Benito')
             ->count();
         // Contar las cámaras en Colonia Avellaneda
         $camarasCniaAvellaneda = Camara::join('sitio', 'camaras.sitio_id', '=', 'sitio.id')
-            ->where('sitio.localidad', 'Colonia Avellaneda')
+        ->where('sitio.activo', 1)
+        ->where('sitio.localidad', 'Colonia Avellaneda')
             ->count();
         // Contar las cámaras en Oro Verde
         $camarasOroVerde = Camara::join('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->where('sitio.activo', 1)
             ->where('sitio.localidad', 'Oro Verde')
             ->count();
 
-        $cantidadSitios = Sitio::where('activo', 1)->count();
-        $sitiosParana = Sitio::where('localidad', 'Paraná')->count();
-        $sitiosCniaAvellaneda = Sitio::where('localidad', 'Colonia Avellaneda')->count();
-        $sitiosSanBenito = Sitio::where('localidad', 'San Benito')->count();
-        $sitiosOroVerde = Sitio::where('localidad', 'Oro Verde')->count();
+        $sitiosActivos = Sitio::where('activo', 1)
+            ->select('localidad', DB::raw('count(*) as total'))
+            ->groupBy('localidad')
+            ->get()
+            ->keyBy('localidad');
 
+        $cantidadSitios = $sitiosActivos->sum('total');
+        $sitiosParana = $sitiosActivos['Paraná']->total ?? 0;
+        $sitiosCniaAvellaneda = $sitiosActivos['Colonia Avellaneda']->total ?? 0;
+        $sitiosSanBenito = $sitiosActivos['San Benito']->total ?? 0;
+        $sitiosOroVerde = $sitiosActivos['Oro Verde']->total ?? 0;
         return response()->view(
             'mapa.mapa',
             [

@@ -249,22 +249,50 @@ class MapaController extends Controller
         }
 
         // Contar las cámaras en Paraná
-        $camarasParana = Camara::join('sitio', 'camaras.sitio_id', '=', 'sitio.id')
-        ->where('sitio.activo', 1)
-        ->where('sitio.localidad', 'Paraná')
+        $camarasParana = Camara::select(
+            'camaras.id',
+            'tipo_camara.tipo',
+            'sitio.activo'
+        )
+            ->leftjoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+            ->leftjoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
+            ->where('sitio.activo', 1)
+            ->where('sitio.localidad', 'Paraná')
             ->count();
         // Contar las cámaras en San Benito
-        $camarasSanBenito = Camara::join('sitio', 'camaras.sitio_id', '=', 'sitio.id')
-        ->where('sitio.activo', 1)
-        ->where('sitio.localidad', 'San Benito')
+        $camarasSanBenito = Camara::select(
+            'camaras.id',
+            'tipo_camara.tipo',
+            'sitio.activo'
+        )
+            ->leftjoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+            ->leftjoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
+            ->where('sitio.activo', 1)
+            ->where('sitio.localidad', 'San Benito')
             ->count();
         // Contar las cámaras en Colonia Avellaneda
-        $camarasCniaAvellaneda = Camara::join('sitio', 'camaras.sitio_id', '=', 'sitio.id')
-        ->where('sitio.activo', 1)
-        ->where('sitio.localidad', 'Colonia Avellaneda')
+        $camarasCniaAvellaneda = Camara::select(
+            'camaras.id',
+            'tipo_camara.tipo',
+            'sitio.activo'
+        )
+            ->leftjoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+            ->leftjoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
+            ->where('sitio.activo', 1)
+            ->where('sitio.localidad', 'Colonia Avellaneda')
             ->count();
         // Contar las cámaras en Oro Verde
-        $camarasOroVerde = Camara::join('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+        $camarasOroVerde = Camara::select(
+            'camaras.id',
+            'tipo_camara.tipo',
+            'sitio.activo'
+        )
+            ->leftjoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+            ->leftjoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
             ->where('sitio.activo', 1)
             ->where('sitio.localidad', 'Oro Verde')
             ->count();

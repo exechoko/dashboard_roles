@@ -772,6 +772,7 @@
                         <span class="badge badge-danger p-2 m-1">Fijas LPR {{ $fijasLPR }}</span>
                         <span class="badge badge-success p-2 m-1">Domos {{ $domos }}</span>
                         <span class="badge badge-primary p-2 m-1">Domos Duales {{ $domosDuales }}</span>
+                        <span class="badge badge-info p-2 m-1">BDE (Totems) {{ $bde }}</span>
                         <span class="badge badge-dark p-2 m-1">Cámaras {{ $total }}</span>
                         <span class="badge badge-dark p-2 m-1">Canales {{ $canales }}</span>
                     </div>
@@ -885,6 +886,14 @@
                                 </label>
                                 <span class="layer-label" onclick="toggleSwitch('switch-camaras-domos-duales')">Cámaras Domos
                                     Duales</span>
+                            </div>
+                            <div class="layer-item">
+                                <label class="switch">
+                                    <input type="checkbox" id="switch-camaras-bde"
+                                        onchange="toggleLayer('camaras-bde', this.checked)">
+                                    <span class="slider camaras-tipo"></span>
+                                </label>
+                                <span class="layer-label" onclick="toggleSwitch('switch-camaras-bde')">Cámaras BDE</span>
                             </div>
                         @endcan
 
@@ -1010,6 +1019,7 @@
         var markersCamarasFijas = L.markerClusterGroup();
         var markersCamarasDomos = L.markerClusterGroup();
         var markersCamarasDomosDuales = L.markerClusterGroup();
+        var markersBDE = L.markerClusterGroup();
         var marcadoresSitios = L.markerClusterGroup();
         var capaSitios = L.layerGroup();
         var capa1 = L.layerGroup();
@@ -1022,6 +1032,7 @@
         var capaFija = L.layerGroup();
         var capaDomo = L.layerGroup();
         var capaDomoDual = L.layerGroup();
+        var capaBDE = L.layerGroup();
 
         // Define las capas para el mapa común y el híbrido
         var mapaComun = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -1266,6 +1277,8 @@
                 markersCamarasDomos.addLayer(marker)
             } else if (tipo_camara === "Domo Dual") {
                 markersCamarasDomosDuales.addLayer(marker)
+            } else if (tipo_camara === "BDE (Totem)") {
+                markersBDE.addLayer(marker)
             }
         @endforeach
         marcadores.addTo(capa2).addTo(capa5);
@@ -1274,6 +1287,7 @@
         markersCamarasFijas.addTo(capaFija);
         markersCamarasDomos.addTo(capaDomo);
         markersCamarasDomosDuales.addTo(capaDomoDual);
+        markersBDE.addTo(capaBDE);
 
         @foreach ($antenas as $marcador)
             var numero = "{{ $marcador['numero'] }}";
@@ -1343,6 +1357,7 @@
             'camaras-lpr': false,
             'camaras-domos': false,
             'camaras-domos-duales': false,
+            'camaras-bde': false,
             antenas: false,
             sitios: false,
             'camaras-comisarias': false
@@ -1441,7 +1456,7 @@
 
         // Función para desactivar capas específicas de cámaras
         function deactivateCameraSpecificLayers() {
-            const cameraTypes = ['camaras-fijas', 'camaras-fr', 'camaras-lpr', 'camaras-domos', 'camaras-domos-duales'];
+            const cameraTypes = ['camaras-fijas', 'camaras-fr', 'camaras-lpr', 'camaras-domos', 'camaras-domos-duales', 'camaras-bde'];
 
             cameraTypes.forEach(type => {
                 if (layerStates[type]) {
@@ -1470,6 +1485,9 @@
                 case 'camaras-domos-duales':
                     mymap.addLayer(capaDomoDual);
                     break;
+                case 'camaras-bde':
+                    mymap.addLayer(capaBDE);
+                    break;
             }
         }
 
@@ -1490,6 +1508,9 @@
                     break;
                 case 'camaras-domos-duales':
                     mymap.removeLayer(capaDomoDual);
+                    break;
+                case 'camaras-bde':
+                    mymap.removeLayer(capaBDE);
                     break;
             }
         }

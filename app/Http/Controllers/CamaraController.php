@@ -40,26 +40,59 @@ class CamaraController extends Controller
 
         $fijas = Camara::whereHas('tipoCamara', function ($query) {
             $query->where('tipo', 'Fija');
-        })->count();
+        })
+            ->whereHas('sitio', function ($query) {
+                $query->where('activo', 1);
+            })
+            ->count();
+
         $fijasFR = Camara::whereHas('tipoCamara', function ($query) {
             $query->where('tipo', 'Fija - FR');
-        })->count();
+        })
+            ->whereHas('sitio', function ($query) {
+                $query->where('activo', 1);
+            })
+            ->count();
+
         $fijasLPR = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo', 'Fija - LPR')->orWhere('tipo', 'Fija - LPR NV')->orWhere('tipo', 'Fija - LPR AV');
-        })->count();
+            $query->where('tipo', 'Fija - LPR')
+                ->orWhere('tipo', 'Fija - LPR NV')
+                ->orWhere('tipo', 'Fija - LPR AV');
+        })
+            ->whereHas('sitio', function ($query) {
+                $query->where('activo', 1);
+            })
+            ->count();
+
         $domos = Camara::whereHas('tipoCamara', function ($query) {
             $query->where('tipo', 'Domo');
-        })->count(); //Camara::where('tipo', 'Domo')->count();
+        })
+            ->whereHas('sitio', function ($query) {
+                $query->where('activo', 1);
+            })
+            ->count();
+
         $domosDuales = Camara::whereHas('tipoCamara', function ($query) {
             $query->where('tipo', 'Domo Dual');
-        })->count();
-        $totalCam = Camara::all()->count();
+        })
+            ->whereHas('sitio', function ($query) {
+                $query->where('activo', 1);
+            })
+            ->count();
+        $totalCam = Camara::select('camaras.id')
+            ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->where('sitio.activo', 1)
+            ->count();
+
         $totalCamaras = Camara::select(
             'camaras.id',
             'tipo_camara.canales as canales'
         )
+            ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
             ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+            ->where('sitio.activo', 1)
             ->get();
+
         $cantidadCanales = 0;
         foreach ($totalCamaras as $camara) {
             $cantidadCanales += $camara->canales;
@@ -103,7 +136,7 @@ class CamaraController extends Controller
     {
         $tipoCamara = TipoCamara::all();
         $dependencias = Destino::all();
-        $sitios = Sitio::all();
+        $sitios = Sitio::where('activo', 1)->get();
         return view('camaras.crear', compact('tipoCamara', 'dependencias', 'sitios'));
     }
 

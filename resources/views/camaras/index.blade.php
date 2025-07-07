@@ -13,7 +13,7 @@
                     <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
                     <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
                     <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
-                    <label class="alert alert-info" for="">BDE (Totem): {{ $domosDuales }}</label>
+                    <label class="alert alert-info" for="">BDE (Totem): {{ $bde }}</label>
                 </div>
             </div>
         </div>

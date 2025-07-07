@@ -58,15 +58,17 @@ class FlotaGeneralController extends Controller
 
     public function busquedaAvanzada(Request $request)
     {
+        //dd($request->all());
         // Obtener datos para los dropdowns (solo estos se cargan siempre)
-        $equipos = Equipo::select('id', 'tei', 'issi', 'tipo_terminal_id')
+        $equipos = Equipo::select('id', 'tei', 'issi', 'tipo_terminal_id', 'estado_id')
             ->with('tipo_terminal:id,marca,modelo,tipo_uso_id')
             ->with('tipo_terminal.tipo_uso:id,uso')
+            ->with('estado:id,nombre')
             ->orderBy('tei', 'desc')
             ->get();
 
         $recursos = Recurso::select('id', 'nombre')->orderBy('nombre')->get();
-        //$destinos = Destino::select('id', 'nombre')->orderBy('nombre')->get();
+        $estados = Estado::all();
         $destinos = Destino::all();
         $tiposTerminal = TipoTerminal::select('id', 'marca', 'modelo')->orderBy('marca', 'desc')->get();
 
@@ -81,6 +83,7 @@ class FlotaGeneralController extends Controller
             'equipo_id' => (array) $request->input('equipo_id', []),
             'recurso_id' => (array) $request->input('recurso_id', []),
             'destino_id' => (array) $request->input('destino_id', []),
+            'estado_id' => (array) $request->input('estado_id', []),
             'destino_actual_id' => (array) $request->input('destino_actual_id', []),
             'tipo_terminal_id' => (array) $request->input('tipo_terminal_id', []),
             'fecha_rango' => $request->get('fecha_rango'),
@@ -104,6 +107,7 @@ class FlotaGeneralController extends Controller
             'equipos' => $equipos,
             'recursos' => $recursos,
             'destinos' => $destinos,
+            'estados' => $estados,
             'tiposTerminal' => $tiposTerminal,
             'totalRegistros' => $totalRegistros,
             'hayBusqueda' => $hayBusqueda
@@ -118,7 +122,8 @@ class FlotaGeneralController extends Controller
                 'equipo.tipo_terminal:id,marca,modelo,imagen,tipo_uso_id',
                 'equipo.tipo_terminal.tipo_uso:id,uso',
                 'recurso:id,nombre',
-                'destino:id,nombre'
+                'destino:id,nombre',
+                'equipo.estado:id,nombre'
             ]);
 
         // Filtro de texto
@@ -173,6 +178,13 @@ class FlotaGeneralController extends Controller
         if (!empty($parametros['tipo_terminal_id'])) {
             $query->whereHas('equipo', function ($subQuery) use ($parametros) {
                 $subQuery->whereIn('tipo_terminal_id', $parametros['tipo_terminal_id']);
+            });
+        }
+
+        // Filtro por estados
+        if (!empty($parametros['estado_id'])) {
+            $query->whereHas('equipo', function ($subQuery) use ($parametros) {
+                $subQuery->whereIn('estado_id', $parametros['estado_id']);
             });
         }
 

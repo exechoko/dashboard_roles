@@ -166,7 +166,7 @@
                                 </div>
 
                                 <div class="row mt-2">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="form-group">
                                             <label class="filter-label" for="destino_actual_id">Dependencia Actual</label>
                                             <select name="destino_actual_id[]" class="form-control select2" multiple="multiple">
@@ -179,7 +179,7 @@
                                             </select>
                                         </div>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <div class="form-group">
                                             <label class="filter-label" for="destino_id">Dependencia Patrimonial</label>
                                             <select name="destino_id[]" class="form-control select2" multiple="multiple">
@@ -187,6 +187,19 @@
                                                     <option value="{{ $destino->id }}"
                                                         {{ in_array($destino->id, (array) $destino_id) ? 'selected' : '' }}>
                                                         {{ $destino->nombre . ' - ' . $destino->dependeDe() }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label class="filter-label" for="estado_id">Estado</label>
+                                            <select name="estado_id[]" class="form-control select2" multiple="multiple">
+                                                @foreach ($estados as $estado)
+                                                    <option value="{{ $estado->id }}"
+                                                        {{ in_array($estado->id, (array) $estado_id) ? 'selected' : '' }}>
+                                                        {{ $estado->nombre }}
                                                     </option>
                                                 @endforeach
                                             </select>

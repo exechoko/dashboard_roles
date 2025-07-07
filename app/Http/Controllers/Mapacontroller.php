@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
+use function PHPUnit\Framework\callback;
+
 class MapaController extends Controller
 {
     /**
@@ -201,24 +203,35 @@ class MapaController extends Controller
             'comisarias.jurisdiccion'
         )->get();
 
-        $fijas = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo', 'Fija');
-        })->count();
-        $fijasFR = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo', 'Fija - FR');
-        })->count();
-        $fijasLPR = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo', 'Fija - LPR')->orWhere('tipo', 'Fija - LPR NV')->orWhere('tipo', 'Fija - LPR AV');
-        })->count();
-        $domos = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo', 'Domo');
-        })->count(); //Camara::where('tipo', 'Domo')->count();
-        $domosDuales = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo', 'Domo Dual');
-        })->count();
-        $bde = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo', 'BDE (Totem)');
-        })->count();
+        // Filtro para sitio activo
+        $activoSitio = function ($query) {
+            $query->where('activo', 1);
+        };
+
+        $fijas = Camara::whereHas('tipoCamara', fn($q) => $q->where('tipo', 'Fija'))
+            ->whereHas('sitio', $activoSitio)
+            ->count();
+
+        $fijasFR = Camara::whereHas('tipoCamara', fn($q) => $q->where('tipo', 'Fija - FR'))
+            ->whereHas('sitio', $activoSitio)
+            ->count();
+
+        $fijasLPR = Camara::whereHas('tipoCamara', fn($q) =>
+            $q->whereIn('tipo', ['Fija - LPR', 'Fija - LPR NV', 'Fija - LPR AV']))
+            ->whereHas('sitio', $activoSitio)
+            ->count();
+
+        $domos = Camara::whereHas('tipoCamara', fn($q) => $q->where('tipo', 'Domo'))
+            ->whereHas('sitio', $activoSitio)
+            ->count();
+
+        $domosDuales = Camara::whereHas('tipoCamara', fn($q) => $q->where('tipo', 'Domo Dual'))
+            ->whereHas('sitio', $activoSitio)
+            ->count();
+
+        $bde = Camara::whereHas('tipoCamara', fn($q) => $q->where('tipo', 'BDE (Totem)'))
+            ->whereHas('sitio', $activoSitio)
+            ->count();
 
         //$totalCam = Camara::all()->count();
         $totalCam = Camara::select(

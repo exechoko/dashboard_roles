@@ -79,8 +79,18 @@ class CamaraController extends Controller
                 $query->where('activo', 1);
             })
             ->count();
+
+        $bde = Camara::whereHas('tipoCamara', function ($query) {
+            $query->where('tipo', 'BDE (Totem)');
+        })
+            ->whereHas('sitio', function ($query) {
+                $query->where('activo', 1);
+            })
+            ->count();
         $totalCam = Camara::select('camaras.id')
+            ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
             ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
             ->where('sitio.activo', 1)
             ->count();
 
@@ -90,6 +100,7 @@ class CamaraController extends Controller
         )
             ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
             ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
             ->where('sitio.activo', 1)
             ->get();
 
@@ -123,6 +134,7 @@ class CamaraController extends Controller
             'fijasLPR',
             'domos',
             'domosDuales',
+            'bde',
             'totalCam'
         ));
     }

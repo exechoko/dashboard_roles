@@ -1319,6 +1319,9 @@
                                                                                                 @if(isset($sitio['cartel']))
                                                                                                     <strong>Cartel:</strong> <b>{{ $sitio['cartel'] ? 'SI' : 'NO' }}</b><br>
                                                                                                 @endif
+                                                                                                @if (isset($sitio['observaciones']))
+                                                                                                    <strong>Observaciones:</strong> {{ $sitio['observaciones'] }}<br>
+                                                                                                @endif
                                                                                                 <div class="btn-group" role="group">
                                                                                                 <button class="btn btn-icon btn-info" title="Abrir en Google Maps" onclick="openGoogleMaps(${latitudSitio}, ${longitudSitio})"><i class="fas fa-globe-americas"></i></button>
                                                                                                 <button class="btn btn-icon btn-warning" title="Abrir en Street View" onclick="openStreetView(${latitudSitio}, ${longitudSitio})"><i class="fas fa-street-view"></i></button>

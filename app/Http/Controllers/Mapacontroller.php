@@ -223,18 +223,23 @@ class MapaController extends Controller
         //$totalCam = Camara::all()->count();
         $totalCam = Camara::select(
             'camaras.id',
+            'tipo_camara.tipo',
             'sitio.activo'
         )
             ->where('sitio.activo', 1)
+            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
+            ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
             ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
             ->get()->count();
 
         $totalCamaras = Camara::select(
             'camaras.id',
+            'tipo_camara.tipo',
             'tipo_camara.canales as canales',
             'sitio.activo'
         )
             ->where('sitio.activo', 1)
+            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
             ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
             ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
             ->get();

@@ -20,11 +20,25 @@ class RecursoController extends Controller
     public function index(Request $request)
     {
         $texto = trim($request->get('texto')); //trim quita espacios vacios
-        $recursos = Recurso::where('nombre', 'LIKE', '%'.$texto.'%')
-                    ->orderBy('nombre','asc')
-                    ->paginate(10);
+        $dependencia_seleccionada = $request->get('dependencia_id'); // Obtener el ID de la dependencia seleccionada
 
-        return view('recursos.index', compact('recursos', 'texto'));
+        $query = Recurso::query();
+
+        // Filtrar por nombre de recurso si se proporciona un texto
+        if (!empty($texto)) {
+            $query->where('nombre', 'LIKE', '%'.$texto.'%');
+        }
+
+        // Filtrar por dependencia si se selecciona una
+        if (!empty($dependencia_seleccionada)) {
+            $query->where('destino_id', $dependencia_seleccionada);
+        }
+
+        $recursos = $query->orderBy('nombre','asc')->paginate(100);
+
+        $dependencias = Destino::all(); // Obtener todas las dependencias para el dropdown
+
+        return view('recursos.index', compact('recursos', 'texto', 'dependencias', 'dependencia_seleccionada'));
     }
 
     public function create()

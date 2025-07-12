@@ -936,7 +936,7 @@
             @can('editar-camara')
                 window.location.href = '/camaras/' + camaraId + '/edit';
             @endcan
-                                }
+                            }
 
         function openGoogleMaps(latitud, longitud) {
             // Abre Google Maps en una nueva pestaña con la ubicación especificada
@@ -974,6 +974,75 @@
                                 d > 20 ? '#FEB24C' :
                                     d > 10 ? '#FED976' :
                                         '#FFEDA0';
+        }
+
+        // Función para convertir orientación a grados
+        function getOrientationDegrees(orientacion) {
+            switch (orientacion?.toLowerCase()) {
+                case 'norte':
+                case 'n':
+                    return 0;
+                case 'noreste':
+                case 'ne':
+                    return 45;
+                case 'este':
+                case 'e':
+                    return 90;
+                case 'sureste':
+                case 'se':
+                    return 135;
+                case 'sur':
+                case 's':
+                    return 180;
+                case 'suroeste':
+                case 'so':
+                case 'sw':
+                    return 225;
+                case 'oeste':
+                case 'o':
+                case 'w':
+                    return 270;
+                case 'noroeste':
+                case 'no':
+                case 'nw':
+                    return 315;
+                default:
+                    return 0; // Por defecto norte
+            }
+        }
+
+        // Función para generar el path del SVG basado en ángulo y orientación
+        function generateCameraPath(angulo, orientacion) {
+            // Radio del sector (distancia visual del campo de visión)
+            const radio = 25;
+
+            // Si es 360°, devolver un círculo completo
+            if (parseFloat(angulo) === 360) {
+                return {
+                    path: `<circle cx="0" cy="0" r="${radio}" fill="rgba(0,255,0,0.3)" />`,
+                    rotation: 0 // no rota porque es simétrico
+                };
+            }
+            // Convertir ángulo de apertura a radianes (dividir por 2 para cada lado)
+            const anguloApertura = (angulo || 60) / 2; // Default 60 grados si no se especifica
+            const anguloRad = (anguloApertura * Math.PI) / 180;
+
+            // Convertir orientación a grados
+            const orientacionGrados = getOrientationDegrees(orientacion);
+
+            // Calcular puntos del arco
+            const x1 = radio * Math.cos(anguloRad);
+            const y1 = -radio * Math.sin(anguloRad);
+            const x2 = radio * Math.cos(-anguloRad);
+            const y2 = -radio * Math.sin(-anguloRad);
+
+            // Crear el path del sector
+            const path = `M0,0 L${x1},${y1} A${radio},${radio} 0 0,1 ${x2},${y2} Z`;
+
+            return {
+                path: path,
+                rotation: orientacionGrados - 90
+            };
         }
 
 
@@ -1167,17 +1236,6 @@
                 let coord = [objeto[i].lat, objeto[i].lng]; // Creamos un arreglo [latitud, longitud]
                 polygonCoords.push(coord); // Agregamos el arreglo al arreglo de coordenadas del polígono
                 console.log("coordenada", objeto[i].lat);
-
-                //Para mostrar las coordenadas en cada punto del poligono
-                /*var lat = objeto[i].lat;
-                var lng = objeto[i].lng;
-                var markerPunto = L.marker([objeto[i].lat, objeto[i].lng], {
-
-                }) //.addTo(capa2)
-                .bindPopup(lat + "," + lng);
-                markerPunto.addTo(mymap);
-                -------------------------------------------------------------*/
-
             }
             console.log("coord", polygonCoords);
             var polygon = L.polygon(polygonCoords).setStyle({
@@ -1187,84 +1245,71 @@
                 weight: 2
             })
                 .addTo(capa1).addTo(capa5);
-            //.addTo(mymap);
-
-            //------------- Para mostrar poligono editable -----------------------------------------------------------
-            /*var poligonoEditable = L.polygon(polygonCoords).setStyle({
-                    color: 'black',
-                    weight: 1
-                })
-                //.addTo(capa1).addTo(capa5);
-                .addTo(mymap);
-            poligonoEditable.enableEdit();
-            poligonoEditable.on('editable:editing', function(e) {
-                var editedPolygon = e.layer;
-                //var newCoords = editedPolygon.getLatLngs()[0]; // Obtener las nuevas coordenadas
-                var polygonCoords = editedPolygon.getLatLngs()[0];
-                var newCoords = [];
-                for (var i = 0; i < polygonCoords.length; i++) {
-                    var coord = {
-                        lat: polygonCoords[i].lat,
-                        lng: polygonCoords[i].lng
-                    };
-                    newCoords.push(coord);
-                }
-                var jsonCoords = JSON.stringify(newCoords);
-                console.log('nuevas coord', jsonCoords);
-                // Aquí puedes hacer una llamada AJAX o enviar las coordenadas al backend para guardar los cambios
-                // Ejemplo de una llamada AJAX usando jQuery:
-                $.ajax({
-                    url: '/guardar-coordenadas',
-                    method: 'POST',
-                    data: {
-                        coordinates: newCoords
-                    },
-                    success: function(response) {
-                        console.log('Cambios guardados con éxito');
-                    },
-                    error: function(error) {
-                        console.error('Error al guardar los cambios:', error);
-                    }
-                });
-            });*/
-            //console("poligon", polygon)
-            //-----------------------------------------------------------------------------------------------------------------------
         @endforeach
 
         @foreach ($camaras as $marcador)
             var numero = "{{ $marcador['numero'] }}";
             var latitud = "{{ $marcador['latitud'] }}";
             var longitud = "{{ $marcador['longitud'] }}";
-            console.log("camaras", numero);
-            var cameraIcon = L.icon({
-                iconUrl: "{{ $marcador['imagen'] }}", //(tipo.includes("Fija")) ? "/img/cctv_icon.png" : "/img/domo_icon.png",
+            var angulo = {{ $marcador['angulo'] ?? 60 }}; // Default 60 grados
+            var orientacion = "{{ $marcador['orientacion'] ?? 'norte' }}"; // Default norte
+            var tipo_camara = "{{ $marcador['tipo_camara'] }}";
+            console.log("camaras", numero, "angulo:", angulo, "orientacion:", orientacion);
+            // Generar el path y rotación dinámicamente
+            var cameraGeometry = generateCameraPath(angulo, orientacion);
+            // Colores por tipo de cámara
+            var fillColor = "rgba(0,0,255,0.3)"; // Default
+
+            if (tipo_camara.includes("Domo")) {
+                fillColor = "rgba(0,255,0,0.3)";
+            } else if (tipo_camara.includes("LPR")) {
+                fillColor = "rgba(255,0,0,0.3)";
+            } else if (tipo_camara.includes("FR")) {
+                fillColor = "rgba(255,165,0,0.3)";
+            }
+
+            var svgShape = angulo === 360
+                ? `<circle cx="0" cy="0" r="20" fill="${fillColor}" stroke="black" stroke-width="1" />`
+                : `<path d="${cameraGeometry.path}" fill="${fillColor}" stroke="black" stroke-width="1" />`;
+            var cameraIcon = L.divIcon({
+                className: '', // sin clase por defecto
+                html: `
+                        <div style="position: relative; width: 50px; height: 50px;">
+                            <svg width="50" height="50" viewBox="-25 -25 50 50" xmlns="http://www.w3.org/2000/svg"
+                                style="position: absolute; top: 0; left: 0; transform: rotate(${cameraGeometry.rotation}deg); z-index: 0;">
+                                ${svgShape}
+                            </svg>
+                            <img src="{{ $marcador['imagen'] }}" style="width: 50px; height: 50px; position: absolute; top: 0; left: 0; z-index: 1;" />
+                        </div>
+                `,
                 iconSize: [50, 50],
-                iconAnchor: [15, 15],
-                popupAnchor: [0, -15]
+                iconAnchor: [25, 25], // centro del ícono
+                popupAnchor: [0, -25]
             });
             var marker = L.marker([latitud, longitud], {
                 icon: cameraIcon
             }).bindPopup(`
-                                                                                        <div>
-                                                                                            <img src='{{ $marcador['imagen'] }}' alt="" style="max-width: 200px;">
-                                                                                            <h5>{{ $marcador['titulo'] }}</h5>
-                                                                                            Tipo: <b>{{ $marcador['tipo_camara'] }}</b><br>
-                                                                                            Sitio: <b>{{ $marcador['sitio'] }}</b><br>
-                                                                                            Señalizado: <b>{{ $marcador['cartel'] ? 'SI' : 'NO' }}</b><br>
-                                                                                            Dependencia: <b>{{ $marcador['dependencia'] }}</b><br>
-                                                                                            Etapa: <b>{{ $marcador['etapa'] }}</b><br>
-                                                                                            Instalación: <b>{{ $marcador['fecha_instalacion'] }}</b><br>
-                                                                                            Inteligencia: <b>{{ $marcador['inteligencia'] }}</b><br>
-                                                                                            Marca: <b>{{ $marcador['marca'] }}</b> - Mod.: <b>{{ $marcador['modelo'] }}</b><br>
-                                                                                            Nº serie: <b>{{ $marcador['nro_serie'] }}</b><br>
-                                                                                            <div class="btn-group" role="group">
-                                                                                                <button class="btn btn-icon btn-primary" title="Editar cámara" onclick="editCamera(${numero})"><i class="fas fa-edit"></i></button>
-                                                                                                <button class="btn btn-icon btn-info" title="Abrir en Google Maps" onclick="openGoogleMaps(${latitud}, ${longitud})"><i class="fas fa-globe-americas"></i></button>
-                                                                                                <button class="btn btn-icon btn-warning" title="Abrir en Street View" onclick="openStreetView(${latitud}, ${longitud})"><i class="fas fa-street-view"></i></button>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    `);
-            //.bindPopup("{{ $marcador['titulo'] }}<br>{{ $marcador['tipo_camara'] }}<br>{{ $marcador['inteligencia'] }}");
+                    <div>
+                        <img src='{{ $marcador['imagen'] }}' alt="" style="max-width: 200px;">
+                        <h5>{{ $marcador['titulo'] }}</h5>
+                        Tipo: <b>{{ $marcador['tipo_camara'] }}</b><br>
+                        Sitio: <b>{{ $marcador['sitio'] }}</b><br>
+                        Ángulo: <b>${angulo}°</b><br>
+                        Orientación: <b>${orientacion}</b><br>
+                        Señalizado: <b>{{ $marcador['cartel'] ? 'SI' : 'NO' }}</b><br>
+                        Dependencia: <b>{{ $marcador['dependencia'] }}</b><br>
+                        Etapa: <b>{{ $marcador['etapa'] }}</b><br>
+                        Instalación: <b>{{ $marcador['fecha_instalacion'] }}</b><br>
+                        Inteligencia: <b>{{ $marcador['inteligencia'] }}</b><br>
+                        Marca: <b>{{ $marcador['marca'] }}</b> - Mod.: <b>{{ $marcador['modelo'] }}</b><br>
+                        Nº serie: <b>{{ $marcador['nro_serie'] }}</b><br>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-icon btn-primary" title="Editar cámara" onclick="editCamera(${numero})"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-icon btn-info" title="Abrir en Google Maps" onclick="openGoogleMaps(${latitud}, ${longitud})"><i class="fas fa-globe-americas"></i></button>
+                            <button class="btn btn-icon btn-warning" title="Abrir en Street View" onclick="openStreetView(${latitud}, ${longitud})"><i class="fas fa-street-view"></i></button>
+                        </div>
+                    </div>
+                `);
             marcadores.addLayer(marker);
             var tipo_camara = "{{ $marcador['tipo_camara'] }}";
             if (tipo_camara === "Fija - LPR" || tipo_camara === "Fija - LPR AV" || tipo_camara === "Fija - LPR NV") {
@@ -1327,21 +1372,21 @@
                 var markerSitio = L.marker([latitudSitio, longitudSitio], {
                     icon: sitioInactivoIcon
                 }).bindPopup(`
-                                                                                            <div>
-                                                                                                <h5>{{ $sitio['titulo'] }}</h5>
-                                                                                                <strong>Estado:</strong> <span style="color: #dc3545;">INACTIVO</span><br>
-                                                                                                @if(isset($sitio['cartel']))
-                                                                                                    <strong>Cartel:</strong> <b>{{ $sitio['cartel'] ? 'SI' : 'NO' }}</b><br>
-                                                                                                @endif
-                                                                                                @if (isset($sitio['observaciones']))
-                                                                                                    <strong>Observaciones:</strong> {{ $sitio['observaciones'] }}<br>
-                                                                                                @endif
-                                                                                                <div class="btn-group" role="group">
-                                                                                                <button class="btn btn-icon btn-info" title="Abrir en Google Maps" onclick="openGoogleMaps(${latitudSitio}, ${longitudSitio})"><i class="fas fa-globe-americas"></i></button>
-                                                                                                <button class="btn btn-icon btn-warning" title="Abrir en Street View" onclick="openStreetView(${latitudSitio}, ${longitudSitio})"><i class="fas fa-street-view"></i></button>
-                                                                                            </div>
-                                                                                            </div>
-                                                                                        `);
+                                                                                                                                                        <div>
+                                                                                                                                                            <h5>{{ $sitio['titulo'] }}</h5>
+                                                                                                                                                            <strong>Estado:</strong> <span style="color: #dc3545;">INACTIVO</span><br>
+                                                                                                                                                            @if(isset($sitio['cartel']))
+                                                                                                                                                                <strong>Cartel:</strong> <b>{{ $sitio['cartel'] ? 'SI' : 'NO' }}</b><br>
+                                                                                                                                                            @endif
+                                                                                                                                                            @if (isset($sitio['observaciones']))
+                                                                                                                                                                <strong>Observaciones:</strong> {{ $sitio['observaciones'] }}<br>
+                                                                                                                                                            @endif
+                                                                                                                                                            <div class="btn-group" role="group">
+                                                                                                                                                            <button class="btn btn-icon btn-info" title="Abrir en Google Maps" onclick="openGoogleMaps(${latitudSitio}, ${longitudSitio})"><i class="fas fa-globe-americas"></i></button>
+                                                                                                                                                            <button class="btn btn-icon btn-warning" title="Abrir en Street View" onclick="openStreetView(${latitudSitio}, ${longitudSitio})"><i class="fas fa-street-view"></i></button>
+                                                                                                                                                        </div>
+                                                                                                                                                        </div>
+                                                                                                                                                    `);
 
                 marcadoresSitios.addLayer(markerSitio);
             @endif

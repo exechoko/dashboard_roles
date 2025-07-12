@@ -67,6 +67,25 @@
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
+                                            <label for="">Orientación</label>
+                                            <select name="orientacion" id="" class="form-control select2"
+                                                style="margin-bottom: 15px">
+                                                <option value="">Seleccionar</option>
+                                                @foreach ($orientaciones as $orientacion)
+                                                    <option value="{{ $orientacion }}">
+                                                        {{ $orientacion }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                        <div class="form-group">
+                                            <label for="angulo">Ángulo de visión (°)</label>
+                                            <input type="text" name="angulo" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-4">
+                                        <div class="form-group">
                                             <label for="nro_serie">Nro. de Serie</label>
                                             <input type="text" name="nro_serie" class="form-control">
                                         </div>

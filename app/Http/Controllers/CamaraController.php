@@ -149,7 +149,17 @@ class CamaraController extends Controller
         $tipoCamara = TipoCamara::all();
         $dependencias = Destino::all();
         $sitios = Sitio::where('activo', 1)->get();
-        return view('camaras.crear', compact('tipoCamara', 'dependencias', 'sitios'));
+        $orientaciones = [
+            'NORTE',
+            'SUR',
+            'ESTE',
+            'OESTE',
+            'SURESTE',
+            'SUROESTE',
+            'NORESTE',
+            'NOROESTE'
+        ];
+        return view('camaras.crear', compact('tipoCamara', 'dependencias', 'sitios', 'orientaciones'));
     }
 
     /**
@@ -177,6 +187,8 @@ class CamaraController extends Controller
             $camara->sitio_id = $request->sitio_id;
             $camara->latitud = (string) $s->latitud;
             $camara->longitud = (string) $s->longitud;
+            $camara->orientacion = $request->orientacion;
+            $camara->angulo = $request->angulo;
             $camara->inteligencia = $request->inteligencia;
             $camara->nro_serie = $request->nro_serie;
             $camara->fecha_instalacion = $request->fecha_instalacion;
@@ -219,7 +231,17 @@ class CamaraController extends Controller
         $tipoCamara = TipoCamara::all();
         $dependencias = Destino::all();
         $sitios = Sitio::all();
-        return view('camaras.editar', compact('camara', 'tipoCamara', 'dependencias', 'sitios'));
+        $orientaciones = [
+            'NORTE',
+            'SUR',
+            'ESTE',
+            'OESTE',
+            'SURESTE',
+            'SUROESTE',
+            'NORESTE',
+            'NOROESTE'
+        ];
+        return view('camaras.editar', compact('camara', 'tipoCamara', 'dependencias', 'sitios', 'orientaciones'));
     }
 
     /**
@@ -252,6 +274,8 @@ class CamaraController extends Controller
                 $camara->longitud = (string) $s->longitud;
                 $camara->inteligencia = $request->inteligencia;
                 $camara->nro_serie = $request->nro_serie;
+                $camara->orientacion = $request->orientacion;
+                $camara->angulo = $request->angulo;
                 $camara->fecha_instalacion = $request->fecha_instalacion;
                 $camara->etapa = $request->etapa;
                 $camara->observaciones = $request->observaciones;

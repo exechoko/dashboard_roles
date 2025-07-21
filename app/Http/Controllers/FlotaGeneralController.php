@@ -1135,8 +1135,9 @@ class FlotaGeneralController extends Controller
                 $histAnt->save();
                 $historico->save();
                 $flota->save();
-                //Cambiar estado al equipo
+                //Cambiar estado al equipo e issi
                 $this->cambiarEstadoAlEquipo($request->equipo, $tipo_de_mov->id, $soloModificaHistorico);
+                $this->cambiarIssiAlEquipo($request, $flota, $soloModificaHistorico);
             }
             DB::commit();
         } catch (\Exception $e) {
@@ -1147,6 +1148,41 @@ class FlotaGeneralController extends Controller
             ]);
         }
         return redirect()->route('flota.index');
+    }
+
+    private function cambiarIssiAlEquipo($request, $flota, $soloModificaHistorico)
+    {
+        //dd($request->all());
+        if ($soloModificaHistorico) {
+            return;
+        }
+        try {
+            DB::beginTransaction();
+            $e = Equipo::find($request->equipo);
+            $issi = $request->nuevoIssi;
+            if ($e) {
+                $observacionExtra = '';
+                if (!empty($e->issi)) {
+                    $fecha = Carbon::parse($request->fecha_asignacion)->format('d/m/Y H:i');
+                    $observacionExtra = "- Fecha de modificación: {$fecha}\n";
+                    $observacionExtra .= "* ISSI anterior: {$e->issi}";
+                }
+                $e->issi = $issi;
+                $e->nombre_issi = $flota ? $flota->recurso->nombre : null;
+                if ($observacionExtra) {
+                    // Concatenar observación nueva a las anteriores (si las hay)
+                    $e->observaciones = trim($e->observaciones ?? '') . "\n\n" . $observacionExtra;
+                }
+                $e->save();
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'result' => 'ERROR',
+                'message' => $e->getMessage()
+            ]);
+        }
     }
 
     private function cambiarEstadoAlEquipo($id, $tipo_de_mov_id, $soloModificaHistorico)

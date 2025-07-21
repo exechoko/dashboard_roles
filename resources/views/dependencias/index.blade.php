@@ -293,7 +293,20 @@
                                                     {{ $comisaria->nombre }}</td>
                                             @endif
 
-                                            <td>{{ $comisaria->telefono }}</td>
+                                            <td>
+                                                @php
+                                                    preg_match('/Celular:\s*(\d+)/', $comisaria->telefono, $matches);
+                                                    $celular = $matches[1] ?? null;
+                                                @endphp
+
+                                                {{ $comisaria->telefono }}
+
+                                                @if($celular)
+                                                    <a href="https://wa.me/549{{ $celular }}" target="_blank" title="Enviar mensaje por WhatsApp">
+                                                        <i class="fab fa-whatsapp text-success ml-2"></i>
+                                                    </a>
+                                                @endif
+                                            </td>
                                             <td>{{ $comisaria->ubicacion }}</td>
                                             @can('editar-dependencia')
                                                 <td>

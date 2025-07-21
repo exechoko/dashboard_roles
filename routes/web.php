@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AudioTranscriptionController;
 use Illuminate\Support\Facades\Route;
 //agregamos los controladores
 use App\Http\Controllers\HomeController;
@@ -41,7 +42,7 @@ Route::get('/', function () {
 
 Auth::routes();
 
-Route::group(['middleware' => ['auth']], function(){
+Route::group(['middleware' => ['auth']], function () {
     Route::resource('roles', RolController::class);
     Route::resource('usuarios', UsuarioController::class);
     Route::resource('blogs', BlogController::class);
@@ -63,14 +64,14 @@ Route::group(['middleware' => ['auth']], function(){
     Route::get('get-divisiones', [App\Http\Controllers\DependenciaController::class, 'getDivisiones'])->name('getDivisiones');
     Route::get('get-comisarias', [App\Http\Controllers\DependenciaController::class, 'getComisarias'])->name('getComisarias');
 
-    Route::get('/generate-docx/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'generateDocx'])->name('generateDocx');
-    Route::get('/generate-docx/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'generateDocxConTemplate'])->name('generateDocxConTemplate');
-    Route::get('/generate-docx/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'generateDocxConTabla'])->name('generateDocxConTabla');
-    Route::get('/ver-historico/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'verHistorico'])->name('verHistorico');
+    Route::get('/generate-docx/{id}', [App\Http\Controllers\FlotaGeneralController::class, 'generateDocx'])->name('generateDocx');
+    Route::get('/generate-docx/{id}', [App\Http\Controllers\FlotaGeneralController::class, 'generateDocxConTemplate'])->name('generateDocxConTemplate');
+    Route::get('/generate-docx/{id}', [App\Http\Controllers\FlotaGeneralController::class, 'generateDocxConTabla'])->name('generateDocxConTabla');
+    Route::get('/ver-historico/{id}', [App\Http\Controllers\FlotaGeneralController::class, 'verHistorico'])->name('verHistorico');
     Route::get('/flota/historico/{id}/imprimir', [FlotaGeneralController::class, 'imprimirHistorico'])->name('flota.historico.imprimir');
-    Route::get('/ver-historico-desde-equipo/{id}',[App\Http\Controllers\EquipoController::class, 'verHistoricoDesdeEquipo'])->name('verHistoricoDesdeEquipo');
+    Route::get('/ver-historico-desde-equipo/{id}', [App\Http\Controllers\EquipoController::class, 'verHistoricoDesdeEquipo'])->name('verHistoricoDesdeEquipo');
     Route::get('/busqueda-avanzada', [App\Http\Controllers\FlotaGeneralController::class, 'busquedaAvanzada'])->name('flota.busquedaAvanzada');
-    Route::post('/update-historico/{id}',[App\Http\Controllers\FlotaGeneralController::class, 'update_historico'])->name('flota.update_historico');
+    Route::post('/update-historico/{id}', [App\Http\Controllers\FlotaGeneralController::class, 'update_historico'])->name('flota.update_historico');
     Route::get('get-recursos', [App\Http\Controllers\FlotaGeneralController::class, 'getRecursosJSON'])->name('getRecursosJSON');
 
     Route::post('/get-equipos-sin-funcionar-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposSinFuncionarJSON'])->name('get-equipos-sin-funcionar-json');
@@ -111,5 +112,13 @@ Route::group(['middleware' => ['auth']], function(){
 
     Route::get('/transcribir', [TranscripcionController::class, 'index'])->name('transcribe.index');
     Route::post('/transcribir', [TranscripcionController::class, 'transcribe'])->name('transcribe.audio');
+
+    Route::get('/transcription', [AudioTranscriptionController::class, 'index'])->name('transcription.index');
+    Route::post('/generate-upload-url', [AudioTranscriptionController::class, 'generateUploadUrl']);
+    Route::post('/upload-file', [AudioTranscriptionController::class, 'uploadFile']);
+    Route::get('/get-results', [AudioTranscriptionController::class, 'getResults']);
+    Route::get('/get-results-by-filename', [AudioTranscriptionController::class, 'getResultsByFileName']);
+    Route::get('/get-historial', [AudioTranscriptionController::class, 'getHistorial'])->name('getHistorial');
+
 
 });

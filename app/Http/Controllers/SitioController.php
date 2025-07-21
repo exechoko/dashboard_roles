@@ -81,6 +81,7 @@ class SitioController extends Controller
             'nombre' => 'required',
             'localidad' => 'required|not_in:Seleccionar localidad',
             'destino_id' => 'required|not_in:Seleccionar la dependencia',
+            'activo' => 'required|boolean',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
@@ -92,6 +93,7 @@ class SitioController extends Controller
             $sitio->longitud = $request->longitud;
             $sitio->localidad = $request->localidad;
             $sitio->cartel = ($request->cartel == 'SI') ? true : false;
+            $sitio->activo = $request->activo; // Asignar el valor del campo activo
             $sitio->destino_id = $request->destino_id;
             $sitio->observaciones = $request->observaciones;
             $sitio->save();
@@ -154,6 +156,7 @@ class SitioController extends Controller
             'nombre' => 'required',
             'localidad' => 'required|not_in:Seleccionar localidad',
             'destino_id' => 'required|not_in:Seleccionar la dependencia',
+            'activo' => 'required|boolean',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
@@ -165,6 +168,7 @@ class SitioController extends Controller
             $sitio->longitud = $request->longitud;
             $sitio->localidad = $request->localidad;
             $sitio->cartel = ($request->cartel == 'SI') ? true : false;
+            $sitio->activo = $request->activo; // Asignar el valor del campo activo
             $sitio->destino_id = $request->destino_id;
             $sitio->observaciones = $request->observaciones;
             $sitio->save();

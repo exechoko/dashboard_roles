@@ -23,60 +23,53 @@
                                 </div>
                             @endif
 
-
                             <form action="{{ route('sitios.update', $sitio->id) }}" method="POST">
                                 @csrf
                                 @method('PUT')
                                 <div class="row">
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
-                                            <label for="nombre">Nombre</label>
+                                            <label for="nombre">Nombre <span class="text-danger">*</span></label>
                                             <input type="text" name="nombre" class="form-control"
-                                                value="{{ $sitio->nombre }}">
+                                                value="{{ old('nombre', $sitio->nombre) }}" required>
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="latitud">Latitud</label>
                                             <input type="text" name="latitud" class="form-control"
-                                                value="{{ $sitio->latitud }}">
+                                                value="{{ old('latitud', $sitio->latitud) }}" placeholder="Ej: -34.6118">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
                                             <label for="longitud">Longitud</label>
                                             <input type="text" name="longitud" class="form-control"
-                                                value="{{ $sitio->longitud }}">
+                                                value="{{ old('longitud', $sitio->longitud) }}" placeholder="Ej: -58.3960">
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
-                                            <label for="">Localidad</label>
-                                            <select name="localidad" id="" class="form-control select2"
-                                                style="margin-bottom: 15px">
-                                                <option value="{{ $sitio->localidad }}">{{ $sitio->localidad }}</option>
+                                            <label for="localidad">Localidad <span class="text-danger">*</span></label>
+                                            <select name="localidad" class="form-control select2" required>
+                                                <option value="">Seleccionar localidad</option>
                                                 @foreach ($localidades as $l)
-                                                    <option value="{{ $l }}">
-                                                        {{ $l }}</option>
+                                                    <option value="{{ $l }}" {{ old('localidad', $sitio->localidad) == $l ? 'selected' : '' }}>
+                                                        {{ $l }}
+                                                    </option>
                                                 @endforeach
                                             </select>
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
-                                            <label for="">Dependencia</label>
-                                            <select name="destino_id" id="" class="form-control select2"
-                                                style="margin-bottom: 15px">
-                                                @if (!is_null($sitio->destino_id))
-                                                    <option value="{{ $sitio->destino->id }}">
-                                                        {{ $sitio->destino->nombre . ' - ' . $sitio->destino->dependeDe() }}
-                                                    </option>
-                                                @else
-                                                    <option value="">Seleccione la dependencia</option>
-                                                @endif
+                                            <label for="destino_id">Dependencia <span class="text-danger">*</span></label>
+                                            <select name="destino_id" class="form-control select2" required>
+                                                <option value="">Seleccionar la dependencia</option>
                                                 @foreach ($dependencias as $d)
-                                                    <option value="{{ $d->id }}">
-                                                        {{ $d->nombre . ' - ' . $d->dependeDe() }}</option>
+                                                    <option value="{{ $d->id }}" {{ old('destino_id', $sitio->destino_id) == $d->id ? 'selected' : '' }}>
+                                                        {{ $d->nombre . ' - ' . $d->dependeDe() }}
+                                                    </option>
                                                 @endforeach
                                             </select>
                                         </div>
@@ -94,15 +87,36 @@
                                             </select>
                                         </div>
                                     </div>
+                                    <!-- Toggle Switch para Estado Activo -->
                                     <div class="col-xs-12 col-sm-12 col-md-12">
-                                        <div class="form-floating">
+                                        <div class="form-group">
+                                            <div class="d-flex align-items-center">
+                                                <label class="form-label mb-0 mr-3">Sitio activo</label>
+                                                <div class="custom-control custom-switch">
+                                                    <input type="hidden" name="activo" value="0">
+                                                    <input type="checkbox" name="activo" value="1" class="custom-control-input" id="activo_switch" {{ old('activo', $sitio->activo) ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="activo_switch"></label>
+                                                </div>
+                                                <span class="ml-2 text-muted">
+                                                    <small id="activo_text">{{ old('activo', $sitio->activo) ? 'Activo' : 'Inactivo' }}</small>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12">
+                                        <div class="form-group">
                                             <label for="observaciones">Observaciones</label>
-                                            <textarea class="form-control" name="observaciones" style="height: 100px">{{ $sitio->observaciones }}</textarea>
+                                            <textarea class="form-control" name="observaciones" style="height: 100px" placeholder="Ingrese observaciones adicionales">{{ old('observaciones', $sitio->observaciones) }}</textarea>
                                         </div>
                                     </div>
                                     @can('editar-sitio')
                                         <div class="col-xs-12 col-sm-12 col-md-12">
-                                            <button type="submit" class="btn btn-primary">Guardar</button>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save"></i> Actualizar
+                                            </button>
+                                            <a href="{{ route('sitios.index') }}" class="btn btn-secondary">
+                                                <i class="fas fa-arrow-left"></i> Cancelar
+                                            </a>
                                         </div>
                                     @endcan
                                 </div>
@@ -114,6 +128,29 @@
             </div>
         </div>
     </section>
+
+    <style>
+        .custom-control-input:checked ~ .custom-control-label::before {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+
+        .custom-control-input:focus ~ .custom-control-label::before {
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+
+        .text-success {
+            color: #28a745 !important;
+        }
+
+        .text-danger {
+            color: #dc3545 !important;
+        }
+
+        .form-group label .text-danger {
+            font-size: 0.8em;
+        }
+    </style>
 
     <script>
         $(document).ready(function() {
@@ -128,7 +165,27 @@
                     select2Field.focus();
                 }
             });
+
+            // Toggle switch para activo/inactivo
+            $('#activo_switch').on('change', function() {
+                const isChecked = $(this).is(':checked');
+                const textElement = $('#activo_text');
+
+                if (isChecked) {
+                    textElement.text('Activo').removeClass('text-danger').addClass('text-success');
+                } else {
+                    textElement.text('Inactivo').removeClass('text-success').addClass('text-danger');
+                }
+            });
+
+            // Inicializar el texto del toggle
+            const isChecked = $('#activo_switch').is(':checked');
+            const textElement = $('#activo_text');
+            if (isChecked) {
+                textElement.addClass('text-success');
+            } else {
+                textElement.addClass('text-danger');
+            }
         });
     </script>
 @endsection
-

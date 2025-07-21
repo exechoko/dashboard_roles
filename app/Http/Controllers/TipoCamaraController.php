@@ -32,7 +32,18 @@ class TipoCamaraController extends Controller
      */
     public function create()
     {
-        return view('tipo_camaras.crear');
+        $tipos = [
+            'Fija',
+            'Fija - FR',
+            'Fija - LPR',
+            'Fija - LPR NV',
+            'Fija - LPR AV',
+            'Domo',
+            'Domo Dual',
+            'Múltiples canales',
+            'BDE (Totem)'
+        ];
+        return view('tipo_camaras.crear', compact('tipos'));
     }
 
     /**
@@ -105,7 +116,18 @@ class TipoCamaraController extends Controller
     public function edit($id)
     {
         $tipoCamara = TipoCamara::find($id);
-        return view('tipo_camaras.editar', compact('tipoCamara'));
+        $tipos = [
+            'Fija',
+            'Fija - FR',
+            'Fija - LPR',
+            'Fija - LPR NV',
+            'Fija - LPR AV',
+            'Domo',
+            'Domo Dual',
+            'Múltiples canales',
+            'BDE (Totem)'
+        ];
+        return view('tipo_camaras.editar', compact('tipoCamara', 'tipos'));
     }
 
     /**

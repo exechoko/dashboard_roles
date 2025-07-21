@@ -209,4 +209,11 @@
         </a>
     </li>
 @endcan
+@can('ver-menu-transcripcion-aws')
+    <li class="{{ request()->is('transcription*') ? 'active' : '' }}">
+        <a class="nav-link" href="/transcription">
+            <i class="fas fa-microphone-alt"></i><span>Transcribir audio AWS</span>
+        </a>
+    </li>
+@endcan
 <!--Documentacion en GetStisla-->

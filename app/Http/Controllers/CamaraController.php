@@ -40,26 +40,70 @@ class CamaraController extends Controller
 
         $fijas = Camara::whereHas('tipoCamara', function ($query) {
             $query->where('tipo', 'Fija');
-        })->count();
+        })
+            ->whereHas('sitio', function ($query) {
+                $query->where('activo', 1);
+            })
+            ->count();
+
         $fijasFR = Camara::whereHas('tipoCamara', function ($query) {
             $query->where('tipo', 'Fija - FR');
-        })->count();
+        })
+            ->whereHas('sitio', function ($query) {
+                $query->where('activo', 1);
+            })
+            ->count();
+
         $fijasLPR = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo', 'Fija - LPR')->orWhere('tipo', 'Fija - LPR NV')->orWhere('tipo', 'Fija - LPR AV');
-        })->count();
+            $query->where('tipo', 'Fija - LPR')
+                ->orWhere('tipo', 'Fija - LPR NV')
+                ->orWhere('tipo', 'Fija - LPR AV');
+        })
+            ->whereHas('sitio', function ($query) {
+                $query->where('activo', 1);
+            })
+            ->count();
+
         $domos = Camara::whereHas('tipoCamara', function ($query) {
             $query->where('tipo', 'Domo');
-        })->count(); //Camara::where('tipo', 'Domo')->count();
+        })
+            ->whereHas('sitio', function ($query) {
+                $query->where('activo', 1);
+            })
+            ->count();
+
         $domosDuales = Camara::whereHas('tipoCamara', function ($query) {
             $query->where('tipo', 'Domo Dual');
-        })->count();
-        $totalCam = Camara::all()->count();
+        })
+            ->whereHas('sitio', function ($query) {
+                $query->where('activo', 1);
+            })
+            ->count();
+
+        $bde = Camara::whereHas('tipoCamara', function ($query) {
+            $query->where('tipo', 'BDE (Totem)');
+        })
+            ->whereHas('sitio', function ($query) {
+                $query->where('activo', 1);
+            })
+            ->count();
+        $totalCam = Camara::select('camaras.id')
+            ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+            ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
+            ->where('sitio.activo', 1)
+            ->count();
+
         $totalCamaras = Camara::select(
             'camaras.id',
             'tipo_camara.canales as canales'
         )
+            ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
             ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
+            ->where('sitio.activo', 1)
             ->get();
+
         $cantidadCanales = 0;
         foreach ($totalCamaras as $camara) {
             $cantidadCanales += $camara->canales;
@@ -90,6 +134,7 @@ class CamaraController extends Controller
             'fijasLPR',
             'domos',
             'domosDuales',
+            'bde',
             'totalCam'
         ));
     }
@@ -103,8 +148,18 @@ class CamaraController extends Controller
     {
         $tipoCamara = TipoCamara::all();
         $dependencias = Destino::all();
-        $sitios = Sitio::all();
-        return view('camaras.crear', compact('tipoCamara', 'dependencias', 'sitios'));
+        $sitios = Sitio::where('activo', 1)->get();
+        $orientaciones = [
+            'NORTE',
+            'SUR',
+            'ESTE',
+            'OESTE',
+            'SURESTE',
+            'SUROESTE',
+            'NORESTE',
+            'NOROESTE'
+        ];
+        return view('camaras.crear', compact('tipoCamara', 'dependencias', 'sitios', 'orientaciones'));
     }
 
     /**
@@ -132,6 +187,8 @@ class CamaraController extends Controller
             $camara->sitio_id = $request->sitio_id;
             $camara->latitud = (string) $s->latitud;
             $camara->longitud = (string) $s->longitud;
+            $camara->orientacion = $request->orientacion;
+            $camara->angulo = $request->angulo;
             $camara->inteligencia = $request->inteligencia;
             $camara->nro_serie = $request->nro_serie;
             $camara->fecha_instalacion = $request->fecha_instalacion;
@@ -174,7 +231,17 @@ class CamaraController extends Controller
         $tipoCamara = TipoCamara::all();
         $dependencias = Destino::all();
         $sitios = Sitio::all();
-        return view('camaras.editar', compact('camara', 'tipoCamara', 'dependencias', 'sitios'));
+        $orientaciones = [
+            'NORTE',
+            'SUR',
+            'ESTE',
+            'OESTE',
+            'SURESTE',
+            'SUROESTE',
+            'NORESTE',
+            'NOROESTE'
+        ];
+        return view('camaras.editar', compact('camara', 'tipoCamara', 'dependencias', 'sitios', 'orientaciones'));
     }
 
     /**
@@ -207,6 +274,8 @@ class CamaraController extends Controller
                 $camara->longitud = (string) $s->longitud;
                 $camara->inteligencia = $request->inteligencia;
                 $camara->nro_serie = $request->nro_serie;
+                $camara->orientacion = $request->orientacion;
+                $camara->angulo = $request->angulo;
                 $camara->fecha_instalacion = $request->fecha_instalacion;
                 $camara->etapa = $request->etapa;
                 $camara->observaciones = $request->observaciones;

@@ -13,6 +13,7 @@
                     <label class="alert alert-danger" for="">Fijas LPR: {{ $fijasLPR }}</label>
                     <label class="alert alert-success" for="">Domos: {{ $domos }}</label>
                     <label class="alert alert-primary" for="">Domos Duales: {{ $domosDuales }}</label>
+                    <label class="alert alert-info" for="">BDE (Totem): {{ $bde }}</label>
                 </div>
             </div>
         </div>
@@ -123,6 +124,7 @@
                                                             </a>
                                                         @endcan
 
+                                                        @can('borrar-camara')
                                                         <form action="{{ route('camaras.destroy', $camara->id) }}" method="POST"
                                                             style="display:inline;">
                                                             @csrf
@@ -132,6 +134,7 @@
                                                                 <i class="fas fa-trash-alt"></i>
                                                             </button>
                                                         </form>
+                                                        @endcan
                                                     </td>
 
                                                 </tr>
@@ -151,7 +154,7 @@
             </div>
         </div>
     </section>
-    
+
     {{-- Script para abrir nueva pestaña cuando se reinicia cámara --}}
     @if(session('open_url'))
         <script>

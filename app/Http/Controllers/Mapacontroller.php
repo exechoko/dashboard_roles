@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 
+use function PHPUnit\Framework\callback;
+
 class MapaController extends Controller
 {
     /**
@@ -149,12 +151,19 @@ class MapaController extends Controller
             DB::raw('camaras.id as numero'),
             DB::raw('camaras.nombre as titulo')
         )
+            ->where('sitio.activo', 1)
             ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
             ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
             ->leftJoin('destino', 'sitio.destino_id', '=', 'destino.id')
             ->get()->toArray();
-        //dd($camaras);
 
+        $sitios = Sitio::select(
+            '*',
+            DB::raw('sitio.id as numero'),
+            DB::raw('sitio.nombre as titulo')
+        )->get()->toArray();
+
+        //dd($sitios);
         $antenas = [
             //PARANA
             [
@@ -194,27 +203,57 @@ class MapaController extends Controller
             'comisarias.jurisdiccion'
         )->get();
 
-        $fijas = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo', 'Fija');
-        })->count();
-        $fijasFR = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo', 'Fija - FR');
-        })->count();
-        $fijasLPR = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo', 'Fija - LPR')->orWhere('tipo', 'Fija - LPR NV')->orWhere('tipo', 'Fija - LPR AV');
-        })->count();
-        $domos = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo', 'Domo');
-        })->count(); //Camara::where('tipo', 'Domo')->count();
-        $domosDuales = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo', 'Domo Dual');
-        })->count();
+        // Filtro para sitio activo
+        $activoSitio = function ($query) {
+            $query->where('activo', 1);
+        };
 
-        $totalCam = Camara::all()->count();
+        $fijas = Camara::whereHas('tipoCamara', fn($q) => $q->where('tipo', 'Fija'))
+            ->whereHas('sitio', $activoSitio)
+            ->count();
+
+        $fijasFR = Camara::whereHas('tipoCamara', fn($q) => $q->where('tipo', 'Fija - FR'))
+            ->whereHas('sitio', $activoSitio)
+            ->count();
+
+        $fijasLPR = Camara::whereHas('tipoCamara', fn($q) =>
+            $q->whereIn('tipo', ['Fija - LPR', 'Fija - LPR NV', 'Fija - LPR AV']))
+            ->whereHas('sitio', $activoSitio)
+            ->count();
+
+        $domos = Camara::whereHas('tipoCamara', fn($q) => $q->where('tipo', 'Domo'))
+            ->whereHas('sitio', $activoSitio)
+            ->count();
+
+        $domosDuales = Camara::whereHas('tipoCamara', fn($q) => $q->where('tipo', 'Domo Dual'))
+            ->whereHas('sitio', $activoSitio)
+            ->count();
+
+        $bde = Camara::whereHas('tipoCamara', fn($q) => $q->where('tipo', 'BDE (Totem)'))
+            ->whereHas('sitio', $activoSitio)
+            ->count();
+
+        //$totalCam = Camara::all()->count();
+        $totalCam = Camara::select(
+            'camaras.id',
+            'tipo_camara.tipo',
+            'sitio.activo'
+        )
+            ->where('sitio.activo', 1)
+            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
+            ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+            ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->get()->count();
+
         $totalCamaras = Camara::select(
             'camaras.id',
-            'tipo_camara.canales as canales'
+            'tipo_camara.tipo',
+            'tipo_camara.canales as canales',
+            'sitio.activo'
         )
+            ->where('sitio.activo', 1)
+            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
+            ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
             ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
             ->get();
         $cantidadCanales = 0;
@@ -223,28 +262,65 @@ class MapaController extends Controller
         }
 
         // Contar las cámaras en Paraná
-        $camarasParana = Camara::join('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+        $camarasParana = Camara::select(
+            'camaras.id',
+            'tipo_camara.tipo',
+            'sitio.activo'
+        )
+            ->leftjoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+            ->leftjoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
+            ->where('sitio.activo', 1)
             ->where('sitio.localidad', 'Paraná')
             ->count();
         // Contar las cámaras en San Benito
-        $camarasSanBenito = Camara::join('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+        $camarasSanBenito = Camara::select(
+            'camaras.id',
+            'tipo_camara.tipo',
+            'sitio.activo'
+        )
+            ->leftjoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+            ->leftjoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
+            ->where('sitio.activo', 1)
             ->where('sitio.localidad', 'San Benito')
             ->count();
         // Contar las cámaras en Colonia Avellaneda
-        $camarasCniaAvellaneda = Camara::join('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+        $camarasCniaAvellaneda = Camara::select(
+            'camaras.id',
+            'tipo_camara.tipo',
+            'sitio.activo'
+        )
+            ->leftjoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+            ->leftjoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
+            ->where('sitio.activo', 1)
             ->where('sitio.localidad', 'Colonia Avellaneda')
             ->count();
         // Contar las cámaras en Oro Verde
-        $camarasOroVerde = Camara::join('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+        $camarasOroVerde = Camara::select(
+            'camaras.id',
+            'tipo_camara.tipo',
+            'sitio.activo'
+        )
+            ->leftjoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+            ->leftjoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
+            ->where('sitio.activo', 1)
             ->where('sitio.localidad', 'Oro Verde')
             ->count();
 
-        $sitios = Sitio::count();
-        $sitiosParana = Sitio::where('localidad', 'Paraná')->count();
-        $sitiosCniaAvellaneda = Sitio::where('localidad', 'Colonia Avellaneda')->count();
-        $sitiosSanBenito = Sitio::where('localidad', 'San Benito')->count();
-        $sitiosOroVerde = Sitio::where('localidad', 'Oro Verde')->count();
+        $sitiosActivos = Sitio::where('activo', 1)
+            ->select('localidad', DB::raw('count(*) as total'))
+            ->groupBy('localidad')
+            ->get()
+            ->keyBy('localidad');
 
+        $cantidadSitios = $sitiosActivos->sum('total');
+        $sitiosParana = $sitiosActivos['Paraná']->total ?? 0;
+        $sitiosCniaAvellaneda = $sitiosActivos['Colonia Avellaneda']->total ?? 0;
+        $sitiosSanBenito = $sitiosActivos['San Benito']->total ?? 0;
+        $sitiosOroVerde = $sitiosActivos['Oro Verde']->total ?? 0;
         return response()->view(
             'mapa.mapa',
             [
@@ -258,8 +334,10 @@ class MapaController extends Controller
                 'fijasLPR' => $fijasLPR,
                 'domos' => $domos,
                 'domosDuales' => $domosDuales,
+                'bde' => $bde,
                 'total' => $totalCam,
                 'sitios' => $sitios,
+                'cantidadSitios' => $cantidadSitios,
                 'sitiosParana' => $sitiosParana,
                 'sitiosCniaAvellaneda' => $sitiosCniaAvellaneda,
                 'sitiosSanBenito' => $sitiosSanBenito,
@@ -457,27 +535,6 @@ class MapaController extends Controller
             DB::raw('camaras.id as numero'),
             DB::raw('camaras.nombre as titulo')
         )->get()->toArray();
-        //dd($camaras);
-        /*$camaras = [
-            [
-                'latitud' => -31.72988,
-                'longitud' => -60.53557,
-                'titulo' => 'Camara 1°',
-                'numero' => 1
-            ],
-            [
-                'latitud' => -31.73755,
-                'longitud' => -60.5294,
-                'titulo' => 'Camara 2°',
-                'numero' => 2
-            ],
-            [
-                'latitud' => -31.757398,
-                'longitud' => -60.595877,
-                'titulo' => 'Camara 3°',
-                'numero' => 3
-            ]
-        ];*/
 
         $antenas = [
             [
@@ -503,8 +560,14 @@ class MapaController extends Controller
         // Convertir el array en formato JSON
         //$jsonUbicaciones = json_encode($ubicaciones);
 
-
-        return view('mapa.mapa', ['comisarias' => $comisarias, 'antenas' => $antenas, 'camaras' => $camaras]);
+        return view(
+            'mapa.mapa',
+            [
+                'comisarias' => $comisarias,
+                'antenas' => $antenas,
+                'camaras' => $camaras
+            ]
+        );
     }
 
     public function exportarExcel()

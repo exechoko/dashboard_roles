@@ -1,5 +1,17 @@
 @extends('layouts.app')
 
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('#tipo').select2({
+                placeholder: "Seleccione un tipo de cámara",
+                allowClear: true
+            });
+        });
+    </script>
+@endpush
+
 @section('content')
     <section class="section">
         <div class="section-header">
@@ -29,8 +41,12 @@
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
                                             <label for="tipo">Tipo</label>
-                                            <label class="alert alert-light ml-3" for="tipo">Fija - Fija FR - Fija LPR - Domo - Domo Dual - Múltiples canales</label>
-                                            <input type="text" name="tipo" class="form-control">
+                                            <select name="tipo" id="tipo" class="form-control">
+                                                <option value="">Seleccione un tipo</option>
+                                                @foreach($tipos as $tipo)
+                                                    <option value="{{ $tipo }}">{{ $tipo }}</option>
+                                                @endforeach
+                                            </select>
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
@@ -55,21 +71,22 @@
                                         <div class="col-sm-4 col-md-6 pl-0 form-group">
                                             <label>Imagen:</label>
                                             <br>
-                                            <label for="imagen"  class="image__file-upload btn btn-dark text-white"
-                                                    tabindex="2"> Elegir
+                                            <label for="imagen" class="image__file-upload btn btn-dark text-white"
+                                                tabindex="2"> Elegir
                                                 <input type="file" name="imagen" id="imagen" class="d-none">
                                             </label>
                                         </div>
                                         <div class="col-sm-3 preview-image-video-container float-right mt-1">
                                             <img id='edit_preview_photo'
-                                                 class="img-thumbnail user-img user-profile-img profilePicture"
-                                                 src="{{asset('img/logo.png')}}"/>
+                                                class="img-thumbnail user-img user-profile-img profilePicture"
+                                                src="{{asset('img/logo.png')}}" />
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>
-                                            <textarea class="form-control" name="observaciones" style="height: 100px"></textarea>
+                                            <textarea class="form-control" name="observaciones"
+                                                style="height: 100px"></textarea>
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">

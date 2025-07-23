@@ -49,7 +49,11 @@
                                             -
                                         @endif
                                     </li>
-                                    <li><strong>Dependencia:</strong>
+                                    <li><strong>Dependencia actual:</strong>
+                                        {{ $f->ultimoMovimiento()->destino->nombre ?? '-' }}<br>
+                                        <small>{{ $f->ultimoMovimiento()->destino->dependeDe() ?? '' }}</small>
+                                    </li>
+                                    <li><strong>Dependencia patrimonial:</strong>
                                         {{ $f->destino->nombre ?? '-' }}<br>
                                         <small>{{ $f->destino->dependeDe() ?? '' }}</small>
                                     </li>

@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Models\Equipo;
 use App\Models\FlotaGeneral;
 use App\Models\Historico;
 use App\Models\Recurso;
 use App\Models\User;
+use App\Observers\EquipoObserver;
 use App\Observers\FlotaGeneralObserver;
 use App\Observers\HistoricoObserver;
 use App\Observers\RecursoObserver;
@@ -43,5 +45,6 @@ class EventServiceProvider extends ServiceProvider
         FlotaGeneral::observe(FlotaGeneralObserver::class);
         Historico::observe(HistoricoObserver::class);
         Recurso::observe(RecursoObserver::class);
+        Equipo::observe(EquipoObserver::class);
     }
 }

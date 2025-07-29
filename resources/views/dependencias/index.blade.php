@@ -11,7 +11,7 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-                            <a class="btn btn-success" href="{{ route('dependencias.create') }}">Nuevo</a>
+                            <a class="btn btn-success" href="{{ route('dependencias.crear-general') }}">Nuevo</a>
                         </div>
                     </div>
                 </div>
@@ -86,7 +86,9 @@
                                         @include('dependencias.modal.editar_direccion')
                                         <tr>
                                             <td style="display: none;">{{ $direccion->id }}</td>
-                                            <td style="font-weight:bold">{{ $direccion->nombre }}</td>
+                                            <td style="font-weight:bold">{{ $direccion->nombre }}<br/>
+                                                <small>{{ $direccion->dependeDe() }}</small>
+                                            </td>
                                             <td>{{ $direccion->telefono }}</td>
                                             <td>{{ $direccion->ubicacion }}</td>
                                             @can('editar-dependencia')
@@ -150,7 +152,9 @@
                                         @include('dependencias.modal.editar_departamental')
                                         <tr>
                                             <td style="display: none;">{{ $departamental->id }}</td>
-                                            <td style="font-weight:bold">{{ $departamental->nombre }}</td>
+                                            <td style="font-weight:bold">{{ $departamental->nombre }}<br/>
+                                                <small>{{ $departamental->dependeDe() }}</small>
+                                            </td>
                                             <td>{{ $departamental->telefono }}</td>
                                             <td>{{ $departamental->ubicacion }}</td>
                                             @can('editar-dependencia')
@@ -214,14 +218,9 @@
                                         @include('dependencias.modal.editar_division')
                                         <tr>
                                             <td style="display: none;">{{ $division->id }}</td>
-                                            @if (!is_null($division->departamental))
-                                                <td style="font-weight:bold">
-                                                    {{ $division->nombre . ' - ' . $division->departamental->nombre }}</td>
-                                            @elseif (!is_null($division->direccion))
-                                                <td style="font-weight:bold">
-                                                    {{ $division->nombre . ' - ' . $division->direccion->nombre }}</td>
-                                            @endif
-
+                                            <td style="font-weight:bold">{{ $division->nombre }}<br/>
+                                                <small>{{ $division->dependeDe() }}</small>
+                                            </td>
                                             <td>{{ $division->telefono }}</td>
                                             <td>{{ $division->ubicacion }}</td>
                                             @can('editar-dependencia')
@@ -284,15 +283,9 @@
                                         @include('dependencias.modal.editar_comisaria')
                                         <tr>
                                             <td style="display: none;">{{ $comisaria->id }}</td>
-                                            @if (!is_null($comisaria->departamental))
-                                                <td style="font-weight:bold">
-                                                    {{ $comisaria->nombre . ' - ' . $comisaria->departamental->nombre }}
-                                                </td>
-                                            @else
-                                                <td style="font-weight:bold">
-                                                    {{ $comisaria->nombre }}</td>
-                                            @endif
-
+                                            <td style="font-weight:bold">{{ $comisaria->nombre }}<br/>
+                                                <small>{{ $comisaria->dependeDe() }}</small>
+                                            </td>
                                             <td>
                                                 @php
                                                     preg_match('/Celular:\s*(\d+)/', $comisaria->telefono, $matches);
@@ -368,19 +361,9 @@
                                         @include('dependencias.modal.editar_seccion')
                                         <tr>
                                             <td style="display: none;">{{ $seccion->id }}</td>
-                                            @if (!is_null($seccion->comisaria))
-                                                <td style="font-weight:bold">
-                                                    {{ $seccion->nombre . ' - ' . $seccion->comisaria->nombre }}</td>
-                                            @elseif (!is_null($seccion->division))
-                                                <td style="font-weight:bold">
-                                                    {{ $seccion->nombre . ' - ' . $seccion->division->nombre }}</td>
-                                            @elseif (!is_null($seccion->departamental))
-                                                <td style="font-weight:bold">
-                                                    {{ $seccion->nombre . ' - ' . $seccion->departamental->nombre }}</td>
-                                            @elseif (!is_null($seccion->direccion))
-                                                <td style="font-weight:bold">
-                                                    {{ $seccion->nombre . ' - ' . $seccion->direccion->nombre }}</td>
-                                            @endif
+                                            <td style="font-weight:bold">{{ $seccion->nombre }}<br/>
+                                                <small>{{ $seccion->dependeDe() }}</small>
+                                            </td>
 
                                             <td>{{ $seccion->telefono }}</td>
                                             <td>{{ $seccion->ubicacion }}</td>
@@ -444,23 +427,9 @@
                                         @include('dependencias.modal.editar_destacamento')
                                         <tr>
                                             <td style="display: none;">{{ $destacamento->id }}</td>
-                                            @if (!is_null($destacamento->comisaria))
-                                                <td style="font-weight:bold">
-                                                    {{ $destacamento->nombre . ' - ' . $destacamento->comisaria->nombre }}
-                                                </td>
-                                            @elseif (!is_null($destacamento->division))
-                                                <td style="font-weight:bold">
-                                                    {{ $destacamento->nombre . ' - ' . $destacamento->division->nombre }}
-                                                </td>
-                                            @elseif (!is_null($destacamento->departamental))
-                                                <td style="font-weight:bold">
-                                                    {{ $destacamento->nombre . ' - ' . $destacamento->departamental->nombre }}
-                                                </td>
-                                            @elseif (!is_null($destacamento->direccion))
-                                                <td style="font-weight:bold">
-                                                    {{ $destacamento->nombre . ' - ' . $destacamento->direccion->nombre }}
-                                                </td>
-                                            @endif
+                                            <td style="font-weight:bold">{{ $destacamento->nombre }}<br/>
+                                                <small>{{ $destacamento->dependeDe() }}</small>
+                                            </td>
 
                                             <td>{{ $destacamento->telefono }}</td>
                                             <td>{{ $destacamento->ubicacion }}</td>

@@ -2,14 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Camara;
-use App\Models\Comisaria;
-use App\Models\Departamental;
-use App\Models\Destacamento;
 use App\Models\Destino;
-use App\Models\Direccion;
-use App\Models\Division;
-use App\Models\Seccion;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +15,7 @@ class DependenciaController extends Controller
         $this->middleware('permission:editar-dependencia', ['only'=>['edit', 'update']]);
         $this->middleware('permission:borrar-dependencia', ['only'=>['destroy']]);
     }
+
     /**
      * Display a listing of the resource.
      *
@@ -29,16 +23,29 @@ class DependenciaController extends Controller
      */
     public function index()
     {
-        $dependencias = Destino::latest()->take(5)->get();
-        //dd($dependencias);
-        $direcciones = Direccion::all();
-        $departamentales = Departamental::all();
-        $divisiones = Division::all();
-        $comisarias = Comisaria::all();
-        $secciones = Seccion::all();
-        $destacamentos = Destacamento::all();
-        //dd($dependencias);
-        return view('dependencias.index', compact('dependencias', 'direcciones', 'departamentales', 'divisiones', 'comisarias', 'secciones', 'destacamentos'));
+        // Obtener las últimas dependencias creadas (secciones y destacamentos)
+        $dependencias = Destino::whereIn('tipo', ['seccion', 'destacamento'])->latest()->take(5)->get();
+
+        // Obtener direcciones, departamentales, divisiones y comisarías para filtros
+        $direcciones = Destino::where('tipo', 'direccion')->get();
+        $departamentales = Destino::where('tipo', 'departamental')->get();
+        $divisiones = Destino::where('tipo', 'division')->get();
+        $comisarias = Destino::where('tipo', 'comisaria')->get();
+        $secciones = Destino::where('tipo', 'seccion')->get();
+        $destacamentos = Destino::where('tipo', 'destacamento')->get();
+
+        return view(
+            'dependencias.index',
+            compact(
+                'dependencias',
+                'direcciones',
+                'departamentales',
+                'divisiones',
+                'comisarias',
+                'secciones',
+                'destacamentos'
+            )
+        );
     }
 
     /**
@@ -48,30 +55,39 @@ class DependenciaController extends Controller
      */
     public function create()
     {
-        $direcciones = Direccion::all();
-        $departamentales = Departamental::all();
-        //$comisarias = Comisaria::all();
+        $direcciones = Destino::where('tipo', 'direccion')->get();
+        $departamentales = Destino::where('tipo', 'departamental')->get();
 
-        return view('dependencias.crear',compact('direcciones', 'departamentales'));
+        return view('dependencias.crear', compact('direcciones', 'departamentales'));
     }
 
-    public function getDepartamentales(Request $request){
-        $departamentales = Departamental::where('direccion_id', $request->direccion_id)->get();
+    public function getDepartamentales(Request $request)
+    {
+        $departamentales = Destino::where('tipo', 'departamental')
+            ->where('parent_id', $request->direccion_id)
+            ->get();
         return response()->json($departamentales);
     }
 
-    public function getDivisiones(Request $request){
-        if(!is_null($request->departamental_id)){
-            $divisiones = Division::where('departamental_id', $request->departamental_id)->get();
+    public function getDivisiones(Request $request)
+    {
+        if (!is_null($request->departamental_id)) {
+            $divisiones = Destino::where('tipo', 'division')
+                ->where('parent_id', $request->departamental_id)
+                ->get();
         } else {
-
-            $divisiones = Division::where('direccion_id', $request->direccion_id)->get();
+            $divisiones = Destino::where('tipo', 'division')
+                ->where('parent_id', $request->direccion_id)
+                ->get();
         }
         return response()->json($divisiones);
     }
 
-    public function getComisarias(Request $request){
-        $comisarias = Comisaria::where('departamental_id', $request->departamental_id)->get();
+    public function getComisarias(Request $request)
+    {
+        $comisarias = Destino::where('tipo', 'comisaria')
+            ->where('parent_id', $request->departamental_id)
+            ->get();
         return response()->json($comisarias);
     }
 
@@ -84,73 +100,89 @@ class DependenciaController extends Controller
     public function store(Request $request)
     {
         request()->validate([
-            //'direccion' => 'required',
             'nombre' => 'required',
-            'tipoDependencia' => 'required',
+            'tipoDependencia' => 'required|in:seccion,destacamento',
         ], [
-            'required' => 'El campo :attribute es necesario completar.'
+            'required' => 'El campo :attribute es necesario completar.',
+            'in' => 'El tipo de dependencia debe ser sección o destacamento.'
         ]);
 
-
-        if (is_null($request->direccion) && is_null($request->departamental)){
-            return back()->with('error', 'Debe elegir una Dirección o Departamental');//->withInput();
+        // Validar que se haya seleccionado al menos una dependencia padre
+        if (is_null($request->direccion) && is_null($request->departamental) &&
+            is_null($request->division) && is_null($request->comisaria)) {
+            return back()->with('error', 'Debe elegir al menos una dependencia padre (Dirección, Departamental, División o Comisaría)')
+                ->withInput();
         }
 
-        $tipoDependencia = $request->tipoDependencia;
-        $dependencia = null;
-        try{
+        try {
             DB::beginTransaction();
-            $destino = new Destino();
-            if($tipoDependencia == 'seccion'){
-                $dependencia = new Seccion();
-                $dependencia->direccion_id = $request->direccion;
-                $dependencia->departamental_id = $request->departamental;
-                $dependencia->comisaria_id = $request->comisaria;
-                $dependencia->division_id = $request->division;
-                $dependencia->nombre ='Sección ' . $request->nombre;
-                $dependencia->telefono = $request->telefono;
-                $dependencia->ubicacion = $request->ubicacion;
-                //$dependencia->observaciones = $request->nombre;
-            } else {
-                $dependencia = new Destacamento();
-                $dependencia->departamental_id = $request->departamental;
-                $dependencia->comisaria_id = $request->comisaria;
-                $dependencia->division_id = $request->division;
-                $dependencia->nombre = 'Destacamento ' . $request->nombre;
-                $dependencia->telefono = $request->ubicacion;
-                $dependencia->ubicacion = $request->ubicacion;
-                //$dependencia->observaciones = $request->nombre;
-            }
-            $dependencia->save();
-            $destino->direccion_id = $request->direccion;
-            $destino->departamental_id = $request->departamental;
-            $destino->seccion_id = ($tipoDependencia == 'seccion') ? $dependencia->id : null;
-            $destino->destacamento_id = ($tipoDependencia == 'destacamento') ? $dependencia->id : null;
-            $destino->comisaria_id = $request->comisaria;
-            $destino->division_id = $request->division;
-            $destino->nombre = $dependencia->nombre;
-            $destino->save();
-            DB::commit();
-        } catch (\Exception $e){
-            DB::rollback();
-            return response()->json([
-                'result' => 'ERROR',
-                'message' => $e->getMessage()
-              ]);
-        }
 
-        return redirect()->route('dependencias.index');
+            // Determinar el parent_id basado en la jerarquía
+            $parent_id = $this->determinarParentId($request);
+
+            // Crear la nueva dependencia
+            $dependencia = new Destino();
+            $dependencia->nombre = $this->formatearNombre($request->nombre, $request->tipoDependencia);
+            $dependencia->tipo = $request->tipoDependencia;
+            $dependencia->parent_id = $parent_id;
+            $dependencia->telefono = $request->telefono;
+            $dependencia->ubicacion = $request->ubicacion;
+            $dependencia->observaciones = $request->observaciones;
+
+            $dependencia->save();
+
+            DB::commit();
+
+            return redirect()->route('dependencias.index')
+                ->with('success', 'Dependencia creada exitosamente.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->with('error', 'Error al crear la dependencia: ' . $e->getMessage())
+                ->withInput();
+        }
     }
 
     /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * Determina el parent_id basado en la jerarquía seleccionada
      */
-    public function show($id)
+    private function determinarParentId(Request $request)
     {
-        //
+        // Priorizar la dependencia más específica (de menor a mayor jerarquía)
+        if (!is_null($request->comisaria)) {
+            return $request->comisaria;
+        }
+
+        if (!is_null($request->division)) {
+            return $request->division;
+        }
+
+        if (!is_null($request->departamental)) {
+            return $request->departamental;
+        }
+
+        if (!is_null($request->direccion)) {
+            return $request->direccion;
+        }
+
+        // Si no se seleccionó ninguna, buscar la jefatura como parent por defecto
+        $jefatura = Destino::where('tipo', 'jefatura')->first();
+        return $jefatura ? $jefatura->id : null;
+    }
+
+    /**
+     * Formatea el nombre según el tipo de dependencia
+     */
+    private function formatearNombre($nombre, $tipo)
+    {
+        $prefijo = ($tipo === 'seccion') ? 'Sección' : 'Destacamento';
+
+        // Si el nombre ya tiene el prefijo, no lo duplicamos
+        if (stripos($nombre, $prefijo) === 0) {
+            return $nombre;
+        }
+
+        return $prefijo . ' ' . $nombre;
     }
 
     /**
@@ -161,7 +193,28 @@ class DependenciaController extends Controller
      */
     public function edit($id)
     {
-        //
+        $dependencia = Destino::findOrFail($id);
+
+        // Obtener todas las posibles dependencias padre según el tipo
+        $tiposPadresValidos = [
+            'direccion' => ['jefatura'],
+            'departamental' => ['jefatura', 'direccion'],
+            'division' => ['jefatura', 'direccion', 'departamental'],
+            'comisaria' => ['departamental'],
+            'seccion' => ['direccion', 'departamental', 'division', 'comisaria'],
+            'destacamento' => ['departamental', 'division', 'comisaria']
+        ];
+
+        $tiposValidos = $tiposPadresValidos[$dependencia->tipo] ?? [];
+        $posiblesPadres = collect();
+
+        if (!empty($tiposValidos)) {
+            $posiblesPadres = Destino::whereIn('tipo', $tiposValidos)
+                ->where('id', '!=', $id) // Excluir la propia dependencia
+                ->get();
+        }
+
+        return view('dependencias.editar', compact('dependencia', 'posiblesPadres'));
     }
 
     /**
@@ -173,55 +226,92 @@ class DependenciaController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //dd($request->all());
-        //dd($id);
-        $destino = null;
-        try {
-            DB::beginTransaction();
-            if($request->tipo_dependencia == 'direccion'){
-                $d = Direccion::find($id);
-                $destino = Destino::where('direccion_id', $d->id)->first();
-            } elseif($request->tipo_dependencia == 'departamental'){
-                $d = Departamental::find($id);
-                $destino = Destino::where('departamental_id', $d->id)->first();
-            } elseif($request->tipo_dependencia == 'division'){
-                $d = Division::find($id);
-                $destino = Destino::where('division_id', $d->id)->first();
-            } elseif($request->tipo_dependencia == 'comisaria'){
-                $d = Comisaria::find($id);
-                $destino = Destino::where('comisaria_id', $d->id)->first();
-            } elseif($request->tipo_dependencia == 'seccion'){
-                $d = Seccion::find($id);
-                $destino = Destino::where('seccion_id', $d->id)->first();
-            } elseif($request->tipo_dependencia == 'destacamento'){
-                $d = Destacamento::find($id);
-                $destino = Destino::where('destacamento_id', $d->id)->first();
-            }
+        $dependencia = Destino::findOrFail($id);
 
-            //dd($destino);
-            $d->nombre = $request->nombre;
-            $destino->nombre = $request->nombre;
+        // Validaciones dinámicas según el tipo
+        $rules = [
+            'nombre' => 'required|string|max:255',
+            'telefono' => 'nullable|string|max:50',
+            'ubicacion' => 'nullable|string|max:255',
+            'observaciones' => 'nullable|string'
+        ];
 
-            $d->telefono = $request->telefono;
-            $destino->telefono = $request->telefono;
-
-            $d->ubicacion = $request->ubicacion;
-            $destino->ubicacion = $request->ubicacion;
-
-            $d->save();
-            $destino->save();
-
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollback();
-            return response()->json([
-                'result' => 'ERROR',
-                'message' => $e->getMessage()
-              ]);
+        // Si se está cambiando el parent_id, validar que exista
+        if ($request->has('parent_id') && !is_null($request->parent_id)) {
+            $rules['parent_id'] = 'exists:destino,id';
         }
 
-        return redirect()->route('dependencias.index');
-        //dd($request);
+        $request->validate($rules, [
+            'required' => 'El campo :attribute es obligatorio.',
+            'exists' => 'La dependencia padre seleccionada no existe.',
+            'string' => 'El campo :attribute debe ser texto.',
+            'max' => 'El campo :attribute no puede tener más de :max caracteres.'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Validar jerarquía si se está cambiando el parent_id
+            if ($request->has('parent_id') && $request->parent_id != $dependencia->parent_id) {
+                if (!$this->validarJerarquia($dependencia->tipo, $request->parent_id)) {
+                    return back()->with('error', 'La nueva jerarquía seleccionada no es válida para este tipo de dependencia.')
+                        ->withInput();
+                }
+
+                // Verificar que no se esté creando una referencia circular
+                if ($this->validarReferenciaCircular($id, $request->parent_id)) {
+                    return back()->with('error', 'No se puede establecer esta dependencia como padre porque crearía una referencia circular.')
+                        ->withInput();
+                }
+
+                $dependencia->parent_id = $request->parent_id;
+            }
+
+            // Actualizar el nombre usando el formateador adecuado
+            $dependencia->nombre = $this->formatearNombrePorTipo($request->nombre, $dependencia->tipo);
+            $dependencia->telefono = $request->telefono;
+            $dependencia->ubicacion = $request->ubicacion;
+            $dependencia->observaciones = $request->observaciones;
+
+            $dependencia->save();
+
+            DB::commit();
+
+            return redirect()->route('dependencias.index')
+                ->with('success', 'Dependencia actualizada exitosamente.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->with('error', 'Error al actualizar la dependencia: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    /**
+     * Validar que no se cree una referencia circular
+     */
+    private function validarReferenciaCircular($dependenciaId, $nuevoParentId)
+    {
+        if (is_null($nuevoParentId)) {
+            return false; // No hay referencia circular si no hay padre
+        }
+
+        // Verificar si el nuevo padre es la misma dependencia
+        if ($dependenciaId == $nuevoParentId) {
+            return true;
+        }
+
+        // Recorrer hacia arriba en la jerarquía del nuevo padre
+        $currentParent = Destino::find($nuevoParentId);
+
+        while ($currentParent && $currentParent->parent_id) {
+            if ($currentParent->parent_id == $dependenciaId) {
+                return true; // Se encontró una referencia circular
+            }
+            $currentParent = $currentParent->padre;
+        }
+
+        return false; // No hay referencia circular
     }
 
     /**
@@ -232,7 +322,198 @@ class DependenciaController extends Controller
      */
     public function destroy($id)
     {
-        //
+        try {
+            DB::beginTransaction();
+
+            $dependencia = Destino::findOrFail($id);
+
+            // Solo permitir eliminar secciones y destacamentos
+            if (!in_array($dependencia->tipo, ['seccion', 'destacamento'])) {
+                return redirect()->route('dependencias.index')
+                    ->with('error', 'Solo se pueden eliminar secciones y destacamentos.');
+            }
+
+            // Verificar si tiene dependencias hijas
+            if ($dependencia->hijos()->count() > 0) {
+                return redirect()->route('dependencias.index')
+                    ->with('error', 'No se puede eliminar la dependencia porque tiene dependencias asociadas.');
+            }
+
+            $dependencia->delete();
+
+            DB::commit();
+
+            return redirect()->route('dependencias.index')
+                ->with('success', 'Dependencia eliminada exitosamente.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->route('dependencias.index')
+                ->with('error', 'Error al eliminar la dependencia: ' . $e->getMessage());
+        }
     }
 
+    /**
+     * Mostrar formulario para crear cualquier tipo de dependencia
+     */
+    public function createGeneral()
+    {
+        // Obtener todas las dependencias que pueden ser padres
+        $jefatura = Destino::where('tipo', 'jefatura')->first();
+        $direcciones = Destino::where('tipo', 'direccion')->get();
+        $departamentales = Destino::where('tipo', 'departamental')->get();
+        $divisiones = Destino::where('tipo', 'division')->get();
+        $comisarias = Destino::where('tipo', 'comisaria')->get();
+
+        return view('dependencias.crear-general', compact('jefatura', 'direcciones', 'departamentales', 'divisiones', 'comisarias'));
+    }
+
+    /**
+     * Almacenar cualquier tipo de dependencia
+     */
+    public function storeGeneral(Request $request)
+    {
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'tipo' => 'required|in:direccion,departamental,division,comisaria,seccion,destacamento',
+            'parent_id' => 'nullable|exists:destino,id',
+            'telefono' => 'nullable|string|max:50',
+            'ubicacion' => 'nullable|string|max:255',
+            'observaciones' => 'nullable|string'
+        ], [
+            'required' => 'El campo :attribute es obligatorio.',
+            'in' => 'El tipo seleccionado no es válido.',
+            'exists' => 'La dependencia padre seleccionada no existe.'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Validar la jerarquía
+            if (!$this->validarJerarquia($request->tipo, $request->parent_id)) {
+                return back()->with('error', 'La jerarquía seleccionada no es válida.')
+                    ->withInput();
+            }
+
+            // Crear la nueva dependencia
+            $dependencia = new Destino();
+            $dependencia->nombre = $this->formatearNombrePorTipo($request->nombre, $request->tipo);
+            $dependencia->tipo = $request->tipo;
+            $dependencia->parent_id = $request->parent_id;
+            $dependencia->telefono = $request->telefono;
+            $dependencia->ubicacion = $request->ubicacion;
+            $dependencia->observaciones = $request->observaciones;
+
+            $dependencia->save();
+
+            DB::commit();
+
+            return redirect()->route('dependencias.index')
+                ->with('success', 'Dependencia creada exitosamente.');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->with('error', 'Error al crear la dependencia: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    /**
+     * Validar que la jerarquía sea correcta
+     */
+    private function validarJerarquia($tipo, $parentId)
+    {
+        if (is_null($parentId)) {
+            // Solo la jefatura puede no tener padre
+            return $tipo === 'jefatura';
+        }
+
+        $padre = Destino::find($parentId);
+        if (!$padre) {
+            return false;
+        }
+
+        // Definir las relaciones jerárquicas válidas
+        $jerarquiaValida = [
+            'jefatura' => [], // La jefatura no puede tener padre
+            'direccion' => ['jefatura'],
+            'departamental' => ['jefatura', 'direccion'],
+            'division' => ['jefatura', 'direccion', 'departamental'],
+            'comisaria' => ['departamental'],
+            'seccion' => ['direccion', 'departamental', 'division', 'comisaria'],
+            'destacamento' => ['departamental', 'division', 'comisaria']
+        ];
+
+        return in_array($padre->tipo, $jerarquiaValida[$tipo] ?? []);
+    }
+
+    /**
+     * Formatear nombre según el tipo
+     */
+    private function formatearNombrePorTipo($nombre, $tipo)
+    {
+        $prefijos = [
+            'direccion' => 'Dirección',
+            'departamental' => 'Departamental',
+            'division' => 'División',
+            'comisaria' => 'Comisaría',
+            'seccion' => 'Sección',
+            'destacamento' => 'Destacamento'
+        ];
+
+        $prefijo = $prefijos[$tipo] ?? '';
+
+        // Si el nombre ya tiene el prefijo, no lo duplicamos
+        if ($prefijo && stripos($nombre, $prefijo) === 0) {
+            return $nombre;
+        }
+
+        return $prefijo ? $prefijo . ' ' . $nombre : $nombre;
+    }
+
+    /**
+     * Obtener dependencias por tipo para AJAX
+     */
+    public function getDependenciasPorTipo(Request $request)
+    {
+        $tipo = $request->tipo;
+        $parentId = $request->parent_id;
+
+        $query = Destino::where('tipo', $tipo);
+
+        if ($parentId) {
+            $query->where('parent_id', $parentId);
+        }
+
+        $dependencias = $query->get();
+
+        return response()->json($dependencias);
+    }
+
+    /**
+     * Obtener posibles padres según el tipo seleccionado
+     */
+    public function getPosiblesPadres(Request $request)
+    {
+        $tipo = $request->tipo;
+
+        $tiposPadresValidos = [
+            'direccion' => ['jefatura'],
+            'departamental' => ['jefatura', 'direccion'],
+            'division' => ['jefatura', 'direccion', 'departamental'],
+            'comisaria' => ['departamental'],
+            'seccion' => ['direccion', 'departamental', 'division', 'comisaria'],
+            'destacamento' => ['departamental', 'division', 'comisaria']
+        ];
+
+        $tiposValidos = $tiposPadresValidos[$tipo] ?? [];
+
+        if (empty($tiposValidos)) {
+            return response()->json([]);
+        }
+
+        $posiblesPadres = Destino::whereIn('tipo', $tiposValidos)->get();
+
+        return response()->json($posiblesPadres);
+    }
 }

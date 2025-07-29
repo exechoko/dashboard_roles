@@ -48,6 +48,14 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('blogs', BlogController::class);
     Route::resource('equipos', EquipoController::class);
     Route::resource('terminales', TipoTerminalController::class);
+
+    Route::get('dependencias/crear-general', [DependenciaController::class, 'createGeneral'])->name('dependencias.crear-general');
+    Route::post('dependencias/store-general', [DependenciaController::class, 'storeGeneral'])->name('dependencias.store-general');
+    Route::get('get-posibles-padres', [DependenciaController::class, 'getPosiblesPadres'])->name('getPosiblesPadres');
+    Route::get('get-dependencias-por-tipo', [DependenciaController::class, 'getDependenciasPorTipo'])->name('getDependenciasPorTipo');
+    Route::get('get-departamentales', [App\Http\Controllers\DependenciaController::class, 'getDepartamentales'])->name('getDepartamentales');
+    Route::get('get-divisiones', [App\Http\Controllers\DependenciaController::class, 'getDivisiones'])->name('getDivisiones');
+    Route::get('get-comisarias', [App\Http\Controllers\DependenciaController::class, 'getComisarias'])->name('getComisarias');
     Route::resource('dependencias', DependenciaController::class);
     Route::resource('vehiculos', VehiculoController::class);
     Route::resource('recursos', RecursoController::class);
@@ -60,6 +68,11 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('sitios', SitioController::class);
 
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+
+    Route::get('dependencias/crear-general', [DependenciaController::class, 'createGeneral'])->name('dependencias.crear-general');
+    Route::post('dependencias/store-general', [DependenciaController::class, 'storeGeneral'])->name('dependencias.store-general');
+    Route::get('get-posibles-padres', [DependenciaController::class, 'getPosiblesPadres'])->name('getPosiblesPadres');
+    Route::get('get-dependencias-por-tipo', [DependenciaController::class, 'getDependenciasPorTipo'])->name('getDependenciasPorTipo');
     Route::get('get-departamentales', [App\Http\Controllers\DependenciaController::class, 'getDepartamentales'])->name('getDepartamentales');
     Route::get('get-divisiones', [App\Http\Controllers\DependenciaController::class, 'getDivisiones'])->name('getDivisiones');
     Route::get('get-comisarias', [App\Http\Controllers\DependenciaController::class, 'getComisarias'])->name('getComisarias');

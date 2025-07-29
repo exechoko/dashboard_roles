@@ -24,13 +24,17 @@ class EquipoObserver
                 'nombre_tabla' => 'equipos',
                 'accion' => 'CREAR EQUIPO',
             ]);
+
+            $estadoNombre = $equipo->estado ? $equipo->estado->nombre : 'N/A';
+            $tipoTerminalNombre = $equipo->tipo_terminal ? $equipo->tipo_terminal->tipo_uso : 'N/A';
+
             $changes = sprintf(
                 'Equipo creado: ID: %d - ISSI: %s - TEI: %s - ESTADO: %s - TIPO_TERMINAL: %s',
                 $equipo->id,
                 $equipo->issi,
                 $equipo->tei,
-                $equipo->estado->nombre ?? 'N/A',
-                $equipo->tipo_terminal->tipo_uso ?? 'N/A'
+                $estadoNombre,
+                $tipoTerminalNombre
             );
             $aud->cambios = $changes;
             $aud->save();
@@ -89,12 +93,16 @@ class EquipoObserver
 
                 // Manejar campos especiales con relaciones
                 if ($field === 'tipo_terminal_id') {
-                    $oldTerminal = $oldValue ? \App\Models\TipoTerminal::find($oldValue)?->tipo_uso : 'N/A';
-                    $newTerminal = $newValue ? \App\Models\TipoTerminal::find($newValue)?->tipo_uso : 'N/A';
+                    $oldTerminalObj = \App\Models\TipoTerminal::find($oldValue);
+                    $newTerminalObj = \App\Models\TipoTerminal::find($newValue);
+                    $oldTerminal = $oldTerminalObj ? $oldTerminalObj->tipo_uso : 'N/A';
+                    $newTerminal = $newTerminalObj ? $newTerminalObj->tipo_uso : 'N/A';
                     $changes[] = sprintf('%s: "%s" → "%s"', $fieldLabel, $oldTerminal, $newTerminal);
                 } elseif ($field === 'estado_id') {
-                    $oldEstado = $oldValue ? \App\Models\Estado::find($oldValue)?->nombre : 'N/A';
-                    $newEstado = $newValue ? \App\Models\Estado::find($newValue)?->nombre : 'N/A';
+                    $oldEstadoObj = \App\Models\Estado::find($oldValue);
+                    $newEstadoObj = \App\Models\Estado::find($newValue);
+                    $oldEstado = $oldEstadoObj ? $oldEstadoObj->nombre : 'N/A';
+                    $newEstado = $newEstadoObj ? $newEstadoObj->nombre : 'N/A';
                     $changes[] = sprintf('%s: "%s" → "%s"', $fieldLabel, $oldEstado, $newEstado);
                 } elseif (in_array($field, ['gps', 'frente_remoto', 'rf', 'kit_inst', 'operativo', 'con_garantia'])) {
                     // Campos booleanos - convertir a texto legible
@@ -156,13 +164,16 @@ class EquipoObserver
                 'accion' => 'ELIMINAR EQUIPO',
             ]);
 
+            $estadoNombre = $equipo->estado ? $equipo->estado->nombre : 'N/A';
+            $tipoTerminalNombre = $equipo->tipo_terminal ? $equipo->tipo_terminal->tipo_uso : 'N/A';
+
             $changes = sprintf(
                 'Equipo eliminado: ID: %d - ISSI: %s - TEI: %s - ESTADO: %s - TIPO_TERMINAL: %s - PROPIETARIO: %s',
                 $equipo->id,
                 $equipo->issi,
                 $equipo->tei,
-                $equipo->estado->nombre ?? 'N/A',
-                $equipo->tipo_terminal->tipo_uso ?? 'N/A',
+                $estadoNombre,
+                $tipoTerminalNombre,
                 $equipo->propietario ?? 'N/A'
             );
 
@@ -192,13 +203,16 @@ class EquipoObserver
                 'accion' => 'RESTAURAR EQUIPO',
             ]);
 
+            $estadoNombre = $equipo->estado ? $equipo->estado->nombre : 'N/A';
+            $tipoTerminalNombre = $equipo->tipo_terminal ? $equipo->tipo_terminal->tipo_uso : 'N/A';
+
             $changes = sprintf(
                 'Equipo restaurado: ID: %d - ISSI: %s - TEI: %s - ESTADO: %s - TIPO_TERMINAL: %s - PROPIETARIO: %s',
                 $equipo->id,
                 $equipo->issi,
                 $equipo->tei,
-                $equipo->estado->nombre ?? 'N/A',
-                $equipo->tipo_terminal->tipo_uso ?? 'N/A',
+                $estadoNombre,
+                $tipoTerminalNombre,
                 $equipo->propietario ?? 'N/A'
             );
 
@@ -228,13 +242,16 @@ class EquipoObserver
                 'accion' => 'ELIMINAR PERMANENTE EQUIPO',
             ]);
 
+            $estadoNombre = $equipo->estado ? $equipo->estado->nombre : 'N/A';
+            $tipoTerminalNombre = $equipo->tipo_terminal ? $equipo->tipo_terminal->tipo_uso : 'N/A';
+
             $changes = sprintf(
                 'Equipo eliminado permanentemente: ID: %d - ISSI: %s - TEI: %s - ESTADO: %s - TIPO_TERMINAL: %s - PROPIETARIO: %s',
                 $equipo->id,
                 $equipo->issi,
                 $equipo->tei,
-                $equipo->estado->nombre ?? 'N/A',
-                $equipo->tipo_terminal->tipo_uso ?? 'N/A',
+                $estadoNombre,
+                $tipoTerminalNombre,
                 $equipo->propietario ?? 'N/A'
             );
 

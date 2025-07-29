@@ -34,11 +34,11 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
             // Datos adicionales de FlotaGeneral
             'flota_general.fecha_asignacion', // K
             'flota_general.ticket_per', // L
-            'flota_general.observaciones as observaciones_flota', // M
             // Datos del vehículo (si existe)
-            'vehiculos.marca as vehiculo_marca', // N
-            'vehiculos.modelo as vehiculo_modelo', // Ñ
-            'vehiculos.dominio as vehiculo_patente' // O
+            'vehiculos.marca as vehiculo_marca', // M
+            'vehiculos.modelo as vehiculo_modelo', // N
+            'vehiculos.dominio as vehiculo_patente', // Ñ
+            'flota_general.observaciones as observaciones_flota' // O
         )
             ->leftJoin('flota_general', 'equipos.id', '=', 'flota_general.equipo_id')
             ->leftJoin('recursos', 'flota_general.recurso_id', '=', 'recursos.id')
@@ -67,10 +67,10 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
             'Dependencia Superior', //J
             'Fecha Asignación', //K
             'Ticket PER', //L
-            'Observaciones', //M
-            'Vehículo Marca', //N
-            'Vehículo Modelo', //Ñ
-            'Dominio' //O
+            'Vehículo Marca', //M
+            'Vehículo Modelo', //N
+            'Dominio', //Ñ
+            'Observaciones' //O
         ];
     }
 

@@ -69,7 +69,7 @@ class FlotaGeneralController extends Controller
 
         $recursos = Recurso::select('id', 'nombre')->orderBy('nombre')->get();
         $estados = Estado::all();
-        $destinos = Destino::all();
+        $destinos = Destino::with('padre:id,nombre')->get();
         $tiposTerminal = TipoTerminal::select('id', 'marca', 'modelo')->orderBy('marca', 'desc')->get();
 
         // Inicializar variables
@@ -122,7 +122,8 @@ class FlotaGeneralController extends Controller
                 'equipo.tipo_terminal:id,marca,modelo,imagen,tipo_uso_id',
                 'equipo.tipo_terminal.tipo_uso:id,uso',
                 'recurso:id,nombre',
-                'destino:id,nombre',
+                'destino:id,nombre,parent_id',  // Agregamos parent_id
+                'destino.padre:id,nombre',      // Agregamos la relación padre
                 'equipo.estado:id,nombre'
             ]);
 

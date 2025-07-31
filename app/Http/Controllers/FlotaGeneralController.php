@@ -1163,13 +1163,13 @@ class FlotaGeneralController extends Controller
             $issi = $request->nuevoIssi;
             if ($e) {
                 $observacionExtra = '';
-                if (!empty($e->issi)) {
+                if (!empty($e->issi) && !empty($issi) && $e->issi != $issi) {
                     $fecha = Carbon::parse($request->fecha_asignacion)->format('d/m/Y H:i');
                     $observacionExtra = "- Fecha de modificación: {$fecha}\n";
                     $observacionExtra .= "* ISSI anterior: {$e->issi}";
+                    $e->issi = $issi;
+                    $e->nombre_issi = $flota ? $flota->recurso->nombre : null;
                 }
-                $e->issi = $issi;
-                $e->nombre_issi = $flota ? $flota->recurso->nombre : null;
                 if ($observacionExtra) {
                     // Concatenar observación nueva a las anteriores (si las hay)
                     $e->observaciones = trim($e->observaciones ?? '') . "\n\n" . $observacionExtra;

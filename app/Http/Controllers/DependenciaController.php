@@ -9,11 +9,12 @@ use Illuminate\Support\Facades\DB;
 
 class DependenciaController extends Controller
 {
-    function __construct(){
+    function __construct()
+    {
         $this->middleware('permission:ver-dependencia|crear-dependencia|editar-dependencia|borrar-dependencia')->only('index');
-        $this->middleware('permission:crear-dependencia', ['only'=>['create', 'store']]);
-        $this->middleware('permission:editar-dependencia', ['only'=>['edit', 'update']]);
-        $this->middleware('permission:borrar-dependencia', ['only'=>['destroy']]);
+        $this->middleware('permission:crear-dependencia', ['only' => ['create', 'store']]);
+        $this->middleware('permission:editar-dependencia', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:borrar-dependencia', ['only' => ['destroy']]);
     }
 
     /**
@@ -23,29 +24,52 @@ class DependenciaController extends Controller
      */
     public function index()
     {
-        // Obtener las últimas dependencias creadas (secciones y destacamentos)
-        $dependencias = Destino::whereIn('tipo', ['seccion', 'destacamento'])->latest()->take(5)->get();
+        // Obtener todas las dependencias ordenadas por jerarquía y nombre
+        $todasDependencias = Destino::with(['padre', 'hijos'])
+            ->orderByRaw("
+            CASE tipo
+                WHEN 'jefatura' THEN 1
+                WHEN 'direccion' THEN 2
+                WHEN 'departamental' THEN 3
+                WHEN 'division' THEN 4
+                WHEN 'comisaria' THEN 5
+                WHEN 'seccion' THEN 6
+                WHEN 'destacamento' THEN 7
+                ELSE 8
+            END
+        ")
+            ->orderBy('nombre')
+            ->get();
 
-        // Obtener direcciones, departamentales, divisiones y comisarías para filtros
-        $direcciones = Destino::where('tipo', 'direccion')->get();
-        $departamentales = Destino::where('tipo', 'departamental')->get();
-        $divisiones = Destino::where('tipo', 'division')->get();
-        $comisarias = Destino::where('tipo', 'comisaria')->get();
-        $secciones = Destino::where('tipo', 'seccion')->get();
-        $destacamentos = Destino::where('tipo', 'destacamento')->get();
+        // Obtener estadísticas
+        $estadisticas = Destino::getEstadisticas();
 
-        return view(
-            'dependencias.index',
-            compact(
-                'dependencias',
-                'direcciones',
-                'departamentales',
-                'divisiones',
-                'comisarias',
-                'secciones',
-                'destacamentos'
-            )
-        );
+        // Si prefieres usar paginación:
+        // $todasDependencias = Destino::with(['padre', 'hijos'])
+        //     ->orderByRaw("...")
+        //     ->orderBy('nombre')
+        //     ->paginate(50);
+
+        return view('dependencias.index', compact('todasDependencias', 'estadisticas'));
+    }
+
+    /**
+     * Método helper para obtener la clase CSS del badge según el tipo
+     * Puedes agregar esto como método en el modelo Destino o como helper
+     */
+    public function getTipoBadgeClass($tipo)
+    {
+        $clases = [
+            'jefatura' => 'dark',
+            'direccion' => 'secondary',
+            'departamental' => 'primary',
+            'division' => 'success',
+            'comisaria' => 'warning',
+            'seccion' => 'info',
+            'destacamento' => 'danger'
+        ];
+
+        return $clases[$tipo] ?? 'light';
     }
 
     /**
@@ -108,8 +132,10 @@ class DependenciaController extends Controller
         ]);
 
         // Validar que se haya seleccionado al menos una dependencia padre
-        if (is_null($request->direccion) && is_null($request->departamental) &&
-            is_null($request->division) && is_null($request->comisaria)) {
+        if (
+            is_null($request->direccion) && is_null($request->departamental) &&
+            is_null($request->division) && is_null($request->comisaria)
+        ) {
             return back()->with('error', 'Debe elegir al menos una dependencia padre (Dirección, Departamental, División o Comisaría)')
                 ->withInput();
         }
@@ -183,6 +209,13 @@ class DependenciaController extends Controller
         }
 
         return $prefijo . ' ' . $nombre;
+    }
+
+    public function show($id)
+    {
+        $dependencia = Destino::with(['padre', 'hijos'])->findOrFail($id);
+
+        return view('dependencias.show', compact('dependencia'));
     }
 
     /**

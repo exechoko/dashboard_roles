@@ -11,375 +11,126 @@
                 <div class="col-lg-12">
                     <div class="card">
                         <div class="card-body">
-                            <a class="btn btn-success" href="{{ route('dependencias.crear-general') }}">Nuevo</a>
+                            <a class="btn btn-success" href="{{ route('dependencias.crear-general') }}">
+                                <i class="fas fa-plus"></i> Nueva Dependencia
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
         @endcan
 
+        <!-- Filtros y búsqueda global -->
         <div class="row">
             <div class="col-lg-12">
                 <div class="card">
                     <div class="card-body">
-                        <h4>Ultimas dependencias agregadas</h4>
-                        <div class="table-responsive">
-                            <table class="table table-striped mt-2">
-                                <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
-                                    <th style="display: none;">ID</th>
-                                    <th style="color:#fff;">Dependencia</th>
-                                    <th style="color:#fff;">Telefono</th>
-                                    <th style="color:#fff;">Dirección</th>
-                                </thead>
-                                <tbody>
-                                    @foreach ($dependencias as $dependencia)
-                                        <tr>
-                                            <td style="display: none;">{{ $dependencia->id }}</td>
-                                            <td style="font-weight:bold">{{ $dependencia->nombre }}</td>
-                                            <td style="font-weight:bold">{{ $dependencia->telefono }}</td>
-                                            <td style="font-weight:bold">{{ $dependencia->ubicacion }}</td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="filtroTipo">Filtrar por tipo:</label>
+                                    <select id="filtroTipo" class="form-control">
+                                        <option value="">Todos los tipos</option>
+                                        <option value="direccion">Direcciones</option>
+                                        <option value="departamental">Departamentales</option>
+                                        <option value="division">Divisiones</option>
+                                        <option value="comisaria">Comisarías</option>
+                                        <option value="seccion">Secciones</option>
+                                        <option value="destacamento">Destacamentos</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="busquedaGlobal">Búsqueda global:</label>
+                                    <input type="text" id="busquedaGlobal" class="form-control"
+                                        placeholder="Buscar por nombre, teléfono o ubicación...">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!--Accordion wrapper-->
-        <div class="accordion md-accordion" id="accordionEx" role="tablist" aria-multiselectable="true">
-
-            <!-- Accordion card -->
-            <div class="card">
-
-                <!-- Card header -->
-                <div class="card-header" role="tab" id="headingOne1">
-                    <a data-toggle="collapse" data-parent="#accordionEx" href="#collapseOne1" aria-expanded="true"
-                        aria-controls="collapseOne1">
-                        <h5 class="mb-0">
-                            Direcciones <i class="fas fa-angle-down rotate-icon"></i>
-                        </h5>
-                    </a>
-                </div>
-
-                <!-- Card body -->
-                <div id="collapseOne1" class="collapse show" role="tabpanel" aria-labelledby="headingOne1"
-                    data-parent="#accordionEx">
+        <!-- Tabla unificada de dependencias -->
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
                     <div class="card-body">
+                        <h4>Todas las Dependencias</h4>
                         <div class="table-responsive">
-                            <input class="form-control" id="inputDirecciones" type="text"
-                                placeholder="Buscar direcciones">
-                            <table class="table table-striped table-hover mt-2">
+                            <table class="table table-striped table-hover mt-2" id="tablaDependencias">
                                 <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
-                                    <th style="display: none;">ID</th>
+                                    <th style="color:#fff;">Tipo</th>
                                     <th style="color:#fff;">Nombre</th>
                                     <th style="color:#fff;">Teléfono</th>
                                     <th style="color:#fff;">Ubicación</th>
+                                    <th style="color:#fff;">Depende de</th>
                                     @can('editar-dependencia')
                                         <th style="color:#fff;">Acciones</th>
                                     @endcan
                                 </thead>
-                                <tbody id="myTableDirecciones">
-                                    @foreach ($direcciones as $direccion)
-                                        @include('dependencias.modal.editar_direccion')
-                                        <tr>
-                                            <td style="display: none;">{{ $direccion->id }}</td>
-                                            <td style="font-weight:bold">{{ $direccion->nombre }}<br/>
-                                                <small>{{ $direccion->dependeDe() }}</small>
+                                <tbody>
+                                    @foreach ($todasDependencias as $dependencia)
+                                        <tr data-tipo="{{ $dependencia->tipo }}">
+                                            <td>
+                                                <span class="badge badge-{{ $dependencia->getBadgeClass() }}">
+                                                    {{ ucfirst($dependencia->tipo) }}
+                                                </span>
                                             </td>
-                                            <td>{{ $direccion->telefono }}</td>
-                                            <td>{{ $direccion->ubicacion }}</td>
-                                            @can('editar-dependencia')
-                                                <td>
-                                                    <form action="#" method="POST">
-                                                        {{-- <a class="btn btn-info" href="#">Editar</a> --}}
-                                                        <a class="btn btn-success" href="#" data-toggle="modal"
-                                                            data-target="#ModalEditar{{ $direccion->id }}">Editar</a>
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        @can('borrar-dependencia')
-                                                            <button type="submit" onclick="return confirm('Está seguro')"
-                                                                class="btn btn-danger">Borrar</button>
-                                                        @endcan
-                                                    </form>
-                                                </td>
-                                            @endcan
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-            <!-- Accordion card -->
-
-            <!-- Accordion card -->
-            <div class="card">
-
-                <!-- Card header -->
-                <div class="card-header" role="tab" id="headingTwo2">
-                    <a class="collapsed" data-toggle="collapse" data-parent="#accordionEx" href="#collapseTwo2"
-                        aria-expanded="false" aria-controls="collapseTwo2">
-                        <h5 class="mb-0">
-                            Departamentales <i class="fas fa-angle-down rotate-icon"></i>
-                        </h5>
-                    </a>
-                </div>
-
-                <!-- Card body -->
-                <div id="collapseTwo2" class="collapse" role="tabpanel" aria-labelledby="headingTwo2"
-                    data-parent="#accordionEx">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <input class="form-control" id="inputDepartamentales" type="text"
-                                placeholder="Buscar departamentales">
-                            <table class="table table-striped table-hover mt-2">
-                                <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
-                                    <th style="display: none;">ID</th>
-                                    <th style="color:#fff;">Nombre</th>
-                                    <th style="color:#fff;">Teléfono</th>
-                                    <th style="color:#fff;">Ubicación</th>
-                                    @can('editar-dependencia')
-                                        <th style="color:#fff;">Acciones</th>
-                                    @endcan
-                                </thead>
-                                <tbody id="myTableDepartamentales">
-                                    @foreach ($departamentales as $departamental)
-                                        @include('dependencias.modal.editar_departamental')
-                                        <tr>
-                                            <td style="display: none;">{{ $departamental->id }}</td>
-                                            <td style="font-weight:bold">{{ $departamental->nombre }}<br/>
-                                                <small>{{ $departamental->dependeDe() }}</small>
-                                            </td>
-                                            <td>{{ $departamental->telefono }}</td>
-                                            <td>{{ $departamental->ubicacion }}</td>
-                                            @can('editar-dependencia')
-                                                <td>
-                                                    <form action="#" method="POST">
-                                                        {{-- <a class="btn btn-info" href="#">Editar</a> --}}
-                                                        <a class="btn btn-success" href="#" data-toggle="modal"
-                                                            data-target="#ModalEditarDptal{{ $departamental->id }}">Editar</a>
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        @can('borrar-dependencia')
-                                                            <button type="submit" onclick="return confirm('Está seguro')"
-                                                                class="btn btn-danger">Borrar</button>
-                                                        @endcan
-                                                    </form>
-                                                </td>
-                                            @endcan
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-            <!-- Accordion card -->
-
-            <!-- Accordion card -->
-            <div class="card">
-
-                <!-- Card header -->
-                <div class="card-header" role="tab" id="headingThree3">
-                    <a class="collapsed" data-toggle="collapse" data-parent="#accordionEx" href="#collapseThree3"
-                        aria-expanded="false" aria-controls="collapseThree3">
-                        <h5 class="mb-0">
-                            Divisiones <i class="fas fa-angle-down rotate-icon"></i>
-                        </h5>
-                    </a>
-                </div>
-
-                <!-- Card body -->
-                <div id="collapseThree3" class="collapse" role="tabpanel" aria-labelledby="headingThree3"
-                    data-parent="#accordionEx">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <input class="form-control" id="inputDivisiones" type="text"
-                                placeholder="Buscar divisiones">
-                            <table class="table table-striped table-hover mt-2">
-                                <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
-                                    <th style="display: none;">ID</th>
-                                    <th style="color:#fff;">Nombre</th>
-                                    <th style="color:#fff;">Teléfono</th>
-                                    <th style="color:#fff;">Ubicación</th>
-                                    @can('editar-dependencia')
-                                        <th style="color:#fff;">Acciones</th>
-                                    @endcan
-                                </thead>
-                                <tbody id="myTableDivisiones">
-                                    @foreach ($divisiones as $division)
-                                        @include('dependencias.modal.editar_division')
-                                        <tr>
-                                            <td style="display: none;">{{ $division->id }}</td>
-                                            <td style="font-weight:bold">{{ $division->nombre }}<br/>
-                                                <small>{{ $division->dependeDe() }}</small>
-                                            </td>
-                                            <td>{{ $division->telefono }}</td>
-                                            <td>{{ $division->ubicacion }}</td>
-                                            @can('editar-dependencia')
-                                                <td>
-                                                    <form action="#" method="POST">
-                                                        {{-- <a class="btn btn-info" href="#">Editar</a> --}}
-                                                        <a class="btn btn-success" href="#" data-toggle="modal"
-                                                            data-target="#ModalEditarDivision{{ $division->id }}">Editar</a>
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        @can('borrar-dependencia')
-                                                            <button type="submit" onclick="return confirm('Está seguro')"
-                                                                class="btn btn-danger">Borrar</button>
-                                                        @endcan
-                                                    </form>
-                                                </td>
-                                            @endcan
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Accordion card -->
-
-            <!-- Accordion card -->
-            <div class="card">
-
-                <!-- Card header -->
-                <div class="card-header" role="tab" id="headingThree4">
-                    <a class="collapsed" data-toggle="collapse" data-parent="#accordionEx" href="#collapseThree4"
-                        aria-expanded="false" aria-controls="collapseThree4">
-                        <h5 class="mb-0">
-                            Comisarías <i class="fas fa-angle-down rotate-icon"></i>
-                        </h5>
-                    </a>
-                </div>
-
-                <!-- Card body -->
-                <div id="collapseThree4" class="collapse" role="tabpanel" aria-labelledby="headingThree4"
-                    data-parent="#accordionEx">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <input class="form-control" id="inputComisarias" type="text"
-                                placeholder="Buscar comisarias">
-                            <table class="table table-striped table-hover mt-2">
-                                <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
-                                    <th style="display: none;">ID</th>
-                                    <th style="color:#fff;">Nombre</th>
-                                    <th style="color:#fff;">Teléfono</th>
-                                    <th style="color:#fff;">Ubicación</th>
-                                    @can('editar-dependencia')
-                                        <th style="color:#fff;">Acciones</th>
-                                    @endcan
-                                </thead>
-                                <tbody id="myTableComisarias">
-                                    @foreach ($comisarias as $comisaria)
-                                        @include('dependencias.modal.editar_comisaria')
-                                        <tr>
-                                            <td style="display: none;">{{ $comisaria->id }}</td>
-                                            <td style="font-weight:bold">{{ $comisaria->nombre }}<br/>
-                                                <small>{{ $comisaria->dependeDe() }}</small>
+                                            <td style="font-weight:bold">
+                                                {{ $dependencia->nombre }}
+                                                @if($dependencia->hijos->count() > 0)
+                                                    <small class="text-muted d-block">
+                                                        <i class="fas fa-sitemap"></i>
+                                                        {{ $dependencia->hijos->count() }} subordinada(s)
+                                                    </small>
+                                                @endif
                                             </td>
                                             <td>
-                                                @php
-                                                    preg_match('/Celular:\s*(\d+)/', $comisaria->telefono, $matches);
-                                                    $celular = $matches[1] ?? null;
-                                                @endphp
-
-                                                {{ $comisaria->telefono }}
-
-                                                @if($celular)
-                                                    <a href="https://wa.me/549{{ $celular }}" target="_blank" title="Enviar mensaje por WhatsApp">
+                                                {{ $dependencia->telefono }}
+                                                @if($dependencia->getWhatsappUrl())
+                                                    <a href="{{ $dependencia->getWhatsappUrl() }}" target="_blank"
+                                                        title="Enviar mensaje por WhatsApp">
                                                         <i class="fab fa-whatsapp text-success ml-2"></i>
                                                     </a>
                                                 @endif
                                             </td>
-                                            <td>{{ $comisaria->ubicacion }}</td>
-                                            @can('editar-dependencia')
-                                                <td>
-                                                    <form action="#" method="POST">
-                                                        {{-- <a class="btn btn-info" href="#">Editar</a> --}}
-                                                        <a class="btn btn-success" href="#" data-toggle="modal"
-                                                            data-target="#ModalEditarComisaria{{ $comisaria->id }}">Editar</a>
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        @can('borrar-dependencia')
-                                                            <button type="submit" onclick="return confirm('Está seguro')"
-                                                                class="btn btn-danger">Borrar</button>
-                                                        @endcan
-                                                    </form>
-                                                </td>
-                                            @endcan
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Accordion card -->
-
-            <!-- Accordion card -->
-            <div class="card">
-
-                <!-- Card header -->
-                <div class="card-header" role="tab" id="headingThree5">
-                    <a class="collapsed" data-toggle="collapse" data-parent="#accordionEx" href="#collapseThree5"
-                        aria-expanded="false" aria-controls="collapseThree5">
-                        <h5 class="mb-0">
-                            Secciones <i class="fas fa-angle-down rotate-icon"></i>
-                        </h5>
-                    </a>
-                </div>
-
-                <!-- Card body -->
-                <div id="collapseThree5" class="collapse" role="tabpanel" aria-labelledby="headingThree5"
-                    data-parent="#accordionEx">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <input class="form-control" id="inputSecciones" type="text"
-                                placeholder="Buscar secciones">
-                            <table class="table table-striped table-hover mt-2">
-                                <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
-                                    <th style="display: none;">ID</th>
-                                    <th style="color:#fff;">Nombre</th>
-                                    <th style="color:#fff;">Teléfono</th>
-                                    <th style="color:#fff;">Ubicación</th>
-                                    @can('editar-dependencia')
-                                        <th style="color:#fff;">Acciones</th>
-                                    @endcan
-                                </thead>
-                                <tbody id="myTableSecciones">
-                                    @foreach ($secciones as $seccion)
-                                        @include('dependencias.modal.editar_seccion')
-                                        <tr>
-                                            <td style="display: none;">{{ $seccion->id }}</td>
-                                            <td style="font-weight:bold">{{ $seccion->nombre }}<br/>
-                                                <small>{{ $seccion->dependeDe() }}</small>
+                                            <td>{{ $dependencia->ubicacion }}</td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    {{ $dependencia->dependeDe() }}
+                                                </small>
                                             </td>
-
-                                            <td>{{ $seccion->telefono }}</td>
-                                            <td>{{ $seccion->ubicacion }}</td>
                                             @can('editar-dependencia')
                                                 <td>
-                                                    <form action="#" method="POST">
-                                                        {{-- <a class="btn btn-info" href="#">Editar</a> --}}
-                                                        <a class="btn btn-success" href="#" data-toggle="modal"
-                                                            data-target="#ModalEditarSeccion{{ $seccion->id }}">Editar</a>
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        @can('borrar-dependencia')
-                                                            <button type="submit" onclick="return confirm('Está seguro')"
-                                                                class="btn btn-danger">Borrar</button>
-                                                        @endcan
-                                                    </form>
+                                                    <div class="btn-group" role="group">
+                                                        <a class="btn btn-sm btn-info"
+                                                            href="{{ route('dependencias.show', $dependencia->id) }}"
+                                                            title="Ver detalles">
+                                                            <i class="fas fa-eye"></i>
+                                                        </a>
+                                                        <a class="btn btn-sm btn-success"
+                                                            href="{{ route('dependencias.edit', $dependencia->id) }}"
+                                                            title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        @if($dependencia->puedeSerEliminada())
+                                                            @can('borrar-dependencia')
+                                                                <form action="{{ route('dependencias.destroy', $dependencia->id) }}"
+                                                                    method="POST" class="d-inline">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <button type="submit"
+                                                                        onclick="return confirm('¿Está seguro de eliminar esta dependencia?')"
+                                                                        class="btn btn-sm btn-danger" title="Eliminar">
+                                                                        <i class="fas fa-trash"></i>
+                                                                    </button>
+                                                                </form>
+                                                            @endcan
+                                                        @endif
+                                                    </div>
                                                 </td>
                                             @endcan
                                         </tr>
@@ -387,118 +138,127 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Paginación si usas paginación -->
+                        @if(method_exists($todasDependencias, 'links'))
+                            <div class="d-flex justify-content-center">
+                                {{ $todasDependencias->links() }}
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
-            <!-- Accordion card -->
-
-            <!-- Accordion card -->
-            <div class="card">
-
-                <!-- Card header -->
-                <div class="card-header" role="tab" id="headingThree6">
-                    <a class="collapsed" data-toggle="collapse" data-parent="#accordionEx" href="#collapseThree6"
-                        aria-expanded="false" aria-controls="collapseThree4">
-                        <h5 class="mb-0">
-                            Destacamentos <i class="fas fa-angle-down rotate-icon"></i>
-                        </h5>
-                    </a>
-                </div>
-
-                <!-- Card body -->
-                <div id="collapseThree6" class="collapse" role="tabpanel" aria-labelledby="headingThree6"
-                    data-parent="#accordionEx">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <input class="form-control" id="inputDestacamentos" type="text"
-                                placeholder="Buscar destacamentos">
-                            <table class="table table-striped table-hover mt-2">
-                                <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
-                                    <th style="display: none;">ID</th>
-                                    <th style="color:#fff;">Nombre</th>
-                                    <th style="color:#fff;">Teléfono</th>
-                                    <th style="color:#fff;">Ubicación</th>
-                                    @can('editar-dependencia')
-                                        <th style="color:#fff;">Acciones</th>
-                                    @endcan
-                                </thead>
-                                <tbody id="myTableDestacamentos">
-                                    @foreach ($destacamentos as $destacamento)
-                                        @include('dependencias.modal.editar_destacamento')
-                                        <tr>
-                                            <td style="display: none;">{{ $destacamento->id }}</td>
-                                            <td style="font-weight:bold">{{ $destacamento->nombre }}<br/>
-                                                <small>{{ $destacamento->dependeDe() }}</small>
-                                            </td>
-
-                                            <td>{{ $destacamento->telefono }}</td>
-                                            <td>{{ $destacamento->ubicacion }}</td>
-                                            @can('editar-dependencia')
-                                                <td>
-                                                    <form action="#" method="POST">
-                                                        {{-- <a class="btn btn-info" href="#">Editar</a> --}}
-                                                        <a class="btn btn-success" href="#" data-toggle="modal"
-                                                            data-target="#ModalEditarDestacamento{{ $destacamento->id }}">Editar</a>
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        @can('borrar-dependencia')
-                                                            <button type="submit" onclick="return confirm('Está seguro')"
-                                                                class="btn btn-danger">Borrar</button>
-                                                        @endcan
-                                                    </form>
-                                                </td>
-                                            @endcan
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Accordion card -->
         </div>
 
-
+        <!-- Resumen estadístico -->
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h5>Resumen por Tipo</h5>
+                        <div class="row">
+                            @foreach(['direccion', 'departamental', 'division', 'comisaria', 'seccion', 'destacamento'] as $tipo)
+                                @if(isset($estadisticas[$tipo]))
+                                    <div class="col-md-2">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <h6 class="card-title">{{ ucfirst($tipo) }}s</h6>
+                                                <h4 class="text-primary">{{ $estadisticas[$tipo] }}</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </section>
+
+    <!-- Scripts -->
     <script>
-        $(document).ready(function() {
-            $("#inputDivisiones").on("keyup", function() {
-                var value = $(this).val().toLowerCase();
-                $("#myTableDivisiones tr").filter(function() {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        $(document).ready(function () {
+            // Filtro por tipo
+            $("#filtroTipo").on("change", function () {
+                var tipoSeleccionado = $(this).val().toLowerCase();
+                $("#tablaDependencias tbody tr").each(function () {
+                    var tipoFila = $(this).data('tipo');
+                    if (tipoSeleccionado === '' || tipoFila === tipoSeleccionado) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
                 });
+                aplicarBusquedaGlobal(); // Reaplicar búsqueda después del filtro
             });
-            $("#inputDepartamentales").on("keyup", function() {
-                var value = $(this).val().toLowerCase();
-                $("#myTableDepartamentales tr").filter(function() {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+
+            // Búsqueda global
+            $("#busquedaGlobal").on("keyup", function () {
+                aplicarBusquedaGlobal();
+            });
+
+            function aplicarBusquedaGlobal() {
+                var value = $("#busquedaGlobal").val().toLowerCase();
+                var tipoSeleccionado = $("#filtroTipo").val().toLowerCase();
+
+                $("#tablaDependencias tbody tr").each(function () {
+                    var tipoFila = $(this).data('tipo');
+                    var textoFila = $(this).text().toLowerCase();
+
+                    var cumpleFiltroTipo = (tipoSeleccionado === '' || tipoFila === tipoSeleccionado);
+                    var cumpleBusqueda = (value === '' || textoFila.indexOf(value) > -1);
+
+                    if (cumpleFiltroTipo && cumpleBusqueda) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
                 });
-            });
-            $("#inputDirecciones").on("keyup", function() {
-                var value = $(this).val().toLowerCase();
-                $("#myTableDirecciones tr").filter(function() {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-                });
-            });
-            $("#inputComisarias").on("keyup", function() {
-                var value = $(this).val().toLowerCase();
-                $("#myTableComisarias tr").filter(function() {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-                });
-            });
-            $("#inputSecciones").on("keyup", function() {
-                var value = $(this).val().toLowerCase();
-                $("#myTableSecciones tr").filter(function() {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-                });
-            });
-            $("#inputDestacamentos").on("keyup", function() {
-                var value = $(this).val().toLowerCase();
-                $("#myTableDestacamentos tr").filter(function() {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-                });
-            });
+            }
+
+            // Tooltip para botones
+            $('[title]').tooltip();
         });
     </script>
+
+    <style>
+        .badge-direccion {
+            background-color: #6c757d;
+        }
+
+        .badge-departamental {
+            background-color: #007bff;
+        }
+
+        .badge-division {
+            background-color: #28a745;
+        }
+
+        .badge-comisaria {
+            background-color: #ffc107;
+            color: #212529;
+        }
+
+        .badge-seccion {
+            background-color: #17a2b8;
+        }
+
+        .badge-destacamento {
+            background-color: #dc3545;
+        }
+
+        .btn-group .btn {
+            margin-right: 2px;
+        }
+
+        .table th {
+            border-top: none;
+        }
+
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: 1px solid rgba(0, 0, 0, 0.125);
+        }
+    </style>
 @endsection

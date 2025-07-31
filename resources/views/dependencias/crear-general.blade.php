@@ -44,6 +44,28 @@
                                 </div>
                             @endif
 
+                            <!-- Información de jerarquía -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card bg-light">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">Jerarquía Organizacional</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <ul class="list-unstyled mb-0">
+                                                <li><strong>Jefatura:</strong> No depende de nadie (nivel superior)</li>
+                                                <li><strong>Dirección:</strong> Depende de la Jefatura</li>
+                                                <li><strong>Departamental:</strong> Puede depender de Jefatura o Dirección</li>
+                                                <li><strong>División:</strong> Puede depender de Jefatura, Dirección o Departamental</li>
+                                                <li><strong>Comisaría:</strong> Depende de una Departamental</li>
+                                                <li><strong>Sección:</strong> Puede depender de Dirección, Departamental, División o Comisaría</li>
+                                                <li><strong>Destacamento:</strong> Puede depender de Departamental, División o Comisaría</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <form action="{{ route('dependencias.store-general') }}" method="POST">
                                 @csrf
                                 <div class="row">
@@ -115,28 +137,6 @@
                                     </div>
                                 </div>
                             </form>
-
-                            <!-- Información de jerarquía -->
-                            <div class="row mt-4">
-                                <div class="col-12">
-                                    <div class="card bg-light">
-                                        <div class="card-header">
-                                            <h5 class="mb-0">Jerarquía Organizacional</h5>
-                                        </div>
-                                        <div class="card-body">
-                                            <ul class="list-unstyled mb-0">
-                                                <li><strong>Jefatura:</strong> No depende de nadie (nivel superior)</li>
-                                                <li><strong>Dirección:</strong> Depende de la Jefatura</li>
-                                                <li><strong>Departamental:</strong> Puede depender de Jefatura o Dirección</li>
-                                                <li><strong>División:</strong> Puede depender de Jefatura, Dirección o Departamental</li>
-                                                <li><strong>Comisaría:</strong> Depende de una Departamental</li>
-                                                <li><strong>Sección:</strong> Puede depender de Dirección, Departamental, División o Comisaría</li>
-                                                <li><strong>Destacamento:</strong> Puede depender de Departamental, División o Comisaría</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -148,6 +148,12 @@
         $(document).ready(function() {
             $('.select2').select2({
                 width: '100%'
+            });
+            $(document).on('select2:open', () => {
+                let select2Field = document.querySelector('.select2-search__field');
+                if (select2Field) {
+                    select2Field.focus();
+                }
             });
 
             // Cuando cambia el tipo de dependencia, cargar los posibles padres

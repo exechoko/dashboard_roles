@@ -15,7 +15,7 @@ class AddParentAndTipoToDestinosTable extends Migration
     {
         Schema::table('destino', function (Blueprint $table) {
             $table->unsignedBigInteger('parent_id')->nullable()->after('id');
-            $table->enum('tipo', ['jefatura', 'direccion', 'departamental', 'division', 'comisaria', 'destacamento', 'seccion'])->nullable()->after('nombre');
+            $table->enum('tipo', ['jefatura', 'subjefatura','direccion', 'departamental', 'division', 'comisaria', 'destacamento', 'seccion'])->nullable()->after('nombre');
 
             $table->foreign('parent_id')->references('id')->on('destino')->nullOnDelete();
         });

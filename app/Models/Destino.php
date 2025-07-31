@@ -42,7 +42,8 @@ class Destino extends Model
     {
         $clases = [
             'jefatura' => 'dark',
-            'direccion' => 'secondary',
+            'subjefatura' => 'secondary',
+            'direccion' => 'light',
             'departamental' => 'primary',
             'division' => 'success',
             'comisaria' => 'warning',
@@ -60,6 +61,7 @@ class Destino extends Model
     {
         $colores = [
             'jefatura' => '#6c757d',
+            'subjefatura' => '#28a745',
             'direccion' => '#6c757d',
             'departamental' => '#007bff',
             'division' => '#28a745',
@@ -132,13 +134,14 @@ class Destino extends Model
             ->orderByRaw("
             CASE tipo
                 WHEN 'jefatura' THEN 1
-                WHEN 'direccion' THEN 2
-                WHEN 'departamental' THEN 3
-                WHEN 'division' THEN 4
-                WHEN 'comisaria' THEN 5
-                WHEN 'seccion' THEN 6
-                WHEN 'destacamento' THEN 7
-                ELSE 8
+                WHEN 'subjefatura' THEN 2
+                WHEN 'direccion' THEN 3
+                WHEN 'departamental' THEN 4
+                WHEN 'division' THEN 5
+                WHEN 'comisaria' THEN 6
+                WHEN 'seccion' THEN 7
+                WHEN 'destacamento' THEN 8
+                ELSE 9
             END
         ")
             ->get()

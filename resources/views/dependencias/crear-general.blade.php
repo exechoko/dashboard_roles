@@ -54,7 +54,8 @@
                                         <div class="card-body">
                                             <ul class="list-unstyled mb-0">
                                                 <li><strong>Jefatura:</strong> No depende de nadie (nivel superior)</li>
-                                                <li><strong>Dirección:</strong> Depende de la Jefatura</li>
+                                                <li><strong>Sub Jefatura:</strong> Puede depender de Jefatura</li>
+                                                <li><strong>Dirección:</strong> Depende de la Jefatura o Sub Jefatura</li>
                                                 <li><strong>Departamental:</strong> Puede depender de Jefatura o Dirección</li>
                                                 <li><strong>División:</strong> Puede depender de Jefatura, Dirección o Departamental</li>
                                                 <li><strong>Comisaría:</strong> Depende de una Departamental</li>
@@ -74,6 +75,7 @@
                                             <label for="tipo">Tipo de Dependencia *</label>
                                             <select name="tipo" id="tipo" class="form-control select2" required>
                                                 <option value="">Seleccionar Tipo</option>
+                                                <option value="subjefatura" {{ old('tipo') == 'subjefatura' ? 'selected' : '' }}>Sub Jefatura</option>
                                                 <option value="direccion" {{ old('tipo') == 'direccion' ? 'selected' : '' }}>Dirección</option>
                                                 <option value="departamental" {{ old('tipo') == 'departamental' ? 'selected' : '' }}>Departamental</option>
                                                 <option value="division" {{ old('tipo') == 'division' ? 'selected' : '' }}>División</option>

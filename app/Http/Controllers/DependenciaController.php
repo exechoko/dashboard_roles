@@ -29,13 +29,14 @@ class DependenciaController extends Controller
             ->orderByRaw("
             CASE tipo
                 WHEN 'jefatura' THEN 1
-                WHEN 'direccion' THEN 2
-                WHEN 'departamental' THEN 3
-                WHEN 'division' THEN 4
-                WHEN 'comisaria' THEN 5
-                WHEN 'seccion' THEN 6
-                WHEN 'destacamento' THEN 7
-                ELSE 8
+                WHEN 'subjefatura' THEN 2
+                WHEN 'direccion' THEN 3
+                WHEN 'departamental' THEN 4
+                WHEN 'division' THEN 5
+                WHEN 'comisaria' THEN 6
+                WHEN 'seccion' THEN 7
+                WHEN 'destacamento' THEN 8
+                ELSE 9
             END
         ")
             ->orderBy('nombre')
@@ -61,7 +62,8 @@ class DependenciaController extends Controller
     {
         $clases = [
             'jefatura' => 'dark',
-            'direccion' => 'secondary',
+            'subjefatura' => 'secondary',
+            'direccion' => 'light',
             'departamental' => 'primary',
             'division' => 'success',
             'comisaria' => 'warning',
@@ -230,7 +232,8 @@ class DependenciaController extends Controller
 
         // Obtener todas las posibles dependencias padre según el tipo
         $tiposPadresValidos = [
-            'direccion' => ['jefatura'],
+            'subjefatura' => ['jefatura'],
+            'direccion' => ['jefatura', 'subjefatura'],
             'departamental' => ['jefatura', 'direccion'],
             'division' => ['jefatura', 'direccion', 'departamental'],
             'comisaria' => ['departamental'],
@@ -393,12 +396,23 @@ class DependenciaController extends Controller
     {
         // Obtener todas las dependencias que pueden ser padres
         $jefatura = Destino::where('tipo', 'jefatura')->first();
+        $subjefatura = Destino::where('tipo', 'subjefatura')->first();
         $direcciones = Destino::where('tipo', 'direccion')->get();
         $departamentales = Destino::where('tipo', 'departamental')->get();
         $divisiones = Destino::where('tipo', 'division')->get();
         $comisarias = Destino::where('tipo', 'comisaria')->get();
 
-        return view('dependencias.crear-general', compact('jefatura', 'direcciones', 'departamentales', 'divisiones', 'comisarias'));
+        return view(
+            'dependencias.crear-general',
+            compact(
+                'jefatura',
+                'subjefatura',
+                'direcciones',
+                'departamentales',
+                'divisiones',
+                'comisarias'
+            )
+        );
     }
 
     /**
@@ -408,7 +422,7 @@ class DependenciaController extends Controller
     {
         $request->validate([
             'nombre' => 'required|string|max:255',
-            'tipo' => 'required|in:direccion,departamental,division,comisaria,seccion,destacamento',
+            'tipo' => 'required|in:subjefatura,direccion,departamental,division,comisaria,seccion,destacamento',
             'parent_id' => 'nullable|exists:destino,id',
             'telefono' => 'nullable|string|max:50',
             'ubicacion' => 'nullable|string|max:255',
@@ -456,6 +470,7 @@ class DependenciaController extends Controller
      */
     private function validarJerarquia($tipo, $parentId)
     {
+
         if (is_null($parentId)) {
             // Solo la jefatura puede no tener padre
             return $tipo === 'jefatura';
@@ -469,7 +484,8 @@ class DependenciaController extends Controller
         // Definir las relaciones jerárquicas válidas
         $jerarquiaValida = [
             'jefatura' => [], // La jefatura no puede tener padre
-            'direccion' => ['jefatura'],
+            'subjefatura' => ['jefatura'],
+            'direccion' => ['jefatura', 'subjefatura'],
             'departamental' => ['jefatura', 'direccion'],
             'division' => ['jefatura', 'direccion', 'departamental'],
             'comisaria' => ['departamental'],
@@ -486,6 +502,7 @@ class DependenciaController extends Controller
     private function formatearNombrePorTipo($nombre, $tipo)
     {
         $prefijos = [
+            'subjefatura' => 'Sub Jefatura',
             'direccion' => 'Dirección',
             'departamental' => 'Departamental',
             'division' => 'División',
@@ -531,7 +548,8 @@ class DependenciaController extends Controller
         $tipo = $request->tipo;
 
         $tiposPadresValidos = [
-            'direccion' => ['jefatura'],
+            'subjefatura' => ['jefatura'],
+            'direccion' => ['jefatura', 'subjefatura'],
             'departamental' => ['jefatura', 'direccion'],
             'division' => ['jefatura', 'direccion', 'departamental'],
             'comisaria' => ['departamental'],

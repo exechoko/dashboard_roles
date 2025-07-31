@@ -31,8 +31,9 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
             'recursos.nombre as recurso', // H
             'destino.nombre as dependencia', // I
             'destino_padre.nombre as dependencia_superior', // J
+            // Datos del histórico
+            'historico.fecha_asignacion', // K
             // Datos adicionales de FlotaGeneral
-            'flota_general.fecha_asignacion', // K
             'flota_general.ticket_per', // L
             // Datos del vehículo (si existe)
             'vehiculos.marca as vehiculo_marca', // M
@@ -47,6 +48,9 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
             ->leftJoin('vehiculos', 'recursos.vehiculo_id', '=', 'vehiculos.id')
             ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
             ->leftJoin('estados', 'equipos.estado_id', '=', 'estados.id')
+            ->leftJoin('historico', 'equipos.id', '=', 'historico.equipo_id')
+            ->where('historico.fecha_asignacion', '!=', null) // Filtrar por fecha de asignación en el histórico
+            ->where('historico.fecha_desasignacion', null) // Asegurarse de que no esté desasignado
             ->get();
 
         return $equipos;

@@ -1,0 +1,438 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\DetalleEntregaEquipo;
+use App\Models\EntregaEquipo;
+use App\Models\FlotaGeneral;
+use Illuminate\Http\Request;
+use PhpOffice\PhpWord\TemplateProcessor;
+
+class EntregasEquiposController extends Controller
+{
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
+    public function index(Request $request)
+    {
+        $query = EntregaEquipo::with(['equipos', 'detalleEntregas']);
+
+        // Aplicar filtros de búsqueda
+        if ($request->filled('tei')) {
+            $query->buscarPorTei($request->tei);
+        }
+
+        if ($request->filled('issi')) {
+            $query->buscarPorIssi($request->issi);
+        }
+
+        if ($request->filled('fecha')) {
+            $query->buscarPorFecha($request->fecha);
+        }
+
+        if ($request->filled('dependencia')) {
+            $query->buscarPorDependencia($request->dependencia);
+        }
+
+        if ($request->filled('numero_acta')) {
+            $query->where('numero_acta', 'LIKE', "%{$request->numero_acta}%");
+        }
+
+        $entregas = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        return view('entregas.entregas-equipos.index', compact('entregas'));
+    }
+
+    public function create()
+    {
+        // Obtener equipos disponibles (no entregados actualmente)
+        $equiposDisponibles = FlotaGeneral::whereDoesntHave('entregasActivas')
+        ->with('equipo')->get();
+
+        //dd($equiposDisponibles);
+        return view('entregas.entregas-equipos.crear', compact('equiposDisponibles'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'fecha_entrega' => 'required|date',
+            'hora_entrega' => 'required',
+            'dependencia' => 'required|string|max:255',
+            'personal_receptor' => 'required|string|max:255',
+            'legajo_receptor' => 'nullable|string|max:50',
+            'motivo_operativo' => 'required|string',
+            'equipos_seleccionados' => 'required|array|min:1',
+            'equipos_seleccionados.*' => 'exists:flota_general,id'
+        ]);
+
+        try {
+            \DB::beginTransaction();
+
+            // Crear la entrega principal
+            $entrega = EntregaEquipo::create([
+                'numero_acta' => EntregaEquipo::generarNumeroActa(),
+                'fecha_entrega' => $request->fecha_entrega,
+                'hora_entrega' => $request->hora_entrega,
+                'dependencia' => $request->dependencia,
+                'personal_receptor' => $request->personal_receptor,
+                'legajo_receptor' => $request->legajo_receptor,
+                'motivo_operativo' => $request->motivo_operativo,
+                'observaciones' => $request->observaciones,
+                'usuario_creador' => auth()->user()->name
+            ]);
+
+            // Crear el detalle de entregas
+            foreach ($request->equipos_seleccionados as $equipoId) {
+                DetalleEntregaEquipo::create([
+                    'entrega_id' => $entrega->id,
+                    'equipo_id' => $equipoId
+                ]);
+
+                // Actualizar el estado del equipo a 'entregado'
+                FlotaGeneral::find($equipoId)->update(['estado' => 'entregado']);
+            }
+
+            \DB::commit();
+
+            return redirect()->route('entrega-equipos.show', $entrega->id)
+                ->with('success', 'Acta de entrega creada exitosamente');
+
+        } catch (\Exception $e) {
+            \DB::rollback();
+            return redirect()->back()
+                ->with('error', 'Error al crear el acta de entrega: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    public function show($id)
+    {
+        $entrega = EntregaEquipo::with(['equipos', 'detalleEntregas.equipo'])->findOrFail($id);
+        return view('entregas.entregas-equipos.show', compact('entrega'));
+    }
+
+    public function edit($id)
+    {
+        $entrega = EntregaEquipo::with('equipos')->findOrFail($id);
+        $equiposDisponibles = FlotaGeneral::whereDoesntHave('entregasActivas')
+            ->orWhereIn('id', $entrega->equipos->pluck('id'))
+            ->get();
+
+        return view('entregas.entregas-equipos.editar', compact('entrega', 'equiposDisponibles'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $entrega = EntregaEquipo::findOrFail($id);
+
+        $request->validate([
+            'fecha_entrega' => 'required|date',
+            'hora_entrega' => 'required',
+            'dependencia' => 'required|string|max:255',
+            'personal_receptor' => 'required|string|max:255',
+            'legajo_receptor' => 'nullable|string|max:50',
+            'motivo_operativo' => 'required|string',
+            'equipos_seleccionados' => 'required|array|min:1',
+            'equipos_seleccionados.*' => 'exists:flota_general,id'
+        ]);
+
+        try {
+            \DB::beginTransaction();
+
+            // Actualizar la entrega principal
+            $entrega->update([
+                'fecha_entrega' => $request->fecha_entrega,
+                'hora_entrega' => $request->hora_entrega,
+                'dependencia' => $request->dependencia,
+                'personal_receptor' => $request->personal_receptor,
+                'legajo_receptor' => $request->legajo_receptor,
+                'motivo_operativo' => $request->motivo_operativo,
+                'observaciones' => $request->observaciones
+            ]);
+
+            // Actualizar equipos: primero liberar los anteriores
+            $equiposAnteriores = $entrega->equipos->pluck('id')->toArray();
+            foreach ($equiposAnteriores as $equipoId) {
+                if (!in_array($equipoId, $request->equipos_seleccionados)) {
+                    FlotaGeneral::find($equipoId)->update(['estado' => 'disponible']);
+                }
+            }
+
+            // Eliminar detalles anteriores y crear nuevos
+            $entrega->detalleEntregas()->delete();
+
+            foreach ($request->equipos_seleccionados as $equipoId) {
+                DetalleEntregaEquipo::create([
+                    'entrega_id' => $entrega->id,
+                    'equipo_id' => $equipoId
+                ]);
+
+                FlotaGeneral::find($equipoId)->update(['estado' => 'entregado']);
+            }
+
+            \DB::commit();
+
+            return redirect()->route('entrega-equipos.show', $entrega->id)
+                ->with('success', 'Acta de entrega actualizada exitosamente');
+
+        } catch (\Exception $e) {
+            \DB::rollback();
+            return redirect()->back()
+                ->with('error', 'Error al actualizar el acta: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    public function generarDocumento($id)
+    {
+        $entrega = EntregaEquipo::with(['equipos', 'detalleEntregas.equipo'])->findOrFail($id);
+
+        // Ruta al template de Word
+        $templatePath = storage_path('app/templates/template_entrega_equipos.docx');
+
+        if (!file_exists($templatePath)) {
+            return redirect()->back()->with('error', 'Template de documento no encontrado');
+        }
+
+        try {
+            $templateProcessor = new TemplateProcessor($templatePath);
+
+            // Reemplazar variables principales
+            $templateProcessor->setValue('DIA', $entrega->fecha_entrega->format('d'));
+            $templateProcessor->setValue('MES', $entrega->fecha_entrega->format('F'));
+            $templateProcessor->setValue('ANIO', $entrega->fecha_entrega->format('Y'));
+            $templateProcessor->setValue('HORA', $entrega->hora_entrega);
+            $templateProcessor->setValue('CANTIDAD_EQUIPOS', $entrega->equipos->count());
+            $templateProcessor->setValue('DEPENDENCIA', strtoupper($entrega->dependencia));
+            $templateProcessor->setValue('MOTIVO', $entrega->motivo_operativo);
+            $templateProcessor->setValue('PERSONAL_RECEPTOR', strtoupper($entrega->personal_receptor));
+            $templateProcessor->setValue('LEGAJO_RECEPTOR', $entrega->legajo_receptor ?? 'N/A');
+            $templateProcessor->setValue('NUMERO_ACTA', $entrega->numero_acta);
+
+            // Crear tabla de equipos
+            $equiposData = [];
+            $contador = 1;
+
+            foreach ($entrega->equipos as $equipo) {
+                $equiposData[] = [
+                    'numero' => $contador++,
+                    'id' => $equipo->id_equipo ?? 'N/A',
+                    'tei' => $equipo->tei ?? 'N/A',
+                    'bateria' => $equipo->numero_bateria ?? 'N/A'
+                ];
+            }
+
+            $templateProcessor->cloneRowAndSetValues('numero', $equiposData);
+
+            // Generar archivo temporal
+            $fileName = 'acta_entrega_' . $entrega->numero_acta . '.docx';
+            $tempPath = storage_path('app/temp/' . $fileName);
+
+            // Crear directorio temp si no existe
+            if (!file_exists(dirname($tempPath))) {
+                mkdir(dirname($tempPath), 0755, true);
+            }
+
+            $templateProcessor->saveAs($tempPath);
+
+            return response()->download($tempPath, $fileName)->deleteFileAfterSend(true);
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error al generar el documento: ' . $e->getMessage());
+        }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $entrega = EntregaEquipo::findOrFail($id);
+
+            \DB::beginTransaction();
+
+            // Liberar equipos antes de eliminar
+            foreach ($entrega->equipos as $equipo) {
+                $equipo->update(['estado' => 'disponible']);
+            }
+
+            $entrega->delete();
+
+            \DB::commit();
+
+            return redirect()->route('entrega-equipos.index')
+                ->with('success', 'Acta de entrega eliminada exitosamente');
+
+        } catch (\Exception $e) {
+            \DB::rollback();
+            return redirect()->back()
+                ->with('error', 'Error al eliminar el acta: ' . $e->getMessage());
+        }
+    }
+
+    // Método para devolver equipos
+    public function devolver(Request $request, $id)
+    {
+        $entrega = EntregaEquipo::findOrFail($id);
+
+        try {
+            \DB::beginTransaction();
+
+            foreach ($entrega->equipos as $equipo) {
+                $equipo->update(['estado' => 'disponible']);
+            }
+
+            $entrega->update([
+                'estado' => 'devuelto',
+                'observaciones' => $entrega->observaciones . '\n\nDevuelto el: ' . now()->format('d/m/Y H:i') . ' por: ' . auth()->user()->name
+            ]);
+
+            \DB::commit();
+
+            return redirect()->back()->with('success', 'Equipos devueltos exitosamente');
+
+        } catch (\Exception $e) {
+            \DB::rollback();
+            return redirect()->back()->with('error', 'Error al devolver equipos: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Buscar equipos disponibles para AJAX
+     */
+    public function buscarEquipos(Request $request)
+    {
+        $query = FlotaGeneral::whereDoesntHave('entregasActivas');
+
+        if ($request->filled('term')) {
+            $term = $request->term;
+            $query->where(function ($q) use ($term) {
+                $q->where('tei', 'LIKE', "%{$term}%")
+                    ->orWhere('issi', 'LIKE', "%{$term}%")
+                    ->orWhere('id_equipo', 'LIKE', "%{$term}%");
+            });
+        }
+
+        $equipos = $query->limit(50)->get();
+
+        return response()->json($equipos->map(function ($equipo) {
+            return [
+                'id' => $equipo->id,
+                'text' => "ID: {$equipo->id_equipo} | TEI: {$equipo->tei} | ISSI: {$equipo->issi}",
+                'tei' => $equipo->tei,
+                'issi' => $equipo->issi,
+                'id_equipo' => $equipo->id_equipo,
+                'numero_bateria' => $equipo->numero_bateria,
+                'estado' => $equipo->estado
+            ];
+        }));
+    }
+
+    /**
+     * Reportar equipos como perdidos
+     */
+    public function reportarPerdido(Request $request, $id)
+    {
+        $entrega = EntregaEquipo::findOrFail($id);
+
+        $request->validate([
+            'motivo_perdida' => 'required|string',
+            'equipos_perdidos' => 'nullable|array',
+            'equipos_perdidos.*' => 'exists:flota_general,id'
+        ]);
+
+        try {
+            \DB::beginTransaction();
+
+            // Si no se especifican equipos, marcar todos como perdidos
+            $equiposPerdidos = $request->equipos_perdidos ?? $entrega->equipos->pluck('id')->toArray();
+
+            foreach ($equiposPerdidos as $equipoId) {
+                FlotaGeneral::find($equipoId)->update(['estado' => 'perdido']);
+            }
+
+            $entrega->update([
+                'estado' => 'perdido',
+                'observaciones' => $entrega->observaciones . "\n\nReportado como perdido el: " .
+                    now()->format('d/m/Y H:i') . " por: " . auth()->user()->name .
+                    "\nMotivo: " . $request->motivo_perdida
+            ]);
+
+            \DB::commit();
+
+            return redirect()->back()->with('success', 'Equipos reportados como perdidos exitosamente');
+
+        } catch (\Exception $e) {
+            \DB::rollback();
+            return redirect()->back()->with('error', 'Error al reportar equipos: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Duplicar una entrega existente
+     */
+    public function duplicar($id)
+    {
+        $entregaOriginal = EntregaEquipo::with('equipos')->findOrFail($id);
+        $equiposDisponibles = FlotaGeneral::whereDoesntHave('entregasActivas')->get();
+
+        return view('entregas.entregas-equipos.crear', [
+            'equiposDisponibles' => $equiposDisponibles,
+            'entregaOriginal' => $entregaOriginal
+        ]);
+    }
+
+    /**
+     * Dashboard de entregas
+     */
+    public function dashboard()
+    {
+        /*$stats = [
+            'total_entregas' => EntregaEquipo::count(),
+            'entregas_activas' => EntregaEquipo::where('estado', 'entregado')->count(),
+            'entregas_devueltas' => EntregaEquipo::where('estado', 'devuelto')->count(),
+            'equipos_perdidos' => EntregaEquipo::where('estado', 'perdido')->count(),
+            'equipos_en_uso' => FlotaGeneral::where('estado', 'entregado')->count(),
+            'equipos_disponibles' => FlotaGeneral::where('estado', 'disponible')->count(),
+        ];
+
+        $entregasRecientes = EntregaEquipo::with(['equipos'])
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+
+        $entregasPorMes = EntregaEquipo::selectRaw('MONTH(created_at) as mes, COUNT(*) as total')
+            ->whereYear('created_at', date('Y'))
+            ->groupBy('mes')
+            ->orderBy('mes')
+            ->get();
+
+        return view('entregas.dashboard', compact('stats', 'entregasRecientes', 'entregasPorMes'));*/
+    }
+
+    /**
+     * Exportar listado
+     */
+    public function exportar($formato, Request $request)
+    {
+        // Implementar exportación según el formato (excel/pdf)
+        // Puedes usar Laravel Excel o DomPDF
+
+        $query = EntregaEquipo::with(['equipos', 'detalleEntregas']);
+
+        // Aplicar los mismos filtros que en index
+        if ($request->filled('tei')) {
+            $query->buscarPorTei($request->tei);
+        }
+        // ... otros filtros
+
+        $entregas = $query->get();
+
+        if ($formato === 'excel') {
+            // return Excel::download(new EntregasExport($entregas), 'entregas.xlsx');
+        } else {
+            // return PDF::loadView('entregas.pdf', compact('entregas'))->download('entregas.pdf');
+        }
+    }
+}

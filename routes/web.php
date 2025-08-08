@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AudioTranscriptionController;
+use App\Http\Controllers\EntregasEquiposController;
 use Illuminate\Support\Facades\Route;
 //agregamos los controladores
 use App\Http\Controllers\HomeController;
@@ -131,6 +132,61 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/get-results', [AudioTranscriptionController::class, 'getResults']);
     Route::get('/get-results-by-filename', [AudioTranscriptionController::class, 'getResultsByFileName']);
     Route::get('/get-historial', [AudioTranscriptionController::class, 'getHistorial'])->name('getHistorial');
+
+    // Rutas principales del CRUD
+    Route::resource('entrega-equipos', EntregasEquiposController::class)->names([
+        'index'   => 'entrega-equipos.index',
+        'create'  => 'entrega-equipos.create',
+        'store'   => 'entrega-equipos.store',
+        'show'    => 'entrega-equipos.show',
+        'edit'    => 'entrega-equipos.edit',
+        'update'  => 'entrega-equipos.update',
+        'destroy' => 'entrega-equipos.destroy'
+    ]);
+    // Rutas adicionales específicas para entregas de equipos
+    Route::prefix('entrega-equipos')->name('entrega-equipos.')->group(function () {
+        // Generar documento Word
+        Route::get('{id}/documento', [EntregasEquiposController::class, 'generarDocumento'])
+            ->name('documento')
+            ->middleware('can:crear-entrega-equipos');
+        // Devolver equipos (cambiar estado a devuelto)
+        Route::patch('{id}/devolver', [EntregasEquiposController::class, 'devolver'])
+            ->name('devolver')
+            ->middleware('can:crear-entrega-equipos');
+        // Reportar equipos como perdidos
+        Route::patch('{id}/reportar-perdido', [EntregasEquiposController::class, 'reportarPerdido'])
+            ->name('reportar-perdido')
+            ->middleware('can:crear-entrega-equipos');
+        // Exportar listado a Excel/PDF
+        Route::get('exportar/{formato}', [EntregasEquiposController::class, 'exportar'])
+            ->name('exportar')
+            ->where('formato', 'excel|pdf')
+            ->middleware('can:crear-entrega-equipos');
+        // Buscar equipos disponibles via AJAX
+        Route::get('buscar-equipos', [EntregasEquiposController::class, 'buscarEquipos'])
+            ->name('buscar-equipos')
+            ->middleware('can:crear-entrega-equipos');
+        // Duplicar una entrega existente
+        Route::post('{id}/duplicar', [EntregasEquiposController::class, 'duplicar'])
+            ->name('duplicar')
+            ->middleware('can:crear-entrega-equipos');
+    });
+    // Dashboard de entregas
+    Route::get('entregas/dashboard', [EntregasEquiposController::class, 'dashboard'])
+        ->name('entregas.dashboard')
+        ->middleware('can:ver-menu-entregas');
+    // Reportes de entregas
+    Route::prefix('entregas/reportes')->name('entregas.reportes.')->group(function () {
+        Route::get('/', [EntregasEquiposController::class, 'reportesIndex'])
+            ->name('index')
+            ->middleware('can:ver-reportes-entregas');
+        Route::get('equipos-entregados', [EntregasEquiposController::class, 'reporteEquiposEntregados'])
+            ->name('equipos-entregados')
+            ->middleware('can:ver-reportes-entregas');
+        Route::get('por-dependencia', [EntregasEquiposController::class, 'reportePorDependencia'])
+            ->name('por-dependencia')
+            ->middleware('can:ver-reportes-entregas');
+    });
 
 
 });

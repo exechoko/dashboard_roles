@@ -55,6 +55,7 @@
                                                         'menu-usuarios',
                                                         'menu-auditoria',
                                                         'menu-cecoco',
+                                                        'menu-entregas',
                                                         'menu-documentacion',
                                                         'menu-transcripcion',
                                                         'menu-transcripcion-aws'
@@ -86,6 +87,10 @@
                                                         'eventos-cecoco',
                                                         'mapa-calor-servicios-cecoco',
                                                         'mapa-cecoco-en-vivo'
+                                                    ],
+                                                    'Entregas' => [
+                                                        'entrega-equipos',
+                                                        'entrega-bodycams'
                                                     ],
                                                     'Operaciones' => [
                                                         'buscar-moviles-parados',

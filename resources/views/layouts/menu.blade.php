@@ -94,6 +94,30 @@
     </li>
 @endcan
 
+@can('ver-menu-entregas')
+    <li
+        class="dropdown {{ request()->is('entrega-equipos*') ? 'active' : '' }} {{ request()->is('entrega-bodycams*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-file-signature"></i><span>Entregas</span>
+        </a>
+        <ul class="dropdown-menu">
+            @can('ver-entrega-equipos')
+                <li class="{{ request()->is('entrega-equipos*') ? 'active' : '' }}">
+                    <a class="nav-link" href="/entrega-equipos">
+                        <i class="fas fa-satellite-dish"></i><span>Equipos</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-entrega-bodycams')
+                <li class="{{ request()->is('entrega-bodycams*') ? 'active' : '' }}">
+                    <a class="nav-link" href="/entrega-bodycams">
+                        <i class="fas fa-mobile"></i><span>Bodycams</span>
+                    </a>
+                </li>
+            @endcan
+        </ul>
+    </li>
+@endcan
 
 <!--li class="{{ request()->is('accesorios*') ? 'active' : '' }}">
     <a class="nav-link" href="/accesorios">

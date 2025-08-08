@@ -18,36 +18,49 @@ class FlotaGeneral extends Model
         'observaciones'
     ];
 
-    public function equipo(){
+    public function equipo()
+    {
         return $this->belongsTo(Equipo::class);
     }
 
-    public function recurso(){
+    public function recurso()
+    {
         return $this->belongsTo(Recurso::class);
     }
 
-    public function destino(){
+    public function destino()
+    {
         return $this->belongsTo(Destino::class);
     }
 
-    public function historico(){
+    public function historico()
+    {
         return $this->belongsTo(Historico::class);
     }
 
-    public function ultimoLugar(){
+    public function ultimoLugar()
+    {
         $hist = Historico::where('equipo_id', $this->equipo_id)->orderBy('created_at', 'desc')->first();
-        if(!is_null($hist)){
+        if (!is_null($hist)) {
             return $hist->destino->nombre . ' - ' . $hist->destino->dependeDe();
         }
         return null;
     }
 
-    public function ultimoMovimiento(){
+    public function ultimoMovimiento()
+    {
         $hist = Historico::where('equipo_id', $this->equipo_id)->orderBy('fecha_asignacion', 'desc')->first();
         return $hist ? $hist : null;
     }
 
-    public function auditoria(){
+    public function auditoria()
+    {
         return $this->hasMany(Auditoria::class);
+    }
+
+    public function entregasActivas()
+    {
+        return $this->belongsToMany(EntregaEquipo::class, 'detalle_entregas_equipos', 'equipo_id', 'entrega_id')
+            ->where('estado', 'entregado');
     }
 }

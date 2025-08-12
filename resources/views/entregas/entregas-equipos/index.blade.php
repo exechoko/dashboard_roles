@@ -5,7 +5,10 @@
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h1>Entregas de Equipos</h1>
+            <h1>Entregas de Equipos<br>
+                <small>Listado de entregas de equipos de mano (HT) para diferentes acontecimientos/eventos</small>
+            </h1>
+
         </div>
 
         <div class="section-body">

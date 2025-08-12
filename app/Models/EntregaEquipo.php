@@ -56,28 +56,47 @@ class EntregaEquipo extends Model
         return $year . '-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
     }
 
-    // Scope para búsquedas
+    /**
+     * Scope para buscar por TEI
+     */
     public function scopeBuscarPorTei($query, $tei)
     {
-        return $query->whereHas('equipos', function($q) use ($tei) {
+        return $query->whereHas('equipos.equipo', function ($q) use ($tei) {
             $q->where('tei', 'LIKE', "%{$tei}%");
         });
     }
 
+    /**
+     * Scope para buscar por ISSI
+     */
     public function scopeBuscarPorIssi($query, $issi)
     {
-        return $query->whereHas('equipos', function($q) use ($issi) {
+        return $query->whereHas('equipos.equipo', function ($q) use ($issi) {
             $q->where('issi', 'LIKE', "%{$issi}%");
         });
     }
 
+    /**
+     * Scope para buscar por fecha
+     */
     public function scopeBuscarPorFecha($query, $fecha)
     {
         return $query->whereDate('fecha_entrega', $fecha);
     }
 
+    /**
+     * Scope para buscar por dependencia
+     */
     public function scopeBuscarPorDependencia($query, $dependencia)
     {
         return $query->where('dependencia', 'LIKE', "%{$dependencia}%");
+    }
+
+    /**
+     * Scope para buscar por número de acta (ID)
+     */
+    public function scopeBuscarPorNumeroActa($query, $numeroActa)
+    {
+        return $query->where('id', $numeroActa);
     }
 }

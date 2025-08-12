@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\DetalleEntregaEquipo;
 use App\Models\EntregaEquipo;
 use App\Models\FlotaGeneral;
+use DB;
 use Illuminate\Http\Request;
+use Log;
 use PhpOffice\PhpWord\TemplateProcessor;
 
 class EntregasEquiposController extends Controller
@@ -36,10 +38,6 @@ class EntregasEquiposController extends Controller
             $query->buscarPorDependencia($request->dependencia);
         }
 
-        if ($request->filled('numero_acta')) {
-            $query->where('numero_acta', 'LIKE', "%{$request->numero_acta}%");
-        }
-
         $entregas = $query->orderBy('created_at', 'desc')->paginate(15);
 
         return view('entregas.entregas-equipos.index', compact('entregas'));
@@ -49,7 +47,7 @@ class EntregasEquiposController extends Controller
     {
         // Obtener equipos disponibles (no entregados actualmente)
         $equiposDisponibles = FlotaGeneral::whereDoesntHave('entregasActivas')
-        ->with('equipo')->get();
+            ->with('equipo')->get();
 
         //dd($equiposDisponibles);
         return view('entregas.entregas-equipos.crear', compact('equiposDisponibles'));
@@ -57,6 +55,7 @@ class EntregasEquiposController extends Controller
 
     public function store(Request $request)
     {
+        //dd($request->all());
         $request->validate([
             'fecha_entrega' => 'required|date',
             'hora_entrega' => 'required',
@@ -69,11 +68,11 @@ class EntregasEquiposController extends Controller
         ]);
 
         try {
-            \DB::beginTransaction();
+            DB::beginTransaction();
 
             // Crear la entrega principal
             $entrega = EntregaEquipo::create([
-                'numero_acta' => EntregaEquipo::generarNumeroActa(),
+                //'numero_acta' => EntregaEquipo::generarNumeroActa(),
                 'fecha_entrega' => $request->fecha_entrega,
                 'hora_entrega' => $request->hora_entrega,
                 'dependencia' => $request->dependencia,
@@ -88,20 +87,20 @@ class EntregasEquiposController extends Controller
             foreach ($request->equipos_seleccionados as $equipoId) {
                 DetalleEntregaEquipo::create([
                     'entrega_id' => $entrega->id,
-                    'equipo_id' => $equipoId
+                    'equipo_id' => $equipoId //Es la id de la flota
                 ]);
 
                 // Actualizar el estado del equipo a 'entregado'
                 FlotaGeneral::find($equipoId)->update(['estado' => 'entregado']);
             }
 
-            \DB::commit();
+            DB::commit();
 
             return redirect()->route('entrega-equipos.show', $entrega->id)
                 ->with('success', 'Acta de entrega creada exitosamente');
 
         } catch (\Exception $e) {
-            \DB::rollback();
+            DB::rollback();
             return redirect()->back()
                 ->with('error', 'Error al crear el acta de entrega: ' . $e->getMessage())
                 ->withInput();
@@ -140,7 +139,7 @@ class EntregasEquiposController extends Controller
         ]);
 
         try {
-            \DB::beginTransaction();
+            DB::beginTransaction();
 
             // Actualizar la entrega principal
             $entrega->update([
@@ -173,13 +172,13 @@ class EntregasEquiposController extends Controller
                 FlotaGeneral::find($equipoId)->update(['estado' => 'entregado']);
             }
 
-            \DB::commit();
+            DB::commit();
 
             return redirect()->route('entrega-equipos.show', $entrega->id)
                 ->with('success', 'Acta de entrega actualizada exitosamente');
 
         } catch (\Exception $e) {
-            \DB::rollback();
+            DB::rollback();
             return redirect()->back()
                 ->with('error', 'Error al actualizar el acta: ' . $e->getMessage())
                 ->withInput();
@@ -200,35 +199,64 @@ class EntregasEquiposController extends Controller
         try {
             $templateProcessor = new TemplateProcessor($templatePath);
 
-            // Reemplazar variables principales
+            // Reemplazar variables principales del encabezado
             $templateProcessor->setValue('DIA', $entrega->fecha_entrega->format('d'));
-            $templateProcessor->setValue('MES', $entrega->fecha_entrega->format('F'));
+
+            // Convertir mes a español
+            $meses = [
+                'January' => 'Enero',
+                'February' => 'Febrero',
+                'March' => 'Marzo',
+                'April' => 'Abril',
+                'May' => 'Mayo',
+                'June' => 'Junio',
+                'July' => 'Julio',
+                'August' => 'Agosto',
+                'September' => 'Septiembre',
+                'October' => 'Octubre',
+                'November' => 'Noviembre',
+                'December' => 'Diciembre'
+            ];
+            $mesIngles = $entrega->fecha_entrega->format('F');
+            $mesEspanol = $meses[$mesIngles] ?? $mesIngles;
+
+            $templateProcessor->setValue('MES', $mesEspanol);
             $templateProcessor->setValue('ANIO', $entrega->fecha_entrega->format('Y'));
             $templateProcessor->setValue('HORA', $entrega->hora_entrega);
-            $templateProcessor->setValue('CANTIDAD_EQUIPOS', $entrega->equipos->count());
-            $templateProcessor->setValue('DEPENDENCIA', strtoupper($entrega->dependencia));
-            $templateProcessor->setValue('MOTIVO', $entrega->motivo_operativo);
-            $templateProcessor->setValue('PERSONAL_RECEPTOR', strtoupper($entrega->personal_receptor));
-            $templateProcessor->setValue('LEGAJO_RECEPTOR', $entrega->legajo_receptor ?? 'N/A');
-            $templateProcessor->setValue('NUMERO_ACTA', $entrega->numero_acta);
 
-            // Crear tabla de equipos
+            // Variables de cantidad y descripción
+            $cantidadEquipos = $entrega->equipos->count();
+            $templateProcessor->setValue('CANTIDAD_EQUIPOS', $cantidadEquipos);
+            $templateProcessor->setValue('CANTIDAD_EQUIPOS_LETRAS', $this->numeroALetras($cantidadEquipos));
+
+            // Información del operativo
+            $templateProcessor->setValue('DEPENDENCIA', strtoupper($entrega->dependencia ?? 'DIRECCIÓN INSTITUTOS POLICIALES'));
+            $templateProcessor->setValue('MOTIVO', $entrega->motivo_operativo ?? 'Operativo dispuesto por la Superioridad');
+
+            // Información del receptor
+            $templateProcessor->setValue('PERSONAL_RECEPTOR', strtoupper($entrega->personal_receptor ?? ''));
+            $templateProcessor->setValue('LEGAJO_RECEPTOR', $entrega->legajo_receptor ?? '');
+
+            // Preparar datos de la tabla de equipos
             $equiposData = [];
             $contador = 1;
 
             foreach ($entrega->equipos as $equipo) {
                 $equiposData[] = [
-                    'numero' => $contador++,
-                    'id' => $equipo->id_equipo ?? 'N/A',
-                    'tei' => $equipo->tei ?? 'N/A',
-                    'bateria' => $equipo->numero_bateria ?? 'N/A'
+                    'NUMERO' => $contador++,
+                    'ID' => $equipo->equipo->nombre_issi ?? 'N/A',
+                    'TEI' => $equipo->equipo->tei ?? 'N/A',
+                    'BATERIA' => $equipo->equipo->numero_bateria ?? 'N/A'
                 ];
             }
 
-            $templateProcessor->cloneRowAndSetValues('numero', $equiposData);
+            // Clonar filas de la tabla
+            if (!empty($equiposData)) {
+                $templateProcessor->cloneRowAndSetValues('NUMERO', $equiposData);
+            }
 
             // Generar archivo temporal
-            $fileName = 'acta_entrega_' . $entrega->numero_acta . '.docx';
+            $fileName = 'recibo_entrega_equipos_' . $entrega->id . '_' . date('Y-m-d_H-i-s') . '.docx';
             $tempPath = storage_path('app/temp/' . $fileName);
 
             // Crear directorio temp si no existe
@@ -238,11 +266,50 @@ class EntregasEquiposController extends Controller
 
             $templateProcessor->saveAs($tempPath);
 
+            // Registrar la generación del documento (opcional)
+            Log::info("Documento generado: {$fileName} para entrega ID: {$id}");
+
             return response()->download($tempPath, $fileName)->deleteFileAfterSend(true);
 
         } catch (\Exception $e) {
+            Log::error("Error al generar documento: " . $e->getMessage());
             return redirect()->back()->with('error', 'Error al generar el documento: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Convierte un número a su representación en letras
+     */
+    private function numeroALetras($numero)
+    {
+        $numeros = [
+            1 => 'UNO',
+            2 => 'DOS',
+            3 => 'TRES',
+            4 => 'CUATRO',
+            5 => 'CINCO',
+            6 => 'SEIS',
+            7 => 'SIETE',
+            8 => 'OCHO',
+            9 => 'NUEVE',
+            10 => 'DIEZ',
+            11 => 'ONCE',
+            12 => 'DOCE',
+            13 => 'TRECE',
+            14 => 'CATORCE',
+            15 => 'QUINCE',
+            16 => 'DIECISÉIS',
+            17 => 'DIECISIETE',
+            18 => 'DIECIOCHO',
+            19 => 'DIECINUEVE',
+            20 => 'VEINTE'
+        ];
+
+        if ($numero <= 20) {
+            return $numeros[$numero] ?? (string) $numero;
+        }
+
+        return (string) $numero; // Para números mayores a 20, devolver el número
     }
 
     public function destroy($id)
@@ -250,7 +317,7 @@ class EntregasEquiposController extends Controller
         try {
             $entrega = EntregaEquipo::findOrFail($id);
 
-            \DB::beginTransaction();
+            DB::beginTransaction();
 
             // Liberar equipos antes de eliminar
             foreach ($entrega->equipos as $equipo) {
@@ -259,13 +326,13 @@ class EntregasEquiposController extends Controller
 
             $entrega->delete();
 
-            \DB::commit();
+            DB::commit();
 
             return redirect()->route('entrega-equipos.index')
                 ->with('success', 'Acta de entrega eliminada exitosamente');
 
         } catch (\Exception $e) {
-            \DB::rollback();
+            DB::rollback();
             return redirect()->back()
                 ->with('error', 'Error al eliminar el acta: ' . $e->getMessage());
         }
@@ -277,7 +344,7 @@ class EntregasEquiposController extends Controller
         $entrega = EntregaEquipo::findOrFail($id);
 
         try {
-            \DB::beginTransaction();
+            DB::beginTransaction();
 
             foreach ($entrega->equipos as $equipo) {
                 $equipo->update(['estado' => 'disponible']);
@@ -288,12 +355,12 @@ class EntregasEquiposController extends Controller
                 'observaciones' => $entrega->observaciones . '\n\nDevuelto el: ' . now()->format('d/m/Y H:i') . ' por: ' . auth()->user()->name
             ]);
 
-            \DB::commit();
+            DB::commit();
 
             return redirect()->back()->with('success', 'Equipos devueltos exitosamente');
 
         } catch (\Exception $e) {
-            \DB::rollback();
+            DB::rollback();
             return redirect()->back()->with('error', 'Error al devolver equipos: ' . $e->getMessage());
         }
     }
@@ -343,7 +410,7 @@ class EntregasEquiposController extends Controller
         ]);
 
         try {
-            \DB::beginTransaction();
+            DB::beginTransaction();
 
             // Si no se especifican equipos, marcar todos como perdidos
             $equiposPerdidos = $request->equipos_perdidos ?? $entrega->equipos->pluck('id')->toArray();
@@ -359,12 +426,12 @@ class EntregasEquiposController extends Controller
                     "\nMotivo: " . $request->motivo_perdida
             ]);
 
-            \DB::commit();
+            DB::commit();
 
             return redirect()->back()->with('success', 'Equipos reportados como perdidos exitosamente');
 
         } catch (\Exception $e) {
-            \DB::rollback();
+            DB::rollback();
             return redirect()->back()->with('error', 'Error al reportar equipos: ' . $e->getMessage());
         }
     }

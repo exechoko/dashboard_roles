@@ -233,6 +233,15 @@
                             </div>
                         </div>
                     </div>
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h4><i class="fas fa-list-check"></i> Equipos Seleccionados</h4>
+                        </div>
+                        <div class="card-body" id="equiposSeleccionadosContainer">
+                            <p class="text-muted">Aún no hay equipos seleccionados.</p>
+                            <ul class="list-group" id="equiposSeleccionadosList"></ul>
+                        </div>
+                    </div>
 
                     {{-- Botones de acción --}}
                     <div class="row">
@@ -269,6 +278,47 @@
 @push('scripts')
     <script>
         $(document).ready(function() {
+            $(document).on('click', '.quitar-equipo', function() {
+                const id = $(this).data('id');
+                const checkbox = $(`#equipo_${id}`);
+                checkbox.prop('checked', false).trigger('change');
+            });
+
+            function renderEquiposSeleccionados() {
+                console.log('Renderizando equipos seleccionados...');
+                const lista = $('#equiposSeleccionadosList');
+                lista.empty();
+
+                const seleccionados = $('input[name="equipos_seleccionados[]"]:checked');
+
+                if (seleccionados.length === 0) {
+                    $('#equiposSeleccionadosContainer p').show();
+                    return;
+                }
+
+                $('#equiposSeleccionadosContainer p').hide();
+
+                seleccionados.each(function() {
+                    const $checkbox = $(this);
+                    const equipoItem = $checkbox.closest('.equipo-item');
+
+                    const tei = equipoItem.data('tei') || 'TEI N/A';
+                    const issi = equipoItem.data('issi') || 'ISSI N/A';
+                    const id = equipoItem.data('id') || 'ID N/A';
+
+                    const li = $(`
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span><strong>${tei}</strong> - ${issi}</span>
+                <button class="btn btn-sm btn-danger quitar-equipo" data-id="${$checkbox.val()}">
+                    <i class="fas fa-times"></i>
+                </button>
+            </li>
+        `);
+                    lista.append(li);
+                });
+            }
+
+
             // Auto-hide alerts after 5 seconds
             setTimeout(function() {
                 $('.alert').fadeOut('slow');
@@ -281,7 +331,7 @@
             // Inicializar datos de equipos desde el DOM
             function inicializarEquipos() {
                 equiposDisponibles = [];
-                $('.equipo-item').each(function () {
+                $('.equipo-item').each(function() {
                     const $item = $(this);
                     const equipoData = {
                         id: $item.data('id'),
@@ -383,12 +433,14 @@
             // Actualizar contador cuando cambie la selección
             $(document).on('change', 'input[name="equipos_seleccionados[]"]', function() {
                 const $equipoItem = $(this).closest('.equipo-item');
+                console.log('Checkbox cambiado:', $equipoItem.data('id'));
                 if ($(this).is(':checked')) {
                     $equipoItem.addClass('selected');
                 } else {
                     $equipoItem.removeClass('selected');
                 }
                 actualizarContador();
+                renderEquiposSeleccionados(); // 👈 Agregado aquí
             });
 
             // Click en equipo-item para seleccionar
@@ -416,10 +468,11 @@
             });
 
             // Seleccionar equipos visibles
-            $('#seleccionarVisibles').on('click', function () {
+            $('#seleccionarVisibles').on('click', function() {
                 // Usar equiposFiltrados en lugar de todos los visibles
                 equiposFiltrados.forEach(equipo => {
-                    equipo.element.find('input[type="checkbox"]').prop('checked', true).trigger('change');
+                    equipo.element.find('input[type="checkbox"]').prop('checked', true).trigger(
+                        'change');
                 });
             });
 

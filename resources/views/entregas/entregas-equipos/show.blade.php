@@ -2,20 +2,8 @@
 
 @extends('layouts.app')
 
-@section('title', 'Detalle de Entrega - Acta ' . $entrega->numero_acta)
-
 @section('content')
-<div class="main-content">
     <section class="section">
-        <div class="section-header">
-            <h1>Detalle de Entrega</h1>
-            <div class="section-header-breadcrumb">
-                <div class="breadcrumb-item"><a href="#">Dashboard</a></div>
-                <div class="breadcrumb-item"><a href="{{ route('entrega-equipos.index') }}">Entregas de Equipos</a></div>
-                <div class="breadcrumb-item active">Detalle</div>
-            </div>
-        </div>
-
         <div class="section-body">
             @if(session('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -40,7 +28,7 @@
                 <div class="col-lg-8">
                     <div class="card">
                         <div class="card-header">
-                            <h4>Información del Acta N° {{ $entrega->numero_acta }}</h4>
+                            <h4>Información del Acta N° {{ $entrega->id }}</h4>
                             <div class="card-header-action">
                                 @switch($entrega->estado)
                                     @case('entregado')
@@ -152,12 +140,12 @@
                                         @foreach($entrega->equipos as $index => $equipo)
                                             <tr>
                                                 <td>{{ $index + 1 }}</td>
-                                                <td>{{ $equipo->id_equipo ?? 'N/A' }}</td>
-                                                <td>{{ $equipo->tei ?? 'N/A' }}</td>
-                                                <td>{{ $equipo->issi ?? 'N/A' }}</td>
-                                                <td>{{ $equipo->numero_bateria ?? 'N/A' }}</td>
+                                                <td>{{ $equipo->equipo->id ?? 'N/A' }}</td>
+                                                <td>{{ $equipo->equipo->tei ?? 'N/A' }}</td>
+                                                <td>{{ $equipo->equipo->issi ?? 'N/A' }}</td>
+                                                <td>{{ $equipo->equipo->numero_bateria ?? 'N/A' }}</td>
                                                 <td>
-                                                    @switch($equipo->estado)
+                                                    @switch($equipo->equipo->estado->nombre)
                                                         @case('disponible')
                                                             <span class="badge badge-success">Disponible</span>
                                                             @break
@@ -174,7 +162,7 @@
                                                             <span class="badge badge-dark">Baja</span>
                                                             @break
                                                         @default
-                                                            <span class="badge badge-secondary">{{ $equipo->estado }}</span>
+                                                            <span class="badge badge-info">{{ $equipo->equipo->estado->nombre }}</span>
                                                     @endswitch
                                                 </td>
                                             </tr>
@@ -294,7 +282,6 @@
             </div>
         </div>
     </section>
-</div>
 @endsection
 
 @push('scripts')

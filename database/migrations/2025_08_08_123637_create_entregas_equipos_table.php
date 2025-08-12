@@ -25,6 +25,7 @@ class CreateEntregasEquiposTable extends Migration
             $table->text('motivo_operativo');
             $table->enum('estado', ['entregado', 'devuelto', 'perdido'])->default('entregado');
             $table->text('observaciones')->nullable();
+            $table->json('rutas_imagenes')->nullable();
             $table->string('usuario_creador');
             $table->timestamps();
         });

@@ -97,7 +97,7 @@
                                     <tbody>
                                         @forelse($entregas as $entrega)
                                             <tr>
-                                                <td>{{ $entrega->numero_acta }}</td>
+                                                <td>{{ $entrega->id }}</td>
                                                 <td>{{ $entrega->fecha_entrega->format('d/m/Y') }}</td>
                                                 <td>{{ $entrega->hora_entrega }}</td>
                                                 <td>{{ $entrega->dependencia }}</td>
@@ -121,31 +121,23 @@
                                                     @endswitch
                                                 </td>
                                                 <td>
-                                                    <div class="dropdown">
-                                                        <a href="#" data-toggle="dropdown" class="btn btn-outline-primary btn-sm">
-                                                            <i class="fas fa-ellipsis-v"></i>
-                                                        </a>
-                                                        <div class="dropdown-menu">
-                                                            @can('ver-entrega-equipos')
-                                                                <a href="{{ route('entrega-equipos.show', $entrega->id) }}"
-                                                                   class="dropdown-item">
-                                                                    <i class="fas fa-eye"></i> Ver Detalle
-                                                                </a>
-                                                            @endcan
+                                                    <div class="d-flex">
+                                                        @can('ver-entrega-equipos')
+                                                                <a href="{{ route('entrega-equipos.show', $entrega->id) }}" class="btn btn-warning">
+                                                                    <i class="fas fa-eye"></i></a>
+                                                        @endcan
 
                                                             @can('editar-entrega-equipos')
                                                                 @if($entrega->estado === 'entregado')
                                                                     <a href="{{ route('entrega-equipos.edit', $entrega->id) }}"
-                                                                       class="dropdown-item">
-                                                                        <i class="fas fa-edit"></i> Editar
-                                                                    </a>
+                                                                       class="btn btn-info">
+                                                                        <i class="fas fa-edit"></i></a>
                                                                 @endif
                                                             @endcan
 
                                                             <a href="{{ route('entrega-equipos.documento', $entrega->id) }}"
-                                                               class="dropdown-item" target="_blank">
-                                                                <i class="fas fa-file-word"></i> Generar Documento
-                                                            </a>
+                                                               class="btn btn-secondary" target="_blank">
+                                                                <i class="fas fa-file-word"></i></a>
 
                                                             @can('devolver-entrega-equipos')
                                                                 @if($entrega->estado === 'entregado')
@@ -153,10 +145,9 @@
                                                                           method="POST" style="display: inline;">
                                                                         @csrf
                                                                         @method('PATCH')
-                                                                        <button type="submit" class="dropdown-item"
+                                                                        <button type="submit" class="btn btn-success"
                                                                                 onclick="return confirm('¿Está seguro de marcar como devueltos todos los equipos?')">
-                                                                            <i class="fas fa-undo"></i> Devolver Equipos
-                                                                        </button>
+                                                                            <i class="fas fa-undo"></i></button>
                                                                     </form>
                                                                 @endif
                                                             @endcan
@@ -167,13 +158,12 @@
                                                                       method="POST" style="display: inline;">
                                                                     @csrf
                                                                     @method('DELETE')
-                                                                    <button type="submit" class="dropdown-item text-danger"
+                                                                    <button type="submit" class="btn btn-danger"
                                                                             onclick="return confirm('¿Está seguro de eliminar esta entrega?')">
-                                                                        <i class="fas fa-trash"></i> Eliminar
+                                                                        <i class="fas fa-trash"></i>
                                                                     </button>
                                                                 </form>
                                                             @endcan
-                                                        </div>
                                                     </div>
                                                 </td>
                                             </tr>

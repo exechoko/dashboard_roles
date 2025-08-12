@@ -128,10 +128,26 @@ class EntregasEquiposController extends Controller
     public function edit($id)
     {
         $entrega = EntregaEquipo::with('equipos')->findOrFail($id);
-        $equiposDisponibles = FlotaGeneral::whereDoesntHave('entregasActivas')
-            ->orWhereIn('id', $entrega->equipos->pluck('id'))
+        // Obtener equipos portátiles disponibles (no entregados actualmente)
+        // o que ya están asignados a esta entrega para poder editarlos
+        $equiposDisponibles = FlotaGeneral::where(function ($query) use ($entrega) {
+            // Equipos disponibles que son portátiles
+            $query->whereDoesntHave('entregasActivas')
+                ->whereHas('equipo.tipo_terminal.tipo_uso', function ($subQuery) {
+                    $subQuery->where('uso', 'portatil');
+                });
+        })
+            ->orWhere(function ($query) use ($entrega) {
+                // O equipos que ya están en esta entrega (para poder editarlos)
+                $query->whereIn('id', $entrega->equipos->pluck('id'))
+                    ->whereHas('equipo.tipo_terminal.tipo_uso', function ($subQuery) {
+                    $subQuery->where('uso', 'portatil');
+                });
+            })
+            ->with('equipo')
             ->get();
-            //Destinos
+
+        //Destinos
         $destinos = Destino::all();
 
         return view(

@@ -184,11 +184,10 @@
                                         <div class="search-container">
                                             <input type="text" class="form-control" id="buscarEquipo"
                                                 placeholder="TEI, ISSI, ID o cualquier texto...">
-                                            <i class="fas fa-search search-icon"></i>
                                         </div>
                                     </div>
 
-                                    <div class="btn-group btn-group-sm d-flex mb-3">
+                                    <!--div class="btn-group btn-group-sm d-flex mb-3">
                                         <button type="button" class="btn btn-outline-primary flex-fill"
                                             id="seleccionarTodos">
                                             <i class="fas fa-check-square"></i> Todos
@@ -201,7 +200,7 @@
                                             id="seleccionarVisibles">
                                             <i class="fas fa-eye"></i> Visibles
                                         </button>
-                                    </div>
+                                    </div-->
 
                                     <div class="contador-seleccionados">
                                         <span id="resumenSeleccion">Selecciona equipos para continuar</span>

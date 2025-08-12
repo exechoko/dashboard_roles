@@ -45,9 +45,13 @@ class EntregasEquiposController extends Controller
 
     public function create()
     {
-        // Obtener equipos disponibles (no entregados actualmente)
+        // Obtener equipos portatiles disponibles (no entregados actualmente)
         $equiposDisponibles = FlotaGeneral::whereDoesntHave('entregasActivas')
-            ->with('equipo')->get();
+            ->whereHas('equipo.tipo_terminal.tipo_uso', function ($query) {
+                $query->where('uso', 'portatil');
+            })
+            ->with('equipo')
+            ->get();
 
         //dd($equiposDisponibles);
         return view('entregas.entregas-equipos.crear', compact('equiposDisponibles'));
@@ -222,19 +226,28 @@ class EntregasEquiposController extends Controller
 
             $templateProcessor->setValue('MES', $mesEspanol);
             $templateProcessor->setValue('ANIO', $entrega->fecha_entrega->format('Y'));
-            $templateProcessor->setValue('HORA', $entrega->hora_entrega);
+            $templateProcessor->setValue('HORA', \Carbon\Carbon::parse($entrega->hora_entrega)->format('H:i'));
 
             // Variables de cantidad y descripción
             $cantidadEquipos = $entrega->equipos->count();
             $templateProcessor->setValue('CANTIDAD_EQUIPOS', $cantidadEquipos);
             $templateProcessor->setValue('CANTIDAD_EQUIPOS_LETRAS', $this->numeroALetras($cantidadEquipos));
 
+            $primerEquipo = $entrega->equipos->first();
+            if ($primerEquipo) {
+                $templateProcessor->setValue('MARCA', $primerEquipo->equipo->tipo_terminal->marca ?? 'N/A');
+                $templateProcessor->setValue('MODELO', $primerEquipo->equipo->tipo_terminal->modelo ?? 'N/A');
+            } else {
+                $templateProcessor->setValue('MARCA', 'N/A');
+                $templateProcessor->setValue('MODELO', 'N/A');
+            }
+
             // Información del operativo
-            $templateProcessor->setValue('DEPENDENCIA', strtoupper($entrega->dependencia ?? 'DIRECCIÓN INSTITUTOS POLICIALES'));
+            $templateProcessor->setValue('DEPENDENCIA', $entrega->dependencia ?? 'DIRECCIÓN INSTITUTOS POLICIALES');
             $templateProcessor->setValue('MOTIVO', $entrega->motivo_operativo ?? 'Operativo dispuesto por la Superioridad');
 
             // Información del receptor
-            $templateProcessor->setValue('PERSONAL_RECEPTOR', strtoupper($entrega->personal_receptor ?? ''));
+            $templateProcessor->setValue('PERSONAL_RECEPTOR', $entrega->personal_receptor ?? '');
             $templateProcessor->setValue('LEGAJO_RECEPTOR', $entrega->legajo_receptor ?? '');
 
             // Preparar datos de la tabla de equipos

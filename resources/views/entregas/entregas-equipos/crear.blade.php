@@ -201,6 +201,8 @@
                                                                 <div><strong>Batería:</strong>
                                                                     {{ $flota->equipo->numero_bateria }}</div>
                                                             @endif
+                                                            <div><strong>MARCA:</strong> {{ $flota->equipo->tipo_terminal->marca ?? 'N/A' }} <strong>Modelo:</strong> {{ $flota->equipo->tipo_terminal->modelo ?? '' }}
+                                                            </div>
                                                             <div class="mt-1">
                                                                 <span
                                                                     class="badge badge-success badge-sm">Disponible</span>

@@ -104,7 +104,7 @@
             @can('ver-entrega-equipos')
                 <li class="{{ request()->is('entrega-equipos*') ? 'active' : '' }}">
                     <a class="nav-link" href="/entrega-equipos">
-                        <i class="fas fa-satellite-dish"></i><span>Equipos</span>
+                        <i class="fas fa-satellite-dish"></i><span>Equipos de mano</span>
                     </a>
                 </li>
             @endcan

@@ -33,7 +33,7 @@ class EquipoController extends Controller
                     ->orWhere('provisto', 'LIKE', '%'.$texto.'%')
                     ->orWhere('propietario', 'LIKE', '%'.$texto.'%')
                     ->orderBy('tei','asc')
-                    ->paginate(10);
+                    ->paginate(40);
 
         //$equipos = Equipo::paginate(5);
         return view('equipos.index', compact('equipos', 'texto'));
@@ -152,15 +152,7 @@ class EquipoController extends Controller
             $equipo->issi = $request->issi;
             $equipo->tei = $request->tei;
             $equipo->nombre_issi = $request->nombre_issi;
-            /*$equipo->gps = (isset($request->gps)) ? true : false;
-            $equipo->frente_remoto = (isset($request->frente_remoto)) ? true : false;
-            $equipo->rf = (isset($request->rf)) ? true : false;
-            $equipo->kit_inst = (isset($request->kit_inst)) ? true : false;
-            $equipo->operativo = (isset($request->operativo)) ? true : false;
-            $equipo->desc_gps = $request->desc_gps;
-            $equipo->desc_frente = $request->desc_frente;
-            $equipo->desc_rf = $request->desc_rf;
-            $equipo->desc_kit_inst = $request->desc_kit_inst;*/
+            $equipo->numero_bateria = $request->numero_bateria ?? null;
             $equipo->provisto = $request->provisto;
             $equipo->propietario = $request->propietario;
             $equipo->con_garantia = (isset($request->con_garantia)) ? true : false;

@@ -11,6 +11,7 @@ class Equipo extends Model
     protected $fillable = [
         'issi',
         'tei',
+        'numero_bateria',
         'tipo_terminal_id',
         'estado_id',
         'fecha_estado',

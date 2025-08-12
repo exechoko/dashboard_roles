@@ -131,8 +131,17 @@ class EntregasEquiposController extends Controller
         $equiposDisponibles = FlotaGeneral::whereDoesntHave('entregasActivas')
             ->orWhereIn('id', $entrega->equipos->pluck('id'))
             ->get();
+            //Destinos
+        $destinos = Destino::all();
 
-        return view('entregas.entregas-equipos.editar', compact('entrega', 'equiposDisponibles'));
+        return view(
+            'entregas.entregas-equipos.editar',
+            compact(
+                'entrega',
+                'equiposDisponibles',
+                'destinos'
+            )
+        );
     }
 
     public function update(Request $request, $id)
@@ -145,6 +154,8 @@ class EntregasEquiposController extends Controller
             'dependencia' => 'required|string|max:255',
             'personal_receptor' => 'required|string|max:255',
             'legajo_receptor' => 'nullable|string|max:50',
+            'personal_entrega' => 'required|string|max:255',
+            'legajo_entrega' => 'nullable|string|max:50',
             'motivo_operativo' => 'required|string',
             'equipos_seleccionados' => 'required|array|min:1',
             'equipos_seleccionados.*' => 'exists:flota_general,id'
@@ -160,6 +171,8 @@ class EntregasEquiposController extends Controller
                 'dependencia' => $request->dependencia,
                 'personal_receptor' => $request->personal_receptor,
                 'legajo_receptor' => $request->legajo_receptor,
+                'personal_entrega' => $request->personal_entrega,
+                'legajo_entrega' => $request->legajo_entrega,
                 'motivo_operativo' => $request->motivo_operativo,
                 'observaciones' => $request->observaciones
             ]);
@@ -257,6 +270,10 @@ class EntregasEquiposController extends Controller
             // Información del receptor
             $templateProcessor->setValue('PERSONAL_RECEPTOR', $entrega->personal_receptor ?? '');
             $templateProcessor->setValue('LEGAJO_RECEPTOR', $entrega->legajo_receptor ?? '');
+
+            // Información del entregador
+            $templateProcessor->setValue('PERSONAL_ENTREGA', $entrega->personal_entrega ?? '');
+            $templateProcessor->setValue('LEGAJO_ENTREGA', $entrega->legajo_entrega ?? '');
 
             // Preparar datos de la tabla de equipos
             $equiposData = [];

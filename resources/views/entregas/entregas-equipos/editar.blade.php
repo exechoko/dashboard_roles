@@ -69,21 +69,24 @@
                                         </div>
                                     </div>
                                     <div class="row">
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="form-group">
-                                                <label for="dependencia">Dependencia <span
-                                                        class="text-danger">*</span></label>
-                                                <input type="text"
-                                                    class="form-control @error('dependencia') is-invalid @enderror"
-                                                    id="dependencia" name="dependencia"
-                                                    value="{{ old('dependencia', $entrega->dependencia) }}"
-                                                    maxlength="255" required placeholder="Ej: Comisaría 1ra">
+                                                <label for="dependencia">Dependencia <span class="text-danger">*</span></label>
+                                                <select class="form-control select2 @error('dependencia') is-invalid @enderror" id="dependencia" name="dependencia"
+                                                    required>
+                                                    <option value="">Seleccione una dependencia</option>
+                                                    @foreach($destinos as $destino)
+                                                        <option value="{{ $destino->nombre }}" {{ old('dependencia', $entrega->dependencia ?? '') == $destino->nombre ? 'selected' : '' }}>
+                                                            {{ $destino->nombre }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
                                                 @error('dependencia')
                                                     <div class="invalid-feedback">{{ $message }}</div>
                                                 @enderror
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="form-group">
                                                 <label for="personal_receptor">Personal Receptor <span
                                                         class="text-danger">*</span></label>
@@ -97,10 +100,7 @@
                                                 @enderror
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="form-group">
                                                 <label for="legajo_receptor">Legajo Receptor</label>
                                                 <input type="text"
@@ -109,6 +109,36 @@
                                                     value="{{ old('legajo_receptor', $entrega->legajo_receptor) }}"
                                                     maxlength="50" placeholder="Número de legajo (opcional)">
                                                 @error('legajo_receptor')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="personal_entrega">Personal que entregó <span
+                                                        class="text-danger">*</span></label>
+                                                <input type="text"
+                                                    class="form-control @error('personal_entrega') is-invalid @enderror"
+                                                    id="personal_entrega" name="personal_entrega"
+                                                    value="{{ old('personal_entrega', $entrega->personal_entrega) }}"
+                                                    maxlength="255" required placeholder="Nombre del personal que entregó">
+                                                @error('personal_entrega')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label for="legajo_entrega">Legajo que entregó</label>
+                                                <input type="text"
+                                                    class="form-control @error('legajo_entrega') is-invalid @enderror"
+                                                    id="legajo_entrega" name="legajo_entrega"
+                                                    value="{{ old('legajo_entrega', $entrega->legajo_entrega) }}"
+                                                    maxlength="50" placeholder="Número de legajo (opcional)">
+                                                @error('legajo_entrega')
                                                     <div class="invalid-feedback">{{ $message }}</div>
                                                 @enderror
                                             </div>

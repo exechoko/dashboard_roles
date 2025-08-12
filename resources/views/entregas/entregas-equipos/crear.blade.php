@@ -68,7 +68,6 @@
                                             </div>
                                         </div>
                                     </div>
-
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group">
@@ -192,7 +191,7 @@
                                                         {{ in_array($flota->id, old('equipos_seleccionados', [])) ? 'checked' : '' }}>
                                                     <label class="custom-control-label" for="equipo_{{ $flota->id }}">
                                                         <div class="equipo-info">
-                                                            <div><strong>ID:</strong> {{ $flota->equipo->id ?? 'N/A' }}
+                                                            <div><strong>ID:</strong> {{ $flota->equipo->nombre_issi ?? 'N/A' }}
                                                             </div>
                                                             <div><strong>TEI:</strong> {{ $flota->equipo->tei ?? 'N/A' }}
                                                             </div>

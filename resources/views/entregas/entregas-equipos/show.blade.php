@@ -140,7 +140,7 @@
                                         @foreach($entrega->equipos as $index => $equipo)
                                             <tr>
                                                 <td>{{ $index + 1 }}</td>
-                                                <td>{{ $equipo->equipo->id ?? 'N/A' }}</td>
+                                                <td>{{ $equipo->equipo->nombre_issi ?? 'N/A' }}</td>
                                                 <td>{{ $equipo->equipo->tei ?? 'N/A' }}</td>
                                                 <td>{{ $equipo->equipo->issi ?? 'N/A' }}</td>
                                                 <td>{{ $equipo->equipo->numero_bateria ?? 'N/A' }}</td>

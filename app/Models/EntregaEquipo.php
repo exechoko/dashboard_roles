@@ -16,6 +16,8 @@ class EntregaEquipo extends Model
         'dependencia',
         'personal_receptor',
         'legajo_receptor',
+        'personal_entrega',
+        'legajo_entrega',
         'motivo_operativo',
         'estado',
         'observaciones',

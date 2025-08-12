@@ -20,6 +20,8 @@ class CreateEntregasEquiposTable extends Migration
             $table->string('dependencia');
             $table->string('personal_receptor');
             $table->string('legajo_receptor')->nullable();
+            $table->string('personal_entrega');
+            $table->string('legajo_entrega')->nullable();
             $table->text('motivo_operativo');
             $table->enum('estado', ['entregado', 'devuelto', 'perdido'])->default('entregado');
             $table->text('observaciones')->nullable();

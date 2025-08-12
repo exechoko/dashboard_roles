@@ -69,21 +69,24 @@
                                         </div>
                                     </div>
                                     <div class="row">
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="form-group">
-                                                <label for="dependencia">Dependencia <span
-                                                        class="text-danger">*</span></label>
-                                                <input type="text"
-                                                    class="form-control @error('dependencia') is-invalid @enderror"
-                                                    id="dependencia" name="dependencia"
-                                                    value="{{ old('dependencia', isset($entregaOriginal) ? $entregaOriginal->dependencia : '') }}"
-                                                    maxlength="255" required placeholder="Ej: Comisaría 1ra">
+                                                <label for="dependencia">Dependencia <span class="text-danger">*</span></label>
+                                                <select class="form-control select2 @error('dependencia') is-invalid @enderror" id="dependencia" name="dependencia"
+                                                    required>
+                                                    <option value="">Seleccione una dependencia</option>
+                                                    @foreach($destinos as $destino)
+                                                        <option value="{{ $destino->nombre }}" {{ old('dependencia', $entrega->dependencia ?? '') == $destino->nombre ? 'selected' : '' }}>
+                                                            {{ $destino->nombre }}
+                                                        </option>
+                                                    @endforeach
+                                                </select>
                                                 @error('dependencia')
                                                     <div class="invalid-feedback">{{ $message }}</div>
                                                 @enderror
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="form-group">
                                                 <label for="personal_receptor">Personal Receptor <span
                                                         class="text-danger">*</span></label>
@@ -97,10 +100,7 @@
                                                 @enderror
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="form-group">
                                                 <label for="legajo_receptor">Legajo Receptor</label>
                                                 <input type="text"
@@ -109,6 +109,36 @@
                                                     value="{{ old('legajo_receptor', isset($entregaOriginal) ? $entregaOriginal->legajo_receptor : '') }}"
                                                     maxlength="50" placeholder="Número de legajo (opcional)">
                                                 @error('legajo_receptor')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="personal_entrega">Personal que entrega <span
+                                                        class="text-danger">*</span></label>
+                                                <input type="text"
+                                                    class="form-control @error('personal_entrega') is-invalid @enderror"
+                                                    id="personal_entrega" name="personal_entrega"
+                                                    value="{{ old('personal_entrega', isset($entregaOriginal) ? $entregaOriginal->personal_entrega : '') }}"
+                                                    maxlength="255" required placeholder="Nombre del personal que entrega">
+                                                @error('personal_entrega')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="legajo_entrega">Legajo del personal que entrega</label>
+                                                <input type="text"
+                                                    class="form-control @error('legajo_entrega') is-invalid @enderror"
+                                                    id="legajo_entrega" name="legajo_entrega"
+                                                    value="{{ old('legajo_entrega', isset($entregaOriginal) ? $entregaOriginal->legajo_entrega : '') }}"
+                                                    maxlength="50" placeholder="Número de legajo (opcional)">
+                                                @error('legajo_entrega')
                                                     <div class="invalid-feedback">{{ $message }}</div>
                                                 @enderror
                                             </div>
@@ -141,7 +171,7 @@
                         <div class="col-lg-4">
                             <div class="card">
                                 <div class="card-header">
-                                    <h4><i class="fas fa-radio"></i> Equipos Disponibles</h4>
+                                    <h4>Equipos HT Disponibles</h4>
                                     <div class="card-header-action">
                                         <span class="badge badge-success"
                                             id="totalDisponibles">{{ $equiposDisponibles->count() }} disponibles</span>
@@ -154,11 +184,10 @@
                                         <div class="search-container">
                                             <input type="text" class="form-control" id="buscarEquipo"
                                                 placeholder="TEI, ISSI, ID o cualquier texto...">
-                                            <i class="fas fa-search search-icon"></i>
                                         </div>
                                     </div>
 
-                                    <div class="btn-group btn-group-sm d-flex mb-3">
+                                    <!--div class="btn-group btn-group-sm d-flex mb-3">
                                         <button type="button" class="btn btn-outline-primary flex-fill"
                                             id="seleccionarTodos">
                                             <i class="fas fa-check-square"></i> Todos
@@ -171,7 +200,7 @@
                                             id="seleccionarVisibles">
                                             <i class="fas fa-eye"></i> Visibles
                                         </button>
-                                    </div>
+                                    </div-->
 
                                     <div class="contador-seleccionados">
                                         <span id="resumenSeleccion">Selecciona equipos para continuar</span>
@@ -279,6 +308,16 @@
 @push('scripts')
     <script>
         $(document).ready(function() {
+            $('.select2').select2({
+                width: '100%'
+            });
+            // Forzar el foco en el campo de búsqueda cuando se abre el Select2
+            $(document).on('select2:open', () => {
+                let select2Field = document.querySelector('.select2-search__field');
+                if (select2Field) {
+                    select2Field.focus();
+                }
+            });
             $(document).on('click', '.quitar-equipo', function() {
                 const id = $(this).data('id');
                 const checkbox = $(`#equipo_${id}`);

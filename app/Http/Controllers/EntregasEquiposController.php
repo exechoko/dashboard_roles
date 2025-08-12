@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Destino;
 use App\Models\DetalleEntregaEquipo;
 use App\Models\EntregaEquipo;
 use App\Models\FlotaGeneral;
@@ -53,8 +54,11 @@ class EntregasEquiposController extends Controller
             ->with('equipo')
             ->get();
 
+        //Destinos
+        $destinos = Destino::all();
+
         //dd($equiposDisponibles);
-        return view('entregas.entregas-equipos.crear', compact('equiposDisponibles'));
+        return view('entregas.entregas-equipos.crear', compact('equiposDisponibles', 'destinos'));
     }
 
     public function store(Request $request)
@@ -66,6 +70,8 @@ class EntregasEquiposController extends Controller
             'dependencia' => 'required|string|max:255',
             'personal_receptor' => 'required|string|max:255',
             'legajo_receptor' => 'nullable|string|max:50',
+            'personal_entrega' => 'required|string|max:255',
+            'legajo_entrega' => 'nullable|string|max:50',
             'motivo_operativo' => 'required|string',
             'equipos_seleccionados' => 'required|array|min:1',
             'equipos_seleccionados.*' => 'exists:flota_general,id'
@@ -82,6 +88,8 @@ class EntregasEquiposController extends Controller
                 'dependencia' => $request->dependencia,
                 'personal_receptor' => $request->personal_receptor,
                 'legajo_receptor' => $request->legajo_receptor,
+                'personal_entrega' => $request->personal_entrega,
+                'legajo_entrega' => $request->legajo_entrega,
                 'motivo_operativo' => $request->motivo_operativo,
                 'observaciones' => $request->observaciones,
                 'usuario_creador' => auth()->user()->name

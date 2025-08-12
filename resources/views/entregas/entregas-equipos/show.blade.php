@@ -45,13 +45,13 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label><strong>Fecha de Entrega:</strong></label>
                                         <p class="form-control-static">{{ $entrega->fecha_entrega->format('d/m/Y') }}</p>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label><strong>Hora de Entrega:</strong></label>
                                         <p class="form-control-static">{{ $entrega->hora_entrega }}</p>
@@ -60,31 +60,43 @@
                             </div>
 
                             <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label><strong>Dependencia:</strong></label>
                                         <p class="form-control-static">{{ $entrega->dependencia }}</p>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label><strong>Personal Receptor:</strong></label>
                                         <p class="form-control-static">{{ $entrega->personal_receptor }}</p>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6">
+                                <div class="col-md-4">
                                     <div class="form-group">
                                         <label><strong>Legajo Receptor:</strong></label>
                                         <p class="form-control-static">{{ $entrega->legajo_receptor ?? 'N/A' }}</p>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4">
                                     <div class="form-group">
-                                        <label><strong>Usuario Creador:</strong></label>
-                                        <p class="form-control-static">{{ $entrega->usuario_creador }}</p>
+                                        <label><strong>Entregó:</strong></label>
+                                        <p class="form-control-static">{{ $entrega->personal_entrega ?? 'N/A' }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label><strong>Legajo Entrega:</strong></label>
+                                        <p class="form-control-static">{{ $entrega->legajo_entrega ?? 'N/A' }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label><strong>Usuario sistema:</strong></label>
+                                        <p class="form-control-static "><span class="badge badge-info badge-lg">{{ $entrega->usuario_creador}}</span></p>
                                     </div>
                                 </div>
                             </div>

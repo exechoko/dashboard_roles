@@ -85,6 +85,7 @@
                                             <th>Hora</th>
                                             <th>Dependencia</th>
                                             <th>Personal Receptor</th>
+                                            <th>Entregó</th>
                                             <th>Cant. Equipos</th>
                                             <th>Estado</th>
                                             <th>Acciones</th>
@@ -98,6 +99,7 @@
                                                 <td>{{ $entrega->hora_entrega }}</td>
                                                 <td>{{ $entrega->dependencia }}</td>
                                                 <td>{{ $entrega->personal_receptor }}</td>
+                                                <td>{{ $entrega->personal_entrega }}</td>
                                                 <td>
                                                     <span class="badge badge-info">
                                                         {{ $entrega->equipos->count() }} equipos

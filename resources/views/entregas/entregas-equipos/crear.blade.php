@@ -232,7 +232,7 @@
                                             <div class="equipo-item" data-id="{{ $flota->id }}"
                                                 data-tei="{{ $flota->equipo->tei ?? '' }}"
                                                 data-issi="{{ $flota->equipo->issi ?? '' }}"
-                                                data-id_equipo="{{ $flota->equipo->id_equipo ?? '' }}"
+                                                data-id_equipo="{{ $flota->equipo->nombre_issi ?? '' }}"
                                                 data-numero_bateria="{{ $flota->equipo->numero_bateria ?? '' }}">
                                                 <div class="custom-control custom-checkbox">
                                                     <input type="checkbox" class="custom-control-input"
@@ -411,6 +411,7 @@
                 equiposDisponibles = [];
                 $('.equipo-item').each(function() {
                     const $item = $(this);
+                    console.log('item equipo:', $item);
                     const equipoData = {
                         id: $item.data('id'),
                         id_equipo: $item.data('id_equipo'),

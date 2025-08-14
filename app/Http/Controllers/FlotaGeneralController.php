@@ -118,10 +118,11 @@ class FlotaGeneralController extends Controller
     {
         $query = FlotaGeneral::query()
             ->with([
-                'equipo:id,tei,issi,tipo_terminal_id',
+                'equipo:id,tei,issi,nombre_issi,tipo_terminal_id',
                 'equipo.tipo_terminal:id,marca,modelo,imagen,tipo_uso_id',
                 'equipo.tipo_terminal.tipo_uso:id,uso',
-                'recurso:id,nombre',
+                'recurso:id,nombre,vehiculo_id',
+                'recurso.vehiculo:id,tipo_vehiculo,dominio,marca,modelo',
                 'destino:id,nombre,parent_id',  // Agregamos parent_id
                 'destino.padre:id,nombre',      // Agregamos la relación padre
                 'equipo.estado:id,nombre'

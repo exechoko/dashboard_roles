@@ -21,6 +21,7 @@ class EntregaEquipo extends Model
         'motivo_operativo',
         'estado',
         'observaciones',
+        'rutas_imagenes',
         'usuario_creador'
     ];
 

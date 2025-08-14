@@ -28,7 +28,7 @@
                     </div>
                 </div>
             @else
-                <form action="{{ route('entrega-equipos.update', $entrega->id) }}" method="POST" id="editarEntregaForm">
+                <form action="{{ route('entrega-equipos.update', $entrega->id) }}" method="POST" id="editarEntregaForm" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
 
@@ -269,6 +269,33 @@
                         </div>
                     </div>
 
+                    {{-- Imágenes y archivos adjuntos --}}
+                    <div class="container col-xs-12 col-sm-12 col-md-12">
+                        <div class="row">
+                            <!-- Archivo adjunto -->
+                            <div class="col-xs-12 col-sm-12 col-md-6">
+                                <div class="form-group">
+                                    <label for="archivo">Archivo adjunto</label>
+                                    <input type="file" name="archivo" class="form-control"
+                                        accept=".pdf,.doc,.docx,.xlsx,.zip,.rar">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección de imágenes -->
+                        <div class="row">
+                            <div class="col-xs-12 col-sm-12 col-md-12">
+                                <h6><i class="fas fa-camera"></i> Imágenes (máximo 3)</h6>
+                                <div id="imageContainer">
+                                    <!-- Los campos de imagen se generarán aquí -->
+                                </div>
+                                <button type="button" id="addImageBtn" class="btn btn-success btn-sm">
+                                    <i class="fas fa-plus"></i> Agregar imagen
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     {{-- Equipos Seleccionados --}}
                     <div class="card mt-3">
                         <div class="card-header">
@@ -314,6 +341,95 @@
 @push('scripts')
     <script>
         $(document).ready(function() {
+            //Carga de imagenes y archivo adjuntoslet
+            let imageCount = 0;
+            const maxImages = 3;
+
+            // Función para agregar campo de imagen
+            function addImageField() {
+                if (imageCount >= maxImages) {
+                    alert('Máximo 3 imágenes permitidas');
+                    return;
+                }
+
+                imageCount++;
+                const imageHtml = `
+                    <div class="image-upload-item" id="imageItem${imageCount}">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <label for="imagen${imageCount}">Imagen ${imageCount}</label>
+                                <input type="file" name="imagen${imageCount}" class="form-control image-input"
+                                    accept="image/jpeg,image/png,image/jpg,image/gif"
+                                    onchange="previewImage(this, ${imageCount})">
+                                <small class="text-muted">JPG, PNG, GIF (máx. 2MB)</small>
+                            </div>
+                            <div class="col-md-4">
+                                <div id="preview${imageCount}"></div>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="remove-image-btn" onclick="removeImageField(${imageCount})">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                $('#imageContainer').append(imageHtml);
+                updateAddButton();
+            }
+
+            // Función para eliminar campo de imagen
+            window.removeImageField = function(id) {
+                $(`#imageItem${id}`).remove();
+                imageCount--;
+                updateAddButton();
+            }
+
+            // Función para previsualizar imagen
+            window.previewImage = function(input, id) {
+                const preview = $(`#preview${id}`);
+                preview.empty();
+
+                if (input.files && input.files[0]) {
+                    const file = input.files[0];
+
+                    // Validar tamaño (2MB)
+                    if (file.size > 2 * 1024 * 1024) {
+                        alert('La imagen es muy grande. Máximo 2MB permitido.');
+                        input.value = '';
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.html(`
+                            <img src="${e.target.result}" class="image-preview" alt="Preview">
+                            <br><small class="text-success">✓ Imagen cargada</small>
+                        `);
+                    }
+                    reader.readAsDataURL(file);
+                }
+            }
+
+            // Actualizar estado del botón agregar
+            function updateAddButton() {
+                const btn = $('#addImageBtn');
+                if (imageCount >= maxImages) {
+                    btn.prop('disabled', true).html('<i class="fas fa-check"></i> Máximo alcanzado');
+                } else {
+                    btn.prop('disabled', false).html('<i class="fas fa-plus"></i> Agregar imagen');
+                }
+            }
+
+            // Event listener para agregar imagen
+            $('#addImageBtn').on('click', addImageField);
+
+            // Agregar una imagen por defecto si no hay ninguna
+            if ($('.image-upload-item').length === 0) {
+                addImageField();
+            }
+
             $(document).on('click', '.quitar-equipo', function() {
                 const id = $(this).data('id');
                 const checkbox = $(`#equipo_${id}`);
@@ -808,6 +924,36 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        .image-upload-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #f9f9f9;
+        }
+
+        .image-preview {
+            max-width: 150px;
+            max-height: 150px;
+            border-radius: 8px;
+            margin-top: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .remove-image-btn {
+            background: #dc3545;
+            border: none;
+            color: white;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .remove-image-btn:hover {
+            background: #c82333;
         }
     </style>
 @endpush

@@ -7,6 +7,7 @@ use App\Models\DetalleEntregaEquipo;
 use App\Models\EntregaEquipo;
 use App\Models\FlotaGeneral;
 use DB;
+use Exception;
 use Illuminate\Http\Request;
 use Log;
 use PhpOffice\PhpWord\TemplateProcessor;
@@ -74,8 +75,44 @@ class EntregasEquiposController extends Controller
             'legajo_entrega' => 'nullable|string|max:50',
             'motivo_operativo' => 'required|string',
             'equipos_seleccionados' => 'required|array|min:1',
-            'equipos_seleccionados.*' => 'exists:flota_general,id'
+            'equipos_seleccionados.*' => 'exists:flota_general,id',
+            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048'
         ]);
+
+        // Obtener las rutas de imágenes existentes
+        $rutasImagenesExistentes = [];
+        $rutasImagenes = $rutasImagenesExistentes; // Empezar con las existentes
+
+        // Procesar las nuevas imágenes
+        $hayNuevasImagenes = false;
+        for ($i = 1; $i <= 3; $i++) {
+            $inputName = 'imagen' . $i;
+            if ($request->hasFile($inputName)) {
+                $rutaImagen = $request->file($inputName)->store('', 'anexos');
+                $rutasImagenes[] = 'anexos/' . $rutaImagen;
+                $hayNuevasImagenes = true;
+                Log::info("Nueva imagen {$i} subida: anexos/{$rutaImagen}");
+            }
+        }
+
+        // Manejo del archivo adjunto
+        if ($request->hasFile('archivo')) {
+            $rutaArchivo = $request->file('archivo')->store('', 'anexos');
+            $rutasImagenes[] = 'anexos/' . $rutaArchivo;
+            Log::info("Nuevo archivo adjunto subido: anexos/{$rutaArchivo}");
+        }
+
+        // Si no hay nuevas imágenes, mantener las existentes
+        if (empty($rutasImagenes) && !empty($rutasImagenesExistentes)) {
+            $rutasImagenes = $rutasImagenesExistentes;
+        } else if (!empty($rutasImagenes)) {
+            // Si hay nuevas imágenes, solo usar las nuevas (reemplazar todas)
+            // Si quieres mantener las existentes Y agregar las nuevas, usa:
+            // $rutasImagenes = array_merge($rutasImagenesExistentes, $rutasImagenes);
+        }
 
         try {
             DB::beginTransaction();
@@ -92,6 +129,7 @@ class EntregasEquiposController extends Controller
                 'legajo_entrega' => $request->legajo_entrega,
                 'motivo_operativo' => $request->motivo_operativo,
                 'observaciones' => $request->observaciones,
+                'rutas_imagenes' => json_encode($rutasImagenes),
                 'usuario_creador' => auth()->user()->name
             ]);
 
@@ -111,7 +149,8 @@ class EntregasEquiposController extends Controller
             return redirect()->route('entrega-equipos.show', $entrega->id)
                 ->with('success', 'Acta de entrega creada exitosamente');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
+            dd($e->getMessage());
             DB::rollback();
             return redirect()->back()
                 ->with('error', 'Error al crear el acta de entrega: ' . $e->getMessage())
@@ -174,14 +213,50 @@ class EntregasEquiposController extends Controller
             'legajo_entrega' => 'nullable|string|max:50',
             'motivo_operativo' => 'required|string',
             'equipos_seleccionados' => 'required|array|min:1',
-            'equipos_seleccionados.*' => 'exists:flota_general,id'
+            'equipos_seleccionados.*' => 'exists:flota_general,id',
+            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048'
         ]);
+
+        // Obtener las rutas de imágenes existentes
+        $rutasImagenesExistentes = json_decode($entrega->rutas_imagenes, true) ?? [];
+        $rutasImagenes = $rutasImagenesExistentes; // Empezar con las existentes
+
+        // Procesar las nuevas imágenes
+        $hayNuevasImagenes = false;
+        for ($i = 1; $i <= 3; $i++) {
+            $inputName = 'imagen' . $i;
+            if ($request->hasFile($inputName)) {
+                $rutaImagen = $request->file($inputName)->store('', 'anexos');
+                $rutasImagenes[] = 'anexos/' . $rutaImagen;
+                $hayNuevasImagenes = true;
+                Log::info("Nueva imagen {$i} subida: anexos/{$rutaImagen}");
+            }
+        }
+
+        // Manejo del archivo adjunto
+        if ($request->hasFile('archivo')) {
+            $rutaArchivo = $request->file('archivo')->store('', 'anexos');
+            $rutasImagenes[] = 'anexos/' . $rutaArchivo;
+            Log::info("Nuevo archivo adjunto subido: anexos/{$rutaArchivo}");
+        }
+
+        // Si no hay nuevas imágenes, mantener las existentes
+        if (empty($rutasImagenes) && !empty($rutasImagenesExistentes)) {
+            $rutasImagenes = $rutasImagenesExistentes;
+        } else if (!empty($rutasImagenes)) {
+            // Si hay nuevas imágenes, solo usar las nuevas (reemplazar todas)
+            // Si quieres mantener las existentes Y agregar las nuevas, usa:
+            // $rutasImagenes = array_merge($rutasImagenesExistentes, $rutasImagenes);
+        }
 
         try {
             DB::beginTransaction();
 
             // Actualizar la entrega principal
-            $entrega->update([
+            $datosActualizacion = [
                 'fecha_entrega' => $request->fecha_entrega,
                 'hora_entrega' => $request->hora_entrega,
                 'dependencia' => $request->dependencia,
@@ -190,8 +265,15 @@ class EntregasEquiposController extends Controller
                 'personal_entrega' => $request->personal_entrega,
                 'legajo_entrega' => $request->legajo_entrega,
                 'motivo_operativo' => $request->motivo_operativo,
-                'observaciones' => $request->observaciones
-            ]);
+                'observaciones' => $request->observaciones,
+                'rutas_imagenes' => json_encode($rutasImagenes)
+            ];
+
+            $entrega->update($datosActualizacion);
+
+            Log::info("Entrega {$id} actualizada. Imágenes existentes: " . count($rutasImagenesExistentes) .
+                ", Nuevas imágenes: " . ($hayNuevasImagenes ? 'Sí' : 'No') .
+                ", Total rutas: " . count($rutasImagenes));
 
             // Actualizar equipos: primero liberar los anteriores
             $equiposAnteriores = $entrega->equipos->pluck('id')->toArray();
@@ -218,8 +300,11 @@ class EntregasEquiposController extends Controller
             return redirect()->route('entrega-equipos.show', $entrega->id)
                 ->with('success', 'Acta de entrega actualizada exitosamente');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
+            Log::error('Error al actualizar entrega: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+
             return redirect()->back()
                 ->with('error', 'Error al actualizar el acta: ' . $e->getMessage())
                 ->withInput();

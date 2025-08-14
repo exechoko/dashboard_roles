@@ -130,6 +130,141 @@
                         </div>
                     </div>
 
+                    {{-- Vista de Imágenes y Archivos --}}
+                    @if($entrega->rutas_imagenes)
+                        @php
+                            $archivos = json_decode($entrega->rutas_imagenes, true) ?? [];
+                        @endphp
+
+                        @if(count($archivos) > 0)
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4><i class="fas fa-camera"></i> Imágenes y Archivos Adjuntos ({{ count($archivos) }})</h4>
+                                    <div class="card-header-action">
+                                        <small class="text-muted">Haz clic para ver en tamaño completo</small>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    {{-- Si hay solo un archivo, mostrarlo grande --}}
+                                    @if(count($archivos) == 1)
+                                        @php
+                                            $ruta = $archivos[0];
+                                            $esImagen = preg_match('/\.(jpg|jpeg|png|gif|bmp|webp)$/i', $ruta);
+                                            $nombreArchivo = basename($ruta);
+                                            $extension = pathinfo($ruta, PATHINFO_EXTENSION);
+                                        @endphp
+
+                                        <div class="d-flex justify-content-center align-items-center" style="min-height: 300px;">
+                                            @if($esImagen)
+                                                {{-- Imagen única grande --}}
+                                                <div class="image-container text-center">
+                                                    <a href="{{ asset($ruta) }}" target="_blank">
+                                                        <img src="{{ asset($ruta) }}" alt="Imagen"
+                                                            style="max-height: 400px; max-width: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); cursor: pointer;">
+                                                    </a>
+                                                    <div class="mt-3">
+                                                        <h6 class="text-muted">{{ $nombreArchivo }}</h6>
+                                                        <a href="{{ asset($ruta) }}" target="_blank" class="btn btn-primary btn-sm">
+                                                            <i class="fas fa-external-link-alt"></i> Ver en tamaño completo
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            @else
+                                                {{-- Archivo único --}}
+                                                <div class="file-container text-center">
+                                                    <div class="file-icon mb-3">
+                                                        @if(strpos($ruta, '.pdf') !== false)
+                                                            <i class="fas fa-file-pdf fa-5x text-danger"></i>
+                                                        @elseif(strpos($ruta, '.doc') !== false || strpos($ruta, '.docx') !== false)
+                                                            <i class="fas fa-file-word fa-5x text-primary"></i>
+                                                        @elseif(strpos($ruta, '.xlsx') !== false || strpos($ruta, '.xls') !== false)
+                                                            <i class="fas fa-file-excel fa-5x text-success"></i>
+                                                        @elseif(strpos($ruta, '.zip') !== false || strpos($ruta, '.rar') !== false)
+                                                            <i class="fas fa-file-archive fa-5x text-warning"></i>
+                                                        @else
+                                                            <i class="fas fa-file fa-5x text-secondary"></i>
+                                                        @endif
+                                                    </div>
+                                                    <h5 class="mb-3">{{ $nombreArchivo }}</h5>
+                                                    <a href="{{ asset($ruta) }}" target="_blank" class="btn btn-success btn-lg">
+                                                        <i class="fas fa-download"></i> Descargar/Ver Archivo
+                                                    </a>
+                                                    <div class="mt-2">
+                                                        <span class="badge badge-info">{{ strtoupper($extension) }}</span>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @else
+                                        {{-- Múltiples archivos - Grid style como en el histórico --}}
+                                        <div class="files-grid">
+                                            <div class="row">
+                                                @foreach($archivos as $index => $ruta)
+                                                    @php
+                                                        $esImagen = preg_match('/\.(jpg|jpeg|png|gif|bmp|webp)$/i', $ruta);
+                                                        $nombreArchivo = basename($ruta);
+                                                        $extension = pathinfo($ruta, PATHINFO_EXTENSION);
+                                                    @endphp
+
+                                                    <div class="col-md-3 col-sm-4 col-6 mb-4">
+                                                        <div class="file-item text-center">
+                                                            @if($esImagen)
+                                                                {{-- Imagen --}}
+                                                                <div class="image-thumbnail">
+                                                                    <a href="{{ asset($ruta) }}" target="_blank">
+                                                                        <img src="{{ asset($ruta) }}" alt="Imagen {{ $index + 1 }}"
+                                                                            class="img-thumbnail"
+                                                                            style="width: 100%; height: 150px; object-fit: cover; cursor: pointer;">
+                                                                    </a>
+                                                                </div>
+                                                            @else
+                                                                {{-- Archivo --}}
+                                                                <div class="file-icon-container" style="height: 150px; display: flex; align-items: center; justify-content: center; border: 1px solid #dee2e6; border-radius: 8px; background-color: #f8f9fa;">
+                                                                    <a href="{{ asset($ruta) }}" target="_blank" style="text-decoration: none;">
+                                                                        @if(strpos($ruta, '.pdf') !== false)
+                                                                            <i class="fas fa-file-pdf" style="font-size: 48px; color: #e74c3c;" title="PDF"></i>
+                                                                        @elseif(strpos($ruta, '.doc') !== false || strpos($ruta, '.docx') !== false)
+                                                                            <i class="fas fa-file-word" style="font-size: 48px; color: #007aff;" title="Word Document"></i>
+                                                                        @elseif(strpos($ruta, '.xlsx') !== false || strpos($ruta, '.xls') !== false)
+                                                                            <i class="fas fa-file-excel" style="font-size: 48px; color: #28a745;" title="Excel Spreadsheet"></i>
+                                                                        @elseif(strpos($ruta, '.zip') !== false || strpos($ruta, '.rar') !== false)
+                                                                            <i class="fas fa-file-archive" style="font-size: 48px; color: #6f42c1;" title="Compressed File"></i>
+                                                                        @else
+                                                                            <i class="fas fa-file" style="font-size: 48px; color: #6c757d;" title="File"></i>
+                                                                        @endif
+                                                                    </a>
+                                                                </div>
+                                                            @endif
+
+                                                            <div class="file-info mt-2">
+                                                                <small class="text-muted" title="{{ $nombreArchivo }}">
+                                                                    {{ strlen($nombreArchivo) > 20 ? substr($nombreArchivo, 0, 20) . '...' : $nombreArchivo }}
+                                                                </small>
+                                                                <div class="mt-1">
+                                                                    <span class="badge badge-info badge-sm">{{ strtoupper($extension) }}</span>
+                                                                </div>
+                                                                <div class="mt-2">
+                                                                    <a href="{{ asset($ruta) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                                        @if($esImagen)
+                                                                            <i class="fas fa-eye"></i> Ver
+                                                                        @else
+                                                                            <i class="fas fa-download"></i> Descargar
+                                                                        @endif
+                                                                    </a>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+                    @endif
+
+
                     {{-- Listado de Equipos Entregados --}}
                     <div class="card">
                         <div class="card-header">
@@ -291,7 +426,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
         </div>
     </section>
 @endsection
@@ -307,6 +441,106 @@
 
 @push('styles')
 <style>
+    .summary-item {
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .summary-item:last-child {
+        border-bottom: none;
+    }
+
+    .form-control-static {
+        padding: 7px 0;
+        margin: 0;
+        border: none;
+        background: none;
+    }
+
+    .badge-lg {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+
+    .files-grid .file-item {
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        background-color: #fff;
+        height: 100%;
+    }
+
+    .files-grid .file-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-color: #007bff;
+    }
+
+    .image-thumbnail img {
+        transition: transform 0.3s ease;
+    }
+
+    .image-thumbnail img:hover {
+        transform: scale(1.05);
+    }
+
+    .file-icon-container {
+        transition: background-color 0.3s ease;
+    }
+
+    .file-icon-container:hover {
+        background-color: #e9ecef !important;
+    }
+
+    .file-info {
+        min-height: 80px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    /* Estilo para archivo único */
+    .file-container {
+        padding: 40px 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border: 2px dashed #dee2e6;
+        min-height: 300px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .image-container {
+        max-width: 100%;
+        padding: 20px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .files-grid .col-6 {
+            margin-bottom: 15px;
+        }
+
+        .file-icon-container {
+            height: 120px !important;
+        }
+
+        .file-icon-container i {
+            font-size: 36px !important;
+        }
+
+        .image-container {
+            padding: 10px;
+        }
+
+        .image-container img {
+            max-height: 250px !important;
+        }
+    }
+
     .summary-item {
         padding: 10px 0;
         border-bottom: 1px solid #eee;

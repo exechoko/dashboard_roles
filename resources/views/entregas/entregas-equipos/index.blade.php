@@ -114,7 +114,7 @@
                                                             <span class="badge badge-warning">Entregado</span>
                                                             @break
                                                         @case('devolucion_parcial')
-                                                            <span class="badge badge-info">Devolución Parcial</span>
+                                                            <span class="badge badge-danger">Devolución Parcial</span>
                                                             @break
                                                         @case('devuelto')
                                                             <span class="badge badge-success">Devuelto</span>

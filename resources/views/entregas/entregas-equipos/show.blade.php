@@ -482,7 +482,7 @@
                                 @endcan
 
                                 {{-- Devolución Parcial --}}
-                                @can('devolver-entrega-equipos')
+                                @can('editar-entrega-equipos')
                                     @php
                                         $equiposPendientes = $entrega->equiposPendientes()->count();
                                     @endphp
@@ -502,7 +502,7 @@
                                 </a>
 
                                 {{-- Eliminar --}}
-                                @can('eliminar-entrega-equipos')
+                                @can('borrar-entrega-equipos')
                                     <hr>
                                     <form action="{{ route('entrega-equipos.destroy', $entrega->id) }}"
                                         method="POST">

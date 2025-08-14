@@ -151,7 +151,7 @@
                                                                class="btn btn-secondary" target="_blank">
                                                                 <i class="fas fa-file-word"></i></a>
 
-                                                            @can('devolver-entrega-equipos')
+                                                            @can('editar-entrega-equipos')
                                                                 @php
                                                                     $equiposPendientes = $entrega->equiposPendientes()->count();
                                                                 @endphp
@@ -165,7 +165,7 @@
                                                                 @endif
                                                             @endcan
 
-                                                            @can('eliminar-entrega-equipos')
+                                                            @can('borrar-entrega-equipos')
                                                                 <div class="dropdown-divider"></div>
                                                                 <form action="{{ route('entrega-equipos.destroy', $entrega->id) }}"
                                                                       method="POST" style="display: inline;">

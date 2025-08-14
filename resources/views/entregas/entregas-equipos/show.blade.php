@@ -319,6 +319,142 @@
                             </div>
                         </div>
                     </div>
+
+                    {{-- Historial de Devoluciones --}}
+                    @if($entrega->devoluciones->count() > 0)
+                        <div class="card">
+                            <div class="card-header">
+                                <h4><i class="fas fa-history"></i> Historial de Devoluciones ({{ $entrega->devoluciones->count() }})</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="timeline">
+                                    @foreach($entrega->devoluciones->sortByDesc('fecha_devolucion') as $devolucion)
+                                        <div class="timeline-item">
+                                            <div class="timeline-marker bg-success"></div>
+                                            <div class="timeline-content">
+                                                <div class="timeline-header">
+                                                    <h6 class="timeline-title">
+                                                        Devolución #{{ $devolucion->id }}
+                                                        <span class="badge badge-success">{{ $devolucion->equipos->count() }} equipos</span>
+                                                    </h6>
+                                                    <small class="text-muted">
+                                                        {{ $devolucion->fecha_devolucion->format('d/m/Y') }} - {{ $devolucion->hora_devolucion }}
+                                                    </small>
+                                                </div>
+                                                <div class="timeline-body">
+                                                    @if($devolucion->personal_devuelve)
+                                                        <p><strong>Devuelto por:</strong> {{ $devolucion->personal_devuelve }}
+                                                            @if($devolucion->legajo_devuelve)
+                                                                (Legajo: {{ $devolucion->legajo_devuelve }})
+                                                            @endif
+                                                        </p>
+                                                    @endif
+
+                                                    @if($devolucion->observaciones)
+                                                        <p><strong>Observaciones:</strong> {{ $devolucion->observaciones }}</p>
+                                                    @endif
+
+                                                    <div class="row">
+                                                        @foreach($devolucion->equipos as $equipo)
+                                                            <div class="col-md-6 col-lg-4 mb-2">
+                                                                <div class="small-box bg-light">
+                                                                    <div class="small-box-content p-2">
+                                                                        <div><strong>TEI:</strong> {{ $equipo->equipo->tei ?? 'N/A' }}</div>
+                                                                        <div><strong>ISSI:</strong> {{ $equipo->equipo->issi ?? 'N/A' }}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+
+                                                    <div class="timeline-footer">
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-user"></i> Registrado por: {{ $devolucion->usuario_creador }}
+                                                            el {{ $devolucion->created_at->format('d/m/Y H:i') }}
+                                                        </small>
+                                                        <div class="btn-group btn-group-sm ml-2">
+                                                            <a href="{{ route('entrega-equipos.devolucion.detalle', [$entrega->id, $devolucion->id]) }}"
+                                                            class="btn btn-info btn-sm">
+                                                                <i class="fas fa-eye"></i> Ver Detalle
+                                                            </a>
+
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Actualizar la sección de equipos entregados para mostrar estado actual --}}
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>Estado Actual de Equipos ({{ $entrega->equipos->count() }} total)</h4>
+                            <div class="card-header-action">
+                                @php
+                                    $equiposPendientes = $entrega->equiposPendientes()->count();
+                                    $equiposDevueltos = $entrega->equiposDevueltos()->count();
+                                @endphp
+                                <span class="badge badge-warning">{{ $equiposPendientes }} pendientes</span>
+                                <span class="badge badge-success">{{ $equiposDevueltos }} devueltos</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>ID Equipo</th>
+                                            <th>TEI</th>
+                                            <th>ISSI</th>
+                                            <th>N° Batería</th>
+                                            <th>Estado</th>
+                                            <th>Devuelto en</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($entrega->equipos as $index => $equipo)
+                                            @php
+                                                $devolucion = $entrega->devoluciones()
+                                                    ->whereHas('equipos', function($q) use ($equipo) {
+                                                        $q->where('detalle_devoluciones_equipos.equipo_id', $equipo->id);
+                                                    })->first();
+                                            @endphp
+                                            <tr class="{{ $devolucion ? 'table-success' : 'table-warning' }}">
+                                                <td>{{ $index + 1 }}</td>
+                                                <td>{{ $equipo->equipo->nombre_issi ?? 'N/A' }}</td>
+                                                <td>{{ $equipo->equipo->tei ?? 'N/A' }}</td>
+                                                <td>{{ $equipo->equipo->issi ?? 'N/A' }}</td>
+                                                <td>{{ $equipo->equipo->numero_bateria ?? 'N/A' }}</td>
+                                                <td>
+                                                    @if($devolucion)
+                                                        <span class="badge badge-success">Devuelto</span>
+                                                    @else
+                                                        <span class="badge badge-warning">Pendiente</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if($devolucion)
+                                                        <small>
+                                                            Devolución #{{ $devolucion->id }}<br>
+                                                            {{ $devolucion->fecha_devolucion->format('d/m/Y') }}
+                                                        </small>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 {{-- Acciones --}}
@@ -331,38 +467,37 @@
                             <div class="d-grid gap-2">
                                 {{-- Generar Documento --}}
                                 <a href="{{ route('entrega-equipos.documento', $entrega->id) }}"
-                                   class="btn btn-info btn-block mb-2" target="_blank">
+                                class="btn btn-info btn-block mb-2" target="_blank">
                                     <i class="fas fa-file-word"></i> Generar Documento
                                 </a>
 
                                 {{-- Editar --}}
                                 @can('editar-entrega-equipos')
-                                    @if($entrega->estado === 'entregado')
+                                    @if(in_array($entrega->estado, ['entregado', 'devolucion_parcial']))
                                         <a href="{{ route('entrega-equipos.edit', $entrega->id) }}"
-                                           class="btn btn-warning btn-block mb-2">
+                                        class="btn btn-warning btn-block mb-2">
                                             <i class="fas fa-edit"></i> Editar Entrega
                                         </a>
                                     @endif
                                 @endcan
 
-                                {{-- Devolver Equipos --}}
+                                {{-- Devolución Parcial --}}
                                 @can('devolver-entrega-equipos')
-                                    @if($entrega->estado === 'entregado')
-                                        <form action="{{ route('entrega-equipos.devolver', $entrega->id) }}"
-                                              method="POST" class="mb-2">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="btn btn-success btn-block"
-                                                    onclick="return confirm('¿Está seguro de marcar como devueltos todos los equipos?')">
-                                                <i class="fas fa-undo"></i> Devolver Equipos
-                                            </button>
-                                        </form>
+                                    @php
+                                        $equiposPendientes = $entrega->equiposPendientes()->count();
+                                    @endphp
+                                    @if($equiposPendientes > 0)
+                                        <a href="{{ route('entrega-equipos.devolver', $entrega->id) }}"
+                                        class="btn btn-success btn-block mb-2">
+                                            <i class="fas fa-undo"></i> Devolver Equipos
+                                            <span class="badge badge-light ml-1">{{ $equiposPendientes }}</span>
+                                        </a>
                                     @endif
                                 @endcan
 
                                 {{-- Volver --}}
                                 <a href="{{ route('entrega-equipos.index') }}"
-                                   class="btn btn-secondary btn-block mb-2">
+                                class="btn btn-secondary btn-block mb-2">
                                     <i class="fas fa-arrow-left"></i> Volver al Listado
                                 </a>
 
@@ -370,11 +505,11 @@
                                 @can('eliminar-entrega-equipos')
                                     <hr>
                                     <form action="{{ route('entrega-equipos.destroy', $entrega->id) }}"
-                                          method="POST">
+                                        method="POST">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-danger btn-block"
-                                                onclick="return confirm('¿Está seguro de eliminar esta entrega? Esta acción no se puede deshacer.')">
+                                                onclick="return confirm('¿Está seguro de eliminar esta entrega? Esta acción eliminará también todas las devoluciones asociadas.')">
                                             <i class="fas fa-trash"></i> Eliminar Entrega
                                         </button>
                                     </form>
@@ -383,7 +518,7 @@
                         </div>
                     </div>
 
-                    {{-- Información adicional --}}
+                    {{-- Información adicional actualizada --}}
                     <div class="card">
                         <div class="card-header">
                             <h4>Resumen</h4>
@@ -396,16 +531,42 @@
                                 </div>
                             </div>
 
+                            @php
+                                $equiposPendientes = $entrega->equiposPendientes()->count();
+                                $equiposDevueltos = $entrega->equiposDevueltos()->count();
+                            @endphp
+
+                            @if($equiposPendientes > 0)
+                                <div class="summary-item">
+                                    <div class="summary-info">
+                                        <h6>Equipos Pendientes</h6>
+                                        <h4 class="text-warning">{{ $equiposPendientes }}</h4>
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if($equiposDevueltos > 0)
+                                <div class="summary-item">
+                                    <div class="summary-info">
+                                        <h6>Equipos Devueltos</h6>
+                                        <h4 class="text-success">{{ $equiposDevueltos }}</h4>
+                                    </div>
+                                </div>
+                            @endif
+
                             <div class="summary-item">
                                 <div class="summary-info">
                                     <h6>Estado de la Entrega</h6>
                                     <h4>
                                         @switch($entrega->estado)
                                             @case('entregado')
-                                                <span class="text-warning">En Uso</span>
+                                                <span class="text-warning">Equipos Entregados</span>
+                                                @break
+                                            @case('devolucion_parcial')
+                                                <span class="text-info">Devolución Parcial</span>
                                                 @break
                                             @case('devuelto')
-                                                <span class="text-success">Finalizada</span>
+                                                <span class="text-success">Completamente Devuelto</span>
                                                 @break
                                             @case('perdido')
                                                 <span class="text-danger">Con Pérdidas</span>
@@ -415,11 +576,11 @@
                                 </div>
                             </div>
 
-                            @if($entrega->equipos->where('estado', 'entregado')->count() > 0)
+                            @if($entrega->devoluciones->count() > 0)
                                 <div class="summary-item">
                                     <div class="summary-info">
-                                        <h6>Equipos Pendientes</h6>
-                                        <h4 class="text-warning">{{ $entrega->equipos->where('estado', 'entregado')->count() }}</h4>
+                                        <h6>Total Devoluciones</h6>
+                                        <h4 class="text-info">{{ $entrega->devoluciones->count() }}</h4>
                                     </div>
                                 </div>
                             @endif

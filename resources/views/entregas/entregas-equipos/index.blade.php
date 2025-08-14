@@ -113,43 +113,55 @@
                                                         @case('entregado')
                                                             <span class="badge badge-warning">Entregado</span>
                                                             @break
+                                                        @case('devolucion_parcial')
+                                                            <span class="badge badge-info">Devolución Parcial</span>
+                                                            @break
                                                         @case('devuelto')
                                                             <span class="badge badge-success">Devuelto</span>
                                                             @break
                                                         @case('perdido')
                                                             <span class="badge badge-danger">Perdido</span>
                                                             @break
+                                                        @default
+                                                            <span class="badge badge-secondary">{{ ucfirst($entrega->estado) }}</span>
                                                     @endswitch
+
+                                                    {{-- Mostrar contador de devoluciones si existen --}}
+                                                    @if($entrega->devoluciones->count() > 0)
+                                                        <br><small class="text-muted">{{ $entrega->devoluciones->count() }} devolución(es)</small>
+                                                    @endif
                                                 </td>
                                                 <td>
                                                     <div class="d-flex">
                                                         @can('ver-entrega-equipos')
-                                                                <a href="{{ route('entrega-equipos.show', $entrega->id) }}" class="btn btn-warning">
-                                                                    <i class="fas fa-eye"></i></a>
+                                                            <a href="{{ route('entrega-equipos.show', $entrega->id) }}" class="btn btn-warning btn-sm mr-1">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
                                                         @endcan
 
-                                                            @can('editar-entrega-equipos')
-                                                                @if($entrega->estado === 'entregado')
-                                                                    <a href="{{ route('entrega-equipos.edit', $entrega->id) }}"
-                                                                       class="btn btn-info">
-                                                                        <i class="fas fa-edit"></i></a>
-                                                                @endif
-                                                            @endcan
+                                                        @can('editar-entrega-equipos')
+                                                            @if(in_array($entrega->estado, ['entregado', 'devolucion_parcial']))
+                                                                <a href="{{ route('entrega-equipos.edit', $entrega->id) }}" class="btn btn-info btn-sm mr-1">
+                                                                    <i class="fas fa-edit"></i>
+                                                                </a>
+                                                            @endif
+                                                        @endcan
 
                                                             <a href="{{ route('entrega-equipos.documento', $entrega->id) }}"
                                                                class="btn btn-secondary" target="_blank">
                                                                 <i class="fas fa-file-word"></i></a>
 
                                                             @can('devolver-entrega-equipos')
-                                                                @if($entrega->estado === 'entregado')
-                                                                    <form action="{{ route('entrega-equipos.devolver', $entrega->id) }}"
-                                                                          method="POST" style="display: inline;">
-                                                                        @csrf
-                                                                        @method('PATCH')
-                                                                        <button type="submit" class="btn btn-success"
-                                                                                onclick="return confirm('¿Está seguro de marcar como devueltos todos los equipos?')">
-                                                                            <i class="fas fa-undo"></i></button>
-                                                                    </form>
+                                                                @php
+                                                                    $equiposPendientes = $entrega->equiposPendientes()->count();
+                                                                @endphp
+                                                                @if($equiposPendientes > 0)
+                                                                    <a href="{{ route('entrega-equipos.devolver', $entrega->id) }}" class="btn btn-success btn-sm mr-1" title="Devolver equipos ({{ $equiposPendientes }} pendientes)">
+                                                                        <i class="fas fa-undo"></i>
+                                                                        @if($equiposPendientes < $entrega->equipos->count())
+                                                                            <span class="badge badge-light" style="font-size: 10px;">{{ $equiposPendientes }}</span>
+                                                                        @endif
+                                                                    </a>
                                                                 @endif
                                                             @endcan
 

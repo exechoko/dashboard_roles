@@ -150,9 +150,9 @@ Route::group(['middleware' => ['auth']], function () {
             ->name('documento')
             ->middleware('can:crear-entrega-equipos');
         // Devolver equipos (cambiar estado a devuelto)
-        Route::patch('{id}/devolver', [EntregasEquiposController::class, 'devolver'])
+        /*Route::patch('{id}/devolver', [EntregasEquiposController::class, 'devolver'])
             ->name('devolver')
-            ->middleware('can:crear-entrega-equipos');
+            ->middleware('can:crear-entrega-equipos');*/
         // Reportar equipos como perdidos
         Route::patch('{id}/reportar-perdido', [EntregasEquiposController::class, 'reportarPerdido'])
             ->name('reportar-perdido')
@@ -187,6 +187,21 @@ Route::group(['middleware' => ['auth']], function () {
             ->name('por-dependencia')
             ->middleware('can:ver-reportes-entregas');
     });
+    Route::get('entrega-equipos/{id}/devolver', [EntregasEquiposController::class, 'devolver'])
+        ->name('entrega-equipos.devolver');
+        
+    Route::post('entrega-equipos/{id}/procesar-devolucion', [EntregasEquiposController::class, 'procesarDevolucion'])
+        ->name('entrega-equipos.procesar-devolucion');
+
+    Route::get('entrega-equipos/{entregaId}/devolucion/{devolucionId}', [EntregasEquiposController::class, 'mostrarDevolucion'])
+        ->name('entrega-equipos.devolucion.detalle');
+
+    Route::delete('entrega-equipos/{entregaId}/devolucion/{devolucionId}', [EntregasEquiposController::class, 'eliminarDevolucion'])
+        ->name('entrega-equipos.devolucion.eliminar');
+
+    // Ruta para generar documento de entrega
+    Route::get('entrega-equipos/{id}/documento', [EntregasEquiposController::class, 'generarDocumento'])
+        ->name('entrega-equipos.documento');
 
 
 });

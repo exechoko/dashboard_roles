@@ -41,6 +41,60 @@ class EntregaEquipo extends Model
         return $this->belongsToMany(FlotaGeneral::class, 'detalle_entregas_equipos', 'entrega_id', 'equipo_id');
     }
 
+    // Relación con devoluciones
+    public function devoluciones()
+    {
+        return $this->hasMany(DevolucionEquipo::class, 'entrega_id');
+    }
+
+    // Método para obtener equipos pendientes de devolución
+    public function equiposPendientes()
+    {
+        $equiposDevueltos = $this->devoluciones()
+            ->with('equipos')
+            ->get()
+            ->pluck('equipos')
+            ->flatten()
+            ->pluck('id')
+            ->unique();
+
+        return $this->equipos()->whereNotIn('flota_general.id', $equiposDevueltos);
+    }
+
+    // Método para obtener equipos ya devueltos
+    public function equiposDevueltos()
+    {
+        return $this->devoluciones()
+            ->with('equipos')
+            ->get()
+            ->pluck('equipos')
+            ->flatten()
+            ->unique();
+    }
+
+    // Método para calcular el estado actual de la entrega
+    public function calcularEstado()
+    {
+        $totalEquipos = $this->equipos->count();
+        $equiposDevueltos = $this->equiposDevueltos()->count();
+
+        if ($equiposDevueltos == 0) {
+            return 'entregado';
+        } elseif ($equiposDevueltos < $totalEquipos) {
+            return 'devolucion_parcial';
+        } else {
+            return 'devuelto';
+        }
+    }
+
+    // Actualizar estado automáticamente
+    public function actualizarEstado()
+    {
+        $nuevoEstado = $this->calcularEstado();
+        $this->update(['estado' => $nuevoEstado]);
+        return $nuevoEstado;
+    }
+
     // Generar número de acta automático
     public static function generarNumeroActa()
     {

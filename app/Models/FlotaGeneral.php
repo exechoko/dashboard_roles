@@ -61,6 +61,9 @@ class FlotaGeneral extends Model
     public function entregasActivas()
     {
         return $this->belongsToMany(EntregaEquipo::class, 'detalle_entregas_equipos', 'equipo_id', 'entrega_id')
-            ->where('estado', 'entregado');
+            ->whereIn('estado', ['entregado', 'devolucion_parcial'])
+            ->whereDoesntHave('devoluciones.detalleDevoluciones', function ($q) {
+                $q->whereColumn('detalle_devoluciones_equipos.equipo_id', 'detalle_entregas_equipos.equipo_id');
+            });
     }
 }

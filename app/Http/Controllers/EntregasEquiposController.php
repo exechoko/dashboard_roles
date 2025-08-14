@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Destino;
+use App\Models\DetalleDevolucionEquipo;
 use App\Models\DetalleEntregaEquipo;
+use App\Models\DevolucionEquipo;
 use App\Models\EntregaEquipo;
 use App\Models\FlotaGeneral;
 use DB;
@@ -477,8 +479,119 @@ class EntregasEquiposController extends Controller
         }
     }
 
-    // Método para devolver equipos
+    // Reemplazar el método devolver existente
     public function devolver(Request $request, $id)
+    {
+        $entrega = EntregaEquipo::findOrFail($id);
+
+        // Obtener equipos pendientes de devolución
+        $equiposPendientes = $entrega->equiposPendientes()->get();
+
+        if ($equiposPendientes->isEmpty()) {
+            return redirect()->back()->with('error', 'No hay equipos pendientes de devolución');
+        }
+
+        return view('entregas.entregas-equipos.devolver', compact('entrega', 'equiposPendientes'));
+    }
+
+    // Procesar la devolución parcial
+    public function procesarDevolucion(Request $request, $id)
+    {
+        $entrega = EntregaEquipo::findOrFail($id);
+
+        $request->validate([
+            'fecha_devolucion' => 'required|date',
+            'hora_devolucion' => 'required',
+            'personal_devuelve' => 'nullable|string|max:255',
+            'legajo_devuelve' => 'nullable|string|max:50',
+            'equipos_devolver' => 'required|array|min:1',
+            'equipos_devolver.*' => 'exists:flota_general,id',
+            'observaciones' => 'nullable|string'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Crear la devolución
+            $devolucion = DevolucionEquipo::create([
+                'entrega_id' => $entrega->id,
+                'fecha_devolucion' => $request->fecha_devolucion,
+                'hora_devolucion' => $request->hora_devolucion,
+                'personal_devuelve' => $request->personal_devuelve,
+                'legajo_devuelve' => $request->legajo_devuelve,
+                'observaciones' => $request->observaciones,
+                'usuario_creador' => auth()->user()->name
+            ]);
+
+            // Crear el detalle de la devolución y actualizar estado de equipos
+            foreach ($request->equipos_devolver as $equipoId) {
+                DetalleDevolucionEquipo::create([
+                    'devolucion_id' => $devolucion->id,
+                    'equipo_id' => $equipoId
+                ]);
+            }
+
+            // Actualizar el estado de la entrega
+            $entrega->actualizarEstado();
+
+            DB::commit();
+
+            return redirect()->route('entrega-equipos.show', $entrega->id)
+                ->with('success', 'Devolución registrada exitosamente');
+
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()
+                ->with('error', 'Error al procesar la devolución: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    // Mostrar detalles de una devolución específica
+    public function mostrarDevolucion($entregaId, $devolucionId)
+    {
+        $entrega = EntregaEquipo::findOrFail($entregaId);
+        $devolucion = DevolucionEquipo::with(['equipos', 'detalleDevoluciones.equipo'])
+            ->where('entrega_id', $entregaId)
+            ->findOrFail($devolucionId);
+
+        return view('entregas.entregas-equipos.devolucion-detalle', compact('entrega', 'devolucion'));
+    }
+
+    // Eliminar una devolución (solo si es necesario)
+    public function eliminarDevolucion(Request $request, $entregaId, $devolucionId)
+    {
+        $entrega = EntregaEquipo::findOrFail($entregaId);
+        $devolucion = DevolucionEquipo::where('entrega_id', $entregaId)->findOrFail($devolucionId);
+
+        try {
+            DB::beginTransaction();
+
+            // Volver a marcar equipos como entregados
+            foreach ($devolucion->equipos as $equipo) {
+                $equipo->update(['estado' => 'entregado']);
+            }
+
+            // Eliminar devolución
+            $devolucion->delete();
+
+            // Actualizar estado de la entrega
+            $entrega->actualizarEstado();
+
+            DB::commit();
+
+            return redirect()->route('entrega-equipos.show', $entrega->id)
+                ->with('success', 'Devolución eliminada exitosamente');
+
+        } catch (Exception $e) {
+            DB::rollback();
+            return redirect()->back()
+                ->with('error', 'Error al eliminar la devolución: ' . $e->getMessage());
+        }
+    }
+
+    // Método para devolver equipos
+    /*public function devolver(Request $request, $id)
     {
         $entrega = EntregaEquipo::findOrFail($id);
 
@@ -498,11 +611,11 @@ class EntregasEquiposController extends Controller
 
             return redirect()->back()->with('success', 'Equipos devueltos exitosamente');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
             return redirect()->back()->with('error', 'Error al devolver equipos: ' . $e->getMessage());
         }
-    }
+    }*/
 
     /**
      * Buscar equipos disponibles para AJAX

@@ -58,7 +58,11 @@ class EntregasEquiposController extends Controller
             ->whereHas('equipo.tipo_terminal.tipo_uso', function ($query) {
                 $query->where('uso', 'portatil');
             })
+            ->whereHas('recurso', function ($query) {
+                $query->where('nombre', 'Unidad Operativa Móvil');
+            })
             ->with('equipo')
+            ->orderBy('equipo_id', 'asc')
             ->get();
 
         //Destinos

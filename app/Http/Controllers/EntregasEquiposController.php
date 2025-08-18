@@ -8,11 +8,15 @@ use App\Models\DetalleEntregaEquipo;
 use App\Models\DevolucionEquipo;
 use App\Models\EntregaEquipo;
 use App\Models\FlotaGeneral;
+use Carbon\Carbon;
 use DB;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Log;
 use PhpOffice\PhpWord\TemplateProcessor;
+use PhpOffice\PhpWord\IOFactory;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class EntregasEquiposController extends Controller
 {
@@ -367,7 +371,7 @@ class EntregasEquiposController extends Controller
             }
 
             // Información del operativo
-            $templateProcessor->setValue('DEPENDENCIA', $entrega->dependencia ?? 'DIRECCIÓN INSTITUTOS POLICIALES');
+            $templateProcessor->setValue('DEPENDENCIA', $entrega->dependencia ?? 'SIN DEPENDENCIA');
             $templateProcessor->setValue('MOTIVO', $entrega->motivo_operativo ?? 'Operativo dispuesto por la Superioridad');
 
             // Información del receptor
@@ -396,26 +400,115 @@ class EntregasEquiposController extends Controller
                 $templateProcessor->cloneRowAndSetValues('NUMERO', $equiposData);
             }
 
-            // Generar archivo temporal
-            $fileName = 'recibo_entrega_equipos_' . $entrega->id . '_' . date('Y-m-d_H-i-s') . '.docx';
-            $tempPath = storage_path('app/temp/' . $fileName);
+            // limpiar dependencia para nombre de carpeta válido en Windows
+            $dependenciaNombre = $entrega->dependencia ?? 'DIRECCIÓN INSTITUTOS POLICIALES';
+            $dependenciaFolder = $this->limpiarNombreCarpeta($dependenciaNombre);
 
-            // Crear directorio temp si no existe
+            // Nombre del archivo
+            $fileName = 'entrega_' . $entrega->id . '_' . date('Y-m-d_H-i-s') . '_' . $entrega->equipos->count() . '_equipos_' . $dependenciaNombre . '.docx';
+
+            // ----------- (1) Guardar en TEMP local para descarga ---------
+            $tempPath = storage_path('app/temp/' . $fileName);
             if (!file_exists(dirname($tempPath))) {
                 mkdir(dirname($tempPath), 0755, true);
             }
-
             $templateProcessor->saveAs($tempPath);
 
-            // Registrar la generación del documento (opcional)
-            Log::info("Documento generado: {$fileName} para entrega ID: {$id}");
+            // ----------- (2) Copiar a carpeta de red ---------------------
+            $baseNetworkPath = '\\\\193.169.1.247\\Comp_Tecnica$\\01-Técnica 911 Doc\\01-Documentos\\U.M. - Acontecimientos - Eventos\\Entregas CAR911';
 
-            return response()->download($tempPath, $fileName)->deleteFileAfterSend(true);
+            $fechaFolder = $entrega->fecha_entrega->format('Ymd') . '_' .
+                Carbon::parse($entrega->hora_entrega)->format('Hi');
 
-        } catch (\Exception $e) {
+            $fullPath = $baseNetworkPath . '\\' . $dependenciaFolder . '\\' . $fechaFolder;
+            if (!file_exists($fullPath)) {
+                mkdir($fullPath, 0755, true);
+            }
+
+            $networkFile = $fullPath . '\\' . $fileName;
+            // copiar el archivo local al de red
+            if (@copy($tempPath, $networkFile)) {
+                Log::info("Copia de documento guardada en red: {$networkFile}");
+            } else {
+                Log::warning("No se pudo copiar el documento a red: {$networkFile}");
+            }
+
+            $entrega->ruta_archivo = $networkFile; // $networkFile es la ruta completa al archivo
+            $entrega->save();
+
+            return redirect()->route('entrega-equipos.index')
+                ->with('success', 'Acta de entrega generada y guardada en red exitosamente');
+
+            // ----------- (3) Entregar descarga al usuario ---------------
+            //return response()->download($tempPath, $fileName);
+
+        } catch (Exception $e) {
             Log::error("Error al generar documento: " . $e->getMessage());
             return redirect()->back()->with('error', 'Error al generar el documento: ' . $e->getMessage());
         }
+    }
+
+    /** * Limpia el nombre de la dependencia para usar como nombre de carpeta */
+    private function limpiarNombreCarpeta($nombre)
+    {
+        // Caracteres no permitidos en nombres de carpetas de Windows
+        $caracteresProhibidos = ['<', '>', ':', '"', '|', '?', '*', '/', '\\'];
+        // Reemplazar caracteres prohibidos por guiones
+        $nombreLimpio = str_replace($caracteresProhibidos, '-', $nombre);
+        // Eliminar puntos al final (no permitidos en Windows)
+        $nombreLimpio = rtrim($nombreLimpio, '.');
+        // Limitar longitud (Windows tiene límite de 255 caracteres para nombres de carpeta)
+        $nombreLimpio = substr($nombreLimpio, 0, 200);
+        return trim($nombreLimpio);
+    }
+
+    public function descargarArchivo($id)
+    {
+        $entrega = EntregaEquipo::findOrFail($id);
+
+        if (!$entrega->ruta_archivo) {
+            abort(404, 'Archivo no encontrado');
+        }
+
+        // Verificar si el archivo existe en la red
+        if (!file_exists($entrega->ruta_archivo)) {
+            return back()->with('error', 'El archivo no está disponible: ' . $entrega->ruta_archivo);
+        }
+
+        $nombreArchivo = basename($entrega->ruta_archivo);
+
+        return response()->download($entrega->ruta_archivo, $nombreArchivo);
+    }
+
+    public function previsualizar($id)
+    {
+        $entrega = EntregaEquipo::findOrFail($id);
+        $rutaArchivoUNC = $entrega->ruta_archivo; // La ruta \\193.169.1.247\...
+
+        if (!file_exists($rutaArchivoUNC)) {
+            return redirect()->back()->with('error', 'El archivo no se encuentra.');
+        }
+
+        // Asegúrate de que PHP en tu servidor Windows pueda acceder a esta ruta UNC
+        // Puede que necesites configurar PHP para que el usuario bajo el que corre
+        // el servidor web (e.g., IIS, Apache, Nginx) tenga permisos de red a la carpeta compartida.
+
+        $filename = basename($rutaArchivoUNC);
+        $mimeType = Storage::mimeType($rutaArchivoUNC); // O usar finfo para obtener el tipo MIME
+
+        // Forzar la descarga
+        // return response()->download($rutaArchivoUNC, $filename);
+
+        // O intentar mostrar en el navegador (útil para PDF, imágenes)
+        return new StreamedResponse(function () use ($rutaArchivoUNC) {
+            $stream = fopen($rutaArchivoUNC, 'r');
+            fpassthru($stream);
+            fclose($stream);
+        }, 200, [
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+            'Content-Length' => filesize($rutaArchivoUNC),
+        ]);
     }
 
     /**

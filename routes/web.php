@@ -189,7 +189,7 @@ Route::group(['middleware' => ['auth']], function () {
     });
     Route::get('entrega-equipos/{id}/devolver', [EntregasEquiposController::class, 'devolver'])
         ->name('entrega-equipos.devolver');
-        
+
     Route::post('entrega-equipos/{id}/procesar-devolucion', [EntregasEquiposController::class, 'procesarDevolucion'])
         ->name('entrega-equipos.procesar-devolucion');
 
@@ -202,6 +202,12 @@ Route::group(['middleware' => ['auth']], function () {
     // Ruta para generar documento de entrega
     Route::get('entrega-equipos/{id}/documento', [EntregasEquiposController::class, 'generarDocumento'])
         ->name('entrega-equipos.documento');
+    // Ruta para descargar el archivo generado
+    Route::get('entrega-equipos/{id}/descargar', [EntregasEquiposController::class, 'descargarArchivo'])
+        ->name('entrega-equipos.descargar');
+    // Ruta para previsualizar el documento generado
+    Route::get('entrega-equipos/previsualizar/{id}', [EntregasEquiposController::class, 'previsualizar'])
+    ->name('entrega-equipos.previsualizar');
 
 
 });

@@ -595,7 +595,11 @@ class EntregasEquiposController extends Controller
             'legajo_devuelve' => 'nullable|string|max:50',
             'equipos_devolver' => 'required|array|min:1',
             'equipos_devolver.*' => 'exists:flota_general,id',
-            'observaciones' => 'nullable|string'
+            'observaciones' => 'nullable|string',
+            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048'
         ]);
 
         try {
@@ -611,6 +615,40 @@ class EntregasEquiposController extends Controller
                 'observaciones' => $request->observaciones,
                 'usuario_creador' => auth()->user()->name
             ]);
+
+            // Obtener las rutas de imágenes existentes
+            $rutasImagenesExistentes = json_decode($devolucion->rutas_imagenes, true) ?? [];
+            $rutasImagenes = $rutasImagenesExistentes; // Empezar con las existentes
+
+            // Procesar las nuevas imágenes
+            $hayNuevasImagenes = false;
+            for ($i = 1; $i <= 3; $i++) {
+                $inputName = 'imagen' . $i;
+                if ($request->hasFile($inputName)) {
+                    $rutaImagen = $request->file($inputName)->store('', 'anexos');
+                    $rutasImagenes[] = 'anexos/' . $rutaImagen;
+                    $hayNuevasImagenes = true;
+                    Log::info("Nueva imagen {$i} subida: anexos/{$rutaImagen}");
+                }
+            }
+
+            // Manejo del archivo adjunto
+            if ($request->hasFile('archivo')) {
+                $rutaArchivo = $request->file('archivo')->store('', 'anexos');
+                $rutasImagenes[] = 'anexos/' . $rutaArchivo;
+                Log::info("Nuevo archivo adjunto subido: anexos/{$rutaArchivo}");
+            }
+
+            // Si no hay nuevas imágenes, mantener las existentes
+            if (empty($rutasImagenes) && !empty($rutasImagenesExistentes)) {
+                $rutasImagenes = $rutasImagenesExistentes;
+            } else if (!empty($rutasImagenes)) {
+                // Si hay nuevas imágenes, solo usar las nuevas (reemplazar todas)
+                // Si quieres mantener las existentes Y agregar las nuevas, usa:
+                // $rutasImagenes = array_merge($rutasImagenesExistentes, $rutasImagenes);
+            }
+
+            $devolucion->update(['rutas_imagenes' => json_encode($rutasImagenes)]);
 
             // Crear el detalle de la devolución y actualizar estado de equipos
             foreach ($request->equipos_devolver as $equipoId) {

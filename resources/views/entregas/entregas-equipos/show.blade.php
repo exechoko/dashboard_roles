@@ -354,6 +354,29 @@
                                                         <p><strong>Observaciones:</strong> {{ $devolucion->observaciones }}</p>
                                                     @endif
 
+                                                    {{-- Mostrar miniatura si hay imágenes cargadas --}}
+                                                    @php
+                                                        $archivosDevolucion = json_decode($devolucion->rutas_imagenes, true) ?? [];
+                                                        $imagenes = collect($archivosDevolucion)->filter(function($ruta){
+                                                            return preg_match('/\.(jpg|jpeg|png|gif|bmp|webp)$/i', $ruta);
+                                                        });
+                                                    @endphp
+
+                                                    @if($imagenes->count() > 0)
+                                                        <div class="mt-3">
+                                                            <strong>Imágenes Adjuntas:</strong>
+                                                            <div class="d-flex flex-wrap mt-2">
+                                                                @foreach($imagenes as $img)
+                                                                    <a href="{{ asset($img) }}" target="_blank" class="mr-2 mb-2">
+                                                                        <img src="{{ asset($img) }}"
+                                                                            alt="Imagen devolución"
+                                                                            style="width: 80px; height: 80px; object-fit: cover; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
+                                                                    </a>
+                                                                @endforeach
+                                                            </div>
+                                                        </div>
+                                                    @endif
+
                                                     <div class="row">
                                                         @foreach($devolucion->equipos as $equipo)
                                                             <div class="col-md-6 col-lg-4 mb-2">

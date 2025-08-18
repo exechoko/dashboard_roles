@@ -18,6 +18,7 @@ class DevolucionEquipo extends Model
         'personal_devuelve',
         'legajo_devuelve',
         'observaciones',
+        'rutas_imagenes',
         'usuario_creador'
     ];
 

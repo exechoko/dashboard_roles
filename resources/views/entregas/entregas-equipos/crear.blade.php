@@ -88,29 +88,22 @@
                                         </div>
                                         <div class="col-md-4">
                                             <div class="form-group">
-                                                <label for="personal_receptor">Personal Receptor <span
-                                                        class="text-danger">*</span></label>
+                                                <label for="personal_receptor">Personal receptor</label>
                                                 <input type="text"
-                                                    class="form-control @error('personal_receptor') is-invalid @enderror"
+                                                    class="form-control"
                                                     id="personal_receptor" name="personal_receptor"
                                                     value="{{ old('personal_receptor', isset($entregaOriginal) ? $entregaOriginal->personal_receptor : '') }}"
-                                                    maxlength="255" required placeholder="Nombre completo del receptor">
-                                                @error('personal_receptor')
-                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                @enderror
+                                                    maxlength="255" placeholder="Nombre completo del receptor">
                                             </div>
                                         </div>
                                         <div class="col-md-4">
                                             <div class="form-group">
-                                                <label for="legajo_receptor">Legajo Receptor</label>
+                                                <label for="legajo_receptor">L.P. receptor</label>
                                                 <input type="text"
-                                                    class="form-control @error('legajo_receptor') is-invalid @enderror"
+                                                    class="form-control"
                                                     id="legajo_receptor" name="legajo_receptor"
                                                     value="{{ old('legajo_receptor', isset($entregaOriginal) ? $entregaOriginal->legajo_receptor : '') }}"
-                                                    maxlength="50" placeholder="Número de legajo (opcional)">
-                                                @error('legajo_receptor')
-                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                @enderror
+                                                    maxlength="50" placeholder="Número de legajo">
                                             </div>
                                         </div>
                                     </div>
@@ -118,29 +111,22 @@
                                     <div class="row">
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                <label for="personal_entrega">Personal que entrega <span
-                                                        class="text-danger">*</span></label>
+                                                <label for="personal_entrega">Personal que entrega</label>
                                                 <input type="text"
-                                                    class="form-control @error('personal_entrega') is-invalid @enderror"
+                                                    class="form-control"
                                                     id="personal_entrega" name="personal_entrega"
                                                     value="{{ old('personal_entrega', isset($entregaOriginal) ? $entregaOriginal->personal_entrega : '') }}"
-                                                    maxlength="255" required placeholder="Nombre del personal que entrega">
-                                                @error('personal_entrega')
-                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                @enderror
+                                                    maxlength="255" placeholder="Nombre del personal que entrega">
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="form-group">
-                                                <label for="legajo_entrega">Legajo del personal que entrega</label>
+                                                <label for="legajo_entrega">L.P. del personal que entrega</label>
                                                 <input type="text"
-                                                    class="form-control @error('legajo_entrega') is-invalid @enderror"
+                                                    class="form-control"
                                                     id="legajo_entrega" name="legajo_entrega"
                                                     value="{{ old('legajo_entrega', isset($entregaOriginal) ? $entregaOriginal->legajo_entrega : '') }}"
                                                     maxlength="50" placeholder="Número de legajo (opcional)">
-                                                @error('legajo_entrega')
-                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                @enderror
                                             </div>
                                         </div>
                                     </div>
@@ -499,11 +485,10 @@
             // Función para validar formulario
             function validarFormulario() {
                 const dependencia = $('#dependencia').val().trim();
-                const personalReceptor = $('#personal_receptor').val().trim();
                 const motivoOperativo = $('#motivo_operativo').val().trim();
                 const equiposSeleccionados = $('input[name="equipos_seleccionados[]"]:checked').length;
 
-                const isValid = dependencia && personalReceptor && motivoOperativo && equiposSeleccionados > 0;
+                const isValid = dependencia && motivoOperativo && equiposSeleccionados > 0;
                 $('#btnCrear').prop('disabled', !isValid);
             }
 

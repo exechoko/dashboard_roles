@@ -264,6 +264,83 @@
                         @endif
                     @endif
 
+                    {{-- Sección de Accesorios Entregados --}}
+                    @if($entrega->accesorios->count() > 0)
+                        <div class="card">
+                            <div class="card-header">
+                                <h4><i class="fas fa-tools"></i> Accesorios Entregados ({{ $entrega->accesorios->count() }})</h4>
+                            </div>
+                            <div class="card-body">
+                                {{-- Cunas Cargadoras --}}
+                                @if($entrega->cunasCargadoras->count() > 0)
+                                    <div class="mb-4">
+                                        <h5 class="text-primary"><i class="fas fa-plug"></i> Cunas Cargadoras ({{ $entrega->cunasCargadoras->count() }})</h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-striped table-sm">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th>#</th>
+                                                        <th>Marca</th>
+                                                        <th>Cantidad</th>
+                                                        <th>Número de Serie</th>
+                                                        <th>Observaciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($entrega->cunasCargadoras as $index => $cuna)
+                                                        <tr>
+                                                            <td>{{ $index + 1 }}</td>
+                                                            <td>
+                                                                <span class="badge badge-info">{{ $cuna->marca ?? 'N/A' }}</span>
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge badge-secondary">{{ $cuna->cantidad }}</span>
+                                                            </td>
+                                                            <td>{{ $cuna->numero_serie ?? 'N/A' }}</td>
+                                                            <td>{{ $cuna->observaciones ?? '-' }}</td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                @endif
+
+                                {{-- Transformadores --}}
+                                @if($entrega->transformadores->count() > 0)
+                                    <div class="mb-4">
+                                        <h5 class="text-success"><i class="fas fa-battery-full"></i> Transformadores 12V ({{ $entrega->transformadores->count() }})</h5>
+                                        <div class="table-responsive">
+                                            <table class="table table-striped table-sm">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th>#</th>
+                                                        <th>Tipo</th>
+                                                        <th>Cantidad</th>
+                                                        <th>Observaciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($entrega->transformadores as $index => $transformador)
+                                                        <tr>
+                                                            <td>{{ $index + 1 }}</td>
+                                                            <td>
+                                                                <span class="badge badge-success">{{ $transformador->tipo_formateado }}</span>
+                                                            </td>
+                                                            <td>
+                                                                <span class="badge badge-secondary">{{ $transformador->cantidad }}</span>
+                                                            </td>
+                                                            <td>{{ $transformador->observaciones ?? '-' }}</td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
 
                     {{-- Listado de Equipos Entregados --}}
                     <div class="card">
@@ -573,6 +650,24 @@
                                     <div class="summary-info">
                                         <h6>Equipos Devueltos</h6>
                                         <h4 class="text-success">{{ $equiposDevueltos }}</h4>
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if($entrega->cunasCargadoras->count() > 0)
+                                <div class="summary-item">
+                                    <div class="summary-info">
+                                        <h6>Total de Cunas Cargadoras Entregadas</h6>
+                                        <h4 class="text-danger">{{ $entrega->cunasCargadoras->sum('cantidad') }}</h4>
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if($entrega->transformadores->count() > 0)
+                                <div class="summary-item">
+                                    <div class="summary-info">
+                                        <h6>Total de Tranformadores Entregados</h6>
+                                        <h4 class="text-danger">{{ $entrega->transformadores->sum('cantidad') }}</h4>
                                     </div>
                                 </div>
                             @endif

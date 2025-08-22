@@ -34,7 +34,7 @@
 
                     <div class="row">
                         {{-- Información de la Entrega --}}
-                        <div class="col-lg-8">
+                        <div class="col-lg-12">
                             <div class="card">
                                 <div class="card-header">
                                     <h4><i class="fas fa-file-alt"></i> Información de la Entrega</h4>
@@ -175,7 +175,7 @@
                         </div>
 
                         {{-- Selección de Equipos --}}
-                        <div class="col-lg-4">
+                        <div class="col-lg-6">
                             <div class="card">
                                 <div class="card-header">
                                     <h4>Equipos HT Disponibles</h4>
@@ -269,6 +269,40 @@
                                 </div>
                             </div>
                         </div>
+
+                        {{-- Accesorios --}}
+                        <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4><i class="fas fa-plug"></i> Accesorios</h4>
+                            </div>
+                            <div class="card-body">
+                                {{-- Cunas Cargadoras --}}
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h5><i class="fas fa-battery-half"></i> Cunas Cargadoras</h5>
+                                        <div class="form-group">
+                                            <button type="button" id="addCunaCargadora" class="btn btn-sm btn-info">
+                                                <i class="fas fa-plus"></i> Agregar Cuna Cargadora
+                                            </button>
+                                        </div>
+                                        <div id="cunasContainer"></div>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <h5><i class="fas fa-plug"></i> Transformadores 12V</h5>
+                                        <div class="form-group">
+                                            <label for="cantidad_transformadores">Cantidad de Transformadores</label>
+                                            <input type="number" class="form-control" id="cantidad_transformadores" name="cantidad_transformadores"
+                                                min="0" value="{{ old('cantidad_transformadores', 0) }}" placeholder="0">
+                                            <small class="text-muted">Los transformadores no requieren número de serie</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+
                     </div>
                     <div class="card mt-3">
                         <div class="card-header">
@@ -315,6 +349,26 @@
 @push('scripts')
     <script>
         $(document).ready(function() {
+            // Event listener for adding cunas cargadoras
+            document.getElementById('addCunaCargadora').addEventListener('click', function() {
+                addCunaCargadora();
+            });
+
+            // Event listener for removing cunas cargadoras (using event delegation)
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-cuna') || e.target.closest('.remove-cuna')) {
+                    const button = e.target.classList.contains('remove-cuna') ? e.target : e.target.closest('.remove-cuna');
+                    const cunaId = button.getAttribute('data-cuna');
+
+                    if (confirm('¿Está seguro de que desea eliminar esta cuna cargadora?')) {
+                        removeCunaCargadora(cunaId);
+                    }
+                }
+            });
+
+            // Initialize counter
+            updateCunaCounter();
+
             $('.select2').select2({
                 width: '100%'
             });
@@ -341,6 +395,120 @@
                 document.getElementById('imageContainer').appendChild(newImageDiv);
             });
             // ---- Fin carga de imagenes y archivos adjuntos
+
+            //Carga de cunas cargadoras y transformadores
+            let cunaCount = 0;
+            function addCunaCargadora() {
+                cunaCount++;
+
+                const newCunaDiv = document.createElement('div');
+                newCunaDiv.classList.add('cuna-item', 'mb-3', 'p-3', 'border', 'rounded');
+                newCunaDiv.id = `cuna-${cunaCount}`;
+
+                newCunaDiv.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0"><i class="fas fa-battery-half"></i> Cuna Cargadora #${cunaCount}</h6>
+                        <button type="button" class="btn btn-sm btn-danger remove-cuna" data-cuna="${cunaCount}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="cunas[${cunaCount - 1}][marca]">Marca <span class="text-danger">*</span></label>
+                                <select class="form-control" name="cunas[${cunaCount - 1}][marca]" required>
+                                    <option value="">Seleccionar marca</option>
+                                    <option value="Sepura">Sepura</option>
+                                    <option value="Teltronic">Teltronic</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="cunas[${cunaCount - 1}][numero_serie]">Número de Serie <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="cunas[${cunaCount - 1}][numero_serie]"
+                                    placeholder="Ej: SC001234" maxlength="255" required>
+                            </div>
+                        </div>
+
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="cunas[${cunaCount - 1}][cantidad]">Cantidad</label>
+                                <input type="number" class="form-control" name="cunas[${cunaCount - 1}][cantidad]"
+                                    value="1" min="1" max="99">
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="cunas[${cunaCount - 1}][observaciones]">Observaciones</label>
+                                <input type="text" class="form-control" name="cunas[${cunaCount - 1}][observaciones]"
+                                    placeholder="Observaciones opcionales" maxlength="255">
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('cunasContainer').appendChild(newCunaDiv);
+                updateCunaCounter();
+            }
+
+            function removeCunaCargadora(cunaId) {
+                const cunaElement = document.getElementById(`cuna-${cunaId}`);
+                if (cunaElement) {
+                    cunaElement.remove();
+                    updateCunaCounter();
+                    reorderCunas();
+                }
+            }
+
+            function updateCunaCounter() {
+                const totalCunas = document.querySelectorAll('.cuna-item').length;
+                const addButton = document.getElementById('addCunaCargadora');
+
+                if (totalCunas === 0) {
+                    addButton.innerHTML = '<i class="fas fa-plus"></i> Agregar Cuna Cargadora';
+                } else {
+                    addButton.innerHTML = `<i class="fas fa-plus"></i> Agregar Cuna Cargadora (${totalCunas})`;
+                }
+            }
+
+            function reorderCunas() {
+                const cunas = document.querySelectorAll('.cuna-item');
+                cunas.forEach((cuna, index) => {
+                    // Update the header number
+                    const header = cuna.querySelector('h6');
+                    if (header) {
+                        header.innerHTML = `<i class="fas fa-battery-half"></i> Cuna Cargadora #${index + 1}`;
+                    }
+
+                    // Update all input names to maintain correct array indexing
+                    const inputs = cuna.querySelectorAll('input, select');
+                    inputs.forEach(input => {
+                        const name = input.getAttribute('name');
+                        if (name && name.includes('cunas[')) {
+                            const newName = name.replace(/cunas\[\d+\]/, `cunas[${index}]`);
+                            input.setAttribute('name', newName);
+                        }
+                    });
+
+                    // Update the remove button data attribute
+                    const removeBtn = cuna.querySelector('.remove-cuna');
+                    if (removeBtn) {
+                        removeBtn.setAttribute('data-cuna', index + 1);
+                    }
+
+                    // Update the div id
+                    cuna.id = `cuna-${index + 1}`;
+                });
+
+                // Update the global counter
+                cunaCount = cunas.length;
+            }
+
+            //Fin carga de cunas cargadoras y transformadores
 
             $(document).on('click', '.quitar-equipo', function() {
                 const id = $(this).data('id');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Destino;
 use App\Models\DetalleDevolucionEquipo;
+use App\Models\DetalleEntregaAccesorio;
 use App\Models\DetalleEntregaEquipo;
 use App\Models\DevolucionEquipo;
 use App\Models\EntregaEquipo;
@@ -150,6 +151,32 @@ class EntregasEquiposController extends Controller
                 FlotaGeneral::find($equipoId)->update(['estado' => 'entregado']);
             }
 
+            // Crear accesorios si se especificaron
+            if ($request->has('cunas')) {
+                foreach ($request->cunas as $cuna) {
+                    DetalleEntregaAccesorio::create([
+                        'entrega_id' => $entrega->id,
+                        'tipo_accesorio' => DetalleEntregaAccesorio::TIPO_CUNA_CARGADORA,
+                        'cantidad' => $cuna['cantidad'],
+                        'marca' => $cuna['marca'],
+                        'numero_serie' => $cuna['numero_serie'] ?? null,
+                        'observaciones' => $cuna['observaciones'] ?? null
+                    ]);
+                }
+            }
+
+            // Crear transformadores si se especificaron
+            if ($request->has('cantidad_transformadores') && $request->cantidad_transformadores > 0) {
+                DetalleEntregaAccesorio::create([
+                    'entrega_id' => $entrega->id,
+                    'tipo_accesorio' => DetalleEntregaAccesorio::TIPO_TRANSFORMADOR,
+                    'cantidad' => $request->cantidad_transformadores,
+                    'marca' => null, // Transformadores no tienen marca
+                    'numero_serie' => null, // Transformadores no tienen número de serie
+                    'observaciones' => null // Transformadores no tienen observaciones
+                ]);
+            }
+
             DB::commit();
 
             return redirect()->route('entrega-equipos.show', $entrega->id)
@@ -166,7 +193,13 @@ class EntregasEquiposController extends Controller
 
     public function show($id)
     {
-        $entrega = EntregaEquipo::with(['equipos', 'detalleEntregas.equipo'])->findOrFail($id);
+        $entrega = EntregaEquipo::with([
+            'equipos',
+            'detalleEntregas.equipo',
+            'accesorios',
+            'cunasCargadoras',
+            'transformadores'
+            ])->findOrFail($id);
         return view('entregas.entregas-equipos.show', compact('entrega'));
     }
 
@@ -322,7 +355,7 @@ class EntregasEquiposController extends Controller
         $entrega = EntregaEquipo::with(['equipos', 'detalleEntregas.equipo'])->findOrFail($id);
 
         // Ruta al template de Word
-        $templatePath = storage_path('app/templates/template_entrega_equipos.docx');
+        $templatePath = storage_path('app/templates/template_entrega_equipos.docx'); //con cunas y transformadores app/templates/template_entrega_equipos_2_bateria_cuna_trafo.docx
 
         if (!file_exists($templatePath)) {
             return redirect()->back()->with('error', 'Template de documento no encontrado');

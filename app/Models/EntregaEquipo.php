@@ -36,6 +36,26 @@ class EntregaEquipo extends Model
         return $this->hasMany(DetalleEntregaEquipo::class, 'entrega_id');
     }
 
+    // Relación con accesorios
+    public function accesorios()
+    {
+        return $this->hasMany(DetalleEntregaAccesorio::class, 'entrega_id');
+    }
+
+    // Relación específica para cunas cargadoras
+    public function cunasCargadoras()
+    {
+        return $this->hasMany(DetalleEntregaAccesorio::class, 'entrega_id')
+                ->where('tipo_accesorio', DetalleEntregaAccesorio::TIPO_CUNA_CARGADORA);
+    }
+
+    // Relación específica para transformadores
+    public function transformadores()
+    {
+        return $this->hasMany(DetalleEntregaAccesorio::class, 'entrega_id')
+                ->where('tipo_accesorio', DetalleEntregaAccesorio::TIPO_TRANSFORMADOR);
+    }
+
     // Relación con equipos a través del detalle
     public function equipos()
     {

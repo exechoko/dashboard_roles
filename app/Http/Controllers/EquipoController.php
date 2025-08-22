@@ -153,6 +153,7 @@ class EquipoController extends Controller
             $equipo->tei = $request->tei;
             $equipo->nombre_issi = $request->nombre_issi;
             $equipo->numero_bateria = $request->numero_bateria ?? null;
+            $equipo->numero_segunda_bateria = $request->numero_segunda_bateria ?? null;
             $equipo->provisto = $request->provisto;
             $equipo->propietario = $request->propietario;
             $equipo->con_garantia = (isset($request->con_garantia)) ? true : false;

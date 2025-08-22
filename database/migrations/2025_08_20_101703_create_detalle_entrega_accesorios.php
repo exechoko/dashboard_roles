@@ -19,6 +19,7 @@ class CreateDetalleEntregaAccesorios extends Migration
             $table->enum('tipo_accesorio', ['cuna_cargadora', 'transformador']);
             $table->integer('cantidad')->default(1);
             $table->string('marca')->nullable(); // Solo para cunas: Sepura o Teltronic
+            $table->string('modelo')->nullable();
             $table->string('numero_serie')->nullable(); // Solo para cunas
             $table->text('observaciones')->nullable();
             $table->timestamps();

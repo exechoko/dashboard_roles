@@ -12,6 +12,7 @@ class Equipo extends Model
         'issi',
         'tei',
         'numero_bateria',
+        'numero_segunda_bateria',
         'tipo_terminal_id',
         'estado_id',
         'fecha_estado',

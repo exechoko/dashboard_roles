@@ -199,7 +199,7 @@ class EntregasEquiposController extends Controller
             'accesorios',
             'cunasCargadoras',
             'transformadores'
-            ])->findOrFail($id);
+        ])->findOrFail($id);
         return view('entregas.entregas-equipos.show', compact('entrega'));
     }
 
@@ -352,14 +352,29 @@ class EntregasEquiposController extends Controller
 
     public function generarDocumento($id)
     {
-        $entrega = EntregaEquipo::with(['equipos', 'detalleEntregas.equipo'])->findOrFail($id);
+        $entrega = EntregaEquipo::with([
+            'equipos.equipo',
+            'detalleEntregas.equipo',
+            'cunasCargadoras',
+            'transformadores'
+        ])->findOrFail($id);
 
-        // Ruta al template de Word
-        $templatePath = storage_path('app/templates/template_entrega_equipos.docx'); //con cunas y transformadores app/templates/template_entrega_equipos_2_bateria_cuna_trafo.docx
+        // Determinar qué template usar basado en los accesorios
+        $tieneCunas = $entrega->cunasCargadoras()->exists();
+        $tieneTransformadores = $entrega->transformadores()->exists();
+        $tieneAccesorios = $tieneCunas || $tieneTransformadores;
+
+        // Seleccionar el template apropiado
+        $templateName = $tieneAccesorios
+            ? 'template_entrega_equipos_2_bateria_cuna_trafo.docx'
+            : 'template_entrega_equipos.docx';
+
+        $templatePath = storage_path('app/templates/' . $templateName);
 
         if (!file_exists($templatePath)) {
-            return redirect()->back()->with('error', 'Template de documento no encontrado');
+            return redirect()->back()->with('error', 'Template de documento no encontrado: ' . $templateName);
         }
+        //dd($templatePath);
 
         try {
             $templateProcessor = new TemplateProcessor($templatePath);
@@ -387,7 +402,7 @@ class EntregasEquiposController extends Controller
 
             $templateProcessor->setValue('MES', $mesEspanol);
             $templateProcessor->setValue('ANIO', $entrega->fecha_entrega->format('Y'));
-            $templateProcessor->setValue('HORA', \Carbon\Carbon::parse($entrega->hora_entrega)->format('H:i'));
+            $templateProcessor->setValue('HORA', Carbon::parse($entrega->hora_entrega)->format('H:i'));
 
             // Variables de cantidad y descripción
             $cantidadEquipos = $entrega->equipos->count();
@@ -415,30 +430,82 @@ class EntregasEquiposController extends Controller
             $templateProcessor->setValue('PERSONAL_ENTREGA', $entrega->personal_entrega ?? '');
             $templateProcessor->setValue('LEGAJO_ENTREGA', $entrega->legajo_entrega ?? '');
 
-            // Preparar datos de la tabla de equipos
-            $equiposData = [];
-            $contador = 1;
+            // Preparar datos específicos según el template
+            if ($tieneAccesorios) {
+                // Para template con accesorios - calcular totales de segundas baterías y cunas
+                $totalSegundasBaterias = 0;
+                $totalCunas = $entrega->cunasCargadoras->sum('cantidad');
 
-            foreach ($entrega->equipos as $equipo) {
-                $equiposData[] = [
-                    'NUMERO' => $contador++,
-                    'ID' => $equipo->equipo->nombre_issi ?? 'N/A',
-                    'TEI' => $equipo->equipo->tei ?? 'N/A',
-                    'BATERIA' => $equipo->equipo->numero_bateria ?? 'N/A'
-                ];
+                // Preparar datos de equipos con segunda batería y cuna
+                $equiposData = [];
+                $contador = 1;
+                $contadorCuna = 1;
+
+                foreach ($entrega->equipos as $equipo) {
+                    // Contar segundas baterías disponibles
+                    if (!empty($equipo->equipo->segunda_bateria)) {
+                        $totalSegundasBaterias++;
+                    }
+
+                    $equiposData[] = [
+                        'NUMERO' => $contador++,
+                        'ID' => $equipo->equipo->nombre_issi ?? 'N/A',
+                        'TEI' => $equipo->equipo->tei ?? 'N/A',
+                        'BATERIA' => $equipo->equipo->numero_bateria ?? 'N/A',
+                        'BATERIA_2' => $equipo->equipo->segunda_bateria ?? 'N/A',
+                        'CUNA' => $equipo->cunasCargadoras->numero_serie ?? 'N/A',
+                    ];
+                }
+
+                // Variables específicas del template con accesorios
+                $templateProcessor->setValue('CANTIDAD_SEGUNDA_BATERIAS', $totalSegundasBaterias);
+                $templateProcessor->setValue('CANTIDAD_SEGUNDA_BATERIAS_LETRAS', $this->numeroALetras($totalSegundasBaterias));
+                $templateProcessor->setValue('CANTIDAD_CUNAS', $totalCunas);
+                $templateProcessor->setValue('CANTIDAD_CUNAS_LETRAS', $this->numeroALetras($totalCunas));
+                $templateProcessor->setValue('MARCA_CUNA', $entrega->cunasCargadoras->first()->marca ?? 'N/A');
+                $templateProcessor->setValue('MODELO_CUNA', $entrega->cunasCargadoras->first()->modelo ?? 'N/A');
+
+            } else {
+                // Para template básico sin accesorios
+                $equiposData = [];
+                $contador = 1;
+
+                foreach ($entrega->equipos as $equipo) {
+                    $equiposData[] = [
+                        'NUMERO' => $contador++,
+                        'ID' => $equipo->equipo->nombre_issi ?? 'N/A',
+                        'TEI' => $equipo->equipo->tei ?? 'N/A',
+                        'BATERIA' => $equipo->equipo->numero_bateria ?? 'N/A'
+                    ];
+                }
             }
 
-            // Clonar filas de la tabla
+            // Clonar filas de la tabla de equipos
             if (!empty($equiposData)) {
                 $templateProcessor->cloneRowAndSetValues('NUMERO', $equiposData);
             }
 
-            // limpiar dependencia para nombre de carpeta válido en Windows
+            // Limpiar dependencia para nombre de carpeta válido en Windows
             $dependenciaNombre = $entrega->dependencia ?? 'DIRECCIÓN INSTITUTOS POLICIALES';
             $dependenciaFolder = $this->limpiarNombreCarpeta($dependenciaNombre);
 
+            // Crear sufijo del nombre de archivo basado en accesorios
+            $sufijos = [];
+            if ($tieneCunas) {
+                $cantidadCunas = $entrega->cunasCargadoras->sum('cantidad');
+                $sufijos[] = $cantidadCunas . '_cunas';
+            }
+            if ($tieneTransformadores) {
+                $cantidadTrafos = $entrega->transformadores->sum('cantidad');
+                $sufijos[] = $cantidadTrafos . '_trafos';
+            }
+
+            $sufijoAccesorios = !empty($sufijos) ? '_' . implode('_', $sufijos) : '';
+
             // Nombre del archivo
-            $fileName = 'entrega_' . $entrega->id . '_' . date('Y-m-d_H-i-s') . '_' . $entrega->equipos->count() . '_equipos_' . $dependenciaNombre . '.docx';
+            $fileName = 'entrega_' . $entrega->id . '_' . date('Ymd_His') . '_' .
+                $entrega->equipos->count() . '_equipos' . $sufijoAccesorios . '_' .
+                $this->acortarNombreDependencia($dependenciaNombre) . '.docx';
 
             // ----------- (1) Guardar en TEMP local para descarga ---------
             $tempPath = storage_path('app/temp/' . $fileName);
@@ -459,26 +526,95 @@ class EntregasEquiposController extends Controller
             }
 
             $networkFile = $fullPath . '\\' . $fileName;
-            // copiar el archivo local al de red
+            // Copiar el archivo local al de red
             if (@copy($tempPath, $networkFile)) {
-                Log::info("Copia de documento guardada en red: {$networkFile}");
+                Log::info("Documento generado con template '{$templateName}' y guardado en red: {$networkFile}");
             } else {
                 Log::warning("No se pudo copiar el documento a red: {$networkFile}");
             }
 
-            $entrega->ruta_archivo = $networkFile; // $networkFile es la ruta completa al archivo
+            $entrega->ruta_archivo = $networkFile;
             $entrega->save();
 
-            return redirect()->route('entrega-equipos.index')
-                ->with('success', 'Acta de entrega generada y guardada en red exitosamente');
+            $mensaje = $tieneAccesorios
+                ? 'Acta de entrega con accesorios generada y guardada exitosamente'
+                : 'Acta de entrega generada y guardada exitosamente';
 
-            // ----------- (3) Entregar descarga al usuario ---------------
-            //return response()->download($tempPath, $fileName);
+            return redirect()->route('entrega-equipos.index')
+                ->with('success', $mensaje);
 
         } catch (Exception $e) {
             Log::error("Error al generar documento: " . $e->getMessage());
             return redirect()->back()->with('error', 'Error al generar el documento: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Acorta el nombre de la dependencia para nombres de archivo más cortos
+     */
+    private function acortarNombreDependencia($nombre)
+    {
+        // Array de abreviaciones comunes
+        $abreviaciones = [
+            'Dirección General de Operaciones y Seguridad Pública' => 'DGOSP',
+            'Dirección General de Investigaciones' => 'DGI',
+            'Dirección General de Seguridad' => 'DGS',
+            'Dirección de Investigaciones' => 'DI',
+            'División Investigaciones' => 'DivInv',
+            'Comisaría Primera' => 'Cria1',
+            'Comisaría Segunda' => 'Cria2',
+            'Comisaría Tercera' => 'Cria3',
+            'Comisaría Cuarta' => 'Cria4',
+            'Comisaría Quinta' => 'Cria5',
+            'Comisaría Sexta' => 'Cria6',
+            'Comisaría Séptima' => 'Cria7',
+            'Comisaría Octava' => 'Cria8',
+            'Comisaría Novena' => 'Cria9',
+            'Comisaría Décima' => 'Cria10',
+            'Comisaría Undécima' => 'Cria11',
+            'Comisaría Duodécima' => 'Cria12',
+            'Comando Radioeléctrico' => 'CmdRadio',
+            'Infantería' => 'Inf',
+            'Motorizada' => 'Mot',
+            'Dirección Institutos Policiales' => 'DIP',
+            'Instituto de Formación Policial' => 'IFP',
+            'Escuela de Cadetes' => 'EscCad',
+            'División Canes' => 'DivCanes',
+            'División Comunicaciones' => 'DivCom',
+            'División Bomberos' => 'DivBomb',
+            'Unidad Regional' => 'UR',
+            'Seccional' => 'Secc',
+            'Destacamento' => 'Dest'
+        ];
+
+        // Buscar coincidencia exacta primero
+        if (isset($abreviaciones[$nombre])) {
+            return $abreviaciones[$nombre];
+        }
+
+        // Buscar coincidencias parciales
+        foreach ($abreviaciones as $nombreCompleto => $abreviacion) {
+            if (stripos($nombre, $nombreCompleto) !== false) {
+                return $abreviacion;
+            }
+        }
+
+        // Si no encuentra coincidencias, crear abreviación genérica
+        $palabras = explode(' ', $nombre);
+        $abreviacion = '';
+
+        foreach ($palabras as $palabra) {
+            $palabra = trim($palabra);
+            if (strlen($palabra) > 2 && !in_array(strtolower($palabra), ['de', 'del', 'la', 'las', 'el', 'los', 'y', 'e'])) {
+                $abreviacion .= strtoupper(substr($palabra, 0, 3));
+            }
+        }
+
+        // Limitar longitud final y limpiar
+        $abreviacion = substr($abreviacion, 0, 15);
+        $abreviacion = $this->limpiarNombreCarpeta($abreviacion);
+
+        return $abreviacion ?: 'DEPT';
     }
 
     /** * Limpia el nombre de la dependencia para usar como nombre de carpeta */

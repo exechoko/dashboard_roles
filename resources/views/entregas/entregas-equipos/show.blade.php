@@ -357,6 +357,9 @@
                                             <th>TEI</th>
                                             <th>ISSI</th>
                                             <th>N° Batería</th>
+                                            @if ($entrega->con_2_baterias)
+                                                <th>N° 2da Batería</th>
+                                            @endif
                                             <th>Estado Actual</th>
                                         </tr>
                                     </thead>
@@ -368,6 +371,9 @@
                                                 <td>{{ $equipo->equipo->tei ?? 'N/A' }}</td>
                                                 <td>{{ $equipo->equipo->issi ?? 'N/A' }}</td>
                                                 <td>{{ $equipo->equipo->numero_bateria ?? 'N/A' }}</td>
+                                                @if ($entrega->con_2_baterias)
+                                                    <td>{{ $equipo->equipo->numero_segunda_bateria ?? 'N/A' }}</td>
+                                                @endif
                                                 <td>
                                                     @switch($equipo->equipo->estado->nombre)
                                                         @case('disponible')
@@ -512,6 +518,9 @@
                                             <th>TEI</th>
                                             <th>ISSI</th>
                                             <th>N° Batería</th>
+                                            @if ($entrega->con_2_baterias)
+                                                <th>N° 2da Batería</th>
+                                            @endif
                                             <th>Estado</th>
                                             <th>Devuelto en</th>
                                         </tr>
@@ -530,6 +539,9 @@
                                                 <td>{{ $equipo->equipo->tei ?? 'N/A' }}</td>
                                                 <td>{{ $equipo->equipo->issi ?? 'N/A' }}</td>
                                                 <td>{{ $equipo->equipo->numero_bateria ?? 'N/A' }}</td>
+                                                @if ($entrega->con_2_baterias)
+                                                    <td>{{ $equipo->equipo->numero_segunda_bateria ?? 'N/A' }}</td>
+                                                @endif
                                                 <td>
                                                     @if($devolucion)
                                                         <span class="badge badge-success">Devuelto</span>

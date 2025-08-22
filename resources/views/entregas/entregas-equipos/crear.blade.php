@@ -68,6 +68,46 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    {{-- Opciones de Entrega --}}
+                                    <div class="row mb-4">
+                                        <div class="col-12">
+                                            <h5><i class="fas fa-check-circle"></i> Opciones de Entrega</h5>
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="con_segunda_bateria" name="con_segunda_bateria" value="1"
+                                                            {{ old('con_segunda_bateria') ? 'checked' : '' }}>
+                                                        <label class="custom-control-label" for="con_segunda_bateria">
+                                                            <i class="fas fa-battery-full"></i> Con segunda batería
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="con_cuna_cargadora" name="con_cuna_cargadora" value="1"
+                                                            {{ old('con_cuna_cargadora') ? 'checked' : '' }}>
+                                                        <label class="custom-control-label" for="con_cuna_cargadora">
+                                                            <i class="fas fa-battery-half"></i> Con cuna cargadora
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="con_transformador" name="con_transformador" value="1"
+                                                            {{ old('con_transformador') ? 'checked' : '' }}>
+                                                        <label class="custom-control-label" for="con_transformador">
+                                                            <i class="fas fa-plug"></i> Con transformador
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="row">
                                         <div class="col-md-4">
                                             <div class="form-group">
@@ -194,21 +234,6 @@
                                         </div>
                                     </div>
 
-                                    <!--div class="btn-group btn-group-sm d-flex mb-3">
-                                        <button type="button" class="btn btn-outline-primary flex-fill"
-                                            id="seleccionarTodos">
-                                            <i class="fas fa-check-square"></i> Todos
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary flex-fill"
-                                            id="deseleccionarTodos">
-                                            <i class="fas fa-square"></i> Ninguno
-                                        </button>
-                                        <button type="button" class="btn btn-outline-info flex-fill"
-                                            id="seleccionarVisibles">
-                                            <i class="fas fa-eye"></i> Visibles
-                                        </button>
-                                    </div-->
-
                                     <div class="contador-seleccionados">
                                         <span id="resumenSeleccion">Selecciona equipos para continuar</span>
                                     </div>
@@ -219,7 +244,8 @@
                                                 data-tei="{{ $flota->equipo->tei ?? '' }}"
                                                 data-issi="{{ $flota->equipo->issi ?? '' }}"
                                                 data-id_equipo="{{ $flota->equipo->nombre_issi ?? '' }}"
-                                                data-numero_bateria="{{ $flota->equipo->numero_bateria ?? '' }}">
+                                                data-numero_bateria="{{ $flota->equipo->numero_bateria ?? '' }}"
+                                                data-numero_segunda_bateria="{{ $flota->equipo->numero_segunda_bateria ?? '' }}">
                                                 <div class="custom-control custom-checkbox">
                                                     <input type="checkbox" class="custom-control-input"
                                                         id="equipo_{{ $flota->id }}" name="equipos_seleccionados[]"
@@ -236,6 +262,12 @@
                                                             @if ($flota->equipo->numero_bateria)
                                                                 <div><strong>Batería:</strong>
                                                                     {{ $flota->equipo->numero_bateria }}</div>
+                                                            @endif
+                                                            @if ($flota->equipo->numero_segunda_bateria)
+                                                                <div class="segunda-bateria-info" style="display: none;">
+                                                                    <strong>Segunda Batería:</strong>
+                                                                    {{ $flota->equipo->numero_segunda_bateria }}
+                                                                </div>
                                                             @endif
                                                             <div><strong>MARCA:</strong> {{ $flota->equipo->tipo_terminal->marca ?? 'N/A' }} <strong>Modelo:</strong> {{ $flota->equipo->tipo_terminal->modelo ?? '' }}
                                                             </div>
@@ -278,7 +310,7 @@
                             </div>
                             <div class="card-body">
                                 {{-- Cunas Cargadoras --}}
-                                <div class="row">
+                                <div class="row" id="cunasSection" style="display: none;">
                                     <div class="col-md-8">
                                         <h5><i class="fas fa-battery-half"></i> Cunas Cargadoras</h5>
                                         <div class="form-group">
@@ -288,7 +320,10 @@
                                         </div>
                                         <div id="cunasContainer"></div>
                                     </div>
+                                </div>
 
+                                {{-- Transformadores --}}
+                                <div class="row" id="transformadoresSection" style="display: none;">
                                     <div class="col-md-4">
                                         <h5><i class="fas fa-plug"></i> Transformadores 12V</h5>
                                         <div class="form-group">
@@ -298,6 +333,13 @@
                                             <small class="text-muted">Los transformadores no requieren número de serie</small>
                                         </div>
                                     </div>
+                                </div>
+
+                                {{-- Mensaje cuando no hay accesorios seleccionados --}}
+                                <div id="noAccesoriosMessage">
+                                    <p class="text-muted text-center">
+                                        <i class="fas fa-info-circle"></i> Selecciona las opciones de entrega arriba para configurar accesorios
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -349,55 +391,52 @@
 @push('scripts')
     <script>
         $(document).ready(function() {
-            // Event listener for adding cunas cargadoras
-            document.getElementById('addCunaCargadora').addEventListener('click', function() {
-                addCunaCargadora();
-            });
-
-            // Event listener for removing cunas cargadoras (using event delegation)
-            document.addEventListener('click', function(e) {
-                if (e.target.classList.contains('remove-cuna') || e.target.closest('.remove-cuna')) {
-                    const button = e.target.classList.contains('remove-cuna') ? e.target : e.target.closest('.remove-cuna');
-                    const cunaId = button.getAttribute('data-cuna');
-
-                    if (confirm('¿Está seguro de que desea eliminar esta cuna cargadora?')) {
-                        removeCunaCargadora(cunaId);
-                    }
-                }
-            });
-
-            // Initialize counter
-            updateCunaCounter();
-
-            $('.select2').select2({
-                width: '100%'
-            });
-            // Forzar el foco en el campo de búsqueda cuando se abre el Select2
-            $(document).on('select2:open', () => {
-                let select2Field = document.querySelector('.select2-search__field');
-                if (select2Field) {
-                    select2Field.focus();
-                }
-            });
-            // ---- Carga de imagenes y archivos adjuntos
-            let imageCount = 0;
-            document.getElementById('addImage').addEventListener('click', function() {
-                imageCount++;
-                const newImageDiv = document.createElement('div');
-                newImageDiv.classList.add('col-xs-12', 'col-sm-12', 'col-md-4');
-
-                newImageDiv.innerHTML = `
-                    <div class="form-group">
-                        <label for="imagen${imageCount}">Imagen ${imageCount}</label>
-                        <input type="file" name="imagen${imageCount}" class="form-control" accept="image/*">
-                    </div>
-                `;
-                document.getElementById('imageContainer').appendChild(newImageDiv);
-            });
-            // ---- Fin carga de imagenes y archivos adjuntos
-
-            //Carga de cunas cargadoras y transformadores
+            // Variables globales - declarar al inicio
             let cunaCount = 0;
+            let imageCount = 0;
+            let equiposDisponibles = [];
+            let equiposFiltrados = [];
+
+            // Funcionalidad de checkboxes de opciones de entrega
+            function toggleSections() {
+                const conCuna = $('#con_cuna_cargadora').is(':checked');
+                const conTransformador = $('#con_transformador').is(':checked');
+                const conSegundaBateria = $('#con_segunda_bateria').is(':checked');
+
+                // Mostrar/ocultar secciones
+                if (conCuna) {
+                    $('#cunasSection').show();
+                } else {
+                    $('#cunasSection').hide();
+                    // Limpiar cunas cuando se deshabilita
+                    $('#cunasContainer').empty();
+                    cunaCount = 0;
+                    updateCunaCounter();
+                }
+
+                if (conTransformador) {
+                    $('#transformadoresSection').show();
+                } else {
+                    $('#transformadoresSection').hide();
+                    $('#cantidad_transformadores').val(0);
+                }
+
+                // Mostrar/ocultar información de segunda batería en equipos
+                if (conSegundaBateria) {
+                    $('.segunda-bateria-info').show();
+                } else {
+                    $('.segunda-bateria-info').hide();
+                }
+
+                // Mostrar/ocultar mensaje cuando no hay accesorios
+                if (!conCuna && !conTransformador) {
+                    $('#noAccesoriosMessage').show();
+                } else {
+                    $('#noAccesoriosMessage').hide();
+                }
+            }
+
+            // Funciones para manejo de cunas
             function addCunaCargadora() {
                 cunaCount++;
 
@@ -508,6 +547,60 @@
                 cunaCount = cunas.length;
             }
 
+            // Event listener for adding cunas cargadoras
+            document.getElementById('addCunaCargadora').addEventListener('click', function() {
+                addCunaCargadora();
+            });
+
+            // Event listener for removing cunas cargadoras (using event delegation)
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-cuna') || e.target.closest('.remove-cuna')) {
+                    const button = e.target.classList.contains('remove-cuna') ? e.target : e.target.closest('.remove-cuna');
+                    const cunaId = button.getAttribute('data-cuna');
+
+                    if (confirm('¿Está seguro de que desea eliminar esta cuna cargadora?')) {
+                        removeCunaCargadora(cunaId);
+                    }
+                }
+            });
+
+            // Initialize counter
+            updateCunaCounter();
+
+            // Event listeners para checkboxes de opciones de entrega
+            $('#con_cuna_cargadora, #con_transformador, #con_segunda_bateria').change(function() {
+                toggleSections();
+            });
+
+            // Inicializar el estado de las secciones
+            toggleSections();
+
+            $('.select2').select2({
+                width: '100%'
+            });
+            // Forzar el foco en el campo de búsqueda cuando se abre el Select2
+            $(document).on('select2:open', () => {
+                let select2Field = document.querySelector('.select2-search__field');
+                if (select2Field) {
+                    select2Field.focus();
+                }
+            });
+            // ---- Carga de imagenes y archivos adjuntos
+            document.getElementById('addImage').addEventListener('click', function() {
+                imageCount++;
+                const newImageDiv = document.createElement('div');
+                newImageDiv.classList.add('col-xs-12', 'col-sm-12', 'col-md-4');
+
+                newImageDiv.innerHTML = `
+                    <div class="form-group">
+                        <label for="imagen${imageCount}">Imagen ${imageCount}</label>
+                        <input type="file" name="imagen${imageCount}" class="form-control" accept="image/*">
+                    </div>
+                `;
+                document.getElementById('imageContainer').appendChild(newImageDiv);
+            });
+            // ---- Fin carga de imagenes y archivos adjuntos
+
             //Fin carga de cunas cargadoras y transformadores
 
             $(document).on('click', '.quitar-equipo', function() {
@@ -537,10 +630,24 @@
                     const tei = equipoItem.data('tei') || 'TEI N/A';
                     const issi = equipoItem.data('issi') || 'ISSI N/A';
                     const id = equipoItem.data('id') || 'ID N/A';
+                    const numeroBateria = equipoItem.data('numero_bateria') || '';
+                    const numeroSegundaBateria = equipoItem.data('numero_segunda_bateria') || '';
+                    const conSegundaBateria = $('#con_segunda_bateria').is(':checked');
+
+                    let bateriaInfo = '';
+                    if (numeroBateria) {
+                        bateriaInfo += `<div><small><strong>Batería:</strong> ${numeroBateria}</small></div>`;
+                    }
+                    if (conSegundaBateria && numeroSegundaBateria) {
+                        bateriaInfo += `<div><small><strong>Segunda Batería:</strong> ${numeroSegundaBateria}</small></div>`;
+                    }
 
                     const li = $(`
             <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span><strong>${tei}</strong> - ${issi}</span>
+                <div>
+                    <span><strong>${tei}</strong> - ${issi}</span>
+                    ${bateriaInfo}
+                </div>
                 <button class="btn btn-sm btn-danger quitar-equipo" data-id="${$checkbox.val()}">
                     <i class="fas fa-times"></i>
                 </button>
@@ -556,9 +663,9 @@
                 $('.alert').fadeOut('slow');
             }, 5000);
 
-            // Variables para tracking
-            let equiposDisponibles = [];
-            let equiposFiltrados = [];
+            // Variables para tracking - ya declaradas arriba
+            // let equiposDisponibles = [];
+            // let equiposFiltrados = [];
 
             // Inicializar datos de equipos desde el DOM
             function inicializarEquipos() {
@@ -572,6 +679,7 @@
                         tei: $item.data('tei'),
                         issi: $item.data('issi'),
                         numero_bateria: $item.data('numero_bateria'),
+                        numero_segunda_bateria: $item.data('numero_segunda_bateria'),
                         element: $item
                     };
                     equiposDisponibles.push(equipoData);
@@ -621,13 +729,15 @@
                     const tei = ($item.data('tei') || '').toString().toLowerCase();
                     const issi = ($item.data('issi') || '').toString().toLowerCase();
                     const bateria = ($item.data('numero_bateria') || '').toString().toLowerCase();
+                    const segundaBateria = ($item.data('numero_segunda_bateria') || '').toString().toLowerCase();
 
                     const coincide = term === '' ||
                         id.includes(term) ||
                         idEquipo.includes(term) ||
                         tei.includes(term) ||
                         issi.includes(term) ||
-                        bateria.includes(term);
+                        bateria.includes(term) ||
+                        segundaBateria.includes(term);
 
                     if (coincide) {
                         $item.show();
@@ -807,6 +917,11 @@
             font-weight: 600;
         }
 
+        .segunda-bateria-info {
+            color: #28a745;
+            font-weight: 500;
+        }
+
         .badge-sm {
             font-size: 10px;
             padding: 3px 8px;
@@ -940,6 +1055,33 @@
         .btn-group-sm .btn {
             padding: 6px 12px;
             font-size: 12px;
+        }
+
+        /* Opciones de entrega */
+        .custom-checkbox {
+            margin-bottom: 15px;
+        }
+
+        .custom-checkbox .custom-control-label {
+            font-weight: 500;
+            color: #495057;
+            display: flex;
+            align-items: center;
+        }
+
+        .custom-checkbox .custom-control-label i {
+            margin-right: 8px;
+            color: #007bff;
+        }
+
+        /* Animaciones para mostrar/ocultar secciones */
+        #cunasSection, #transformadoresSection {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* Scrollbar personalizada */

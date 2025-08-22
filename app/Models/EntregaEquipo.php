@@ -20,6 +20,7 @@ class EntregaEquipo extends Model
         'legajo_entrega',
         'motivo_operativo',
         'estado',
+        'con_2_baterias',
         'observaciones',
         'rutas_imagenes',
         'ruta_archivo',

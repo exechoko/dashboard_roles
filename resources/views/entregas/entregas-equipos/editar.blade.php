@@ -68,6 +68,44 @@
                                             </div>
                                         </div>
                                     </div>
+                                    {{-- Opciones de Entrega --}}
+                                    <div class="row mb-4">
+                                        <div class="col-12">
+                                            <h5><i class="fas fa-check-circle"></i> Opciones de Entrega</h5>
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="con_segunda_bateria" name="con_segunda_bateria" value="1"
+                                                            {{ old('con_segunda_bateria', $entrega->con_2_baterias ?? false) ? 'checked' : '' }}>
+                                                        <label class="custom-control-label" for="con_segunda_bateria">
+                                                            <i class="fas fa-battery-full"></i> Con segunda batería
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="con_cuna_cargadora" name="con_cuna_cargadora" value="1"
+                                                            {{ old('con_cuna_cargadora') ? 'checked' : '' }}>
+                                                        <label class="custom-control-label" for="con_cuna_cargadora">
+                                                            <i class="fas fa-battery-half"></i> Con cuna cargadora
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="custom-control custom-checkbox">
+                                                        <input type="checkbox" class="custom-control-input"
+                                                            id="con_transformador" name="con_transformador" value="1"
+                                                            {{ old('con_transformador') ? 'checked' : '' }}>
+                                                        <label class="custom-control-label" for="con_transformador">
+                                                            <i class="fas fa-plug"></i> Con transformador
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="row">
                                         <div class="col-md-4">
                                             <div class="form-group">
@@ -187,21 +225,6 @@
                                         </div>
                                     </div>
 
-                                    <!--div class="btn-group btn-group-sm d-flex mb-3">
-                                        <button type="button" class="btn btn-outline-primary flex-fill"
-                                            id="seleccionarTodos">
-                                            <i class="fas fa-check-square"></i> Todos
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary flex-fill"
-                                            id="deseleccionarTodos">
-                                            <i class="fas fa-square"></i> Ninguno
-                                        </button>
-                                        <button type="button" class="btn btn-outline-info flex-fill"
-                                            id="seleccionarVisibles">
-                                            <i class="fas fa-eye"></i> Visibles
-                                        </button>
-                                    </div-->
-
                                     <div class="contador-seleccionados">
                                         <span id="resumenSeleccion">Selecciona equipos para continuar</span>
                                     </div>
@@ -216,7 +239,8 @@
                                                 data-tei="{{ $flota->equipo->tei ?? '' }}"
                                                 data-issi="{{ $flota->equipo->issi ?? '' }}"
                                                 data-id_equipo="{{ $flota->equipo->id_equipo ?? '' }}"
-                                                data-numero_bateria="{{ $flota->equipo->numero_bateria ?? '' }}">
+                                                data-numero_bateria="{{ $flota->equipo->numero_bateria ?? '' }}"
+                                                data-numero_segunda_bateria="{{ $flota->equipo->numero_segunda_bateria ?? '' }}">
                                                 <div class="custom-control custom-checkbox">
                                                     <input type="checkbox" class="custom-control-input"
                                                         id="equipo_{{ $flota->id }}" name="equipos_seleccionados[]"
@@ -233,6 +257,12 @@
                                                             @if ($flota->equipo->numero_bateria)
                                                                 <div><strong>Batería:</strong>
                                                                     {{ $flota->equipo->numero_bateria }}</div>
+                                                            @endif
+                                                            @if ($flota->equipo->numero_segunda_bateria)
+                                                                <div class="segunda-bateria-info" style="display: none;">
+                                                                    <strong>Segunda Batería:</strong>
+                                                                    {{ $flota->equipo->numero_segunda_bateria }}
+                                                                </div>
                                                             @endif
                                                             <div class="mt-1">
                                                                 @if($isEntregado)
@@ -264,6 +294,98 @@
                                             <small><i class="fas fa-exclamation-circle"></i> {{ $message }}</small>
                                         </div>
                                     @enderror
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Accesorios --}}
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4><i class="fas fa-plug"></i> Accesorios</h4>
+                                </div>
+                                <div class="card-body">
+                                    {{-- Cunas Cargadoras --}}
+                                    <div class="row" id="cunasSection" style="display: none;">
+                                        <div class="col-md-12">
+                                            <h5><i class="fas fa-battery-half"></i> Cunas Cargadoras</h5>
+                                            <div class="form-group">
+                                                <button type="button" id="addCunaCargadora" class="btn btn-sm btn-info">
+                                                    <i class="fas fa-plus"></i> Agregar Cuna Cargadora
+                                                </button>
+                                            </div>
+                                            <div id="cunasContainer">
+                                                {{-- Aquí puedes cargar las cunas existentes si las hay --}}
+                                                @if(isset($entrega->cunasCargadoras))
+                                                    @foreach($entrega->cunasCargadoras as $i => $cuna)
+                                                        <div class="cuna-item mb-3 p-3 border rounded" id="cuna-{{ $i+1 }}">
+                                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                                <h6 class="mb-0"><i class="fas fa-battery-half"></i> Cuna Cargadora #{{ $i+1 }}</h6>
+                                                                <button type="button" class="btn btn-sm btn-danger remove-cuna" data-cuna="{{ $i+1 }}">
+                                                                    <i class="fas fa-times"></i>
+                                                                </button>
+                                                            </div>
+                                                            <div class="row">
+                                                                <div class="col-md-3">
+                                                                    <div class="form-group">
+                                                                        <label for="cunas[{{ $i }}][marca]">Marca <span class="text-danger">*</span></label>
+                                                                        <select class="form-control" name="cunas[{{ $i }}][marca]" required>
+                                                                            <option value="">Seleccionar marca</option>
+                                                                            <option value="Sepura" {{ $cuna->marca == 'Sepura' ? 'selected' : '' }}>Sepura</option>
+                                                                            <option value="Teltronic" {{ $cuna->marca == 'Teltronic' ? 'selected' : '' }}>Teltronic</option>
+                                                                        </select>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <div class="form-group">
+                                                                        <label for="cunas[{{ $i }}][numero_serie]">Número de Serie <span class="text-danger">*</span></label>
+                                                                        <input type="text" class="form-control" name="cunas[{{ $i }}][numero_serie]"
+                                                                            value="{{ $cuna->numero_serie }}" maxlength="255" required>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-2">
+                                                                    <div class="form-group">
+                                                                        <label for="cunas[{{ $i }}][cantidad]">Cantidad</label>
+                                                                        <input type="number" class="form-control" name="cunas[{{ $i }}][cantidad]"
+                                                                            value="{{ $cuna->cantidad }}" min="1" max="1">
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-md-4">
+                                                                    <div class="form-group">
+                                                                        <label for="cunas[{{ $i }}][observaciones]">Observaciones</label>
+                                                                        <input type="text" class="form-control" name="cunas[{{ $i }}][observaciones]"
+                                                                            value="{{ $cuna->observaciones }}" maxlength="255">
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Transformadores --}}
+                                    <div class="row" id="transformadoresSection" style="display: none;">
+                                        <div class="col-md-12">
+                                            <h5><i class="fas fa-plug"></i> Transformadores 12V</h5>
+                                            <div class="form-group">
+                                                <label for="cantidad_transformadores">Cantidad de Transformadores</label>
+                                                <input type="number" class="form-control" id="cantidad_transformadores" name="cantidad_transformadores"
+                                                    min="0" value="{{ old('cantidad_transformadores', isset($entrega->transformadores) ? $entrega->transformadores->sum('cantidad') : 0) }}" placeholder="0">
+                                                <small class="text-muted">Los transformadores no requieren número de serie</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Mensaje cuando no hay accesorios seleccionados --}}
+                                    <div id="noAccesoriosMessage">
+                                        <p class="text-muted text-center">
+                                            <i class="fas fa-info-circle"></i> Selecciona las opciones de entrega arriba para configurar accesorios
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -341,6 +463,97 @@
 @push('scripts')
     <script>
         $(document).ready(function() {
+            // Accesorios
+            // Mostrar/ocultar accesorios según opciones de entrega
+            function toggleAccesorios() {
+                const conCuna = $('#con_cuna_cargadora').is(':checked');
+                const conTransformador = $('#con_transformador').is(':checked');
+                const conSegundaBateria = $('#con_segunda_bateria').is(':checked');
+
+                if (conCuna) {
+                    $('#cunasSection').show();
+                } else {
+                    $('#cunasSection').hide();
+                }
+
+                if (conTransformador) {
+                    $('#transformadoresSection').show();
+                } else {
+                    $('#transformadoresSection').hide();
+                }
+
+                if (!conCuna && !conTransformador) {
+                    $('#noAccesoriosMessage').show();
+                } else {
+                    $('#noAccesoriosMessage').hide();
+                }
+                // Mostrar/ocultar información de segunda batería en equipos
+                if (conSegundaBateria) {
+                    $('.segunda-bateria-info').show();
+                } else {
+                    $('.segunda-bateria-info').hide();
+                }
+            }
+
+            $('#con_cuna_cargadora, #con_transformador').on('change', toggleAccesorios);
+            toggleAccesorios();
+
+            // Agregar cuna cargadora dinámicamente
+            let cunaCount = $('#cunasContainer .cuna-item').length;
+            $('#addCunaCargadora').on('click', function() {
+                cunaCount++;
+                const cunaHtml = `
+                    <div class="cuna-item mb-3 p-3 border rounded" id="cuna-${cunaCount}">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0"><i class="fas fa-battery-half"></i> Cuna Cargadora #${cunaCount}</h6>
+                            <button type="button" class="btn btn-sm btn-danger remove-cuna" data-cuna="${cunaCount}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="cunas[${cunaCount}][marca]">Marca <span class="text-danger">*</span></label>
+                                    <select class="form-control" name="cunas[${cunaCount}][marca]" required>
+                                        <option value="">Seleccionar marca</option>
+                                        <option value="Sepura">Sepura</option>
+                                        <option value="Teltronic">Teltronic</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="cunas[${cunaCount}][numero_serie]">Número de Serie <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="cunas[${cunaCount}][numero_serie]" maxlength="255" required>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="form-group">
+                                    <label for="cunas[${cunaCount}][cantidad]">Cantidad</label>
+                                    <input type="number" class="form-control" name="cunas[${cunaCount}][cantidad]" value="1" min="1" max="1">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="cunas[${cunaCount}][observaciones]">Observaciones</label>
+                                    <input type="text" class="form-control" name="cunas[${cunaCount}][observaciones]" maxlength="255">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                $('#cunasContainer').append(cunaHtml);
+            });
+
+            // Eliminar cuna cargadora
+            $(document).on('click', '.remove-cuna', function() {
+                const cunaId = $(this).data('cuna');
+                $('#cuna-' + cunaId).remove();
+            });
+
+            // Mostrar/ocultar accesorios al cargar la página
+            toggleAccesorios();
+            // Fin Accesorios
             //Carga de imagenes y archivo adjuntoslet
             let imageCount = 0;
             const maxImages = 3;
@@ -457,10 +670,24 @@
                     const tei = equipoItem.data('tei') || 'TEI N/A';
                     const issi = equipoItem.data('issi') || 'ISSI N/A';
                     const id = equipoItem.data('id') || 'ID N/A';
+                    const numeroBateria = equipoItem.data('numero_bateria') || '';
+                    const numeroSegundaBateria = equipoItem.data('numero_segunda_bateria') || '';
+                    const conSegundaBateria = $('#con_segunda_bateria').is(':checked');
+
+                    let bateriaInfo = '';
+                    if (numeroBateria) {
+                        bateriaInfo += `<div><small><strong>Batería:</strong> ${numeroBateria}</small></div>`;
+                    }
+                    if (conSegundaBateria && numeroSegundaBateria) {
+                        bateriaInfo += `<div><small><strong>Segunda Batería:</strong> ${numeroSegundaBateria}</small></div>`;
+                    }
 
                     const li = $(`
                         <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <span><strong>${tei}</strong> - ${issi}</span>
+                            <div>
+                                <span><strong>${tei}</strong> - ${issi}</span>
+                                ${bateriaInfo}
+                            </div>
                             <button class="btn btn-sm btn-danger quitar-equipo" data-id="${$checkbox.val()}">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -954,6 +1181,11 @@
 
         .remove-image-btn:hover {
             background: #c82333;
+        }
+
+        .segunda-bateria-info {
+            color: #28a745;
+            font-weight: 500;
         }
     </style>
 @endpush

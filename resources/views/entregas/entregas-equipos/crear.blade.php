@@ -311,7 +311,7 @@
                             <div class="card-body">
                                 {{-- Cunas Cargadoras --}}
                                 <div class="row" id="cunasSection" style="display: none;">
-                                    <div class="col-md-8">
+                                    <div class="col-md-12">
                                         <h5><i class="fas fa-battery-half"></i> Cunas Cargadoras</h5>
                                         <div class="form-group">
                                             <button type="button" id="addCunaCargadora" class="btn btn-sm btn-info">
@@ -324,7 +324,7 @@
 
                                 {{-- Transformadores --}}
                                 <div class="row" id="transformadoresSection" style="display: none;">
-                                    <div class="col-md-4">
+                                    <div class="col-md-12">
                                         <h5><i class="fas fa-plug"></i> Transformadores 12V</h5>
                                         <div class="form-group">
                                             <label for="cantidad_transformadores">Cantidad de Transformadores</label>
@@ -476,7 +476,7 @@
                             <div class="form-group">
                                 <label for="cunas[${cunaCount - 1}][cantidad]">Cantidad</label>
                                 <input type="number" class="form-control" name="cunas[${cunaCount - 1}][cantidad]"
-                                    value="1" min="1" max="99">
+                                    value="1" min="1" max="1">
                             </div>
                         </div>
 

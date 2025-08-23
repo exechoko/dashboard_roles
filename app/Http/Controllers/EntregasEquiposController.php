@@ -438,45 +438,68 @@ class EntregasEquiposController extends Controller
             $templateProcessor->setValue('LEGAJO_ENTREGA', $entrega->legajo_entrega ?? '');
 
             // Preparar datos específicos según el template
+            $equiposData = [];
+            $contador = 1;
+            $totalSegundasBaterias = 0;
+
+            // Calcular segundas baterías (independiente de accesorios)
+            foreach ($entrega->equipos as $equipo) {
+                if (!empty($equipo->equipo->numero_segunda_bateria)) {
+                    $totalSegundasBaterias++;
+                }
+            }
+
             if ($tieneAccesorios) {
-                // Para template con accesorios - calcular totales de segundas baterías y cunas
-                $totalSegundasBaterias = 0;
+                // Para template con accesorios
                 $totalCunas = $entrega->cunasCargadoras->sum('cantidad');
 
-                // Preparar datos de equipos con segunda batería y cuna
-                $equiposData = [];
-                $contador = 1;
-                $contadorCuna = 1;
-
                 foreach ($entrega->equipos as $equipo) {
-                    // Contar segundas baterías disponibles
-                    if (!empty($equipo->equipo->segunda_bateria)) {
-                        $totalSegundasBaterias++;
-                    }
-
-                    $equiposData[] = [
+                    $equipoData = [
                         'NUMERO' => $contador++,
                         'ID' => $equipo->equipo->nombre_issi ?? 'N/A',
                         'TEI' => $equipo->equipo->tei ?? 'N/A',
                         'BATERIA' => $equipo->equipo->numero_bateria ?? 'N/A',
-                        'BATERIA_2' => $equipo->equipo->segunda_bateria ?? 'N/A',
                         'CUNA' => $equipo->cunasCargadoras->numero_serie ?? 'N/A',
                     ];
+
+                    // Agregar BATERIA_2 solo si el template la necesita (con 2 baterías)
+                    if ($entrega->con_2_baterias) {
+                        $equipoData['BATERIA_2'] = $equipo->equipo->segunda_bateria ?? 'N/A';
+                    }
+
+                    $equiposData[] = $equipoData;
                 }
 
                 // Variables específicas del template con accesorios
-                $templateProcessor->setValue('CANTIDAD_SEGUNDA_BATERIAS', $totalSegundasBaterias);
-                $templateProcessor->setValue('CANTIDAD_SEGUNDA_BATERIAS_LETRAS', $this->numeroALetras($totalSegundasBaterias));
                 $templateProcessor->setValue('CANTIDAD_CUNAS', $totalCunas);
                 $templateProcessor->setValue('CANTIDAD_CUNAS_LETRAS', $this->numeroALetras($totalCunas));
                 $templateProcessor->setValue('MARCA_CUNA', $entrega->cunasCargadoras->first()->marca ?? 'N/A');
                 $templateProcessor->setValue('MODELO_CUNA', $entrega->cunasCargadoras->first()->modelo ?? 'N/A');
 
-            } else {
-                // Para template básico sin accesorios
-                $equiposData = [];
-                $contador = 1;
+                // Variables de segundas baterías (si aplica)
+                if ($entrega->con_2_baterias) {
+                    $templateProcessor->setValue('CANTIDAD_SEGUNDA_BATERIAS', $totalSegundasBaterias);
+                    $templateProcessor->setValue('CANTIDAD_SEGUNDA_BATERIAS_LETRAS', $this->numeroALetras($totalSegundasBaterias));
+                }
 
+            } elseif ($entrega->con_2_baterias) {
+                // Para template de 2 baterías SIN accesorios
+                foreach ($entrega->equipos as $equipo) {
+                    $equiposData[] = [
+                        'NUMERO' => $contador++,
+                        'ID' => $equipo->equipo->nombre_issi ?? 'N/A',
+                        'TEI' => $equipo->equipo->tei ?? 'N/A',
+                        'BATERIA' => $equipo->equipo->numero_bateria ?? 'N/A',
+                        'BATERIA_2' => $equipo->equipo->numero_segunda_bateria ?? 'N/A'
+                    ];
+                }
+
+                // Variables específicas para el template de 2 baterías
+                $templateProcessor->setValue('CANTIDAD_SEGUNDA_BATERIAS', $totalSegundasBaterias);
+                $templateProcessor->setValue('CANTIDAD_SEGUNDA_BATERIAS_LETRAS', $this->numeroALetras($totalSegundasBaterias));
+
+            } else {
+                // Para template básico sin accesorios ni segundas baterías
                 foreach ($entrega->equipos as $equipo) {
                     $equiposData[] = [
                         'NUMERO' => $contador++,

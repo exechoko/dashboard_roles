@@ -87,7 +87,7 @@
                                                     <div class="custom-control custom-checkbox">
                                                         <input type="checkbox" class="custom-control-input"
                                                             id="con_cuna_cargadora" name="con_cuna_cargadora" value="1"
-                                                            {{ old('con_cuna_cargadora') ? 'checked' : '' }}>
+                                                            {{ old('con_cuna_cargadora', $entrega->cunasCargadoras->count() ? true : false) ? 'checked' : '' }}>
                                                         <label class="custom-control-label" for="con_cuna_cargadora">
                                                             <i class="fas fa-battery-half"></i> Con cuna cargadora
                                                         </label>
@@ -97,7 +97,7 @@
                                                     <div class="custom-control custom-checkbox">
                                                         <input type="checkbox" class="custom-control-input"
                                                             id="con_transformador" name="con_transformador" value="1"
-                                                            {{ old('con_transformador') ? 'checked' : '' }}>
+                                                            {{ old('con_transformador', $entrega->transformadores->sum('cantidad') > 0 ? true : false) ? 'checked' : '' }}>
                                                         <label class="custom-control-label" for="con_transformador">
                                                             <i class="fas fa-plug"></i> Con transformador
                                                         </label>

@@ -206,7 +206,12 @@ class EntregasEquiposController extends Controller
 
     public function edit($id)
     {
-        $entrega = EntregaEquipo::with('equipos')->findOrFail($id);
+        $entrega = EntregaEquipo::with([
+            'equipos',
+            'cunasCargadoras',
+            'transformadores',
+            'accesorios'
+        ])->findOrFail($id);
         // Obtener equipos portátiles disponibles (no entregados actualmente)
         // o que ya están asignados a esta entrega para poder editarlos
         $equiposDisponibles = FlotaGeneral::where(function ($query) use ($entrega) {
@@ -305,6 +310,7 @@ class EntregasEquiposController extends Controller
                 'personal_entrega' => $request->personal_entrega,
                 'legajo_entrega' => $request->legajo_entrega,
                 'motivo_operativo' => $request->motivo_operativo,
+                'con_2_baterias' => $request->has('con_segunda_bateria') ? true : false,
                 'observaciones' => $request->observaciones,
                 'rutas_imagenes' => json_encode($rutasImagenes)
             ];
@@ -333,6 +339,35 @@ class EntregasEquiposController extends Controller
                 ]);
 
                 FlotaGeneral::find($equipoId)->update(['estado' => 'entregado']);
+            }
+
+            // Eliminar accesorios anteriores
+            $entrega->accesorios()->delete();
+
+            // Crear accesorios si se especificaron
+            if ($request->has('cunas')) {
+                foreach ($request->cunas as $cuna) {
+                    DetalleEntregaAccesorio::create([
+                        'entrega_id' => $entrega->id,
+                        'tipo_accesorio' => DetalleEntregaAccesorio::TIPO_CUNA_CARGADORA,
+                        'cantidad' => $cuna['cantidad'],
+                        'marca' => $cuna['marca'],
+                        'numero_serie' => $cuna['numero_serie'] ?? null,
+                        'observaciones' => $cuna['observaciones'] ?? null
+                    ]);
+                }
+            }
+
+            // Crear transformadores si se especificaron
+            if ($request->has('cantidad_transformadores') && $request->cantidad_transformadores > 0) {
+                DetalleEntregaAccesorio::create([
+                    'entrega_id' => $entrega->id,
+                    'tipo_accesorio' => DetalleEntregaAccesorio::TIPO_TRANSFORMADOR,
+                    'cantidad' => $request->cantidad_transformadores,
+                    'marca' => null,
+                    'numero_serie' => null,
+                    'observaciones' => null
+                ]);
             }
 
             DB::commit();

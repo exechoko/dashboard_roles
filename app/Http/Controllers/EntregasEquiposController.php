@@ -135,6 +135,7 @@ class EntregasEquiposController extends Controller
                 'personal_entrega' => $request->personal_entrega ?? '',
                 'legajo_entrega' => $request->legajo_entrega ?? '',
                 'motivo_operativo' => $request->motivo_operativo,
+                'con_2_baterias' => $request->has('con_segunda_bateria') ? true : false,
                 'observaciones' => $request->observaciones,
                 'rutas_imagenes' => json_encode($rutasImagenes),
                 'usuario_creador' => auth()->user()->name
@@ -365,9 +366,15 @@ class EntregasEquiposController extends Controller
         $tieneAccesorios = $tieneCunas || $tieneTransformadores;
 
         // Seleccionar el template apropiado
-        $templateName = $tieneAccesorios
-            ? 'template_entrega_equipos_2_bateria_cuna_trafo.docx'
-            : 'template_entrega_equipos.docx';
+        if ($entrega->con_2_baterias) {
+            $templateName = $tieneAccesorios
+                ? 'template_entrega_equipos_2_bateria_cuna_trafo.docx'
+                : 'template_entrega_equipos_2_baterias.docx';
+        } else {
+            $templateName = $tieneAccesorios
+                ? 'template_entrega_equipos_cuna_trafo.docx'
+                : 'template_entrega_equipos.docx';
+        }
 
         $templatePath = storage_path('app/templates/' . $templateName);
 

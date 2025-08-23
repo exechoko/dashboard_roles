@@ -190,6 +190,9 @@
                                     <th>TEI</th>
                                     <th>ISSI</th>
                                     <th>N° Batería</th>
+                                    @if ($entrega->con_2_baterias)
+                                        <th>N° 2da Batería</th>
+                                    @endif
                                     <th>Estado Actual</th>
                                 </tr>
                             </thead>
@@ -200,6 +203,9 @@
                                         <td>{{ $detalle->equipo->tei ?? 'N/A' }}</td>
                                         <td>{{ $detalle->equipo->issi ?? 'N/A' }}</td>
                                         <td>{{ $detalle->equipo->numero_bateria ?? 'N/A' }}</td>
+                                        @if ($entrega->con_2_baterias)
+                                            <td>{{ $detalle->equipo->numero_segunda_bateria ?? 'N/A' }}</td>
+                                        @endif
                                         <td>
                                             @switch($detalle->equipo->estado->nombre)
                                                 @case('disponible')

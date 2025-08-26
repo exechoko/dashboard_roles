@@ -595,21 +595,38 @@ class EntregasEquiposController extends Controller
 
             $networkFile = $fullPath . '\\' . $fileName;
             // Copiar el archivo local al de red
+            $copiadoExitoso = false;
             if (@copy($tempPath, $networkFile)) {
                 Log::info("Documento generado con template '{$templateName}' y guardado en red: {$networkFile}");
+                $copiadoExitoso = true;
             } else {
                 Log::warning("No se pudo copiar el documento a red: {$networkFile}");
             }
 
-            $entrega->ruta_archivo = $networkFile;
-            $entrega->save();
+            //! ============= DESCARGAR AUTOMÁTICAMENTE =============
+            // Verificar que el archivo temporal existe para la descarga
+            if (file_exists($tempPath)) {
+                $mensaje = $tieneAccesorios
+                    ? 'Acta de entrega con accesorios generada y guardada exitosamente'
+                    : 'Acta de entrega generada y guardada exitosamente';
 
-            $mensaje = $tieneAccesorios
-                ? 'Acta de entrega con accesorios generada y guardada exitosamente'
-                : 'Acta de entrega generada y guardada exitosamente';
+                if (!$copiadoExitoso) {
+                    $mensaje .= ' (Nota: No se pudo guardar en la carpeta de red, pero el documento está disponible para descarga)';
+                }
 
-            return redirect()->route('entrega-equipos.index')
-                ->with('success', $mensaje);
+                // Agregar mensaje de éxito a la sesión para mostrar después de la descarga
+                session()->flash('success', $mensaje);
+
+                // Retornar descarga directa del archivo
+                return response()->download($tempPath, $fileName, [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                ])->deleteFileAfterSend(true); // Eliminar archivo temporal después de la descarga
+
+            } else {
+                // Si no existe el archivo temporal, redirigir con error
+                return redirect()->route('entrega-equipos.index')
+                    ->with('error', 'Error: No se pudo generar el archivo para descarga.');
+            }
 
         } catch (Exception $e) {
             Log::error("Error al generar documento: " . $e->getMessage());

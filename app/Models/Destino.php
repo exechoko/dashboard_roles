@@ -167,4 +167,38 @@ class Destino extends Model
                 ->orWhere('ubicacion', 'LIKE', "%{$texto}%");
         });
     }
+
+    /**
+     * Obtiene todos los destinos hijos de forma recursiva
+     */
+    public function getDestinosHijosRecursivo()
+    {
+        $destinosHijos = collect([$this->id]); // Incluir el propio destino
+
+        $this->obtenerHijosRecursivo($this->id, $destinosHijos);
+
+        return $destinosHijos->unique()->values();
+    }
+
+    /**
+     * Método auxiliar para obtener hijos recursivamente
+     */
+    private function obtenerHijosRecursivo($destinoId, &$resultado)
+    {
+        $hijos = self::where('parent_id', $destinoId)->get();
+
+        foreach ($hijos as $hijo) {
+            $resultado->push($hijo->id);
+            $this->obtenerHijosRecursivo($hijo->id, $resultado);
+        }
+    }
+
+    /**
+     * Método estático para obtener destinos hijos desde cualquier lugar
+     */
+    public static function obtenerTodosLosHijos($destinoId)
+    {
+        $destino = self::find($destinoId);
+        return $destino ? $destino->getDestinosHijosRecursivo() : collect([$destinoId]);
+    }
 }

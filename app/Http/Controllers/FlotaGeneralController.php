@@ -123,8 +123,8 @@ class FlotaGeneralController extends Controller
                 'equipo.tipo_terminal.tipo_uso:id,uso',
                 'recurso:id,nombre,vehiculo_id',
                 'recurso.vehiculo:id,tipo_vehiculo,dominio,marca,modelo',
-                'destino:id,nombre,parent_id',  // Agregamos parent_id
-                'destino.padre:id,nombre',      // Agregamos la relación padre
+                'destino:id,nombre,parent_id',
+                'destino.padre:id,nombre',
                 'equipo.estado:id,nombre'
             ]);
 
@@ -152,28 +152,35 @@ class FlotaGeneralController extends Controller
             $query->whereIn('recurso_id', $parametros['recurso_id']);
         }
 
-        // Filtro por destino actual
+        // FILTRO POR DESTINO ACTUAL MEJORADO
         if (!empty($parametros['destino_actual_id'])) {
-            $query->whereHas('equipo.historico', function ($subQuery) use ($parametros) {
-                $subQuery->whereIn('destino_id', $parametros['destino_actual_id'])
+            $todosLosDestinosActuales = collect();
+
+            foreach ($parametros['destino_actual_id'] as $destinoId) {
+                // Obtener el destino padre y todos sus hijos recursivamente
+                $destinosHijos = Destino::obtenerTodosLosHijos($destinoId);
+                $todosLosDestinosActuales = $todosLosDestinosActuales->merge($destinosHijos);
+            }
+
+            // Aplicar filtro con todos los destinos (padre e hijos) en el histórico
+            $query->whereHas('equipo.historico', function ($subQuery) use ($todosLosDestinosActuales) {
+                $subQuery->whereIn('destino_id', $todosLosDestinosActuales->unique()->values())
                     ->whereNull('fecha_desasignacion');
             });
         }
 
-        // Filtro por destino patrimonial
+        // FILTRO POR DESTINO PATRIMONIAL MEJORADO
         if (!empty($parametros['destino_id'])) {
-            $allDependientes = collect();
+            $todosLosDestinos = collect();
+
             foreach ($parametros['destino_id'] as $destinoId) {
-                $destino = Destino::find($destinoId);
-                if ($destino) {
-                    $categoria = $this->determinarCategoria($destino->nombre);
-                    if ($categoria) {
-                        $dependientes = $destino->destinosDependientes($categoria, $destinoId);
-                        $allDependientes = $allDependientes->merge($dependientes);
-                    }
-                }
+                // Obtener el destino padre y todos sus hijos recursivamente
+                $destinosHijos = Destino::obtenerTodosLosHijos($destinoId);
+                $todosLosDestinos = $todosLosDestinos->merge($destinosHijos);
             }
-            $query->whereIn('destino_id', $allDependientes->unique());
+
+            // Aplicar filtro con todos los destinos (padre e hijos)
+            $query->whereIn('destino_id', $todosLosDestinos->unique()->values());
         }
 
         // Filtro por tipos de terminal
@@ -467,15 +474,15 @@ class FlotaGeneralController extends Controller
         $issi = $rec_de_flota->equipo->issi;
 
         $cantNegrita = new TextRun();
-        $cantNegrita->addText($cant, array(/*'underline' => 'single', */'size' => 12, 'bold' => true));
+        $cantNegrita->addText($cant, array(/*'underline' => 'single', */ 'size' => 12, 'bold' => true));
         $marcaNegrita = new TextRun();
-        $marcaNegrita->addText($marca, array(/*'underline' => 'single', */'size' => 12, 'bold' => true));
+        $marcaNegrita->addText($marca, array(/*'underline' => 'single', */ 'size' => 12, 'bold' => true));
         $modeloNegrita = new TextRun();
-        $modeloNegrita->addText($modelo, array(/*'underline' => 'single', */'size' => 12, 'bold' => true));
+        $modeloNegrita->addText($modelo, array(/*'underline' => 'single', */ 'size' => 12, 'bold' => true));
         $teiNegrita = new TextRun();
-        $teiNegrita->addText($tei, array(/*'underline' => 'single', */'size' => 12, 'bold' => true));
+        $teiNegrita->addText($tei, array(/*'underline' => 'single', */ 'size' => 12, 'bold' => true));
         $issiNegrita = new TextRun();
-        $issiNegrita->addText($issi, array(/*'underline' => 'single', */'size' => 12, 'bold' => true));
+        $issiNegrita->addText($issi, array(/*'underline' => 'single', */ 'size' => 12, 'bold' => true));
 
         $templateWord = new TemplateProcessor(storage_path("template.docx"));
         $templateWord->setValue('dia', $dia);

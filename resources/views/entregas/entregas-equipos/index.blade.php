@@ -113,6 +113,10 @@
                                                     <span class="badge badge-info">
                                                         {{ $entrega->equipos->count() }} equipos
                                                     </span>
+                                                    {{-- Mostrar accesorios --}}
+                                                    @if($entrega->accesorios->count() > 0)
+                                                        <br><small class="text-muted">Con accesorios </small>
+                                                    @endif
                                                 </td>
                                                 <td>
                                                     @switch($entrega->estado)

@@ -603,6 +603,9 @@ class EntregasEquiposController extends Controller
                 Log::warning("No se pudo copiar el documento a red: {$networkFile}");
             }
 
+            $entrega->ruta_archivo = $networkFile;
+            $entrega->save();
+
             //! ============= DESCARGAR AUTOMÁTICAMENTE =============
             // Verificar que el archivo temporal existe para la descarga
             if (file_exists($tempPath)) {
@@ -614,13 +617,9 @@ class EntregasEquiposController extends Controller
                     $mensaje .= ' (Nota: No se pudo guardar en la carpeta de red, pero el documento está disponible para descarga)';
                 }
 
-                // Agregar mensaje de éxito a la sesión para mostrar después de la descarga
-                session()->flash('success', $mensaje);
-
-                // Retornar descarga directa del archivo
                 return response()->download($tempPath, $fileName, [
                     'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                ])->deleteFileAfterSend(true); // Eliminar archivo temporal después de la descarga
+                ])->deleteFileAfterSend(true);
 
             } else {
                 // Si no existe el archivo temporal, redirigir con error

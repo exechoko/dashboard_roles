@@ -78,6 +78,13 @@
                                 </div>
                             </form>
 
+                            <div class="form-group form-check mb-3">
+                                <input type="checkbox" class="form-check-input" id="toggleDevueltas" checked>
+                                <label class="form-check-label" for="toggleDevueltas">
+                                    Mostrar entregas devueltas
+                                </label>
+                            </div>
+
                             {{-- Tabla de entregas --}}
                             <div class="table-responsive">
                                 <table class="table table-striped">
@@ -96,7 +103,7 @@
                                     </thead>
                                     <tbody>
                                         @forelse($entregas as $entrega)
-                                            <tr>
+                                            <tr class="{{ $entrega->estado === 'devuelto' ? 'fila-devuelta' : '' }}">
                                                 <td>{{ $entrega->id }}</td>
                                                 <td>{{ $entrega->fecha_entrega->format('d/m/Y') }} {{ $entrega->hora_entrega }}</td>
                                                 <td>{{ $entrega->dependencia }}</td>
@@ -228,6 +235,14 @@
     setTimeout(function() {
         $('.alert').fadeOut('slow');
     }, 5000);
+    // Ocultar/mostrar filas de entregas devueltas
+    $('#toggleDevueltas').on('change', function () {
+        if ($(this).is(':checked')) {
+            $('.fila-devuelta').show();
+        } else {
+            $('.fila-devuelta').hide();
+        }
+    });
     /**
      * Copies the given text to the clipboard.
      * @param {string} text The text to copy.

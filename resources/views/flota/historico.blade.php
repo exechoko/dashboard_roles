@@ -125,7 +125,10 @@
                                                 @if (is_null($h->tipoMovimiento))
                                                     <td>-</td>
                                                 @else
-                                                    <td><span class="badge badge-success">{{ $h->tipoMovimiento->nombre }}</span>
+                                                    <td>
+                                                        <span class="badge" style="background-color: {{ $h->tipoMovimiento->color ?? '#28a745' }}; color: white;">
+                                                            {{ $h->tipoMovimiento->nombre }}
+                                                        </span>
                                                     </td>
                                                 @endif
                                                 <td>{{ Carbon\Carbon::parse($h->fecha_asignacion)->format('d/m/Y H:i') }}

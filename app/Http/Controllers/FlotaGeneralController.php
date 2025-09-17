@@ -898,6 +898,7 @@ class FlotaGeneralController extends Controller
         $id_baja = TipoMovimiento::where('nombre', 'Baja')->value('id');
         $id_extraviado = TipoMovimiento::where('nombre', 'Extraviado')->value('id');
         $id_recuperado = TipoMovimiento::where('nombre', 'Recuperado')->value('id');
+        $id_reprogramacion = TipoMovimiento::where('nombre', 'Reprogramación')->value('id');
 
         //Validar que permita mov patrimoniales solo en recursos que acepten muchos equipos
         if ($tipo_de_mov->id == $id_mov_patrimonial || $tipo_de_mov->id == $id_inst_completa) {
@@ -1128,6 +1129,24 @@ class FlotaGeneralController extends Controller
 
                         $historicoReemplazo->save();
                         $histAntReemplazo->save();
+
+                        break;
+                    case $id_reprogramacion:
+                        // En la reprogramación no se modifica la asignación del equipo en la flota
+                        // Solo se registra el histórico y se actualiza el ISSI si es necesario
+
+                        // Mantener la asignación actual de recurso y vehículo del historico anterior
+                        $r = Recurso::find($histAnt->recurso_id);
+                        $d = Destino::find($histAnt->destino_id);
+
+                        $v = null;
+                        if (!is_null($r)) {
+                            $v = Vehiculo::find($r->vehiculo_id);
+                        }
+                        $historico->recurso_asignado = !is_null($r) ? $r->nombre : null;
+                        $historico->vehiculo_asignado = !is_null($v) ? $v->dominio : null;
+                        $historico->destino_id = !is_null($d) ? $d->id : null;
+                        $historico->recurso_asignado = ($histAnt->recurso_asignado) ? $histAnt->recurso_asignado : null;
 
                         break;
                     default:

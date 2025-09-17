@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AudioTranscriptionController;
+use App\Http\Controllers\EntregasBodycamsController;
 use App\Http\Controllers\EntregasEquiposController;
 use Illuminate\Support\Facades\Route;
 //agregamos los controladores
@@ -135,12 +136,12 @@ Route::group(['middleware' => ['auth']], function () {
 
     // Rutas principales del CRUD
     Route::resource('entrega-equipos', EntregasEquiposController::class)->names([
-        'index'   => 'entrega-equipos.index',
-        'create'  => 'entrega-equipos.create',
-        'store'   => 'entrega-equipos.store',
-        'show'    => 'entrega-equipos.show',
-        'edit'    => 'entrega-equipos.edit',
-        'update'  => 'entrega-equipos.update',
+        'index' => 'entrega-equipos.index',
+        'create' => 'entrega-equipos.create',
+        'store' => 'entrega-equipos.store',
+        'show' => 'entrega-equipos.show',
+        'edit' => 'entrega-equipos.edit',
+        'update' => 'entrega-equipos.update',
         'destroy' => 'entrega-equipos.destroy'
     ]);
     // Rutas adicionales específicas para entregas de equipos
@@ -207,7 +208,88 @@ Route::group(['middleware' => ['auth']], function () {
         ->name('entrega-equipos.descargar');
     // Ruta para previsualizar el documento generado
     Route::get('entrega-equipos/previsualizar/{id}', [EntregasEquiposController::class, 'previsualizar'])
-    ->name('entrega-equipos.previsualizar');
+        ->name('entrega-equipos.previsualizar');
+
+    // Rutas principales del CRUD para entregas de bodycams
+    Route::resource('entrega-bodycams', EntregasBodycamsController::class)->names([
+        'index' => 'entrega-bodycams.index',
+        'create' => 'entrega-bodycams.create',
+        'store' => 'entrega-bodycams.store',
+        'show' => 'entrega-bodycams.show',
+        'edit' => 'entrega-bodycams.edit',
+        'update' => 'entrega-bodycams.update',
+        'destroy' => 'entrega-bodycams.destroy'
+    ]);
+
+    // Rutas adicionales específicas para entregas de bodycams
+    Route::prefix('entrega-bodycams')->name('entrega-bodycams.')->group(function () {
+        // Generar documento Word
+        Route::get('{id}/documento', [EntregasBodycamsController::class, 'generarDocumento'])
+            ->name('documento')
+            ->middleware('can:crear-entrega-bodycams');
+
+        // Reportar bodycams como perdidas
+        Route::patch('{id}/reportar-perdido', [EntregasBodycamsController::class, 'reportarPerdido'])
+            ->name('reportar-perdido')
+            ->middleware('can:crear-entrega-bodycams');
+
+        // Exportar listado a Excel/PDF
+        Route::get('exportar/{formato}', [EntregasBodycamsController::class, 'exportar'])
+            ->name('exportar')
+            ->where('formato', 'excel|pdf')
+            ->middleware('can:crear-entrega-bodycams');
+
+        // Buscar bodycams disponibles via AJAX
+        Route::get('buscar-bodycams', [EntregasBodycamsController::class, 'buscarBodycams'])
+            ->name('buscar-bodycams')
+            ->middleware('can:crear-entrega-bodycams');
+
+        // Duplicar una entrega existente
+        Route::post('{id}/duplicar', [EntregasBodycamsController::class, 'duplicar'])
+            ->name('duplicar')
+            ->middleware('can:crear-entrega-bodycams');
+    });
+
+    // Dashboard de entregas de bodycams
+    Route::get('entregas-bodycams/dashboard', [EntregasBodycamsController::class, 'dashboard'])
+        ->name('entregas-bodycams.dashboard')
+        ->middleware('can:ver-menu-entregas-bodycams');
+
+    // Reportes de entregas de bodycams
+    Route::prefix('entregas-bodycams/reportes')->name('entregas-bodycams.reportes.')->group(function () {
+        Route::get('/', [EntregasBodycamsController::class, 'reportesIndex'])
+            ->name('index')
+            ->middleware('can:ver-reportes-entregas-bodycams');
+
+        Route::get('bodycams-entregadas', [EntregasBodycamsController::class, 'reporteBodycamsEntregadas'])
+            ->name('bodycams-entregadas')
+            ->middleware('can:ver-reportes-entregas-bodycams');
+
+        Route::get('por-dependencia', [EntregasBodycamsController::class, 'reportePorDependencia'])
+            ->name('por-dependencia')
+            ->middleware('can:ver-reportes-entregas-bodycams');
+    });
+
+    // Rutas para devolución de bodycams
+    Route::get('entrega-bodycams/{id}/devolver', [EntregasBodycamsController::class, 'devolver'])
+        ->name('entrega-bodycams.devolver');
+
+    Route::post('entrega-bodycams/{id}/procesar-devolucion', [EntregasBodycamsController::class, 'procesarDevolucion'])
+        ->name('entrega-bodycams.procesar-devolucion');
+
+    Route::get('entrega-bodycams/{entregaId}/devolucion/{devolucionId}', [EntregasBodycamsController::class, 'mostrarDevolucion'])
+        ->name('entrega-bodycams.devolucion.detalle');
+
+    Route::delete('entrega-bodycams/{entregaId}/devolucion/{devolucionId}', [EntregasBodycamsController::class, 'eliminarDevolucion'])
+        ->name('entrega-bodycams.devolucion.eliminar');
+
+    // Ruta para descargar el archivo generado
+    Route::get('entrega-bodycams/{id}/descargar', [EntregasBodycamsController::class, 'descargarArchivo'])
+        ->name('entrega-bodycams.descargar');
+
+    // Ruta para previsualizar el documento generado
+    Route::get('entrega-bodycams/previsualizar/{id}', [EntregasBodycamsController::class, 'previsualizar'])
+        ->name('entrega-bodycams.previsualizar');
 
 
 });

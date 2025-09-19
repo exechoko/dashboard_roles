@@ -108,10 +108,6 @@
 @endsection
 
 @push('styles')
-    <!-- Select2 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap4-theme@1.0.0/dist/select2-bootstrap4.min.css" rel="stylesheet" />
-
     <style>
         .role-badge {
             display: inline-block;
@@ -155,12 +151,17 @@
 @endpush
 
 @push('scripts')
-    <!-- Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
         $(document).ready(function() {
             // Inicializar Select2
+            // Forzar el foco en el campo de búsqueda cuando se abre el Select2
+            $(document).on('select2:open', () => {
+                let select2Field = document.querySelector('.select2-search__field');
+                if (select2Field) {
+                    select2Field.focus();
+                }
+            });
             $('#roles').select2({
                 theme: 'bootstrap4',
                 placeholder: "Seleccione el rol",

@@ -49,6 +49,7 @@
                                                     'Menús' => [
                                                         'menu-dashboard',
                                                         'menu-equipamientos',
+                                                        'menu-bodycams',
                                                         'menu-camaras',
                                                         'menu-dependencias',
                                                         'menu-mapa',
@@ -67,6 +68,9 @@
                                                     ],
                                                     'Dependencias' => [
                                                         'dependencia'
+                                                    ],
+                                                    'Bodycams' => [
+                                                        'bodycam'
                                                     ],
                                                     'Equipamientos' => [
                                                         'equipo',

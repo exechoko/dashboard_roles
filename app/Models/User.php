@@ -52,4 +52,9 @@ class User extends Authenticatable
         return $this->hasMany(Auditoria::class);
     }
 
+    public function getRoleColor($roleName) {
+        $role = \Spatie\Permission\Models\Role::where('name', $roleName)->first();
+        return $role ? $role->color : null;
+    }
+
 }

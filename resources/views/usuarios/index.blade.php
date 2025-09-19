@@ -38,7 +38,11 @@
                                                 <td>
                                                     @if (!empty($usuario->getRoleNames()))
                                                         @foreach ($usuario->getRoleNames() as $rolName)
-                                                            <h5><span class="badge badge-dark">{{ $rolName }}</span></h5>
+                                                            <h5>
+                                                                <span class="badge" style="background-color: {{ $usuario->getRoleColor($rolName) ?? '#28a745' }}; color: white;">
+                                                                    {{ $rolName }}
+                                                                </span>
+                                                            </h5>
                                                         @endforeach
                                                     @endif
                                                 </td>

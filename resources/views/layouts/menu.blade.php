@@ -94,6 +94,24 @@
     </li>
 @endcan
 
+@can('ver-menu-bodycams')
+    <li
+        class="dropdown {{ request()->is('bodycam*') ? 'active' : '' }} ">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-mobile"></i><span>Bodycams</span>
+        </a>
+        <ul class="dropdown-menu">
+            @can('ver-bodycam')
+                <li class="{{ request()->is('bodycam*') ? 'active' : '' }}">
+                    <a class="nav-link" href="/bodycams">
+                        <i class="fas fa-cog"></i><span>Administración</span>
+                    </a>
+                </li>
+            @endcan
+        </ul>
+    </li>
+@endcan
+
 @can('ver-menu-entregas')
     <li
         class="dropdown {{ request()->is('entrega-equipos*') ? 'active' : '' }} {{ request()->is('entrega-bodycams*') ? 'active' : '' }}">

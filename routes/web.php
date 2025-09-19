@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AudioTranscriptionController;
+use App\Http\Controllers\BodycamController;
 use App\Http\Controllers\EntregasBodycamsController;
 use App\Http\Controllers\EntregasEquiposController;
 use Illuminate\Support\Facades\Route;
@@ -50,6 +51,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('blogs', BlogController::class);
     Route::resource('equipos', EquipoController::class);
     Route::resource('terminales', TipoTerminalController::class);
+    Route::resource('bodycams', BodycamController::class);
 
     Route::get('dependencias/crear-general', [DependenciaController::class, 'createGeneral'])->name('dependencias.crear-general');
     Route::post('dependencias/store-general', [DependenciaController::class, 'storeGeneral'])->name('dependencias.store-general');

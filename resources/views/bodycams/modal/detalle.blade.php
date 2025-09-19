@@ -1,4 +1,4 @@
-<div class="modal fade" id="ModalDetalle{{ $bodycam->id }}" tabindex="-1" role="dialog" aria-labelledby="ModalDetalle" aria-hidden="true">
+<div class="modal fade" id="ModalDetalle{{ $bodycam->id }}" tabindex="-1" data-backdrop="false" style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -39,7 +39,6 @@
                             @endswitch
                         </p>
                         <p><strong>Fecha de Adquisición:</strong> {{ $bodycam->fecha_adquisicion ? $bodycam->fecha_adquisicion->format('d/m/Y') : '-' }}</p>
-                        <p><strong>Creado:</strong> {{ $bodycam->created_at->format('d/m/Y H:i') }}</p>
                     </div>
                 </div>
                 @if($bodycam->observaciones)

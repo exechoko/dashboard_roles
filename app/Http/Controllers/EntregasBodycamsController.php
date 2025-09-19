@@ -338,8 +338,9 @@ class EntregasBodycamsController extends Controller
                 $bodycamsData[] = [
                     'NUMERO' => $contador++,
                     'CODIGO' => $bodycam->codigo ?? 'N/A',
+                    'IMEI' => $bodycam->imei ?? 'N/A',
                     'SERIE' => $bodycam->numero_serie ?? 'N/A',
-                    'TARJETA_SD' => $bodycam->numero_tarjeta_sd ?? 'N/A'
+                    'BATERIA' => $bodycam->numero_bateria ?? 'N/A'
                 ];
             }
 
@@ -362,7 +363,7 @@ class EntregasBodycamsController extends Controller
             $templateProcessor->saveAs($tempPath);
 
             // Copiar a carpeta de red
-            $baseNetworkPath = '\\\\193.169.1.247\\Comp_Tecnica$\\01-Técnica 911 Doc\\01-Documentos\\Entregas Bodycams';
+            $baseNetworkPath = '\\\\193.169.1.247\\Comp_Tecnica$\\01-Técnica 911 Doc\\01-Documentos\\U.M. - Acontecimientos - Eventos\\Entregas Bodycams CAR911';
             $fechaFolder = $entrega->fecha_entrega->format('Ymd') . '_' .
                 Carbon::parse($entrega->hora_entrega)->format('Hi');
 
@@ -383,7 +384,7 @@ class EntregasBodycamsController extends Controller
             $entrega->ruta_archivo = $networkFile;
             $entrega->save();
 
-            // Descargar automáticamente
+            //! ============= DESCARGAR AUTOMÁTICAMENTE =============
             if (file_exists($tempPath)) {
                 $mensaje = 'Acta de entrega de bodycams generada exitosamente';
                 if (!$copiadoExitoso) {

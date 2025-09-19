@@ -25,7 +25,7 @@ class CreateEntregasBodycamsTable extends Migration
             $table->text('motivo_operativo')->comment('Motivo o descripción del operativo');
             $table->text('observaciones')->nullable()->comment('Observaciones adicionales');
             $table->json('rutas_imagenes')->nullable()->comment('Rutas de imágenes adjuntas en formato JSON');
-            $table->string('ruta_archivo')->nullable()->comment('Ruta del documento generado');
+            $table->text('ruta_archivo')->nullable()->comment('Ruta del documento generado');
             $table->enum('estado', ['entregada', 'parcialmente_devuelta', 'devuelta', 'perdida'])->default('entregada')->comment('Estado de la entrega');
             $table->string('usuario_creador')->comment('Usuario que creó la entrega');
             $table->timestamps();

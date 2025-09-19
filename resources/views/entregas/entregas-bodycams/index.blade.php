@@ -102,7 +102,7 @@
                                     </thead>
                                     <tbody>
                                         @forelse($entregas as $entrega)
-                                            <tr class="{{ $entrega->estado === 'devuelto' ? 'fila-devuelta' : '' }}">
+                                            <tr class="{{ $entrega->estado === 'devuelta' ? 'fila-devuelta' : '' }}">
                                                 <td>{{ $entrega->id }}</td>
                                                 <td>{{ $entrega->fecha_entrega->format('d/m/Y') }} {{ $entrega->hora_entrega }}</td>
                                                 <td>{{ $entrega->dependencia }}</td>

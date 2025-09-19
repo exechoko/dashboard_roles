@@ -13,10 +13,12 @@ class Bodycam extends Model
 
     protected $fillable = [
         'codigo',
+        'imei',
         'numero_serie',
         'marca',
         'modelo',
         'numero_tarjeta_sd',
+        'numero_bateria',
         'estado',
         'fecha_adquisicion',
         'observaciones',

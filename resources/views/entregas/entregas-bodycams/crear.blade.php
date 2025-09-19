@@ -214,7 +214,7 @@
                                             <div class="bodycam-item" data-id="{{ $bodycam->id }}"
                                                 data-codigo="{{ $bodycam->codigo ?? '' }}"
                                                 data-numero_serie="{{ $bodycam->numero_serie ?? '' }}"
-                                                data-numero_tarjeta_sd="{{ $bodycam->numero_tarjeta_sd ?? '' }}">
+                                                data-numero_bateria="{{ $bodycam->numero_bateria ?? '' }}">
                                                 <div class="custom-control custom-checkbox">
                                                     <input type="checkbox" class="custom-control-input"
                                                         id="bodycam_{{ $bodycam->id }}" name="bodycams_seleccionadas[]"
@@ -224,7 +224,7 @@
                                                         <div class="bodycam-info">
                                                             <div><strong>Código:</strong> {{ $bodycam->codigo ?? 'N/A' }}</div>
                                                             <div><strong>N° Serie:</strong> {{ $bodycam->numero_serie ?? 'N/A' }}</div>
-                                                            <div><strong>Tarjeta SD:</strong> {{ $bodycam->numero_tarjeta_sd ?? 'N/A' }}</div>
+                                                            <div><strong>Batería:</strong> {{ $bodycam->numero_bateria ?? 'N/A' }}</div>
                                                             <div><strong>Marca:</strong> {{ $bodycam->marca ?? 'N/A' }}
                                                                 <strong>Modelo:</strong> {{ $bodycam->modelo ?? 'N/A' }}
                                                             </div>
@@ -358,7 +358,7 @@
                         id: $item.data('id'),
                         codigo: $item.data('codigo'),
                         numero_serie: $item.data('numero_serie'),
-                        numero_tarjeta_sd: $item.data('numero_tarjeta_sd'),
+                        numero_bateria: $item.data('numero_bateria'),
                         element: $item
                     };
                     bodycamsDisponibles.push(bodycamData);
@@ -399,12 +399,12 @@
                     const $item = $(this);
                     const codigo = ($item.data('codigo') || '').toString().toLowerCase();
                     const numeroSerie = ($item.data('numero_serie') || '').toString().toLowerCase();
-                    const tarjetaSD = ($item.data('numero_tarjeta_sd') || '').toString().toLowerCase();
+                    const bateria = ($item.data('numero_bateria') || '').toString().toLowerCase();
 
                     const coincide = term === '' ||
                         codigo.includes(term) ||
                         numeroSerie.includes(term) ||
-                        tarjetaSD.includes(term);
+                        bateria.includes(term);
 
                     if (coincide) {
                         $item.show();
@@ -456,13 +456,13 @@
 
                     const codigo = bodycamItem.data('codigo') || 'Código N/A';
                     const numeroSerie = bodycamItem.data('numero_serie') || 'Serie N/A';
-                    const tarjetaSD = bodycamItem.data('numero_tarjeta_sd') || 'SD N/A';
+                    const bateria = bodycamItem.data('numero_bateria') || 'Bateria N/A';
 
                     const li = $(`
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             <div>
                                 <span><strong>${codigo}</strong> - ${numeroSerie}</span>
-                                <div><small><strong>Tarjeta SD:</strong> ${tarjetaSD}</small></div>
+                                <div><small><strong>Batería:</strong> ${bateria}</small></div>
                             </div>
                             <button class="btn btn-sm btn-danger quitar-bodycam" data-id="${$checkbox.val()}">
                                 <i class="fas fa-times"></i>

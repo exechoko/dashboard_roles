@@ -282,7 +282,7 @@
                                             <th>#</th>
                                             <th>Código</th>
                                             <th>N° Serie</th>
-                                            <th>Tarjeta SD</th>
+                                            <th>Batería</th>
                                             <th>Marca/Modelo</th>
                                             <th>Estado Actual</th>
                                         </tr>
@@ -293,7 +293,7 @@
                                                 <td>{{ $index + 1 }}</td>
                                                 <td>{{ $bodycam->codigo ?: 'N/A' }}</td>
                                                 <td>{{ $bodycam->numero_serie ?: 'N/A' }}</td>
-                                                <td>{{ $bodycam->numero_tarjeta_sd ?: 'N/A' }}</td>
+                                                <td>{{ $bodycam->numero_bateria ?: 'N/A' }}</td>
                                                 <td>{{ $bodycam->marca ?: 'N/A' }} {{ $bodycam->modelo ?: '' }}</td>
                                                 <td>
                                                     @switch($bodycam->estado)
@@ -436,7 +436,7 @@
                                             <th>#</th>
                                             <th>Código</th>
                                             <th>N° Serie</th>
-                                            <th>Tarjeta SD</th>
+                                            <th>Batería</th>
                                             <th>Estado</th>
                                             <th>Devuelta en</th>
                                         </tr>
@@ -453,7 +453,7 @@
                                                 <td>{{ $index + 1 }}</td>
                                                 <td>{{ $bodycam->codigo ?: 'N/A' }}</td>
                                                 <td>{{ $bodycam->numero_serie ?: 'N/A' }}</td>
-                                                <td>{{ $bodycam->numero_tarjeta_sd ?: 'N/A' }}</td>
+                                                <td>{{ $bodycam->numero_bateria ?: 'N/A' }}</td>
                                                 <td>
                                                     @if($devolucion)
                                                         <span class="badge badge-success">Devuelta</span>

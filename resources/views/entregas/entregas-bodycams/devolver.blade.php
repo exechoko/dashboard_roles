@@ -194,7 +194,7 @@
                                         </th>
                                         <th>Código</th>
                                         <th>N° Serie</th>
-                                        <th>N° Tarjeta SD</th>
+                                        <th>N° Batería</th>
                                         <th>Marca</th>
                                         <th>Modelo</th>
                                         <th>Estado</th>
@@ -214,7 +214,7 @@
                                             </td>
                                             <td>{{ $bodycam->codigo ?? 'N/A' }}</td>
                                             <td>{{ $bodycam->numero_serie ?? 'N/A' }}</td>
-                                            <td>{{ $bodycam->numero_tarjeta_sd ?? 'N/A' }}</td>
+                                            <td>{{ $bodycam->numero_bateria ?? 'N/A' }}</td>
                                             <td>{{ $bodycam->marca ?? 'N/A' }}</td>
                                             <td>{{ $bodycam->modelo ?? 'N/A' }}</td>
                                             <td>

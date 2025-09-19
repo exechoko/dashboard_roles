@@ -189,7 +189,7 @@
                                     <th>#</th>
                                     <th>Código</th>
                                     <th>N° Serie</th>
-                                    <th>N° Tarjeta SD</th>
+                                    <th>N° Batería</th>
                                     <th>Marca</th>
                                     <th>Modelo</th>
                                     <th>Estado Actual</th>
@@ -201,7 +201,7 @@
                                         <td>{{ $index + 1 }}</td>
                                         <td>{{ $detalle->bodycam->codigo ?? 'N/A' }}</td>
                                         <td>{{ $detalle->bodycam->numero_serie ?? 'N/A' }}</td>
-                                        <td>{{ $detalle->bodycam->numero_tarjeta_sd ?? 'N/A' }}</td>
+                                        <td>{{ $detalle->bodycam->numero_bateria ?? 'N/A' }}</td>
                                         <td>{{ $detalle->bodycam->marca ?? 'N/A' }}</td>
                                         <td>{{ $detalle->bodycam->modelo ?? 'N/A' }}</td>
                                         <td>

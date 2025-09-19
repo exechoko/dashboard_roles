@@ -115,10 +115,10 @@
                                                 </td>
                                                 <td>
                                                     @switch($entrega->estado)
-                                                        @case('entregado')
-                                                            <span class="badge badge-warning">Entregado</span>
+                                                        @case('entregada')
+                                                            <span class="badge badge-warning">Entregada</span>
                                                             @break
-                                                        @case('devolucion_parcial')
+                                                        @case('parcialmente_devuelta')
                                                             <span class="badge badge-danger">Devolución Parcial</span>
                                                             @break
                                                         @case('devuelta')
@@ -167,7 +167,7 @@
                                                         @endcan
 
                                                         @can('editar-entrega-bodycams')
-                                                            @if(in_array($entrega->estado, ['entregado', 'devolucion_parcial']))
+                                                            @if(in_array($entrega->estado, ['entregada', 'devolucion_parcial']))
                                                                 <a href="{{ route('entrega-bodycams.edit', $entrega->id) }}" class="btn btn-info btn-sm mr-1">
                                                                     <i class="fas fa-edit"></i>
                                                                 </a>

@@ -65,16 +65,18 @@
                                                         'usuario',
                                                         'auditoria'
                                                     ],
+                                                    'Dependencias' => [
+                                                        'dependencia'
+                                                    ],
                                                     'Equipamientos' => [
                                                         'equipo',
                                                         'terminal',
-                                                        'dependencia',
-                                                        'recurso'
+                                                        'flota',
+                                                        'historico'
                                                     ],
-                                                    'Vehículos' => [
-                                                        'vehiculo',
-                                                        'historico',
-                                                        'flota'
+                                                    'Recursos' => [
+                                                        'recurso',
+                                                        'vehiculo'
                                                     ],
                                                     'Cámaras' => [
                                                         'camara',

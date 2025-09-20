@@ -1002,10 +1002,13 @@ class FlotaGeneralController extends Controller
                         break;
 
                     case $id_devolucion:
-                        if (!$soloModificaHistorico) {
+                        //Que no modifique la flota, solo el historico
+                        //para que siga figurando el equipo en la dependencia
+                        //ya que la devolucion es solo para registrar el movimiento
+                        /*if (!$soloModificaHistorico) {
                             $flota->recurso_id = $recurso_stock->id; //asigna al stock
                             $flota->destino_id = $recurso_stock->destino->id;
-                        }
+                        }*/
                         $historico->recurso_id = $recurso_stock->id; //asigna al stock
                         $historico->recurso_asignado = $recurso_stock->nombre; //asigna al stock;
                         $historico->vehiculo_asignado = null;

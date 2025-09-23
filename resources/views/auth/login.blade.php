@@ -2,9 +2,40 @@
 @section('title')
     C.A.R. 911 - Login
 @endsection
+
 @section('content')
+    <style>
+        .password-toggle {
+            position: relative;
+        }
+
+        .password-toggle-btn {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            color: #6c757d;
+            z-index: 10;
+        }
+
+        .password-toggle-btn:hover {
+            color: #495057;
+        }
+
+        .password-toggle input[type="password"],
+        .password-toggle input[type="text"] {
+            padding-right: 45px;
+        }
+    </style>
+
     <div class="card card-primary">
-        <div class="card-header"><h4>Ingreso</h4></div>
+        <div class="card-header">
+            <h4>Ingreso</h4>
+        </div>
 
         <div class="card-body">
             @if(session('status'))
@@ -26,10 +57,10 @@
                 <div class="form-group">
                     <label for="email">Email</label>
                     <input aria-describedby="emailHelpBlock" id="email" type="email"
-                           class="form-control{{ $errors->has('email') ? ' is-invalid' : '' }}" name="email"
-                           placeholder="Ingresar email" tabindex="1"
-                           value="{{ (Cookie::get('email') !== null) ? Cookie::get('email') : old('email') }}" autofocus
-                           required>
+                        class="form-control{{ $errors->has('email') ? ' is-invalid' : '' }}" name="email"
+                        placeholder="Ingresar email" tabindex="1"
+                        value="{{ (Cookie::get('email') !== null) ? Cookie::get('email') : old('email') }}" autofocus
+                        required>
                     <div class="invalid-feedback">
                         {{ $errors->first('email') }}
                     </div>
@@ -43,23 +74,30 @@
                             </a>
                         </div>
                     </div>
-                    <input aria-describedby="passwordHelpBlock" id="password" type="password"
-                           value="{{ (Cookie::get('password') !== null) ? Cookie::get('password') : null }}"
-                           placeholder="Ingresar Contraseña"
-                           class="form-control{{ $errors->has('password') ? ' is-invalid' : '' }}" name="password"
-                           tabindex="2" required>
-                    <div class="invalid-feedback">
-                        {{ $errors->first('password') }}
+                    <div class="password-toggle">
+                        <input aria-describedby="passwordHelpBlock" id="password" type="password"
+                            value="{{ (Cookie::get('password') !== null) ? Cookie::get('password') : null }}"
+                            placeholder="Ingresar Contraseña"
+                            class="form-control{{ $errors->has('password') ? ' is-invalid' : '' }}" name="password"
+                            tabindex="2" required>
+                        <button type="button" class="password-toggle-btn" id="togglePassword">
+                            <span id="passwordIcon">👁</span>
+                        </button>
+                        @if($errors->has('password'))
+                            <div class="invalid-feedback d-block">
+                                {{ $errors->first('password') }}
+                            </div>
+                        @endif
                     </div>
                 </div>
 
                 <!--div class="form-group">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" name="remember" class="custom-control-input" tabindex="3"
-                               id="remember"{{ (Cookie::get('remember') !== null) ? 'checked' : '' }}>
-                        <label class="custom-control-label" for="remember">Remember Me</label>
-                    </div>
-                </div-->
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" name="remember" class="custom-control-input" tabindex="3"
+                                   id="remember"{{ (Cookie::get('remember') !== null) ? 'checked' : '' }}>
+                            <label class="custom-control-label" for="remember">Remember Me</label>
+                        </div>
+                    </div-->
 
                 <div class="form-group">
                     <button type="submit" class="btn btn-primary btn-lg btn-block" tabindex="4">
@@ -69,4 +107,27 @@
             </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const togglePassword = document.getElementById('togglePassword');
+            const passwordField = document.getElementById('password');
+            const passwordIcon = document.getElementById('passwordIcon');
+
+            togglePassword.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                // Cambiar el tipo de input entre password y text
+                const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordField.setAttribute('type', type);
+
+                // Cambiar el ícono
+                if (type === 'password') {
+                    passwordIcon.textContent = '👁'; // Ojo abierto
+                } else {
+                    passwordIcon.textContent = '🙈'; // Ojo cerrado
+                }
+            });
+        });
+    </script>
 @endsection

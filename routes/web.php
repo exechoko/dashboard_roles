@@ -39,8 +39,7 @@ use App\Http\Controllers\TranscripcionController;
 
 Route::get('/', function () {
     return view('auth.login');
-    //return view('welcome');
-});
+})->name('login.view');
 
 
 Auth::routes();
@@ -293,5 +292,16 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('entrega-bodycams/previsualizar/{id}', [EntregasBodycamsController::class, 'previsualizar'])
         ->name('entrega-bodycams.previsualizar');
 
+    //Optimizar sistema
+    Route::get('optimizar', function () {
+        Artisan::call('optimize:clear');
+        Artisan::call('config:cache');
+        Artisan::call('route:cache');
+        Artisan::call('view:cache');
 
+        Auth::logout();
+
+        return redirect()->route('login.view')
+            ->with('status', '✅ Optimización completada correctamente');
+    });
 });

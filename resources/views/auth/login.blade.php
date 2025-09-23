@@ -7,6 +7,11 @@
         <div class="card-header"><h4>Ingreso</h4></div>
 
         <div class="card-body">
+            @if(session('status'))
+                <div class="alert alert-success">
+                    {{ session('status') }}
+                </div>
+            @endif
             <form method="POST" action="{{ route('login') }}">
                 @csrf
                 @if ($errors->any())
@@ -41,7 +46,7 @@
                     <input aria-describedby="passwordHelpBlock" id="password" type="password"
                            value="{{ (Cookie::get('password') !== null) ? Cookie::get('password') : null }}"
                            placeholder="Ingresar Contraseña"
-                           class="form-control{{ $errors->has('password') ? ' is-invalid': '' }}" name="password"
+                           class="form-control{{ $errors->has('password') ? ' is-invalid' : '' }}" name="password"
                            tabindex="2" required>
                     <div class="invalid-feedback">
                         {{ $errors->first('password') }}

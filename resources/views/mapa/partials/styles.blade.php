@@ -693,7 +693,7 @@
     .layer-control-content {
         max-height: 400px;
         overflow-y: auto;
-        transition: max-height 0.3s ease-out;
+        transition: max-height 0.1s ease-out;
     }
 
     .layer-control-content.hidden {

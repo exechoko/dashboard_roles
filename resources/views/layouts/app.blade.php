@@ -49,10 +49,19 @@
     <link rel="stylesheet" href="{{ asset('web/css/components.css') }}">
     @yield('page_css')
 
+    <!-- DARK THEME PARTIALS -->
+    @include('themes.dark-theme.variables')
+    @include('themes.dark-theme.components')
+    @include('themes.dark-theme.forms')
+    @include('themes.dark-theme.tables')
+    @include('themes.dark-theme.navigation')
+    @include('themes.dark-theme.animations')
+
     @yield('css')
 </head>
 
 <body>
+    @include('themes.dark-theme.toggle-button')
 
     <div id="app">
         <div class="main-wrapper main-wrapper-1">
@@ -102,6 +111,10 @@
 <script src="{{ asset('web/js/scripts.js') }}"></script>
 <script src="{{ mix('assets/js/profile.js') }}"></script>
 <script src="{{ mix('assets/js/custom/custom.js') }}"></script>
+
+<!-- DARK THEME SCRIPTS -->
+@include('themes.dark-theme.scripts')
+
 @yield('page_js')
 @yield('scripts')
 @stack('scripts')
@@ -110,8 +123,8 @@
     let loginUrl = '{{ route('login') }}';
     const userUrl = '{{ url('users') }}';
     // Loading button plugin (removed from BS4)
-    (function($) {
-        $.fn.button = function(action) {
+    (function ($) {
+        $.fn.button = function (action) {
             if (action === 'loading' && this.data('loading-text')) {
                 this.data('original-text', this.html()).html(this.data('loading-text')).prop('disabled', true);
             }

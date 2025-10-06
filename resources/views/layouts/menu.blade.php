@@ -142,7 +142,7 @@
         <i class="fas fa-headphones-alt"></i><span>Accesorios</span>
     </a>
 </li-->
-@can('ver-menu-dependencia')
+@can('ver-menu-dependencias')
     <li class="{{ request()->is('dependencias*') ? 'active' : '' }}">
         <a class="nav-link" href="/dependencias">
             <i class="far fa-flag"></i><span>Dependencias</span>

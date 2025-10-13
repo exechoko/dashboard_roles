@@ -48,9 +48,36 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
             ->leftJoin('vehiculos', 'recursos.vehiculo_id', '=', 'vehiculos.id')
             ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
             ->leftJoin('estados', 'equipos.estado_id', '=', 'estados.id')
-            ->leftJoin('historico', 'equipos.id', '=', 'historico.equipo_id')
-            ->where('historico.fecha_asignacion', '!=', null) // Filtrar por fecha de asignación en el histórico
-            ->where('historico.fecha_desasignacion', null) // Asegurarse de que no esté desasignado
+            // Subquery para obtener solo la fecha de asignación más reciente por equipo
+            ->leftJoin(DB::raw('(
+                SELECT
+                    equipo_id,
+                    MAX(fecha_asignacion) as fecha_asignacion
+                FROM historico
+                WHERE fecha_desasignacion IS NULL
+                AND fecha_asignacion IS NOT NULL
+                GROUP BY equipo_id
+            ) as historico'), 'equipos.id', '=', 'historico.equipo_id')
+            // Agrupar por equipo.id para evitar duplicados
+            ->groupBy(
+                'equipos.id',
+                'tipo_terminales.marca',
+                'tipo_terminales.modelo',
+                'estados.nombre',
+                'equipos.tei',
+                'equipos.issi',
+                'equipos.nombre_issi',
+                'equipos.provisto',
+                'recursos.nombre',
+                'destino.nombre',
+                'destino_padre.nombre',
+                'historico.fecha_asignacion',
+                'flota_general.ticket_per',
+                'vehiculos.marca',
+                'vehiculos.modelo',
+                'vehiculos.dominio',
+                'flota_general.observaciones'
+            )
             ->get();
 
         return $equipos;

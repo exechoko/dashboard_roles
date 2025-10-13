@@ -2,6 +2,16 @@
 <html>
 
 <head>
+    <script>
+        // CRITICAL: Apply theme IMMEDIATELY before page renders to prevent flash
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
+    
     <meta charset="UTF-8">
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <link rel="shortcut icon" type="image/ico" href="{{ asset('/img/logo.ico') }}">

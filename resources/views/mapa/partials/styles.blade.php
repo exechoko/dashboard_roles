@@ -1,5 +1,7 @@
 <style>
-    /* Variables CSS para colores de franjas horarias */
+    /* ========================================
+   VARIABLES CSS PARA COLORES DE FRANJAS HORARIAS
+   ======================================== */
     html {
         --border-m: darkgreen;
         --border-t: red;
@@ -9,7 +11,9 @@
         --fondo-all: deepskyblue;
     }
 
-    /* Reset de márgenes y padding para elementos principales */
+    /* ========================================
+   RESET DE MÁRGENES Y PADDING
+   ======================================== */
     section {
         padding: 0px;
         margin: 0px;
@@ -25,7 +29,9 @@
         margin: 0px;
     }
 
-    /* Botón de pantalla completa */
+    /* ========================================
+   BOTÓN DE PANTALLA COMPLETA
+   ======================================== */
     #fullscreen-button {
         position: absolute;
         bottom: 20px;
@@ -37,23 +43,34 @@
         cursor: pointer;
     }
 
-    /* Clase de utilidad para posicionamiento absoluto */
-    .my_class {
-        position: absolute;
-        top: npx; /* distancia superior */
-        left: npx; /* distancia izquierda */
-        right: npx; /* distancia derecha */
-        bottom: npx; /* distancia inferior */
-        z-index: N; /* valor numerico - nivel de elevacion (simil elevation de android) */
+    [data-theme="dark"] #fullscreen-button {
+        background-color: var(--card-bg, #1e1e1e) !important;
+        color: var(--text-primary, #ffffff) !important;
     }
 
-    /* Hover effects */
+    /* ========================================
+   CLASE DE UTILIDAD PARA POSICIONAMIENTO
+   ======================================== */
+    .my_class {
+        position: absolute;
+        top: npx;
+        left: npx;
+        right: npx;
+        bottom: npx;
+        z-index: N;
+    }
+
+    /* ========================================
+   HOVER EFFECTS
+   ======================================== */
     .underline-on-hover:hover {
         text-decoration: underline;
         cursor: pointer;
     }
 
-    /* Utilidades Flexbox */
+    /* ========================================
+   UTILIDADES FLEXBOX
+   ======================================== */
     .flex-row-between-center {
         display: -ms-flexbox;
         display: flex;
@@ -113,10 +130,16 @@
         flex-wrap: wrap;
     }
 
-    /* Estilos para leyenda del mapa */
+    /* ========================================
+   ESTILOS PARA LEYENDA DEL MAPA
+   ======================================== */
     .legend {
         line-height: 18px;
         color: #555;
+    }
+
+    [data-theme="dark"] .legend {
+        color: var(--text-primary, #ffffff) !important;
     }
 
     .legend i {
@@ -134,12 +157,24 @@
         border-radius: 5px;
     }
 
+    [data-theme="dark"] .info {
+        background: rgba(30, 30, 30, 0.9) !important;
+        color: var(--text-primary, #ffffff) !important;
+        border: 1px solid var(--border-color, #333333) !important;
+    }
+
     .info h4 {
         margin: 0 0 5px;
         color: #777;
     }
 
-    /* Botones de control del mapa */
+    [data-theme="dark"] .info h4 {
+        color: var(--text-primary, #ffffff) !important;
+    }
+
+    /* ========================================
+   BOTONES DE CONTROL DEL MAPA
+   ======================================== */
     #btn-reset {
         position: fixed;
         right: 20px;
@@ -157,12 +192,20 @@
         color: black !important;
     }
 
-    /* Estilos para elementos de información */
+    /* ========================================
+   ESTILOS PARA ELEMENTOS DE INFORMACIÓN
+   ======================================== */
     .pieza {
         padding: 10px;
         border: solid thin #00c0ef;
         border-radius: 5px;
         margin-bottom: 10px;
+    }
+
+    [data-theme="dark"] .pieza {
+        background-color: var(--card-bg, #1e1e1e) !important;
+        color: var(--text-primary, #ffffff) !important;
+        border-color: var(--border-color, #333333) !important;
     }
 
     .lbl-result {
@@ -183,7 +226,9 @@
         margin-bottom: 10px;
     }
 
-    /* Modal de resultados */
+    /* ========================================
+   MODAL DE RESULTADOS
+   ======================================== */
     #modal-result ul {
         list-style: none;
         height: 250px;
@@ -206,7 +251,9 @@
         margin: 10px !important;
     }
 
-    /* Marcadores personalizados */
+    /* ========================================
+   MARCADORES PERSONALIZADOS
+   ======================================== */
     .marker-comprador {
         display: -ms-flexbox;
         display: flex;
@@ -253,7 +300,9 @@
         background-color: white !important;
     }
 
-    /* Estilos para diferentes turnos */
+    /* ========================================
+   ESTILOS PARA DIFERENTES TURNOS
+   ======================================== */
     .comprador-matutino {
         background-color: var(--fondo-m) !important;
         border-color: var(--border-m) !important;
@@ -269,7 +318,9 @@
         border-color: var(--border-all) !important;
     }
 
-    /* Modal división */
+    /* ========================================
+   MODAL DIVISIÓN
+   ======================================== */
     #modal-divide {
         display: none;
         position: fixed;
@@ -282,7 +333,14 @@
         transform: translateX(-50%);
     }
 
-    /* Marcadores de rutas */
+    [data-theme="dark"] #modal-divide {
+        background: var(--card-bg, #1e1e1e) !important;
+        color: var(--text-primary, #ffffff) !important;
+    }
+
+    /* ========================================
+   MARCADORES DE RUTAS
+   ======================================== */
     .marker-route {
         display: -ms-flexbox;
         display: flex;
@@ -347,13 +405,17 @@
         color: var(--border-all) !important;
     }
 
-    /* Tabla de retiros */
-    #retiros_table > tbody > tr:hover {
+    /* ========================================
+   TABLA DE RETIROS
+   ======================================== */
+    #retiros_table>tbody>tr:hover {
         cursor: move;
         background: #EAF1F8;
     }
 
-    /* Controles superiores */
+    /* ========================================
+   CONTROLES SUPERIORES
+   ======================================== */
     #box-top-center {
         position: fixed;
         top: 20px;
@@ -394,7 +456,9 @@
         margin-left: 5px;
     }
 
-    /* Panel de viaje */
+    /* ========================================
+   PANEL DE VIAJE
+   ======================================== */
     #travel {
         padding: 5px 10px;
         position: fixed;
@@ -406,6 +470,12 @@
         border: solid thin gray;
     }
 
+    [data-theme="dark"] #travel {
+        background: var(--card-bg, #1e1e1e) !important;
+        color: var(--text-primary, #ffffff) !important;
+        border-color: var(--border-color, #333333) !important;
+    }
+
     #travel span {
         margin: 0 5px;
     }
@@ -415,7 +485,9 @@
         height: 0;
     }
 
-    /* Tipos de transporte */
+    /* ========================================
+   TIPOS DE TRANSPORTE
+   ======================================== */
     .auto {
         border: solid 2px #0015FF;
     }
@@ -440,7 +512,9 @@
         color: #FF0000;
     }
 
-    /* Panel de franjas */
+    /* ========================================
+   PANEL DE FRANJAS
+   ======================================== */
     #franjas {
         padding: 5px 10px;
         position: fixed;
@@ -450,6 +524,12 @@
         background: white;
         border-radius: 5px;
         border: solid thin gray;
+    }
+
+    [data-theme="dark"] #franjas {
+        background: var(--card-bg, #1e1e1e) !important;
+        color: var(--text-primary, #ffffff) !important;
+        border-color: var(--border-color, #333333) !important;
     }
 
     .franja-horaria {
@@ -472,7 +552,9 @@
         z-index: 10;
     }
 
-    /* Modal sin geolocalización */
+    /* ========================================
+   MODAL SIN GEOLOCALIZACIÓN
+   ======================================== */
     #modal-nogeo .fixed-table-loading {
         height: 430px;
     }
@@ -495,13 +577,17 @@
         font-size: 15px !important;
     }
 
-    /* Bootstrap table ajustes */
-    .bootstrap-table table > thead > tr > th,
-    .bootstrap-table table > tbody > tr > td {
-        white-space: nowrap; /* ajusta col al contenido */
+    /* ========================================
+   BOOTSTRAP TABLE AJUSTES
+   ======================================== */
+    .bootstrap-table table>thead>tr>th,
+    .bootstrap-table table>tbody>tr>td {
+        white-space: nowrap;
     }
 
-    /* Loading de rutas */
+    /* ========================================
+   LOADING DE RUTAS
+   ======================================== */
     #loading-route {
         position: fixed;
         top: 50%;
@@ -528,9 +614,16 @@
         animation-duration: 1s;
     }
 
-    /* Google Places Autocomplete z-index fix */
+    /* ========================================
+   GOOGLE PLACES AUTOCOMPLETE
+   ======================================== */
     .pac-container {
-        z-index: 100000000 !important; /* permite visualizar la lista de resultados de busqueda de google al reasignar origen */
+        z-index: 100000000 !important;
+    }
+
+    [data-theme="dark"] .pac-container {
+        background-color: var(--card-bg, #1e1e1e) !important;
+        color: var(--text-primary, #ffffff) !important;
     }
 
     .modal-polygon {
@@ -545,18 +638,9 @@
         background: transparent !important;
     }
 
-    /* Media queries para responsividad */
-    @media (min-width: 1150px) {
-        .modal-xl {
-            width: 1140px;
-        }
-
-        .modal-full {
-            width: 98%;
-        }
-    }
-
-    /* === ESTILOS PARA EL CONTROL PERSONALIZADO DE CAPAS === */
+    /* ========================================
+   CONTROL PERSONALIZADO DE CAPAS - LIGHT
+   ======================================== */
     .custom-layer-control {
         position: absolute !important;
         top: 10px;
@@ -573,15 +657,14 @@
         pointer-events: auto;
     }
 
-    /* Asegurar que el contenedor del mapa tenga position relative */
-    #map {
-        position: relative !important;
-    }
-
     .custom-layer-control h6 {
         margin: 0 0 10px 0;
         font-weight: bold;
         color: #333;
+    }
+
+    #map {
+        position: relative !important;
     }
 
     .layer-item {
@@ -595,7 +678,9 @@
         margin-bottom: 0;
     }
 
-    /* Switch CSS */
+    /* ========================================
+   SWITCH/TOGGLE LIGHT THEME
+   ======================================== */
     .switch {
         position: relative;
         display: inline-block;
@@ -634,11 +719,11 @@
         border-radius: 50%;
     }
 
-    input:checked + .slider {
+    input:checked+.slider {
         background-color: #007bff;
     }
 
-    input:checked + .slider:before {
+    input:checked+.slider:before {
         transform: translateX(16px);
     }
 
@@ -649,28 +734,29 @@
         user-select: none;
     }
 
-    /* Diferentes colores para diferentes tipos de capas */
-    .switch input:checked + .slider.comisarias {
+    .switch input:checked+.slider.comisarias {
         background-color: #28a745;
     }
 
-    .switch input:checked + .slider.camaras {
+    .switch input:checked+.slider.camaras {
         background-color: #007bff;
     }
 
-    .switch input:checked + .slider.camaras-tipo {
+    .switch input:checked+.slider.camaras-tipo {
         background-color: #fd7e14;
     }
 
-    .switch input:checked + .slider.antenas {
+    .switch input:checked+.slider.antenas {
         background-color: #6f42c1;
     }
 
-    .switch input:checked + .slider.sitios {
+    .switch input:checked+.slider.sitios {
         background-color: #dc3545;
     }
 
-    /* Hacer el control colapsible */
+    /* ========================================
+   CONTROL COLAPSIBLE LIGHT
+   ======================================== */
     .layer-control-header {
         display: flex;
         justify-content: space-between;
@@ -701,11 +787,123 @@
         overflow: hidden;
     }
 
-    /* Ajuste para pantalla completa */
+    /* ========================================
+   CONTROL PERSONALIZADO DE CAPAS - DARK THEME
+   ======================================== */
+    [data-theme="dark"] .custom-layer-control {
+        background-color: var(--card-bg, #1e1e1e) !important;
+        border: 1px solid var(--border-color, #333333) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    [data-theme="dark"] .custom-layer-control h6 {
+        color: var(--text-primary, #ffffff) !important;
+    }
+
+    [data-theme="dark"] .layer-control-header {
+        background-color: var(--bg-secondary, #2d2d2d) !important;
+        color: var(--text-primary, #ffffff) !important;
+        border-bottom-color: var(--border-color, #333333) !important;
+    }
+
+    [data-theme="dark"] .layer-control-toggle {
+        color: var(--text-primary, #ffffff) !important;
+    }
+
+    [data-theme="dark"] .layer-control-content {
+        background-color: var(--card-bg, #1e1e1e) !important;
+    }
+
+    [data-theme="dark"] .layer-item {
+        border-radius: 4px !important;
+        transition: background-color 0.2s ease !important;
+    }
+
+    [data-theme="dark"] .layer-item:hover {
+        background-color: var(--bg-secondary, #2d2d2d) !important;
+    }
+
+    [data-theme="dark"] .layer-label {
+        color: var(--text-primary, #ffffff) !important;
+    }
+
+    [data-theme="dark"] .layer-label:hover {
+        color: #fff !important;
+    }
+
+    /* ========================================
+   SWITCH DARK THEME
+   ======================================== */
+    [data-theme="dark"] .slider {
+        background-color: var(--input-border, #444444) !important;
+    }
+
+    [data-theme="dark"] input:checked+.slider {
+        background-color: #007bff !important;
+    }
+
+    [data-theme="dark"] input:checked+.slider.comisarias {
+        background-color: #28a745 !important;
+    }
+
+    [data-theme="dark"] input:checked+.slider.camaras {
+        background-color: #007bff !important;
+    }
+
+    [data-theme="dark"] input:checked+.slider.camaras-tipo {
+        background-color: #fd7e14 !important;
+    }
+
+    [data-theme="dark"] input:checked+.slider.antenas {
+        background-color: #6f42c1 !important;
+    }
+
+    [data-theme="dark"] input:checked+.slider.sitios {
+        background-color: #dc3545 !important;
+    }
+
+    /* ========================================
+   FULLSCREEN ADJUSTMENT
+   ======================================== */
     #map:fullscreen .custom-layer-control {
         position: absolute !important;
         top: 10px;
         right: 10px;
         z-index: 10000 !important;
+    }
+
+    /* ========================================
+   MEDIA QUERIES RESPONSIVO
+   ======================================== */
+    @media (min-width: 1150px) {
+        .modal-xl {
+            width: 1140px;
+        }
+
+        .modal-full {
+            width: 98%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .custom-layer-control {
+            max-width: 280px !important;
+            font-size: 11px !important;
+        }
+
+        #map {
+            height: 400px !important;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .custom-layer-control {
+            max-width: 260px !important;
+            font-size: 10px !important;
+        }
+
+        #map {
+            height: 300px !important;
+        }
     }
 </style>

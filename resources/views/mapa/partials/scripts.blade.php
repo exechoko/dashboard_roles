@@ -353,20 +353,137 @@ let layerStates = {
     'camaras-comisarias': false
 };
 
-// Configuración de capas del mapa
-var mapaComun = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+// MAPA CLARO (Tema por defecto)
+var mapaClaro = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 20
 });
 
+// MAPA OSCURO (Dark Theme)
+var mapaOscuro = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20
+});
+
+// MAPA HÍBRIDO (Satélite - igual para ambos temas)
 var mapaHibrido = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-    subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    maxZoom: 20
 });
 
-// Añade el mapa común por defecto
-mymap.addLayer(mapaComun);
+/* ========================================
+   VARIABLE GLOBAL PARA CONTROL DE MAPA
+   ======================================== */
+var mapaActualLigero = null; // Referencia a la capa de mapa actual
+var esHibrido = false; // Estado actual del mapa
 
-// Estado inicial del mapa
-var esHibrido = false;
+/* ========================================
+   FUNCIÓN PARA OBTENER MAPA SEGÚN TEMA
+   ======================================== */
+function getMapaSegunTema() {
+    const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
+    return isDarkTheme ? mapaOscuro : mapaClaro;
+}
+
+/* ========================================
+   FUNCIÓN PARA CAMBIAR CAPA DE MAPA
+   ======================================== */
+function cambiarCapaMapa(mymap) {
+    const nuevoMapa = getMapaSegunTema();
+
+    // Si ya hay una capa de mapa ligero, removerla
+    if (mapaActualLigero) {
+        mymap.removeLayer(mapaActualLigero);
+    }
+
+    // Agregar nueva capa de mapa
+    mapaActualLigero = nuevoMapa;
+    mymap.addLayer(nuevoMapa);
+
+    // Traer al frente (debajo de otros elementos)
+    nuevoMapa.bringToBack();
+}
+
+/* ========================================
+   OBSERVADOR DE CAMBIOS DE TEMA
+   ======================================== */
+function observarCambiosTema(mymap) {
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            // Detectar cambios en data-theme
+            if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
+                // Esperar un pequeño delay para que se apliquen otros estilos
+                setTimeout(function() {
+                    cambiarCapaMapa(mymap);
+                }, 50);
+            }
+        });
+    });
+
+    observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-theme']
+    });
+}
+
+/* ========================================
+   FUNCIÓN PARA MODIFICAR BOTÓN DE TOGGLE
+   ======================================== */
+function actualizarBotonesMapaConTema(mymap, botonesConfig) {
+    const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
+
+    if (botonesConfig && botonesConfig.toggleMapBtn) {
+        const btn = document.getElementById(botonesConfig.toggleMapBtn);
+        if (btn) {
+            if (esHibrido) {
+                btn.textContent = isDarkTheme ? 'Mapa Oscuro' : 'Mapa Común';
+            } else {
+                btn.textContent = isDarkTheme ? 'Mapa Satelital' : 'Mapa Satelital';
+            }
+        }
+    }
+}
+
+/* ========================================
+   INTEGRACIÓN CON setupMapToggleButton
+   ======================================== */
+
+function setupMapToggleButton() {
+    var toggleControl = L.control({
+        position: 'bottomleft'
+    });
+
+    toggleControl.onAdd = function() {
+        var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+        div.innerHTML = '<button id="toggleMapBtn" class="btn btn-primary">Mapa Satelital</button>';
+        div.style.backgroundColor = 'white';
+        div.style.padding = '5px';
+        L.DomEvent.disableClickPropagation(div);
+        return div;
+    };
+
+    toggleControl.addTo(mymap);
+
+    document.getElementById('toggleMapBtn').addEventListener('click', function() {
+        const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
+
+        if (esHibrido) {
+            // Cambiar a mapa normal (claro u oscuro según tema)
+            mymap.removeLayer(mapaHibrido);
+            cambiarCapaMapa(mymap);
+            this.textContent = 'Mapa Satelital';
+        } else {
+            // Cambiar a mapa híbrido (satélite)
+            if (mapaActualLigero) {
+                mymap.removeLayer(mapaActualLigero);
+            }
+            mymap.addLayer(mapaHibrido);
+            this.textContent = isDarkTheme ? 'Mapa Oscuro' : 'Mapa Común';
+        }
+        esHibrido = !esHibrido;
+    });
+}
 
 $(document).ready(function() {
     // Inicialización de Select2
@@ -394,6 +511,12 @@ $(document).ready(function() {
 
         mymap.setView([lat, lng], 20);
     });
+
+    // Agregar mapa según tema actual
+    cambiarCapaMapa(mymap);
+
+   // Observar cambios de tema
+    observarCambiosTema(mymap);
 
     // Configuración del botón toggle para cambiar tipo de mapa
     setupMapToggleButton();
@@ -446,36 +569,6 @@ function ensureLayerControlVisibility() {
         layerControl.style.top = '10px';
         layerControl.style.right = '10px';
     }
-}
-
-function setupMapToggleButton() {
-    var toggleControl = L.control({
-        position: 'bottomleft'
-    });
-
-    toggleControl.onAdd = function() {
-        var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-        div.innerHTML = '<button id="toggleMapBtn" class="btn btn-primary">Mapa Satelital</button>';
-        div.style.backgroundColor = 'white';
-        div.style.padding = '5px';
-        L.DomEvent.disableClickPropagation(div);
-        return div;
-    };
-
-    toggleControl.addTo(mymap);
-
-    document.getElementById('toggleMapBtn').addEventListener('click', function() {
-        if (esHibrido) {
-            mymap.removeLayer(mapaHibrido);
-            mymap.addLayer(mapaComun);
-            this.textContent = 'Mapa Satelital';
-        } else {
-            mymap.removeLayer(mapaComun);
-            mymap.addLayer(mapaHibrido);
-            this.textContent = 'Mapa Común';
-        }
-        esHibrido = !esHibrido;
-    });
 }
 
 function setupSearchControl() {

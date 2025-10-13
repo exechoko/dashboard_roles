@@ -54,6 +54,16 @@
         color: var(--text-primary) !important;
     }
 
+    /* Labels generales */
+    label {
+        color: var(--text-primary, #ffffff) !important;
+        font-weight: 500;
+    }
+
+    .form-check-label {
+        color: var(--text-primary, #ffffff) !important;
+    }
+
     /* Buttons */
     .btn-secondary {
         background-color: var(--bg-tertiary) !important;

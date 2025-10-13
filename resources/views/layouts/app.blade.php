@@ -11,7 +11,7 @@
             }
         })();
     </script>
-    
+
     <meta charset="UTF-8">
     <meta name="csrf-token" content="{{ csrf_token() }}" />
     <link rel="shortcut icon" type="image/ico" href="{{ asset('/img/logo.ico') }}">
@@ -66,6 +66,7 @@
     @include('themes.dark-theme.tables')
     @include('themes.dark-theme.navigation')
     @include('themes.dark-theme.animations')
+    @include('themes.dark-theme.modal-fix')
 
     @yield('css')
 </head>

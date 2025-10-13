@@ -27,7 +27,17 @@
         color: var(--text-primary) !important;
     }
 
+    [data-theme="dark"] .select2-container--default .select2-selection--multiple {
+        background-color: var(--input-bg) !important;
+        border: 1px solid var(--input-border) !important;
+        color: var(--text-primary) !important;
+    }
+
     [data-theme="dark"] .select2-container--default .select2-selection--single .select2-selection__rendered {
+        color: var(--text-primary) !important;
+    }
+
+    [data-theme="dark"] .select2-container--default .select2-selection--multiple .select2-selection__rendered {
         color: var(--text-primary) !important;
     }
 

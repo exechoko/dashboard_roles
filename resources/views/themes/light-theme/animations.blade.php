@@ -1,30 +1,30 @@
 <style>
-    [data-theme="dark"] * {
+    * {
         transition: background-color 0.1s ease, color 0.1s ease, border-color 0.1s ease;
     }
 
-    [data-theme="dark"] ::-webkit-scrollbar {
+    ::-webkit-scrollbar {
         width: 8px;
     }
 
-    [data-theme="dark"] ::-webkit-scrollbar-track {
+    ::-webkit-scrollbar-track {
         background: var(--bg-secondary);
     }
 
-    [data-theme="dark"] ::-webkit-scrollbar-thumb {
+    ::-webkit-scrollbar-thumb {
         background: var(--bg-tertiary);
         border-radius: 4px;
     }
 
-    [data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
-        background: #555555;
+    ::-webkit-scrollbar-thumb:hover {
+        background: #cccccc;
     }
 
-    [data-theme="dark"] .spinner-border {
+    .spinner-border {
         color: var(--text-primary);
     }
 
-    [data-theme="dark"] .progress {
+    .progress {
         background-color: var(--bg-tertiary);
     }
 </style>

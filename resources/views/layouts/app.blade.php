@@ -42,22 +42,28 @@
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.Default.css" />
     <link href="{{ asset('leaflet/geocoder/geocoder.css') }}" rel="stylesheet">
-    <!--link href="{{ asset('leaflet/lib/leaflet-dist/leaflet.css') }}" rel="stylesheet"-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/leaflet.markercluster.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-editable/1.1.0/Leaflet.Editable.min.js"></script>
     <script src="{{ asset('leaflet/geocoder/esri-leaflet.js') }}"></script>
     <script src="{{ asset('leaflet/geocoder/esri-leaflet-geocoder.min.js') }}"></script>
     <script src="{{ asset('leaflet/geocoder/gpx.min.js') }}"></script>
     <script src="{{ asset('leaflet/leaflet-heat.js') }}"></script>
-    <!-- Enlace a la biblioteca de pantalla completa -->
     <script src="https://unpkg.com/leaflet-fullscreen@1.6.0/dist/Leaflet.fullscreen.min.js"></script>
-
 
     @yield('page_css')
     <!-- Template CSS -->
     <link rel="stylesheet" href="{{ asset('web/css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('web/css/components.css') }}">
     @yield('page_css')
+
+    <!-- LIGHT THEME PARTIALS -->
+    @include('themes.light-theme.variables')
+    @include('themes.light-theme.components')
+    @include('themes.light-theme.forms')
+    @include('themes.light-theme.tables')
+    @include('themes.light-theme.navigation')
+    @include('themes.light-theme.animations')
+    @include('themes.light-theme.modal-fix')
 
     <!-- DARK THEME PARTIALS -->
     @include('themes.dark-theme.variables')
@@ -72,14 +78,11 @@
 </head>
 
 <body>
-    @include('themes.dark-theme.toggle-button')
-
     <div id="app">
         <div class="main-wrapper main-wrapper-1">
             <div class="navbar-bg"></div>
             <nav class="navbar navbar-expand-lg main-navbar">
                 @include('layouts.header')
-
             </nav>
             <div class="main-sidebar main-sidebar-postion">
                 @include('layouts.sidebar')
@@ -97,6 +100,9 @@
 
     @include('profile.change_password')
     @include('profile.edit_profile')
+
+    <!-- THEME TOGGLE BUTTON -->
+    @include('themes.toggle-button')
 
 </body>
 <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
@@ -116,12 +122,14 @@
 <script src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap-daterangepicker/daterangepicker.js"></script>
 
-
 <!-- Template JS File -->
 <script src="{{ asset('web/js/stisla.js') }}"></script>
 <script src="{{ asset('web/js/scripts.js') }}"></script>
 <script src="{{ mix('assets/js/profile.js') }}"></script>
 <script src="{{ mix('assets/js/custom/custom.js') }}"></script>
+
+<!-- LIGHT THEME SCRIPTS -->
+@include('themes.light-theme.scripts')
 
 <!-- DARK THEME SCRIPTS -->
 @include('themes.dark-theme.scripts')

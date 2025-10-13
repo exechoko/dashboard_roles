@@ -1,5 +1,4 @@
 <style>
-    /* Theme toggle button */
     .theme-toggle {
         position: fixed;
         bottom: 30px;
@@ -30,7 +29,6 @@
     }
 </style>
 
-<!-- Theme Toggle Button HTML -->
 <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Cambiar tema">
     <i class="fas fa-moon" id="themeIcon"></i>
 </button>

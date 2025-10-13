@@ -1,22 +1,5 @@
 <style>
-    :root {
-        /* Light theme variables */
-        --bg-primary: #ffffff;
-        --bg-secondary: #f8f9fa;
-        --bg-tertiary: #e9ecef;
-        --text-primary: #212529;
-        --text-secondary: #6c757d;
-        --border-color: #dee2e6;
-        --card-bg: #ffffff;
-        --nav-bg: #007bff;
-        --sidebar-bg: #2d3748;
-        --shadow: rgba(0, 0, 0, 0.1);
-        --input-bg: #ffffff;
-        --input-border: #ced4da;
-    }
-
     [data-theme="dark"] {
-        /* Dark theme variables */
         --bg-primary: #1a1a1a;
         --bg-secondary: #2d2d2d;
         --bg-tertiary: #3a3a3a;

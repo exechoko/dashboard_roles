@@ -13,6 +13,8 @@ use App\Models\TipoMovimiento;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
+//DashboardController.php
+
 class DashboardController extends Controller
 {
     public function getCantidadEquiposSinFuncionarJSON(Request $request)
@@ -35,6 +37,7 @@ class DashboardController extends Controller
     {
         $idEstadoBaja = Estado::where('nombre', 'Baja')->value('id');
         $idEstadoRecambio = Estado::where('nombre', 'Recambio')->value('id');
+        $idEstadoPerdido = Estado::where('nombre', 'Perdido')->value('id');
         $records = Equipo::select(
             'tipo_terminales.marca as marca',
             'tipo_terminales.modelo as modelo',
@@ -42,31 +45,13 @@ class DashboardController extends Controller
             DB::raw('COUNT(equipos.id) as cantidad')
         )
             ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
-            ->whereIn('equipos.estado_id', [$idEstadoBaja, $idEstadoRecambio]) // Estado "Baja" "Recambio
+            ->whereIn('equipos.estado_id', [$idEstadoBaja, $idEstadoRecambio, $idEstadoPerdido]) // Estado "Baja" "Recambio "Perdido"
             ->groupBy('tipo_terminales.id', 'tipo_terminales.marca', 'tipo_terminales.modelo', 'equipos.provisto')
             ->get();
 
         return response()->json($records);
     }
 
-    /*public function getCantidadEquiposFuncionalesJSON(Request $request)
-    {
-        $idEstadoNuevo = Estado::where('nombre', 'Nuevo')->value('id');
-        $idEstadoUsado = Estado::where('nombre', 'Usado')->value('id');
-        $idEstadoReparado = Estado::where('nombre', 'Reparado')->value('id');
-        $records = Equipo::select(
-            'tipo_terminales.marca as marca',
-            'tipo_terminales.modelo as modelo',
-            'equipos.provisto as provisto',
-            DB::raw('COUNT(equipos.id) as cantidad')
-        )
-            ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
-            ->whereIn('equipos.estado_id', [$idEstadoNuevo, $idEstadoUsado, $idEstadoReparado]) // Estados "Nuevo", "Usado" y "Reparado"
-            ->groupBy('tipo_terminales.id', 'equipos.provisto')
-            ->get();
-
-        return response()->json($records);
-    }*/
     public function getCantidadEquiposFuncionalesJSON(Request $request)
     {
         $stock911 = Recurso::where('nombre', 'Stock 911')->first();
@@ -87,7 +72,7 @@ class DashboardController extends Controller
             ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
             ->leftJoin('tipo_uso', 'tipo_terminales.tipo_uso_id', '=', 'tipo_uso.id')
             ->leftJoin('flota_general', 'equipos.id', '=', 'flota_general.equipo_id')
-            ->whereIn('equipos.estado_id', [$idEstadoNuevo, $idEstadoUsado, $idEstadoReparado])
+            ->whereIn('equipos.estado_id', [$idEstadoNuevo, $idEstadoUsado, $idEstadoReparado]) // Estados funcionales
             ->groupBy(
                 'tipo_terminales.id',
                 'tipo_terminales.marca',

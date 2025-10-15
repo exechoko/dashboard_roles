@@ -1,31 +1,32 @@
+{{-- resources/views/home.blade.php --}}
 @extends('layouts.app')
 
 @section('css')
 
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="{{ asset('/plugins/JQueryUi/jquery-ui.css') }}" rel="stylesheet">
-    <link href="{{ asset('/plugins/bootstrap-dialog/bootstrap-dialog.min.css') }}" rel="stylesheet">
-    <link href="{{ asset('/plugins/bootstrap-toggle/bootstrap-toggle.min.css') }}" rel="stylesheet">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="{{ asset('/plugins/JQueryUi/jquery-ui.css') }}" rel="stylesheet">
+<link href="{{ asset('/plugins/bootstrap-dialog/bootstrap-dialog.min.css') }}" rel="stylesheet">
+<link href="{{ asset('/plugins/bootstrap-toggle/bootstrap-toggle.min.css') }}" rel="stylesheet">
 
-    <style>
-        .card-item {
-            position: relative;
-            background-color: #000;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 30px;
-            transition: transform .5s;
-        }
+<style>
+    .card-item {
+        position: relative;
+        background-color: #000;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 30px;
+        transition: transform .5s;
+    }
 
-        .card-item:hover {
-            transform: translateY(-5px);
-            /*translate: 0 -20px;
+    .card-item:hover {
+        transform: translateY(-5px);
+        /*translate: 0 -20px;
                                                                                                                                                                                                                                                                                 box-shadow: 5px 3px rgb(217 220 242 / 75%),
                                                                                                                                                                                                                                                                                     10px 6px rgb(44 217 255 / 50%),
                                                                                                                                                                                                                                                                                     15px 9px rgb(126 255 178 / 25%),*/
-        }
+    }
 
-        /*.card-item::before {
+    /*.card-item::before {
                                                                                                                                                                                                                                                                             content: '';
                                                                                                                                                                                                                                                                             position: absolute;
                                                                                                                                                                                                                                                                             inset: 0;
@@ -39,7 +40,7 @@
                                                                                                                                                                                                                                                                         .card-item:hover::before {
                                                                                                                                                                                                                                                                             transform: scale(1);
                                                                                                                                                                                                                                                                         }*/
-    </style>
+</style>
 
 @stop
 
@@ -56,8 +57,8 @@
                     @can('ver-menu-dashboard')
                         <ul class="nav nav-pills" id="myTab3" role="tablist">
                             <li class="nav-item">
-                                <a class="nav-link active" id="terminales-tab3" data-toggle="tab" href="#terminales3"
-                                    role="tab" aria-controls="home" aria-selected="true">Terminales</a>
+                                <a class="nav-link active" id="terminales-tab3" data-toggle="tab" href="#terminales3" role="tab"
+                                    aria-controls="home" aria-selected="true">Terminales</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" id="recursos-tab3" data-toggle="tab" href="#recursos3" role="tab"
@@ -101,7 +102,12 @@
                                             <div class="col-md-4 col-xl-3">
                                                 <div class="card-item bg-c-violet order-card">
                                                     <div class="card-block">
-                                                        <h5>Funcionales</h5>
+                                                        <h5>
+                                                            Funcionales
+                                                            <i class="fas fa-info-circle ml-1" data-toggle="tooltip"
+                                                                data-placement="top"
+                                                                title="Equipos con estado Nuevo, Usado y Reparado"></i>
+                                                        </h5>
                                                         <h2 class="text-right"><i
                                                                 class="fas fa-check f-left"></i><span>{{ $cant_equipos_funcionales }}</span>
                                                         </h2>
@@ -119,25 +125,39 @@
                                             <div class="col-md-4 col-xl-3">
                                                 <div class="card-item bg-c-red order-card">
                                                     <div class="card-block">
-                                                        <h5>Sin funcionar</h5>
-                                                        <h2 class="text-right"><i
-                                                                class="fas fa-times f-left"></i><span>{{ $cant_equipos_sin_funcionar }}</span>
+                                                        <h5>
+                                                            Sin funcionar
+                                                            <i class="fas fa-info-circle ml-1" data-toggle="tooltip"
+                                                                data-placement="top"
+                                                                title="Equipos con estado No funciona"></i>
+                                                        </h5>
+                                                        <h2 class="text-right">
+                                                            <i class="fas fa-times f-left"></i>
+                                                            <span>{{ $cant_equipos_sin_funcionar }}</span>
                                                         </h2>
                                                         @can('ver-equipo')
-                                                            <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                            <p class="m-b-0 text-right">
+                                                                <a href="#" data-toggle="modal"
                                                                     data-target="#modal-equipos-sin-funcionar"
                                                                     id="btn-buscar-equipos-sin-funcionar"
-                                                                    style="color: rgb(253, 253, 253)">Ver
-                                                                    más</a>
+                                                                    style="color: rgb(253, 253, 253)">
+                                                                    Ver más
+                                                                </a>
                                                             </p>
                                                         @endcan
                                                     </div>
                                                 </div>
                                             </div>
+
                                             <div class="col-md-4 col-xl-3">
                                                 <div class="card-item bg-blue order-card">
                                                     <div class="card-block">
-                                                        <h5>Baja</h5>
+                                                        <h5>
+                                                            Baja
+                                                            <i class="fas fa-info-circle ml-1" data-toggle="tooltip"
+                                                                data-placement="top"
+                                                                title="Equipos con estado Baja, Perdido y Recambio (TELECOM)"></i>
+                                                        </h5>
                                                         <h2 class="text-right"><i
                                                                 class="fas fa-trash-alt f-left"></i><span>{{ $cant_equipos_baja }}</span>
                                                         </h2>
@@ -192,8 +212,8 @@
                                                     <div class="card-block">
                                                         <h5>Provistos por TELECOM</h5>
                                                         <h2 class="text-right"><img
-                                                                src="{{ asset('img/telecom_logo_202.png') }}"
-                                                                alt="Telecom Logo" class="f-left"
+                                                                src="{{ asset('img/telecom_logo_202.png') }}" alt="Telecom Logo"
+                                                                class="f-left"
                                                                 width="60"><span>{{ $cant_equipos_provisto_por_telecom }}</span>
                                                         </h2>
                                                         @can('ver-equipo')
@@ -211,8 +231,7 @@
                                         <div class="row justify-content-end">
                                             <div class="col-md-12 text-right">
                                                 <form action="{{ route('equipos.export') }}" method="GET">
-                                                    <button id="exportar-a-excel-todos-los-terminales"
-                                                        class="btn btn-success">
+                                                    <button id="exportar-a-excel-todos-los-terminales" class="btn btn-success">
                                                         <i class="fa fa-file-excel"> Exportar todos los terminales</i>
                                                     </button>
                                                 </form>
@@ -220,8 +239,7 @@
                                         </div>
                                     </div>
                                     <!-- TAB Recursos -->
-                                    <div class="tab-pane fade" id="recursos3" role="tabpanel"
-                                        aria-labelledby="recursos-tab3">
+                                    <div class="tab-pane fade" id="recursos3" role="tabpanel" aria-labelledby="recursos-tab3">
                                         <div class="row">
                                             <div class="col-md-4 col-xl-4">
                                                 <div class="card-item bg-c-orange order-card">
@@ -234,8 +252,7 @@
                                                         @can('ver-equipo')
                                                             <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
                                                                     data-target="#modal-equipos-pg{{-- $vehiculo->id --}}"
-                                                                    id="btn-buscar-equipos-pg"
-                                                                    style="color: rgb(253, 253, 253)">Ver
+                                                                    id="btn-buscar-equipos-pg" style="color: rgb(253, 253, 253)">Ver
                                                                     más</a>
                                                             </p>
                                                         @endcan
@@ -334,8 +351,7 @@
                                         </div>
                                     </div>
                                     <!-- TAB Camaras -->
-                                    <div class="tab-pane fade" id="camaras3" role="tabpanel"
-                                        aria-labelledby="camaras-tab3">
+                                    <div class="tab-pane fade" id="camaras3" role="tabpanel" aria-labelledby="camaras-tab3">
                                         <div class="row">
                                             <div class="col-md-4 col-xl-4">
                                                 <div class="card-item bg-c-blue order-card">
@@ -346,7 +362,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                     data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                 data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -402,8 +418,8 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--ul id="equiposFuncionalesList" class="mt-3">
-                            </ul>
-                            <hr-->
+                                </ul>
+                                <hr-->
                         <h5>Equipos para móviles</h5>
                         <ul id="cantidadTotalEquiposMoviles" class="mt-3">
                             <!-- Lista de equipos -->
@@ -430,12 +446,12 @@
             </div>
         </div>
 
-        <div id="modal-equipos-baja" class="modal fade " data-backdrop="false"
-            style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
+        <div id="modal-equipos-baja" class="modal fade " data-backdrop="false" style="background-color: rgba(0, 0, 0, 0.5);"
+            role="dialog" aria-hidden="true">
             <div id="dialog" class="modal-dialog modal-xs">
                 <div class="modal-content">
                     <div class="modal-header bg-blue">
-                        <h4 class="modal-title text-white">Equipos dados de Baja</h4>
+                        <h4 class="modal-title text-white">Equipos dados de Baja o Recambio</h4>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -555,9 +571,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                                            <button id="btn-buscar-moviles" href="consultarMoviles"
-                                                                                                                                                                                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                                        </div-->
+                                                                                                                                                                                                                                                                                                <button id="btn-buscar-moviles" href="consultarMoviles"
+                                                                                                                                                                                                                                                                                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                                            </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-moviles" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -572,8 +588,8 @@
             </div>
         </div>
 
-        <div id="modal-equipos-pg" class="modal fade " data-backdrop="false"
-            style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
+        <div id="modal-equipos-pg" class="modal fade " data-backdrop="false" style="background-color: rgba(0, 0, 0, 0.5);"
+            role="dialog" aria-hidden="true">
             <div id="dialog" class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header bg-warning">
@@ -742,9 +758,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                                            <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                                                                                                                                                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                                        </div-->
+                                                                                                                                                                                                                                                                                                <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                                                                                                                                                                                                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                                            </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-motos" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -771,9 +787,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                                            <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                                                                                                                                                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                                        </div-->
+                                                                                                                                                                                                                                                                                                <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                                                                                                                                                                                                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                                            </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-camaras" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -793,10 +809,10 @@
 
 
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             // Definir funciones de manejo de eventos
             function handleClickEvent(id, consultarFunction) {
-                $(id).click(function() {
+                $(id).click(function () {
                     consultarFunction($(this).data('id'));
                 });
             }
@@ -816,34 +832,34 @@
             handleClickEvent('#btn-buscar-equipos-division-911', consultarEquiposDivision911);
             handleClickEvent('#btn-buscar-equipos-division-bancaria', consultarEquiposDivisionBancaria);
             handleClickEvent('#btn-buscar-desinstalaciones-parciales', consultarDesinstalacionesParciales);
-            handleClickEvent('#btn-buscar-camaras', function() {
+            handleClickEvent('#btn-buscar-camaras', function () {
                 // Tu función de consulta para cámaras, si es diferente
             });
 
-            $('#exportar-a-excel-todos-los-terminales').click(function() {
+            $('#exportar-a-excel-todos-los-terminales').click(function () {
                 exportarTodosLosTerminales();
             });
-            $('#exportar-a-excel-equipos-departamental').click(function() {
+            $('#exportar-a-excel-equipos-departamental').click(function () {
                 exportarAExcel('table-equipos-departamental', 'equipos_departamental', ['fecha', 'marca',
                     'modelo', 'issi', 'tei', 'nombre_recurso', 'ticket_per', 'observaciones'
                 ]);
             });
-            $('#exportar-a-excel-equipos-stock').click(function() {
+            $('#exportar-a-excel-equipos-stock').click(function () {
                 exportarAExcel('table-equipos-stock', 'equipos_stock', ['fecha', 'marca',
                     'modelo', 'issi', 'tei', 'nombre_recurso', 'ticket_per', 'observaciones'
                 ]);
             });
-            $('#exportar-a-excel-equipos-pg').click(function() {
+            $('#exportar-a-excel-equipos-pg').click(function () {
                 exportarAExcel('table-equipos-pg', 'equipos_pg', ['fecha', 'marca',
                     'modelo', 'issi', 'tei', 'nombre_recurso', 'ticket_per', 'observaciones'
                 ]);
             });
-            $('#exportar-a-excel-equipos-division-911').click(function() {
+            $('#exportar-a-excel-equipos-division-911').click(function () {
                 exportarAExcel('table-equipos-division-911', 'equipos_911', ['fecha', 'marca',
                     'modelo', 'issi', 'tei', 'nombre_recurso', 'ticket_per', 'observaciones'
                 ]);
             });
-            $('#exportar-a-excel-equipos-division-bancaria').click(function() {
+            $('#exportar-a-excel-equipos-division-bancaria').click(function () {
                 exportarAExcel('table-equipos-division-bancaria', 'equipos_bancaria', ['fecha', 'marca',
                     'modelo', 'issi', 'tei', 'nombre_recurso', 'ticket_per', 'observaciones'
                 ]);
@@ -854,11 +870,11 @@
             $.ajax({
                 type: 'GET',
                 url: '/export-equipos',
-                success: function(response) {
+                success: function (response) {
                     // La respuesta puede contener el archivo descargable, o puedes manejarla de acuerdo a tus necesidades
                     console.log(response);
                 },
-                error: function(error) {
+                error: function (error) {
                     // Manejar errores si es necesario
                     console.error(error);
                 }
@@ -870,9 +886,9 @@
             var tableData = $('#' + idTabla).bootstrapTable('getData');
 
             // Filtra los datos para incluir solo los campos seleccionados
-            var filteredData = tableData.map(function(row) {
+            var filteredData = tableData.map(function (row) {
                 var filteredRow = {};
-                camposExportar.forEach(function(campo) {
+                camposExportar.forEach(function (campo) {
                     filteredRow[campo] = row[campo];
                 });
                 return filteredRow;
@@ -896,20 +912,20 @@
         function consultarEquiposFuncionales(id) {
             $.post(
                 "{{ route('get-equipos-funcionales-json') }}", {
-                    _token: "{{ csrf_token() }}",
-                },
-                function(data, textStatus, xhr) {
+                _token: "{{ csrf_token() }}",
+            },
+                function (data, textStatus, xhr) {
                     console.log('data', data);
                     //$("#equiposFuncionalesList").empty();
                     $("#cantidadTotalEquiposMoviles").empty();
                     $("#cantidadTotalEquiposDeMano").empty();
                     $("#cantidadTotalEquipoBase").empty();
 
-                    data.forEach(function(equipo) {
+                    data.forEach(function (equipo) {
                         var listItem = $("<li>").html(equipo.marca + " " + equipo.modelo + " (" +
                             equipo.provisto + "): <strong>" + equipo.cantidad + "</strong> (Usados: <strong>" +
                             equipo.cantidad_en_uso + "</strong> - Stock: <strong>" + equipo
-                            .cantidad_en_stock + "</strong>)");
+                                .cantidad_en_stock + "</strong>)");
 
                         // Agregar a la lista principal
                         //$("#equiposFuncionalesList").append(listItem);
@@ -924,7 +940,7 @@
                         }
                     });
                 }
-            ).fail(function(data) {
+            ).fail(function (data) {
                 swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');
             });
         }
@@ -932,12 +948,12 @@
         function consultarEquiposSinFuncionar(id) {
             $.post(
                 "{{ route('get-equipos-sin-funcionar-json') }}", {
-                    _token: "{{ csrf_token() }}",
-                },
-                function(data, textStatus, xhr) {
+                _token: "{{ csrf_token() }}",
+            },
+                function (data, textStatus, xhr) {
                     console.log('data', data);
                     $("#equiposSinFuncionarList").empty();
-                    data.forEach(function(equipo) {
+                    data.forEach(function (equipo) {
                         var listItem = $("<li>");
                         listItem.append(
                             $("<span>").text(equipo.marca + " " + equipo.modelo + " (" + equipo.provisto +
@@ -949,20 +965,20 @@
                         );
                         $("#equiposSinFuncionarList").append(listItem);
                     });
-                }).fail(function(data) {
-                swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');
-            });
+                }).fail(function (data) {
+                    swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');
+                });
         }
 
         function consultarEquiposBaja(id) {
             $.post(
                 "{{ route('get-equipos-baja-json') }}", {
-                    _token: "{{ csrf_token() }}",
-                },
-                function(data, textStatus, xhr) {
+                _token: "{{ csrf_token() }}",
+            },
+                function (data, textStatus, xhr) {
                     console.log('data', data);
                     $("#equiposBajaList").empty();
-                    data.forEach(function(equipo) {
+                    data.forEach(function (equipo) {
                         var listItem = $("<li>");
                         listItem.append(
                             $("<span>").text(equipo.marca + " " + equipo.modelo + " (" + equipo.provisto +
@@ -974,22 +990,22 @@
                         );
                         $("#equiposBajaList").append(listItem);
                     });
-                }).fail(function(data) {
-                swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');
-            });
+                }).fail(function (data) {
+                    swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');
+                });
         }
 
         function consultarEquiposProvistosPorPG(id) {
             $.post(
                 "{{ route('get-equipos-provistos-por-pg-json') }}", {
-                    _token: "{{ csrf_token() }}",
-                },
-                function(data, textStatus, xhr) {
+                _token: "{{ csrf_token() }}",
+            },
+                function (data, textStatus, xhr) {
                     console.log('data', data);
 
                     // Mostrar equipos provistos por PG
                     $("#equiposProvistosPorPgList").empty();
-                    data.records.forEach(function(equipo) {
+                    data.records.forEach(function (equipo) {
                         var listItem = $("<li>");
                         listItem.append(
                             $("<span>").css({
@@ -1009,7 +1025,7 @@
 
                     // Mostrar cantidades totales por marca y modelo
                     $("#cantidadesTotalesPorMarcaYModeloListPG").empty();
-                    data.recordsTotales.forEach(function(equipo) {
+                    data.recordsTotales.forEach(function (equipo) {
                         var listItem = $("<li>");
                         listItem.append(
                             $("<span>").css({
@@ -1022,21 +1038,21 @@
                         );
                         $("#cantidadesTotalesPorMarcaYModeloListPG").append(listItem);
                     });
-                }).fail(function(data) {
-                swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');
-            });
+                }).fail(function (data) {
+                    swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');
+                });
         }
 
         function consultarEquiposProvistosPorTELECOM(id) {
             $.post(
                 "{{ route('get-equipos-provistos-por-telecom-json') }}", {
-                    _token: "{{ csrf_token() }}",
-                },
-                function(data, textStatus, xhr) {
+                _token: "{{ csrf_token() }}",
+            },
+                function (data, textStatus, xhr) {
                     console.log('data', data);
 
                     $("#equiposProvistosPorTelecomList").empty();
-                    data.records.forEach(function(equipo) {
+                    data.records.forEach(function (equipo) {
                         var listItem = $("<li>");
                         listItem.append(
                             $("<span>").css({
@@ -1056,7 +1072,7 @@
 
                     // Mostrar cantidades totales
                     $("#cantidadesTotalesPorMarcaYModeloList").empty();
-                    data.recordsTotales.forEach(function(equipo) {
+                    data.recordsTotales.forEach(function (equipo) {
                         var listItem = $("<li>");
                         listItem.append(
                             $("<span>").css({
@@ -1069,115 +1085,115 @@
                         );
                         $("#cantidadesTotalesPorMarcaYModeloList").append(listItem);
                     });
-                }).fail(function(data) {
-                swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');
-            });
+                }).fail(function (data) {
+                    swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');
+                });
         }
 
         function consultarCamaras(id) {
             $.post(
                 "{{ route('get-equipos-PG-json') }}", {
-                    _token: "{{ csrf_token() }}",
-                },
-                function(data, textStatus, xhr) {
+                _token: "{{ csrf_token() }}",
+            },
+                function (data, textStatus, xhr) {
                     console.log('data', data);
                     setTableCamaras('table-camaras', data)
-                }).fail(function(data) {
-                swal('Error', 'Ocurrio un error al guardar: ' + data.responseJSON.message, 'error');
-            })
+                }).fail(function (data) {
+                    swal('Error', 'Ocurrio un error al guardar: ' + data.responseJSON.message, 'error');
+                })
         }
 
         function consultarEquiposPG(id) {
             $.post(
                 "{{ route('get-equipos-PG-json') }}", {
-                    _token: "{{ csrf_token() }}",
-                },
-                function(data, textStatus, xhr) {
+                _token: "{{ csrf_token() }}",
+            },
+                function (data, textStatus, xhr) {
                     console.log('data', data);
                     setTableEquiposPG('table-equipos-pg', data)
-                }).fail(function(data) {
-                swal('Error', 'Ocurrio un error al guardar: ' + data.responseJSON.message, 'error');
-            })
+                }).fail(function (data) {
+                    swal('Error', 'Ocurrio un error al guardar: ' + data.responseJSON.message, 'error');
+                })
         }
 
         function consultarEquiposStock(id) {
             $.post(
                 "{{ route('get-equipos-stock-json') }}", {
-                    _token: "{{ csrf_token() }}",
-                },
-                function(data, textStatus, xhr) {
+                _token: "{{ csrf_token() }}",
+            },
+                function (data, textStatus, xhr) {
                     console.log('data', data);
                     setTableEquiposStock('table-equipos-stock', data)
-                }).fail(function(data) {
-                if (data.status === 404) {
-                    swal('Error', 'Recurso Stock 911 no encontrado', 'error');
-                } else {
-                    swal('Error', 'Ocurrió un error al cargar los equipos: ' + data.responseJSON.message, 'error');
-                }
-            });
+                }).fail(function (data) {
+                    if (data.status === 404) {
+                        swal('Error', 'Recurso Stock 911 no encontrado', 'error');
+                    } else {
+                        swal('Error', 'Ocurrió un error al cargar los equipos: ' + data.responseJSON.message, 'error');
+                    }
+                });
         }
 
         function consultarEquiposDepartamental(id) {
             $.post(
                 "{{ route('get-equipos-departamental-json') }}", {
-                    _token: "{{ csrf_token() }}",
-                },
-                function(data, textStatus, xhr) {
+                _token: "{{ csrf_token() }}",
+            },
+                function (data, textStatus, xhr) {
                     console.log('data', data);
                     setTableEquiposDepartamental('table-equipos-departamental', data)
-                }).fail(function(data) {
-                if (data.status === 404) {
-                    swal('Error', 'Departamental no encontrada', 'error');
-                } else {
-                    swal('Error', 'Ocurrió un error al cargar los equipos: ' + data.responseJSON.message, 'error');
-                }
-            });
+                }).fail(function (data) {
+                    if (data.status === 404) {
+                        swal('Error', 'Departamental no encontrada', 'error');
+                    } else {
+                        swal('Error', 'Ocurrió un error al cargar los equipos: ' + data.responseJSON.message, 'error');
+                    }
+                });
         }
 
         function consultarEquiposDivision911(id) {
             $.post(
                 "{{ route('get-equipos-division-911-json') }}", {
-                    _token: "{{ csrf_token() }}",
-                },
-                function(data, textStatus, xhr) {
+                _token: "{{ csrf_token() }}",
+            },
+                function (data, textStatus, xhr) {
                     console.log('data', data);
                     setTableEquiposDivision911('table-equipos-division-911', data)
-                }).fail(function(data) {
-                if (data.status === 404) {
-                    swal('Error', 'Division no encontrada', 'error');
-                } else {
-                    swal('Error', 'Ocurrió un error al cargar los equipos: ' + data.responseJSON.message, 'error');
-                }
-            });
+                }).fail(function (data) {
+                    if (data.status === 404) {
+                        swal('Error', 'Division no encontrada', 'error');
+                    } else {
+                        swal('Error', 'Ocurrió un error al cargar los equipos: ' + data.responseJSON.message, 'error');
+                    }
+                });
         }
 
         function consultarEquiposDivisionBancaria(id) {
             $.post(
                 "{{ route('get-equipos-division-bancaria-json') }}", {
-                    _token: "{{ csrf_token() }}",
-                },
-                function(data, textStatus, xhr) {
+                _token: "{{ csrf_token() }}",
+            },
+                function (data, textStatus, xhr) {
                     console.log('data', data);
                     setTableEquiposDivisionBancaria('table-equipos-division-bancaria', data)
-                }).fail(function(data) {
-                if (data.status === 404) {
-                    swal('Error', 'Division no encontrada', 'error');
-                } else {
-                    swal('Error', 'Ocurrió un error al cargar los equipos: ' + data.responseJSON.message, 'error');
-                }
-            });
+                }).fail(function (data) {
+                    if (data.status === 404) {
+                        swal('Error', 'Division no encontrada', 'error');
+                    } else {
+                        swal('Error', 'Ocurrió un error al cargar los equipos: ' + data.responseJSON.message, 'error');
+                    }
+                });
         }
 
         function consultarMotopatrullas(id) {
             $.post(
                 "{{ route('get-motos-json') }}", {
-                    _token: "{{ csrf_token() }}",
-                },
-                function(data, textStatus, xhr) {
+                _token: "{{ csrf_token() }}",
+            },
+                function (data, textStatus, xhr) {
                     setTableMotos('table-motos', data)
-                }).fail(function(data) {
-                swal('Error', 'Ocurrio un error al guardar: ' + data.responseJSON.message, 'error');
-            })
+                }).fail(function (data) {
+                    swal('Error', 'Ocurrio un error al guardar: ' + data.responseJSON.message, 'error');
+                })
         }
 
         function consultarMoviles(id) {
@@ -1185,37 +1201,37 @@
             //blockUi('box-auditoria-historico', true)
             $.post(
                 "{{ route('get-moviles-json') }}", {
-                    _token: "{{ csrf_token() }}",
-                    //distribuidor_id: id,
-                    //fecha: $('#fecha-auditoria-historico').val()
-                },
-                function(data, textStatus, xhr) {
+                _token: "{{ csrf_token() }}",
+                //distribuidor_id: id,
+                //fecha: $('#fecha-auditoria-historico').val()
+            },
+                function (data, textStatus, xhr) {
 
                     //blockUi('box-auditoria-historico')
                     setTableMoviles('table-moviles', data)
 
-                }).fail(function(data) {
-                //hideShowBlockUi('box-auditoria')
-                swal('Error', 'Ocurrio un error al guardar: ' + data.responseJSON.message, 'error');
-            })
+                }).fail(function (data) {
+                    //hideShowBlockUi('box-auditoria')
+                    swal('Error', 'Ocurrio un error al guardar: ' + data.responseJSON.message, 'error');
+                })
         }
 
         function consultarDesinstalacionesParciales(id) {
             $.post(
                 "{{ route('get-desinstalaciones-parciales-json') }}", {
-                    _token: "{{ csrf_token() }}",
-                    //distribuidor_id: id,
-                    //fecha: $('#fecha-auditoria-historico').val()
-                },
-                function(data, textStatus, xhr) {
+                _token: "{{ csrf_token() }}",
+                //distribuidor_id: id,
+                //fecha: $('#fecha-auditoria-historico').val()
+            },
+                function (data, textStatus, xhr) {
 
                     //blockUi('box-auditoria-historico')
                     setTableDesinstalacionesParciales('table-desinstalaciones-parciales', data)
 
-                }).fail(function(data) {
-                //hideShowBlockUi('box-auditoria')
-                swal('Error', 'Ocurrio un error al guardar: ' + data.responseJSON.message, 'error');
-            })
+                }).fail(function (data) {
+                    //hideShowBlockUi('box-auditoria')
+                    swal('Error', 'Ocurrio un error al guardar: ' + data.responseJSON.message, 'error');
+                })
         }
 
         function setTableDesinstalacionesParciales(table_id, rows) {

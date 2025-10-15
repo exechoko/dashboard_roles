@@ -172,6 +172,33 @@
                                                 </div>
                                             </div>
                                             <div class="col-md-4 col-xl-3">
+                                                <div class="card-item bg-c-gray order-card">
+                                                    <div class="card-block">
+                                                        <h5>
+                                                            En revisión
+                                                            <i class="fas fa-info-circle ml-1" data-toggle="tooltip"
+                                                                data-placement="top"
+                                                                title="Equipos con estado En revisión (en reparación o diagnóstico)"></i>
+                                                        </h5>
+                                                        <h2 class="text-right">
+                                                            <i class="fas fa-tools f-left"></i>
+                                                            <span>{{ $cant_equipos_en_revision }}</span>
+                                                        </h2>
+                                                        @can('ver-equipo')
+                                                            <p class="m-b-0 text-right">
+                                                                <a href="#" data-toggle="modal"
+                                                                    data-target="#modal-equipos-en-revision"
+                                                                    id="btn-buscar-equipos-en-revision"
+                                                                    onclick="consultarEquiposEnRevision()"
+                                                                    style="color: rgb(253, 253, 253)">
+                                                                    Ver más
+                                                                </a>
+                                                            </p>
+                                                        @endcan
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 col-xl-3">
                                                 <div class="card-item bg-c-green order-card">
                                                     <div class="card-block">
                                                         <h5>Temporales</h5>
@@ -460,6 +487,37 @@
                         <ul id="equiposBajaList" class="mt-3">
                             <!-- La lista de equipos se agregará aquí dinámicamente -->
                         </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" data-dismiss="modal">
+                            <i class="fa fa-times"></i>
+                            <span> Cerrar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-equipos-en-revision" class="modal fade" data-backdrop="false"
+            style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
+            <div id="dialog" class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-c-gray">
+                        <h4 class="modal-title text-white">Equipos en Revisión</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" style="min-height: 500px">
+                        <h5>Equipos para móviles</h5>
+                        <ul id="equiposEnRevisionMoviles" class="mt-3"></ul>
+                        <hr>
+                        <h5>Equipos de mano</h5>
+                        <ul id="equiposEnRevisionDeMano" class="mt-3"></ul>
+                        <hr>
+                        <h5>Equipos base</h5>
+                        <ul id="equiposEnRevisionBase" class="mt-3"></ul>
+                        <hr>
                     </div>
                     <div class="modal-footer">
                         <button class="btn btn-danger" data-dismiss="modal">
@@ -993,6 +1051,43 @@
                 }).fail(function (data) {
                     swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');
                 });
+        }
+
+        function consultarEquiposEnRevision(id) {
+            $.post(
+                "{{ route('get-equipos-en-revision-json') }}",
+                {
+                    _token: "{{ csrf_token() }}",
+                },
+                function (data, textStatus, xhr) {
+                    console.log('data', data);
+
+                    // Limpiar las listas antes de agregar nuevos datos
+                    $("#equiposEnRevisionMoviles").empty();
+                    $("#equiposEnRevisionDeMano").empty();
+                    $("#equiposEnRevisionBase").empty();
+
+                    // Recorrer los datos recibidos del backend
+                    data.forEach(function (equipo) {
+                        var listItem = $("<li>").html(
+                            equipo.marca + " " + equipo.modelo + " (" + equipo.provisto + "): " +
+                            "<strong>" + equipo.cantidad + "</strong> (En revisión: <strong>" +
+                            equipo.cantidad_en_revision + "</strong>)"
+                        );
+
+                        // Clasificar por categoría
+                        if (equipo.categoria === 'Movil') {
+                            $("#equiposEnRevisionMoviles").append(listItem.clone());
+                        } else if (equipo.categoria === 'Portatil') {
+                            $("#equiposEnRevisionDeMano").append(listItem.clone());
+                        } else if (equipo.categoria === 'Base') {
+                            $("#equiposEnRevisionBase").append(listItem.clone());
+                        }
+                    });
+                }
+            ).fail(function (data) {
+                swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');
+            });
         }
 
         function consultarEquiposProvistosPorPG(id) {

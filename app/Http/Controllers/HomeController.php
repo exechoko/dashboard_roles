@@ -26,7 +26,7 @@ class HomeController extends Controller
         // Obtener IDs de estados una sola vez
         $estados = Estado::whereIn('nombre', [
             'Nuevo', 'Usado', 'Reparado', 'Baja',
-            'No funciona', 'Perdido', 'Recambio', 'Temporal'
+            'No funciona', 'Perdido', 'Recambio', 'Temporal', 'En revision'
         ])->pluck('id', 'nombre');
 
         // Contadores básicos
@@ -37,6 +37,7 @@ class HomeController extends Controller
         // Equipos por estado
         $cant_equipos_sin_funcionar = Equipo::where('estado_id', $estados['No funciona'])->count();
         $cant_equipos_temporales = Equipo::where('estado_id', $estados['Temporal'])->count();
+        $cant_equipos_en_revision = Equipo::where('estado_id', $estados['En revision'])->count();
         $cant_equipos_baja = Equipo::whereIn('estado_id', [
             $estados['Baja'],
             $estados['Recambio'],
@@ -146,6 +147,7 @@ class HomeController extends Controller
             'cant_equipos_funcionales',
             'cant_equipos_temporales',
             'cant_equipos_baja',
+            'cant_equipos_en_revision',
             'cant_equipos_en_div_bancaria'
         ));
     }

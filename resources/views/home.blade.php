@@ -172,7 +172,7 @@
                                                 </div>
                                             </div>
                                             <div class="col-md-4 col-xl-3">
-                                                <div class="card-item bg-c-gray order-card">
+                                                <div class="card-item bg-indigo order-card">
                                                     <div class="card-block">
                                                         <h5>
                                                             En revisión
@@ -502,7 +502,7 @@
             style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
             <div id="dialog" class="modal-dialog modal-lg">
                 <div class="modal-content">
-                    <div class="modal-header bg-c-gray">
+                    <div class="modal-header bg-indigo">
                         <h4 class="modal-title text-white">Equipos en Revisión</h4>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
@@ -1071,8 +1071,7 @@
                     data.forEach(function (equipo) {
                         var listItem = $("<li>").html(
                             equipo.marca + " " + equipo.modelo + " (" + equipo.provisto + "): " +
-                            "<strong>" + equipo.cantidad + "</strong> (En revisión: <strong>" +
-                            equipo.cantidad_en_revision + "</strong>)"
+                            "<strong>" + equipo.cantidad + "</strong>"
                         );
 
                         // Clasificar por categoría

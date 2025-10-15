@@ -80,41 +80,44 @@ a:not(.btn-social-icon):not(.btn-social):not(.page-link) .fab {
     margin-left: 4px;
 }
 
-.bg-primary {
-    background-color: #6777ef !important;
-}
+.bg-primary   { background-color: #6777ef !important; }
+.bg-secondary { background-color: #cdd3d8 !important; }
+.bg-success   { background-color: #47c363 !important; }
+.bg-info      { background-color: #3abaf4 !important; }
+.bg-warning   { background-color: #ffa426 !important; }
+.bg-danger    { background-color: #fc544b !important; }
+.bg-light     { background-color: #e3eaef !important; }
+.bg-dark      { background-color: #191d21 !important; }
+.bg-blue      { background-color: #1b5c9c !important; }
 
-.bg-secondary {
-    background-color: #cdd3d8 !important;
-}
+.bg-indigo    { background-color: #6610f2 !important; }
+.bg-purple    { background-color: #6f42c1 !important; }
+.bg-pink      { background-color: #e83e8c !important; }
+.bg-teal      { background-color: #20c997 !important; }
+.bg-cyan      { background-color: #17a2b8 !important; }
+.bg-lime      { background-color: #a3e635 !important; }
+.bg-orange    { background-color: #fd7e14 !important; }
+.bg-amber     { background-color: #ffbf00 !important; }
+.bg-brown     { background-color: #795548 !important; }
+.bg-gray      { background-color: #6c757d !important; }
+.bg-slate     { background-color: #64748b !important; }
+.bg-olive     { background-color: #808000 !important; }
+.bg-maroon    { background-color: #800000 !important; }
+.bg-navy      { background-color: #001f3f !important; }
+.bg-sky       { background-color: #0ea5e9 !important; }
+.bg-mint      { background-color: #3eb489 !important; }
+.bg-sand      { background-color: #d6c49f !important; }
+.bg-rose      { background-color: #f43f5e !important; }
+.bg-violet    { background-color: #8b5cf6 !important; }
+.bg-graphite  { background-color: #2f3542 !important; }
 
-.bg-success {
-    background-color: #47c363 !important;
-}
-
-.bg-info {
-    background-color: #3abaf4 !important;
-}
-
-.bg-warning {
-    background-color: #ffa426 !important;
-}
-
-.bg-danger {
-    background-color: #fc544b !important;
-}
-
-.bg-light {
-    background-color: #e3eaef !important;
-}
-
-.bg-dark {
-    background-color: #191d21 !important;
-}
-
-.bg-blue {
-    background-color: #1b5c9c !important;
-}
+/* Tonos pastel (útiles para fondos suaves) */
+.bg-pastel-blue    { background-color: #cfe2ff !important; }
+.bg-pastel-green   { background-color: #d1e7dd !important; }
+.bg-pastel-yellow  { background-color: #fff3cd !important; }
+.bg-pastel-pink    { background-color: #f8d7da !important; }
+.bg-pastel-purple  { background-color: #e0d4f7 !important; }
+.bg-pastel-gray    { background-color: #f1f3f5 !important; }
 
 .text-primary, .text-primary-all *, .text-primary-all *:before, .text-primary-all *:after {
     color: #6777ef !important;

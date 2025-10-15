@@ -11,17 +11,20 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Events\BeforeExport;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithMapping;
 use PhpOffice\PhpSpreadsheet;
 
-class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldAutoSize
+class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldAutoSize, WithMapping
 {
+    protected $rowNumber = 0;
+
     /**
      * @return \Illuminate\Support\Collection
      */
     public function collection()
     {
         $equipos = Equipo::select(
-            'equipos.id', // A
+            'equipos.id', // A (ID original, será reemplazado en el mapeo)
             DB::raw("CONCAT(tipo_terminales.marca, ' ', tipo_terminales.modelo) AS terminal"), // B
             'estados.nombre as estado', // C
             'equipos.tei as tei',  // D
@@ -81,6 +84,33 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
             ->get();
 
         return $equipos;
+    }
+
+    /**
+     * Mapea cada fila reemplazando el ID por un número incremental
+     */
+    public function map($equipo): array
+    {
+        $this->rowNumber++;
+
+        return [
+            $this->rowNumber, // Número incremental en lugar del ID
+            $equipo->terminal,
+            $equipo->estado,
+            $equipo->tei,
+            $equipo->issi,
+            $equipo->id_issi,
+            $equipo->provisto,
+            $equipo->recurso,
+            $equipo->dependencia,
+            $equipo->dependencia_superior,
+            $equipo->fecha_asignacion,
+            $equipo->ticket_per,
+            $equipo->vehiculo_marca,
+            $equipo->vehiculo_modelo,
+            $equipo->vehiculo_patente,
+            $equipo->observaciones_flota
+        ];
     }
 
     public function headings(): array

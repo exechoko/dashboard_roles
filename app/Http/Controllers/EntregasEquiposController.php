@@ -789,14 +789,44 @@ class EntregasEquiposController extends Controller
             17 => 'DIECISIETE',
             18 => 'DIECIOCHO',
             19 => 'DIECINUEVE',
-            20 => 'VEINTE'
+            20 => 'VEINTE',
+            21 => 'VEINTIUNO',
+            22 => 'VEINTIDÓS',
+            23 => 'VEINTITRÉS',
+            24 => 'VEINTICUATRO',
+            25 => 'VEINTICINCO',
+            26 => 'VEINTISÉIS',
+            27 => 'VEINTISIETE',
+            28 => 'VEINTIOCHO',
+            29 => 'VEINTINUEVE',
+            30 => 'TREINTA',
+            40 => 'CUARENTA',
+            50 => 'CINCUENTA',
+            60 => 'SESENTA',
+            70 => 'SETENTA'
         ];
 
-        if ($numero <= 20) {
-            return $numeros[$numero] ?? (string) $numero;
+        if (isset($numeros[$numero])) {
+            return $numeros[$numero];
         }
 
-        return (string) $numero; // Para números mayores a 20, devolver el número
+        // Manejo de números entre decenas (31–69)
+        $decenas = [
+            30 => 'TREINTA',
+            40 => 'CUARENTA',
+            50 => 'CINCUENTA',
+            60 => 'SESENTA',
+            70 => 'SETENTA'
+        ];
+
+        foreach ($decenas as $base => $texto) {
+            $resto = $numero - $base;
+            if ($resto > 0 && $resto < 10 && $numero < 70) {
+                return $texto . ' Y ' . $numeros[$resto];
+            }
+        }
+
+        return (string) $numero; // Si excede 70, devolver número como texto
     }
 
     public function destroy($id)

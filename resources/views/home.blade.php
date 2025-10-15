@@ -98,6 +98,8 @@
                                     <!-- TAB Terminales -->
                                     <div class="tab-pane fade show active" id="terminales3" role="tabpanel"
                                         aria-labelledby="terminales-tab3">
+
+                                        <!-- Sección: Equipos por Estado -->
                                         <div class="row">
                                             <div class="col-md-4 col-xl-3">
                                                 <div class="card-item bg-c-violet order-card">
@@ -215,7 +217,14 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4 col-xl-3">
+                                        </div>
+
+                                        <!-- Separador -->
+                                        <hr style="border: 0; height: 2px; background: linear-gradient(to right, transparent, #6c757d, transparent); margin: 30px 0;">
+
+                                        <!-- Sección: Equipos Provistos Por -->
+                                        <div class="row">
+                                            <div class="col-md-4 col-xl-4">
                                                 <div class="card-item bg-c-orange order-card">
                                                     <div class="card-block">
                                                         <h5>Provistos por P.G.</h5>
@@ -234,7 +243,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-md-4 col-xl-3">
+                                            <div class="col-md-4 col-xl-4">
                                                 <div class="card-item bg-c-blue order-card">
                                                     <div class="card-block">
                                                         <h5>Provistos por TELECOM</h5>
@@ -255,7 +264,9 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="row justify-content-end">
+
+                                        <!-- Botón de exportar -->
+                                        <div class="row justify-content-end mt-4">
                                             <div class="col-md-12 text-right">
                                                 <form action="{{ route('equipos.export') }}" method="GET">
                                                     <button id="exportar-a-excel-todos-los-terminales" class="btn btn-success">

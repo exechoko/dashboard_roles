@@ -219,6 +219,11 @@ class DashboardController extends Controller
         return $this->getCantidadEquiposProvistosPorProveedorJSON('Telecom');
     }
 
+    public function getCantidadEquiposProvistosPorPERJSON(Request $request)
+    {
+        return $this->getCantidadEquiposProvistosPorProveedorJSON('Policía de Entre Ríos');
+    }
+
     /**
      * Método genérico para obtener equipos por proveedor
      */

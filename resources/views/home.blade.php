@@ -229,7 +229,7 @@
                                                     <div class="card-block">
                                                         <h5>Provistos por P.G.</h5>
                                                         <h2 class="text-right"><img src="{{ asset('img/patagonia_logo.png') }}"
-                                                                alt="Telecom Logo" class="f-left" width="40"
+                                                                alt="PG Logo" class="f-left" width="40"
                                                                 height="40"><span>{{ $cant_equipos_provisto_por_pg }}</span>
                                                         </h2>
                                                         @can('ver-equipo')
@@ -256,6 +256,26 @@
                                                             <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
                                                                     data-target="#modal-equipos-provistos-por-telecom"
                                                                     id="btn-buscar-equipos-provistos-por-telecom"
+                                                                    style="color: rgb(253, 253, 253)">Ver
+                                                                    más</a>
+                                                            </p>
+                                                        @endcan
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 col-xl-4">
+                                                <div class="card-item bg-gray order-card">
+                                                    <div class="card-block">
+                                                        <h5>Provistos por P.E.R.</h5>
+                                                        <h2 class="text-right"><img
+                                                                src="{{ asset('img/jefatura_policia.png') }}" alt="PER Logo"
+                                                                class="f-left" width="40"
+                                                                height="40"><span>{{ $cant_equipos_provisto_por_per }}</span>
+                                                        </h2>
+                                                        @can('ver-equipo')
+                                                            <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                                    data-target="#modal-equipos-provistos-por-per"
+                                                                    id="btn-buscar-equipos-provistos-por-per"
                                                                     style="color: rgb(253, 253, 253)">Ver
                                                                     más</a>
                                                             </p>
@@ -602,6 +622,37 @@
             </div>
         </div>
 
+        <div id="modal-equipos-provistos-por-per" class="modal fade" data-backdrop="false"
+            style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
+            <div id="dialog" class="modal-dialog modal-xs">
+                <div class="modal-content">
+                    <div class="modal-header bg-gray">
+                        <h4 class="modal-title text-white">Equipos provistos por P.E.R.</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" style="min-height: 500px">
+                        <h5>Totales por Marca y Modelo</h5>
+                        <ul id="cantidadesTotalesPorMarcaYModeloListPer" class="mt-3">
+                            <!-- La lista de cantidades totales se agregará aquí dinámicamente -->
+                        </ul>
+                        <hr>
+                        <h5>Equipos por Estado</h5>
+                        <ul id="equiposProvistosPorPerList" class="mt-3">
+                            <!-- La lista de equipos por estado se agregará aquí dinámicamente -->
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" data-dismiss="modal">
+                            <i class="fa fa-times"></i>
+                            <span> Cerrar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="modal-desinstalaciones-parciales" class="modal fade " data-backdrop="false"
             style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
             <div id="dialog" class="modal-dialog modal-xl">
@@ -893,6 +944,7 @@
             handleClickEvent('#btn-buscar-equipos-funcionales', consultarEquiposFuncionales);
             handleClickEvent('#btn-buscar-equipos-provistos-por-pg', consultarEquiposProvistosPorPG);
             handleClickEvent('#btn-buscar-equipos-provistos-por-telecom', consultarEquiposProvistosPorTELECOM);
+            handleClickEvent('#btn-buscar-equipos-provistos-por-per', consultarEquiposProvistosPorPer);
             handleClickEvent('#btn-buscar-moviles', consultarMoviles);
             handleClickEvent('#btn-buscar-motopatrullas', consultarMotopatrullas);
             handleClickEvent('#btn-buscar-equipos-pg', consultarEquiposPG);
@@ -1189,6 +1241,54 @@
                             }).text(equipo.cantidad)
                         );
                         $("#cantidadesTotalesPorMarcaYModeloList").append(listItem);
+                    });
+                }).fail(function (data) {
+                    swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');
+                });
+        }
+
+        function consultarEquiposProvistosPorPer(id) {
+            $.post(
+                "{{ route('get-equipos-provistos-por-per-json') }}", {
+                _token: "{{ csrf_token() }}",
+            },
+                function (data, textStatus, xhr) {
+                    console.log('data', data);
+
+                    $("#equiposProvistosPorPerList").empty();
+                    data.records.forEach(function (equipo) {
+                        var listItem = $("<li>");
+                        listItem.append(
+                            $("<span>").css({
+                                //'font-size': 'larger'
+                            }).text(equipo.marca + " " + equipo.modelo + " - "),
+                            $("<span>").css({
+                                'font-weight': 'bold',
+                            }).text(equipo.estado),
+                            $("<span>").text(" (" + equipo.provisto + "): "),
+                            $("<span>").css({
+                                'font-weight': 'bold',
+                                //'font-size': 'larger'
+                            }).text(equipo.cantidad)
+                        );
+                        $("#equiposProvistosPorPerList").append(listItem);
+                    });
+
+                    // Mostrar cantidades totales
+                    $("#cantidadesTotalesPorMarcaYModeloListPer").empty();
+                    data.recordsTotales.forEach(function (equipo) {
+                        console.log('equipo', equipo);
+                        var listItem = $("<li>");
+                        listItem.append(
+                            $("<span>").css({
+                                //'font-size': 'larger'
+                            }).text(equipo.marca + " " + equipo.modelo + ": "),
+                            $("<span>").css({
+                                'font-weight': 'bold',
+                                //'font-size': 'larger'
+                            }).text(equipo.cantidad)
+                        );
+                        $("#cantidadesTotalesPorMarcaYModeloListPer").append(listItem);
                     });
                 }).fail(function (data) {
                     swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');

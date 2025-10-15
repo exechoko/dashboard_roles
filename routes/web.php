@@ -95,6 +95,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/get-equipos-funcionales-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposFuncionalesJSON'])->name('get-equipos-funcionales-json');
     Route::post('/get-equipos-provistos-por-pg-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposProvistosPorPGJSON'])->name('get-equipos-provistos-por-pg-json');
     Route::post('/get-equipos-provistos-por-telecom-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposProvistosPorTELECOMJSON'])->name('get-equipos-provistos-por-telecom-json');
+    Route::post('/get-equipos-provistos-por-per-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposProvistosPorPERJSON'])->name('get-equipos-provistos-por-per-json');
     Route::post('/get-moviles-json', [App\Http\Controllers\DashboardController::class, 'getMovilesJSON'])->name('get-moviles-json');
     Route::post('/get-motos-json', [App\Http\Controllers\DashboardController::class, 'getMotosJSON'])->name('get-motos-json');
     Route::post('/get-desinstalaciones-parciales-json', [App\Http\Controllers\DashboardController::class, 'getDesinstalacionesParcialesJSON'])->name('get-desinstalaciones-parciales-json');

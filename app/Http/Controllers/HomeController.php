@@ -52,6 +52,7 @@ class HomeController extends Controller
         // Equipos por proveedor
         $cant_equipos_provisto_por_pg = Equipo::where('provisto', 'Patagonia Green')->count();
         $cant_equipos_provisto_por_telecom = Equipo::where('provisto', 'Telecom')->count();
+        $cant_equipos_provisto_por_per = Equipo::where('provisto', 'Policía de Entre Ríos')->count();
 
         // Equipos en Stock 911
         $stock911 = Recurso::where('nombre', 'Stock 911')->first();
@@ -140,6 +141,7 @@ class HomeController extends Controller
             'cant_equipos_en_pg',
             'cant_equipos_provisto_por_pg',
             'cant_equipos_provisto_por_telecom',
+            'cant_equipos_provisto_por_per',
             'cant_camaras',
             'cant_desinstalaciones',
             'cant_equipos_en_div_911',

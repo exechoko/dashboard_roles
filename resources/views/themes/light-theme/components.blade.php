@@ -140,7 +140,7 @@
         box-shadow: none !important;
     }
 
-    /* A veces Stisla agrega una línea con pseudo-elemento */
+    /* A veces Stisla agrega una línea con pseudo-elemento. */
     #sidebar-wrapper .sidebar-brand::after {
         display: none !important;
         border: none !important;

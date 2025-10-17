@@ -353,24 +353,20 @@ let layerStates = {
     'camaras-comisarias': false
 };
 
-// MAPA CLARO (Tema por defecto)
-var mapaClaro = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 20,
-    crossOrigin: true,
-    errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+// MAPA CLARO
+var mapaClaro = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 19
 });
 
-// MAPA OSCURO (Dark Theme) - Usar alternativas más confiables
+// MAPA OSCURO - CartoDB Dark (NATIVO, sin filtros CSS)
 var mapaOscuro = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
     subdomains: ['a', 'b', 'c', 'd'],
-    maxZoom: 20,
-    crossOrigin: true,
-    errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+    maxZoom: 19
 });
 
-// MAPA HÍBRIDO (Satélite - igual para ambos temas)
+// MAPA HÍBRIDO (el que ya tienes)
 var mapaHibrido = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
     maxZoom: 20

@@ -145,13 +145,26 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
 
                 // Tamaño letra de cabecera
                 $event->sheet->getStyle($headerRange)->getFont()->setSize(14);
-                // Centrar Cabecera
-                $event->sheet->getStyle($headerRange)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+                // Centrar solo las cabeceras
+                $event->sheet->getStyle($headerRange)->getAlignment()->setHorizontal(
+                    \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER
+                );
+
                 // Cabeceras en negrita
                 $event->sheet->getStyle($headerRange)->getFont()->setBold(true);
+
                 // Filtros en cabecera
                 $event->sheet->setAutoFilter($headerRange);
 
+                // 🔹 Centrar contenido solo de la columna A a la O
+                $event->sheet->getStyle('A:O')
+                    ->getAlignment()
+                    ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
+
+                $event->sheet->getStyle('P1')
+                    ->getAlignment()
+                    ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
             },
         ];
     }

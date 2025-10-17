@@ -27,12 +27,12 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
             'equipos.id', // A (ID original, será reemplazado en el mapeo)
             DB::raw("CONCAT(tipo_terminales.marca, ' ', tipo_terminales.modelo) AS terminal"), // B
             'estados.nombre as estado', // C
-            'equipos.tei as tei',  // D
-            'equipos.issi as issi', // E
+            'equipos.provisto as provisto', // D
+            'destino.nombre as dependencia', // E
             'equipos.nombre_issi as id_issi', // F
-            'equipos.provisto as provisto', // G
-            'recursos.nombre as recurso', // H
-            'destino.nombre as dependencia', // I
+            'equipos.issi as issi', // G
+            'equipos.tei as tei', // H
+            'recursos.nombre as recurso', // I
             'destino_padre.nombre as dependencia_superior', // J
             // Datos del histórico
             'historico.fecha_asignacion', // K
@@ -41,8 +41,8 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
             // Datos del vehículo (si existe)
             'vehiculos.marca as vehiculo_marca', // M
             'vehiculos.modelo as vehiculo_modelo', // N
-            'vehiculos.dominio as vehiculo_patente', // Ñ
-            'flota_general.observaciones as observaciones_flota' // O
+            'vehiculos.dominio as vehiculo_patente', // O
+            'flota_general.observaciones as observaciones_flota' // P
         )
             ->leftJoin('flota_general', 'equipos.id', '=', 'flota_general.equipo_id')
             ->leftJoin('recursos', 'flota_general.recurso_id', '=', 'recursos.id')
@@ -94,22 +94,22 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
         $this->rowNumber++;
 
         return [
-            $this->rowNumber, // Número incremental en lugar del ID
-            $equipo->terminal,
-            $equipo->estado,
-            $equipo->tei,
-            $equipo->issi,
-            $equipo->id_issi,
-            $equipo->provisto,
-            $equipo->recurso,
-            $equipo->dependencia,
-            $equipo->dependencia_superior,
-            $equipo->fecha_asignacion,
-            $equipo->ticket_per,
-            $equipo->vehiculo_marca,
-            $equipo->vehiculo_modelo,
-            $equipo->vehiculo_patente,
-            $equipo->observaciones_flota
+            $this->rowNumber, // A Número incremental en lugar del ID
+            $equipo->terminal, // B
+            $equipo->estado, // C
+            $equipo->provisto, // D
+            $equipo->dependencia, // E
+            $equipo->id_issi, // F
+            $equipo->issi, // G
+            $equipo->tei, // H
+            $equipo->recurso, // I
+            $equipo->dependencia_superior, // J
+            $equipo->fecha_asignacion, // K
+            $equipo->ticket_per, // L
+            $equipo->vehiculo_marca, // M
+            $equipo->vehiculo_modelo, // N
+            $equipo->vehiculo_patente, // O
+            $equipo->observaciones_flota // P
         ];
     }
 
@@ -119,19 +119,19 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
             'Nro', //A
             'Terminal', //B
             'Estado', //C
-            'TEI', //D
-            'ISSI', //E
+            'Provisto', //D
+            'Dependencia', //E
             'ID ISSI', //F
-            'Provisto', //G
-            'Recurso', //H
-            'Dependencia', //I
+            'ISSI', //G
+            'TEI', //H
+            'Recurso', //I
             'Dependencia Superior', //J
             'Fecha Asignación', //K
             'Ticket PER', //L
             'Vehículo Marca', //M
             'Vehículo Modelo', //N
-            'Dominio', //Ñ
-            'Observaciones' //O
+            'Dominio', //O
+            'Observaciones' //P
         ];
     }
 

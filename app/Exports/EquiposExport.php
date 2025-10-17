@@ -165,6 +165,9 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
                 $event->sheet->getStyle('P1')
                     ->getAlignment()
                     ->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
+
+                // 🔹 Inmovilizar cabecera
+                $event->sheet->freezePane('A2');
             },
         ];
     }

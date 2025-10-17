@@ -13,7 +13,7 @@ class AccesorioController extends Controller
      */
     public function index()
     {
-        //
+        //prueba
     }
 
     /**

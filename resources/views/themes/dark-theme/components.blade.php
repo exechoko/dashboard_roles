@@ -200,6 +200,24 @@
         padding-left: 2rem !important;
     }
 
+    /* Quitar línea debajo del logo del sidebar en tema oscuro */
+    [data-theme="dark"] #sidebar-wrapper .sidebar-brand {
+        border-bottom: none !important;
+        box-shadow: none !important;
+    }
+
+    /* A veces Stisla agrega una línea con pseudo-elemento */
+    [data-theme="dark"] #sidebar-wrapper .sidebar-brand::after {
+        display: none !important;
+        border: none !important;
+        content: none !important;
+    }
+
+    /* También eliminar posibles bordes globales del contenedor */
+    [data-theme="dark"] #sidebar-wrapper {
+        border-right: none !important;
+    }
+
     [data-theme="dark"] .list-group {
         background-color: var(--card-bg) !important;
         border: 1px solid var(--border-color) !important;

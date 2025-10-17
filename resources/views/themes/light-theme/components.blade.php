@@ -134,6 +134,24 @@
         margin: 0 auto !important;
     }
 
+    /* Quitar línea debajo del logo del sidebar en tema claro */
+    #sidebar-wrapper .sidebar-brand {
+        border-bottom: none !important;
+        box-shadow: none !important;
+    }
+
+    /* A veces Stisla agrega una línea con pseudo-elemento */
+    #sidebar-wrapper .sidebar-brand::after {
+        display: none !important;
+        border: none !important;
+        content: none !important;
+    }
+
+    /* También eliminar posibles bordes globales del contenedor */
+    #sidebar-wrapper {
+        border-right: none !important;
+    }
+
     .list-group {
         background-color: #ffffff !important;
         border: 1px solid #dee2e6 !important;

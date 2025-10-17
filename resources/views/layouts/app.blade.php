@@ -4,12 +4,23 @@
 <head>
     <script>
         // CRITICAL: Apply theme IMMEDIATELY before page renders to prevent flash
-        (function() {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'dark') {
-                document.documentElement.setAttribute('data-theme', 'dark');
-            }
-        })();
+        (function () {
+            @auth
+                // Si el usuario está autenticado, usar su preferencia de la BD
+                const userTheme = @json(auth()->user()->theme ?? 'light');
+                if (userTheme === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+                // Sincronizar con localStorage
+                localStorage.setItem('theme', userTheme);
+            @else
+                // Si no está autenticado, usar localStorage
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'dark') {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            @endauth
+    })();
     </script>
 
     <meta charset="UTF-8">

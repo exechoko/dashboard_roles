@@ -26,7 +26,9 @@ class User extends Authenticatable
         'lp',
         'dni',
         'email',
-        'password'
+        'password',
+        'photo',
+        'theme'
     ];
 
     /**

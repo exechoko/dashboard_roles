@@ -52,6 +52,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('terminales', TipoTerminalController::class);
     Route::resource('bodycams', BodycamController::class);
 
+    Route::post('/profile/update', [UsuarioController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/profile/update-theme', [UsuarioController::class, 'updateTheme'])->name('profile.updateTheme')->middleware('auth');
+
     Route::get('dependencias/crear-general', [DependenciaController::class, 'createGeneral'])->name('dependencias.crear-general');
     Route::post('dependencias/store-general', [DependenciaController::class, 'storeGeneral'])->name('dependencias.store-general');
     Route::get('get-posibles-padres', [DependenciaController::class, 'getPosiblesPadres'])->name('getPosiblesPadres');

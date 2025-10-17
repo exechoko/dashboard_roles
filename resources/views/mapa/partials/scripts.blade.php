@@ -376,6 +376,19 @@ var mapaHibrido = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z
     maxZoom: 20
 });
 
+// Diagnóstico de tiles
+mapaClaro.on('tileerror', function(error, tile) {
+    console.error('Error cargando tile CLARO:', error, tile.src);
+});
+
+mapaOscuro.on('tileerror', function(error, tile) {
+    console.error('Error cargando tile OSCURO:', error, tile.src);
+});
+
+mapaHibrido.on('tileerror', function(error, tile) {
+    console.error('Error cargando tile HÍBRIDO:', error, tile.src);
+});
+
 /* ========================================
    VARIABLE GLOBAL PARA CONTROL DE MAPA
    ======================================== */

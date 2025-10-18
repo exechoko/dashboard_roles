@@ -26,7 +26,7 @@
                                     <input type="file" name="photo" id="pfImage" class="d-none">
                                 </label>
                             </div>
-                            <div class="col-sm-3 preview-image-video-container float-right mt-1">
+                            <div class="col-sm-5 preview-image-video-container float-right mt-1">
                                 <img id='edit_preview_photo'
                                     class="img-thumbnail user-img user-profile-img profilePicture"
                                     src="{{asset('img/logo.png')}}" />

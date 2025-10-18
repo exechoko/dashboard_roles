@@ -24,7 +24,9 @@
                                         <th style="display: none;">ID</th>
                                         <th style="color: #fff;">Nombre y Apellido</th>
                                         <th style="color: #fff;">L.P.</th>
+                                        <th style="color: #fff;">Foto</th>
                                         <th style="color: #fff;">E-mail</th>
+
                                         <th style="color: #fff;">Rol</th>
                                         <th style="color: #fff;">Acciones</th>
                                     </thead>
@@ -34,6 +36,13 @@
                                                 <td style="display: none;">{{ $usuario->id }}</td>
                                                 <td>{{ $usuario->name.' '.$usuario->apellido }}</td>
                                                 <td>{{ $usuario->lp }}</td>
+                                                <td>
+                                                    <img alt="{{ $usuario->name }}"
+                                                         width="30px"
+                                                         class="img-fluid img-thumbnail zoom-img"
+                                                         src="{{ $usuario->photo ? asset($usuario->photo) : asset('img/user.png') }}"
+                                                         style="cursor: pointer;">
+                                                </td>
                                                 <td>{{ $usuario->email }}</td>
                                                 <td>
                                                     @if (!empty($usuario->getRoleNames()))
@@ -68,5 +77,39 @@
             </div>
         </div>
     </section>
-@endsection
 
+    <!-- Modal para zoom de imagen -->
+    <div id="imageModal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="modalImage" src="" class="img-fluid" style="max-height: 70vh;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .zoom-img:hover {
+            opacity: 0.8;
+            transform: scale(1.1);
+            transition: all 0.3s ease;
+        }
+    </style>
+
+    <script>
+        $(document).ready(function() {
+            // Al hacer clic en cualquier imagen con clase zoom-img
+            $('.zoom-img').on('click', function() {
+                var imgSrc = $(this).attr('src');
+                $('#modalImage').attr('src', imgSrc);
+                $('#imageModal').modal('show');
+            });
+        });
+    </script>
+@endsection

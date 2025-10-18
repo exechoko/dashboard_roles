@@ -5,7 +5,7 @@
         <div class="section-header d-flex justify-content-between align-items-center">
             <h3 class="page__heading">Sitios</h3>
             <div>
-                <div class="" style="float: right;">
+                <div class="stats-labels" style="float: right;">
                     <label class="alert alert-dark" for="">Total: {{ $sitios->total() }} </label>
                     <label class="alert alert-info ml-5" for="">Paraná: {{ $sitiosParana }}</label>
                     <label class="alert alert-warning" for="">Cnia. Avellaneda: {{ $sitiosCniaAvellaneda }}</label>

@@ -133,6 +133,50 @@
         border: 1px solid var(--border-color) !important;
     }
 
+    /* Excluir stats-labels de los estilos del tema */
+    .stats-labels .alert {
+        background-color: initial !important;
+        border-color: initial !important;
+        color: initial !important;
+    }
+
+    /* Mantener colores originales de Bootstrap para stats */
+    .stats-labels .alert-dark {
+        background-color: #343a40 !important;
+        border-color: #343a40 !important;
+        color: #fff !important;
+    }
+
+    .stats-labels .alert-info {
+        background-color: #17a2b8 !important;
+        border-color: #17a2b8 !important;
+        color: #fff !important;
+    }
+
+    .stats-labels .alert-warning {
+        background-color: #ffc107 !important;
+        border-color: #ffc107 !important;
+        color: #212529 !important;
+    }
+
+    .stats-labels .alert-danger {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+        color: #fff !important;
+    }
+
+    .stats-labels .alert-success {
+        background-color: #28a745 !important;
+        border-color: #28a745 !important;
+        color: #fff !important;
+    }
+
+    .stats-labels .alert-primary {
+        background-color: #007bff !important;
+        border-color: #007bff !important;
+        color: #fff !important;
+    }
+
     [data-theme="dark"] .main-footer {
         background-color: var(--bg-secondary) !important;
         color: var(--text-primary) !important;

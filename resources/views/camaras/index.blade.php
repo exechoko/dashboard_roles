@@ -5,7 +5,7 @@
         <div class="section-header d-flex justify-content-between align-items-center">
             <h3 class="page__heading">Cámaras - Administración</h3>
             <div>
-                <div class="" style="float: right;">
+                <div class="stats-labels" style="float: right;">
                     <label class="alert alert-dark" for="">Cámaras: {{ $totalCam }} / Canales: {{ $cantidadCanales }}
                     </label>
                     <label class="alert alert-info ml-5" for="">Fijas: {{ $fijas }}</label>

@@ -668,19 +668,24 @@ function loadCameraMarkers() {
         // Generar el path y rotación dinámicamente
         var cameraGeometry = generateCameraPath(angulo, orientacion);
 
+        // Detectar si está en modo oscuro
+        var isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+        var strokeColor = isDarkMode ? '#ffffff' : '#000000';
+        var strokeWidth = isDarkMode ? '2' : '1';
+
         // Colores por tipo de cámara
         var fillColor = "rgba(0,0,255,0.3)"; // Default
         if (tipo_camara.includes("Domo")) {
-            fillColor = "rgba(0,255,0,0.3)";
+            fillColor = "rgba(0,255,0,0.4)";
         } else if (tipo_camara.includes("LPR")) {
-            fillColor = "rgba(255,0,0,0.3)";
+            fillColor = "rgba(255,0,0,0.4)";
         } else if (tipo_camara.includes("FR")) {
-            fillColor = "rgba(255,165,0,0.3)";
+            fillColor = "rgba(255,165,0,0.4)";
         }
 
         var svgShape = angulo === 360
-            ? `<circle cx="0" cy="0" r="20" fill="${fillColor}" stroke="black" stroke-width="1" />`
-            : `<path d="${cameraGeometry.path}" fill="${fillColor}" stroke="black" stroke-width="1" />`;
+            ? `<circle cx="0" cy="0" r="20" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />`
+            : `<path d="${cameraGeometry.path}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />`;
 
         var cameraIcon = L.divIcon({
             className: '',
@@ -750,6 +755,29 @@ function loadCameraMarkers() {
     markersCamarasDomosDuales.addTo(capaDomoDual);
     markersBDE.addTo(capaBDE);
 }
+
+// Escuchar cambios en el tema
+const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.attributeName === 'data-theme') {
+            // Limpiar marcadores existentes
+            marcadores.clearLayers();
+            markersCamarasLPR.clearLayers();
+            markersCamarasFR.clearLayers();
+            markersCamarasFijas.clearLayers();
+            markersCamarasDomos.clearLayers();
+            markersCamarasDomosDuales.clearLayers();
+            markersBDE.clearLayers();
+
+            // Recargar con los nuevos colores
+            loadCameraMarkers();
+        }
+    });
+});
+
+observer.observe(document.documentElement, {
+    attributes: true
+});
 
 function loadAntenasMarkers() {
     @foreach ($antenas as $marcador)

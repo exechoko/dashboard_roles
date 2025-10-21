@@ -441,6 +441,64 @@
                 loadCurrentShares(passwordId);
             });
 
+            // **********************************************
+            // ** LÓGICA PARA REVOCAR EL ACCESO (AJAX) **
+            // **********************************************
+            $(document).on('click', '.remove-share', function () {
+                const shareId = $(this).data('share-id');
+                const btn = $(this);
+
+                swal({
+                    title: '¿Revocar acceso?',
+                    text: 'El usuario perderá inmediatamente el acceso a esta contraseña.',
+                    icon: 'warning',
+                    buttons: true,
+                    dangerMode: true,
+                }, function(willDelete) {
+                    if (willDelete) {
+                        // IMPORTANTE: Usar POST con _method: DELETE para compatibilidad con Laravel
+                        $.ajax({
+                            url: `/password-shares/${shareId}/revoke`,
+                            method: 'POST',
+                            data: {
+                                _token: '{{ csrf_token() }}',
+                                _method: 'DELETE'  // ← Esto es CRUCIAL para Laravel
+                            },
+                            success: function (response) {
+                                swal({
+                                    title: "¡Revocado!",
+                                    text: "Acceso revocado exitosamente.",
+                                    icon: "success",
+                                    timer: 2000,
+                                    buttons: false
+                                });
+
+                                // Recargar la lista de compartidos en el modal
+                                const passwordId = $('#share_password_vault_id').val();
+                                loadCurrentShares(passwordId);
+                            },
+                            error: function (xhr) {
+                                let message = 'Error al revocar el acceso.';
+
+                                if (xhr.status === 403) {
+                                    message = 'No tienes permiso para revocar este acceso.';
+                                } else if (xhr.status === 404) {
+                                    message = 'El registro de compartido no fue encontrado.';
+                                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    message = xhr.responseJSON.message;
+                                }
+
+                                swal({
+                                    title: "Error",
+                                    text: message,
+                                    icon: "error"
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+
             function loadCurrentShares(passwordId) {
                 const listContainer = $('#currentSharesList');
                 listContainer.html('<p class="text-center text-muted small"><i class="fas fa-sync fa-spin"></i> Cargando...</p>');
@@ -468,64 +526,6 @@
                     }
                 });
             }
-        });
-
-        // **********************************************
-        // ** LÓGICA PARA REVOCAR EL ACCESO (AJAX) **
-        // **********************************************
-        $(document).on('click', '.remove-share', function () {
-            const shareId = $(this).data('share-id');
-            const btn = $(this);
-
-            swal({
-                title: '¿Revocar acceso?',
-                text: 'El usuario perderá inmediatamente el acceso a esta contraseña.',
-                icon: 'warning',
-                buttons: true,
-                dangerMode: true,
-            }, function(willDelete) {
-                if (willDelete) {
-                    // IMPORTANTE: Usar POST con _method: DELETE para compatibilidad con Laravel
-                    $.ajax({
-                        url: `/password-shares/${shareId}/revoke`,
-                        method: 'POST',
-                        data: {
-                            _token: '{{ csrf_token() }}',
-                            _method: 'DELETE'  // ← Esto es CRUCIAL para Laravel
-                        },
-                        success: function (response) {
-                            swal({
-                                title: "¡Revocado!",
-                                text: "Acceso revocado exitosamente.",
-                                icon: "success",
-                                timer: 2000,
-                                buttons: false
-                            });
-
-                            // Recargar la lista de compartidos en el modal
-                            const passwordId = $('#share_password_vault_id').val();
-                            loadCurrentShares(passwordId);
-                        },
-                        error: function (xhr) {
-                            let message = 'Error al revocar el acceso.';
-
-                            if (xhr.status === 403) {
-                                message = 'No tienes permiso para revocar este acceso.';
-                            } else if (xhr.status === 404) {
-                                message = 'El registro de compartido no fue encontrado.';
-                            } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                                message = xhr.responseJSON.message;
-                            }
-
-                            swal({
-                                title: "Error",
-                                text: message,
-                                icon: "error"
-                            });
-                        }
-                    });
-                }
-            });
         });
     </script>
 @endpush

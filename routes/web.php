@@ -4,6 +4,7 @@ use App\Http\Controllers\AudioTranscriptionController;
 use App\Http\Controllers\BodycamController;
 use App\Http\Controllers\EntregasBodycamsController;
 use App\Http\Controllers\EntregasEquiposController;
+use App\Http\Controllers\PasswordVaultController;
 use Illuminate\Support\Facades\Route;
 //agregamos los controladores
 use App\Http\Controllers\HomeController;
@@ -296,6 +297,15 @@ Route::group(['middleware' => ['auth']], function () {
     // Ruta para previsualizar el documento generado
     Route::get('entrega-bodycams/previsualizar/{id}', [EntregasBodycamsController::class, 'previsualizar'])
         ->name('entrega-bodycams.previsualizar');
+
+    // Rutas del gestor de contraseñas
+    Route::resource('password-vault', PasswordVaultController::class);
+    Route::get('password-vault-generate', [PasswordVaultController::class, 'generatePassword'])
+        ->name('password-vault.generate');
+    Route::post('password-vault/{passwordVault}/toggle-favorite', [PasswordVaultController::class, 'toggleFavorite'])
+        ->name('password-vault.toggle-favorite');
+    Route::get('password-vault/{passwordVault}/get-password', [PasswordVaultController::class, 'getPassword'])
+        ->name('password-vault.get-password');
 
     //Optimizar sistema
     Route::get('optimizar', function () {

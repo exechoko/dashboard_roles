@@ -16,6 +16,9 @@ class PasswordVault extends Model
         'user_id',
         'system_name',
         'system_type',
+        'vpn_type',
+        'vpn_host',
+        'vpn_preshared_key',
         'url',
         'username',
         'password',
@@ -27,6 +30,7 @@ class PasswordVault extends Model
 
     protected $hidden = [
         'password',
+        'vpn_preshared_key',
     ];
 
     protected $casts = [
@@ -37,17 +41,43 @@ class PasswordVault extends Model
     // Encriptar automáticamente la contraseña
     public function setPasswordAttribute($value)
     {
-        $this->attributes['password'] = Crypt::encryptString($value);
+        if ($value) {
+            $this->attributes['password'] = Crypt::encryptString($value);
+        }
     }
 
     // Desencriptar automáticamente la contraseña
     public function getPasswordAttribute($value)
     {
-        try {
-            return Crypt::decryptString($value);
-        } catch (Exception $e) {
-            return null;
+        if ($value) {
+            try {
+                return Crypt::decryptString($value);
+            } catch (Exception $e) {
+                return null;
+            }
         }
+        return null;
+    }
+
+    // Encriptar clave previamente compartida VPN
+    public function setVpnPresharedKeyAttribute($value)
+    {
+        if ($value) {
+            $this->attributes['vpn_preshared_key'] = Crypt::encryptString($value);
+        }
+    }
+
+    // Desencriptar clave previamente compartida VPN
+    public function getVpnPresharedKeyAttribute($value)
+    {
+        if ($value) {
+            try {
+                return Crypt::decryptString($value);
+            } catch (Exception $e) {
+                return null;
+            }
+        }
+        return null;
     }
 
     // Encriptar notas
@@ -126,6 +156,21 @@ class PasswordVault extends Model
             'ftp' => ['label' => 'FTP/SFTP', 'icon' => 'fas fa-server'],
             'ssh' => ['label' => 'SSH', 'icon' => 'fas fa-terminal'],
             'otro' => ['label' => 'Otro', 'icon' => 'fas fa-key'],
+        ];
+    }
+
+    // Tipos de VPN disponibles
+    public static function getVpnTypes()
+    {
+        return [
+            'pptp' => 'PPTP',
+            'l2tp' => 'L2TP/IPsec',
+            'ipsec' => 'IPsec',
+            'openvpn' => 'OpenVPN',
+            'wireguard' => 'WireGuard',
+            'sstp' => 'SSTP',
+            'ikev2' => 'IKEv2',
+            'otro' => 'Otro'
         ];
     }
 }

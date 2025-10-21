@@ -31,13 +31,18 @@ class PasswordVaultController extends Controller
 
         $systemTypes = PasswordVault::getSystemTypes();
 
-        return view('password_vault.index', compact('passwords', 'systemTypes'));
+        $vpnTypes = PasswordVault::getVpnTypes();
+
+        return view(
+            'password_vault.index',
+            compact('passwords', 'systemTypes', 'vpnTypes'));
     }
 
     public function create()
     {
         $systemTypes = PasswordVault::getSystemTypes();
-        return view('password_vault.create', compact('systemTypes'));
+        $vpnTypes = PasswordVault::getVpnTypes();
+        return view('password_vault.create', compact('systemTypes', 'vpnTypes'));
     }
 
     public function store(Request $request)
@@ -47,9 +52,12 @@ class PasswordVaultController extends Controller
             'system_type' => 'required|in:web,vpn,escritorio,base_datos,email,ftp,ssh,otro',
             'url' => 'nullable|url|max:500',
             'username' => 'required|string|max:255',
-            'password' => 'required|string|min:1',
+            'password' => 'nullable|string|min:1',
             'notes' => 'nullable|string',
             'favorite' => 'boolean',
+            'vpn_host' => 'nullable|string|max:255',
+            'vpn_type' => 'nullable|string|max:255',
+            'vpn_preshared_key' => 'nullable|string|max:255',
         ]);
 
         $validated['user_id'] = Auth::id();
@@ -89,6 +97,9 @@ class PasswordVaultController extends Controller
             'password' => 'nullable|string|min:1',
             'notes' => 'nullable|string',
             'favorite' => 'boolean',
+            'vpn_host' => 'nullable|string|max:255',
+            'vpn_type' => 'nullable|string|max:255',
+            'vpn_preshared_key' => 'nullable|string|max:255',
         ]);
 
         // Solo actualizar password si se proporciona uno nuevo

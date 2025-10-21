@@ -393,6 +393,41 @@
         color: var(--text-primary) !important;
     }
 
+    /* Menú contextual del Geocoder en modo oscuro */
+    [data-theme="dark"] .geocoder-control-suggestions.leaflet-bar {
+        background-color: var(--card-bg) !important;
+        color: var(--text-primary) !important;
+        border: 1px solid var(--border-color) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7) !important;
+    }
+
+    /* Cada elemento de la lista */
+    [data-theme="dark"] .geocoder-control-suggestions.leaflet-bar li {
+        background-color: var(--card-bg) !important;
+        color: var(--text-primary) !important;
+        border-bottom: 1px solid var(--border-color) !important;
+        padding: 6px 10px !important;
+        transition: background-color 0.2s ease, color 0.2s ease !important;
+    }
+
+    /* Hover (al pasar el mouse sobre una sugerencia) */
+    [data-theme="dark"] .geocoder-control-suggestions.leaflet-bar li:hover {
+        background-color: var(--bg-secondary) !important;
+        color: var(--text-primary) !important;
+    }
+
+    /* Asegurar texto legible dentro de <a> o <span> si los hubiera */
+    [data-theme="dark"] .geocoder-control-suggestions.leaflet-bar li a,
+    [data-theme="dark"] .geocoder-control-suggestions.leaflet-bar li span {
+        color: var(--text-primary) !important;
+    }
+
+    /* Bordes redondeados y sombra del contenedor */
+    [data-theme="dark"] .geocoder-control-suggestions.leaflet-bar {
+        border-radius: 6px !important;
+        overflow: hidden !important;
+    }
+
     @media (max-width: 768px) {
         [data-theme="dark"] .list-group-item {
             padding: 0.5rem 0.75rem !important;

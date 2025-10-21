@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\PasswordVault;
+use App\Policies\PasswordVaultPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 
@@ -13,6 +15,7 @@ class AuthServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     protected $policies = [
+        // PasswordVault::class => PasswordVaultPolicy::class,
         // 'App\Models\Model' => 'App\Policies\ModelPolicy',
     ];
 

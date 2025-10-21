@@ -59,7 +59,8 @@
                                                         'menu-entregas',
                                                         'menu-documentacion',
                                                         'menu-transcripcion',
-                                                        'menu-transcripcion-aws'
+                                                        'menu-transcripcion-aws',
+                                                        'menu-gestor-claves'
                                                     ],
                                                     'Administración' => [
                                                         'rol',
@@ -97,6 +98,9 @@
                                                     'Entregas' => [
                                                         'entrega-equipos',
                                                         'entrega-bodycams'
+                                                    ],
+                                                    'Claves' => [
+                                                        'clave'
                                                     ],
                                                     'Operaciones' => [
                                                         'buscar-moviles-parados',

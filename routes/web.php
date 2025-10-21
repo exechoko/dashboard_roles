@@ -4,6 +4,7 @@ use App\Http\Controllers\AudioTranscriptionController;
 use App\Http\Controllers\BodycamController;
 use App\Http\Controllers\EntregasBodycamsController;
 use App\Http\Controllers\EntregasEquiposController;
+use App\Http\Controllers\PasswordVaultController;
 use Illuminate\Support\Facades\Route;
 //agregamos los controladores
 use App\Http\Controllers\HomeController;
@@ -94,7 +95,7 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::post('/get-equipos-sin-funcionar-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposSinFuncionarJSON'])->name('get-equipos-sin-funcionar-json');
     Route::post('/get-equipos-baja-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposBajaJSON'])->name('get-equipos-baja-json');
-    Route::post('/get-equipos-en-revision-json', [App\Http\Controllers\DashboardController::class,'getEquiposEnRevisionJSON'])->name('get-equipos-en-revision-json');
+    Route::post('/get-equipos-en-revision-json', [App\Http\Controllers\DashboardController::class, 'getEquiposEnRevisionJSON'])->name('get-equipos-en-revision-json');
     Route::post('/get-equipos-funcionales-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposFuncionalesJSON'])->name('get-equipos-funcionales-json');
     Route::post('/get-equipos-provistos-por-pg-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposProvistosPorPGJSON'])->name('get-equipos-provistos-por-pg-json');
     Route::post('/get-equipos-provistos-por-telecom-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposProvistosPorTELECOMJSON'])->name('get-equipos-provistos-por-telecom-json');
@@ -296,6 +297,28 @@ Route::group(['middleware' => ['auth']], function () {
     // Ruta para previsualizar el documento generado
     Route::get('entrega-bodycams/previsualizar/{id}', [EntregasBodycamsController::class, 'previsualizar'])
         ->name('entrega-bodycams.previsualizar');
+
+
+    // Rutas del gestor de contraseñas (con permisos en el controlador, NO en las rutas)
+    Route::resource('password-vault', PasswordVaultController::class);
+    // Generar contraseña aleatoria
+    Route::get('password-vault-generate', [PasswordVaultController::class, 'generatePassword'])
+        ->name('password-vault.generate');
+    // Toggle favorito
+    Route::post('password-vault/{passwordVault}/toggle-favorite', [PasswordVaultController::class, 'toggleFavorite'])
+        ->name('password-vault.toggle-favorite');
+    // Obtener contraseña (API)
+    Route::get('password-vault/{passwordVault}/get-password', [PasswordVaultController::class, 'getPassword'])
+        ->name('password-vault.get-password');
+    // Compartir contraseña con otro usuario
+    Route::post('password-vault/{passwordVault}/share', [PasswordVaultController::class, 'share'])
+        ->name('password-vault.share');
+    // Obtener lista de usuarios con los que se compartió
+    Route::get('password-vault/{passwordVault}/shares', [PasswordVaultController::class, 'getShares'])
+        ->name('password-vault.get-shares');
+    // Revocar acceso compartido
+    Route::delete('password-shares/{share}/revoke', [PasswordVaultController::class, 'revokeShare'])
+        ->name('password-vault.revoke-share');
 
     //Optimizar sistema
     Route::get('optimizar', function () {

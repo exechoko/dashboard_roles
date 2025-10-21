@@ -258,4 +258,12 @@
         </a>
     </li>
 @endcan
+@can('ver-menu-gestor-claves')
+<li class="{{ request()->is('password-vault*') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('password-vault.index') }}">
+        <i class="fas fa-lock"></i>
+        <span>Gestor de Contraseñas</span>
+    </a>
+</li>
+@endcan
 <!--Documentacion en GetStisla-->

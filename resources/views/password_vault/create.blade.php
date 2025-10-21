@@ -64,6 +64,27 @@
                                 <div class="input-group">
                                     <div class="input-group-prepend">
                                         <div class="input-group-text">
+                                            <i class="fas fa-link"></i>
+                                        </div>
+                                    </div>
+                                    <input type="text"
+                                           name="url"
+                                           class="form-control @error('username') is-invalid @enderror"
+                                           value="{{ old('username', $passwordVault->url ?? '') }}"
+                                           placeholder="usuario@ejemplo.com"
+                                           required>
+                                </div>
+                                @error('username')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            {{-- Username --}}
+                            <div class="form-group">
+                                <label>Usuario <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <div class="input-group-prepend">
+                                        <div class="input-group-text">
                                             <i class="fas fa-user"></i>
                                         </div>
                                     </div>
@@ -71,7 +92,7 @@
                                            name="username"
                                            class="form-control @error('username') is-invalid @enderror"
                                            value="{{ old('username', $passwordVault->username ?? '') }}"
-                                           placeholder="usuario@ejemplo.com"
+                                           placeholder="usuario123"
                                            required>
                                 </div>
                                 @error('username')

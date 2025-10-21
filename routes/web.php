@@ -306,6 +306,14 @@ Route::group(['middleware' => ['auth']], function () {
         ->name('password-vault.toggle-favorite');
     Route::get('password-vault/{passwordVault}/get-password', [PasswordVaultController::class, 'getPassword'])
         ->name('password-vault.get-password');
+    Route::post('password-vault/{passwordVault}/share', [PasswordVaultController::class, 'share'])
+        ->name('password-vault.share')
+        ->middleware('can:owner,passwordVault'); // Restringe a que solo el dueño pueda compartir
+    Route::get('password-vault/{passwordVault}/shares', [PasswordVaultController::class, 'getShares'])
+        ->name('password-vault.get-shares')
+        ->middleware('can:owner,passwordVault'); // Restringe a que solo el dueño pueda ver la lista
+    Route::delete('password-shares/{share}/revoke', [PasswordVaultController::class, 'revokeShare'])
+        ->name('password-vault.revoke-share'); // Revoca el acceso
 
     //Optimizar sistema
     Route::get('optimizar', function () {

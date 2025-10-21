@@ -47,6 +47,7 @@
                             <hr>
                             <h6 class="text-primary mb-3"><i class="fas fa-shield-alt"></i> Información VPN</h6>
 
+                            {{-- Tipo de VPN --}}
                             @if($passwordVault->vpn_type)
                                 <div class="form-group">
                                     <label class="text-muted mb-1">Tipo de VPN</label>
@@ -56,14 +57,35 @@
                                 </div>
                             @endif
 
+                            {{-- Host / Servidor VPN --}}
+                            @if($passwordVault->host)
+                                <div class="form-group">
+                                    <label class="text-muted mb-1">Host / Servidor VPN</label>
+                                    <div class="input-group">
+                                        <input type="text"
+                                            class="form-control"
+                                            value="{{ $passwordVault->host }}"
+                                            readonly>
+                                        <div class="input-group-append">
+                                            <button class="btn btn-outline-secondary copy-host"
+                                                    type="button"
+                                                    data-host="{{ $passwordVault->host }}">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- Clave Previamente Compartida (PSK) --}}
                             @if($passwordVault->vpn_preshared_key)
                                 <div class="form-group">
                                     <label class="text-muted mb-1">Clave Previamente Compartida (PSK)</label>
                                     <div class="input-group">
                                         <input type="password"
-                                               class="form-control psk-field"
-                                               value="{{ $passwordVault->vpn_preshared_key }}"
-                                               readonly>
+                                            class="form-control psk-field"
+                                            value="{{ $passwordVault->vpn_preshared_key }}"
+                                            readonly>
                                         <div class="input-group-append">
                                             <button class="btn btn-outline-secondary toggle-psk" type="button">
                                                 <i class="fas fa-eye"></i>
@@ -258,6 +280,18 @@
                 iziToast.success({
                     title: 'Copiado',
                     message: 'Contraseña copiada al portapapeles',
+                    position: 'topRight'
+                });
+            });
+        });
+
+        // Copiar host
+        $('.copy-host').click(function() {
+            let host = $(this).data('host');
+            navigator.clipboard.writeText(host).then(function() {
+                iziToast.success({
+                    title: 'Copiado',
+                    message: 'Host copiado al portapapeles',
                     position: 'topRight'
                 });
             });

@@ -43,6 +43,12 @@ class PasswordVaultPolicy
         return true;
     }
 
+    public function owner(User $user, PasswordVault $passwordVault)
+    {
+        // Esto verifica si el ID del usuario actual coincide con el user_id de la contraseña.
+        return $user->id === $passwordVault->user_id;
+    }
+
     /**
      * Determine whether the user can update the model.
      *

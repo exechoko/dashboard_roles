@@ -182,6 +182,8 @@ class PasswordVault extends Model
             'web' => ['label' => 'Sitio Web', 'icon' => 'fas fa-globe'],
             'vpn' => ['label' => 'VPN', 'icon' => 'fas fa-shield-alt'],
             'escritorio' => ['label' => 'Sistema de Escritorio', 'icon' => 'fas fa-desktop'],
+            'servidor' => ['label' => 'Servidor', 'icon' => 'fas fa-server'],
+            'remoto' => ['label' => 'Acceso Remoto', 'icon' => 'fas fa-laptop-house'],
             'base_datos' => ['label' => 'Base de Datos', 'icon' => 'fas fa-database'],
             'email' => ['label' => 'Email', 'icon' => 'fas fa-envelope'],
             'ftp' => ['label' => 'FTP/SFTP', 'icon' => 'fas fa-server'],

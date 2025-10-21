@@ -17,7 +17,7 @@ class CreatePasswordVaultsTable extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('system_name');
-            $table->enum('system_type', ['web', 'vpn', 'escritorio', 'base_datos', 'email', 'ftp', 'ssh', 'otro']);
+            $table->enum('system_type', ['web', 'vpn', 'escritorio', 'servidor', 'remoto', 'base_datos', 'email', 'ftp', 'ssh', 'otro']);
             $table->string('url')->nullable();
             $table->string('username');
             $table->text('password'); // Encriptado

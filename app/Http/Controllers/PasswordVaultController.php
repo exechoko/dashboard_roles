@@ -74,7 +74,7 @@ class PasswordVaultController extends Controller
         $this->authorize('update', $passwordVault);
 
         $systemTypes = PasswordVault::getSystemTypes();
-        return view('password_vault.edit', compact('passwordVault', 'systemTypes'));
+        return view('password_vault.create', compact('passwordVault', 'systemTypes'));
     }
 
     public function update(Request $request, PasswordVault $passwordVault)

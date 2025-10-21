@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -44,7 +45,7 @@ class PasswordVault extends Model
     {
         try {
             return Crypt::decryptString($value);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return null;
         }
     }
@@ -62,7 +63,7 @@ class PasswordVault extends Model
         if ($value) {
             try {
                 return Crypt::decryptString($value);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 return null;
             }
         }

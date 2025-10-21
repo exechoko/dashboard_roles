@@ -111,11 +111,42 @@ class PasswordVault extends Model
         return $this->hasMany(PasswordVaultShare::class);
     }
 
+    /**
+     * Relación con el usuario dueño
+     */
+    public function owner()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
     public function sharedWith()
     {
         return $this->belongsToMany(User::class, 'password_vault_shares', 'password_vault_id', 'shared_with_user_id')
             ->withPivot('can_edit', 'shared_by_user_id')
             ->withTimestamps();
+    }
+
+    /**
+     * Verifica si la contraseña está compartida con un usuario específico
+     */
+    public function isSharedWith($userId)
+    {
+        return $this->shares()->where('shared_with_user_id', $userId)->exists();
+    }
+
+    /**
+     * Verifica si un usuario tiene permiso de edición
+     */
+    public function canBeEditedBy($userId)
+    {
+        // El dueño siempre puede editar
+        if ($this->user_id == $userId) {
+            return true;
+        }
+
+        // Verificar permiso de edición compartida
+        $share = $this->shares()->where('shared_with_user_id', $userId)->first();
+        return $share && $share->can_edit;
     }
 
     // Scopes

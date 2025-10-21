@@ -13,31 +13,31 @@ class PasswordVaultController extends Controller
 {
     public function index(Request $request)
     {
-        // El index debe mostrar las contraseñas PROPIAS Y las COMPARTIDAS CON el usuario
-        $userId = Auth::id();
+        // Verificar permiso general
+        if (!Auth::user()->can('ver-clave')) {
+            abort(403, 'No tienes permiso para ver las contraseñas.');
+        }
 
-        // Contraseñas propias
-        $queryOwn = PasswordVault::where('user_id', $userId);
+        $userId = Auth::id();
 
         // IDs de las contraseñas compartidas con el usuario
         $sharedIds = PasswordVaultShare::where('shared_with_user_id', $userId)
-            ->pluck('password_vault_id');
+            ->pluck('password_vault_id')
+            ->toArray();
 
-        // Consulta base combinando propias y compartidas
-        $query = PasswordVault::where('user_id', $userId)
-            ->orWhereIn('id', $sharedIds)
-            ->with(['shares' => function ($q) use ($userId) {
-                // Eager loading de los compartidos relevantes, puede usarse en la vista
-                $q->where('shared_with_user_id', $userId);
-            }]);
+        // Consulta base: contraseñas propias O compartidas
+        $query = PasswordVault::where(function ($q) use ($userId, $sharedIds) {
+            $q->where('user_id', $userId)
+              ->orWhereIn('id', $sharedIds);
+        });
 
-        // Aplicar filtros solo a las contraseñas del usuario (o considerar un filtro más complejo)
-        // Por simplicidad, aplicaremos los filtros a toda la consulta combinada
+        // Aplicar filtros de búsqueda
         if ($request->filled('search')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('system_name', 'like', '%' . $request->search . '%')
-                  ->orWhere('username', 'like', '%' . $request->search . '%')
-                  ->orWhere('url', 'like', '%' . $request->search . '%');
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('system_name', 'like', '%' . $search . '%')
+                  ->orWhere('username', 'like', '%' . $search . '%')
+                  ->orWhere('url', 'like', '%' . $search . '%');
             });
         }
 
@@ -45,28 +45,39 @@ class PasswordVaultController extends Controller
             $query->where('system_type', $request->type);
         }
 
-        if ($request->has('favorites')) {
+        if ($request->filled('favorites') && $request->favorites == '1') {
             $query->where('favorite', true);
         }
 
+        // Eager loading de las comparticiones
+        $query->with(['shares' => function ($q) use ($userId) {
+            $q->where('shared_with_user_id', $userId);
+        }]);
+
+        // Ordenar y paginar
         $passwords = $query->orderBy('favorite', 'desc')
             ->orderBy('system_name')
-            ->paginate(15);
+            ->paginate(15)
+            ->appends($request->all());
 
         $systemTypes = PasswordVault::getSystemTypes();
         $vpnTypes = PasswordVault::getVpnTypes();
 
-        // Necesitas pasar los usuarios para el modal de compartir
+        // Usuarios para el modal de compartir
         $users = User::where('id', '!=', $userId)->get(['id', 'name', 'email']);
-
 
         return view(
             'password_vault.index',
-            compact('passwords', 'systemTypes', 'vpnTypes', 'users'));
+            compact('passwords', 'systemTypes', 'vpnTypes', 'users')
+        );
     }
 
     public function create()
     {
+        if (!Auth::user()->can('crear-clave')) {
+            abort(403, 'No tienes permiso para crear contraseñas.');
+        }
+
         $systemTypes = PasswordVault::getSystemTypes();
         $vpnTypes = PasswordVault::getVpnTypes();
         return view('password_vault.create', compact('systemTypes', 'vpnTypes'));
@@ -74,6 +85,10 @@ class PasswordVaultController extends Controller
 
     public function store(Request $request)
     {
+        if (!Auth::user()->can('crear-clave')) {
+            abort(403, 'No tienes permiso para crear contraseñas.');
+        }
+
         $validated = $request->validate([
             'system_name' => 'required|string|max:255',
             'system_type' => 'required|in:web,vpn,escritorio,base_datos,email,ftp,ssh,otro',
@@ -97,8 +112,19 @@ class PasswordVaultController extends Controller
 
     public function show(PasswordVault $passwordVault)
     {
-        // Policy: Verifica si el usuario es dueño O si ha sido compartido con él
-        $this->authorize('view', $passwordVault);
+        // Verificar permiso general
+        if (!Auth::user()->can('ver-clave')) {
+            abort(403, 'No tienes permiso para ver contraseñas.');
+        }
+
+        // Verificar que sea dueño O que esté compartida con él
+        $userId = Auth::id();
+        $isOwner = $passwordVault->user_id === $userId;
+        $isShared = $passwordVault->shares()->where('shared_with_user_id', $userId)->exists();
+
+        if (!$isOwner && !$isShared) {
+            abort(403, 'No tienes acceso a esta contraseña.');
+        }
 
         $passwordVault->recordAccess();
 
@@ -107,15 +133,44 @@ class PasswordVaultController extends Controller
 
     public function edit(PasswordVault $passwordVault)
     {
-        $this->authorize('update', $passwordVault);
+        // Verificar permiso general
+        if (!Auth::user()->can('editar-clave')) {
+            abort(403, 'No tienes permiso para editar contraseñas.');
+        }
+
+        // Verificar que sea dueño O que tenga permiso de edición compartida
+        $userId = Auth::id();
+        $isOwner = $passwordVault->user_id === $userId;
+
+        $share = $passwordVault->shares()->where('shared_with_user_id', $userId)->first();
+        $canEdit = $share && $share->can_edit;
+
+        if (!$isOwner && !$canEdit) {
+            abort(403, 'No tienes permiso para editar esta contraseña.');
+        }
 
         $systemTypes = PasswordVault::getSystemTypes();
-        return view('password_vault.create', compact('passwordVault', 'systemTypes'));
+        $vpnTypes = PasswordVault::getVpnTypes();
+        return view('password_vault.create', compact('passwordVault', 'systemTypes', 'vpnTypes'));
     }
 
     public function update(Request $request, PasswordVault $passwordVault)
     {
-        $this->authorize('update', $passwordVault);
+        // Verificar permiso general
+        if (!Auth::user()->can('editar-clave')) {
+            abort(403, 'No tienes permiso para editar contraseñas.');
+        }
+
+        // Verificar que sea dueño O que tenga permiso de edición compartida
+        $userId = Auth::id();
+        $isOwner = $passwordVault->user_id === $userId;
+
+        $share = $passwordVault->shares()->where('shared_with_user_id', $userId)->first();
+        $canEdit = $share && $share->can_edit;
+
+        if (!$isOwner && !$canEdit) {
+            abort(403, 'No tienes permiso para editar esta contraseña.');
+        }
 
         $validated = $request->validate([
             'system_name' => 'required|string|max:255',
@@ -143,7 +198,15 @@ class PasswordVaultController extends Controller
 
     public function destroy(PasswordVault $passwordVault)
     {
-        $this->authorize('delete', $passwordVault);
+        // Verificar permiso general
+        if (!Auth::user()->can('borrar-clave')) {
+            abort(403, 'No tienes permiso para eliminar contraseñas.');
+        }
+
+        // Solo el dueño puede eliminar
+        if ($passwordVault->user_id !== Auth::id()) {
+            abort(403, 'Solo el dueño puede eliminar esta contraseña.');
+        }
 
         $passwordVault->delete();
 
@@ -151,10 +214,21 @@ class PasswordVaultController extends Controller
             ->with('success', 'Contraseña eliminada exitosamente');
     }
 
-    // API endpoint para obtener contraseña (con seguridad adicional)
     public function getPassword(PasswordVault $passwordVault)
     {
-        $this->authorize('view', $passwordVault);
+        // Verificar permiso general
+        if (!Auth::user()->can('ver-clave')) {
+            abort(403, 'No tienes permiso para ver contraseñas.');
+        }
+
+        // Verificar que sea dueño O que esté compartida con él
+        $userId = Auth::id();
+        $isOwner = $passwordVault->user_id === $userId;
+        $isShared = $passwordVault->shares()->where('shared_with_user_id', $userId)->exists();
+
+        if (!$isOwner && !$isShared) {
+            abort(403, 'No tienes acceso a esta contraseña.');
+        }
 
         $passwordVault->recordAccess();
 
@@ -163,7 +237,6 @@ class PasswordVaultController extends Controller
         ]);
     }
 
-    // Generar contraseña segura
     public function generatePassword()
     {
         $length = 16;
@@ -177,10 +250,23 @@ class PasswordVaultController extends Controller
         return response()->json(['password' => $password]);
     }
 
-    // Toggle favorito
     public function toggleFavorite(PasswordVault $passwordVault)
     {
-        $this->authorize('update', $passwordVault);
+        // Verificar permiso general
+        if (!Auth::user()->can('editar-clave')) {
+            abort(403, 'No tienes permiso para editar contraseñas.');
+        }
+
+        // Verificar que sea dueño O que tenga permiso de edición compartida
+        $userId = Auth::id();
+        $isOwner = $passwordVault->user_id === $userId;
+
+        $share = $passwordVault->shares()->where('shared_with_user_id', $userId)->first();
+        $canEdit = $share && $share->can_edit;
+
+        if (!$isOwner && !$canEdit) {
+            return response()->json(['error' => 'No tienes permiso para editar esta contraseña.'], 403);
+        }
 
         $passwordVault->update(['favorite' => !$passwordVault->favorite]);
 
@@ -190,17 +276,20 @@ class PasswordVaultController extends Controller
         ]);
     }
 
-    /**
-     * Devuelve los usuarios con los que se ha compartido la contraseña. (AJAX/API)
-     */
     public function getShares(PasswordVault $passwordVault)
     {
-        // Asegurarse de que SOLO el dueño pueda ver con quién está compartida
-        $this->authorize('owner', $passwordVault);
+        // Verificar permiso general
+        if (!Auth::user()->can('compartir-clave')) {
+            abort(403, 'No tienes permiso para gestionar compartidos.');
+        }
+
+        // Solo el dueño puede ver con quién está compartida
+        if ($passwordVault->user_id !== Auth::id()) {
+            abort(403, 'Solo el dueño puede ver los compartidos.');
+        }
 
         $shares = $passwordVault->shares()->with('sharedWith')->get();
 
-        // Mapear para una respuesta JSON limpia
         $sharesData = $shares->map(function ($share) {
             return [
                 'id' => $share->id,
@@ -214,22 +303,25 @@ class PasswordVaultController extends Controller
         return response()->json(['shares' => $sharesData]);
     }
 
-    /**
-     * Comparte una contraseña con otro usuario.
-     */
     public function share(Request $request, PasswordVault $passwordVault)
     {
-        // Asegurarse de que SOLO el dueño pueda compartir
-        $this->authorize('owner', $passwordVault);
+        // Verificar permiso general
+        if (!Auth::user()->can('compartir-clave')) {
+            abort(403, 'No tienes permiso para compartir contraseñas.');
+        }
+
+        // Solo el dueño puede compartir
+        if ($passwordVault->user_id !== Auth::id()) {
+            abort(403, 'Solo el dueño puede compartir esta contraseña.');
+        }
+
         $sharedWithId = $request->input('shared_with_user_id');
 
         $request->validate([
             'shared_with_user_id' => [
                 'required',
                 'exists:users,id',
-                // Validación para evitar compartir consigo mismo
                 Rule::notIn([Auth::id()]),
-                // Validación para evitar compartir dos veces la misma contraseña con el mismo usuario
                 Rule::unique('password_vault_shares')->where(function ($query) use ($passwordVault, $sharedWithId) {
                     return $query->where('password_vault_id', $passwordVault->id)
                                  ->where('shared_with_user_id', $sharedWithId);
@@ -241,8 +333,6 @@ class PasswordVaultController extends Controller
             'shared_with_user_id.not_in' => 'No puedes compartir una contraseña contigo mismo.',
         ]);
 
-        //dd('llegue', $request->all());
-
         PasswordVaultShare::create([
             'password_vault_id' => $passwordVault->id,
             'shared_with_user_id' => $sharedWithId,
@@ -250,17 +340,26 @@ class PasswordVaultController extends Controller
             'can_edit' => $request->boolean('can_edit'),
         ]);
 
+        if (request()->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Contraseña compartida exitosamente.']);
+        }
+
         return redirect()->back()->with('success', 'Contraseña compartida exitosamente.');
     }
 
-    /**
-     * Revoca el acceso de un usuario a una contraseña compartida.
-     */
     public function revokeShare(PasswordVaultShare $share)
     {
-        // 1. Verificar que el usuario autenticado sea el dueño de la contraseña compartida
-        $passwordVault = $share->vault; // Asumiendo que el modelo share tiene la relación 'vault'
-        $this->authorize('owner', $passwordVault);
+        // Verificar permiso general
+        if (!Auth::user()->can('compartir-clave')) {
+            abort(403, 'No tienes permiso para gestionar compartidos.');
+        }
+
+        $passwordVault = $share->vault;
+
+        // Solo el dueño puede revocar
+        if ($passwordVault->user_id !== Auth::id()) {
+            abort(403, 'Solo el dueño puede revocar accesos.');
+        }
 
         $share->delete();
 

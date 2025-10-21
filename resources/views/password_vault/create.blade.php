@@ -21,6 +21,12 @@
 
                             <div class="card-header">
                                 <h4>Información de la Contraseña</h4>
+                                {{-- Mostrar si es una contraseña compartida --}}
+                                @if(isset($passwordVault) && $passwordVault->user_id !== Auth::id())
+                                    <div class="badge badge-info ml-auto">
+                                        <i class="fas fa-share-alt"></i> Contraseña Compartida (Solo lectura/edición según permisos)
+                                    </div>
+                                @endif
                             </div>
 
                             <div class="card-body">
@@ -81,7 +87,7 @@
 
                                     {{-- Host / Dirección del Servidor VPN --}}
                                     <div class="form-group">
-                                        <label>Host / Dirección del Servidor VPN <span class="text-danger">*</span></label>
+                                        <label>Host / Dirección del Servidor VPN</label>
                                         <input type="text" name="vpn_host" class="form-control @error('vpn_host') is-invalid @enderror"
                                             value="{{ old('vpn_host', $passwordVault->vpn_host ?? '') }}" placeholder="Ej: vpn.empresa.com o 190.12.34.56">
                                         @error('vpn_host')
@@ -227,9 +233,19 @@
                                 <a href="{{ route('password-vault.index') }}" class="btn btn-secondary">
                                     <i class="fas fa-times"></i> Cancelar
                                 </a>
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save"></i> {{ isset($passwordVault) ? 'Actualizar' : 'Guardar' }}
-                                </button>
+                                @if(isset($passwordVault))
+                                    @can('editar-clave')
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save"></i> Actualizar
+                                        </button>
+                                    @endcan
+                                @else
+                                    @can('crear-clave')
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-save"></i> Guardar
+                                        </button>
+                                    @endcan
+                                @endif
                             </div>
                         </form>
                     </div>
@@ -279,6 +295,24 @@
                             </p>
                         </div>
                     </div>
+
+                    {{-- Información de contraseña compartida --}}
+                    @if(isset($passwordVault) && $passwordVault->user_id !== Auth::id())
+                        <div class="card border-info">
+                            <div class="card-header bg-info text-white">
+                                <h4><i class="fas fa-share-alt"></i> Contraseña Compartida</h4>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small mb-2">
+                                    <i class="fas fa-info-circle text-info"></i>
+                                    Esta contraseña ha sido compartida contigo.
+                                </p>
+                                <p class="text-muted small mb-0">
+                                    <strong>Propietario:</strong> {{ $passwordVault->owner->name ?? 'Usuario' }}
+                                </p>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -295,6 +329,7 @@
             } else {
                 $('#vpn_fields').slideUp();
                 $('#vpn_type').val('');
+                $('#vpn_host').val('');
                 $('#vpn_preshared_key').val('');
             }
         }
@@ -433,9 +468,7 @@
         }
 
         // Verificar contraseña inicial si existe
-        @if(isset($passwordVault))
-            // No mostramos el strength para contraseñas existentes
-        @else
+        @if(!isset($passwordVault))
             checkPasswordStrength($('#password').val());
         @endif
     });

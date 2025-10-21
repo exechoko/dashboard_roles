@@ -157,6 +157,12 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
                 // Filtros en cabecera
                 $event->sheet->setAutoFilter($headerRange);
 
+                // 🔹 Establecer la columna H como texto
+                $lastRow = $event->sheet->getHighestRow();
+                $event->sheet->getStyle('H2:H' . $lastRow)
+                    ->getNumberFormat()
+                    ->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+
                 // 🔹 Centrar contenido solo de la columna A a la O
                 $event->sheet->getStyle('A:O')
                     ->getAlignment()

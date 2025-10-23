@@ -208,15 +208,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            {{-- Último acceso --}}
-                            <div class="last-access-container">
-                                @if($password->last_accessed_at)
-                                    <small class="text-muted">
-                                        Último acceso: {{ $password->last_accessed_at->diffForHumans() }}
-                                    </small>
-                                @endif
-                            </div>
                         </div>
 
                         {{-- Botones de acción (siempre al final) --}}

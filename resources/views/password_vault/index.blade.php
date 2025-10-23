@@ -413,14 +413,17 @@
                 e.preventDefault();
                 let form = this;
 
-                swal({
+                Swal.fire({
                     title: '¿Estás seguro?',
                     text: 'Esta contraseña será eliminada permanentemente',
                     icon: 'warning',
-                    buttons: true,
-                    dangerMode: true,
-                }).then((willDelete) => {
-                    if (willDelete) {
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
                         form.submit();
                     }
                 });
@@ -474,14 +477,17 @@
                 const shareId = $(this).data('share-id');
                 const btn = $(this);
 
-                swal({
+                Swal.fire({
                     title: '¿Revocar acceso?',
                     text: 'El usuario perderá inmediatamente el acceso a esta contraseña.',
                     icon: 'warning',
-                    buttons: true,
-                    dangerMode: true,
-                }).then((willDelete) => {
-                    if (willDelete) {
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Sí, revocar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
                         $.ajax({
                             url: `/password-shares/${shareId}/revoke`,
                             method: 'POST',

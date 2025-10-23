@@ -414,7 +414,120 @@
         $(document).ready(function () {
             let select2UsersInstance = null;
 
-            // Inicializar Select2 cuando se abre el modal (igual que en tu proyecto)
+            // ========== FUNCIONALIDAD DE CONTRASEÑAS ==========
+
+            // Toggle para mostrar/ocultar contraseña
+            $('.toggle-password').on('click', function () {
+                const button = $(this);
+                const input = button.closest('.input-group').find('.password-field');
+                const icon = button.find('i');
+
+                if (input.attr('type') === 'password') {
+                    input.attr('type', 'text');
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    input.attr('type', 'password');
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+
+            // Copiar contraseña al portapapeles
+            $('.copy-password').on('click', function () {
+                const button = $(this);
+                const password = button.data('password');
+
+                // Crear elemento temporal para copiar
+                const tempInput = $('<input>');
+                $('body').append(tempInput);
+                tempInput.val(password).select();
+                document.execCommand('copy');
+                tempInput.remove();
+
+                // Feedback visual
+                const originalIcon = button.find('i').attr('class');
+                button.find('i').removeClass().addClass('fas fa-check text-success');
+
+                iziToast.success({
+                    title: 'Copiado',
+                    message: 'Contraseña copiada al portapapeles',
+                    position: 'topRight',
+                    timeout: 2000
+                });
+
+                // Restaurar icono después de 2 segundos
+                setTimeout(() => {
+                    button.find('i').removeClass().addClass(originalIcon);
+                }, 2000);
+            });
+
+            // Toggle de favoritos
+            $('.toggle-favorite').on('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const button = $(this);
+                const passwordId = button.data('id');
+                const icon = button.find('i');
+
+                $.ajax({
+                    url: `/password-vault/${passwordId}/favorite`,
+                    method: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    success: function (response) {
+                        if (response.favorite) {
+                            icon.removeClass('text-muted').addClass('favorite-star');
+                            iziToast.success({
+                                title: 'Favorito',
+                                message: 'Añadido a favoritos',
+                                position: 'topRight',
+                                timeout: 2000
+                            });
+                        } else {
+                            icon.removeClass('favorite-star').addClass('text-muted');
+                            iziToast.info({
+                                title: 'Favorito',
+                                message: 'Eliminado de favoritos',
+                                position: 'topRight',
+                                timeout: 2000
+                            });
+                        }
+                    },
+                    error: function () {
+                        iziToast.error({
+                            title: 'Error',
+                            message: 'No se pudo actualizar el favorito',
+                            position: 'topRight'
+                        });
+                    }
+                });
+            });
+
+            // Confirmación para eliminar contraseña
+            $('.delete-form').on('submit', function (e) {
+                e.preventDefault();
+                const form = $(this);
+
+                Swal.fire({
+                    title: '¿Eliminar contraseña?',
+                    text: "Esta acción no se puede deshacer",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.off('submit').submit();
+                    }
+                });
+            });
+
+            // ========== FUNCIONALIDAD DE COMPARTIR ==========
+
+            // Inicializar Select2 cuando se abre el modal
             $('#shareModal').on('shown.bs.modal', function () {
                 if (!select2UsersInstance) {
                     select2UsersInstance = $('.select2-users').select2({
@@ -494,7 +607,7 @@
                     return;
                 }
 
-                // Deshabilitar el botón de enviar (siguiendo tu patrón)
+                // Deshabilitar el botón de enviar
                 const submitBtn = $('#shareSubmitBtn');
                 const originalBtnText = submitBtn.html();
                 submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Compartiendo...');

@@ -360,7 +360,7 @@ var mapaClaro = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 });
 
 // MAPA OSCURO - CartoDB Dark (NATIVO, sin filtros CSS)
-var mapaOscuro = L.tileLayer(`https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png?api_key=${API_KEY_STADIA_MAPS}`, {
+var mapaOscuro = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; Stadia Maps &copy; OpenMapTiles &copy; OpenStreetMap',
     maxZoom: 20,
     tileSize: 256,

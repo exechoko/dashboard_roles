@@ -62,6 +62,53 @@
     .last-access-container {
         min-height: 24px;
     }
+    /* Ajustar Select2 para el modal */
+    .select2-users + .select2-container {
+        min-height: 120px;
+    }
+
+    .select2-container--bootstrap .select2-selection--multiple {
+        min-height: 120px !important;
+    }
+
+    .select2-container--bootstrap .select2-selection--multiple .select2-selection__choice {
+        background-color: #6777ef !important;
+        border-color: #6777ef !important;
+        color: white !important;
+        padding: 5px 10px !important;
+        font-size: 14px !important;
+        margin: 3px !important;
+    }
+
+    .select2-container--bootstrap .select2-selection--multiple .select2-selection__choice__remove {
+        color: white !important;
+        margin-right: 5px !important;
+        font-weight: bold;
+    }
+
+    .select2-container--bootstrap .select2-selection--multiple .select2-selection__choice__remove:hover {
+        color: #ff6b6b !important;
+    }
+
+    /* Z-index para modales */
+    .select2-container--open {
+        z-index: 9999;
+    }
+
+    .select2-dropdown {
+        z-index: 10000;
+    }
+
+    /* Estilo para usuarios compartidos */
+    .shared-user-card {
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+    }
+
+    .shared-user-card:hover {
+        background-color: #f8f9fa;
+        border-left-color: #6777ef;
+    }
 </style>
 @endpush
 
@@ -293,10 +340,12 @@
 {{-- Modal de compartir (solo para dueños con permiso) --}}
 @can('compartir-clave')
 <div class="modal fade" id="shareModal" tabindex="-1" role="dialog" aria-labelledby="shareModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="shareModalLabel">Compartir Contraseña</h5>
+                <h5 class="modal-title" id="shareModalLabel">
+                    <i class="fas fa-share-alt"></i> Compartir Contraseña
+                </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -307,30 +356,51 @@
                     <input type="hidden" name="password_vault_id" id="share_password_vault_id">
 
                     <div class="form-group">
-                        <label for="shared_with_user_id">Seleccionar Usuario para Compartir</label>
-                        <select name="shared_with_user_id" id="shared_with_user_id" class="form-control" required>
-                            <option value="">Buscar y seleccionar un usuario...</option>
+                        <label for="shared_with_users">
+                            <i class="fas fa-users"></i> Seleccionar Usuarios para Compartir
+                        </label>
+                        <select name="shared_with_users[]" id="shared_with_users" class="form-control select2" multiple="multiple" style="width: 100%;">
                             @foreach($users as $user)
-                                <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
+                                <option value="{{ $user->id }}" data-email="{{ $user->email }}">
+                                    {{ $user->name }} ({{ $user->email }})
+                                </option>
                             @endforeach
                         </select>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i> Puedes buscar por nombre o email. Selecciona múltiples usuarios.
+                        </small>
                     </div>
 
-                    <div class="custom-control custom-checkbox">
+                    <div class="custom-control custom-checkbox mb-3">
                         <input type="hidden" name="can_edit" value="0">
                         <input type="checkbox" class="custom-control-input" id="can_edit" name="can_edit" value="1">
-                        <label class="custom-control-label" for="can_edit">Permitir edición al usuario</label>
+                        <label class="custom-control-label" for="can_edit">
+                            <i class="fas fa-edit"></i> Permitir edición a los usuarios seleccionados
+                        </label>
                     </div>
 
                     <hr>
-                    <p class="text-muted small">Usuarios con acceso actual:</p>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <p class="text-muted small mb-0">
+                            <i class="fas fa-user-friends"></i> <strong>Usuarios con acceso actual:</strong>
+                        </p>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshSharesList">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
+                    </div>
                     <div id="currentSharesList">
-                        <p class="text-center text-muted small">Cargando...</p>
+                        <p class="text-center text-muted small">
+                            <i class="fas fa-spinner fa-spin"></i> Cargando...
+                        </p>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                    <button type="submit" class="btn btn-primary">Compartir</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cerrar
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="shareSubmitBtn">
+                        <i class="fas fa-share-alt"></i> Compartir con Seleccionados
+                    </button>
                 </div>
             </form>
         </div>
@@ -341,133 +411,159 @@
 
 @push('scripts')
     <script>
-        $(document).ready(function() {
-            // Toggle mostrar/ocultar contraseña
-            $('.toggle-password').click(function() {
-                let input = $(this).closest('.input-group').find('.password-field');
-                let icon = $(this).find('i');
+        $(document).ready(function () {
+            let select2UsersInstance = null;
 
-                if (input.attr('type') === 'password') {
-                    input.attr('type', 'text');
-                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
-                } else {
-                    input.attr('type', 'password');
-                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+            // Inicializar Select2 cuando se abre el modal (igual que en tu proyecto)
+            $('#shareModal').on('shown.bs.modal', function () {
+                if (!select2UsersInstance) {
+                    select2UsersInstance = $('.select2-users').select2({
+                        theme: 'bootstrap',
+                        language: 'es',
+                        placeholder: 'Seleccione uno o varios usuarios...',
+                        allowClear: true,
+                        width: '100%',
+                        closeOnSelect: false,
+                        dropdownParent: $('#shareModal'), // Importante para modales
+                        templateResult: formatUserOption,
+                        templateSelection: formatUserSelection
+                    });
+
+                    // Manejo del foco (igual que en tu proyecto)
+                    $('.select2-users').on('select2:open', function (e) {
+                        setTimeout(() => {
+                            const $dropdown = $('.select2-container--open');
+                            const searchField = $dropdown.find('.select2-search__field');
+                            if (searchField.length > 0) {
+                                searchField[0].focus();
+                            }
+                        }, 50);
+                    });
                 }
             });
 
-            // Copiar contraseña
-            $('.copy-password').click(function () {
-                let password = $(this).data('password');
-
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(password)
-                        .then(function () {
-                            iziToast.success({
-                                title: 'Copiado',
-                                message: 'Contraseña copiada al portapapeles.',
-                                position: 'topRight'
-                            });
-                        })
-                        .catch(function (err) {
-                            copyFallback(password);
-                        });
-                } else {
-                    copyFallback(password);
+            // Formato personalizado para las opciones del dropdown
+            function formatUserOption(user) {
+                if (!user.id) {
+                    return user.text;
                 }
-            });
 
-            // Toggle favorito
-            $('.toggle-favorite').click(function() {
-                let btn = $(this);
-                let id = btn.data('id');
+                var $user = $(
+                    '<div class="d-flex align-items-center">' +
+                    '<i class="fas fa-user-circle fa-lg mr-2 text-primary"></i>' +
+                    '<div>' +
+                    '<div><strong>' + user.text.split('(')[0].trim() + '</strong></div>' +
+                    '<small class="text-muted">' + $(user.element).data('email') + '</small>' +
+                    '</div>' +
+                    '</div>'
+                );
+                return $user;
+            }
 
-                $.ajax({
-                    url: `/password-vault/${id}/toggle-favorite`,
-                    method: 'POST',
-                    data: {
-                        _token: '{{ csrf_token() }}'
-                    },
-                    success: function(response) {
-                        let star = btn.find('i');
-                        if (response.favorite) {
-                            star.addClass('favorite-star').removeClass('text-muted');
-                        } else {
-                            star.removeClass('favorite-star').addClass('text-muted');
-                        }
-                    },
-                    error: function(xhr) {
-                        if (xhr.status === 403) {
-                            iziToast.error({
-                                title: 'Error',
-                                message: 'No tienes permiso para modificar favoritos.',
-                                position: 'topRight'
-                            });
-                        }
-                    }
-                });
-            });
+            // Formato para los items seleccionados (chips)
+            function formatUserSelection(user) {
+                if (!user.id) {
+                    return user.text;
+                }
+                return user.text.split('(')[0].trim();
+            }
 
-            // Confirmar eliminación
-            $('.delete-form').submit(function(e) {
-                e.preventDefault();
-                let form = this;
-
-                Swal.fire({
-                    title: '¿Estás seguro?',
-                    text: 'Esta contraseña será eliminada permanentemente',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#3085d6',
-                    confirmButtonText: 'Sí, eliminar',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
-                });
+            // Destruir Select2 cuando se cierra el modal
+            $('#shareModal').on('hidden.bs.modal', function () {
+                if (select2UsersInstance) {
+                    $('.select2-users').select2('destroy');
+                    select2UsersInstance = null;
+                }
+                $('#shareForm').trigger('reset');
             });
 
             // Envío del formulario de compartir
             $('#shareForm').submit(function (e) {
                 e.preventDefault();
                 const form = $(this);
-                const url = form.attr('action');
+                const passwordId = $('#share_password_vault_id').val();
+                const selectedUsers = $('#shared_with_users').val();
+                const canEdit = $('#can_edit').is(':checked');
 
-                $.ajax({
-                    url: url,
-                    method: 'POST',
-                    data: form.serialize(),
-                    success: function (response) {
-                        $('#shareModal').modal('hide');
-                        form.trigger('reset');
+                if (!selectedUsers || selectedUsers.length === 0) {
+                    iziToast.warning({
+                        title: 'Atención',
+                        message: 'Debes seleccionar al menos un usuario.',
+                        position: 'topRight'
+                    });
+                    return;
+                }
 
-                        iziToast.success({
-                            title: 'Éxito',
-                            message: 'Contraseña compartida exitosamente.',
-                            position: 'topRight'
-                        });
+                // Deshabilitar el botón de enviar (siguiendo tu patrón)
+                const submitBtn = $('#shareSubmitBtn');
+                const originalBtnText = submitBtn.html();
+                submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Compartiendo...');
 
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
-                    },
-                    error: function (xhr) {
-                        let message = 'Error al intentar compartir la contraseña.';
-
-                        if (xhr.status === 403) {
-                            message = 'No tienes permiso para compartir esta contraseña.';
-                        } else if (xhr.status === 422 && xhr.responseJSON.errors) {
-                            const errors = xhr.responseJSON.errors;
-                            message = errors[Object.keys(errors)[0]][0];
+                // Enviar solicitudes para cada usuario seleccionado
+                const promises = selectedUsers.map(userId => {
+                    return $.ajax({
+                        url: `/password-vault/${passwordId}/share`,
+                        method: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            shared_with_user_id: userId,
+                            can_edit: canEdit ? 1 : 0
                         }
+                    });
+                });
 
+                // Esperar a que todas las solicitudes terminen
+                Promise.allSettled(promises).then(results => {
+                    const successful = results.filter(r => r.status === 'fulfilled').length;
+                    const failed = results.filter(r => r.status === 'rejected').length;
+                    const alreadyShared = results.filter(r =>
+                        r.status === 'rejected' &&
+                        r.reason.status === 422
+                    ).length;
+
+                    // Resetear el botón
+                    submitBtn.prop('disabled', false).html(originalBtnText);
+
+                    // Mostrar mensajes según resultados
+                    if (successful > 0) {
+                        iziToast.success({
+                            title: '¡Éxito!',
+                            message: `Contraseña compartida con ${successful} usuario(s) exitosamente.`,
+                            position: 'topRight',
+                            timeout: 3000
+                        });
+                    }
+
+                    if (alreadyShared > 0) {
+                        iziToast.info({
+                            title: 'Información',
+                            message: `${alreadyShared} usuario(s) ya tenían acceso a esta contraseña.`,
+                            position: 'topRight',
+                            timeout: 3000
+                        });
+                    }
+
+                    if (failed > alreadyShared) {
                         iziToast.error({
                             title: 'Error',
-                            message: message,
-                            position: 'topRight'
+                            message: `No se pudo compartir con ${failed - alreadyShared} usuario(s).`,
+                            position: 'topRight',
+                            timeout: 3000
                         });
+                    }
+
+                    // Limpiar selección y actualizar lista
+                    if (select2UsersInstance) {
+                        $('.select2-users').val(null).trigger('change');
+                    }
+                    loadCurrentShares(passwordId);
+
+                    // Si todo fue exitoso, cerrar modal y recargar
+                    if (failed === 0 || failed === alreadyShared) {
+                        setTimeout(() => {
+                            $('#shareModal').modal('hide');
+                            window.location.reload();
+                        }, 2000);
                     }
                 });
             });
@@ -475,11 +571,11 @@
             // Revocar acceso
             $(document).on('click', '.remove-share', function () {
                 const shareId = $(this).data('share-id');
-                const btn = $(this);
+                const userName = $(this).data('user-name');
 
                 Swal.fire({
                     title: '¿Revocar acceso?',
-                    text: 'El usuario perderá inmediatamente el acceso a esta contraseña.',
+                    html: `El usuario <strong>${userName}</strong> perderá inmediatamente el acceso a esta contraseña.`,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#d33',
@@ -527,36 +623,28 @@
                 });
             });
 
+            // Botón para actualizar la lista de compartidos
+            $('#refreshSharesList').click(function () {
+                const passwordId = $('#share_password_vault_id').val();
+                if (passwordId) {
+                    loadCurrentShares(passwordId);
+                    iziToast.info({
+                        title: 'Actualizando',
+                        message: 'Recargando lista de usuarios...',
+                        position: 'topRight',
+                        timeout: 1500
+                    });
+                }
+            });
+
             // Configurar modal de compartir
             $('.share-password-btn').click(function () {
                 const passwordId = $(this).data('id');
                 $('#share_password_vault_id').val(passwordId);
-                $('#shareForm').attr('action', `/password-vault/${passwordId}/share`);
                 loadCurrentShares(passwordId);
             });
 
-            function copyFallback(text) {
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                document.body.appendChild(textarea);
-                textarea.select();
-                try {
-                    document.execCommand('copy');
-                    iziToast.success({
-                        title: 'Copiado',
-                        message: 'Contraseña copiada al portapapeles.',
-                        position: 'topRight'
-                    });
-                } catch (err) {
-                    iziToast.error({
-                        title: 'Error',
-                        message: 'No se pudo copiar automáticamente.',
-                        position: 'topRight'
-                    });
-                }
-                document.body.removeChild(textarea);
-            }
-
+            // Función para cargar la lista de usuarios compartidos
             function loadCurrentShares(passwordId) {
                 const listContainer = $('#currentSharesList');
                 listContainer.html('<p class="text-center text-muted small"><i class="fas fa-sync fa-spin"></i> Cargando...</p>');
@@ -566,29 +654,65 @@
                     method: 'GET',
                     success: function (response) {
                         if (response.shares && response.shares.length > 0) {
-                            let html = '<ul class="list-unstyled mb-0">';
+                            let html = '<div class="list-group list-group-flush">';
                             response.shares.forEach(function (share) {
-                                const canEdit = share.can_edit ? ' <span class="badge badge-info">Puede Editar</span>' : '';
-                                html += `<li class="mb-2">
+                                const canEditBadge = share.can_edit ?
+                                    '<span class="badge badge-success ml-2"><i class="fas fa-edit"></i> Puede Editar</span>' :
+                                    '<span class="badge badge-info ml-2"><i class="fas fa-eye"></i> Solo Ver</span>';
+
+                                html += `
+                                <div class="list-group-item shared-user-card px-2 py-3">
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <span>${share.shared_with_name}${canEdit}</span>
-                                        <button type="button" class="btn btn-sm btn-danger remove-share" data-share-id="${share.id}">
+                                        <div class="d-flex align-items-center flex-grow-1">
+                                            <div class="mr-3">
+                                                <i class="fas fa-user-circle fa-2x text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <strong>${share.shared_with_name}</strong>
+                                                ${canEditBadge}
+                                                <br>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-envelope"></i> ${share.shared_with_email}
+                                                </small>
+                                            </div>
+                                        </div>
+                                        <button type="button"
+                                                class="btn btn-sm btn-danger remove-share"
+                                                data-share-id="${share.id}"
+                                                data-user-name="${share.shared_with_name}"
+                                                title="Revocar acceso">
                                             <i class="fas fa-times"></i> Revocar
                                         </button>
                                     </div>
-                                </li>`;
+                                </div>
+                            `;
                             });
-                            html += '</ul>';
+                            html += '</div>';
                             listContainer.html(html);
                         } else {
-                            listContainer.html('<p class="text-muted small mb-0">Esta contraseña no está compartida con nadie.</p>');
+                            listContainer.html(`
+                            <div class="alert alert-light text-center mb-0">
+                                <i class="fas fa-info-circle text-muted"></i>
+                                <p class="mb-0 mt-2">Esta contraseña no está compartida con nadie.</p>
+                            </div>
+                        `);
                         }
                     },
                     error: function (xhr) {
                         if (xhr.status === 403) {
-                            listContainer.html('<p class="text-danger small mb-0">No tienes permiso para ver los compartidos.</p>');
+                            listContainer.html(`
+                            <div class="alert alert-danger mb-0">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                No tienes permiso para ver los compartidos.
+                            </div>
+                        `);
                         } else {
-                            listContainer.html('<p class="text-danger small mb-0">Error al cargar compartidos.</p>');
+                            listContainer.html(`
+                            <div class="alert alert-danger mb-0">
+                                <i class="fas fa-exclamation-circle"></i>
+                                Error al cargar compartidos.
+                            </div>
+                        `);
                         }
                     }
                 });

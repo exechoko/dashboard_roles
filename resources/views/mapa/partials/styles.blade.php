@@ -872,6 +872,10 @@
         z-index: 10000 !important;
     }
 
+    .leaflet-tile {
+        border: none !important;
+    }
+
     /* ========================================
    MEDIA QUERIES RESPONSIVO
    ======================================== */

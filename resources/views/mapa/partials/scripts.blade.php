@@ -364,8 +364,8 @@ var mapaOscuro = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_
     attribution: '&copy; Stadia Maps &copy; OpenMapTiles &copy; OpenStreetMap',
     maxZoom: 20,
     tileSize: 256,
-    detectRetina: true,
-    keepBuffer: 5 // evita vacíos al hacer zoom
+    detectRetina: false,
+    crossOrigin: true
 });
 
 // MAPA HÍBRIDO (el que ya tienes)

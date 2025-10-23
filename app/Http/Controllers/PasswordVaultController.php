@@ -91,7 +91,7 @@ class PasswordVaultController extends Controller
 
         $validated = $request->validate([
             'system_name' => 'required|string|max:255',
-            'system_type' => 'required|in:web,vpn,escritorio,servidor,remoto,base_datos,email,ftp,ssh,otro',
+            'system_type' => 'required|in:web,vpn,escritorio,windows,cecoco,dss,anydesk,servidor,remoto,base_datos,email,ftp,ssh,otro',
             'url' => 'nullable|max:500',
             'username' => 'required|string|max:255',
             'password' => 'nullable|string|min:1',
@@ -174,7 +174,7 @@ class PasswordVaultController extends Controller
 
         $validated = $request->validate([
             'system_name' => 'required|string|max:255',
-            'system_type' => 'required|in:web,vpn,escritorio,servidor,remoto,base_datos,email,ftp,ssh,otro',
+            'system_type' => 'required|in:web,vpn,escritorio,windows,cecoco,dss,anydesk,servidor,remoto,base_datos,email,ftp,ssh,otro',
             'url' => 'nullable|max:500',
             'username' => 'required|string|max:255',
             'password' => 'nullable|string|min:1',

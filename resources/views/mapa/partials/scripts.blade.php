@@ -360,10 +360,9 @@ var mapaClaro = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 });
 
 // MAPA OSCURO - CartoDB Dark (NATIVO, sin filtros CSS)
-var mapaOscuro = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
-    subdomains: ['a', 'b', 'c', 'd'],
-    maxZoom: 19
+var mapaOscuro = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; Stadia Maps &copy; OpenMapTiles &copy; OpenStreetMap',
+    maxZoom: 20
 });
 
 // MAPA HÍBRIDO (el que ya tienes)

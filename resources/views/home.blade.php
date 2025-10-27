@@ -425,6 +425,48 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div class="col-md-4 col-xl-4">
+                                                <div class="card-item bg-teal order-card">
+                                                    <div class="card-block">
+                                                        <h5>BDE (Totem)</h5>
+                                                        <h2 class="text-right"><i
+                                                                class="fas fa-mobile f-left"></i><span>{{ $cant_camaras_bde }}</span>
+                                                        </h2>
+                                                        @can('ver-camara')
+                                                            <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                                                                                                                                                                                                                                                                                                                                                 data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                        @endcan
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 col-xl-4">
+                                                <div class="card-item bg-cyan order-card">
+                                                    <div class="card-block">
+                                                        <h5>Sitios activos</h5>
+                                                        <h2 class="text-right"><i
+                                                                class="fas fa-map-marker-alt f-left"></i><span>{{ $cant_sitios_activos }}</span>
+                                                        </h2>
+                                                        @can('ver-camara')
+                                                            <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                                                                                                                                                                                                                                                                                                                                                 data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                        @endcan
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 col-xl-4">
+                                                <div class="card-item bg-orange order-card">
+                                                    <div class="card-block">
+                                                        <h5>Sitios inactivos</h5>
+                                                        <h2 class="text-right"><i
+                                                                class="fas fa-times-circle f-left"></i><span>{{ $cant_sitios_inactivos }}</span>
+                                                        </h2>
+                                                        @can('ver-camara')
+                                                            <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                                                                                                                                                                                                                                                                                                                                                 data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                        @endcan
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

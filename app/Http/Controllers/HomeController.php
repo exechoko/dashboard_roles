@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Sitio;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
@@ -32,7 +33,18 @@ class HomeController extends Controller
         // Contadores básicos
         $cant_usuarios = User::count();
         $cant_roles = Role::count();
-        $cant_camaras = Camara::count();
+        //Camaras activas que no sean BDE (Totem)
+        $cant_camaras = Camara::whereHas('tipoCamara', function ($query) {
+            $query->where('tipo','!=', 'BDE (Totem)');
+        })->whereHas('sitio', fn($q) => $q->where('activo', true))->count();
+        //BDE (Totem)
+        $cant_camaras_bde = Camara::whereHas('tipoCamara', function ($query) {
+            $query->where('tipo', 'BDE (Totem)');
+        })->count();
+        //Sitios Activos
+        $cant_sitios_activos = Sitio::where('activo', true)->count();
+        //Sitios Inactivos
+        $cant_sitios_inactivos = Sitio::where('activo', false)->count();
 
         // Equipos por estado
         $cant_equipos_sin_funcionar = Equipo::where('estado_id', $estados['No funciona'])->count();
@@ -143,6 +155,9 @@ class HomeController extends Controller
             'cant_equipos_provisto_por_telecom',
             'cant_equipos_provisto_por_per',
             'cant_camaras',
+            'cant_camaras_bde',
+            'cant_sitios_activos',
+            'cant_sitios_inactivos',
             'cant_desinstalaciones',
             'cant_equipos_en_div_911',
             'cant_equipos_sin_funcionar',

@@ -1169,7 +1169,7 @@ class FlotaGeneralController extends Controller
                 //Cambiar estado al equipo e issi
                 $this->cambiarEstadoAlEquipo($request->equipo, $tipo_de_mov->id, $soloModificaHistorico);
                 if ($request->nuevoIssi) {
-                    $this->cambiarIssiAlEquipo($request, $flota, $soloModificaHistorico);
+                    $this->cambiarIssiAlEquipo($request, $flota, $soloModificaHistorico, $tipo_de_mov->id);
                 }
             }
             DB::commit();
@@ -1183,7 +1183,7 @@ class FlotaGeneralController extends Controller
         return redirect()->route('flota.index');
     }
 
-    private function cambiarIssiAlEquipo($request, $flota, $soloModificaHistorico)
+    private function cambiarIssiAlEquipo($request, $flota, $soloModificaHistorico, $tipoMovimientoID)
     {
         //dd($request->all());
         if ($soloModificaHistorico) {
@@ -1191,7 +1191,14 @@ class FlotaGeneralController extends Controller
         }
         try {
             DB::beginTransaction();
-            $e = Equipo::find($request->equipo);
+            $id_reemplazo = TipoMovimiento::where('nombre', 'Reemplazo')->value('id');
+            $id_recambio = TipoMovimiento::where('nombre', 'Recambio')->value('id');
+            if ($tipoMovimientoID == $id_reemplazo || $tipoMovimientoID == $id_recambio) {
+                $e = Equipo::find($request->equipoReemplazo);
+            } else {
+                $e = Equipo::find($request->equipo);
+            }
+
             $issi = $request->nuevoIssi;
             if ($e) {
                 $observacionExtra = '';

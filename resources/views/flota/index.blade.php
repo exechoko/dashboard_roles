@@ -1,162 +1,260 @@
 @extends('layouts.app')
 
-@push('styles')
-    <style>
-        /* Aquí puedes agregar tus estilos CSS */
-        .tooltip-text {
-            position: absolute;
-            white-space: normal;
-            background-color: #333;
-            color: #fff;
-            padding: 5px;
-            border-radius: 4px;
-            max-width: 400px;
-            display: none;
-            z-index: 10;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            left: 50%;
-            transform: translateX(-50%);
-        }
-
-        td:hover .tooltip-text {
-            display: block;
-        }
-    </style>
-@endpush
-
 @section('content')
     <section class="section">
         <div class="section-header">
             <h3 class="page__heading">Equipamientos - Administración</h3>
         </div>
-        <div class="section-body">
-            <div class="row">
-                <div class="col-lg-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <a class="btn btn-success" href="{{ route('flota.create') }}">Nuevo</a>
-                                <label class="alert alert-dark mb-0" style="float: right;">Registros:
-                                    {{ $flota->total() }}</label>
-                            </div>
 
-                            <form action="{{ route('flota.index') }}" method="get" onsubmit="return showLoad()">
-                                <div class="input-group mt-4">
-                                    <input type="text" name="texto" class="form-control"
-                                        placeholder="Ingrese el nombre del flota que desea buscar"
-                                        value="{{ $texto }}">
-                                    <div class="input-group-append">
-                                        <button type="submit" class="btn btn-info">Buscar</button>
+        <div class="section-body">
+
+            <div class="card">
+                <div class="card-body">
+
+                    <!-- ACCIONES SUPERIORES -->
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a class="btn btn-success" href="{{ route('flota.create') }}">Nuevo</a>
+                        <label class="alert alert-dark mb-0">
+                            Registros: {{ $flota->total() }}
+                        </label>
+                    </div>
+
+                    <!-- BUSCADOR -->
+                    <form action="{{ route('flota.index') }}" method="get" onsubmit="return showLoad()">
+                        <div class="input-group mt-4">
+                            <input type="text" name="texto" class="form-control"
+                                placeholder="Ingrese el nombre del flota que desea buscar" value="{{ $texto }}">
+
+                            <button type="submit" class="btn btn-info">Buscar</button>
+                        </div>
+                    </form>
+
+                    <!-- ✅✅ MOBILE → CARDS -->
+                    <div class="mobile-cards mt-4">
+
+                        @forelse ($flota as $f)
+
+                            @include('flota.modal.detalle')
+                            @include('flota.modal.borrar')
+
+                            <div class="flota-card">
+                                <div class="flota-card-header">
+                                    <div class="flota-card-tei">
+                                        <a href="{{ route('verHistorico', $f->id) }}" target="_blank">
+                                            TEI: {{ $f->equipo->tei }}
+                                        </a>
+                                    </div>
+
+                                    <img width="50" class="img-thumbnail" src="{{ asset($f->equipo->tipo_terminal->imagen) }}">
+                                </div>
+
+                                <div class="flota-card-body">
+
+                                    <div class="flota-card-item">
+                                        <span class="flota-card-label">Tipo/Modelo:</span>
+                                        <span>{{ $f->equipo->tipo_terminal->tipo_uso->uso }}/{{ $f->equipo->tipo_terminal->modelo }}</span>
+                                    </div>
+
+                                    <div class="flota-card-item">
+                                        <span class="flota-card-label">Recurso:</span>
+                                        <span>{{ $f->recurso->nombre ?? '-' }}</span>
+                                    </div>
+
+                                    <div class="flota-card-item">
+                                        <span class="flota-card-label">Dependencia:</span>
+                                        <span>{{ $f->destino->nombre }}<br><small>{{ $f->destino->dependeDe() }}</small></span>
+                                    </div>
+
+                                    <div class="flota-card-item">
+                                        <span class="flota-card-label">Fecha:</span>
+                                        <span>{{ $f->fecha_ultimo_mov ?? '-' }}</span>
                                     </div>
                                 </div>
-                            </form>
 
-                            <div class="table-responsive">
-                                <table id="dataTable" class="table table-hover mt-2 display">
-                                    <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
-                                        <th style="display: none;">ID</th>
-                                        <th style="color:#fff;">TEI</th>
-                                        <th style="color:#fff;">Tipo/Modelo</th>
-                                        <th style="color:#fff;">Fecha</th>
-                                        <th style="color:#fff;">Último mov.</th>
-                                        <th style="color:#fff;">Recurso asignado</th>
-                                        <th style="color:#fff;">Dependencia</th>
-                                        <th style="color:#fff;">Obs.</th>
-                                        <!--th style="color:#fff;">Actualmente en</th-->
-                                        <th style="color:#fff; width: 200px;"></th>
-                                    </thead>
-                                    <tbody>
-                                        @if (count($flota) <= 0)
-                                            <tr>
-                                                <td colspan="8">No se encontraron resultados</td>
-                                            </tr>
-                                        @else
-                                            @foreach ($flota as $f)
-                                                        {{-- <tr>
-                                                    <td>
-                                                        @if ($f->equipo == null)
-                                                        $f->id
-                                                        @endif
-                                                    </td>
-                                                </tr> --}}
+                                <div class="flota-card-actions">
+                                    <a class="btn btn-warning btn-sm" data-toggle="modal"
+                                        data-target="#ModalDetalle{{ $f->id }}">
+                                        <i class="far fa-eye"></i> Ver
+                                    </a>
 
-                                                        @include('flota.modal.detalle')
-                                                        @include('flota.modal.borrar')
-                                                        {{-- @include('flota.modal.editar') --}}
-                                                        <tr>
-                                                            <td style="display: none;">{{ $f->id }}</td>
-                                                            <td><a class="btn btn-dark" href="{{ route('verHistorico', $f->id) }}"
-                                                                    target="_blank">{{ $f->equipo->tei }}</a>
-                                                            </td>
-                                                            <td>
-                                                                <div class="d-flex flex-column align-items-center">
-                                                                    <img alt="" width="60px" id="myImg"
-                                                                        src="{{ asset($f->equipo->tipo_terminal->imagen) }}"
-                                                                        class="img-fluid img-thumbnail">
-                                                                    <span
-                                                                        style="font-size: 12px;">{{ $f->equipo->tipo_terminal->tipo_uso->uso . '/' . $f->equipo->tipo_terminal->modelo }}</span>
-                                                                </div>
-                                                            </td>
-                                                            <td>{{ $f->fecha_ultimo_mov ? $f->fecha_ultimo_mov : '-' }}</td>
-                                                            <td>{{ $f->ultimo_movimiento ? $f->ultimo_movimiento : '-' }}</td>
-                                                            @if (is_null($f->recurso_id))
-                                                                <td>-</td>
-                                                            @else
-                                                                @if (is_null($f->recurso))
-                                                                    <td>-</td>
-                                                                @else
-                                                                    <td>{{ $f->recurso->nombre }}</td>
-                                                                @endif
-                                                            @endif
+                                    @can('editar-flota')
+                                        <a class="btn btn-success btn-sm" href="{{ route('flota.edit', $f->id) }}">
+                                            <i class="fas fa-plus"></i> Editar
+                                        </a>
+                                    @endcan
 
-                                                            <td>{{ $f->destino->nombre }}<br>{{ $f->destino->dependeDe() }}</td>
-                                                            <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; position: relative;" title="{{ $f->observaciones }}">
-                                                                <span class="tooltip-text">{{ $f->observaciones_ultimo_mov }}</span>
-                                                            </td>
-                                                            {{-- @if (is_null($f->ultimoLugar()))
-                                                            <td>Sin movimientos</td>
-                                                        @else
-                                                            <td>{{ $f->ultimoLugar() }}</td>
-                                                        @endif --}}
-                                                            <td>
-                                                                <form action="{{ route('flota.destroy', $f->id) }}" method="POST">
-
-                                                                    {{-- <a class="btn btn-success" href="#" data-toggle="modal"
-                                                                    data-target="#ModalEditar{{ $flota->id }}">Editar</a> --}}
-
-                                                                    {{-- <a class="btn btn-success" href="{{ route('generateDocxConTabla', $f->id) }}">Acta de entrega</a> --}}
-
-                                                                    <a class="btn btn-warning" href="#" data-toggle="modal" data-target="#ModalDetalle{{ $f->id }}"><i
-                                                                            class="far fa-eye"></i></a>
-
-                                                                    @can('editar-flota')
-                                                                        <a class="btn btn-success"
-                                                                            href="{{ route('flota.edit', $f->id) }}"><i
-                                                                                class="fas fa-plus"></i></a>
-                                                                    @endcan
-
-                                                                    @can('borrar-flota')
-                                                                        <a class="btn btn-danger" href="#" data-toggle="modal"
-                                                                            data-target="#ModalDelete{{ $f->id }}"><i
-                                                                                class="far fa-trash-alt"></i></a>
-                                                                    @endcan
-                                                                </form>
-                                                            </td>
-                                                        </tr>
-                                            @endforeach
-                                        @endif
-                                    </tbody>
-                                </table>
+                                    @can('borrar-flota')
+                                        <a class="btn btn-danger btn-sm" data-toggle="modal" data-target="#ModalDelete{{ $f->id }}">
+                                            <i class="far fa-trash-alt"></i>
+                                        </a>
+                                    @endcan
+                                </div>
                             </div>
 
-                            <!-- Ubicamos la paginacion a la derecha -->
-                            <div class="pagination justify-content-end">
-                                {{ $flota->links() }}
-                            </div>
-                        </div>
+                        @empty
+                            <div class="alert alert-info">No se encontraron resultados</div>
+                        @endforelse
+
                     </div>
+
+                    <!-- ✅✅ DESKTOP → TABLA -->
+                    <div class="table-responsive desktop-table mt-4">
+
+                        <table class="table table-hover">
+                            <thead style="background:linear-gradient(45deg,#6777ef, #35199a)">
+                                <tr>
+                                    <th style="display:none;">ID</th>
+                                    <th class="text-white">TEI</th>
+                                    <th class="text-white">Tipo/Modelo</th>
+                                    <th class="text-white">Fecha</th>
+                                    <th class="text-white">Último mov.</th>
+                                    <th class="text-white">Recurso</th>
+                                    <th class="text-white">Dependencia</th>
+                                    <th class="text-white">Obs.</th>
+                                    <th class="text-white" style="width:200px;"></th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                @forelse ($flota as $f)
+
+                                    @include('flota.modal.detalle')
+                                    @include('flota.modal.borrar')
+
+                                    <tr>
+                                        <td style="display:none;">{{ $f->id }}</td>
+
+                                        <td>
+                                            <a class="btn btn-dark" href="{{ route('verHistorico', $f->id) }}" target="_blank">
+                                                {{ $f->equipo->tei }}
+                                            </a>
+                                        </td>
+
+                                        <td>
+                                            <div class="d-flex flex-column align-items-center">
+                                                <img width="60" class="img-thumbnail"
+                                                    src="{{ asset($f->equipo->tipo_terminal->imagen) }}">
+                                                <small>
+                                                    {{ $f->equipo->tipo_terminal->tipo_uso->uso }}/{{ $f->equipo->tipo_terminal->modelo }}
+                                                </small>
+                                            </div>
+                                        </td>
+
+                                        <td>{{ $f->fecha_ultimo_mov ?? '-' }}</td>
+                                        <td>{{ $f->ultimo_movimiento ?? '-' }}</td>
+                                        <td>{{ $f->recurso->nombre ?? '-' }}</td>
+                                        <td>{{ $f->destino->nombre }}<br><small>{{ $f->destino->dependeDe() }}</small></td>
+
+                                        <td class="obs-cell">
+                                            <span class="obs-text" data-tooltip="{{ $f->observaciones_ultimo_mov }}">
+                                                {{ Str::limit($f->observaciones_ultimo_mov, 40, '...') }}
+                                            </span>
+                                        </td>
+
+
+                                        <td>
+                                            <a class="btn btn-warning" data-toggle="modal"
+                                                data-target="#ModalDetalle{{ $f->id }}">
+                                                <i class="far fa-eye"></i>
+                                            </a>
+
+                                            @can('editar-flota')
+                                                <a class="btn btn-success" href="{{ route('flota.edit', $f->id) }}">
+                                                    <i class="fas fa-plus"></i>
+                                                </a>
+                                            @endcan
+
+                                            @can('borrar-flota')
+                                                <a class="btn btn-danger" data-toggle="modal"
+                                                    data-target="#ModalDelete{{ $f->id }}">
+                                                    <i class="far fa-trash-alt"></i>
+                                                </a>
+                                            @endcan
+                                        </td>
+                                    </tr>
+
+                                @empty
+                                    <tr>
+                                        <td colspan="9">No se encontraron resultados</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+
+                    </div>
+
+                    <!-- PAGINACIÓN -->
+                    <div class="pagination justify-content-end">
+                        {{ $flota->links() }}
+                    </div>
+
                 </div>
             </div>
+
         </div>
+
     </section>
 @endsection
+
+@push('scripts')
+    <style>
+        .obs-cell {
+            position: relative;
+        }
+
+        .obs-text {
+            cursor: pointer;
+        }
+
+        /* ✅ Tooltip SOLO si se toca el texto */
+        .obs-text:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translate(-50%, -8px);
+            background: rgba(30, 30, 30, 0.95);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            max-width: 350px;
+            white-space: normal;
+            z-index: 2000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            font-size: 13px;
+        }
+
+        /* flechita */
+        .obs-text:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translate(-50%, 4px);
+            border-width: 6px;
+            border-style: solid;
+            border-color: rgba(30, 30, 30, 0.95) transparent transparent transparent;
+            z-index: 2001;
+        }
+
+        /* ✅ MOBILE */
+        .mobile-cards {
+            display: block !important;
+        }
+
+        .desktop-table {
+            display: none !important;
+        }
+
+        /* ✅ DESKTOP */
+        @media (min-width: 768px) {
+            .mobile-cards {
+                display: none !important;
+            }
+
+            .desktop-table {
+                display: block !important;
+            }
+        }
+    </style>
+@endpush

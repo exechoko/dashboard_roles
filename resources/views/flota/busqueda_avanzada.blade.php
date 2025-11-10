@@ -1,86 +1,5 @@
 @extends('layouts.app')
 
-@push('styles')
-        <!-- Flatpickr CSS -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-        <!-- Select2 CSS -->
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-theme/0.1.0-beta.10/select2-bootstrap.min.css">
-        <style>
-            /* Todos tus estilos CSS existentes aquí */
-            .tooltip-text {
-                position: absolute;
-                white-space: normal;
-                background-color: #333;
-                color: #fff;
-                padding: 5px;
-                border-radius: 4px;
-                max-width: 400px;
-                display: none;
-                z-index: 10;
-                box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-                left: 50%;
-                transform: translateX(-50%);
-            }
-
-            td:hover .tooltip-text {
-                display: block;
-            }
-
-            .filter-label {
-                font-weight: 600;
-                margin-bottom: 5px;
-                color: #444;
-            }
-
-            .card-header-bg {
-                background: linear-gradient(45deg, #6777ef, #35199a);
-                color: white;
-            }
-
-            .btn-purple {
-                background: linear-gradient(45deg, #6777ef, #35199a);
-                color: white;
-                border: none;
-            }
-
-            .btn-purple:hover {
-                background: linear-gradient(45deg, #5a6bd8, #2d1580);
-                color: white;
-            }
-
-            .table-header-bg {
-                background: linear-gradient(45deg,#6777ef, #35199a);
-                color: white;
-            }
-
-            .section-header h3 {
-                font-weight: 700;
-                color: #35199a;
-            }
-
-            .action-buttons .btn {
-                padding: 0.3rem 0.6rem;
-                margin: 0 2px;
-            }
-
-            .no-search-message {
-                background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-                border: 2px dashed #6777ef;
-                border-radius: 15px;
-                padding: 2rem;
-                text-align: center;
-                margin: 2rem 0;
-            }
-
-            .search-icon {
-                font-size: 3rem;
-                color: #6777ef;
-                margin-bottom: 1rem;
-            }
-        </style>
-@endpush
-
 @section('content')
     <section class="section">
         <div class="section-header">
@@ -95,18 +14,18 @@
                         </div>
                         <div class="card-body">
                             @if($hayBusqueda)
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <label class="alert alert-dark mb-0">
-                                        <i class="fas fa-list"></i> Registros encontrados: {{ $totalRegistros }}
+                                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+                                    <label class="alert alert-dark mb-2 mb-md-0">
+                                        <i class="fas fa-list"></i> Registros: {{ $totalRegistros }}
                                     </label>
                                     <a href="{{ route('flota.busquedaAvanzada') }}" class="btn btn-outline-secondary">
-                                        <i class="fas fa-sync-alt"></i> Limpiar Filtros
+                                        <i class="fas fa-sync-alt"></i> Limpiar
                                     </a>
                                 </div>
                             @else
                                 <div class="alert alert-info mb-3">
                                     <i class="fas fa-info-circle"></i>
-                                    Configure los filtros de búsqueda y presione "Buscar" para ver los resultados.
+                                    Configure los filtros y presione "Buscar" para ver resultados.
                                 </div>
                             @endif
 
@@ -118,7 +37,7 @@
                                                 <span class="input-group-text"><i class="fas fa-search"></i></span>
                                             </div>
                                             <input type="text" name="texto" class="form-control"
-                                                placeholder="Buscar por texto en todos los campos" value="{{ $texto }}">
+                                                placeholder="Buscar por texto" value="{{ $texto }}">
                                         </div>
                                     </div>
                                 </div>
@@ -210,7 +129,7 @@
                                 <div class="row mt-2">
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="filter-label" for="fecha_rango">Rango de fechas de movimientos</label>
+                                            <label class="filter-label" for="fecha_rango">Rango de fechas</label>
                                             <div class="input-group">
                                                 <div class="input-group-prepend">
                                                     <div class="input-group-text">
@@ -218,7 +137,7 @@
                                                     </div>
                                                 </div>
                                                 <input name="fecha_rango" type="text" class="form-control daterange-cus"
-                                                    placeholder="Fecha de asignación" value="{{ $fecha_rango }}">
+                                                    placeholder="Seleccione rango" value="{{ $fecha_rango }}">
                                             </div>
                                         </div>
                                     </div>
@@ -252,10 +171,107 @@
                     @if(!$hayBusqueda)
                         <!-- Mensaje cuando no hay búsqueda -->
                     @else
-                        <!-- Tabla de resultados -->
+                        <!-- Resultados -->
                         <div class="card mt-4">
                             <div class="card-body">
-                                <div class="table-responsive">
+
+                                {{-- INCLUSIÓN DE MODALES --}}
+                                @forelse ($flota as $f)
+                                    @include('flota.modal.detalle')
+                                    @include('flota.modal.borrar')
+                                @empty
+                                @endforelse
+
+                                <!-- ✅✅ MOBILE → CARDS -->
+                                <div class="mobile-cards">
+                                    @forelse ($flota as $f)
+                                        <div class="flota-card">
+                                            <div class="flota-card-header">
+                                                <div class="flota-card-tei">
+                                                    <a href="{{ route('verHistorico', $f->id) }}" target="_blank">
+                                                        TEI: {{ $f->equipo->tei }}
+                                                    </a>
+                                                </div>
+                                                <img width="50" class="img-thumbnail"
+                                                    src="{{ asset($f->equipo->tipo_terminal->imagen) }}">
+                                            </div>
+
+                                            <div class="flota-card-body">
+                                                <div class="flota-card-item">
+                                                    <span class="flota-card-label">Tipo/Modelo:</span>
+                                                    <span class="flota-card-value">
+                                                        {{ $f->equipo->tipo_terminal->tipo_uso->uso }}/{{ $f->equipo->tipo_terminal->modelo }}
+                                                    </span>
+                                                </div>
+
+                                                <div class="flota-card-item">
+                                                    <span class="flota-card-label">Fecha:</span>
+                                                    <span class="flota-card-value">{{ $f->fecha_ultimo_mov ?? '-' }}</span>
+                                                </div>
+
+                                                <div class="flota-card-item">
+                                                    <span class="flota-card-label">Último mov.:</span>
+                                                    <span class="flota-card-value">{{ $f->ultimo_movimiento ?? '-' }}</span>
+                                                </div>
+
+                                                <div class="flota-card-item">
+                                                    <span class="flota-card-label">Recurso:</span>
+                                                    <span class="flota-card-value">{{ $f->recurso->nombre ?? '-' }}</span>
+                                                </div>
+
+                                                <div class="flota-card-item">
+                                                    <span class="flota-card-label">Dependencia:</span>
+                                                    <span class="flota-card-value">
+                                                        @php
+                                                            $destino = $f->destino instanceof \Illuminate\Database\Eloquent\Collection
+                                                                ? $f->destino->first()
+                                                                : $f->destino;
+                                                        @endphp
+                                                        {{ $destino->nombre ?? '-' }}<br>
+                                                        <small>{{ $destino->dependeDe() ?? '-' }}</small>
+                                                    </span>
+                                                </div>
+
+                                                <div class="flota-card-item">
+                                                    <span class="flota-card-label">Observaciones:</span>
+                                                    <span class="flota-card-value">
+                                                        {{ Str::limit($f->observaciones_ultimo_mov, 50, '...') }}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div class="flota-card-actions">
+                                                <a class="btn btn-warning btn-sm" data-toggle="modal"
+                                                    data-target="#ModalDetalle{{ $f->id }}">
+                                                    <i class="far fa-eye"></i> Ver
+                                                </a>
+
+                                                @can('editar-flota')
+                                                    <a class="btn btn-success btn-sm" href="{{ route('flota.edit', $f->id) }}">
+                                                        <i class="fas fa-plus"></i> Editar
+                                                    </a>
+                                                @endcan
+
+                                                @can('borrar-flota')
+                                                    <a class="btn btn-danger btn-sm" data-toggle="modal"
+                                                        data-target="#ModalDelete{{ $f->id }}">
+                                                        <i class="far fa-trash-alt"></i>
+                                                    </a>
+                                                @endcan
+                                            </div>
+                                        </div>
+
+                                    @empty
+                                        <div class="alert alert-info text-center">
+                                            <i class="fas fa-exclamation-circle fa-2x mb-3" style="color: #6777ef;"></i>
+                                            <h5>No se encontraron resultados</h5>
+                                            <p class="text-muted">Intenta ajustar tus filtros de búsqueda</p>
+                                        </div>
+                                    @endforelse
+                                </div>
+
+                                <!-- ✅✅ DESKTOP → TABLA -->
+                                <div class="desktop-table table-responsive">
                                     <table id="dataTable" class="table table-hover mt-2 display">
                                         <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                             <th style="display: none;">ID</th>
@@ -305,9 +321,10 @@
                                                             {{ $destino->nombre ?? '-' }}<br>
                                                             {{ $destino->dependeDe() ?? '-' }}
                                                         </td>
-                                                        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; position: relative;"
-                                                            title="{{ $f->observaciones }}">
-                                                            <span class="tooltip-text">{{ $f->observaciones_ultimo_mov }}</span>
+                                                        <td class="obs-cell">
+                                                            <span class="obs-text" data-tooltip="{{ $f->observaciones_ultimo_mov }}">
+                                                                {{ Str::limit($f->observaciones_ultimo_mov, 40, '...') }}
+                                                            </span>
                                                         </td>
                                                         <td class="action-buttons">
                                                             <div class="d-flex justify-content-center">
@@ -346,14 +363,6 @@
             </div>
         </div>
     </section>
-
-    <!-- Incluir modales solo si hay resultados -->
-    @if($hayBusqueda && count($flota) > 0)
-        @foreach ($flota as $f)
-            @include('flota.modal.detalle')
-            @include('flota.modal.borrar')
-        @endforeach
-    @endif
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
@@ -433,3 +442,143 @@
         });
     </script>
 @endsection
+
+@push('scripts')
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <!-- Select2 CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2-bootstrap-theme/0.1.0-beta.10/select2-bootstrap.min.css">
+    <style>
+        .filter-label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #444;
+        }
+
+        .card-header-bg {
+            background: linear-gradient(45deg, #6777ef, #35199a);
+            color: white;
+        }
+
+        .btn-purple {
+            background: linear-gradient(45deg, #6777ef, #35199a);
+            color: white;
+            border: none;
+        }
+
+        .btn-purple:hover {
+            background: linear-gradient(45deg, #5a6bd8, #2d1580);
+            color: white;
+        }
+
+        .table-header-bg {
+            background: linear-gradient(45deg,#6777ef, #35199a);
+            color: white;
+        }
+
+        .section-header h3 {
+            font-weight: 700;
+            color: #35199a;
+        }
+
+        .action-buttons .btn {
+            padding: 0.3rem 0.6rem;
+            margin: 0 2px;
+        }
+
+        .no-search-message {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border: 2px dashed #6777ef;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .search-icon {
+            font-size: 3rem;
+            color: #6777ef;
+            margin-bottom: 1rem;
+        }
+
+        /* ============================================
+           RESPONSIVE: Mobile Cards vs Desktop Table
+           ============================================ */
+
+        /* ✅ MOBILE */
+        .mobile-cards {
+            display: block !important;
+        }
+
+        .desktop-table {
+            display: none !important;
+        }
+
+        /* ✅ DESKTOP */
+        @media (min-width: 768px) {
+            .mobile-cards {
+                display: none !important;
+            }
+
+            .desktop-table {
+                display: block !important;
+            }
+        }
+
+        /* ============================================
+           MEJORAS RESPONSIVE PARA FORMULARIO
+           ============================================ */
+
+        @media (max-width: 767px) {
+            .section-header h3 {
+                font-size: 18px;
+            }
+
+            .card-body {
+                padding: 15px;
+            }
+
+            .alert {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+
+            .btn-lg {
+                padding: 10px 20px;
+                font-size: 16px;
+            }
+
+            .form-group {
+                margin-bottom: 15px;
+            }
+
+            .filter-label {
+                font-size: 14px;
+            }
+
+            .form-control, .select2-container {
+                font-size: 14px;
+            }
+
+            /* Ajustar espaciado en móvil */
+            .row.mt-3, .row.mt-2, .row.mt-4 {
+                margin-top: 10px !important;
+            }
+
+            /* Botón de búsqueda full width en móvil */
+            .text-right {
+                text-align: center !important;
+            }
+
+            .btn-success.btn-lg {
+                width: 100%;
+            }
+
+            /* Ajustar el input group */
+            .input-group-text {
+                font-size: 14px;
+            }
+        }
+    </style>
+@endpush

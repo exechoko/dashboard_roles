@@ -3,6 +3,7 @@
         background-color: var(--card-bg) !important;
         color: var(--text-primary) !important;
         margin-bottom: 0 !important;
+        min-width: 800px; /* Ancho mínimo para forzar scroll si es necesario */
     }
 
     .table thead th {
@@ -140,7 +141,8 @@
 
     .table-responsive {
         border-radius: 6px !important;
-        overflow: hidden !important;
+        overflow-x: auto !important; /* Asegurar scroll horizontal */
+        -webkit-overflow-scrolling: touch !important; /* Scroll suave en móviles */
         background-color: var(--card-bg) !important;
     }
 

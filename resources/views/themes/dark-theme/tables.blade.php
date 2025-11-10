@@ -3,6 +3,7 @@
         background-color: var(--card-bg) !important;
         color: var(--text-primary) !important;
         margin-bottom: 0 !important;
+        min-width: 800px; /* Ancho mínimo para forzar scroll si es necesario */
     }
 
     [data-theme="dark"] .table thead th {
@@ -153,6 +154,8 @@
 
     [data-theme="dark"] .table-responsive {
         background-color: var(--card-bg) !important;
+        overflow-x: auto !important; /* Asegurar scroll horizontal */
+        -webkit-overflow-scrolling: touch !important; /* Scroll suave en móviles */
     }
 
     [data-theme="dark"] .timeline {

@@ -225,8 +225,7 @@
                         <input type="file"
                             name="imagen${imageCount}"
                             class="form-control"
-                            accept="image/*"
-                            capture="environment">
+                            accept="image/*;capture=camera">
                         <button type="button" class="btn btn-sm btn-danger mt-2 remove-image">
                             <i class="fas fa-trash"></i> Eliminar
                         </button>

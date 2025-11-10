@@ -185,7 +185,8 @@
                                     <div class="col-xs-12 col-sm-12 col-md-12 mt-3">
                                         <div class="form-floating">
                                             <label for="observaciones">Observaciones</label>
-                                            <textarea class="form-control" name="observaciones" style="height: 100px"></textarea>
+                                            <textarea class="form-control" name="observaciones"
+                                                style="height: 100px"></textarea>
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">
@@ -200,7 +201,7 @@
         </div>
     </section>
     <script type="text/javascript">
-        $(document).ready(function() {
+        $(document).ready(function () {
             $('.select2').select2({
                 width: '100%'
             });
@@ -213,7 +214,7 @@
             });
             let imageCount = 0;
 
-            document.getElementById('addImage').addEventListener('click', function() {
+            document.getElementById('addImage').addEventListener('click', function () {
                 imageCount++;
                 const newImageDiv = document.createElement('div');
                 newImageDiv.classList.add('col-xs-12', 'col-sm-12', 'col-md-4');
@@ -221,13 +222,25 @@
                 newImageDiv.innerHTML = `
                     <div class="form-group">
                         <label for="imagen${imageCount}">Imagen ${imageCount}</label>
-                        <input type="file" name="imagen${imageCount}" class="form-control" accept="image/*">
+                        <input type="file"
+                            name="imagen${imageCount}"
+                            class="form-control"
+                            accept="image/*"
+                            capture="environment">
+                        <button type="button" class="btn btn-sm btn-danger mt-2 remove-image">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
                     </div>
                 `;
 
                 document.getElementById('imageContainer').appendChild(newImageDiv);
+
+                // Agregar evento para eliminar la imagen
+                newImageDiv.querySelector('.remove-image').addEventListener('click', function () {
+                    newImageDiv.remove();
+                });
             });
-            $('#dependencia').on('change', function() {
+            $('#dependencia').on('change', function () {
                 var dependenciaId = this.value;
                 $('#recurso').html('');
                 $.ajax({
@@ -236,14 +249,14 @@
                     },
                     url: '{{ route('getRecursosJSON') }}?destino_id=' + dependenciaId,
                     type: 'get',
-                    success: function(res) {
+                    success: function (res) {
                         $('#recurso').html('<option value="">Seleccionar Recurso</option>');
-                        $.each(res, function(key, value) {
+                        $.each(res, function (key, value) {
                             // Verificar si el recurso tiene un vehículo asociado
                             if (value.vehiculo) {
                                 var label = value.nombre + ' - ' + value.vehiculo
                                     .marca + ' ' + value.vehiculo.modelo + ': ' + value
-                                    .vehiculo.dominio;
+                                        .vehiculo.dominio;
                                 $('#recurso').append('<option value="' + value.id +
                                     '">' + label + '</option>');
                             } else {
@@ -286,7 +299,7 @@
                 }
             }
 
-            tipoMovimientoSelect.on("change", function() {
+            tipoMovimientoSelect.on("change", function () {
                 var selectedTipoMovimiento = $(this).val();
                 console.log("Tipo de movimiento seleccionado:", selectedTipoMovimiento);
                 toggleDependenciaRecursoFields(selectedTipoMovimiento);

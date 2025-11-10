@@ -572,7 +572,7 @@
                             <div class="col-md-6">
                                 <label for="imagen${imageCount}">Imagen ${imageCount}</label>
                                 <input type="file" name="imagen${imageCount}" class="form-control image-input"
-                                    accept="image/jpeg,image/png,image/jpg,image/gif"
+                                    accept="image/*;capture=camera"
                                     onchange="previewImage(this, ${imageCount})">
                                 <small class="text-muted">JPG, PNG, GIF (máx. 2MB)</small>
                             </div>

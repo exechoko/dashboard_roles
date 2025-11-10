@@ -1,13 +1,11 @@
 {{-- resources/views/entregas/entregas-bodycams/index.blade.php --}}
-
 @extends('layouts.app')
 
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h1>Entregas de Bodycams<br>
-                <small>Listado de entregas de cámaras corporales para diferentes acontecimientos/eventos</small>
-            </h1>
+            <h1 class="section-title">Entregas de Bodycams</h1>
+            <p class="section-subtitle">Listado de entregas de cámaras corporales para diferentes acontecimientos/eventos</p>
         </div>
 
         <div class="section-body">
@@ -31,63 +29,73 @@
 
             <div class="row">
                 <div class="col-12">
-                    <div class="card">
+                    <div class="card card-mobile-optimized">
                         <div class="card-header">
-                            <h4>Listado de Entregas</h4>
-                            @can('crear-entrega-bodycams')
-                                <div class="card-header-action">
-                                    <a href="{{ route('entrega-bodycams.create') }}" class="btn btn-primary">
-                                        <i class="fas fa-plus"></i> Nueva Entrega
+                            <div class="d-flex justify-content-between align-items-center flex-column flex-md-row">
+                                <h4 class="card-title mb-2 mb-md-0">Listado de Entregas</h4>
+                                @can('crear-entrega-bodycams')
+                                    <a href="{{ route('entrega-bodycams.create') }}" class="btn btn-primary btn-lg-mobile">
+                                        <i class="fas fa-plus"></i> <span class="d-none d-md-inline">Nueva Entrega</span>
                                     </a>
-                                </div>
-                            @endcan
+                                @endcan
+                            </div>
                         </div>
                         <div class="card-body">
-                            {{-- Formulario de búsqueda --}}
-                            <form method="GET" action="{{ route('entrega-bodycams.index') }}" class="mb-4">
-                                <div class="row">
-                                    <div class="col-md-2">
-                                        <input type="text" name="numero_acta" class="form-control"
-                                               placeholder="Número de Acta" value="{{ request('numero_acta') }}">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <input type="text" name="codigo" class="form-control"
-                                               placeholder="Código" value="{{ request('codigo') }}">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <input type="text" name="numero_serie" class="form-control"
-                                               placeholder="N° Serie" value="{{ request('numero_serie') }}">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <input type="date" name="fecha" class="form-control"
-                                               value="{{ request('fecha') }}">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <input type="text" name="dependencia" class="form-control"
-                                               placeholder="Dependencia" value="{{ request('dependencia') }}">
-                                    </div>
-                                    <div class="col-md-2">
-                                        <button type="submit" class="btn btn-info btn-block">
-                                            <i class="fas fa-search"></i> Buscar
-                                        </button>
-                                        <a href="{{ route('entrega-bodycams.index') }}" class="btn btn-secondary btn-block mt-1">
-                                            <i class="fas fa-times"></i> Limpiar
-                                        </a>
-                                    </div>
-                                </div>
-                            </form>
+                            {{-- Formulario de búsqueda optimizado para mobile --}}
+                            <div class="search-container mb-4">
+                                <button class="btn btn-outline-info btn-block d-md-none mb-2" type="button" data-toggle="collapse" data-target="#searchForm">
+                                    <i class="fas fa-search"></i> Mostrar/Ocultar Búsqueda
+                                </button>
 
-                            <div class="form-group form-check mb-3">
-                                <input type="checkbox" class="form-check-input" id="toggleDevueltas" checked>
+                                <div class="collapse d-md-block" id="searchForm">
+                                    <form method="GET" action="{{ route('entrega-bodycams.index') }}">
+                                        <div class="row g-2">
+                                            <div class="col-12 col-md-6 col-lg-2">
+                                                <input type="text" name="numero_acta" class="form-control form-control-mobile"
+                                                       placeholder="Número de Acta" value="{{ request('numero_acta') }}">
+                                            </div>
+                                            <div class="col-12 col-md-6 col-lg-2">
+                                                <input type="text" name="codigo" class="form-control form-control-mobile"
+                                                       placeholder="Código" value="{{ request('codigo') }}">
+                                            </div>
+                                            <div class="col-12 col-md-6 col-lg-2">
+                                                <input type="text" name="numero_serie" class="form-control form-control-mobile"
+                                                       placeholder="N° Serie" value="{{ request('numero_serie') }}">
+                                            </div>
+                                            <div class="col-12 col-md-6 col-lg-2">
+                                                <input type="date" name="fecha" class="form-control form-control-mobile"
+                                                       value="{{ request('fecha') }}">
+                                            </div>
+                                            <div class="col-12 col-md-6 col-lg-2">
+                                                <input type="text" name="dependencia" class="form-control form-control-mobile"
+                                                       placeholder="Dependencia" value="{{ request('dependencia') }}">
+                                            </div>
+                                            <div class="col-12 col-md-6 col-lg-2">
+                                                <div class="d-grid gap-2 d-md-block">
+                                                    <button type="submit" class="btn btn-info btn-block btn-mobile">
+                                                        <i class="fas fa-search"></i> <span class="d-none d-md-inline">Buscar</span>
+                                                    </button>
+                                                    <a href="{{ route('entrega-bodycams.index') }}" class="btn btn-secondary btn-block btn-mobile mt-1">
+                                                        <i class="fas fa-times"></i> <span class="d-none d-md-inline">Limpiar</span>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="toggleDevueltas" checked>
                                 <label class="form-check-label" for="toggleDevueltas">
                                     Mostrar entregas devueltas
                                 </label>
                             </div>
 
-                            {{-- Tabla de entregas --}}
+                            {{-- Tabla optimizada para mobile --}}
                             <div class="table-responsive">
-                                <table class="table table-striped">
-                                    <thead>
+                                <table class="table table-striped mobile-table">
+                                    <thead class="d-none d-md-table-header-group">
                                         <tr>
                                             <th>N° Acta</th>
                                             <th>Fecha</th>
@@ -102,18 +110,22 @@
                                     </thead>
                                     <tbody>
                                         @forelse($entregas as $entrega)
-                                            <tr class="{{ $entrega->estado === 'devuelta' ? 'fila-devuelta' : '' }}">
-                                                <td>{{ $entrega->id }}</td>
-                                                <td>{{ $entrega->fecha_entrega->format('d/m/Y') }} {{ $entrega->hora_entrega }}</td>
-                                                <td>{{ $entrega->dependencia }}</td>
-                                                <td>{{ $entrega->personal_receptor }}</td>
-                                                <td>{{ $entrega->personal_entrega }}</td>
-                                                <td>
+                                            <tr class="{{ $entrega->estado === 'devuelta' ? 'fila-devuelta' : '' }} mobile-table-row">
+                                                <td data-label="N° Acta" class="fw-bold">{{ $entrega->id }}</td>
+                                                <td data-label="Fecha">{{ $entrega->fecha_entrega->format('d/m/Y') }}<br>
+                                                    <small class="text-muted">{{ $entrega->hora_entrega }}</small>
+                                                </td>
+                                                <td data-label="Dependencia" class="text-truncate" style="max-width: 150px;" title="{{ $entrega->dependencia }}">
+                                                    {{ $entrega->dependencia }}
+                                                </td>
+                                                <td data-label="Personal Receptor" class="d-none d-md-table-cell">{{ $entrega->personal_receptor }}</td>
+                                                <td data-label="Entregó" class="d-none d-md-table-cell">{{ $entrega->personal_entrega }}</td>
+                                                <td data-label="Cant. Bodycams">
                                                     <span class="badge badge-info">
                                                         {{ $entrega->bodycams->count() }} bodycams
                                                     </span>
                                                 </td>
-                                                <td>
+                                                <td data-label="Estado">
                                                     @switch($entrega->estado)
                                                         @case('entregada')
                                                             <span class="badge badge-warning">Entregada</span>
@@ -136,11 +148,11 @@
                                                         <br><small class="text-muted">{{ $entrega->devoluciones->count() }} devolución(es)</small>
                                                     @endif
                                                 </td>
-                                                <td>
+                                                <td data-label="Archivo">
                                                     @if($entrega->ruta_archivo)
                                                         <div class="dropdown">
-                                                            <button class="btn btn-warning btn-sm dropdown-toggle" type="button" id="dropdownMenuButton{{$entrega->id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                                👁 Archivo
+                                                            <button class="btn btn-warning btn-sm dropdown-toggle btn-mobile-action" type="button" id="dropdownMenuButton{{$entrega->id}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                                <i class="fas fa-file"></i>
                                                             </button>
                                                             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton{{$entrega->id}}">
                                                                 <a class="dropdown-item" href="{{ route('entrega-bodycams.descargar', $entrega->id) }}">
@@ -158,24 +170,24 @@
                                                         <span class="text-muted">No generado</span>
                                                     @endif
                                                 </td>
-                                                <td>
-                                                    <div class="d-flex">
+                                                <td data-label="Acciones">
+                                                    <div class="action-buttons">
                                                         @can('ver-entrega-bodycams')
-                                                            <a href="{{ route('entrega-bodycams.show', $entrega->id) }}" class="btn btn-warning btn-sm mr-1">
+                                                            <a href="{{ route('entrega-bodycams.show', $entrega->id) }}" class="btn btn-warning btn-sm btn-mobile-action" title="Ver">
                                                                 <i class="fas fa-eye"></i>
                                                             </a>
                                                         @endcan
 
                                                         @can('editar-entrega-bodycams')
                                                             @if(in_array($entrega->estado, ['entregada', 'devolucion_parcial']))
-                                                                <a href="{{ route('entrega-bodycams.edit', $entrega->id) }}" class="btn btn-info btn-sm mr-1">
+                                                                <a href="{{ route('entrega-bodycams.edit', $entrega->id) }}" class="btn btn-info btn-sm btn-mobile-action" title="Editar">
                                                                     <i class="fas fa-edit"></i>
                                                                 </a>
                                                             @endif
                                                         @endcan
 
                                                         <a href="{{ route('entrega-bodycams.documento', $entrega->id) }}"
-                                                           class="btn btn-secondary btn-sm mr-1" target="_blank">
+                                                           class="btn btn-secondary btn-sm btn-mobile-action" target="_blank" title="Documento Word">
                                                             <i class="fas fa-file-word"></i>
                                                         </a>
 
@@ -184,7 +196,7 @@
                                                                 $bodycamsPendientes = $entrega->bodycamsPendientes()->count();
                                                             @endphp
                                                             @if($bodycamsPendientes > 0)
-                                                                <a href="{{ route('entrega-bodycams.devolver', $entrega->id) }}" class="btn btn-success btn-sm mr-1" title="Devolver bodycams ({{ $bodycamsPendientes }} pendientes)">
+                                                                <a href="{{ route('entrega-bodycams.devolver', $entrega->id) }}" class="btn btn-success btn-sm btn-mobile-action" title="Devolver bodycams ({{ $bodycamsPendientes }} pendientes)">
                                                                     <i class="fas fa-undo"></i>
                                                                     @if($bodycamsPendientes < $entrega->bodycams->count())
                                                                         <span class="badge badge-light" style="font-size: 10px;">{{ $bodycamsPendientes }}</span>
@@ -195,11 +207,11 @@
 
                                                         @can('borrar-entrega-bodycams')
                                                             <form action="{{ route('entrega-bodycams.destroy', $entrega->id) }}"
-                                                                  method="POST" style="display: inline;">
+                                                                  method="POST" class="d-inline">
                                                                 @csrf
                                                                 @method('DELETE')
-                                                                <button type="submit" class="btn btn-danger btn-sm"
-                                                                        onclick="return confirm('¿Está seguro de eliminar esta entrega?')">
+                                                                <button type="submit" class="btn btn-danger btn-sm btn-mobile-action"
+                                                                        onclick="return confirm('¿Está seguro de eliminar esta entrega?')" title="Eliminar">
                                                                     <i class="fas fa-trash"></i>
                                                                 </button>
                                                             </form>
@@ -209,7 +221,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="9" class="text-center">No se encontraron entregas</td>
+                                                <td colspan="9" class="text-center py-4">No se encontraron entregas</td>
                                             </tr>
                                         @endforelse
                                     </tbody>
@@ -217,7 +229,7 @@
                             </div>
 
                             {{-- Paginación --}}
-                            <div class="d-flex justify-content-center">
+                            <div class="d-flex justify-content-center mt-4">
                                 {{ $entregas->appends(request()->query())->links() }}
                             </div>
                         </div>
@@ -227,6 +239,123 @@
         </div>
     </section>
 @endsection
+
+@push('styles')
+<style>
+    /* Estilos optimizados para mobile */
+    .card-mobile-optimized {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .btn-mobile {
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+
+    .btn-lg-mobile {
+        padding: 12px 20px;
+        font-size: 16px;
+    }
+
+    .btn-mobile-action {
+        min-width: 40px;
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 2px;
+    }
+
+    .form-control-mobile {
+        height: 45px;
+        font-size: 16px; /* Previene zoom en iOS */
+    }
+
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        justify-content: center;
+    }
+
+    /* Estilos para tabla responsive en móviles */
+    @media (max-width: 767.98px) {
+        .mobile-table {
+            border: 0;
+        }
+
+        .mobile-table thead {
+            display: none;
+        }
+
+        .mobile-table-row {
+            display: block;
+            margin-bottom: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+        }
+
+        .mobile-table-row td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .mobile-table-row td:last-child {
+            border-bottom: none;
+        }
+
+        .mobile-table-row td::before {
+            content: attr(data-label);
+            font-weight: bold;
+            margin-right: 1rem;
+            flex: 0 0 40%;
+        }
+
+        .mobile-table-row td:last-child::before {
+            display: none;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+        }
+
+        .section-subtitle {
+            font-size: 0.9rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+        }
+
+        .search-container .collapse:not(.show) {
+            display: none;
+        }
+    }
+
+    /* Mejoras para tablets */
+    @media (min-width: 768px) and (max-width: 1024px) {
+        .btn-mobile-action {
+            min-width: 35px;
+            height: 35px;
+            font-size: 0.8rem;
+        }
+
+        .table td, .table th {
+            padding: 0.5rem;
+        }
+    }
+
+    /* Estilo para filas devueltas */
+    .fila-devuelta {
+        background-color: rgba(40, 167, 69, 0.1);
+    }
+</style>
+@endpush
 
 @push('scripts')
 <script>
@@ -241,6 +370,18 @@
             $('.fila-devuelta').show();
         } else {
             $('.fila-devuelta').hide();
+        }
+    });
+
+    // Auto expand search form on page load if there are search parameters
+    $(document).ready(function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasSearchParams = Array.from(urlParams.keys()).some(key =>
+            key !== 'page' && urlParams.get(key) !== ''
+        );
+
+        if (hasSearchParams && window.innerWidth < 768) {
+            $('#searchForm').collapse('show');
         }
     });
 

@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const file = event.target.files[0];
             if (file) {
                 previsualizarImagen(file, modalId);
-                //event.target.value = ''; // Limpiar el input
+                event.target.value = ''; // Limpiar el input
             }
         });
     }
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const file = event.target.files[0];
             if (file) {
                 previsualizarImagen(file, modalId);
-                //event.target.value = ''; // Limpiar el input
+                event.target.value = ''; // Limpiar el input
             }
         });
     }

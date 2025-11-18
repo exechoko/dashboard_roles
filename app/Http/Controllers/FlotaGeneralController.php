@@ -1004,8 +1004,8 @@ class FlotaGeneralController extends Controller
                     case $id_devolucion:
                         //Probar porque estaba comentado y no modificaba la flota
                         if (!$soloModificaHistorico) {
-                            $flota->recurso_id = $recurso_stock->id; //asigna al stock
-                            $flota->destino_id = $recurso_stock->destino->id;
+                            //$flota->recurso_id = $recurso_stock->id; //asigna al stock
+                            //$flota->destino_id = $recurso_stock->destino->id;
                         }
                         //------------------------------------------------
                         $historico->recurso_id = $recurso_stock->id; //asigna al stock

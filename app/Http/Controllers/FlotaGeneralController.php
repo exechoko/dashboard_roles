@@ -658,7 +658,7 @@ class FlotaGeneralController extends Controller
             $request->validate([
                 'observaciones' => 'required',
                 'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048',
-                'nuevas_imagenes.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+                //'nuevas_imagenes.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:20240'
             ]);
 
             $historico = Historico::find($id);

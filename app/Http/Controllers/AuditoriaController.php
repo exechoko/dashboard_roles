@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Auditoria;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class AuditoriaController extends Controller
@@ -14,82 +15,63 @@ class AuditoriaController extends Controller
 
     public function index(Request $request)
     {
-        $texto = trim($request->get('texto')); //trim quita espacios vacios
-        $auditorias = Auditoria::where('accion', 'LIKE', '%' . $texto . '%')
-            ->orWhere('nombre_tabla', 'LIKE', '%' . $texto . '%')
-            /*->orWhereHas('user_id', function ($query) use ($texto) {
-                $query->where('tipo', 'LIKE', '%' . $texto . '%');
-            })*/
-            ->orderBy('id', 'desc')
-            ->paginate(20);
+        $texto = trim($request->get('texto'));
+        $tabla = $request->get('tabla');
+        $usuario = $request->get('usuario');
+        $fecha_desde = $request->get('fecha_desde');
+        $fecha_hasta = $request->get('fecha_hasta');
 
-        //$camaras = Equipo::paginate(5);
-        return view('auditoria.index', compact('auditorias', 'texto'));
-    }
+        // Query base
+        $query = Auditoria::query();
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
+        // Filtro por texto general
+        if ($texto) {
+            $query->where(function ($q) use ($texto) {
+                $q->where('accion', 'LIKE', '%' . $texto . '%')
+                    ->orWhere('cambios', 'LIKE', '%' . $texto . '%');
+            });
+        }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
-    }
+        // Filtro por tabla
+        if ($tabla) {
+            $query->where('nombre_tabla', $tabla);
+        }
 
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
-    }
+        // Filtro por usuario
+        if ($usuario) {
+            $query->where('user_id', $usuario);
+        }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
-    {
-        //
-    }
+        // Filtro por rango de fechas
+        if ($fecha_desde) {
+            $query->whereDate('created_at', '>=', $fecha_desde);
+        }
+        if ($fecha_hasta) {
+            $query->whereDate('created_at', '<=', $fecha_hasta);
+        }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
+        // Obtener resultados paginados
+        $auditorias = $query->orderBy('id', 'desc')->paginate(20);
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        //
+        // Obtener listas para los filtros
+        $tablas = Auditoria::select('nombre_tabla')
+            ->distinct()
+            ->orderBy('nombre_tabla')
+            ->pluck('nombre_tabla');
+
+        $usuarios = User::select('id', 'name', 'apellido')
+            ->orderBy('apellido')
+            ->get();
+
+        return view('auditoria.index', compact(
+            'auditorias',
+            'texto',
+            'tabla',
+            'usuario',
+            'fecha_desde',
+            'fecha_hasta',
+            'tablas',
+            'usuarios'
+        ));
     }
 }

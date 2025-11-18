@@ -9,19 +9,73 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
-                        <div class="">
-                            <div class="">
-                                <label class="alert alert-dark mb-0" style="float: right;">Registros:
-                                    {{ $auditorias->total() }}</label>
+                        <div class="card-header">
+                            <h4>Filtros de búsqueda</h4>
+                            <div class="card-header-action">
+                                <label class="badge badge-dark">Registros: {{ $auditorias->total() }}</label>
                             </div>
                         </div>
+
                         <div class="card-body">
                             <form action="{{ route('auditoria.index') }}" method="get" onsubmit="return showLoad()">
-                                <div class="input-group mt-4">
-                                    <input type="text" name="texto" class="form-control" placeholder="Buscar"
-                                        value="{{ $texto }}">
-                                    <div class="input-group-append">
-                                        <button type="submit" class="btn btn-info">Buscar</button>
+                                <div class="row">
+                                    <!-- Búsqueda general -->
+                                    <div class="col-md-6 mb-3">
+                                        <label>Búsqueda general</label>
+                                        <input type="text" name="texto" class="form-control"
+                                               placeholder="Buscar en acción o cambios..."
+                                               value="{{ $texto }}">
+                                    </div>
+
+                                    <!-- Filtro por tabla -->
+                                    <div class="col-md-6 mb-3">
+                                        <label>Tabla modificada</label>
+                                        <select name="tabla" class="form-control">
+                                            <option value="">Todas las tablas</option>
+                                            @foreach($tablas as $t)
+                                                <option value="{{ $t }}" {{ $tabla == $t ? 'selected' : '' }}>
+                                                    {{ $t }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <!-- Filtro por usuario -->
+                                    <div class="col-md-4 mb-3">
+                                        <label>Usuario</label>
+                                        <select name="usuario" class="form-control">
+                                            <option value="">Todos los usuarios</option>
+                                            @foreach($usuarios as $u)
+                                                <option value="{{ $u->id }}" {{ $usuario == $u->id ? 'selected' : '' }}>
+                                                    {{ $u->apellido }} {{ $u->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <!-- Fecha desde -->
+                                    <div class="col-md-4 mb-3">
+                                        <label>Fecha desde</label>
+                                        <input type="date" name="fecha_desde" class="form-control"
+                                               value="{{ $fecha_desde }}">
+                                    </div>
+
+                                    <!-- Fecha hasta -->
+                                    <div class="col-md-4 mb-3">
+                                        <label>Fecha hasta</label>
+                                        <input type="date" name="fecha_hasta" class="form-control"
+                                               value="{{ $fecha_hasta }}">
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-search"></i> Buscar
+                                        </button>
+                                        <a href="{{ route('auditoria.index') }}" class="btn btn-secondary">
+                                            <i class="fas fa-times"></i> Limpiar filtros
+                                        </a>
                                     </div>
                                 </div>
                             </form>
@@ -29,77 +83,115 @@
 
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table id="dataTable" class="table table-hover mt-2">
+                                <table id="dataTable" class="table table-striped table-hover">
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
-                                        <th style="color:#fff; width: 5%;">Registro</th>
-                                        <th style="color:#fff; width: 10%;">Fecha</th>
-                                        <th style="color:#fff; width: 5%;">Usuario</th>
-                                        <th style="color:#fff;">Item modificado</th>
-                                        <th style="color:#fff;">Tabla modificada</th>
-                                        <th style="color:#fff;">Acción</th>
-                                        <th style="color:#fff;">Cambios</th>
+                                        <tr>
+                                            <th style="color:#fff; width: 5%;">ID</th>
+                                            <th style="color:#fff; width: 12%;">Fecha</th>
+                                            <th style="color:#fff; width: 15%;">Usuario</th>
+                                            <th style="color:#fff; width: 15%;">Tabla</th>
+                                            <th style="color:#fff; width: 15%;">Item</th>
+                                            <th style="color:#fff; width: 10%;">Acción</th>
+                                            <th style="color:#fff; width: 28%;">Cambios</th>
+                                        </tr>
                                     </thead>
                                     <tbody>
-                                        @if (count($auditorias) <= 0)
+                                        @forelse ($auditorias as $auditoria)
                                             <tr>
-                                                <td colspan="8">No se encontraron resultados</td>
-                                            </tr>
-                                        @else
-                                            @foreach ($auditorias as $auditoria)
-                                                <tr>
-                                                    <td>{{ $auditoria->id }}</td>
-                                                    <td>{{ $auditoria->created_at }}</td>
-                                                    <td>{{ $auditoria->user->apellido . ' ' . $auditoria->user->name }}</td>
+                                                <td><span class="badge badge-light">{{ $auditoria->id }}</span></td>
+                                                <td>
+                                                    <small>{{ $auditoria->created_at->format('d/m/Y') }}</small><br>
+                                                    <small class="text-muted">{{ $auditoria->created_at->format('H:i:s') }}</small>
+                                                </td>
+                                                <td>
+                                                    <strong>{{ $auditoria->user->apellido }}</strong><br>
+                                                    <small class="text-muted">{{ $auditoria->user->name }}</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge badge-info">{{ $auditoria->nombre_tabla }}</span>
+                                                </td>
+                                                <td>
                                                     @switch($auditoria->nombre_tabla)
                                                         @case('user')
                                                             @if (!is_null($auditoria->usuarioModificado))
-                                                                <td>{{ $auditoria->usuarioModificado->name }}</td>
+                                                                {{ $auditoria->usuarioModificado->name }}
                                                             @else
-                                                                <td>-</td>
+                                                                <span class="text-muted">-</span>
                                                             @endif
                                                         @break
 
                                                         @case('flota_general')
                                                             @if (!is_null($auditoria->flotaModificada))
-                                                                <td>{{ $auditoria->flotaModificada->equipo->tei }}</td>
+                                                                {{ $auditoria->flotaModificada->equipo->tei }}
                                                             @else
-                                                                <td>-</td>
+                                                                <span class="text-muted">-</span>
                                                             @endif
                                                         @break
 
                                                         @case('historico')
                                                             @if (!is_null($auditoria->historicoModificado))
-                                                                <td>{{ $auditoria->historicoModificado->equipo->tei }}</td>
+                                                                {{ $auditoria->historicoModificado->equipo->tei }}
                                                             @else
-                                                                <td>-</td>
+                                                                <span class="text-muted">-</span>
                                                             @endif
                                                         @break
 
                                                         @case('recursos')
                                                             @if (!is_null($auditoria->recursoModificado))
-                                                                <td>{{ $auditoria->recursoModificado->nombre }}</td>
+                                                                {{ $auditoria->recursoModificado->nombre }}
                                                             @else
-                                                                <td>-</td>
+                                                                <span class="text-muted">-</span>
                                                             @endif
                                                         @break
 
                                                         @default
-                                                            <td>NN</td>
+                                                            <span class="text-muted">N/A</span>
                                                     @endswitch
-
-                                                    <td>{{ $auditoria->nombre_tabla }}</td>
-                                                    <td>{{ $auditoria->accion }}</td>
-                                                    <td>{{ $auditoria->cambios }}</td>
-                                                </tr>
-                                            @endforeach
-                                        @endif
+                                                </td>
+                                                <td>
+                                                    @switch($auditoria->accion)
+                                                        @case('create')
+                                                            <span class="badge badge-success">Crear</span>
+                                                            @break
+                                                        @case('update')
+                                                            <span class="badge badge-warning">Editar</span>
+                                                            @break
+                                                        @case('delete')
+                                                            <span class="badge badge-danger">Eliminar</span>
+                                                            @break
+                                                        @default
+                                                            <span class="badge badge-secondary">{{ $auditoria->accion }}</span>
+                                                    @endswitch
+                                                </td>
+                                                <td>
+                                                    <small style="word-break: break-word;">
+                                                        {{ Str::limit($auditoria->cambios, 100) }}
+                                                    </small>
+                                                </td>
+                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="7" class="text-center text-muted">
+                                                    <i class="fas fa-inbox fa-3x mb-3"></i><br>
+                                                    No se encontraron registros con los filtros aplicados
+                                                </td>
+                                            </tr>
+                                        @endforelse
                                     </tbody>
                                 </table>
                             </div>
 
-                            <!-- Ubicamos la paginacion a la derecha -->
-                            <div class="pagination justify-content-end">
-                                {!! $auditorias->links() !!}
+                            <!-- Paginación -->
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div>
+                                    <small class="text-muted">
+                                        Mostrando {{ $auditorias->firstItem() ?? 0 }} a {{ $auditorias->lastItem() ?? 0 }}
+                                        de {{ $auditorias->total() }} registros
+                                    </small>
+                                </div>
+                                <div>
+                                    {!! $auditorias->appends(request()->query())->links() !!}
+                                </div>
                             </div>
                         </div>
                     </div>

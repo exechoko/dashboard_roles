@@ -22,13 +22,13 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="imagen1">Imagen 1</label>
-                                    <input type="file" id="imagen1-{{ $h->id }}" class="form-control" accept="image/*">
+                                    <input type="file" id="imagen1-{{ $h->id }}" class="form-control" accept="image/*;capture=camera">
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="imagen2">Imagen 2</label>
-                                    <input type="file" id="imagen2-{{ $h->id }}" class="form-control" accept="image/*">
+                                    <input type="file" id="imagen2-{{ $h->id }}" class="form-control" accept="image/*;capture=camera">
                                 </div>
                             </div>
                         </div>

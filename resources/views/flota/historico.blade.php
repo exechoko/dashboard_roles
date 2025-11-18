@@ -15,7 +15,6 @@
         margin: none;
     }
 
-    /* Estilo para el contenedor del botón */
     .header-container {
         display: flex;
         justify-content: space-between;
@@ -25,7 +24,6 @@
 
     .print-btn-container {
         margin-left: auto;
-        /* Empuja el botón a la derecha */
     }
 </style>
 @stop
@@ -57,12 +55,12 @@
                                         <li>
                                             <h3>TEI: <b>{{ $flota->tei }}</b>
                                                 @if (!is_null($flota->issi))
-                                                            - ISSI: <b>{{ $flota->issi }}</b>
-                                                    </li>
+                                                    - ISSI: <b>{{ $flota->issi }}</b>
                                                 @else
-                                                    - ISSI: <b>Sin asignar</b></h3>
-                                                    </li>
+                                                    - ISSI: <b>Sin asignar</b>
                                                 @endif
+                                            </h3>
+                                        </li>
                                         <li>
                                             <h4>Marca: <b>{{ $flota->tipo_terminal->marca }}</b> - Modelo:
                                                 <b>{{ $flota->tipo_terminal->modelo }}</b>
@@ -79,12 +77,12 @@
                                         <li>
                                             <h3>TEI: <b>{{ $flota->equipo->tei }}</b>
                                                 @if (!is_null($flota->equipo->issi))
-                                                            - ISSI: <b>{{ $flota->equipo->issi }}</b>
-                                                    </li>
+                                                    - ISSI: <b>{{ $flota->equipo->issi }}</b>
                                                 @else
-                                                    - ISSI: <b>Sin asignar</b></h3>
-                                                    </li>
+                                                    - ISSI: <b>Sin asignar</b>
                                                 @endif
+                                            </h3>
+                                        </li>
                                         <li>
                                             <h4>Marca: <b>{{ $flota->equipo->tipo_terminal->marca }}</b> - Modelo:
                                                 <b>{{ $flota->equipo->tipo_terminal->modelo }}</b>
@@ -117,9 +115,6 @@
                                     </thead>
                                     <tbody>
                                         @foreach ($hist as $h)
-                                            @include('flota.modal.editar_historico', ['h' => $h])
-                                        @endforeach
-                                        @foreach ($hist as $h)
                                             <tr>
                                                 <td style="display: none;">{{ $h->id }}</td>
                                                 @if (is_null($h->tipoMovimiento))
@@ -131,13 +126,11 @@
                                                         </span>
                                                     </td>
                                                 @endif
-                                                <td>{{ Carbon\Carbon::parse($h->fecha_asignacion)->format('d/m/Y H:i') }}
-                                                </td>
+                                                <td>{{ Carbon\Carbon::parse($h->fecha_asignacion)->format('d/m/Y H:i') }}</td>
                                                 @if (is_null($h->recurso_asignado))
                                                     <td>-</td>
                                                 @else
-                                                    <td>{{ $h->recurso_asignado . ($h->vehiculo_asignado ? ' - Dom.: ' . $h->vehiculo_asignado : '') }}
-                                                    </td>
+                                                    <td>{{ $h->recurso_asignado . ($h->vehiculo_asignado ? ' - Dom.: ' . $h->vehiculo_asignado : '') }}</td>
                                                 @endif
                                                 <td>
                                                     @if ($h->destino)
@@ -146,12 +139,10 @@
                                                         -
                                                     @endif
                                                 </td>
-
                                                 @if (is_null($h->recurso_desasignado))
                                                     <td>-</td>
                                                 @else
-                                                    <td>{{ $h->recurso_desasignado . ($h->vehiculo_desasignado ? ' - Dom.: ' . $h->vehiculo_desasignado : '') }}
-                                                    </td>
+                                                    <td>{{ $h->recurso_desasignado . ($h->vehiculo_desasignado ? ' - Dom.: ' . $h->vehiculo_desasignado : '') }}</td>
                                                 @endif
                                                 <td>{{ $h->ticket_per }}</td>
                                                 <td>{{ $h->observaciones }}</td>
@@ -198,10 +189,8 @@
                                                 @if ($desdeEquipo == false)
                                                     @can('editar-historico')
                                                         <td>
-                                                            <form action="#" method="POST">
-                                                                <a class="btn btn-info" href="#" data-toggle="modal"
-                                                                    data-target="#ModalEditar{{ $h->id }}">Editar</a>
-                                                            </form>
+                                                            <a class="btn btn-info" href="#" data-toggle="modal"
+                                                                data-target="#ModalEditar{{ $h->id }}">Editar</a>
                                                         </td>
                                                     @endcan
                                                 @endif
@@ -220,4 +209,130 @@
             </div>
         </div>
     </section>
+
+    <!-- Incluir todos los modales -->
+    @foreach ($hist as $h)
+        @include('flota.modal.editar_historico', ['h' => $h])
+    @endforeach
 @endsection
+
+@push('scripts')
+    <script>
+        // Variables globales - SOLO UNA VEZ
+        window.nuevasImagenes = {};
+        window.imagenesActualesMap = {};
+
+        // Función para inicializar el array de nuevas imágenes
+        function initializeNuevasImagenes(id) {
+            console.log('Inicializando imágenes para:', id);
+            if (!window.nuevasImagenes[id]) {
+                window.nuevasImagenes[id] = [];
+            }
+        }
+
+        // Función para previsualizar la imagen
+        function previsualizarImagen(file, id) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const imgElement = document.createElement('div');
+                imgElement.style.position = 'relative';
+                imgElement.style.marginRight = '10px';
+                imgElement.style.marginBottom = '10px';
+
+                // Usar nombre único para identificar la imagen
+                const uniqueId = 'img_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+                imgElement.innerHTML = `
+                <img src="${e.target.result}" alt="Imagen nueva" style="width: 100px; height: auto;">
+                <button type="button" class="btn btn-danger btn-sm" style="position: absolute; top: 0; right: 0;"
+                    onclick="eliminarNuevaImagen('${uniqueId}', '${id}')">X</button>
+            `;
+
+                imgElement.setAttribute('data-nueva', uniqueId);
+
+                // Almacenar referencia al archivo
+                window.nuevasImagenes[id].push({
+                    uniqueId: uniqueId,
+                    file: file
+                });
+
+                document.getElementById(`imagenes-actuales-${id}`).appendChild(imgElement);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Eliminar nueva imagen de memoria
+        function eliminarNuevaImagen(uniqueId, id) {
+            if (window.nuevasImagenes[id]) {
+                window.nuevasImagenes[id] = window.nuevasImagenes[id].filter(img => img.uniqueId !== uniqueId);
+            }
+            const imgElement = document.querySelector(`[data-nueva="${uniqueId}"]`);
+            if (imgElement) {
+                imgElement.remove();
+            }
+        }
+
+        // Función para eliminar una imagen existente de memoria
+        function eliminarImagen(ruta, id) {
+            if (confirm('¿Estás seguro de que deseas eliminar esta imagen?')) {
+                if (window.imagenesActualesMap[id]) {
+                    window.imagenesActualesMap[id] = window.imagenesActualesMap[id].filter(img => img !== ruta);
+                }
+                const element = document.querySelector(`[data-ruta="${ruta}"]`);
+                if (element) {
+                    element.remove();
+                }
+            }
+        }
+
+        // Función para enviar el formulario
+        function guardar(id) {
+            console.log('Guardando histórico:', id);
+            console.log('nuevasImagenes:', window.nuevasImagenes[id]);
+            console.log('imagenesActuales:', window.imagenesActualesMap[id]);
+
+            let form = document.getElementById(`form-historico-${id}`);
+            let formData = new FormData(form);
+
+            // Agregar nuevas imágenes
+            if (window.nuevasImagenes[id] && window.nuevasImagenes[id].length > 0) {
+                window.nuevasImagenes[id].forEach((imagenObj) => {
+                    formData.append('nuevas_imagenes[]', imagenObj.file);
+                });
+            }
+
+            // Agregar rutas de imágenes existentes
+            if (window.imagenesActualesMap[id]) {
+                formData.append('imagenes_actuales', JSON.stringify(window.imagenesActualesMap[id]));
+            }
+
+            // Enviar el formulario usando jQuery
+            $.ajax({
+                url: form.action,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function (response) {
+                    alert('Registro actualizado exitosamente.');
+                    location.reload();
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error:', error);
+                    alert('Error al actualizar el registro: ' + (xhr.responseText || error));
+                }
+            });
+        }
+
+        // Inicializar modales cuando se abran
+        $(document).ready(function () {
+            $('.modal').on('show.bs.modal', function () {
+                const modalId = $(this).attr('id').replace('ModalEditar', '');
+                console.log('Modal abierto:', modalId);
+            });
+        });
+    </script>
+@endpush

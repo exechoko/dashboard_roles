@@ -228,13 +228,39 @@
     </li>
 @endcan
 
-@can('ver-menu-auditoria')
-    <li class="{{ request()->is('auditoria*') ? 'active' : '' }}">
-        <a class="nav-link" href="/auditoria">
-            <i class=" fas fa-search"></i><span>Auditoría</span>
+@can('ver-menu-transcripcion')
+    <li class="dropdown {{ request()->is('transcribir*') ? 'active' : '' }} {{ request()->is('transcription*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-microphone-alt"></i><span>Transcripción</span>
         </a>
+        <ul class="dropdown-menu">
+            @can('ver-menu-transcripcion')
+                <li class="{{ request()->is('transcribir*') ? 'active' : '' }}">
+                    <a class="nav-link" href="/transcribir">
+                        <i class="fas fa-microphone-alt"></i><span>Transcribir audio</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-menu-transcripcion-aws')
+                <li class="{{ request()->is('transcription*') ? 'active' : '' }}">
+                    <a class="nav-link" href="/transcription">
+                        <i class="fab fa-aws"></i><span>Transcribir audio AWS</span>
+                    </a>
+                </li>
+            @endcan
+        </ul>
     </li>
 @endcan
+
+@can('ver-menu-gestor-claves')
+<li class="{{ request()->is('password-vault*') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('password-vault.index') }}">
+        <i class="fas fa-lock"></i>
+        <span>Gestor de Contraseñas</span>
+    </a>
+</li>
+@endcan
+
 @can('ver-menu-documentacion')
     <li class="{{ request()->is('manual_usuario*') ? 'active' : '' }}">
         <a class="nav-link"
@@ -244,26 +270,13 @@
         </a>
     </li>
 @endcan
-@can('ver-menu-transcripcion')
-    <li class="{{ request()->is('transcribir*') ? 'active' : '' }}">
-        <a class="nav-link" href="/transcribir">
-            <i class="fas fa-microphone-alt"></i><span>Transcribir audio</span>
+
+@can('ver-menu-auditoria')
+    <li class="{{ request()->is('auditoria*') ? 'active' : '' }}">
+        <a class="nav-link" href="/auditoria">
+            <i class=" fas fa-search"></i><span>Auditoría</span>
         </a>
     </li>
 @endcan
-@can('ver-menu-transcripcion-aws')
-    <li class="{{ request()->is('transcription*') ? 'active' : '' }}">
-        <a class="nav-link" href="/transcription">
-            <i class="fas fa-microphone-alt"></i><span>Transcribir audio AWS</span>
-        </a>
-    </li>
-@endcan
-@can('ver-menu-gestor-claves')
-<li class="{{ request()->is('password-vault*') ? 'active' : '' }}">
-    <a class="nav-link" href="{{ route('password-vault.index') }}">
-        <i class="fas fa-lock"></i>
-        <span>Gestor de Contraseñas</span>
-    </a>
-</li>
-@endcan
+
 <!--Documentacion en GetStisla-->

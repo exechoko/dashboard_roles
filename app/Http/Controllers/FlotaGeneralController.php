@@ -657,7 +657,7 @@ class FlotaGeneralController extends Controller
 
             $request->validate([
                 'observaciones' => 'required',
-                'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048',
+                'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:20240',
                 //'nuevas_imagenes.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:20240'
             ]);
 

@@ -738,7 +738,7 @@ class FlotaGeneralController extends Controller
             'imagen8' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'imagen9' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'imagen10' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048',
+            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:20240',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);
@@ -854,7 +854,7 @@ class FlotaGeneralController extends Controller
             'imagen8' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'imagen9' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'imagen10' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048',
+            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:20240',
         ], [
             'required' => 'El campo :attribute es necesario completar.'
         ]);

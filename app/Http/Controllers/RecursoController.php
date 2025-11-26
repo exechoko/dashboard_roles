@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Recurso;
+use Cache;
 use Illuminate\Http\Request;
 use App\Models\Destino;
 use App\Models\Vehiculo;
@@ -19,24 +20,36 @@ class RecursoController extends Controller
 
     public function index(Request $request)
     {
-        $texto = trim($request->get('texto')); //trim quita espacios vacios
-        $dependencia_seleccionada = $request->get('dependencia_id'); // Obtener el ID de la dependencia seleccionada
+        $texto = trim($request->get('texto'));
+        $dependencia_seleccionada = $request->get('dependencia_id');
 
-        $query = Recurso::query();
+        $recursos = Recurso::query()
+            // ✅ Eager Loading - Evita N+1
+            ->with(['vehiculo:id,dominio,marca,modelo', 'destino:id,nombre'])
+            // ✅ Select específico - Solo las columnas necesarias
+            ->select('id', 'nombre', 'vehiculo_id', 'destino_id')
+            // Filtro de búsqueda
+            ->when($texto, function ($query) use ($texto) {
+                $query->where(function ($q) use ($texto) {
+                    $q->where('nombre', 'LIKE', "%{$texto}%")
+                        ->orWhereHas('vehiculo', function ($subQuery) use ($texto) {
+                            $subQuery->where('dominio', 'LIKE', "%{$texto}%")
+                                ->orWhere('marca', 'LIKE', "%{$texto}%")
+                                ->orWhere('modelo', 'LIKE', "%{$texto}%");
+                        });
+                });
+            })
+            // Filtro de dependencia
+            ->when($dependencia_seleccionada, function ($query) use ($dependencia_seleccionada) {
+                $query->where('destino_id', $dependencia_seleccionada);
+            })
+            ->orderBy('nombre', 'asc')
+            ->paginate(100);
 
-        // Filtrar por nombre de recurso si se proporciona un texto
-        if (!empty($texto)) {
-            $query->where('nombre', 'LIKE', '%'.$texto.'%');
-        }
-
-        // Filtrar por dependencia si se selecciona una
-        if (!empty($dependencia_seleccionada)) {
-            $query->where('destino_id', $dependencia_seleccionada);
-        }
-
-        $recursos = $query->orderBy('nombre','asc')->paginate(100);
-
-        $dependencias = Destino::all(); // Obtener todas las dependencias para el dropdown
+        // ✅ Caché para dependencias (datos que no cambian frecuentemente)
+        $dependencias = Cache::remember('dependencias_all', 3600, function () {
+            return Destino::select('id', 'nombre')->orderBy('nombre')->get();
+        });
 
         return view('recursos.index', compact('recursos', 'texto', 'dependencias', 'dependencia_seleccionada'));
     }

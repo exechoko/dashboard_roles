@@ -11,11 +11,12 @@ use Illuminate\Support\Facades\DB;
 
 class RecursoController extends Controller
 {
-    function __construct(){
+    function __construct()
+    {
         $this->middleware('permission:ver-recurso|crear-recurso|editar-recurso|borrar-recurso')->only('index');
-        $this->middleware('permission:crear-recurso', ['only'=>['create', 'store']]);
-        $this->middleware('permission:editar-recurso', ['only'=>['edit', 'update']]);
-        $this->middleware('permission:borrar-recurso', ['only'=>['destroy']]);
+        $this->middleware('permission:crear-recurso', ['only' => ['create', 'store']]);
+        $this->middleware('permission:editar-recurso', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:borrar-recurso', ['only' => ['destroy']]);
     }
 
     public function index(Request $request)
@@ -26,10 +27,9 @@ class RecursoController extends Controller
         // Uso del helper optimize()
         $recursos = optimize(Recurso::class)
             ->with('vehiculo:id,dominio,marca,modelo', 'destino:id,nombre')
-            ->only('id', 'nombre', 'vehiculo_id', 'destino_id')
             ->when($texto, function ($query) use ($texto) {
-                $builder = $query->getQuery();
-                $builder->where(function ($q) use ($texto) {
+                // NO usar getQuery() - trabajar directamente con $query
+                $query->where(function ($q) use ($texto) {
                     $q->where('nombre', 'LIKE', "%{$texto}%")
                         ->orWhereHas('vehiculo', function ($subQuery) use ($texto) {
                             $subQuery->where('dominio', 'LIKE', "%{$texto}%")
@@ -46,7 +46,6 @@ class RecursoController extends Controller
 
         // Dependencias con caché
         $dependencias = optimize(Destino::class)
-            ->only('id', 'nombre')
             ->orderBy('nombre', 'asc')
             ->cached('dependencias_all', 60)
             ->get();
@@ -75,11 +74,11 @@ class RecursoController extends Controller
 
         //Para no guardar el mismo equipo 2 veces
         $r = Recurso::where('nombre', $request->nombre)->first();
-        if (!is_null($r)){
+        if (!is_null($r)) {
             return back()->with('error', 'Ya se encuentra un recurso con el mismo nombre');//->withInput();
         }
 
-        try{
+        try {
             DB::beginTransaction();
             $recurso = new Recurso();
             $recurso->vehiculo_id = $request->vehiculo;
@@ -89,12 +88,12 @@ class RecursoController extends Controller
             $recurso->observaciones = $request->observaciones;
             $recurso->save();
             DB::commit();
-        } catch (\Exception $e){
+        } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
                 'result' => 'ERROR',
                 'message' => $e->getMessage()
-              ]);
+            ]);
         }
         return redirect()->route('recursos.index');
     }
@@ -126,7 +125,7 @@ class RecursoController extends Controller
         //dd($request->all());
 
         $recurso = Recurso::find($id);
-        try{
+        try {
             DB::beginTransaction();
             $recurso->vehiculo_id = $request->vehiculo;
             $recurso->destino_id = $request->dependencia;
@@ -135,12 +134,12 @@ class RecursoController extends Controller
             $recurso->observaciones = $request->observaciones;
             $recurso->save();
             DB::commit();
-        } catch (\Exception $e){
+        } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
                 'result' => 'ERROR',
                 'message' => $e->getMessage()
-              ]);
+            ]);
         }
 
         return redirect()->route('recursos.index');

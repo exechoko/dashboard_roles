@@ -23,14 +23,13 @@ class RecursoController extends Controller
         $texto = trim($request->get('texto'));
         $dependencia_seleccionada = $request->get('dependencia_id');
 
-        $recursos = Recurso::query()
-            // ✅ Eager Loading - Evita N+1
-            ->with(['vehiculo:id,dominio,marca,modelo', 'destino:id,nombre'])
-            // ✅ Select específico - Solo las columnas necesarias
-            ->select('id', 'nombre', 'vehiculo_id', 'destino_id')
-            // Filtro de búsqueda
+        // Uso del helper optimize()
+        $recursos = optimize(Recurso::class)
+            ->with('vehiculo:id,dominio,marca,modelo', 'destino:id,nombre')
+            ->only('id', 'nombre', 'vehiculo_id', 'destino_id')
             ->when($texto, function ($query) use ($texto) {
-                $query->where(function ($q) use ($texto) {
+                $builder = $query->getQuery();
+                $builder->where(function ($q) use ($texto) {
                     $q->where('nombre', 'LIKE', "%{$texto}%")
                         ->orWhereHas('vehiculo', function ($subQuery) use ($texto) {
                             $subQuery->where('dominio', 'LIKE', "%{$texto}%")
@@ -39,17 +38,18 @@ class RecursoController extends Controller
                         });
                 });
             })
-            // Filtro de dependencia
             ->when($dependencia_seleccionada, function ($query) use ($dependencia_seleccionada) {
                 $query->where('destino_id', $dependencia_seleccionada);
             })
             ->orderBy('nombre', 'asc')
             ->paginate(100);
 
-        // ✅ Caché para dependencias (datos que no cambian frecuentemente)
-        $dependencias = Cache::remember('dependencias_all', 3600, function () {
-            return Destino::select('id', 'nombre')->orderBy('nombre')->get();
-        });
+        // Dependencias con caché
+        $dependencias = optimize(Destino::class)
+            ->only('id', 'nombre')
+            ->orderBy('nombre', 'asc')
+            ->cached('dependencias_all', 60)
+            ->get();
 
         return view('recursos.index', compact('recursos', 'texto', 'dependencias', 'dependencia_seleccionada'));
     }

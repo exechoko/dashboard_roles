@@ -161,6 +161,20 @@
                                             <input type="text" name="nuevoIssi" class="form-control" value="">
                                         </div>
                                     </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-6" id="estadoEquipo">
+                                        <div class="form-group">
+                                            <label for="recurso">Estado final del equipo</label>
+                                            <select name="estado_final" id="estado_final" class="form-control select2"
+                                                style="margin-bottom: 15px; width: 100%;">
+                                                <option value="">Seleccionar estado del equipo</option>
+                                                @foreach ($estados as $estado)
+                                                    <option value="{{ $estado->id }}">
+                                                        {{ $estado->nombre }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
                                     <div class="container col-xs-12 col-sm-12 col-md-12">
                                         <div class="row">
                                             <div class="col-xs-12 col-sm-12 col-md-6">
@@ -272,12 +286,19 @@
             var recursoSelect = $("#recursoDestino");
             var equipoReemplazoSelect = $("#equipoReemplazo");
             var tipoMovimientoSelect = $("#tipoMovimiento");
+            var estadoEquipoSelect = $("#estadoEquipo");
 
             console.log("tipo_movimiento", dependenciaSelect);
 
             function toggleDependenciaRecursoFields(selectedTipoMovimiento) {
                 // Convertir el JSON en un objeto JavaScript
                 var tipoMovimiento = JSON.parse(selectedTipoMovimiento);
+
+                if (tipoMovimiento.nombre === "Devolución" || tipoMovimiento.nombre === "Devolución a dependencia") {
+                    estadoEquipoSelect.show();
+                } else {
+                    estadoEquipoSelect.hide();
+                }
 
                 if (tipoMovimiento.nombre === "Reemplazo" || tipoMovimiento.nombre === "Recambio") {
                     console.log("entro al if reemplazo", "SI");

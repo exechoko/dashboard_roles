@@ -830,11 +830,12 @@ class FlotaGeneralController extends Controller
         $flotas_stock = FlotaGeneral::with('equipo')->where('recurso_id', $recurso_stock->id)->get();
         $dependencias = Destino::all();
         $recursos = Recurso::all();
+        $estados = Estado::all();
         $tipos_movimiento = TipoMovimiento::all();
         $hist = Historico::where('equipo_id', $flota->equipo_id)->orderBy('created_at', 'desc')->first();
         //dd($flotas_stock);
 
-        return view('flota.editar', compact('flota', 'equipos', 'dependencias', 'recursos', 'tipos_movimiento', 'hist', 'flotas_stock'));
+        return view('flota.editar', compact('flota', 'equipos', 'dependencias', 'recursos', 'tipos_movimiento', 'hist', 'flotas_stock', 'estados'));
     }
 
     public function update(Request $request, $id)
@@ -899,6 +900,12 @@ class FlotaGeneralController extends Controller
         $id_extraviado = TipoMovimiento::where('nombre', 'Extraviado')->value('id');
         $id_recuperado = TipoMovimiento::where('nombre', 'Recuperado')->value('id');
         $id_reprogramacion = TipoMovimiento::where('nombre', 'Reprogramación')->value('id');
+
+        $estadoFinal = null;
+        if (isset($request->estado_final)) {
+            $estadoFinal = Estado::find($request->estado_final);
+        }
+        //dd($estadoFinal);
 
         //Validar que permita mov patrimoniales solo en recursos que acepten muchos equipos
         if ($tipo_de_mov->id == $id_mov_patrimonial || $tipo_de_mov->id == $id_inst_completa) {
@@ -1166,7 +1173,7 @@ class FlotaGeneralController extends Controller
                 $historico->save();
                 $flota->save();
                 //Cambiar estado al equipo e issi
-                $this->cambiarEstadoAlEquipo($request->equipo, $tipo_de_mov->id, $soloModificaHistorico);
+                $this->cambiarEstadoAlEquipo($request->equipo, $tipo_de_mov->id, $soloModificaHistorico, $estadoFinal);
                 if ($request->nuevoIssi) {
                     $this->cambiarIssiAlEquipo($request, $flota, $soloModificaHistorico, $tipo_de_mov->id);
                 }
@@ -1235,7 +1242,7 @@ class FlotaGeneralController extends Controller
         }
     }
 
-    private function cambiarEstadoAlEquipo($id, $tipo_de_mov_id, $soloModificaHistorico)
+    private function cambiarEstadoAlEquipo($id, $tipo_de_mov_id, $soloModificaHistorico, $estadoFinal)
     {
         if ($soloModificaHistorico) {
             return;
@@ -1249,6 +1256,7 @@ class FlotaGeneralController extends Controller
             $id_estado_perdido = Estado::where('nombre', 'Perdido')->value('id');
             $id_estado_temporal = Estado::where('nombre', 'Temporal')->value('id');
             $id_estado_no_funciona = Estado::where('nombre', 'No funciona')->value('id');
+
             //Se obtienen los id de los tipo de movimientos
             $id_mov_patrimonial = TipoMovimiento::where('nombre', 'Movimiento patrimonial')->value('id');
             $id_desinst_completa = TipoMovimiento::where('nombre', 'Desinstalación completa')->value('id');
@@ -1278,8 +1286,8 @@ class FlotaGeneralController extends Controller
                 } else if ($tipo_de_mov_id == $id_extraviado) {
                     $e->estado_id = $id_estado_perdido;
                     $e->save();
-                } else if ($tipo_de_mov_id == $id_devolucion_dependencia) {
-                    $e->estado_id = $id_estado_usado;
+                } else if (($tipo_de_mov_id == $id_devolucion_dependencia || $tipo_de_mov_id == $id_devolucion) && !is_null($estadoFinal)) {
+                    $e->estado_id = $estadoFinal->id;
                     $e->save();
                 }
             }

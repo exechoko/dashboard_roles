@@ -1,0 +1,195 @@
+@extends('layouts.app')
+
+@section('content')
+    <section class="section">
+        <div class="section-header">
+            <h1><i class="fas fa-exchange-alt"></i> Trasladar Bien Patrimonial</h1>
+        </div>
+
+        <div class="section-body">
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ session('error') }}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            @endif
+
+            <form action="{{ route('patrimonio.bienes.procesarTraslado', $bien->id) }}" method="POST">
+                @csrf
+
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4><i class="fas fa-box"></i> Información del Bien</h4>
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Tipo:</strong> {{ $bien->tipoBien->nombre }}</p>
+                                        <p><strong>SIAF:</strong> {{ $bien->siaf ?? 'N/A' }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>N° Serie:</strong> {{ $bien->numero_serie ?? 'N/A' }}</p>
+                                        <p><strong>Estado:</strong>
+                                            <span class="badge badge-success">{{ $bien->estado_formateado }}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <p><strong>Descripción:</strong> {{ Str::limit($bien->descripcion, 100) }}</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h4><i class="fas fa-map-marker-alt"></i> Destino del Traslado</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group">
+                                    <label for="destino_desde">Ubicación Actual</label>
+                                    <input type="text" class="form-control" readonly
+                                        value="{{ $bien->destino->nombre ?? 'Sin asignar' }}">
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="destino_hasta_id">Nueva Ubicación <span class="text-danger">*</span></label>
+                                    <select class="form-control select2 @error('destino_hasta_id') is-invalid @enderror"
+                                            id="destino_hasta_id" name="destino_hasta_id" required>
+                                        <option value="">Seleccione el destino</option>
+                                        @foreach($destinos as $destino)
+                                            @if($destino->id != $bien->destino_id)
+                                                <option value="{{ $destino->id }}" {{ old('destino_hasta_id') == $destino->id ? 'selected' : '' }}>
+                                                    {{ $destino->nombre }}
+                                                </option>
+                                            @endif
+                                        @endforeach
+                                    </select>
+                                    @error('destino_hasta_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="observaciones">Observaciones del Traslado</label>
+                                    <textarea class="form-control @error('observaciones') is-invalid @enderror"
+                                            id="observaciones" name="observaciones" rows="4"
+                                            placeholder="Motivo del traslado, responsable, etc.">{{ old('observaciones') }}</textarea>
+                                    @error('observaciones')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="text-muted">Opcional pero recomendado para auditoría</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4><i class="fas fa-info-circle"></i> Información</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-lightbulb"></i> ¿Qué sucederá?</h6>
+                                    <ul class="mb-0 pl-3">
+                                        <li>Se actualizará la ubicación del bien</li>
+                                        <li>Se registrará un movimiento de <strong>TRASLADO</strong> en el historial</li>
+                                        <li>La fecha del movimiento será la actual</li>
+                                        <li>El bien permanecerá en estado <strong>ACTIVO</strong></li>
+                                    </ul>
+                                </div>
+
+                                <div class="alert alert-warning">
+                                    <h6><i class="fas fa-exclamation-triangle"></i> Importante</h6>
+                                    <p class="mb-0">Asegúrese de seleccionar el destino correcto. Esta acción quedará registrada permanentemente en el historial del bien.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if($bien->movimientos->where('tipo_movimiento', 'traslado')->count() > 0)
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4><i class="fas fa-history"></i> Traslados Previos</h4>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Este bien ha sido trasladado <strong>{{ $bien->movimientos->where('tipo_movimiento', 'traslado')->count() }}</strong> veces.</p>
+
+                                    <div class="list-group">
+                                        @foreach($bien->movimientos->where('tipo_movimiento', 'traslado')->sortByDesc('fecha')->take(3) as $traslado)
+                                            <div class="list-group-item list-group-item-action flex-column align-items-start">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <small class="text-muted">{{ $traslado->fecha->format('d/m/Y') }}</small>
+                                                </div>
+                                                <p class="mb-1 small">
+                                                    <strong>De:</strong> {{ $traslado->destinoDesde->nombre ?? 'N/A' }}<br>
+                                                    <strong>A:</strong> {{ $traslado->destinoHasta->nombre ?? 'N/A' }}
+                                                </p>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ route('patrimonio.bienes.show', $bien->id) }}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left"></i> Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-exchange-alt"></i> Confirmar Traslado
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </section>
+@endsection
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            width: '100%'
+        });
+
+        // Validación al enviar
+        $('form').on('submit', function(e) {
+            const destino = $('#destino_hasta_id').val();
+            if (!destino) {
+                e.preventDefault();
+                alert('Debe seleccionar un destino para el traslado');
+                return false;
+            }
+
+            return confirm('¿Está seguro de trasladar este bien? Se registrará en el historial patrimonial.');
+        });
+    });
+</script>
+@endpush
+
+@push('styles')
+<style>
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        margin-bottom: 25px;
+    }
+
+    .list-group-item {
+        border-radius: 8px !important;
+        margin-bottom: 5px;
+    }
+</style>
+@endpush

@@ -137,11 +137,25 @@
     </li>
 @endcan
 
-<!--li class="{{ request()->is('accesorios*') ? 'active' : '' }}">
-    <a class="nav-link" href="/accesorios">
-        <i class="fas fa-headphones-alt"></i><span>Accesorios</span>
+{{-- NUEVO MENÚ DE PATRIMONIO --}}
+<li class="dropdown {{ request()->is('patrimonio*') ? 'active' : '' }}">
+    <a class="nav-link has-dropdown" href="#">
+        <i class="fas fa-boxes"></i><span>Patrimonio</span>
     </a>
-</li-->
+    <ul class="dropdown-menu">
+        <li class="{{ request()->is('patrimonio/bienes*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('patrimonio.bienes.index') }}">
+                <i class="fas fa-box"></i><span>Bienes</span>
+            </a>
+        </li>
+        <li class="{{ request()->is('patrimonio/tipos-bien*') ? 'active' : '' }}">
+            <a class="nav-link" href="{{ route('patrimonio.tipos-bien.index') }}">
+                <i class="fas fa-tags"></i><span>Tipos de Bien</span>
+            </a>
+        </li>
+    </ul>
+</li>
+
 @can('ver-menu-dependencias')
     <li class="{{ request()->is('dependencias*') ? 'active' : '' }}">
         <a class="nav-link" href="/dependencias">

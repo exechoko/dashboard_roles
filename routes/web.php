@@ -5,6 +5,8 @@ use App\Http\Controllers\BodycamController;
 use App\Http\Controllers\EntregasBodycamsController;
 use App\Http\Controllers\EntregasEquiposController;
 use App\Http\Controllers\PasswordVaultController;
+use App\Http\Controllers\PatrimonioBienController;
+use App\Http\Controllers\PatrimonioTipoBienController;
 use Illuminate\Support\Facades\Route;
 //agregamos los controladores
 use App\Http\Controllers\HomeController;
@@ -319,6 +321,18 @@ Route::group(['middleware' => ['auth']], function () {
     // Revocar acceso compartido
     Route::delete('password-shares/{share}/revoke', [PasswordVaultController::class, 'revokeShare'])
         ->name('password-vault.revoke-share');
+
+    Route::prefix('patrimonio')->name('patrimonio.')->group(function () {
+        // Tipos de Bien
+        Route::resource('tipos-bien', PatrimonioTipoBienController::class)->except(['show']);
+        // Bienes
+        Route::resource('bienes', PatrimonioBienController::class);
+        // Acciones especiales para bienes
+        Route::get('bienes/{id}/baja', [PatrimonioBienController::class, 'darBaja'])->name('bienes.baja');
+        Route::post('bienes/{id}/baja', [PatrimonioBienController::class, 'procesarBaja'])->name('bienes.procesarBaja');
+        Route::get('bienes/{id}/traslado', [PatrimonioBienController::class, 'traslado'])->name('bienes.traslado');
+        Route::post('bienes/{id}/traslado', [PatrimonioBienController::class, 'procesarTraslado'])->name('bienes.procesarTraslado');
+    });
 
     //Optimizar sistema
     Route::get('optimizar', function () {

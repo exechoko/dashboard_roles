@@ -49,7 +49,7 @@
 
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="destino_id">Destino/Ubicación</label>
+                                            <label for="destino_id">Destino</label>
                                             <select class="form-control select2 @error('destino_id') is-invalid @enderror"
                                                     id="destino_id" name="destino_id">
                                                 <option value="">Sin asignar</option>
@@ -63,9 +63,19 @@
                                             @error('destino_id')
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
-                                            <small class="text-muted">Si cambia el destino, se registrará automáticamente como traslado</small>
                                         </div>
                                     </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="ubicacion">Ubicación Específica</label>
+                                    <input type="text" class="form-control @error('ubicacion') is-invalid @enderror"
+                                        id="ubicacion" name="ubicacion" value="{{ old('ubicacion', $bien->ubicacion) }}"
+                                        maxlength="150" placeholder="Ej: Oficina 201, Estante A, Sala de Servidores">
+                                    @error('ubicacion')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="text-muted">Ubicación física detallada del bien</small>
                                 </div>
 
                                 <div class="row">
@@ -183,7 +193,7 @@
                                 <div class="alert alert-warning">
                                     <h6><i class="fas fa-exclamation-triangle"></i> Importante</h6>
                                     <ul class="mb-0 pl-3">
-                                        <li>Si cambia el destino, se registrará automáticamente como traslado</li>
+                                        <li>Si cambia el destino o la ubicación, se registrará automáticamente como traslado</li>
                                         <li>Para dar de baja use el botón específico</li>
                                         <li>Todos los cambios quedan registrados</li>
                                     </ul>
@@ -224,13 +234,16 @@
             width: '100%'
         });
 
-        // Advertir sobre cambio de destino
+        // Advertir sobre cambio de destino o ubicación
         const destinoOriginal = $('#destino_id').val();
+        const ubicacionOriginal = $('#ubicacion').val();
+
         $('form').on('submit', function(e) {
             const destinoNuevo = $('#destino_id').val();
+            const ubicacionNueva = $('#ubicacion').val();
 
-            if (destinoOriginal != destinoNuevo && destinoNuevo) {
-                return confirm('Ha cambiado el destino del bien. Esto registrará automáticamente un TRASLADO en el historial. ¿Desea continuar?');
+            if ((destinoOriginal != destinoNuevo) || (ubicacionOriginal != ubicacionNueva)) {
+                return confirm('Ha cambiado el destino o la ubicación del bien. Esto registrará automáticamente un TRASLADO en el historial. ¿Desea continuar?');
             }
         });
     });

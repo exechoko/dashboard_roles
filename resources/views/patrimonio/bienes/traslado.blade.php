@@ -44,26 +44,32 @@
 
                         <div class="card">
                             <div class="card-header">
-                                <h4><i class="fas fa-map-marker-alt"></i> Destino del Traslado</h4>
+                                <h4><i class="fas fa-map-marker-alt"></i> Ubicación Actual y Nueva</h4>
                             </div>
                             <div class="card-body">
-                                <div class="form-group">
-                                    <label for="destino_desde">Ubicación Actual</label>
-                                    <input type="text" class="form-control" readonly
-                                        value="{{ $bien->destino->nombre ?? 'Sin asignar' }}">
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle"></i> Ubicación Actual</h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <p class="mb-0"><strong>Destino:</strong> {{ $bien->destino->nombre ?? 'Sin asignar' }}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p class="mb-0"><strong>Ubicación:</strong> {{ $bien->ubicacion ?? 'No especificada' }}</p>
+                                        </div>
+                                    </div>
                                 </div>
 
+                                <h5 class="mt-4 mb-3"><i class="fas fa-arrow-right"></i> Nueva Ubicación</h5>
+
                                 <div class="form-group">
-                                    <label for="destino_hasta_id">Nueva Ubicación <span class="text-danger">*</span></label>
+                                    <label for="destino_hasta_id">Nuevo Destino <span class="text-danger">*</span></label>
                                     <select class="form-control select2 @error('destino_hasta_id') is-invalid @enderror"
                                             id="destino_hasta_id" name="destino_hasta_id" required>
                                         <option value="">Seleccione el destino</option>
                                         @foreach($destinos as $destino)
-                                            @if($destino->id != $bien->destino_id)
-                                                <option value="{{ $destino->id }}" {{ old('destino_hasta_id') == $destino->id ? 'selected' : '' }}>
-                                                    {{ $destino->nombre }}
-                                                </option>
-                                            @endif
+                                            <option value="{{ $destino->id }}" {{ old('destino_hasta_id') == $destino->id ? 'selected' : '' }}>
+                                                {{ $destino->nombre }}
+                                            </option>
                                         @endforeach
                                     </select>
                                     @error('destino_hasta_id')
@@ -72,14 +78,25 @@
                                 </div>
 
                                 <div class="form-group">
+                                    <label for="ubicacion_hasta">Nueva Ubicación Específica</label>
+                                    <input type="text" class="form-control @error('ubicacion_hasta') is-invalid @enderror"
+                                        id="ubicacion_hasta" name="ubicacion_hasta" value="{{ old('ubicacion_hasta') }}"
+                                        maxlength="150" placeholder="Ej: Oficina 201, Estante A, Sala de Servidores">
+                                    @error('ubicacion_hasta')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="text-muted">Ubicación física detallada dentro del nuevo destino</small>
+                                </div>
+
+                                <div class="form-group">
                                     <label for="observaciones">Observaciones del Traslado</label>
                                     <textarea class="form-control @error('observaciones') is-invalid @enderror"
                                             id="observaciones" name="observaciones" rows="4"
-                                            placeholder="Motivo del traslado, responsable, etc.">{{ old('observaciones') }}</textarea>
+                                            placeholder="Motivo del traslado, responsable, autorización, etc.">{{ old('observaciones') }}</textarea>
                                     @error('observaciones')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                    <small class="text-muted">Opcional pero recomendado para auditoría</small>
+                                    <small class="text-muted">Opcional pero recomendado para auditoría y trazabilidad</small>
                                 </div>
                             </div>
                         </div>
@@ -94,7 +111,8 @@
                                 <div class="alert alert-info">
                                     <h6><i class="fas fa-lightbulb"></i> ¿Qué sucederá?</h6>
                                     <ul class="mb-0 pl-3">
-                                        <li>Se actualizará la ubicación del bien</li>
+                                        <li>Se actualizará el destino del bien</li>
+                                        <li>Se actualizará la ubicación específica</li>
                                         <li>Se registrará un movimiento de <strong>TRASLADO</strong> en el historial</li>
                                         <li>La fecha del movimiento será la actual</li>
                                         <li>El bien permanecerá en estado <strong>ACTIVO</strong></li>
@@ -103,7 +121,7 @@
 
                                 <div class="alert alert-warning">
                                     <h6><i class="fas fa-exclamation-triangle"></i> Importante</h6>
-                                    <p class="mb-0">Asegúrese de seleccionar el destino correcto. Esta acción quedará registrada permanentemente en el historial del bien.</p>
+                                    <p class="mb-0">Asegúrese de seleccionar el destino y ubicación correctos. Esta acción quedará registrada permanentemente en el historial del bien.</p>
                                 </div>
                             </div>
                         </div>
@@ -114,7 +132,7 @@
                                     <h4><i class="fas fa-history"></i> Traslados Previos</h4>
                                 </div>
                                 <div class="card-body">
-                                    <p class="text-muted">Este bien ha sido trasladado <strong>{{ $bien->movimientos->where('tipo_movimiento', 'traslado')->count() }}</strong> veces.</p>
+                                    <p class="text-muted mb-3">Este bien ha sido trasladado <strong>{{ $bien->movimientos->where('tipo_movimiento', 'traslado')->count() }}</strong> veces.</p>
 
                                     <div class="list-group">
                                         @foreach($bien->movimientos->where('tipo_movimiento', 'traslado')->sortByDesc('fecha')->take(3) as $traslado)
@@ -123,8 +141,16 @@
                                                     <small class="text-muted">{{ $traslado->fecha->format('d/m/Y') }}</small>
                                                 </div>
                                                 <p class="mb-1 small">
-                                                    <strong>De:</strong> {{ $traslado->destinoDesde->nombre ?? 'N/A' }}<br>
+                                                    <strong>De:</strong> {{ $traslado->destinoDesde->nombre ?? 'N/A' }}
+                                                    @if($traslado->ubicacion_desde)
+                                                        <br><small class="text-muted">{{ $traslado->ubicacion_desde }}</small>
+                                                    @endif
+                                                </p>
+                                                <p class="mb-1 small">
                                                     <strong>A:</strong> {{ $traslado->destinoHasta->nombre ?? 'N/A' }}
+                                                    @if($traslado->ubicacion_hasta)
+                                                        <br><small class="text-muted">{{ $traslado->ubicacion_hasta }}</small>
+                                                    @endif
                                                 </p>
                                             </div>
                                         @endforeach
@@ -166,13 +192,18 @@
         // Validación al enviar
         $('form').on('submit', function(e) {
             const destino = $('#destino_hasta_id').val();
+            const ubicacion = $('#ubicacion_hasta').val();
+
             if (!destino) {
                 e.preventDefault();
                 alert('Debe seleccionar un destino para el traslado');
                 return false;
             }
 
-            return confirm('¿Está seguro de trasladar este bien? Se registrará en el historial patrimonial.');
+            const destinoNuevo = $('#destino_hasta_id option:selected').text();
+            const ubicacionTexto = ubicacion ? ` - ${ubicacion}` : '';
+
+            return confirm(`¿Está seguro de trasladar este bien a:\n\n${destinoNuevo}${ubicacionTexto}\n\nSe registrará en el historial patrimonial.`);
         });
     });
 </script>

@@ -29,8 +29,7 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="tipo_bien_id">Tipo de Bien <span
-                                                    class="text-danger">*</span></label>
+                                            <label for="tipo_bien_id">Tipo de Bien <span class="text-danger">*</span></label>
                                             <select class="form-control select2 @error('tipo_bien_id') is-invalid @enderror"
                                                 id="tipo_bien_id" name="tipo_bien_id" required>
                                                 <option value="">Seleccione un tipo</option>
@@ -48,7 +47,7 @@
 
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="destino_id">Destino/Ubicación</label>
+                                            <label for="destino_id">Destino</label>
                                             <select class="form-control select2 @error('destino_id') is-invalid @enderror"
                                                 id="destino_id" name="destino_id">
                                                 <option value="">Sin asignar</option>
@@ -65,6 +64,17 @@
                                     </div>
                                 </div>
 
+                                <div class="form-group">
+                                    <label for="ubicacion">Ubicación Específica</label>
+                                    <input type="text" class="form-control @error('ubicacion') is-invalid @enderror"
+                                        id="ubicacion" name="ubicacion" value="{{ old('ubicacion') }}"
+                                        maxlength="150" placeholder="Ej: Oficina 201, Estante A, Sala de Servidores">
+                                    @error('ubicacion')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="text-muted">Ubicación física detallada del bien</small>
+                                </div>
+
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
@@ -75,16 +85,14 @@
                                             @error('siaf')
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
-                                            <small class="text-muted">Código del Sistema Integrado de Administración
-                                                Financiera</small>
+                                            <small class="text-muted">Código del Sistema Integrado de Administración Financiera</small>
                                         </div>
                                     </div>
 
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="numero_serie">Número de Serie</label>
-                                            <input type="text"
-                                                class="form-control @error('numero_serie') is-invalid @enderror"
+                                            <input type="text" class="form-control @error('numero_serie') is-invalid @enderror"
                                                 id="numero_serie" name="numero_serie" value="{{ old('numero_serie') }}"
                                                 maxlength="255" placeholder="Ej: SN123456">
                                             @error('numero_serie')
@@ -108,8 +116,7 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="fecha_alta">Fecha de Alta <span class="text-danger">*</span></label>
-                                            <input type="date"
-                                                class="form-control @error('fecha_alta') is-invalid @enderror"
+                                            <input type="date" class="form-control @error('fecha_alta') is-invalid @enderror"
                                                 id="fecha_alta" name="fecha_alta"
                                                 value="{{ old('fecha_alta', date('Y-m-d')) }}" required>
                                             @error('fecha_alta')
@@ -144,6 +151,7 @@
                                         <li>Complete todos los campos obligatorios (*)</li>
                                         <li>El código SIAF es importante para auditoría</li>
                                         <li>Asegúrese de registrar el número de serie si está disponible</li>
+                                        <li>La ubicación específica ayuda a localizar el bien rápidamente</li>
                                         <li>La fecha de alta debe corresponder a la fecha real de ingreso del bien</li>
                                     </ul>
                                 </div>
@@ -152,6 +160,12 @@
                                     <h6><i class="fas fa-exclamation-triangle"></i> Importante</h6>
                                     <p class="mb-0">Al crear el bien, se registrará automáticamente como un movimiento de
                                         <strong>ALTA</strong> en el historial patrimonial.</p>
+                                </div>
+
+                                <div class="alert alert-success">
+                                    <h6><i class="fas fa-map-marker-alt"></i> Ubicación</h6>
+                                    <p class="mb-0"><strong>Destino:</strong> Área general<br>
+                                    <strong>Ubicación:</strong> Lugar específico dentro del destino</p>
                                 </div>
                             </div>
                         </div>

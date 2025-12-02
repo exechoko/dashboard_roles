@@ -49,7 +49,7 @@
                                         <div class="row g-2">
                                             <div class="col-12 col-md-6 col-lg-3">
                                                 <input type="text" name="busqueda" class="form-control"
-                                                    placeholder="SIAF, Serie, Descripción..." value="{{ request('busqueda') }}">
+                                                    placeholder="SIAF, Serie, Descripción, Ubicación..." value="{{ request('busqueda') }}">
                                             </div>
                                             <div class="col-12 col-md-6 col-lg-2">
                                                 <select name="tipo_bien_id" class="form-control">
@@ -72,6 +72,10 @@
                                                 </select>
                                             </div>
                                             <div class="col-12 col-md-6 col-lg-2">
+                                                <input type="text" name="ubicacion" class="form-control"
+                                                    placeholder="Ubicación..." value="{{ request('ubicacion') }}">
+                                            </div>
+                                            <div class="col-12 col-md-6 col-lg-2">
                                                 <select name="estado" class="form-control">
                                                     <option value="">Todos los estados</option>
                                                     @foreach(\App\Models\PatrimonioBien::ESTADOS as $key => $label)
@@ -81,15 +85,19 @@
                                                     @endforeach
                                                 </select>
                                             </div>
-                                            <div class="col-12 col-md-12 col-lg-3">
+                                            <div class="col-12 col-md-12 col-lg-1">
                                                 <div class="d-grid gap-2 d-md-block">
                                                     <button type="submit" class="btn btn-info btn-block">
-                                                        <i class="fas fa-search"></i> Buscar
+                                                        <i class="fas fa-search"></i>
                                                     </button>
-                                                    <a href="{{ route('patrimonio.bienes.index') }}" class="btn btn-secondary btn-block">
-                                                        <i class="fas fa-times"></i> Limpiar
-                                                    </a>
                                                 </div>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-2">
+                                            <div class="col-12 text-right">
+                                                <a href="{{ route('patrimonio.bienes.index') }}" class="btn btn-secondary btn-sm">
+                                                    <i class="fas fa-times"></i> Limpiar Filtros
+                                                </a>
                                             </div>
                                         </div>
                                     </form>
@@ -107,6 +115,7 @@
                                             <th>Descripción</th>
                                             <th>N° Serie</th>
                                             <th>Destino</th>
+                                            <th>Ubicación</th>
                                             <th>Estado</th>
                                             <th>Fecha Alta</th>
                                             <th>Acciones</th>
@@ -127,6 +136,13 @@
                                                 <td>{{ Str::limit($bien->descripcion, 40) }}</td>
                                                 <td>{{ $bien->numero_serie ?? '-' }}</td>
                                                 <td>{{ $bien->destino->nombre ?? '-' }}</td>
+                                                <td>
+                                                    @if($bien->ubicacion)
+                                                        <span class="badge badge-secondary">{{ Str::limit($bien->ubicacion, 20) }}</span>
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </td>
                                                 <td>
                                                     @switch($bien->estado)
                                                         @case('activo')
@@ -168,7 +184,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="9" class="text-center py-4">
+                                                <td colspan="10" class="text-center py-4">
                                                     <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                                                     <p>No se encontraron bienes</p>
                                                 </td>

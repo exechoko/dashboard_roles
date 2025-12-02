@@ -85,15 +85,31 @@
                                 <p class="form-control-static">{{ $bien->descripcion }}</p>
                             </div>
 
-                            <div class="form-group">
-                                <label><strong>Destino/Ubicación Actual:</strong></label>
-                                <p class="form-control-static">
-                                    @if($bien->destino)
-                                        <span class="badge badge-primary">{{ $bien->destino->nombre }}</span>
-                                    @else
-                                        <span class="text-muted">Sin asignar</span>
-                                    @endif
-                                </p>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label><strong>Destino Actual:</strong></label>
+                                        <p class="form-control-static">
+                                            @if($bien->destino)
+                                                <span class="badge badge-primary badge-lg">{{ $bien->destino->nombre }}</span>
+                                            @else
+                                                <span class="text-muted">Sin asignar</span>
+                                            @endif
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label><strong>Ubicación Específica:</strong></label>
+                                        <p class="form-control-static">
+                                            @if($bien->ubicacion)
+                                                <span class="badge badge-secondary badge-lg">{{ $bien->ubicacion }}</span>
+                                            @else
+                                                <span class="text-muted">No especificada</span>
+                                            @endif
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
 
                             @if($bien->observaciones)
@@ -153,14 +169,31 @@
                                                 </div>
                                                 <div class="timeline-body">
                                                     @if($movimiento->tipo_movimiento == 'traslado')
-                                                        <p><strong>Desde:</strong> {{ $movimiento->destinoDesde->nombre ?? 'Sin especificar' }}</p>
-                                                        <p><strong>Hasta:</strong> {{ $movimiento->destinoHasta->nombre ?? 'Sin especificar' }}</p>
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <p class="mb-1"><strong>Desde:</strong></p>
+                                                                <p class="mb-0"><i class="fas fa-building"></i> {{ $movimiento->destinoDesde->nombre ?? 'Sin especificar' }}</p>
+                                                                @if($movimiento->ubicacion_desde)
+                                                                    <p class="mb-0"><i class="fas fa-map-marker-alt"></i> {{ $movimiento->ubicacion_desde }}</p>
+                                                                @endif
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <p class="mb-1"><strong>Hasta:</strong></p>
+                                                                <p class="mb-0"><i class="fas fa-building"></i> {{ $movimiento->destinoHasta->nombre ?? 'Sin especificar' }}</p>
+                                                                @if($movimiento->ubicacion_hasta)
+                                                                    <p class="mb-0"><i class="fas fa-map-marker-alt"></i> {{ $movimiento->ubicacion_hasta }}</p>
+                                                                @endif
+                                                            </div>
+                                                        </div>
                                                     @elseif($movimiento->tipo_movimiento == 'alta')
                                                         <p><strong>Destino inicial:</strong> {{ $movimiento->destinoHasta->nombre ?? 'Sin asignar' }}</p>
+                                                        @if($movimiento->ubicacion_hasta)
+                                                            <p><strong>Ubicación inicial:</strong> {{ $movimiento->ubicacion_hasta }}</p>
+                                                        @endif
                                                     @endif
 
                                                     @if($movimiento->observaciones)
-                                                        <p><strong>Observaciones:</strong> {{ $movimiento->observaciones }}</p>
+                                                        <p class="mt-2"><strong>Observaciones:</strong> {{ $movimiento->observaciones }}</p>
                                                     @endif
 
                                                     @if($movimiento->usuario_creador)

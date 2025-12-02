@@ -26,7 +26,7 @@ class PatrimonioBienController extends Controller
         }
 
         if ($request->filled('ubicacion')) {
-            $query->where('ubicacion', $request->ubicacion);
+            $query->where('ubicacion', 'like', '%' . $request->ubicacion . '%');
         }
 
         if ($request->filled('estado')) {
@@ -46,7 +46,8 @@ class PatrimonioBienController extends Controller
             $query->where(function ($q) use ($busqueda) {
                 $q->where('siaf', 'like', '%' . $busqueda . '%')
                     ->orWhere('numero_serie', 'like', '%' . $busqueda . '%')
-                    ->orWhere('descripcion', 'like', '%' . $busqueda . '%');
+                    ->orWhere('descripcion', 'like', '%' . $busqueda . '%')
+                    ->orWhere('ubicacion', 'like', '%' . $busqueda . '%');
             });
         }
 
@@ -69,7 +70,7 @@ class PatrimonioBienController extends Controller
     {
         $validated = $request->validate([
             'tipo_bien_id' => 'required|exists:patrimonio_tipos_bien,id',
-            'destino_id' => 'nullable|exists:destinos,id',
+            'destino_id' => 'nullable|exists:destino,id',
             'ubicacion' => 'nullable|string|max:150',
             'siaf' => 'nullable|string|max:100',
             'descripcion' => 'required|string',
@@ -127,7 +128,7 @@ class PatrimonioBienController extends Controller
 
         $validated = $request->validate([
             'tipo_bien_id' => 'required|exists:patrimonio_tipos_bien,id',
-            'destino_id' => 'nullable|exists:destinos,id',
+            'destino_id' => 'nullable|exists:destino,id',
             'ubicacion' => 'nullable|string|max:150',
             'siaf' => 'nullable|string|max:100',
             'descripcion' => 'required|string',
@@ -138,14 +139,14 @@ class PatrimonioBienController extends Controller
 
         DB::beginTransaction();
         try {
-            // Verificar si cambió el destino y la ubicación
+            // Verificar si cambió el destino o la ubicación
             $destinoAnterior = $bien->destino_id;
             $ubicacionAnterior = $bien->ubicacion;
             $destinoNuevo = $request->destino_id;
             $ubicacionNueva = $request->ubicacion;
 
-            if ($destinoAnterior === $destinoNuevo && $ubicacionNueva) {
-                // Registrar traslado
+            // Si cambió el destino o la ubicación, registrar traslado
+            if ($destinoAnterior != $destinoNuevo || $ubicacionAnterior != $ubicacionNueva) {
                 $bien->registrarMovimiento(
                     'traslado',
                     $destinoAnterior,
@@ -177,7 +178,7 @@ class PatrimonioBienController extends Controller
 
             return redirect()->route('patrimonio.bienes.index')
                 ->with('success', 'Bien eliminado exitosamente');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return back()->with('error', 'Error al eliminar el bien: ' . $e->getMessage());
         }
     }
@@ -207,6 +208,8 @@ class PatrimonioBienController extends Controller
             $bien->registrarMovimiento(
                 $validated['tipo_baja'],
                 $bien->destino_id,
+                $bien->ubicacion,
+                null,
                 null,
                 $validated['observaciones']
             );
@@ -215,7 +218,7 @@ class PatrimonioBienController extends Controller
 
             return redirect()->route('patrimonio.bienes.show', $bien->id)
                 ->with('success', 'Baja procesada exitosamente');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Error al procesar la baja: ' . $e->getMessage())
                 ->withInput();
@@ -233,7 +236,8 @@ class PatrimonioBienController extends Controller
     public function procesarTraslado(Request $request, $id)
     {
         $validated = $request->validate([
-            'destino_hasta_id' => 'required|exists:destinos,id',
+            'destino_hasta_id' => 'required|exists:destino,id',
+            'ubicacion_hasta' => 'nullable|string|max:150',
             'observaciones' => 'nullable|string',
         ]);
 
@@ -241,21 +245,26 @@ class PatrimonioBienController extends Controller
         try {
             $bien = PatrimonioBien::findOrFail($id);
             $destinoDesde = $bien->destino_id;
+            $ubicacionDesde = $bien->ubicacion;
             $destinoHasta = $validated['destino_hasta_id'];
+            $ubicacionHasta = $validated['ubicacion_hasta'] ?? null;
 
-            if ($destinoDesde == $destinoHasta) {
-                return back()->with('error', 'El destino de origen y destino son iguales')
+            if ($destinoDesde == $destinoHasta && $ubicacionDesde == $ubicacionHasta) {
+                return back()->with('error', 'El destino y la ubicación son iguales a los actuales')
                     ->withInput();
             }
 
             $bien->update([
                 'destino_id' => $destinoHasta,
+                'ubicacion' => $ubicacionHasta,
             ]);
 
             $bien->registrarMovimiento(
                 'traslado',
                 $destinoDesde,
+                $ubicacionDesde,
                 $destinoHasta,
+                $ubicacionHasta,
                 $validated['observaciones']
             );
 
@@ -263,7 +272,7 @@ class PatrimonioBienController extends Controller
 
             return redirect()->route('patrimonio.bienes.show', $bien->id)
                 ->with('success', 'Traslado procesado exitosamente');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Error al procesar el traslado: ' . $e->getMessage())
                 ->withInput();

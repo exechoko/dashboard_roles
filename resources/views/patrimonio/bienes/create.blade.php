@@ -16,7 +16,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('patrimonio.bienes.store') }}" method="POST">
+            <form action="{{ route('patrimonio.bienes.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
                 <div class="row">
@@ -195,6 +195,35 @@
                     </div>
                 </div>
 
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h5><i class="fas fa-paperclip"></i> Archivos Adjuntos</h5>
+                        <hr>
+                    </div>
+                </div>
+
+                <div class="container col-xs-12 col-sm-12 col-md-12">
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-6">
+                            <div class="form-group">
+                                <label for="archivo">
+                                    <i class="fas fa-file"></i> Archivo adjunto
+                                </label>
+                                <input type="file" name="archivo" class="form-control" accept=".pdf,.doc,.docx,.xlsx,.zip,.rar">
+                                <small class="text-muted">Formatos permitidos: PDF, DOC, DOCX, XLSX, ZIP, RAR (Máx. 2MB)</small>
+                            </div>
+                        </div>
+
+                        <div class="col-xs-12 col-sm-12 col-md-12 mt-3">
+                            <button type="button" id="addImage" class="btn btn-success">
+                                <i class="fas fa-plus"></i> Agregar imagen
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3" id="imageContainer"></div>
+                </div>
+
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
@@ -219,6 +248,68 @@
 @push('scripts')
     <script>
         $(document).ready(function () {
+            let imageCount = 0;
+
+            document.getElementById('addImage').addEventListener('click', function () {
+                imageCount++;
+
+                // Máximo 3 imágenes
+                if (imageCount > 3) {
+                    alert('Puede agregar un máximo de 3 imágenes');
+                    imageCount = 3;
+                    return;
+                }
+
+                const newImageDiv = document.createElement('div');
+                newImageDiv.classList.add('col-xs-12', 'col-sm-12', 'col-md-4', 'image-upload-container');
+                newImageDiv.id = `image-container-${imageCount}`;
+
+                newImageDiv.innerHTML = `
+                <div class="form-group">
+                    <label for="imagen${imageCount}">
+                        <i class="fas fa-image"></i> Imagen ${imageCount}
+                    </label>
+                    <div class="input-group">
+                        <input type="file" name="imagen${imageCount}" class="form-control" accept="image/*">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-danger remove-image" data-image="${imageCount}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <small class="text-muted">JPG, PNG, GIF (Máx. 2MB)</small>
+                </div>
+            `;
+
+                document.getElementById('imageContainer').appendChild(newImageDiv);
+
+                // Ocultar botón si ya hay 3 imágenes
+                if (imageCount >= 3) {
+                    document.getElementById('addImage').style.display = 'none';
+                }
+            });
+            // Remover imagen
+            $(document).on('click', '.remove-image', function () {
+                const imageNum = $(this).data('image');
+                $(`#image-container-${imageNum}`).remove();
+
+                // Recontear imágenes y mostrar botón si hay menos de 3
+                imageCount = $('.image-upload-container').length;
+                if (imageCount < 3) {
+                    document.getElementById('addImage').style.display = 'block';
+                }
+            });
+
+            // // Validación de tamaño de archivo
+            // $(document).on('change', 'input[type="file"]', function () {
+            //     const file = this.files[0];
+            //     if (file) {
+            //         alert('No hay archivo seleccionado');
+            //         $(this).val('');
+            //     }
+            // });
+
+
             // Inicializar select2 normal
             $('#tipo_bien_id, #destino_id').select2({
                 width: '100%'
@@ -314,6 +405,19 @@
 
 @push('styles')
     <style>
+        .image-upload-container {
+            margin-bottom: 15px;
+        }
+
+        .input-group-append .btn-danger {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        .form-control[type="file"] {
+            padding: 5px;
+        }
+
         .card {
             border: none;
             border-radius: 12px;

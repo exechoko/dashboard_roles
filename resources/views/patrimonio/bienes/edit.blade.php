@@ -16,7 +16,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('patrimonio.bienes.update', $bien->id) }}" method="POST">
+            <form action="{{ route('patrimonio.bienes.update', $bien->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 
@@ -206,6 +206,78 @@
                     </div>
                 </div>
 
+                {{-- Nueva sección de Archivos Adjuntos --}}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h5><i class="fas fa-paperclip"></i> Archivos Adjuntos</h5>
+                        <hr>
+                    </div>
+                </div>
+
+                {{-- Mostrar archivos existentes --}}
+                @php
+                    $rutasImagenes = json_decode($bien->rutas_imagenes, true) ?? [];
+                @endphp
+
+                @if(!empty($rutasImagenes))
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6><i class="fas fa-images"></i> Archivos Actuales</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        @foreach($rutasImagenes as $index => $ruta)
+                                            <div class="col-md-3 mb-3">
+                                                <div class="existing-file-container">
+                                                    @php
+                                                        $extension = pathinfo($ruta, PATHINFO_EXTENSION);
+                                                        $isImage = in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif']);
+                                                    @endphp
+
+                                                    @if($isImage)
+                                                        <img src="{{ asset($ruta) }}" alt="Imagen {{ $index + 1 }}" class="img-thumbnail">
+                                                    @else
+                                                        <div class="file-icon">
+                                                            <i class="fas fa-file fa-3x"></i>
+                                                            <p class="mt-2">{{ strtoupper($extension) }}</p>
+                                                        </div>
+                                                    @endif
+                                                    <small class="text-muted d-block mt-2">Archivo {{ $index + 1 }}</small>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Agregar nuevos archivos --}}
+                <div class="container col-xs-12 col-sm-12 col-md-12">
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-6">
+                            <div class="form-group">
+                                <label for="archivo">
+                                    <i class="fas fa-file"></i> Archivo adjunto
+                                </label>
+                                <input type="file" name="archivo" class="form-control" accept=".pdf,.doc,.docx,.xlsx,.zip,.rar">
+                                <small class="text-muted">Formatos permitidos: PDF, DOC, DOCX, XLSX, ZIP, RAR (Máx. 2MB)</small>
+                            </div>
+                        </div>
+
+                        <div class="col-xs-12 col-sm-12 col-md-12 mt-3">
+                            <button type="button" id="addImage" class="btn btn-success">
+                                <i class="fas fa-plus"></i> Agregar imagen
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3" id="imageContainer"></div>
+                </div>
+
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
@@ -230,6 +302,61 @@
 @push('scripts')
 <script>
     $(document).ready(function() {
+        let imageCount = 0;
+
+        // Agregar imagen
+        document.getElementById('addImage').addEventListener('click', function () {
+            imageCount++;
+
+            // Máximo 3 imágenes
+            if (imageCount > 3) {
+                alert('Puede agregar un máximo de 3 imágenes');
+                imageCount = 3;
+                return;
+            }
+
+            const newImageDiv = document.createElement('div');
+            newImageDiv.classList.add('col-xs-12', 'col-sm-12', 'col-md-4', 'image-upload-container');
+            newImageDiv.id = `image-container-${imageCount}`;
+
+            newImageDiv.innerHTML = `
+                <div class="form-group">
+                    <label for="imagen${imageCount}">
+                        <i class="fas fa-image"></i> Imagen ${imageCount}
+                    </label>
+                    <div class="input-group">
+                        <input type="file" name="imagen${imageCount}" class="form-control" accept="image/*">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-danger remove-image" data-image="${imageCount}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <small class="text-muted">JPG, PNG, GIF (Máx. 2MB)</small>
+                </div>
+            `;
+
+            document.getElementById('imageContainer').appendChild(newImageDiv);
+
+            // Ocultar botón si ya hay 3 imágenes
+            if (imageCount >= 3) {
+                document.getElementById('addImage').style.display = 'none';
+            }
+        });
+
+        // Remover imagen
+        $(document).on('click', '.remove-image', function () {
+            const imageNum = $(this).data('image');
+            $(`#image-container-${imageNum}`).remove();
+
+            // Recontear imágenes y mostrar botón si hay menos de 3
+            imageCount = $('.image-upload-container').length;
+            if (imageCount < 3) {
+                document.getElementById('addImage').style.display = 'block';
+            }
+        });
+
+        // Inicializar select2
         $('.select2').select2({
             width: '100%'
         });
@@ -271,6 +398,60 @@
     .summary-item h6 {
         margin-bottom: 5px;
         color: #6c757d;
+    }
+
+    .image-upload-container {
+        margin-bottom: 15px;
+    }
+
+    .input-group-append .btn-danger {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+    }
+
+    .form-control[type="file"] {
+        padding: 5px;
+    }
+
+    .existing-file-container {
+        text-align: center;
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+    }
+
+    .existing-file-container img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+
+    .file-icon {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 150px;
+        color: #6c757d;
+    }
+
+    .file-icon i {
+        margin-bottom: 10px;
+    }
+
+    .select2-container--default .select2-selection--single {
+        height: 38px;
+        padding: 5px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+        line-height: 28px;
+    }
+
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+        height: 36px;
     }
 </style>
 @endpush

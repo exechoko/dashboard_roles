@@ -209,7 +209,92 @@
                             </div>
                         </div>
                     @endif
+
+                    @if($bien->rutas_imagenes)
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4><i class="fas fa-paperclip"></i> Archivos Adjuntos</h4>
+                                </div>
+                                <div class="card-body">
+                                    @php
+                                        $rutas = json_decode($bien->rutas_imagenes, true) ?? [];
+                                        $imagenes = [];
+                                        $archivos = [];
+
+                                        foreach ($rutas as $ruta) {
+                                            $extension = strtolower(pathinfo($ruta, PATHINFO_EXTENSION));
+                                            if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif'])) {
+                                                $imagenes[] = $ruta;
+                                            } else {
+                                                $archivos[] = $ruta;
+                                            }
+                                        }
+                                    @endphp
+
+                                    {{-- Mostrar imágenes --}}
+                                    @if(count($imagenes) > 0)
+                                        <h5><i class="fas fa-images"></i> Imágenes</h5>
+                                        <div class="row mb-4">
+                                            @foreach($imagenes as $imagen)
+                                                <div class="col-md-4 mb-3">
+                                                    <div class="card">
+                                                        <img src="{{ asset('storage/' . str_replace('anexos/', '', $imagen)) }}"
+                                                            class="card-img-top"
+                                                            alt="Imagen del bien"
+                                                            style="max-height: 300px; object-fit: cover; cursor: pointer;"
+                                                            onclick="openImageModal('{{ asset('storage/' . str_replace('anexos/', '', $imagen)) }}')">
+                                                        <div class="card-body text-center">
+                                                            <a href="{{ asset('storage/' . str_replace('anexos/', '', $imagen)) }}"
+                                                            class="btn btn-sm btn-primary"
+                                                            download>
+                                                                <i class="fas fa-download"></i> Descargar
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+
+                                    {{-- Mostrar archivos --}}
+                                    @if(count($archivos) > 0)
+                                        <h5><i class="fas fa-file-alt"></i> Documentos</h5>
+                                        <div class="list-group">
+                                            @foreach($archivos as $archivo)
+                                                @php
+                                                    $nombreArchivo = basename($archivo);
+                                                    $extension = strtolower(pathinfo($archivo, PATHINFO_EXTENSION));
+                                                    $iconos = [
+                                                        'pdf' => 'fa-file-pdf text-danger',
+                                                        'doc' => 'fa-file-word text-primary',
+                                                        'docx' => 'fa-file-word text-primary',
+                                                        'xlsx' => 'fa-file-excel text-success',
+                                                        'xls' => 'fa-file-excel text-success',
+                                                        'zip' => 'fa-file-archive text-warning',
+                                                        'rar' => 'fa-file-archive text-warning',
+                                                    ];
+                                                    $icono = $iconos[$extension] ?? 'fa-file';
+                                                @endphp
+                                                <a href="{{ asset('storage/' . str_replace('anexos/', '', $archivo)) }}"
+                                                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+                                                download>
+                                                    <span>
+                                                        <i class="fas {{ $icono }} fa-2x mr-3"></i>
+                                                        {{ $nombreArchivo }}
+                                                    </span>
+                                                    <span class="badge badge-primary badge-pill">
+                                                        <i class="fas fa-download"></i> Descargar
+                                                    </span>
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                    @endif
                 </div>
+
 
                 {{-- Acciones --}}
                 <div class="col-lg-4">
@@ -300,8 +385,29 @@
     </section>
 @endsection
 
+{{-- Modal para ver imágenes en grande --}}
+<div class="modal fade" id="imageModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Vista de Imagen</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImage" src="" class="img-fluid" alt="Imagen ampliada">
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
+    function openImageModal(imageSrc) {
+        $('#modalImage').attr('src', imageSrc);
+        $('#imageModal').modal('show');
+    }
     setTimeout(function() {
         $('.alert').fadeOut('slow');
     }, 5000);
@@ -310,6 +416,14 @@
 
 @push('styles')
 <style>
+    .card-img-top:hover {
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
+    }
+
+    .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
     .form-control-static {
         padding: 7px 0;
         margin: 0;

@@ -26,6 +26,8 @@ class PatrimonioBien extends Model
         'tabla_origen',
         'id_origen',
         'observaciones',
+        'rutas_imagenes',
+        'ruta_archivo',
     ];
 
     protected $casts = [

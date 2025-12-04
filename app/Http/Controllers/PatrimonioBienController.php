@@ -9,6 +9,7 @@ use App\Models\Destino;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Log;
 
 class PatrimonioBienController extends Controller
 {
@@ -78,11 +79,35 @@ class PatrimonioBienController extends Controller
             'numero_serie' => 'nullable|string|max:255',
             'fecha_alta' => 'required|date',
             'observaciones' => 'nullable|string',
+            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048'
         ]);
 
         DB::beginTransaction();
         try {
             $tipoBien = PatrimonioTipoBien::findOrFail($validated['tipo_bien_id']);
+
+            // Procesar imágenes y archivos
+            $rutasImagenes = [];
+
+            // Procesar las imágenes
+            for ($i = 1; $i <= 3; $i++) {
+                $inputName = 'imagen' . $i;
+                if ($request->hasFile($inputName)) {
+                    $rutaImagen = $request->file($inputName)->store('', 'anexos');
+                    $rutasImagenes[] = 'anexos/' . $rutaImagen;
+                    \Log::info("Nueva imagen {$i} subida: anexos/{$rutaImagen}");
+                }
+            }
+
+            // Manejo del archivo adjunto
+            if ($request->hasFile('archivo')) {
+                $rutaArchivo = $request->file('archivo')->store('', 'anexos');
+                $rutasImagenes[] = 'anexos/' . $rutaArchivo;
+                Log::info("Nuevo archivo adjunto subido: anexos/{$rutaArchivo}");
+            }
 
             // Si tiene tabla propia, procesar vinculación
             if ($tipoBien->tiene_tabla_propia && $tipoBien->tabla_referencia) {
@@ -122,6 +147,9 @@ class PatrimonioBienController extends Controller
 
             // Establecer estado inicial
             $validated['estado'] = 'activo';
+
+            // Agregar rutas de imágenes al array de datos validados
+            $validated['rutas_imagenes'] = !empty($rutasImagenes) ? json_encode($rutasImagenes) : null;
 
             // Crear el bien patrimonial
             $bien = PatrimonioBien::create($validated);
@@ -178,10 +206,42 @@ class PatrimonioBienController extends Controller
             'numero_serie' => 'nullable|string|max:255',
             'fecha_alta' => 'required|date',
             'observaciones' => 'nullable|string',
+            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048'
         ]);
 
         DB::beginTransaction();
         try {
+            // Obtener las rutas de imágenes existentes
+            $rutasImagenesExistentes = json_decode($bien->rutas_imagenes, true) ?? [];
+            $rutasImagenes = $rutasImagenesExistentes; // Empezar con las existentes
+
+            // Procesar las nuevas imágenes
+            $hayNuevasImagenes = false;
+            for ($i = 1; $i <= 3; $i++) {
+                $inputName = 'imagen' . $i;
+                if ($request->hasFile($inputName)) {
+                    $rutaImagen = $request->file($inputName)->store('', 'anexos');
+                    $rutasImagenes[] = 'anexos/' . $rutaImagen;
+                    $hayNuevasImagenes = true;
+                    Log::info("Nueva imagen {$i} subida: anexos/{$rutaImagen}");
+                }
+            }
+
+            // Manejo del archivo adjunto
+            if ($request->hasFile('archivo')) {
+                $rutaArchivo = $request->file('archivo')->store('', 'anexos');
+                $rutasImagenes[] = 'anexos/' . $rutaArchivo;
+                \Log::info("Nuevo archivo adjunto subido: anexos/{$rutaArchivo}");
+            }
+
+            // Actualizar rutas de imágenes si hay cambios
+            if (!empty($rutasImagenes)) {
+                $validated['rutas_imagenes'] = json_encode($rutasImagenes);
+            }
+
             // Verificar si cambió el destino o la ubicación
             $destinoAnterior = $bien->destino_id;
             $ubicacionAnterior = $bien->ubicacion;
@@ -203,6 +263,10 @@ class PatrimonioBienController extends Controller
             $bien->update($validated);
 
             DB::commit();
+
+            Log::info("Bien patrimonial {$id} actualizado. Imágenes existentes: " . count($rutasImagenesExistentes) .
+                ", Nuevas imágenes: " . ($hayNuevasImagenes ? 'Sí' : 'No') .
+                ", Total rutas: " . count($rutasImagenes));
 
             return redirect()->route('patrimonio.bienes.show', $bien->id)
                 ->with('success', 'Bien actualizado exitosamente');

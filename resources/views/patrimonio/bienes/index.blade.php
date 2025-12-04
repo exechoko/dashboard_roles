@@ -4,7 +4,6 @@
     <section class="section">
         <div class="section-header">
             <h1 class="section-title"><i class="fas fa-boxes"></i> Patrimonio - Bienes</h1>
-            <p class="section-subtitle">Gestión de bienes patrimoniales</p>
         </div>
 
         <div class="section-body">

@@ -323,15 +323,16 @@ Route::group(['middleware' => ['auth']], function () {
         ->name('password-vault.revoke-share');
 
     Route::prefix('patrimonio')->name('patrimonio.')->group(function () {
-        // Tipos de Bien
-        Route::resource('tipos-bien', PatrimonioTipoBienController::class)->except(['show']);
-        // Bienes
-        Route::resource('bienes', PatrimonioBienController::class);
         // Acciones especiales para bienes
         Route::get('bienes/{id}/baja', [PatrimonioBienController::class, 'darBaja'])->name('bienes.baja');
         Route::post('bienes/{id}/baja', [PatrimonioBienController::class, 'procesarBaja'])->name('bienes.procesarBaja');
         Route::get('bienes/{id}/traslado', [PatrimonioBienController::class, 'traslado'])->name('bienes.traslado');
         Route::post('bienes/{id}/traslado', [PatrimonioBienController::class, 'procesarTraslado'])->name('bienes.procesarTraslado');
+        Route::get('bienes/items-disponibles', [PatrimonioBienController::class, 'getItemsDisponibles'])->name('bienes.items-disponibles');
+        // Tipos de Bien
+        Route::resource('tipos-bien', PatrimonioTipoBienController::class)->except(['show']);
+        // Bienes
+        Route::resource('bienes', PatrimonioBienController::class);
     });
 
     //Optimizar sistema

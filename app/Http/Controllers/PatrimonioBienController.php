@@ -70,6 +70,7 @@ class PatrimonioBienController extends Controller
     {
         $validated = $request->validate([
             'tipo_bien_id' => 'required|exists:patrimonio_tipos_bien,id',
+            'item_origen_id' => 'nullable|integer',
             'destino_id' => 'nullable|exists:destino,id',
             'ubicacion' => 'nullable|string|max:150',
             'siaf' => 'nullable|string|max:100',
@@ -81,7 +82,48 @@ class PatrimonioBienController extends Controller
 
         DB::beginTransaction();
         try {
+            $tipoBien = PatrimonioTipoBien::findOrFail($validated['tipo_bien_id']);
+
+            // Si tiene tabla propia, procesar vinculación
+            if ($tipoBien->tiene_tabla_propia && $tipoBien->tabla_referencia) {
+
+                // Validar que se seleccionó un item
+                if (!$request->item_origen_id) {
+                    return back()->with('error', 'Debe seleccionar un item para patrimoniar')->withInput();
+                }
+
+                // Verificar que el item no esté ya patrimoniado
+                $yaPatrimoniado = PatrimonioBien::where('tabla_origen', $tipoBien->tabla_referencia)
+                    ->where('id_origen', $request->item_origen_id)
+                    ->exists();
+
+                if ($yaPatrimoniado) {
+                    return back()->with('error', 'Este item ya fue patrimoniado anteriormente')->withInput();
+                }
+
+                // Obtener datos del item origen
+                $itemOrigen = DB::table($tipoBien->tabla_referencia)
+                    ->where('id', $request->item_origen_id)
+                    ->first();
+
+                if (!$itemOrigen) {
+                    return back()->with('error', 'El item seleccionado no existe')->withInput();
+                }
+
+                // Si la descripción está vacía, usar la del item origen
+                if (empty($validated['descripcion']) && isset($itemOrigen->descripcion)) {
+                    $validated['descripcion'] = $itemOrigen->descripcion;
+                }
+
+                // Asignar vinculación
+                $validated['tabla_origen'] = $tipoBien->tabla_referencia;
+                $validated['id_origen'] = $request->item_origen_id;
+            }
+
+            // Establecer estado inicial
             $validated['estado'] = 'activo';
+
+            // Crear el bien patrimonial
             $bien = PatrimonioBien::create($validated);
 
             // Registrar movimiento de alta
@@ -91,13 +133,14 @@ class PatrimonioBienController extends Controller
                 null,
                 $request->destino_id,
                 $request->ubicacion,
-                'Alta inicial del bien'
+                'Alta inicial del bien patrimonial'
             );
 
             DB::commit();
 
             return redirect()->route('patrimonio.bienes.show', $bien->id)
-                ->with('success', 'Bien registrado exitosamente');
+                ->with('success', 'Bien patrimonial registrado exitosamente');
+
         } catch (Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Error al registrar el bien: ' . $e->getMessage())
@@ -276,6 +319,77 @@ class PatrimonioBienController extends Controller
             DB::rollBack();
             return back()->with('error', 'Error al procesar el traslado: ' . $e->getMessage())
                 ->withInput();
+        }
+    }
+
+    /**
+     * Obtener items disponibles para patrimoniar según el tipo de bien
+     */
+    /**
+     * Obtener items disponibles para patrimoniar según el tipo de bien
+     */
+    public function getItemsDisponibles(Request $request)
+    {
+        try {
+            $tipoId = $request->tipo_bien_id;
+
+            if (!$tipoId) {
+                return response()->json([]);
+            }
+
+            $tipoBien = PatrimonioTipoBien::find($tipoId);
+
+            if (!$tipoBien || !$tipoBien->tiene_tabla_propia || !$tipoBien->tabla_referencia) {
+                return response()->json([]);
+            }
+
+            if (!DB::getSchemaBuilder()->hasTable($tipoBien->tabla_referencia)) {
+                return response()->json([]);
+            }
+
+            /* ==========================================================
+             * CONFIGURACIÓN MODULAR
+             * ==========================================================*/
+            $config = [
+                'equipos' => [
+                    'prefix' => '- TEI: - ',
+                    'column' => 'tei'
+                ],
+                'camaras' => [
+                    'prefix' => ' - ',
+                    'column' => 'nombre'
+                ],
+            ];
+
+            $tabla = $tipoBien->tabla_referencia;
+
+            // Definir prefijo y columna a concatenar
+            $prefix = $config[$tabla]['prefix'] ?? '';
+            $col = $config[$tabla]['column'] ?? 'id';
+
+            // Construir select seguro
+            $selectRaw = "id, CONCAT(" .
+                DB::getPdo()->quote($prefix) . ", " .
+                "COALESCE($col, '')) AS text";
+
+            /* ==========================================================
+             * CONSULTA
+             * ==========================================================*/
+            $items = DB::table($tabla)
+                ->selectRaw($selectRaw)
+                ->whereNotIn('id', function ($query) use ($tabla) {
+                    $query->select('id_origen')
+                        ->from('patrimonio_bienes')
+                        ->where('tabla_origen', $tabla)
+                        ->whereNull('deleted_at');
+                })
+                ->orderBy('id')
+                ->get();
+
+            return response()->json($items);
+
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 }

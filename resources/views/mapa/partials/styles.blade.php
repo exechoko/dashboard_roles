@@ -788,69 +788,322 @@
     }
 
     /* ========================================
-    ESTILOS PARA CONTROLES DEL POLIGONO
+   ESTILOS PARA SISTEMA DE SELECCIÓN POR POLÍGONO
    ======================================== */
-    .polygon-results-button .btn {
-        font-size: 14px;
-        font-weight: bold;
-        padding: 8px 15px;
+
+    /* Cursor personalizado durante el dibujo */
+    #map.drawing-mode {
+        cursor: crosshair !important;
+    }
+
+    /* Estilos para el modal de cámaras */
+    #camerasPolygonModal .modal-content {
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="dark"] #camerasPolygonModal .modal-content {
+        background-color: var(--card-bg, #1e1e1e);
+        color: var(--text-primary, #ffffff);
+    }
+
+    #camerasPolygonModal .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    [data-theme="dark"] #camerasPolygonModal .modal-header {
+        background: linear-gradient(135deg, #434343 0%, #000000 100%);
+    }
+
+    #camerasPolygonModal .modal-title {
+        font-weight: 600;
+    }
+
+    #camerasPolygonModal .table {
+        margin-bottom: 0;
+    }
+
+    #camerasPolygonModal .table thead th {
+        border-bottom: 2px solid #dee2e6;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+
+    [data-theme="dark"] #camerasPolygonModal .table thead th {
+        background-color: var(--bg-secondary, #2d2d2d);
+        color: var(--text-primary, #ffffff);
+        border-color: var(--border-color, #333333);
+    }
+
+    [data-theme="dark"] #camerasPolygonModal .table {
+        color: var(--text-primary, #ffffff);
+    }
+
+    [data-theme="dark"] #camerasPolygonModal .table tbody tr {
+        border-color: var(--border-color, #333333);
+    }
+
+    [data-theme="dark"] #camerasPolygonModal .table tbody tr:hover {
+        background-color: var(--bg-secondary, #2d2d2d);
+    }
+
+    #camerasPolygonModal .table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+
+    #camerasPolygonModal .table tbody tr:hover {
+        background-color: #f8f9fa;
+        cursor: pointer;
+    }
+
+    /* Estilos para el campo de búsqueda */
+    #searchCameraInList {
         border-radius: 20px;
-        animation: pulse 2s infinite;
+        padding-left: 15px;
+    }
+
+    [data-theme="dark"] #searchCameraInList {
+        background-color: var(--input-bg, #2d2d2d);
+        color: var(--text-primary, #ffffff);
+        border-color: var(--input-border, #444444);
+    }
+
+    /* Botones de exportación */
+    #camerasPolygonModal .btn {
+        border-radius: 20px;
+        padding: 6px 15px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    #camerasPolygonModal .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Estilos para el polígono seleccionado */
+    .leaflet-interactive.polygon-selected {
+        stroke: #3388ff;
+        stroke-width: 3;
+        fill: #3388ff;
+        fill-opacity: 0.2;
+    }
+
+    /* Marcadores de vértices del polígono */
+    .polygon-vertex-marker {
+        background-color: #ff0000;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Animación para botón de selección */
+    #togglePolygonDraw {
+        transition: all 0.3s ease;
+    }
+
+    #togglePolygonDraw:hover {
+        transform: scale(1.05);
+    }
+
+    #togglePolygonDraw.active {
+        animation: pulse 1.5s infinite;
     }
 
     @keyframes pulse {
-        0% {
-            transform: scale(1);
+
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
         }
 
         50% {
-            transform: scale(1.05);
+            box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+        }
+    }
+
+    /* Controles de polígono (lista y limpiar) */
+    .polygon-controls {
+        background: white;
+        padding: 8px;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="dark"] .polygon-controls {
+        background-color: var(--card-bg, #1e1e1e);
+    }
+
+    /* Tabla responsive */
+    .table-responsive {
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+    }
+
+    .table-responsive::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    [data-theme="dark"] .table-responsive::-webkit-scrollbar-track {
+        background: var(--bg-secondary, #2d2d2d);
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* Estilos para cámaras resaltadas */
+    .camera-marker-highlighted {
+        animation: markerPulse 1s infinite;
+    }
+
+    @keyframes markerPulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        50% {
+            transform: scale(1.1);
+            opacity: 0.8;
+        }
+    }
+
+    /* Badge de conteo */
+    .camera-count-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-left: 10px;
+    }
+
+    /* Mensaje cuando no hay cámaras */
+    .no-cameras-message {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+
+    [data-theme="dark"] .no-cameras-message {
+        color: var(--text-secondary, #aaaaaa);
+    }
+
+    .no-cameras-message i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        opacity: 0.5;
+    }
+
+    /* Tooltips personalizados */
+    .camera-tooltip {
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        #camerasPolygonModal .modal-xl {
+            max-width: 95%;
+            margin: 10px auto;
+        }
+
+        #camerasPolygonModal .modal-body {
+            padding: 10px;
+        }
+
+        #camerasPolygonModal .table {
+            font-size: 0.85rem;
+        }
+
+        #camerasPolygonModal .btn {
+            padding: 4px 10px;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+
+        .table-responsive {
+            max-height: 400px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        #togglePolygonDraw {
+            font-size: 0.85rem;
+            padding: 6px 10px;
+        }
+
+        #camerasPolygonModal .modal-title {
+            font-size: 1rem;
+        }
+
+        .table-responsive {
+            max-height: 300px;
+        }
+    }
+
+    /* Estilos para el estado de carga */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 99999;
+    }
+
+    .loading-spinner {
+        background: white;
+        padding: 20px 30px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    [data-theme="dark"] .loading-spinner {
+        background-color: var(--card-bg, #1e1e1e);
+        color: var(--text-primary, #ffffff);
+    }
+
+    .loading-spinner i {
+        font-size: 2rem;
+        color: #667eea;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
         }
 
         100% {
-            transform: scale(1);
+            transform: rotate(360deg);
         }
-    }
-
-    .polygon-control-button {
-        margin-top: 50px;
-    }
-
-    .leaflet-draw-toolbar {
-        margin-top: 12px !important;
-    }
-
-    .leaflet-draw-toolbar a {
-        background-color: #ff9800 !important;
-        color: white !important;
-        border-radius: 4px !important;
-    }
-
-    .leaflet-draw-toolbar a:hover {
-        background-color: #f57c00 !important;
-    }
-
-    /* Modal personalizado */
-    #polygonCamerasModal .modal-xl {
-        max-width: 95%;
-    }
-
-    #polygonCamerasModal .table th {
-        background-color: #343a40;
-        color: white;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-    }
-
-    #polygonCamerasModal .table-responsive {
-        max-height: 500px;
-        overflow-y: auto;
-    }
-
-    /* Botón activo */
-    #togglePolygonBtn.active {
-        background-color: #dc3545 !important;
     }
 
     /* ========================================

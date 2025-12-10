@@ -144,6 +144,27 @@ class HomeController extends Controller
                     ->where('nombre', 'Desinstalación Parcial');
             })
             ->count();
+        
+        // Equipos UOM en Stock PROBANDO
+        $cant_equipos_uom_stock = FlotaGeneral::whereDoesntHave('entregasActivas')
+            ->whereHas('equipo.tipo_terminal.tipo_uso', function ($query) {
+                $query->where('uso', 'portatil');
+            })
+            ->whereHas('recurso', function ($query) {
+                $query->where('nombre', 'Unidad Operativa Móvil');
+            })
+            ->count();
+        
+        // Equipos UOM no disponibles PROBANDO
+        $cant_equipos_uom_no_disponibles = FlotaGeneral::whereHas('entregasActivas')
+            ->whereHas('equipo.tipo_terminal.tipo_uso', function ($query) {
+                $query->where('uso', 'portatil');
+            })
+            ->whereHas('recurso', function ($query) {
+                $query->where('nombre', 'Unidad Operativa Móvil');
+            })
+            ->count();
+
 
         return view('home', compact(
             'cant_usuarios',
@@ -165,7 +186,9 @@ class HomeController extends Controller
             'cant_equipos_temporales',
             'cant_equipos_baja',
             'cant_equipos_en_revision',
-            'cant_equipos_en_div_bancaria'
+            'cant_equipos_en_div_bancaria',
+            'cant_equipos_uom_stock',
+            'cant_equipos_uom_no_disponibles'
         ));
     }
 }

@@ -481,13 +481,13 @@
                                                 <div class="card-item bg-c-green order-card">
                                                     <div class="card-block">
                                                         <h5>
-                                                            HT's UOM entregados
+                                                            HT's UOM disponibles
                                                             <i class="fas fa-info-circle ml-1" data-toggle="tooltip"
                                                                 data-placement="top"
-                                                                title="Portatiles Sepura STP9000 entregados"></i>
+                                                                title="Portatiles Sepura STP9000 no entregados"></i>
                                                         </h5>
                                                         <h2 class="text-right"><i
-                                                                class="fas fa-check f-left"></i><span>{{ $cant_equipos_funcionales }}</span>
+                                                                class="fas fa-check f-left"></i><span>{{ $cant_equipos_uom_stock }}</span>
                                                         </h2>
                                                         @can('ver-equipo')
                                                             <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
@@ -501,16 +501,16 @@
                                                 </div>
                                             </div>
                                             <div class="col-md-4 col-xl-3">
-                                                <div class="card-item bg-c-green order-card">
+                                                <div class="card-item bg-c-red order-card">
                                                     <div class="card-block">
                                                         <h5>
-                                                            Bodycams entregadas
+                                                            HT's UOM entregados
                                                             <i class="fas fa-info-circle ml-1" data-toggle="tooltip"
                                                                 data-placement="top"
-                                                                title="Bodycams Hytera entregadas"></i>
+                                                                title="Portatiles Sepura STP9000 entregados y no disponibles"></i>
                                                         </h5>
                                                         <h2 class="text-right"><i
-                                                                class="fas fa-check f-left"></i><span>{{ $cant_equipos_funcionales }}</span>
+                                                                class="fas fa-check f-left"></i><span>{{ $cant_equipos_uom_no_disponibles }}</span>
                                                         </h2>
                                                         @can('ver-equipo')
                                                             <p class="m-b-0 text-right"><a href="#" data-toggle="modal"

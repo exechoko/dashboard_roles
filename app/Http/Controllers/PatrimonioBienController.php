@@ -293,32 +293,70 @@ class PatrimonioBienController extends Controller
     public function darBaja($id)
     {
         $bien = PatrimonioBien::findOrFail($id);
+        $destinos = Destino::orderBy('nombre')->get();
 
-        return view('patrimonio.bienes.baja', compact('bien'));
+        return view('patrimonio.bienes.baja', compact('bien', 'destinos'));
     }
 
     public function procesarBaja(Request $request, $id)
     {
+        //dd($request->all());
+        $bien = PatrimonioBien::findOrFail($id);
+
         $validated = $request->validate([
             'tipo_baja' => 'required|in:baja_desuso,baja_transferencia,baja_rotura',
             'observaciones' => 'required|string',
+            'destino_transferencia' => 'required_if:tipo_baja,baja_transferencia|nullable|exists:destino,id',
+            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048'
         ]);
 
         DB::beginTransaction();
         try {
-            $bien = PatrimonioBien::findOrFail($id);
+            //Tipo de baja
+            $tipoBaja = $validated['tipo_baja'];
 
-            $bien->update([
-                'estado' => 'baja',
-            ]);
+            // Obtener las rutas de imágenes existentes
+            $rutasImagenesExistentes = json_decode($bien->rutas_imagenes, true) ?? [];
+            $rutasImagenes = $rutasImagenesExistentes;
 
+            // Procesar las nuevas imágenes
+            for ($i = 1; $i <= 3; $i++) {
+                $inputName = 'imagen' . $i;
+                if ($request->hasFile($inputName)) {
+                    $rutaImagen = $request->file($inputName)->store('', 'anexos');
+                    $rutasImagenes[] = 'anexos/' . $rutaImagen;
+                    Log::info("Nueva imagen {$i} de la baja subida: anexos/{$rutaImagen}");
+                }
+            }
+
+            // Manejo del archivo adjunto
+            if ($request->hasFile('archivo')) {
+                $rutaArchivo = $request->file('archivo')->store('', 'anexos');
+                $rutasImagenes[] = 'anexos/' . $rutaArchivo;
+                Log::info("Nuevo archivo adjunto de la baja subido: anexos/{$rutaArchivo}");
+            }
+
+            // Actualizar estado y rutas de archivos
+            $bien->estado = 'baja';
+            $bien->observaciones = $request->observaciones;
+            $bien->rutas_imagenes = !empty($rutasImagenes) ? json_encode($rutasImagenes) : $bien->rutas_imagenes;
+            // Si es baja por transferencia → actualizar destino
+            if ($tipoBaja === 'baja_transferencia') {
+                $bien->destino_id = $request->destino_transferencia;
+            }
+            $bien->save();
+
+            // Registrar movimiento de baja
             $bien->registrarMovimiento(
                 $validated['tipo_baja'],
                 $bien->destino_id,
                 $bien->ubicacion,
+                $tipoBaja === 'baja_transferencia' ? $request->destino_transferencia : null,
                 null,
-                null,
-                $validated['observaciones']
+                $request->observaciones
             );
 
             DB::commit();
@@ -346,6 +384,10 @@ class PatrimonioBienController extends Controller
             'destino_hasta_id' => 'required|exists:destino,id',
             'ubicacion_hasta' => 'nullable|string|max:150',
             'observaciones' => 'nullable|string',
+            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048'
         ]);
 
         DB::beginTransaction();
@@ -361,11 +403,35 @@ class PatrimonioBienController extends Controller
                     ->withInput();
             }
 
+            // Obtener las rutas de imágenes existentes
+            $rutasImagenesExistentes = json_decode($bien->rutas_imagenes, true) ?? [];
+            $rutasImagenes = $rutasImagenesExistentes;
+
+            // Procesar las nuevas imágenes
+            for ($i = 1; $i <= 3; $i++) {
+                $inputName = 'imagen' . $i;
+                if ($request->hasFile($inputName)) {
+                    $rutaImagen = $request->file($inputName)->store('', 'anexos');
+                    $rutasImagenes[] = 'anexos/' . $rutaImagen;
+                    Log::info("Nueva imagen {$i} del traslado subida: anexos/{$rutaImagen}");
+                }
+            }
+
+            // Manejo del archivo adjunto
+            if ($request->hasFile('archivo')) {
+                $rutaArchivo = $request->file('archivo')->store('', 'anexos');
+                $rutasImagenes[] = 'anexos/' . $rutaArchivo;
+                Log::info("Nuevo archivo adjunto del traslado subido: anexos/{$rutaArchivo}");
+            }
+
+            // Actualizar bien con nuevas rutas y ubicación
             $bien->update([
                 'destino_id' => $destinoHasta,
                 'ubicacion' => $ubicacionHasta,
+                'rutas_imagenes' => !empty($rutasImagenes) ? json_encode($rutasImagenes) : $bien->rutas_imagenes
             ]);
 
+            // Registrar movimiento de traslado
             $bien->registrarMovimiento(
                 'traslado',
                 $destinoDesde,

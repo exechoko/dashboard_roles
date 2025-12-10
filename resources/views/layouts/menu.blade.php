@@ -137,7 +137,7 @@
     </li>
 @endcan
 
-{{-- NUEVO MENÚ DE PATRIMONIO --}}
+@can('ver-menu-patrimonio')
 <li class="dropdown {{ request()->is('patrimonio*') ? 'active' : '' }}">
     <a class="nav-link has-dropdown" href="#">
         <i class="fas fa-boxes"></i><span>Patrimonio</span>
@@ -155,6 +155,7 @@
         </li>
     </ul>
 </li>
+@endcan
 
 @can('ver-menu-dependencias')
     <li class="{{ request()->is('dependencias*') ? 'active' : '' }}">

@@ -7,11 +7,6 @@ use Spatie\Permission\Models\Permission;
 
 class SeederTablaPermisos extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
     public function run()
     {
         $permisos = [
@@ -39,7 +34,7 @@ class SeederTablaPermisos extends Seeder
             'editar-terminal',
             'borrar-terminal',
 
-            //tabla destino
+            //tabla dependencia
             'ver-dependencia',
             'crear-dependencia',
             'editar-dependencia',
@@ -83,6 +78,8 @@ class SeederTablaPermisos extends Seeder
 
             //tabla auditoria
             'ver-auditoria',
+            'editar-auditoria',
+            'borrar-auditoria',
 
             //tabla sitio
             'ver-sitio',
@@ -99,6 +96,13 @@ class SeederTablaPermisos extends Seeder
             'ver-menu-usuarios',
             'ver-menu-auditoria',
             'ver-menu-cecoco',
+            'ver-menu-documentacion',
+            'ver-menu-transcripcion',
+            'ver-menu-transcripcion-aws',
+            'ver-menu-entregas',
+            'ver-menu-bodycams',
+            'ver-menu-gestor-claves',
+            'ver-menu-patrimonio',
 
             //CeCoCo
             'ver-llamadas-cecoco',
@@ -107,12 +111,51 @@ class SeederTablaPermisos extends Seeder
             'buscar-moviles-recorridos',
             'ver-eventos-cecoco',
             'ver-mapa-calor-servicios-cecoco',
-            'ver-mapa-cecoco-en-vivo'
+            'ver-mapa-cecoco-en-vivo',
+
+            //ENTREGAS – Equipos
+            'ver-entrega-equipos',
+            'crear-entrega-equipos',
+            'editar-entrega-equipos',
+            'borrar-entrega-equipos',
+
+            //ENTREGAS – Bodycams
+            'ver-entrega-bodycams',
+            'crear-entrega-bodycams',
+            'editar-entrega-bodycams',
+            'borrar-entrega-bodycams',
+
+            //Bodycams
+            'ver-bodycam',
+            'crear-bodycam',
+            'editar-bodycam',
+            'borrar-bodycam',
+
+            //Gestor de claves
+            'ver-clave',
+            'crear-clave',
+            'editar-clave',
+            'borrar-clave',
+            'compartir-clave',
+
+            //Patrimonio
+            'ver-bien',
+            'crear-bien',
+            'editar-bien',
+            'baja-bien',
+
+            //Tipo Bien
+            'ver-tipo-bien',
+            'crear-tipo-bien',
+            'editar-tipo-bien',
+            'borrar-tipo-bien',
+
+            //Acciones varias
+            'reiniciar-camara',
         ];
 
-        // Looping and Inserting Array's Permissions into Permission Table
+        // Crear permisos si no existen
         foreach ($permisos as $permission) {
-            // Verificar si el permiso ya existe antes de crearlo
             if (!Permission::where('name', $permission)->exists()) {
                 Permission::create(['name' => $permission]);
             }

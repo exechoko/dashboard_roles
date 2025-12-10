@@ -68,6 +68,11 @@
                                 <a class="nav-link" id="camaras-tab3" data-toggle="tab" href="#camaras3" role="tab"
                                     aria-controls="contact" aria-selected="false">Cámaras</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="novedades-tab3" data-toggle="tab" href="#novedades3" role="tab"
+                                    aria-controls="contact" aria-selected="false">Novedades del día</a>
+                            </li>
+
                         </ul>
                     @endcan()
                     <div class="card">
@@ -468,6 +473,57 @@
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
+                                    <!-- Tab de portatiles UOM -->
+                                    <div class="tab-pane fade" id="novedades3" role="tabpanel" aria-labelledby="novedades-tab3">
+                                        <div class="row">
+                                            <div class="col-md-4 col-xl-3">
+                                                <div class="card-item bg-c-green order-card">
+                                                    <div class="card-block">
+                                                        <h5>
+                                                            HT's UOM entregados
+                                                            <i class="fas fa-info-circle ml-1" data-toggle="tooltip"
+                                                                data-placement="top"
+                                                                title="Portatiles Sepura STP9000 entregados"></i>
+                                                        </h5>
+                                                        <h2 class="text-right"><i
+                                                                class="fas fa-check f-left"></i><span>{{ $cant_equipos_funcionales }}</span>
+                                                        </h2>
+                                                        @can('ver-equipo')
+                                                            <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                                    data-target="#modal-equipos-funcionales"
+                                                                    id="btn-buscar-equipos-funcionales"
+                                                                    style="color: rgb(253, 253, 253)">Ver
+                                                                    más</a>
+                                                            </p>
+                                                        @endcan
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 col-xl-3">
+                                                <div class="card-item bg-c-green order-card">
+                                                    <div class="card-block">
+                                                        <h5>
+                                                            Bodycams entregadas
+                                                            <i class="fas fa-info-circle ml-1" data-toggle="tooltip"
+                                                                data-placement="top"
+                                                                title="Bodycams Hytera entregadas"></i>
+                                                        </h5>
+                                                        <h2 class="text-right"><i
+                                                                class="fas fa-check f-left"></i><span>{{ $cant_equipos_funcionales }}</span>
+                                                        </h2>
+                                                        @can('ver-equipo')
+                                                            <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                                    data-target="#modal-equipos-funcionales"
+                                                                    id="btn-buscar-equipos-funcionales"
+                                                                    style="color: rgb(253, 253, 253)">Ver
+                                                                    más</a>
+                                                            </p>
+                                                        @endcan
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>    
                                     </div>
                                 </div>
                             @endcan

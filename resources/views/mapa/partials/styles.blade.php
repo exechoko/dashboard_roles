@@ -788,6 +788,72 @@
     }
 
     /* ========================================
+    ESTILOS PARA CONTROLES DEL POLIGONO
+   ======================================== */
+    .polygon-results-button .btn {
+        font-size: 14px;
+        font-weight: bold;
+        padding: 8px 15px;
+        border-radius: 20px;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.05);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .polygon-control-button {
+        margin-top: 50px;
+    }
+
+    .leaflet-draw-toolbar {
+        margin-top: 12px !important;
+    }
+
+    .leaflet-draw-toolbar a {
+        background-color: #ff9800 !important;
+        color: white !important;
+        border-radius: 4px !important;
+    }
+
+    .leaflet-draw-toolbar a:hover {
+        background-color: #f57c00 !important;
+    }
+
+    /* Modal personalizado */
+    #polygonCamerasModal .modal-xl {
+        max-width: 95%;
+    }
+
+    #polygonCamerasModal .table th {
+        background-color: #343a40;
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    #polygonCamerasModal .table-responsive {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+
+    /* Botón activo */
+    #togglePolygonBtn.active {
+        background-color: #dc3545 !important;
+    }
+
+    /* ========================================
    CONTROL PERSONALIZADO DE CAPAS - DARK THEME
    ======================================== */
     [data-theme="dark"] .custom-layer-control {

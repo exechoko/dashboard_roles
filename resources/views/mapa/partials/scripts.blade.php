@@ -314,6 +314,9 @@ var mymap = L.map('map', {
 }).setView(new L.LatLng(-31.75899, -60.47825), zoom);
 
 // Variables para marcadores y capas
+var polygonLayer = L.featureGroup();
+var drawControl = null;
+var selectedCameras = [];
 var marcadores = L.markerClusterGroup();
 var markersCamarasLPR = L.markerClusterGroup();
 var markersCamarasFR = L.markerClusterGroup();
@@ -461,6 +464,562 @@ function actualizarBotonesMapaConTema(mymap, botonesConfig) {
 }
 
 /* ========================================
+   INICIALIZACIÓN OPCIONES POLIGONOS
+   ======================================== */
+
+// Configurar controles de dibujo después de la inicialización del mapa
+function setupDrawControls() {
+    // Control de dibujo
+    drawControl = new L.Control.Draw({
+        position: 'topleft',
+        draw: {
+            polygon: {
+                allowIntersection: false,
+                drawError: {
+                    color: '#e1e100',
+                    message: '<strong>¡Error!</strong> El polígono no puede intersectarse'
+                },
+                shapeOptions: {
+                    color: '#2196F3',
+                    fillColor: '#2196F3',
+                    fillOpacity: 0.3,
+                    weight: 2
+                },
+                showArea: true,
+                metric: true,
+                icon: new L.DivIcon({
+                    iconSize: new L.Point(8, 8),
+                    className: 'leaflet-div-icon leaflet-editing-icon'
+                })
+            },
+            polyline: false,
+            circle: false,
+            rectangle: false,
+            circlemarker: false,
+            marker: false
+        },
+        edit: {
+            featureGroup: polygonLayer,
+            edit: false,
+            remove: false
+        }
+    });
+
+    mymap.addControl(drawControl);
+
+    // Eventos de dibujo
+    mymap.on(L.Draw.Event.CREATED, function(event) {
+        var layer = event.layer;
+        polygonLayer.addLayer(layer);
+
+        // Buscar cámaras dentro del polígono
+        findCamerasInPolygon(layer);
+
+        // Agregar botón para cerrar polígono
+        addPolygonControls(layer);
+    });
+
+    mymap.on(L.Draw.Event.DRAWSTOP, function() {
+        // Limpiar selección anterior
+        clearPolygonSelection();
+    });
+}
+
+// Buscar cámaras dentro del polígono
+function findCamerasInPolygon(polygon) {
+    selectedCameras = [];
+
+    // Recorrer todas las cámaras visibles
+    marcadores.eachLayer(function(marker) {
+        if (marker instanceof L.Marker) {
+            var point = marker.getLatLng();
+            if (polygon.getBounds().contains(point) &&
+                isPointInPolygon(point, polygon.getLatLngs()[0])) {
+
+                // Obtener información del marcador
+                var cameraData = getCameraDataFromMarker(marker);
+                if (cameraData) {
+                    selectedCameras.push(cameraData);
+
+                    // Resaltar marcador
+                    highlightMarker(marker);
+                }
+            }
+        }
+    });
+
+    // Mostrar resultados
+    showPolygonResults(polygon);
+}
+
+// Verificar si un punto está dentro de un polígono
+function isPointInPolygon(point, polygon) {
+    var x = point.lat, y = point.lng;
+    var inside = false;
+
+    for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        var xi = polygon[i].lat, yi = polygon[i].lng;
+        var xj = polygon[j].lat, yj = polygon[j].lng;
+
+        var intersect = ((yi > y) != (yj > y)) &&
+            (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+
+    return inside;
+}
+
+// Obtener datos de la cámara desde el marcador
+function getCameraDataFromMarker(marker) {
+    var popupContent = marker.getPopup().getContent();
+    var tempDiv = document.createElement('div');
+    tempDiv.innerHTML = popupContent;
+
+    // Extraer información básica
+    var title = tempDiv.querySelector('h5')?.textContent || '';
+    var details = {};
+
+    // Parsear detalles del popup
+    var lines = popupContent.split('<br>');
+    lines.forEach(function(line) {
+        if (line.includes(':')) {
+            var parts = line.split(':');
+            var key = parts[0].trim().toLowerCase().replace(/\s+/g, '_');
+            var value = parts[1].replace(/<[^>]*>/g, '').trim();
+            details[key] = value;
+        }
+    });
+
+    return {
+        marker: marker,
+        latlng: marker.getLatLng(),
+        title: title,
+        details: details,
+        popupContent: popupContent
+    };
+}
+
+// Resaltar marcador seleccionado
+function highlightMarker(marker) {
+    var icon = marker.options.icon;
+    if (icon && icon.options) {
+        // Guardar el icono original
+        if (!marker._originalIcon) {
+            marker._originalIcon = icon;
+        }
+
+        // Crear icono resaltado
+        var highlightedIcon = L.divIcon({
+            ...icon.options,
+            html: icon.options.html.replace('stroke-width="1"', 'stroke-width="3"')
+                .replace('stroke-width="2"', 'stroke-width="4"')
+                .replace('stroke="#000000"', 'stroke="#FF0000"')
+                .replace('stroke="#ffffff"', 'stroke="#FF0000"')
+        });
+
+        marker.setIcon(highlightedIcon);
+    }
+}
+
+// Mostrar resultados del polígono
+function showPolygonResults(polygon) {
+    if (selectedCameras.length === 0) {
+        showNotification('No se encontraron cámaras en el área seleccionada', 'warning');
+        return;
+    }
+
+    // Crear botón flotante
+    var resultsButton = L.control({ position: 'bottomleft' });
+
+    resultsButton.onAdd = function(map) {
+        var div = L.DomUtil.create('div', 'polygon-results-button');
+        div.innerHTML = `
+            <button class="btn btn-success btn-sm"
+                    onclick="showCamerasModal()"
+                    style="box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+                <i class="fas fa-camera"></i>
+                ${selectedCameras.length} Cámaras encontradas
+                <i class="fas fa-external-link-alt ml-1"></i>
+            </button>
+        `;
+        return div;
+    };
+
+    resultsButton.addTo(mymap);
+
+    // Guardar referencia
+    polygon._resultsButton = resultsButton;
+
+    // Mostrar notificación
+    showNotification(`Encontró ${selectedCameras.length} cámaras en el área`, 'success');
+}
+
+// Agregar controles al polígono
+function addPolygonControls(polygon) {
+    // Botón para buscar cámaras nuevamente
+    var findButton = L.control({ position: 'topleft' });
+
+    findButton.onAdd = function(map) {
+        var div = L.DomUtil.create('div', 'polygon-control-button');
+        div.innerHTML = `
+            <button class="btn btn-primary btn-sm"
+                    onclick="findCamerasInPolygon(polygonLayer.getLayers()[0])"
+                    style="margin-right: 5px;">
+                <i class="fas fa-search"></i> Buscar
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="clearPolygonSelection()">
+                <i class="fas fa-times"></i> Limpiar
+            </button>
+        `;
+        return div;
+    };
+
+    findButton.addTo(mymap);
+    polygon._controlButton = findButton;
+}
+
+// Limpiar selección de polígono
+function clearPolygonSelection() {
+    // Restaurar iconos originales
+    selectedCameras.forEach(function(camera) {
+        if (camera.marker && camera.marker._originalIcon) {
+            camera.marker.setIcon(camera.marker._originalIcon);
+            delete camera.marker._originalIcon;
+        }
+    });
+
+    // Limpiar capa de polígonos
+    polygonLayer.clearLayers();
+
+    // Limpiar controles
+    if (polygonLayer.getLayers().length > 0) {
+        var polygon = polygonLayer.getLayers()[0];
+        if (polygon._resultsButton) {
+            mymap.removeControl(polygon._resultsButton);
+        }
+        if (polygon._controlButton) {
+            mymap.removeControl(polygon._controlButton);
+        }
+    }
+
+    selectedCameras = [];
+
+    // Cerrar modal si está abierto
+    var modal = document.getElementById('polygonCamerasModal');
+    if (modal) {
+        $(modal).modal('hide');
+    }
+}
+
+// Mostrar modal con cámaras
+function showCamerasModal() {
+    // Crear contenido del modal
+    var modalContent = `
+        <div class="modal fade" id="polygonCamerasModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-xl" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-camera mr-2"></i>
+                            Cámaras en el Área Seleccionada: ${selectedCameras.length} encontradas
+                        </h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <button class="btn btn-success" onclick="exportToExcel()">
+                                    <i class="fas fa-file-excel"></i> Exportar a Excel
+                                </button>
+                                <button class="btn btn-primary ml-2" onclick="exportToPDF()">
+                                    <i class="fas fa-file-pdf"></i> Exportar a PDF
+                                </button>
+                                <button class="btn btn-info ml-2" onclick="exportToCSV()">
+                                    <i class="fas fa-file-csv"></i> Exportar a CSV
+                                </button>
+                            </div>
+                            <div class="col-md-6 text-right">
+                                <div class="input-group">
+                                    <input type="text" id="cameraSearch" class="form-control"
+                                           placeholder="Buscar cámara..." onkeyup="filterCameras()">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-search"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="camerasTable">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Nombre</th>
+                                        <th>Tipo</th>
+                                        <th>Sitio</th>
+                                        <th>Ubicación</th>
+                                        <th>Dependencia</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="camerasTableBody">
+                                    ${generateCamerasTable()}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                            <i class="fas fa-times"></i> Cerrar
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="zoomToSelectedArea()">
+                            <i class="fas fa-search-location"></i> Zoom al Área
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Agregar modal al DOM si no existe
+    if (!document.getElementById('polygonCamerasModal')) {
+        document.body.insertAdjacentHTML('beforeend', modalContent);
+    }
+
+    // Mostrar modal
+    $('#polygonCamerasModal').modal('show');
+}
+
+// Generar tabla de cámaras
+function generateCamerasTable() {
+    return selectedCameras.map(function(camera, index) {
+        return `
+            <tr data-camera-index="${index}">
+                <td>${index + 1}</td>
+                <td><strong>${camera.title}</strong></td>
+                <td>${camera.details.tipo || 'N/A'}</td>
+                <td>${camera.details.sitio || 'N/A'}</td>
+                <td>${camera.latlng.lat.toFixed(5)}, ${camera.latlng.lng.toFixed(5)}</td>
+                <td>${camera.details.dependencia || 'N/A'}</td>
+                <td>
+                    <span class="badge badge-success">Activa</span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-info" onclick="zoomToCamera(${index})"
+                            title="Ver en mapa">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </button>
+                    <button class="btn btn-sm btn-warning" onclick="showCameraDetails(${index})"
+                            title="Ver detalles">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    @can('editar-camara')
+                    <button class="btn btn-sm btn-primary" onclick="editSelectedCamera(${index})"
+                            title="Editar">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    @endcan
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Filtrar cámaras en la tabla
+function filterCameras() {
+    var input = document.getElementById('cameraSearch');
+    var filter = input.value.toUpperCase();
+    var rows = document.querySelectorAll('#camerasTableBody tr');
+
+    rows.forEach(function(row) {
+        var text = row.textContent.toUpperCase();
+        row.style.display = text.indexOf(filter) > -1 ? '' : 'none';
+    });
+}
+
+// Zoom a la cámara específica
+function zoomToCamera(index) {
+    var camera = selectedCameras[index];
+    if (camera && camera.latlng) {
+        mymap.setView(camera.latlng, 18);
+        camera.marker.openPopup();
+        $('#polygonCamerasModal').modal('hide');
+    }
+}
+
+// Zoom al área del polígono
+function zoomToSelectedArea() {
+    if (polygonLayer.getLayers().length > 0) {
+        var polygon = polygonLayer.getLayers()[0];
+        mymap.fitBounds(polygon.getBounds());
+        $('#polygonCamerasModal').modal('hide');
+    }
+}
+
+// Mostrar detalles de la cámara
+function showCameraDetails(index) {
+    var camera = selectedCameras[index];
+
+    Swal.fire({
+        title: camera.title,
+        html: camera.popupContent,
+        width: '800px',
+        showCloseButton: true,
+        showConfirmButton: false
+    });
+}
+
+// Editar cámara seleccionada
+function editSelectedCamera(index) {
+    var camera = selectedCameras[index];
+    // Extraer ID de la cámara del popup content
+    var matches = camera.popupContent.match(/editCamera\((\d+)\)/);
+    if (matches && matches[1]) {
+        editCamera(parseInt(matches[1]));
+    }
+}
+
+// Función de notificación
+function showNotification(message, type = 'info') {
+    var icon = type === 'success' ? 'fas fa-check-circle' :
+               type === 'warning' ? 'fas fa-exclamation-triangle' :
+               'fas fa-info-circle';
+
+    Swal.fire({
+        icon: type,
+        title: message,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true
+    });
+}
+
+// Exportar a Excel
+function exportToExcel() {
+    // Preparar datos para exportación
+    var exportData = selectedCameras.map(function(camera, index) {
+        return {
+            'Nº': index + 1,
+            'Nombre': camera.title,
+            'Tipo': camera.details.tipo || '',
+            'Sitio': camera.details.sitio || '',
+            'Latitud': camera.latlng.lat,
+            'Longitud': camera.latlng.lng,
+            'Dependencia': camera.details.dependencia || '',
+            'Instalación': camera.details.fecha_instalacion || '',
+            'Marca': camera.details.marca || '',
+            'Modelo': camera.details.modelo || '',
+            'Nº Serie': camera.details.nro_serie || ''
+        };
+    });
+
+    // Crear hoja de trabajo
+    var ws = XLSX.utils.json_to_sheet(exportData);
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Cámaras");
+
+    // Exportar
+    var date = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `camaras-seleccionadas-${date}.xlsx`);
+
+    showNotification('Exportación a Excel completada', 'success');
+}
+
+// Exportar a PDF (usando jsPDF y autoTable)
+function exportToPDF() {
+    // Asegurarse de que jsPDF y autoTable estén cargados
+    if (typeof jsPDF === 'undefined' || typeof autoTable === 'undefined') {
+        showNotification('Error: Bibliotecas PDF no cargadas', 'error');
+        return;
+    }
+
+    var doc = new jsPDF('landscape');
+
+    // Título
+    doc.setFontSize(16);
+    doc.text('Reporte de Cámaras Seleccionadas', 14, 15);
+    doc.setFontSize(10);
+    doc.text(`Fecha: ${new Date().toLocaleDateString()} | Total: ${selectedCameras.length} cámaras`, 14, 22);
+
+    // Preparar datos para la tabla
+    var tableData = selectedCameras.map(function(camera, index) {
+        return [
+            index + 1,
+            camera.title,
+            camera.details.tipo || '',
+            camera.details.sitio || '',
+            `${camera.latlng.lat.toFixed(5)}, ${camera.latlng.lng.toFixed(5)}`,
+            camera.details.dependencia || '',
+            camera.details.fecha_instalacion || ''
+        ];
+    });
+
+    // Crear tabla
+    doc.autoTable({
+        head: [['#', 'Nombre', 'Tipo', 'Sitio', 'Ubicación', 'Dependencia', 'Instalación']],
+        body: tableData,
+        startY: 30,
+        theme: 'grid',
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [41, 128, 185] }
+    });
+
+    // Guardar PDF
+    var date = new Date().toISOString().split('T')[0];
+    doc.save(`camaras-seleccionadas-${date}.pdf`);
+
+    showNotification('Exportación a PDF completada', 'success');
+}
+
+// Exportar a CSV
+function exportToCSV() {
+    var csvContent = "data:text/csv;charset=utf-8,";
+
+    // Encabezados
+    csvContent += "Nº,Nombre,Tipo,Sitio,Latitud,Longitud,Dependencia,Instalación,Marca,Modelo,Nº Serie\n";
+
+    // Datos
+    selectedCameras.forEach(function(camera, index) {
+        var row = [
+            index + 1,
+            `"${camera.title}"`,
+            `"${camera.details.tipo || ''}"`,
+            `"${camera.details.sitio || ''}"`,
+            camera.latlng.lat,
+            camera.latlng.lng,
+            `"${camera.details.dependencia || ''}"`,
+            `"${camera.details.fecha_instalacion || ''}"`,
+            `"${camera.details.marca || ''}"`,
+            `"${camera.details.modelo || ''}"`,
+            `"${camera.details.nro_serie || ''}"`
+        ].join(',');
+
+        csvContent += row + "\n";
+    });
+
+    // Descargar
+    var encodedUri = encodeURI(csvContent);
+    var link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `camaras-seleccionadas-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showNotification('Exportación a CSV completada', 'success');
+}
+/* ========================================
+   FIN DE LA FUNCIÓN DE SELECCIÓN POR POLÍGONO
+   ======================================== */
+
+/* ========================================
    INTEGRACIÓN CON setupMapToggleButton
    ======================================== */
 
@@ -562,7 +1121,52 @@ $(document).ready(function() {
 
     // Añadir capa inicial de cámaras
     mymap.addLayer(capa2);
+
+    setTimeout(function() {
+        setupDrawControls();
+
+        // Agregar capa de polígonos al mapa
+        mymap.addLayer(polygonLayer);
+
+        // Botón para activar/desactivar dibujo de polígonos
+        addPolygonToggleButton();
+    }, 1000);
 });
+
+// Agregar botón toggle para polígonos
+function addPolygonToggleButton() {
+    var polygonControl = L.control({ position: 'topleft' });
+
+    polygonControl.onAdd = function(map) {
+        var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+        div.innerHTML = `
+            <button id="togglePolygonBtn" class="btn btn-warning"
+                    style="background-color: #ff9800; color: white; border: none;">
+                <i class="fas fa-draw-polygon"></i> Dibujar Área
+            </button>
+        `;
+
+        L.DomEvent.disableClickPropagation(div);
+        return div;
+    };
+
+    polygonControl.addTo(mymap);
+
+    document.getElementById('togglePolygonBtn').addEventListener('click', function() {
+        if (drawControl) {
+            // Alternar modo dibujo
+            if (this.classList.contains('active')) {
+                this.classList.remove('active');
+                this.innerHTML = '<i class="fas fa-draw-polygon"></i> Dibujar Área';
+                drawControl._toolbars.draw._modes.polygon.handler.disable();
+            } else {
+                this.classList.add('active');
+                this.innerHTML = '<i class="fas fa-times"></i> Cancelar';
+                drawControl._toolbars.draw._modes.polygon.handler.enable();
+            }
+        }
+    });
+}
 
 function ensureLayerControlVisibility() {
     // Asegurar que el control de capas siempre esté visible dentro del contenedor del mapa

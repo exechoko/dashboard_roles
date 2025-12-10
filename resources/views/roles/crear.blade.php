@@ -59,7 +59,8 @@
                                                         'menu-documentacion',
                                                         'menu-transcripcion',
                                                         'menu-transcripcion-aws',
-                                                        'menu-gestor-claves'
+                                                        'menu-gestor-claves',
+                                                        'menu-patrimonio'
                                                     ],
                                                     'Administración' => [
                                                         'rol',
@@ -97,6 +98,10 @@
                                                     ],
                                                     'Claves' => [
                                                         'clave'
+                                                    ],
+                                                    'Patrimonio' => [
+                                                        'bien',
+                                                        'tipo-bien'
                                                     ],
                                                     'Operaciones' => [
                                                         'buscar-moviles-parados',

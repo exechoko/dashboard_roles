@@ -216,7 +216,7 @@
 
                 {{-- Mostrar archivos existentes --}}
                 @php
-                    $rutasImagenes = json_decode($bien->rutas_imagenes, true) ?? [];
+$rutasImagenes = json_decode($bien->rutas_imagenes, true) ?? [];
                 @endphp
 
                 @if(!empty($rutasImagenes))
@@ -232,8 +232,8 @@
                                             <div class="col-md-3 mb-3">
                                                 <div class="existing-file-container">
                                                     @php
-                                                        $extension = pathinfo($ruta, PATHINFO_EXTENSION);
-                                                        $isImage = in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif']);
+        $extension = pathinfo($ruta, PATHINFO_EXTENSION);
+        $isImage = in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif']);
                                                     @endphp
 
                                                     @if($isImage)
@@ -300,81 +300,91 @@
 @endsection
 
 @push('scripts')
-<script>
-    $(document).ready(function() {
-        let imageCount = 0;
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2({
+                width: '100%'
+            });
+            // Forzar el foco en el campo de búsqueda cuando se abre el Select2
+            $(document).on('select2:open', () => {
+                let select2Field = document.querySelector('.select2-search__field');
+                if (select2Field) {
+                    select2Field.focus();
+                }
+            });
+            let imageCount = 0;
 
-        // Agregar imagen
-        document.getElementById('addImage').addEventListener('click', function () {
-            imageCount++;
+            // Agregar imagen
+            document.getElementById('addImage').addEventListener('click', function () {
+                imageCount++;
 
-            // Máximo 3 imágenes
-            if (imageCount > 3) {
-                alert('Puede agregar un máximo de 3 imágenes');
-                imageCount = 3;
-                return;
-            }
+                // Máximo 3 imágenes
+                if (imageCount > 3) {
+                    alert('Puede agregar un máximo de 3 imágenes');
+                    imageCount = 3;
+                    return;
+                }
 
-            const newImageDiv = document.createElement('div');
-            newImageDiv.classList.add('col-xs-12', 'col-sm-12', 'col-md-4', 'image-upload-container');
-            newImageDiv.id = `image-container-${imageCount}`;
+                const newImageDiv = document.createElement('div');
+                newImageDiv.classList.add('col-xs-12', 'col-sm-12', 'col-md-4', 'image-upload-container');
+                newImageDiv.id = `image-container-${imageCount}`;
 
-            newImageDiv.innerHTML = `
-                <div class="form-group">
-                    <label for="imagen${imageCount}">
-                        <i class="fas fa-image"></i> Imagen ${imageCount}
-                    </label>
-                    <div class="input-group">
-                        <input type="file" name="imagen${imageCount}" class="form-control" accept="image/*">
-                        <div class="input-group-append">
-                            <button type="button" class="btn btn-danger remove-image" data-image="${imageCount}">
-                                <i class="fas fa-times"></i>
-                            </button>
+                newImageDiv.innerHTML = `
+                    <div class="form-group">
+                        <label for="imagen${imageCount}">
+                            <i class="fas fa-image"></i> Imagen ${imageCount}
+                        </label>
+                        <div class="input-group">
+                            <input type="file" name="imagen${imageCount}" class="form-control" accept="image/*">
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-danger remove-image" data-image="${imageCount}">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
                         </div>
+                        <small class="text-muted">JPG, PNG, GIF (Máx. 2MB)</small>
                     </div>
-                    <small class="text-muted">JPG, PNG, GIF (Máx. 2MB)</small>
-                </div>
-            `;
+                `;
 
-            document.getElementById('imageContainer').appendChild(newImageDiv);
+                document.getElementById('imageContainer').appendChild(newImageDiv);
 
-            // Ocultar botón si ya hay 3 imágenes
-            if (imageCount >= 3) {
-                document.getElementById('addImage').style.display = 'none';
-            }
+                // Ocultar botón si ya hay 3 imágenes
+                if (imageCount >= 3) {
+                    document.getElementById('addImage').style.display = 'none';
+                }
+            });
+
+            // Remover imagen
+            $(document).on('click', '.remove-image', function () {
+                const imageNum = $(this).data('image');
+                $(`#image-container-${imageNum}`).remove();
+
+                // Recontear imágenes y mostrar botón si hay menos de 3
+                imageCount = $('.image-upload-container').length;
+                if (imageCount < 3) {
+                    document.getElementById('addImage').style.display = 'block';
+                }
+            });
+
+            // Inicializar select2
+            $('.select2').select2({
+                width: '100%'
+            });
+
+            // Advertir sobre cambio de destino o ubicación
+            const destinoOriginal = $('#destino_id').val();
+            const ubicacionOriginal = $('#ubicacion').val();
+
+            $('form').on('submit', function(e) {
+                const destinoNuevo = $('#destino_id').val();
+                const ubicacionNueva = $('#ubicacion').val();
+
+                if ((destinoOriginal != destinoNuevo) || (ubicacionOriginal != ubicacionNueva)) {
+                    return confirm('Ha cambiado el destino o la ubicación del bien. Esto registrará automáticamente un TRASLADO en el historial. ¿Desea continuar?');
+                }
+            });
         });
-
-        // Remover imagen
-        $(document).on('click', '.remove-image', function () {
-            const imageNum = $(this).data('image');
-            $(`#image-container-${imageNum}`).remove();
-
-            // Recontear imágenes y mostrar botón si hay menos de 3
-            imageCount = $('.image-upload-container').length;
-            if (imageCount < 3) {
-                document.getElementById('addImage').style.display = 'block';
-            }
-        });
-
-        // Inicializar select2
-        $('.select2').select2({
-            width: '100%'
-        });
-
-        // Advertir sobre cambio de destino o ubicación
-        const destinoOriginal = $('#destino_id').val();
-        const ubicacionOriginal = $('#ubicacion').val();
-
-        $('form').on('submit', function(e) {
-            const destinoNuevo = $('#destino_id').val();
-            const ubicacionNueva = $('#ubicacion').val();
-
-            if ((destinoOriginal != destinoNuevo) || (ubicacionOriginal != ubicacionNueva)) {
-                return confirm('Ha cambiado el destino o la ubicación del bien. Esto registrará automáticamente un TRASLADO en el historial. ¿Desea continuar?');
-            }
-        });
-    });
-</script>
+    </script>
 @endpush
 
 @push('styles')

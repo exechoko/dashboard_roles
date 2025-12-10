@@ -224,85 +224,95 @@
 @endsection
 
 @push('scripts')
-<script>
-    $(document).ready(function() {
-        let imageCount = 0;
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2({
+                width: '100%'
+            });
+            // Forzar el foco en el campo de búsqueda cuando se abre el Select2
+            $(document).on('select2:open', () => {
+                let select2Field = document.querySelector('.select2-search__field');
+                if (select2Field) {
+                    select2Field.focus();
+                }
+            });
+            let imageCount = 0;
 
-        // Agregar imagen
-        document.getElementById('addImage').addEventListener('click', function () {
-            imageCount++;
+            // Agregar imagen
+            document.getElementById('addImage').addEventListener('click', function () {
+                imageCount++;
 
-            // Máximo 3 imágenes
-            if (imageCount > 3) {
-                alert('Puede agregar un máximo de 3 imágenes');
-                imageCount = 3;
-                return;
-            }
+                // Máximo 3 imágenes
+                if (imageCount > 3) {
+                    alert('Puede agregar un máximo de 3 imágenes');
+                    imageCount = 3;
+                    return;
+                }
 
-            const newImageDiv = document.createElement('div');
-            newImageDiv.classList.add('col-md-4', 'image-upload-container');
-            newImageDiv.id = `image-container-${imageCount}`;
+                const newImageDiv = document.createElement('div');
+                newImageDiv.classList.add('col-md-4', 'image-upload-container');
+                newImageDiv.id = `image-container-${imageCount}`;
 
-            newImageDiv.innerHTML = `
-                <div class="form-group">
-                    <label for="imagen${imageCount}">
-                        <i class="fas fa-image"></i> Imagen ${imageCount}
-                    </label>
-                    <div class="input-group">
-                        <input type="file" name="imagen${imageCount}" class="form-control" accept="image/*">
-                        <div class="input-group-append">
-                            <button type="button" class="btn btn-danger remove-image" data-image="${imageCount}">
-                                <i class="fas fa-times"></i>
-                            </button>
+                newImageDiv.innerHTML = `
+                    <div class="form-group">
+                        <label for="imagen${imageCount}">
+                            <i class="fas fa-image"></i> Imagen ${imageCount}
+                        </label>
+                        <div class="input-group">
+                            <input type="file" name="imagen${imageCount}" class="form-control" accept="image/*">
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-danger remove-image" data-image="${imageCount}">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
                         </div>
+                        <small class="text-muted">JPG, PNG, GIF (Máx. 2MB)</small>
                     </div>
-                    <small class="text-muted">JPG, PNG, GIF (Máx. 2MB)</small>
-                </div>
-            `;
+                `;
 
-            document.getElementById('imageContainer').appendChild(newImageDiv);
+                document.getElementById('imageContainer').appendChild(newImageDiv);
 
-            // Ocultar botón si ya hay 3 imágenes
-            if (imageCount >= 3) {
-                document.getElementById('addImage').style.display = 'none';
-            }
+                // Ocultar botón si ya hay 3 imágenes
+                if (imageCount >= 3) {
+                    document.getElementById('addImage').style.display = 'none';
+                }
+            });
+
+            // Remover imagen
+            $(document).on('click', '.remove-image', function () {
+                const imageNum = $(this).data('image');
+                $(`#image-container-${imageNum}`).remove();
+
+                // Recontear imágenes y mostrar botón si hay menos de 3
+                imageCount = $('.image-upload-container').length;
+                if (imageCount < 3) {
+                    document.getElementById('addImage').style.display = 'block';
+                }
+            });
+
+            // Inicializar select2
+            $('.select2').select2({
+                width: '100%'
+            });
+
+            // Validación al enviar
+            $('form').on('submit', function(e) {
+                const destino = $('#destino_hasta_id').val();
+                const ubicacion = $('#ubicacion_hasta').val();
+
+                if (!destino) {
+                    e.preventDefault();
+                    alert('Debe seleccionar un destino para el traslado');
+                    return false;
+                }
+
+                const destinoNuevo = $('#destino_hasta_id option:selected').text();
+                const ubicacionTexto = ubicacion ? ` - ${ubicacion}` : '';
+
+                return confirm(`¿Está seguro de trasladar este bien a:\n\n${destinoNuevo}${ubicacionTexto}\n\nSe registrará en el historial patrimonial.`);
+            });
         });
-
-        // Remover imagen
-        $(document).on('click', '.remove-image', function () {
-            const imageNum = $(this).data('image');
-            $(`#image-container-${imageNum}`).remove();
-
-            // Recontear imágenes y mostrar botón si hay menos de 3
-            imageCount = $('.image-upload-container').length;
-            if (imageCount < 3) {
-                document.getElementById('addImage').style.display = 'block';
-            }
-        });
-
-        // Inicializar select2
-        $('.select2').select2({
-            width: '100%'
-        });
-
-        // Validación al enviar
-        $('form').on('submit', function(e) {
-            const destino = $('#destino_hasta_id').val();
-            const ubicacion = $('#ubicacion_hasta').val();
-
-            if (!destino) {
-                e.preventDefault();
-                alert('Debe seleccionar un destino para el traslado');
-                return false;
-            }
-
-            const destinoNuevo = $('#destino_hasta_id option:selected').text();
-            const ubicacionTexto = ubicacion ? ` - ${ubicacion}` : '';
-
-            return confirm(`¿Está seguro de trasladar este bien a:\n\n${destinoNuevo}${ubicacionTexto}\n\nSe registrará en el historial patrimonial.`);
-        });
-    });
-</script>
+    </script>
 @endpush
 
 @push('styles')

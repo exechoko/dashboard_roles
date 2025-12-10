@@ -51,7 +51,7 @@
                                                     placeholder="SIAF, Serie, Descripción, Ubicación..." value="{{ request('busqueda') }}">
                                             </div>
                                             <div class="col-12 col-md-6 col-lg-2">
-                                                <select name="tipo_bien_id" class="form-control">
+                                                <select name="tipo_bien_id" class="form-control select2">
                                                     <option value="">Todos los tipos</option>
                                                     @foreach($tiposBien as $tipo)
                                                         <option value="{{ $tipo->id }}" {{ request('tipo_bien_id') == $tipo->id ? 'selected' : '' }}>
@@ -61,7 +61,7 @@
                                                 </select>
                                             </div>
                                             <div class="col-12 col-md-6 col-lg-2">
-                                                <select name="destino_id" class="form-control">
+                                                <select name="destino_id" class="form-control select2">
                                                     <option value="">Todos los destinos</option>
                                                     @foreach($destinos as $destino)
                                                         <option value="{{ $destino->id }}" {{ request('destino_id') == $destino->id ? 'selected' : '' }}>
@@ -75,7 +75,7 @@
                                                     placeholder="Ubicación..." value="{{ request('ubicacion') }}">
                                             </div>
                                             <div class="col-12 col-md-6 col-lg-2">
-                                                <select name="estado" class="form-control">
+                                                <select name="estado" class="form-control select2">
                                                     <option value="">Todos los estados</option>
                                                     @foreach(\App\Models\PatrimonioBien::ESTADOS as $key => $label)
                                                         <option value="{{ $key }}" {{ request('estado') == $key ? 'selected' : '' }}>
@@ -207,6 +207,16 @@
 
 @push('scripts')
 <script>
+    $('.select2').select2({
+        width: '100%'
+    });
+    // Forzar el foco en el campo de búsqueda cuando se abre el Select2
+    $(document).on('select2:open', () => {
+        let select2Field = document.querySelector('.select2-search__field');
+        if (select2Field) {
+            select2Field.focus();
+        }
+    });
     // Auto-hide alerts after 5 seconds
     setTimeout(function() {
         $('.alert').fadeOut('slow');

@@ -491,8 +491,8 @@
                                                         </h2>
                                                         @can('ver-equipo')
                                                             <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                    data-target="#modal-equipos-funcionales"
-                                                                    id="btn-buscar-equipos-funcionales"
+                                                                    data-target="#modal-uom-disponibles"
+                                                                    id="btn-uom-disponibles"
                                                                     style="color: rgb(253, 253, 253)">Ver
                                                                     más</a>
                                                             </p>
@@ -514,8 +514,8 @@
                                                         </h2>
                                                         @can('ver-equipo')
                                                             <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                    data-target="#modal-equipos-funcionales"
-                                                                    id="btn-buscar-equipos-funcionales"
+                                                                    data-target="#modal-uom-no-disponibles"
+                                                                    id="btn-uom-no-disponibles"
                                                                     style="color: rgb(253, 253, 253)">Ver
                                                                     más</a>
                                                             </p>
@@ -536,7 +536,7 @@
                 </div>
             </div>
         </div>
-
+        <!-- Modales -->
         <div id="modal-equipos-sin-funcionar" class="modal fade " data-backdrop="false"
             style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
             <div id="dialog" class="modal-dialog modal-xs">
@@ -1021,7 +1021,65 @@
                 </div>
             </div>
         </div>
+                                <!-- acá dejo las modales de los equipos UOM -->
+        <div id="modal-uom-disponibles" class="modal fade" data-backdrop="false" style="background-color: rgba(0,0,0,0.5);"
+         role="dialog">
 
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+
+                    <div class="modal-header bg-c-green">
+                        <h4 class="modal-title text-white">HTs UOM Disponibles</h4>
+                        <button type="button" class="close" data-dismiss="modal">
+                                <span>&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body" style="min-height: 400px;">
+                        <table id="tabla-uom-disponibles"
+                       class="table table-condensed table-bordered table-striped"></table>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" data-dismiss="modal">
+                        <i class="fa fa-times"></i> Cerrar
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+                                <!-- modal de no disponibles -->
+        <div id="modal-uom-no-disponibles" class="modal fade" data-backdrop="false"
+            style="background-color: rgba(0,0,0,0.5);" role="dialog">
+
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+
+                    <div class="modal-header bg-c-red">
+                        <h4 class="modal-title text-white">HTs UOM No Disponibles</h4>
+                        <button type="button" class="close" data-dismiss="modal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body" style="min-height: 400px;">
+                        <table id="tabla-uom-no-disponibles"
+                       class="table table-condensed table-bordered table-striped"></table>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" data-dismiss="modal">
+                            <i class="fa fa-times"></i> Cerrar
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+
+        
     </section>
 
 
@@ -1051,6 +1109,10 @@
             handleClickEvent('#btn-buscar-equipos-division-911', consultarEquiposDivision911);
             handleClickEvent('#btn-buscar-equipos-division-bancaria', consultarEquiposDivisionBancaria);
             handleClickEvent('#btn-buscar-desinstalaciones-parciales', consultarDesinstalacionesParciales);
+            // agrego la parte de los botones de equipos UOM 11/12/2025
+            handleClickEvent('#btn-uom-disponibles', consultarUOMDisponibles);
+            handleClickEvent('#btn-uom-no-disponibles', consultarUOMNoDisponibles);
+
             handleClickEvent('#btn-buscar-camaras', function () {
                 // Tu función de consulta para cámaras, si es diferente
             });
@@ -2281,5 +2343,62 @@
                 height: '400px'
             })
         }
+
+        ///agrego las funciones de los botones de equipos UOM 11/12/2025
+        function consultarUOMDisponibles() {
+            $.post(
+                "{{ route('get-uom-disponibles-json') }}",
+                { _token: "{{ csrf_token() }}" },
+
+                function (data) {
+                    console.log('UOM DISPONIBLES:', data);
+                    setTableUOM('tabla-uom-disponibles', data);
+                }
+            ).fail(function (data) {
+                swal('Error', 'Ocurrió un error al cargar los equipos.', 'error');
+            });
+        }
+
+        function consultarUOMNoDisponibles() {
+            $.post(
+                "{{ route('get-uom-no-disponibles-json') }}",
+                { _token: "{{ csrf_token() }}" },
+
+                function (data) {
+                    console.log('UOM NO DISPONIBLES:', data);
+                    setTableUOM('tabla-uom-no-disponibles', data);
+                }
+            ).fail(function (data) {
+                swal('Error', 'Ocurrió un error al cargar los equipos.', 'error');
+            });
+        }
+
+        //agrego la forma de la tabla de equipos UOM 11/12/2025
+        function setTableUOM(table_id, rows) {
+            var table = $('#' + table_id);
+            var columns = [];
+
+            table.bootstrapTable('destroy');
+
+            columns.push({ title: 'ID', field: 'id', sortable: true });
+            columns.push({ title: 'TEI', field: 'tei', sortable: true });
+            columns.push({ title: 'Modelo', field: 'modelo', sortable: true });
+
+            table.bootstrapTable({
+                striped: true,
+                fixedColumns: true,
+                fixedNumber: 1,
+                sortable: true,
+                paginationVAlign: 'both',
+                columns: columns,
+                data: rows
+            });
+
+            table.find('thead').css({ backgroundColor: 'white' });
+            table.closest('.fixed-table-body').css({ height: '350px' });
+        }
+
+
+
     </script>
 @endsection

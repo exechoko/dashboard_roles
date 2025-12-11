@@ -568,4 +568,51 @@ class DashboardController extends Controller
 
         return response()->json(['cantidad_desinstalaciones_parciales' => $cantidad]);
     }
+
+    //agrego metodos para equipos UOM 11/12/2025
+    public function getUOMDisponiblesJSON(Request $request)
+    {
+        $equipos = FlotaGeneral::whereDoesntHave('entregasActivas')
+            ->whereHas('equipo.tipo_terminal.tipo_uso', function ($query) {
+                $query->where('uso', 'portatil');
+            })
+            ->whereHas('recurso', function ($query) {
+                $query->where('nombre', 'Unidad Operativa Móvil');
+            })
+            ->with(['equipo'])
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->equipo->id ?? '',
+                    'tei' => $item->equipo->tei ?? '',
+                    'modelo' => $item->equipo->modelo ?? '',
+                ];
+            });
+
+        return response()->json($equipos);
+    }
+
+    public function getUOMNoDisponiblesJSON(Request $request)
+    {
+        $equipos = FlotaGeneral::whereHas('entregasActivas')
+            ->whereHas('equipo.tipo_terminal.tipo_uso', function ($query) {
+                $query->where('uso', 'portatil');
+            })
+            ->whereHas('recurso', function ($query) {
+                $query->where('nombre', 'Unidad Operativa Móvil');
+            })
+            ->with(['equipo'])
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'id' => $item->equipo->id ?? '',
+                    'tei' => $item->equipo->tei ?? '',
+                    'modelo' => $item->equipo->modelo ?? '',
+                ];
+            });
+
+        return response()->json($equipos);
+    }
+
+
 }

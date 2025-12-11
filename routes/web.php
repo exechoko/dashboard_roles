@@ -110,6 +110,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/get-equipos-departamental-json', [App\Http\Controllers\DashboardController::class, 'getEquiposPorDepartamentalJSON'])->name('get-equipos-departamental-json');
     Route::post('/get-equipos-division-911-json', [App\Http\Controllers\DashboardController::class, 'getEquiposDivision911JSON'])->name('get-equipos-division-911-json');
     Route::post('/get-equipos-division-bancaria-json', [App\Http\Controllers\DashboardController::class, 'getEquiposDivisionBancariaJSON'])->name('get-equipos-division-bancaria-json');
+    Route::post('/get-uom-disponibles-json', [App\Http\Controllers\DashboardController::class, 'getUOMDisponiblesJSON'])->name('get-uom-disponibles-json'); //agrego rutas 11/12/2025
+    Route::post('/get-uom-no-disponibles-json', [App\Http\Controllers\DashboardController::class, 'getUOMNoDisponiblesJSON'])->name('get-uom-no-disponibles-json');
+
 
     //Route::get('/showmap', [App\Http\Controllers\MapaController::class, 'showMap'])->name('mapa.showMap');
     Route::post('/import-camaras', [App\Http\Controllers\CamaraController::class, 'importExcel'])->name('camaras.import');

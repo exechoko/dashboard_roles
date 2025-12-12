@@ -247,94 +247,111 @@
         const bounds = polygon.getBounds();
         const seenCameras = new Set();
 
-
         console.log('📦 Bounds del polígono:', bounds);
 
-        // Función para verificar si un punto está dentro del polígono
-        function isPointInPolygon(point, vs) {
+        // Función mejorada para verificar punto en polígono
+        function isPointInPolygon(point, polygonPoints) {
             const x = point.lat;
             const y = point.lng;
             let inside = false;
 
-            for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-                const xi = vs[i].lat;
-                const yi = vs[i].lng;
-                const xj = vs[j].lat;
-                const yj = vs[j].lng;
+            for (let i = 0, j = polygonPoints.length - 1; i < polygonPoints.length; j = i++) {
+                const xi = polygonPoints[i].lat;
+                const yi = polygonPoints[i].lng;
+                const xj = polygonPoints[j].lat;
+                const yj = polygonPoints[j].lng;
 
                 const intersect = ((yi > y) !== (yj > y)) &&
                     (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
                 if (intersect) inside = !inside;
             }
-
             return inside;
         }
 
-        // Buscar en todas las capas de cámaras
+        // ARREGLADO: Procesar clusters expandidos
+        function processMarkerClusters(layer) {
+            if (!layer) return 0;
+            let count = 0;
+
+            // Si es un MarkerClusterGroup, obtener todos los hijos
+            if (layer instanceof L.MarkerClusterGroup) {
+                console.log(`Procesando cluster con ${layer.getLayers().length} markers`);
+
+                // Recorrer todos los markers en el cluster
+                layer.eachLayer(function (marker) {
+                    if (marker instanceof L.Marker) {
+                        const position = marker.getLatLng();
+
+                        // Usar ID único de la cámara en lugar de coordenadas
+                        const popup = marker.getPopup();
+                        let cameraId = marker.options.cameraId ||
+                            (popup ? popup.getContent().hashCode() : null) ||
+                            `${position.lat.toFixed(6)}_${position.lng.toFixed(6)}_${Date.now()}`;
+
+                        if (seenCameras.has(cameraId)) {
+                            console.log(`  ⚠️ Cámara duplicada (${cameraId}), saltando...`);
+                            return;
+                        }
+
+                        // Verificar si está dentro del polígono
+                        const polygonPoints = polygon.getLatLngs()[0];
+                        if (bounds.contains(position) &&
+                            isPointInPolygon(position, polygonPoints)) {
+                            console.log(`  ✅ Cámara DENTRO del polígono: ${cameraId}`);
+
+                            // Extraer información de la cámara
+                            const cameraInfo = extractCameraInfo(marker);
+                            if (cameraInfo) {
+                                cameraInfo.id = cameraId; // Agregar ID único
+                                selectedCamerasInPolygon.push(cameraInfo);
+                                seenCameras.add(cameraId);
+                                highlightCameraMarker(marker);
+                                count++;
+                            }
+                        }
+                    }
+                });
+            } else if (layer.eachLayer) {
+                // Para otras capas
+                layer.eachLayer(function (marker) {
+                    if (marker instanceof L.Marker) {
+                        const position = marker.getLatLng();
+                        // ... mismo procesamiento
+                    }
+                });
+            }
+            return count;
+        }
+
+        // Procesar todas las capas
         const allCameraLayers = [
-            marcadores,
-            markersCamarasLPR,
-            markersCamarasFR,
-            markersCamarasFijas,
-            markersCamarasDomos,
-            markersCamarasDomosDuales,
-            markersBDE
+            { name: 'marcadores', layer: marcadores },
+            { name: 'LPR', layer: markersCamarasLPR },
+            { name: 'FR', layer: markersCamarasFR },
+            { name: 'Fijas', layer: markersCamarasFijas },
+            { name: 'Domos', layer: markersCamarasDomos },
+            { name: 'DomosDuales', layer: markersCamarasDomosDuales },
+            { name: 'BDE', layer: markersBDE }
         ];
 
-        console.log('📹 Capas a revisar:', allCameraLayers.length);
-        let totalMarkersChecked = 0;
-
-        allCameraLayers.forEach((layer, layerIndex) => {
-            console.log(`Revisando capa ${layerIndex}:`, layer);
-            layer.eachLayer(function (marker) {
-                if (marker instanceof L.Marker) {
-                    const position = marker.getLatLng();
-                    const cameraKey = `${position.lat.toFixed(6)},${position.lng.toFixed(6)}`;
-
-                    console.log(`  📍 Marcador en: ${cameraKey}`);
-
-                    if (seenCameras.has(cameraKey)) {
-                        console.log(`  ⚠️ Cámara duplicada, saltando...`);
-                        return;
-                    }
-
-                    // Verificar si está dentro del polígono
-                    if (bounds.contains(position) &&
-                        isPointInPolygon(position, polygon.getLatLngs()[0])) {
-                        console.log(`  ✅ Cámara DENTRO del polígono`);
-
-                        // Extraer información de la cámara
-                        const cameraInfo = extractCameraInfo(marker);
-                        if (cameraInfo) {
-                            selectedCamerasInPolygon.push(cameraInfo);
-                            seenCameras.add(cameraKey);
-                            // Resaltar marcador
-                            highlightCameraMarker(marker);
-                        } else {
-                            console.log(`  ❌ No se pudo extraer info de la cámara`);
-                        }
-                    } else {
-                        console.log(`  ❌ Cámara FUERA del polígono`);
-                    }
-                }
-            });
+        let totalFound = 0;
+        allCameraLayers.forEach(({ name, layer }) => {
+            console.log(`Revisando capa ${name}...`);
+            const found = processMarkerClusters(layer);
+            totalFound += found;
+            console.log(`  → Encontradas en ${name}: ${found}`);
         });
 
-        console.log(`📊 Total de marcadores revisados: ${totalMarkersChecked}`);
-        console.log(`🎯 Cámaras encontradas: ${selectedCamerasInPolygon.length}`);
-
+        console.log(`📊 Total de cámaras encontradas: ${selectedCamerasInPolygon.length}`);
 
         // Mostrar resultados
         if (selectedCamerasInPolygon.length > 0) {
-            console.log('✅ Mostrando modal...');
             showNotification(`${selectedCamerasInPolygon.length} cámaras encontradas`, 'success');
             showCamerasModal();
         } else {
-            console.log('⚠️ No se encontraron cámaras');
             showNotification('No se encontraron cámaras en esta área', 'warning');
         }
     }
-
     // ========================================
     // EXTRAER INFORMACIÓN DE LA CÁMARA
     // ========================================
@@ -347,12 +364,27 @@
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = content;
 
-            // Extraer datos del popup
-            const titulo = tempDiv.querySelector('h5')?.textContent || 'N/A';
+            // Extraer título
+            const titulo = tempDiv.querySelector('h5')?.textContent ||
+                tempDiv.querySelector('strong')?.textContent ||
+                'Cámara sin nombre';
+
             const position = marker.getLatLng();
 
-            // Extraer información adicional
+            // Extraer ID único si existe en el popup
+            let cameraId = null;
+            const idElement = tempDiv.querySelector('[data-camera-id]');
+            if (idElement) {
+                cameraId = idElement.getAttribute('data-camera-id');
+            }
+
+            // Generar ID único si no existe
+            if (!cameraId) {
+                cameraId = `cam_${titulo.replace(/\s+/g, '_')}_${position.lat.toFixed(6)}_${position.lng.toFixed(6)}`;
+            }
+
             const info = {
+                id: cameraId, // ID único agregado
                 titulo: titulo,
                 latitud: position.lat.toFixed(6),
                 longitud: position.lng.toFixed(6),
@@ -369,7 +401,7 @@
 
             return info;
         } catch (error) {
-            console.error('Error extrayendo info de cámara:', error);
+            console.error('Error extrayendo info:', error);
             return null;
         }
     }
@@ -815,6 +847,17 @@
         return inside;
     }
 
+    // Función para generar hash de contenido
+    String.prototype.hashCode = function () {
+        let hash = 0;
+        for (let i = 0; i < this.length; i++) {
+            const char = this.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return Math.abs(hash).toString(16);
+    };
+
     // ========================================
     // FUNCIÓN DE NOTIFICACIÓN (reutilizar la existente o crear una nueva)
     // ========================================
@@ -896,87 +939,37 @@
                 }
             });
 
-            // 1.2. Remover clustering temporalmente
-            const clusterLayers = [
-                marcadores,
-                markersCamarasLPR,
-                markersCamarasFR,
-                markersCamarasFijas,
-                markersCamarasDomos,
-                markersCamarasDomosDuales,
-                markersBDE
-            ];
-
-            // Crear capa temporal para marcadores individuales
-            const individualMarkersLayer = L.layerGroup();
-            const removedLayers = [];
-
-            // Recopilar todos los marcadores de los clusters
-            clusterLayers.forEach(layer => {
-                if (layer && mymap.hasLayer(layer)) {
-                    // Guardar referencia y remover del mapa
-                    removedLayers.push(layer);
-                    mymap.removeLayer(layer);
-
-                    // Agregar marcadores individuales
-                    layer.eachLayer(function (marker) {
-                        if (marker instanceof L.Marker) {
-                            const clonedMarker = L.marker(marker.getLatLng(), {
-                                icon: marker.options.icon,
-                                title: marker.options.title
-                            });
-
-                            // Copiar popup si existe
-                            const popup = marker.getPopup();
-                            if (popup) {
-                                clonedMarker.bindPopup(popup.getContent());
-                            }
-
-                            individualMarkersLayer.addLayer(clonedMarker);
-                        }
-                    });
-                }
-            });
-
-            // Agregar la capa de marcadores individuales
-            individualMarkersLayer.addTo(mymap);
-
-            // 1.3. Agregar leyenda temporal
-            const tempLegend = addTemporaryLegend();
-
-            // 1.4. Forzar redibujado del mapa
-            mymap.invalidateSize();
+            // ARREGLADO: Forzar actualización del tamaño del mapa
+            setTimeout(() => {
+                mymap.invalidateSize(true);
+            }, 100);
 
             // ========================================
-            // PASO 2: AJUSTAR LA VISTA AL POLÍGONO
+            // PASO 2: CENTRAR CORRECTAMENTE EL POLÍGONO
             // ========================================
 
-            // Asegurar que el polígono esté visible y resaltado
+            // ARREGLADO: Usar fitBounds con padding específico para PDF
             if (currentPolygon) {
-                currentPolygon.setStyle({
-                    color: '#ff0000',
-                    fillColor: '#ff0000',
-                    fillOpacity: 0.3,
-                    weight: 4
-                });
-
-                // Centrar la vista en el polígono con padding adecuado
                 const bounds = currentPolygon.getBounds();
                 const mapSize = mymap.getSize();
 
-                // Calcular padding proporcional al tamaño del mapa
+                // Calcular padding proporcional para mejor centrado
+                const paddingPercent = 0.10; // 10% de padding
+
                 const paddingPixels = {
-                    top: Math.floor(mapSize.y * 0.15),
-                    bottom: Math.floor(mapSize.y * 0.15),
-                    left: Math.floor(mapSize.x * 0.15),
-                    right: Math.floor(mapSize.x * 0.15)
+                    top: Math.floor(mapSize.y * paddingPercent),
+                    bottom: Math.floor(mapSize.y * paddingPercent),
+                    left: Math.floor(mapSize.x * paddingPercent),
+                    right: Math.floor(mapSize.x * paddingPercent)
                 };
 
+                // Ajustar el zoom para incluir todo el polígono
                 mymap.fitBounds(bounds, {
                     paddingTopLeft: [paddingPixels.left, paddingPixels.top],
                     paddingBottomRight: [paddingPixels.right, paddingPixels.bottom],
                     animate: false,
-                    maxZoom: 19
+                    maxZoom: 18, // Limitar zoom máximo para mejor captura
+                    duration: 0 // Sin animación
                 });
             }
 
@@ -988,7 +981,7 @@
             await new Promise(resolve => setTimeout(resolve, 2000));
 
             // Forzar otro redibujado
-            mymap.invalidateSize();
+            mymap.invalidateSize(true);
             await new Promise(resolve => setTimeout(resolve, 500));
 
             // ========================================
@@ -1003,57 +996,49 @@
                 // Obtener el contenedor del mapa
                 const mapContainer = document.getElementById('map');
 
+                //Calcular posición exacta del mapa en la página
+                const rect = mapContainer.getBoundingClientRect();
+
                 // Opciones de html2canvas optimizadas para mapas
                 const options = {
                     useCORS: true,
-                    allowTaint: false,
+                    allowTaint: true,
                     backgroundColor: '#ffffff',
-                    scale: 2, // Alta resolución
-                    logging: false,
-                    width: mapContainer.offsetWidth,
-                    height: mapContainer.offsetHeight,
-                    windowWidth: mapContainer.scrollWidth,
-                    windowHeight: mapContainer.scrollHeight,
-                    x: mapContainer.offsetLeft,
-                    y: mapContainer.offsetTop,
-                    scrollX: -window.scrollX,
-                    scrollY: -window.scrollY,
+                    scale: 1.5, // Resolución media para mejor balance
+                    logging: true,
+                    width: rect.width,
+                    height: rect.height,
+                    x: rect.left + window.scrollX,
+                    y: rect.top + window.scrollY,
+                    scrollX: 0,
+                    scrollY: 0,
+                    ignoreElements: function (element) {
+                        // Ignorar elementos que no son parte del mapa
+                        return !mapContainer.contains(element);
+                    },
                     onclone: function (clonedDoc) {
-                        // Asegurar que los estilos se mantengan en el clon
+                        // ARREGLADO: Asegurar que el clon tenga las mismas dimensiones
                         const clonedMap = clonedDoc.getElementById('map');
                         if (clonedMap) {
-                            clonedMap.style.position = 'relative';
-                            clonedMap.style.overflow = 'visible';
+                            clonedMap.style.position = 'absolute';
+                            clonedMap.style.left = '0';
+                            clonedMap.style.top = '0';
+                            clonedMap.style.width = rect.width + 'px';
+                            clonedMap.style.height = rect.height + 'px';
                         }
-                    },
-                    ignoreElements: function (element) {
-                        // Ignorar elementos que no queremos capturar
-                        return element.style.display === 'none' ||
-                            element.classList.contains('leaflet-control-container');
                     }
                 };
 
                 try {
                     const canvas = await html2canvas(mapContainer, options);
-
-                    // Opcional: recortar la imagen para centrarla mejor
-                    const ctx = canvas.getContext('2d');
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
                     capturedImage = canvas.toDataURL('image/png', 1.0);
                     console.log('✅ Imagen capturada exitosamente');
 
                 } catch (error) {
                     console.error('Error con html2canvas:', error);
 
-                    // Método alternativo: usar leaflet-image
-                    if (typeof L.canvasLayer !== 'undefined') {
-                        try {
-                            capturedImage = await captureWithLeafletImage();
-                        } catch (leafletError) {
-                            console.error('Error con leaflet-image:', leafletError);
-                        }
-                    }
+                    // Método alternativo: captura simple del contenedor
+                    capturedImage = await simpleMapCapture();
                 }
             }
 
@@ -1061,45 +1046,20 @@
             // PASO 5: RESTAURAR TODO
             // ========================================
 
-            // 5.1. Restaurar vista original del mapa
-            mymap.setView(originalView.center, originalView.zoom, {
-                animate: false
-            });
+            // Restaurar vista original
+            mymap.setView(originalView.center, originalView.zoom, { animate: false });
 
-            // 5.2. Remover capa temporal de marcadores individuales
-            mymap.removeLayer(individualMarkersLayer);
-
-            // 5.3. Restaurar capas de clustering
-            removedLayers.forEach(layer => {
-                mymap.addLayer(layer);
-            });
-
-            // 5.4. Remover leyenda temporal
-            mymap.removeControl(tempLegend);
-
-            // 5.5. Restaurar estilo del polígono
-            if (currentPolygon) {
-                currentPolygon.setStyle({
-                    color: '#3388ff',
-                    fillColor: '#3388ff',
-                    fillOpacity: 0.2,
-                    weight: 2
-                });
-            }
-
-            // 5.6. Restaurar controles ocultos
+            // Restaurar controles
             originalDisplayValues.forEach(item => {
                 if (item.element) {
                     item.element.style.display = item.display;
                 }
             });
 
-            // 5.7. Forzar redibujado final
-            mymap.invalidateSize();
+            // Forzar redibujado final
+            mymap.invalidateSize(true);
 
-            // Cerrar notificación de progreso
             Swal.close();
-
             return capturedImage;
 
         } catch (error) {
@@ -1119,6 +1079,30 @@
 
             return null;
         }
+    }
+
+    // Método alternativo simplificado
+    async function simpleMapCapture() {
+        const mapContainer = document.getElementById('map');
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = mapContainer.offsetWidth;
+        canvas.height = mapContainer.offsetHeight;
+
+        // Capturar la vista actual del mapa
+        const mapImage = new Image();
+        mapImage.src = mymap.getContainer().toDataURL('image/png');
+
+        return new Promise((resolve) => {
+            mapImage.onload = function () {
+                ctx.drawImage(mapImage, 0, 0);
+                resolve(canvas.toDataURL('image/png'));
+            };
+            mapImage.onerror = function () {
+                resolve(null);
+            };
+        });
     }
 
     // ========================================

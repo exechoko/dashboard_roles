@@ -647,7 +647,18 @@
     }
 
     // ========================================
-    // EXPORTAR A PDF
+    // CAPTURA MEJORADA DEL MAPA PARA PDF
+    // ========================================
+
+    /**
+     * Estrategia mejorada de captura:
+     * 1. Usar leaflet-image para captura nativa de tiles
+     * 2. Fallback a html2canvas con configuración optimizada
+     * 3. Fallback final con canvas manual
+     */
+
+    // ========================================
+    // EXPORTAR A PDF - VERSIÓN MEJORADA
     // ========================================
     async function exportToPDF() {
         if (typeof jspdf === 'undefined') {
@@ -813,23 +824,12 @@
             // Guardar estado original
             const originalState = saveMapState();
 
-            // Preparar mapa para captura
+            // Preparar mapa para captura (oculta marcadores problemáticos)
             await prepareMapForCapture();
 
             let capturedImage = null;
 
-            // ESTRATEGIA 1: leaflet-image (mejor calidad para tiles)
-            if (typeof leafletImage !== 'undefined') {
-                console.log('🔄 Intentando con leaflet-image...');
-                capturedImage = await captureWithLeafletImage();
-                if (capturedImage) {
-                    console.log('✅ Captura exitosa con leaflet-image');
-                    await restoreMapState(originalState);
-                    return capturedImage;
-                }
-            }
-
-            // ESTRATEGIA 2: html2canvas optimizado para Leaflet
+            // ESTRATEGIA 1: html2canvas optimizado (más confiable con marcadores personalizados)
             if (typeof html2canvas !== 'undefined') {
                 console.log('🔄 Intentando con html2canvas optimizado...');
                 capturedImage = await captureWithHtml2Canvas();
@@ -840,7 +840,7 @@
                 }
             }
 
-            // ESTRATEGIA 3: Canvas manual (fallback)
+            // ESTRATEGIA 2: Canvas manual (fallback más robusto)
             console.log('🔄 Usando método de canvas manual...');
             capturedImage = await captureWithManualCanvas();
 
@@ -849,6 +849,7 @@
 
         } catch (error) {
             console.error('❌ Error en captura optimizada:', error);
+            await restoreMapState(originalState);
             return null;
         }
     }
@@ -868,7 +869,9 @@
     // PREPARAR MAPA PARA CAPTURA
     // ========================================
     async function prepareMapForCapture() {
-        // Ocultar todos los controles
+        console.log('🔧 Preparando mapa para captura...');
+
+        // 1. Guardar y ocultar todos los controles
         const controlSelectors = [
             '.leaflet-control-zoom',
             '.leaflet-control-attribution',
@@ -877,35 +880,99 @@
             '.geocoder-control',
             '#customLayerControl',
             '#ver-lista',
-            '#limpiar-seleccion'
+            '#limpiar-seleccion',
+            '.leaflet-popup',
+            '.leaflet-tooltip'
         ];
 
         controlSelectors.forEach(selector => {
             const elements = document.querySelectorAll(selector);
             elements.forEach(el => {
-                el.style.display = 'none';
-                el.setAttribute('data-hidden-for-capture', 'true');
+                if (el) {
+                    el.style.display = 'none';
+                    el.setAttribute('data-hidden-for-capture', 'true');
+                }
             });
         });
 
-        // Ajustar vista al polígono
-        if (currentPolygon) {
-            const bounds = currentPolygon.getBounds();
-            mymap.fitBounds(bounds, {
-                padding: [50, 50],
-                animate: false,
-                maxZoom: 17
+        // 2. CRÍTICO: Limpiar polígonos duplicados o fantasma del overlay-pane
+        const overlayPane = document.querySelector('.leaflet-overlay-pane');
+        if (overlayPane && currentPolygon) {
+            console.log('🧹 Limpiando polígonos duplicados...');
+
+            // Obtener el path del polígono actual
+            const currentPath = currentPolygon._path;
+
+            // Buscar todos los paths en el overlay
+            const allPaths = overlayPane.querySelectorAll('path.leaflet-interactive');
+            console.log(`📊 Encontrados ${allPaths.length} paths en total`);
+
+            // Remover paths que NO sean el polígono actual
+            allPaths.forEach((path, index) => {
+                if (path !== currentPath) {
+                    console.log(`🗑️ Removiendo path duplicado ${index}`);
+                    path.style.display = 'none';
+                    path.setAttribute('data-hidden-duplicate', 'true');
+                } else {
+                    console.log(`✅ Path ${index} es el polígono actual, manteniéndolo visible`);
+                    path.style.display = 'block';
+                    path.style.opacity = '1';
+                    path.style.visibility = 'visible';
+                }
             });
         }
 
-        // Forzar renderizado
+        // 3. CRÍTICO: Ocultar temporalmente TODOS los marcadores con iconos problemáticos
+        const tempHiddenMarkers = [];
+        const markerLayers = [
+            marcadores,
+            markersCamarasLPR,
+            markersCamarasFR,
+            markersCamarasFijas,
+            markersCamarasDomos,
+            markersCamarasDomosDuales,
+            markersBDE
+        ];
+
+        markerLayers.forEach(layer => {
+            if (layer && layer.getLayers) {
+                layer.eachLayer(function (marker) {
+                    if (marker instanceof L.Marker) {
+                        tempHiddenMarkers.push({
+                            marker: marker,
+                            originalOpacity: marker.options.opacity || 1
+                        });
+                        marker.setOpacity(0);
+                    }
+                });
+            }
+        });
+
+        window._tempHiddenMarkers = tempHiddenMarkers;
+
+        // 4. Ajustar vista al polígono con padding generoso
+        if (currentPolygon) {
+            const bounds = currentPolygon.getBounds();
+            mymap.fitBounds(bounds, {
+                padding: [80, 80],
+                animate: false,
+                maxZoom: 16,
+                duration: 0
+            });
+        }
+
+        // 5. Forzar renderizado múltiple para estabilidad
+        mymap.invalidateSize(true);
+        await new Promise(resolve => setTimeout(resolve, 100));
         mymap.invalidateSize(true);
 
-        // Esperar a que se carguen todos los tiles
+        // 6. Esperar a que se carguen todos los tiles del mapa base
         await waitForTilesToLoad();
 
-        // Espera adicional para estabilidad
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // 7. Espera adicional para asegurar renderizado completo
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        console.log('✅ Mapa preparado para captura');
     }
 
     // ========================================
@@ -913,36 +980,75 @@
     // ========================================
     function waitForTilesToLoad() {
         return new Promise((resolve) => {
-            let tilesLoading = 0;
+            let checksCount = 0;
+            const maxChecks = 15; // Máximo 15 intentos (4.5 segundos)
             let checkInterval;
 
             const checkTiles = () => {
-                const tiles = document.querySelectorAll('.leaflet-tile');
-                tilesLoading = 0;
+                checksCount++;
+
+                // Solo verificar tiles del mapa base, NO marcadores
+                const tiles = document.querySelectorAll('.leaflet-tile-pane .leaflet-tile');
+                let tilesLoading = 0;
 
                 tiles.forEach(tile => {
-                    if (!tile.complete) {
+                    if (!tile.complete || tile.naturalWidth === 0) {
                         tilesLoading++;
                     }
                 });
 
-                if (tilesLoading === 0) {
+                console.log(`⏳ Check ${checksCount}/${maxChecks}: ${tilesLoading} tiles pendientes`);
+
+                // Resolver si no hay tiles cargando O si llegamos al máximo de checks
+                if (tilesLoading === 0 || checksCount >= maxChecks) {
                     clearInterval(checkInterval);
-                    console.log('✅ Todos los tiles cargados');
+                    if (tilesLoading === 0) {
+                        console.log('✅ Todos los tiles del mapa base cargados');
+                    } else {
+                        console.log(`⚠️ Continuando con ${tilesLoading} tiles pendientes`);
+                    }
                     resolve();
-                } else {
-                    console.log(`⏳ Esperando ${tilesLoading} tiles...`);
                 }
             };
 
+            // Verificar cada 300ms
             checkInterval = setInterval(checkTiles, 300);
 
-            // Timeout de seguridad
+            // Timeout de seguridad absoluto (6 segundos)
             setTimeout(() => {
                 clearInterval(checkInterval);
-                console.log('⚠️ Timeout en carga de tiles, continuando...');
+                console.log('⏰ Timeout alcanzado, continuando con la captura...');
                 resolve();
-            }, 5000);
+            }, 6000);
+        });
+    }
+
+    // ========================================
+    // CAPTURA CON LEAFLET-IMAGE
+    // ========================================
+    function captureWithLeafletImage() {
+        return new Promise((resolve) => {
+            if (typeof leafletImage === 'undefined') {
+                resolve(null);
+                return;
+            }
+
+            try {
+                leafletImage(mymap, function (err, canvas) {
+                    if (err) {
+                        console.error('Error en leafletImage:', err);
+                        resolve(null);
+                        return;
+                    }
+
+                    // Recortar canvas al área visible
+                    const croppedCanvas = cropCanvasToPolygon(canvas);
+                    resolve(croppedCanvas.toDataURL('image/png', 0.95));
+                });
+            } catch (error) {
+                console.error('Error ejecutando leafletImage:', error);
+                resolve(null);
+            }
         });
     }
 
@@ -951,44 +1057,110 @@
     // ========================================
     async function captureWithHtml2Canvas() {
         try {
+            console.log('🎨 Iniciando captura con html2canvas...');
+
             const mapContainer = document.getElementById('map');
 
-            // Opciones optimizadas para Leaflet
+            if (!mapContainer) {
+                console.error('No se encontró el contenedor del mapa');
+                return null;
+            }
+
+            // CRÍTICO: Forzar actualización del mapa antes de capturar
+            mymap.invalidateSize(true);
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Opciones ultra-optimizadas para Leaflet
             const options = {
                 useCORS: true,
                 allowTaint: true,
-                backgroundColor: '#e5e3df', // Color del fondo de OpenStreetMap
-                scale: 2, // Alta calidad
+                backgroundColor: '#e5e3df',
+                scale: 2,
                 logging: false,
-                windowWidth: mapContainer.scrollWidth,
-                windowHeight: mapContainer.scrollHeight,
+                width: mapContainer.offsetWidth,
+                height: mapContainer.offsetHeight,
+                windowWidth: mapContainer.offsetWidth,
+                windowHeight: mapContainer.offsetHeight,
                 scrollX: 0,
                 scrollY: 0,
-                imageTimeout: 15000,
+                x: 0,
+                y: 0,
+                imageTimeout: 0,
                 removeContainer: false,
-                foreignObjectRendering: false, // Importante para tiles
+                foreignObjectRendering: false,
+
+                ignoreElements: function (element) {
+                    // Ignorar marcadores con imágenes rotas
+                    if (element.tagName === 'IMG' && element.src && element.src.includes('uploads')) {
+                        return true;
+                    }
+                    if (element.style.display === 'none') {
+                        return true;
+                    }
+                    return false;
+                },
+
                 onclone: function (clonedDoc) {
+                    console.log('🔄 Clonando documento...');
+
                     const clonedMap = clonedDoc.getElementById('map');
                     if (clonedMap) {
-                        // Forzar dimensiones exactas
                         clonedMap.style.width = mapContainer.offsetWidth + 'px';
                         clonedMap.style.height = mapContainer.offsetHeight + 'px';
+                        clonedMap.style.position = 'relative';
 
-                        // Asegurar que todos los tiles sean visibles
+                        // Forzar visibilidad de tiles
                         const tiles = clonedMap.querySelectorAll('.leaflet-tile');
                         tiles.forEach(tile => {
                             tile.style.opacity = '1';
                             tile.style.visibility = 'visible';
+                            tile.style.display = 'block';
                         });
+
+                        // CRÍTICO: Asegurar que los paths SVG del polígono sean visibles
+                        const overlayPane = clonedMap.querySelector('.leaflet-overlay-pane');
+                        if (overlayPane) {
+                            overlayPane.style.display = 'block';
+                            overlayPane.style.visibility = 'visible';
+
+                            const svgPaths = overlayPane.querySelectorAll('path.leaflet-interactive');
+                            svgPaths.forEach(path => {
+                                path.style.opacity = '1';
+                                path.style.visibility = 'visible';
+                                path.style.display = 'block';
+                            });
+
+                            console.log(`✅ ${svgPaths.length} paths SVG del polígono visibles`);
+                        }
+
+                        // Remover imágenes de marcadores problemáticas
+                        const markerImages = clonedMap.querySelectorAll('img[src*="uploads"]');
+                        markerImages.forEach(img => img.remove());
+
+                        console.log(`✅ Documento clonado: ${tiles.length} tiles`);
                     }
                 }
             };
 
+            console.log('📷 Ejecutando html2canvas...');
             const canvas = await html2canvas(mapContainer, options);
-            return canvas.toDataURL('image/png', 0.95);
+
+            if (canvas && canvas.width > 0 && canvas.height > 0) {
+                console.log(`✅ Canvas generado: ${canvas.width}x${canvas.height}px`);
+
+                // Ya no necesitamos dibujar encima porque html2canvas captura el SVG
+                // Solo dibujamos los marcadores
+                const ctx = canvas.getContext('2d');
+                drawMarkersOnCanvas(ctx, mapContainer);
+
+                return canvas.toDataURL('image/png', 0.92);
+            }
+
+            console.warn('⚠️ Canvas vacío o inválido');
+            return null;
 
         } catch (error) {
-            console.error('Error en html2canvas:', error);
+            console.error('❌ Error en html2canvas:', error);
             return null;
         }
     }
@@ -998,6 +1170,8 @@
     // ========================================
     async function captureWithManualCanvas() {
         try {
+            console.log('🎨 Iniciando captura con canvas manual...');
+
             const mapContainer = document.getElementById('map');
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
@@ -1009,45 +1183,195 @@
             canvas.width = width;
             canvas.height = height;
 
-            // Fondo del mapa
+            console.log(`Canvas: ${width}x${height}px`);
+
+            // 1. Fondo del mapa (color de OpenStreetMap)
             ctx.fillStyle = '#e5e3df';
             ctx.fillRect(0, 0, width, height);
 
-            // Capturar tiles del mapa
-            const tiles = mapContainer.querySelectorAll('.leaflet-tile');
-            const tilePromises = [];
+            // 2. Capturar tiles del mapa base solamente
+            const tilePane = mapContainer.querySelector('.leaflet-tile-pane');
+            if (tilePane) {
+                const tiles = tilePane.querySelectorAll('.leaflet-tile');
+                console.log(`🗺️ Procesando ${tiles.length} tiles...`);
 
-            tiles.forEach(tile => {
-                if (tile.complete && tile.naturalWidth > 0) {
-                    const promise = new Promise((resolve) => {
-                        const rect = tile.getBoundingClientRect();
-                        const mapRect = mapContainer.getBoundingClientRect();
+                let tilesDrawn = 0;
 
-                        const x = rect.left - mapRect.left;
-                        const y = rect.top - mapRect.top;
+                for (const tile of tiles) {
+                    if (tile.complete && tile.naturalWidth > 0) {
+                        try {
+                            const rect = tile.getBoundingClientRect();
+                            const mapRect = mapContainer.getBoundingClientRect();
 
-                        ctx.drawImage(tile, x, y, rect.width, rect.height);
-                        resolve();
-                    });
-                    tilePromises.push(promise);
+                            const x = rect.left - mapRect.left;
+                            const y = rect.top - mapRect.top;
+
+                            ctx.drawImage(tile, x, y, rect.width, rect.height);
+                            tilesDrawn++;
+
+                        } catch (tileError) {
+                            console.warn('Error dibujando tile:', tileError);
+                        }
+                    }
                 }
-            });
 
-            await Promise.all(tilePromises);
-
-            // Dibujar polígono encima
-            if (currentPolygon) {
-                drawPolygonOnCanvas(ctx, currentPolygon, mapContainer);
+                console.log(`✅ ${tilesDrawn} tiles dibujados`);
             }
 
-            // Dibujar marcadores de cámaras
+            // 3. Capturar el SVG del polígono directamente del overlay-pane
+            const overlayPane = mapContainer.querySelector('.leaflet-overlay-pane');
+            if (overlayPane) {
+                try {
+                    // Obtener el SVG container
+                    const svgContainer = overlayPane.querySelector('svg');
+                    if (svgContainer) {
+                        console.log('📐 Capturando SVG del polígono...');
+
+                        // Método 1: Serializar el SVG y dibujarlo como imagen
+                        const serializer = new XMLSerializer();
+                        const svgString = serializer.serializeToString(svgContainer);
+                        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+                        const url = URL.createObjectURL(svgBlob);
+
+                        const img = new Image();
+                        await new Promise((resolve, reject) => {
+                            img.onload = () => {
+                                // Obtener posición del SVG
+                                const svgRect = svgContainer.getBoundingClientRect();
+                                const mapRect = mapContainer.getBoundingClientRect();
+
+                                const x = svgRect.left - mapRect.left;
+                                const y = svgRect.top - mapRect.top;
+
+                                ctx.drawImage(img, x, y, svgRect.width, svgRect.height);
+                                URL.revokeObjectURL(url);
+                                console.log('✅ SVG del polígono dibujado');
+                                resolve();
+                            };
+                            img.onerror = () => {
+                                console.warn('⚠️ Error cargando SVG como imagen, usando fallback');
+                                URL.revokeObjectURL(url);
+                                resolve(); // No rechazar, continuar con fallback
+                            };
+                            img.src = url;
+                        });
+                    } else {
+                        console.log('⚠️ No se encontró SVG, usando método manual');
+                        drawPolygonOnCanvas(ctx, currentPolygon, mapContainer);
+                    }
+                } catch (svgError) {
+                    console.warn('Error capturando SVG:', svgError);
+                    // Fallback a dibujo manual
+                    drawPolygonOnCanvas(ctx, currentPolygon, mapContainer);
+                }
+            } else {
+                // Si no hay overlay pane, dibujar manualmente
+                if (currentPolygon) {
+                    drawPolygonOnCanvas(ctx, currentPolygon, mapContainer);
+                }
+            }
+
+            // 4. Dibujar marcadores de cámaras
             drawMarkersOnCanvas(ctx, mapContainer);
 
-            return canvas.toDataURL('image/png', 0.95);
+            // 5. Agregar leyenda en la esquina
+            drawLegendOnCanvas(ctx, canvas.width, canvas.height);
+
+            const imageData = canvas.toDataURL('image/png', 0.92);
+            console.log('✅ Captura manual completada');
+
+            return imageData;
 
         } catch (error) {
-            console.error('Error en canvas manual:', error);
+            console.error('❌ Error en canvas manual:', error);
             return null;
+        }
+    }
+
+    // ========================================
+    // DIBUJAR LEYENDA EN CANVAS
+    // ========================================
+    function drawLegendOnCanvas(ctx, canvasWidth, canvasHeight) {
+        try {
+            const area = currentPolygon ?
+                (L.GeometryUtil.geodesicArea(currentPolygon.getLatLngs()[0]) / 1000000).toFixed(2) : 'N/A';
+
+            const legendWidth = 240;
+            const legendHeight = 120;
+            const padding = 15;
+            const x = canvasWidth - legendWidth - padding;
+            const y = padding;
+
+            // Fondo con sombra
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 3;
+            ctx.shadowOffsetY = 3;
+
+            // Fondo semi-transparente
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.strokeStyle = '#3388ff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.roundRect(x, y, legendWidth, legendHeight, 8);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.restore();
+
+            // Título
+            ctx.fillStyle = '#3388ff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('📍 ÁREA SELECCIONADA', x + legendWidth / 2, y + 25);
+
+            // Línea separadora
+            ctx.strokeStyle = '#dddddd';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x + 15, y + 35);
+            ctx.lineTo(x + legendWidth - 15, y + 35);
+            ctx.stroke();
+
+            // Información
+            ctx.textAlign = 'left';
+            ctx.font = '13px Arial';
+            ctx.fillStyle = '#333333';
+
+            const info = [
+                { icon: '📹', label: 'Cámaras:', value: selectedCamerasInPolygon.length, color: '#e74c3c' },
+                { icon: '📐', label: 'Superficie:', value: area + ' km²', color: '#27ae60' }
+            ];
+
+            let currentY = y + 55;
+            info.forEach(item => {
+                ctx.fillStyle = '#666666';
+                ctx.fillText(item.icon + ' ' + item.label, x + 20, currentY);
+
+                ctx.fillStyle = item.color;
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'right';
+                ctx.fillText(item.value.toString(), x + legendWidth - 20, currentY);
+
+                ctx.textAlign = 'left';
+                ctx.font = '13px Arial';
+                currentY += 25;
+            });
+
+            // Fecha
+            const fecha = new Date().toLocaleDateString('es-AR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+            ctx.fillStyle = '#999999';
+            ctx.font = '11px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('📅 ' + fecha, x + legendWidth / 2, y + legendHeight - 10);
+
+        } catch (error) {
+            console.error('Error dibujando leyenda:', error);
         }
     }
 
@@ -1055,44 +1379,194 @@
     // DIBUJAR POLÍGONO EN CANVAS
     // ========================================
     function drawPolygonOnCanvas(ctx, polygon, mapContainer) {
-        const bounds = polygon.getLatLngs()[0];
-        const mapRect = mapContainer.getBoundingClientRect();
+        if (!polygon) return;
 
-        ctx.beginPath();
-        ctx.strokeStyle = '#3388ff';
-        ctx.lineWidth = 3;
-        ctx.fillStyle = 'rgba(51, 136, 255, 0.2)';
+        console.log('🔷 Dibujando polígono en canvas...');
 
-        bounds.forEach((latlng, index) => {
-            const point = mymap.latLngToContainerPoint(latlng);
-            if (index === 0) {
-                ctx.moveTo(point.x, point.y);
-            } else {
-                ctx.lineTo(point.x, point.y);
+        try {
+            const bounds = polygon.getLatLngs()[0];
+
+            if (!bounds || bounds.length === 0) {
+                console.warn('Polígono sin coordenadas');
+                return;
             }
-        });
 
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+            // CRÍTICO: Guardar el contexto antes de dibujar
+            ctx.save();
+
+            // Obtener el contenedor de la capa de overlays (donde están los vectores)
+            const overlayPane = document.querySelector('.leaflet-overlay-pane');
+            if (!overlayPane) {
+                console.warn('No se encontró leaflet-overlay-pane');
+                ctx.restore();
+                return;
+            }
+
+            // SOLUCIÓN: Usar las coordenadas SVG directamente del polígono renderizado
+            const svgPath = overlayPane.querySelector('path.leaflet-interactive');
+            if (svgPath) {
+                console.log('✅ Usando path SVG del polígono renderizado');
+
+                // Obtener el path "d" attribute que contiene las coordenadas exactas
+                const pathData = svgPath.getAttribute('d');
+
+                if (pathData) {
+                    // Crear un Path2D desde el SVG path
+                    const path2D = new Path2D(pathData);
+
+                    // Dibujar el relleno
+                    ctx.fillStyle = 'rgba(51, 136, 255, 0.15)';
+                    ctx.fill(path2D);
+
+                    // Dibujar el borde con sombra
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                    ctx.shadowBlur = 4;
+                    ctx.shadowOffsetX = 2;
+                    ctx.shadowOffsetY = 2;
+                    ctx.strokeStyle = '#3388ff';
+                    ctx.lineWidth = 3;
+                    ctx.stroke(path2D);
+
+                    ctx.restore();
+                    console.log('✅ Polígono dibujado desde SVG path');
+                    return;
+                }
+            }
+
+            // FALLBACK: Si no hay SVG, dibujar manualmente con coordenadas transformadas
+            console.log('⚠️ SVG no encontrado, usando fallback manual');
+
+            ctx.beginPath();
+            ctx.fillStyle = 'rgba(51, 136, 255, 0.15)';
+
+            bounds.forEach((latlng, index) => {
+                const point = mymap.latLngToContainerPoint(latlng);
+
+                console.log(`Punto ${index}: lat=${latlng.lat}, lng=${latlng.lng} -> x=${point.x}, y=${point.y}`);
+
+                if (index === 0) {
+                    ctx.moveTo(point.x, point.y);
+                } else {
+                    ctx.lineTo(point.x, point.y);
+                }
+            });
+
+            ctx.closePath();
+            ctx.fill();
+
+            // Borde
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            ctx.strokeStyle = '#3388ff';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Vértices
+            ctx.shadowColor = 'transparent';
+            bounds.forEach((latlng) => {
+                const point = mymap.latLngToContainerPoint(latlng);
+
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                ctx.strokeStyle = '#3388ff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+
+            ctx.restore();
+            console.log(`✅ Polígono fallback dibujado con ${bounds.length} vértices`);
+
+        } catch (error) {
+            console.error('Error dibujando polígono:', error);
+            ctx.restore();
+        }
     }
 
     // ========================================
     // DIBUJAR MARCADORES EN CANVAS
     // ========================================
     function drawMarkersOnCanvas(ctx, mapContainer) {
-        selectedCamerasInPolygon.forEach(camera => {
-            const point = mymap.latLngToContainerPoint([camera.latitud, camera.longitud]);
+        console.log(`🎯 Dibujando ${selectedCamerasInPolygon.length} marcadores en canvas...`);
 
-            // Dibujar marcador simple
-            ctx.beginPath();
-            ctx.arc(point.x, point.y, 6, 0, 2 * Math.PI);
-            ctx.fillStyle = '#ff0000';
-            ctx.fill();
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
+        selectedCamerasInPolygon.forEach((camera, index) => {
+            try {
+                const point = mymap.latLngToContainerPoint([camera.latitud, camera.longitud]);
+
+                // Verificar que el punto esté dentro del canvas visible
+                if (point.x < 0 || point.y < 0 ||
+                    point.x > mapContainer.offsetWidth ||
+                    point.y > mapContainer.offsetHeight) {
+                    return; // Saltar marcadores fuera del área visible
+                }
+
+                // Dibujar pin estilo Google Maps
+                const pinHeight = 30;
+                const pinWidth = 24;
+                const x = point.x;
+                const y = point.y;
+
+                // Sombra
+                ctx.save();
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                ctx.shadowBlur = 6;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+
+                // Cuerpo del pin (gota)
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.bezierCurveTo(
+                    x - pinWidth / 2, y - pinHeight / 2,
+                    x - pinWidth / 2, y - pinHeight,
+                    x, y - pinHeight
+                );
+                ctx.arc(x, y - pinHeight, pinWidth / 2, Math.PI, 0, false);
+                ctx.bezierCurveTo(
+                    x + pinWidth / 2, y - pinHeight,
+                    x + pinWidth / 2, y - pinHeight / 2,
+                    x, y
+                );
+                ctx.closePath();
+
+                // Gradiente para el pin
+                const gradient = ctx.createLinearGradient(x - pinWidth / 2, y - pinHeight, x + pinWidth / 2, y);
+                gradient.addColorStop(0, '#ff3333');
+                gradient.addColorStop(1, '#cc0000');
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                ctx.restore();
+
+                // Borde blanco
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Círculo interior blanco
+                ctx.beginPath();
+                ctx.arc(x, y - pinHeight + 8, 6, 0, 2 * Math.PI);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+
+                // Número de cámara
+                if (selectedCamerasInPolygon.length <= 50) { // Solo mostrar números si no son muchas
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 10px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText((index + 1).toString(), x, y - pinHeight + 8);
+                }
+
+            } catch (error) {
+                console.error(`Error dibujando marcador ${index}:`, error);
+            }
         });
+
+        console.log('✅ Marcadores dibujados en canvas');
     }
 
     // ========================================
@@ -1122,20 +1596,47 @@
     // RESTAURAR ESTADO DEL MAPA
     // ========================================
     async function restoreMapState(state) {
-        // Restaurar vista
-        mymap.setView(state.center, state.zoom, { animate: false });
+        console.log('🔄 Restaurando estado del mapa...');
 
-        // Mostrar controles ocultos
+        // 1. Restaurar vista original
+        if (state && state.center && state.zoom) {
+            mymap.setView(state.center, state.zoom, { animate: false });
+        }
+
+        // 2. Mostrar controles ocultos
         const hiddenElements = document.querySelectorAll('[data-hidden-for-capture]');
         hiddenElements.forEach(el => {
             el.style.display = '';
             el.removeAttribute('data-hidden-for-capture');
         });
 
-        // Forzar renderizado
+        // 3. Restaurar paths duplicados que fueron ocultados
+        const hiddenPaths = document.querySelectorAll('[data-hidden-duplicate]');
+        hiddenPaths.forEach(path => {
+            path.style.display = '';
+            path.removeAttribute('data-hidden-duplicate');
+        });
+
+        // 4. CRÍTICO: Restaurar opacidad de los marcadores
+        if (window._tempHiddenMarkers && window._tempHiddenMarkers.length > 0) {
+            console.log(`🔄 Restaurando ${window._tempHiddenMarkers.length} marcadores...`);
+
+            window._tempHiddenMarkers.forEach(item => {
+                if (item.marker && item.marker.setOpacity) {
+                    item.marker.setOpacity(item.originalOpacity);
+                }
+            });
+
+            window._tempHiddenMarkers = [];
+        }
+
+        // 5. Forzar renderizado completo
         mymap.invalidateSize(true);
 
+        // 6. Pequeña espera para estabilización
         await new Promise(resolve => setTimeout(resolve, 300));
+
+        console.log('✅ Estado del mapa restaurado');
     }
 
     // ========================================
@@ -1172,6 +1673,10 @@
         });
     }
 
+    // Cargar leaflet-image al inicializar
+    $(document).ready(function () {
+        loadLeafletImage();
+    });
     // ========================================
     // EXPORTAR A CSV
     // ========================================
@@ -1566,35 +2071,6 @@
             mapImage.onerror = function () {
                 resolve(null);
             };
-        });
-    }
-
-    // ========================================
-    // CAPTURA CON LEAFLET-IMAGE
-    // ========================================
-    function captureWithLeafletImage() {
-        return new Promise((resolve) => {
-            if (typeof leafletImage === 'undefined') {
-                resolve(null);
-                return;
-            }
-
-            try {
-                leafletImage(mymap, function (err, canvas) {
-                    if (err) {
-                        console.error('Error en leafletImage:', err);
-                        resolve(null);
-                        return;
-                    }
-
-                    // Recortar canvas al área visible
-                    const croppedCanvas = cropCanvasToPolygon(canvas);
-                    resolve(croppedCanvas.toDataURL('image/png', 0.95));
-                });
-            } catch (error) {
-                console.error('Error ejecutando leafletImage:', error);
-                resolve(null);
-            }
         });
     }
 

@@ -659,52 +659,90 @@
             showNotification('Generando PDF con mapa...', 'info');
 
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('landscape');
+            const doc = new jsPDF('landscape', 'mm', 'a4');
 
-            // Capturar imagen del mapa
-            const mapImage = await captureMapImage();
+            // Dimensiones de la página
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
 
             // Título
-            doc.setFontSize(16);
-            doc.text('Reporte de Cámaras Seleccionadas', 14, 15);
+            doc.setFontSize(18);
+            doc.text('REPORTE DE CÁMARAS - ÁREA SELECCIONADA', 14, 15);
 
+            // Información del reporte
             doc.setFontSize(10);
-            const area = currentPolygon ? (L.GeometryUtil.geodesicArea(currentPolygon.getLatLngs()[0]) / 1000000).toFixed(2) : 'N/A';
-            doc.text(`Fecha: ${new Date().toLocaleDateString()} | Total: ${selectedCamerasInPolygon.length} cámaras | Área: ${area} km²`, 14, 22);
+            const area = currentPolygon ?
+                (L.GeometryUtil.geodesicArea(currentPolygon.getLatLngs()[0]) / 1000000).toFixed(2) : 'N/A';
+            doc.text(`Fecha: ${new Date().toLocaleDateString()} | Cámaras: ${selectedCamerasInPolygon.length} | Área: ${area} km²`, 14, 22);
 
-            // Agregar imagen del mapa
+            // Capturar y agregar imagen del mapa CENTRADA
+            const mapImage = await captureMapImage();
+
             if (mapImage) {
-                doc.addImage(mapImage, 'PNG', 14, 28, 120, 80);
+                // ARREGLADO: Calcular dimensiones para centrar la imagen
+                const imgWidth = 180; // Ancho fijo para A4 landscape
+                const imgHeight = 100; // Alto proporcional
+                const xPos = (pageWidth - imgWidth) / 2; // Centrar horizontalmente
+                const yPos = 28;
+
+                doc.addImage(mapImage, 'PNG', xPos, yPos, imgWidth, imgHeight);
+            } else {
+                // Dibujar rectángulo placeholder
+                doc.setDrawColor(200, 200, 200);
+                doc.rect(14, 28, 180, 100);
+                doc.text('Mapa no disponible', 100, 80, { align: 'center' });
             }
 
-            // Preparar datos para tabla
+            // Tabla de datos
             const tableData = selectedCamerasInPolygon.map((camera, index) => [
                 index + 1,
-                camera.titulo,
+                camera.titulo.substring(0, 30), // Limitar longitud
                 camera.tipo,
                 camera.sitio,
                 camera.dependencia,
-                `${camera.latitud}, ${camera.longitud}`,
-                camera.instalacion
+                `${camera.latitud}, ${camera.longitud}`
             ]);
 
-            // Generar tabla
+            // Configurar tabla
             doc.autoTable({
-                head: [['#', 'Título', 'Tipo', 'Sitio', 'Dependencia', 'Ubicación', 'Instalación']],
+                head: [['#', 'Título', 'Tipo', 'Sitio', 'Dependencia', 'Ubicación']],
                 body: tableData,
-                startY: 115,
+                startY: mapImage ? 135 : 135,
                 theme: 'grid',
-                styles: { fontSize: 8 },
-                headStyles: { fillColor: [41, 128, 185] }
+                styles: {
+                    fontSize: 8,
+                    cellPadding: 2
+                },
+                headStyles: {
+                    fillColor: [41, 128, 185],
+                    textColor: 255
+                },
+                margin: { left: 14, right: 14 },
+                tableWidth: 'auto'
             });
 
-            const fileName = `camaras_seleccionadas_${new Date().toISOString().split('T')[0]}.pdf`;
+            // Pie de página
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.text(
+                    `Página ${i} de ${pageCount} - Sistema de Videovigilancia`,
+                    pageWidth / 2,
+                    pageHeight - 10,
+                    { align: 'center' }
+                );
+            }
+
+            // Guardar PDF
+            const fileName = `camaras_${new Date().toISOString().slice(0, 10)}_${selectedCamerasInPolygon.length}.pdf`;
             doc.save(fileName);
 
-            showNotification('Archivo PDF exportado correctamente', 'success');
+            showNotification('PDF exportado correctamente', 'success');
+
         } catch (error) {
             console.error('Error exportando PDF:', error);
-            showNotification('Error al exportar PDF', 'error');
+            showNotification('Error al exportar PDF: ' + error.message, 'error');
         }
     }
 

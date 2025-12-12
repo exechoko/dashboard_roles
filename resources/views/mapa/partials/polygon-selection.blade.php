@@ -846,18 +846,57 @@
 
             console.log('📸 Iniciando captura del mapa...');
 
+            // Mostrar notificación de progreso
+            Swal.fire({
+                title: 'Capturando mapa...',
+                text: 'Por favor espera, esto puede tomar unos segundos.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
             // Guardar el estado actual del mapa
             const originalView = {
                 center: mymap.getCenter(),
                 zoom: mymap.getZoom()
             };
 
-            // AGREGAR LEYENDA TEMPORAL
-            const tempLegend = addTemporaryLegend();
+            // ========================================
+            // PASO 1: PREPARAR EL MAPA PARA CAPTURA
+            // ========================================
 
-            // ========================================
-            // DESACTIVAR CLUSTERING TEMPORALMENTE
-            // ========================================
+            // 1.1. Ocultar TODOS los controles del mapa
+            const elementsToHide = [
+                // Controles de Leaflet
+                document.querySelector('.leaflet-control-zoom'),
+                document.querySelector('.leaflet-control-attribution'),
+                document.querySelector('.leaflet-control-scale'),
+
+                // Nuestros controles personalizados
+                document.getElementById('customLayerControl'),
+                document.getElementById('togglePolygonDraw'),
+                document.getElementById('toggleMapBtn')?.parentElement,
+                document.querySelector('.geocoder-control'),
+                document.querySelector('#fullscreen-button')?.parentElement,
+
+                // Controles de polígono si existen
+                document.getElementById('ver-lista'),
+                document.getElementById('limpiar-seleccion')
+            ];
+
+            const originalDisplayValues = [];
+            elementsToHide.forEach(el => {
+                if (el) {
+                    originalDisplayValues.push({
+                        element: el,
+                        display: el.style.display
+                    });
+                    el.style.display = 'none';
+                }
+            });
+
+            // 1.2. Remover clustering temporalmente
             const clusterLayers = [
                 marcadores,
                 markersCamarasLPR,
@@ -868,159 +907,352 @@
                 markersBDE
             ];
 
-            // Remover clusters del mapa temporalmente
+            // Crear capa temporal para marcadores individuales
+            const individualMarkersLayer = L.layerGroup();
             const removedLayers = [];
+
+            // Recopilar todos los marcadores de los clusters
             clusterLayers.forEach(layer => {
                 if (layer && mymap.hasLayer(layer)) {
-                    mymap.removeLayer(layer);
+                    // Guardar referencia y remover del mapa
                     removedLayers.push(layer);
-                }
-            });
+                    mymap.removeLayer(layer);
 
-            // Agregar marcadores individuales sin clustering
-            const individualMarkers = L.layerGroup();
-            clusterLayers.forEach(layer => {
-                if (layer) {
+                    // Agregar marcadores individuales
                     layer.eachLayer(function (marker) {
                         if (marker instanceof L.Marker) {
-                            // Clonar el marcador y agregarlo directamente
                             const clonedMarker = L.marker(marker.getLatLng(), {
-                                icon: marker.options.icon
+                                icon: marker.options.icon,
+                                title: marker.options.title
                             });
 
-                            individualMarkers.addLayer(clonedMarker);
+                            // Copiar popup si existe
+                            const popup = marker.getPopup();
+                            if (popup) {
+                                clonedMarker.bindPopup(popup.getContent());
+                            }
+
+                            individualMarkersLayer.addLayer(clonedMarker);
                         }
                     });
                 }
             });
 
-            // Agregar los marcadores individuales al mapa
-            individualMarkers.addTo(mymap);
-            console.log(`📍 Marcadores individuales agregados: ${individualMarkers.getLayers().length}`);
+            // Agregar la capa de marcadores individuales
+            individualMarkersLayer.addTo(mymap);
+
+            // 1.3. Agregar leyenda temporal
+            const tempLegend = addTemporaryLegend();
+
+            // 1.4. Forzar redibujado del mapa
+            mymap.invalidateSize();
 
             // ========================================
-            // OCULTAR CONTROLES
+            // PASO 2: AJUSTAR LA VISTA AL POLÍGONO
             // ========================================
-            const elementsToHide = [
-                document.getElementById('customLayerControl'),
-                document.getElementById('togglePolygonDraw'),
-                document.getElementById('ver-lista'),
-                document.getElementById('limpiar-seleccion'),
-                document.querySelector('.leaflet-control-zoom'),
-                document.querySelector('.geocoder-control'),
-                document.querySelector('#toggleMapBtn')?.parentElement,
-                document.querySelector('#fullscreen-button')?.parentElement,
-                document.querySelector('.leaflet-control-attribution')
-            ];
 
-            elementsToHide.forEach(el => {
-                if (el) {
-                    el.style.display = 'none';
-                    el.setAttribute('data-hidden-for-capture', 'true');
-                }
-            });
+            // Asegurar que el polígono esté visible y resaltado
+            if (currentPolygon) {
+                currentPolygon.setStyle({
+                    color: '#ff0000',
+                    fillColor: '#ff0000',
+                    fillOpacity: 0.3,
+                    weight: 4
+                });
 
-            // ========================================
-            // AJUSTAR VISTA AL POLÍGONO
-            // ========================================
-            const bounds = currentPolygon.getBounds();
+                // Centrar la vista en el polígono con padding adecuado
+                const bounds = currentPolygon.getBounds();
+                const mapSize = mymap.getSize();
 
-            // Padding más generoso para evitar cortes
-            const mapSize = mymap.getSize();
-            const paddingPercent = 0.12; // 12% de padding
-            const paddingPixels = [
-                Math.floor(mapSize.y * paddingPercent),
-                Math.floor(mapSize.x * paddingPercent)
-            ];
+                // Calcular padding proporcional al tamaño del mapa
+                const paddingPixels = {
+                    top: Math.floor(mapSize.y * 0.15),
+                    bottom: Math.floor(mapSize.y * 0.15),
+                    left: Math.floor(mapSize.x * 0.15),
+                    right: Math.floor(mapSize.x * 0.15)
+                };
 
-            mymap.fitBounds(bounds, {
-                padding: paddingPixels,
-                animate: false
-            });
-
-            // Ajustar zoom
-            const currentZoom = mymap.getZoom();
-            if (currentZoom > 19) {
-                mymap.setZoom(19);
+                mymap.fitBounds(bounds, {
+                    paddingTopLeft: [paddingPixels.left, paddingPixels.top],
+                    paddingBottomRight: [paddingPixels.right, paddingPixels.bottom],
+                    animate: false,
+                    maxZoom: 19
+                });
             }
 
-            console.log(`🔍 Zoom ajustado a: ${mymap.getZoom()}`);
+            // ========================================
+            // PASO 3: ESPERAR A QUE EL MAPA SE ESTABILICE
+            // ========================================
 
             // Esperar a que se carguen los tiles
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // Forzar otro redibujado
+            mymap.invalidateSize();
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             // ========================================
-            // CAPTURAR IMAGEN
+            // PASO 4: CAPTURAR LA IMAGEN CORRECTAMENTE
             // ========================================
-            const mapElement = document.getElementById('map');
+
             let capturedImage = null;
 
             if (typeof html2canvas !== 'undefined') {
                 console.log('📷 Capturando con html2canvas...');
 
-                const canvas = await html2canvas(mapElement, {
+                // Obtener el contenedor del mapa
+                const mapContainer = document.getElementById('map');
+
+                // Opciones de html2canvas optimizadas para mapas
+                const options = {
                     useCORS: true,
                     allowTaint: false,
                     backgroundColor: '#ffffff',
-                    scale: 2,
+                    scale: 2, // Alta resolución
                     logging: false,
-                    width: mapElement.offsetWidth,
-                    height: mapElement.offsetHeight,
-                    windowWidth: mapElement.offsetWidth,
-                    windowHeight: mapElement.offsetHeight,
-                    ignoreElements: (element) => {
-                        return element.getAttribute('data-hidden-for-capture') === 'true';
+                    width: mapContainer.offsetWidth,
+                    height: mapContainer.offsetHeight,
+                    windowWidth: mapContainer.scrollWidth,
+                    windowHeight: mapContainer.scrollHeight,
+                    x: mapContainer.offsetLeft,
+                    y: mapContainer.offsetTop,
+                    scrollX: -window.scrollX,
+                    scrollY: -window.scrollY,
+                    onclone: function (clonedDoc) {
+                        // Asegurar que los estilos se mantengan en el clon
+                        const clonedMap = clonedDoc.getElementById('map');
+                        if (clonedMap) {
+                            clonedMap.style.position = 'relative';
+                            clonedMap.style.overflow = 'visible';
+                        }
+                    },
+                    ignoreElements: function (element) {
+                        // Ignorar elementos que no queremos capturar
+                        return element.style.display === 'none' ||
+                            element.classList.contains('leaflet-control-container');
                     }
-                });
+                };
 
-                capturedImage = canvas.toDataURL('image/png');
-                console.log('✅ Imagen capturada exitosamente');
+                try {
+                    const canvas = await html2canvas(mapContainer, options);
+
+                    // Opcional: recortar la imagen para centrarla mejor
+                    const ctx = canvas.getContext('2d');
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                    capturedImage = canvas.toDataURL('image/png', 1.0);
+                    console.log('✅ Imagen capturada exitosamente');
+
+                } catch (error) {
+                    console.error('Error con html2canvas:', error);
+
+                    // Método alternativo: usar leaflet-image
+                    if (typeof L.canvasLayer !== 'undefined') {
+                        try {
+                            capturedImage = await captureWithLeafletImage();
+                        } catch (leafletError) {
+                            console.error('Error con leaflet-image:', leafletError);
+                        }
+                    }
+                }
             }
 
             // ========================================
-            // RESTAURAR TODO
+            // PASO 5: RESTAURAR TODO
             // ========================================
 
-            // Remover leyenda temporal
-            mymap.removeControl(tempLegend);
-
-            // Remover marcadores individuales
-            mymap.removeLayer(individualMarkers);
-
-            // Restaurar layers de clusters
-            removedLayers.forEach(layer => {
-                mymap.addLayer(layer);
-            });
-
-            // Restaurar controles
-            elementsToHide.forEach(el => {
-                if (el) {
-                    el.style.display = '';
-                    el.removeAttribute('data-hidden-for-capture');
-                }
-            });
-
-            // Restaurar vista original
+            // 5.1. Restaurar vista original del mapa
             mymap.setView(originalView.center, originalView.zoom, {
                 animate: false
             });
 
-            console.log('✅ Mapa restaurado completamente');
+            // 5.2. Remover capa temporal de marcadores individuales
+            mymap.removeLayer(individualMarkersLayer);
+
+            // 5.3. Restaurar capas de clustering
+            removedLayers.forEach(layer => {
+                mymap.addLayer(layer);
+            });
+
+            // 5.4. Remover leyenda temporal
+            mymap.removeControl(tempLegend);
+
+            // 5.5. Restaurar estilo del polígono
+            if (currentPolygon) {
+                currentPolygon.setStyle({
+                    color: '#3388ff',
+                    fillColor: '#3388ff',
+                    fillOpacity: 0.2,
+                    weight: 2
+                });
+            }
+
+            // 5.6. Restaurar controles ocultos
+            originalDisplayValues.forEach(item => {
+                if (item.element) {
+                    item.element.style.display = item.display;
+                }
+            });
+
+            // 5.7. Forzar redibujado final
+            mymap.invalidateSize();
+
+            // Cerrar notificación de progreso
+            Swal.close();
 
             return capturedImage;
 
         } catch (error) {
             console.error('❌ Error capturando imagen del mapa:', error);
 
-            // Restaurar en caso de error
-            const elementsToShow = document.querySelectorAll('[data-hidden-for-capture]');
-            elementsToShow.forEach(el => {
+            // Restaurar controles en caso de error
+            const hiddenElements = document.querySelectorAll('[style*="display: none"]');
+            hiddenElements.forEach(el => {
                 el.style.display = '';
-                el.removeAttribute('data-hidden-for-capture');
+            });
+
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'No se pudo capturar la imagen del mapa. Intenta nuevamente.'
             });
 
             return null;
         }
+    }
+
+    // ========================================
+    // MÉTODO ALTERNATIVO CON leaflet-image
+    // ========================================
+    async function captureWithLeafletImage() {
+        return new Promise((resolve, reject) => {
+            if (typeof L.canvasLayer !== 'undefined') {
+                L.canvasLayer().delegate(this).addTo(mymap).once('render', function () {
+                    const bounds = currentPolygon.getBounds();
+                    const size = mymap.getSize();
+
+                    // Crear canvas para la captura
+                    const canvas = document.createElement('canvas');
+                    canvas.width = size.x;
+                    canvas.height = size.y;
+                    const ctx = canvas.getContext('2d');
+
+                    // Aquí necesitarías implementar la lógica específica de leaflet-image
+                    // Esta es una implementación simplificada
+
+                    const imageData = canvas.toDataURL('image/png');
+                    resolve(imageData);
+                });
+            } else {
+                reject(new Error('leaflet-image no disponible'));
+            }
+        });
+    }
+
+    // ========================================
+    // FUNCIÓN MEJORADA PARA AGREGAR LEYENDA
+    // ========================================
+    function addTemporaryLegend() {
+        const area = currentPolygon
+            ? (L.GeometryUtil.geodesicArea(currentPolygon.getLatLngs()[0]) / 1000000).toFixed(2)
+            : 'N/A';
+
+        const legend = L.control({ position: 'topright' });
+
+        legend.onAdd = function () {
+            const div = L.DomUtil.create('div', 'map-legend');
+
+            // Estilos para mejor visibilidad en la captura
+            div.style.cssText = `
+            background-color: rgba(255, 255, 255, 0.95) !important;
+            padding: 15px !important;
+            border-radius: 8px !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+            font-size: 14px !important;
+            font-family: Arial, sans-serif !important;
+            border: 3px solid #3388ff !important;
+            z-index: 1000 !important;
+            min-width: 200px !important;
+            backdrop-filter: blur(5px) !important;
+        `;
+
+            const fecha = new Date().toLocaleDateString('es-AR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            div.innerHTML = `
+            <div style="text-align: center; margin-bottom: 10px;">
+                <strong style="color: #3388ff; font-size: 16px;">📍 ÁREA SELECCIONADA</strong>
+            </div>
+            <div style="line-height: 1.6;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>📹 Cámaras:</span>
+                    <strong style="color: #e74c3c;">${selectedCamerasInPolygon.length}</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>📐 Superficie:</span>
+                    <strong style="color: #27ae60;">${area} km²</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>📅 Fecha:</span>
+                    <strong>${fecha}</strong>
+                </div>
+            </div>
+            <hr style="margin: 10px 0; border-color: #ddd;">
+            <div style="font-size: 12px; color: #7f8c8d; text-align: center;">
+                <i class="fas fa-map-marker-alt"></i> Sistema de Videovigilancia
+            </div>
+        `;
+
+            return div;
+        };
+
+        legend.addTo(mymap);
+        return legend;
+    }
+
+    // ========================================
+    // FUNCIÓN AUXILIAR PARA CALCULAR PADDING DINÁMICO
+    // ========================================
+    function calculateDynamicPadding(bounds, mapSize) {
+        const boundsSize = mymap.latLngToLayerPoint(bounds.getNorthEast())
+            .subtract(mymap.latLngToLayerPoint(bounds.getSouthWest()));
+
+        // Calcular qué porcentaje del mapa ocupa el polígono
+        const widthRatio = boundsSize.x / mapSize.x;
+        const heightRatio = boundsSize.y / mapSize.y;
+
+        // Si ocupa más del 80% del mapa, usar poco padding
+        if (widthRatio > 0.8 || heightRatio > 0.8) {
+            return {
+                top: 10,
+                bottom: 10,
+                left: 10,
+                right: 10
+            };
+        }
+
+        // Si ocupa menos del 50%, usar más padding
+        if (widthRatio < 0.5 && heightRatio < 0.5) {
+            return {
+                top: Math.floor(mapSize.y * 0.2),
+                bottom: Math.floor(mapSize.y * 0.2),
+                left: Math.floor(mapSize.x * 0.2),
+                right: Math.floor(mapSize.x * 0.2)
+            };
+        }
+
+        // Caso intermedio
+        return {
+            top: Math.floor(mapSize.y * 0.15),
+            bottom: Math.floor(mapSize.y * 0.15),
+            left: Math.floor(mapSize.x * 0.15),
+            right: Math.floor(mapSize.x * 0.15)
+        };
     }
 
     // ========================================
@@ -1054,44 +1286,6 @@
                 console.log(`Layer tiene ${allMarkers.length} marcadores`);
             }
         });
-    }
-
-    // ========================================
-    // AGREGAR LEYENDA TEMPORAL AL MAPA
-    // ========================================
-    function addTemporaryLegend() {
-        const area = currentPolygon
-            ? (L.GeometryUtil.geodesicArea(currentPolygon.getLatLngs()[0]) / 1000000).toFixed(2)
-            : 'N/A';
-
-        const legend = L.control({ position: 'bottomright' });
-
-        legend.onAdd = function () {
-            const div = L.DomUtil.create('div', 'map-legend');
-            div.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
-            div.style.padding = '12px';
-            div.style.borderRadius = '8px';
-            div.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
-            div.style.fontSize = '13px';
-            div.style.fontFamily = 'Arial, sans-serif';
-            div.style.border = '2px solid #3388ff';
-            div.innerHTML = `
-            <strong style="color: #3388ff; font-size: 14px;">📍 Área Seleccionada</strong><br>
-            <div style="margin-top: 6px;">
-                📹 Cámaras: <strong>${selectedCamerasInPolygon.length}</strong><br>
-                📐 Superficie: <strong>${area} km²</strong><br>
-                📅 ${new Date().toLocaleDateString('es-AR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-            })}
-            </div>
-        `;
-            return div;
-        };
-
-        legend.addTo(mymap);
-        return legend;
     }
 
     // ========================================

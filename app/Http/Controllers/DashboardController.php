@@ -576,6 +576,7 @@ class DashboardController extends Controller
             ->whereHas('equipo.tipo_terminal.tipo_uso', function ($query) {
                 $query->where('uso', 'portatil');
             })
+            //acá hay que agregar una comprobación por si estos nombres dejan de existir. NOLI ME TANGERE
             ->whereHas('recurso', function ($query) {
                 $query->whereIn('nombre', ['Unidad Operativa Móvil', 'Stock 911']);
             })

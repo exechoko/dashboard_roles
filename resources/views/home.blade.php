@@ -2380,9 +2380,9 @@
 
             table.bootstrapTable('destroy');
 
-            columns.push({ title: 'ID', field: 'id', sortable: true });
+            columns.push({ title: 'ID', field: 'nombre_issi', sortable: true });
             columns.push({ title: 'TEI', field: 'tei', sortable: true });
-            columns.push({ title: 'Modelo', field: 'modelo', sortable: true });
+            columns.push({ title: 'ISSI', field: 'issi', sortable: true });
 
             table.bootstrapTable({
                 striped: true,

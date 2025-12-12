@@ -577,15 +577,26 @@ class DashboardController extends Controller
                 $query->where('uso', 'portatil');
             })
             ->whereHas('recurso', function ($query) {
-                $query->where('nombre', 'Unidad Operativa Móvil');
+                $query->whereIn('nombre', ['Unidad Operativa Móvil', 'Stock 911']);
             })
+            //agrego otro filtro por estado, sea nuevo, usado o reparado
+            ->whereHas('equipo', function ($query) {
+                $estados = $this->getEstadosIds();
+                $query->whereIn('estado_id', [
+                    $estados['Nuevo'],
+                    $estados['Usado'],
+                    $estados['Reparado']
+                ]);
+            })
+
+
             ->with(['equipo'])
             ->get()
             ->map(function ($item) {
                 return [
-                    'id' => $item->equipo->id ?? '',
+                    'issi' => $item->equipo->issi ?? '',
                     'tei' => $item->equipo->tei ?? '',
-                    'modelo' => $item->equipo->modelo ?? '',
+                    'nombre_issi' => $item->equipo->nombre_issi ?? '',
                 ];
             });
 
@@ -605,9 +616,9 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($item) {
                 return [
-                    'id' => $item->equipo->id ?? '',
+                    'issi' => $item->equipo->issi ?? '',
                     'tei' => $item->equipo->tei ?? '',
-                    'modelo' => $item->equipo->modelo ?? '',
+                    'nombre_issi' => $item->equipo->nombre_issi ?? '',
                 ];
             });
 

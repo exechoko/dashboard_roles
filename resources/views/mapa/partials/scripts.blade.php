@@ -894,14 +894,18 @@ function setupFullscreenControl() {
         position: 'bottomright'
     });
 
-    var isFullscreen = false;
-
     fullscreenButton.onAdd = function(map) {
         var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
         div.innerHTML = '<div id="fullscreen-button"><i class="fas fa-expand"></i></div>';
         div.firstChild.addEventListener('click', function() {
             var element = map.getContainer();
-            if (!isFullscreen) {
+
+            if (!document.fullscreenElement &&
+                !document.webkitFullscreenElement &&
+                !document.mozFullScreenElement &&
+                !document.msFullscreenElement) {
+
+                // Entrar en fullscreen
                 if (element.requestFullscreen) {
                     element.requestFullscreen();
                 } else if (element.mozRequestFullScreen) {
@@ -911,8 +915,8 @@ function setupFullscreenControl() {
                 } else if (element.msRequestFullscreen) {
                     element.msRequestFullscreen();
                 }
-                isFullscreen = true;
             } else {
+                // Salir de fullscreen
                 if (document.exitFullscreen) {
                     document.exitFullscreen();
                 } else if (document.mozCancelFullScreen) {
@@ -922,9 +926,14 @@ function setupFullscreenControl() {
                 } else if (document.msExitFullscreen) {
                     document.msExitFullscreen();
                 }
-                isFullscreen = false;
-                div.firstChild.innerHTML = '<i class="fas fa-expand"></i>';
             }
+
+            // Actualizar estado después de un breve delay
+            setTimeout(() => {
+                if (typeof detectFullscreen === 'function') {
+                    detectFullscreen();
+                }
+            }, 100);
         });
         return div;
     };

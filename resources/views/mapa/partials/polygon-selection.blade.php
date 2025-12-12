@@ -6,6 +6,85 @@
     let currentPolygon = null;
     let selectedCamerasInPolygon = [];
     let polygonDrawControl = null;
+    let isFullscreen = false;
+
+    // ========================================
+    // DETECTAR MODO FULLSCREEN
+    // ========================================
+    function detectFullscreen() {
+        isFullscreen = !!(
+            document.fullscreenElement ||
+            document.webkitFullscreenElement ||
+            document.mozFullScreenElement ||
+            document.msFullscreenElement ||
+            document.fullscreen ||
+            document.webkitIsFullScreen ||
+            document.mozFullScreen
+        );
+
+        return isFullscreen;
+    }
+
+    // ========================================
+    // AGREGAR ESTILOS PARA MODAL EN FULLSCREEN
+    // ========================================
+    function addFullscreenModalStyles() {
+        const styleId = 'fullscreen-modal-styles';
+        if (document.getElementById(styleId)) return;
+
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+            /* Modal overlay en fullscreen */
+            .leaflet-container:fullscreen .modal-backdrop {
+                background-color: rgba(0, 0, 0, 0.9) !important;
+                z-index: 10000 !important;
+            }
+
+            /* Modal en fullscreen */
+            .leaflet-container:fullscreen .modal {
+                z-index: 10001 !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+
+            .leaflet-container:fullscreen .modal-dialog {
+                margin: 20px auto !important;
+                max-height: 90vh !important;
+                max-width: 95vw !important;
+            }
+
+            .leaflet-container:fullscreen .modal-content {
+                max-height: 90vh !important;
+                overflow: hidden !important;
+            }
+
+            /* Asegurar visibilidad */
+            .leaflet-container:-webkit-full-screen .modal {
+                z-index: 10001 !important;
+            }
+
+            .leaflet-container:-moz-full-screen .modal {
+                z-index: 10001 !important;
+            }
+
+            .leaflet-container:-ms-fullscreen .modal {
+                z-index: 10001 !important;
+            }
+
+            /* Forzar modal por encima del mapa */
+            .modal.show {
+                display: block !important;
+            }
+        `;
+        document.head.appendChild(style);
+    }
 
     // ========================================
     // INICIALIZACIÓN DEL SISTEMA DE POLÍGONOS
@@ -17,11 +96,19 @@
             return;
         }
 
+        // Agregar estilos para fullscreen
+        addFullscreenModalStyles();
+
+        // Configurar handlers de fullscreen
+        setupFullscreenHandlers();
+
         // Agregar control de dibujo de polígonos
         addPolygonDrawControl();
 
         // Agregar eventos de mapa
         setupMapClickEvents();
+
+        console.log('✅ Sistema de polígonos inicializado');
     }
 
     // ========================================
@@ -70,6 +157,9 @@
             // Cambiar cursor
             mymap.getContainer().style.cursor = 'crosshair';
 
+            // Cerrar cualquier modal abierto
+            $('#camerasPolygonModal').modal('hide');
+
             // Mostrar instrucciones
             showNotification('Haz clic en el mapa para dibujar el polígono. Doble clic para cerrar.', 'info');
 
@@ -78,6 +168,118 @@
         } else {
             // Desactivar modo de dibujo
             cancelPolygonDrawing();
+        }
+    }
+
+    // ========================================
+    // VERIFICAR SI ESTÁ EN MODO FULLSCREEN
+    // ========================================
+    function isFullscreenMode() {
+        return !!(document.fullscreenElement ||
+            document.webkitFullscreenElement ||
+            document.mozFullScreenElement ||
+            document.msFullscreenElement ||
+            document.fullscreen ||
+            document.webkitIsFullScreen ||
+            document.mozFullScreen);
+    }
+
+    // ========================================
+    // MANEJAR CAMBIOS DE FULLSCREEN
+    // ========================================
+    function setupFullscreenHandlers() {
+        const mapContainer = document.getElementById('map');
+
+        const fullscreenEvents = [
+            'fullscreenchange',
+            'webkitfullscreenchange',
+            'mozfullscreenchange',
+            'MSFullscreenChange'
+        ];
+
+        fullscreenEvents.forEach(event => {
+            document.addEventListener(event, function () {
+                setTimeout(() => {
+                    detectFullscreen();
+
+                    // Si hay un modal abierto, reubicarlo
+                    const modal = document.getElementById('camerasPolygonModal');
+                    if (modal && modal.classList.contains('show')) {
+                        repositionModalForFullscreen();
+                    }
+
+                    // Forzar redibujado del mapa
+                    if (window.mymap) {
+                        window.mymap.invalidateSize();
+                    }
+                }, 100);
+            });
+        });
+    }
+
+    // ========================================
+    // REPOSICIONAR MODAL PARA FULLSCREEN
+    // ========================================
+    function repositionModalForFullscreen() {
+        const modal = document.getElementById('camerasPolygonModal');
+        if (!modal) return;
+
+        if (detectFullscreen()) {
+            // En fullscreen: mover el modal al body del documento
+            if (!document.body.contains(modal)) {
+                document.body.appendChild(modal);
+            }
+
+            // Estilos para fullscreen
+            modal.style.cssText = `
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                z-index: 10001 !important;
+                background: transparent !important;
+            `;
+
+            // Asegurar backdrop
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.style.cssText = `
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100vw !important;
+                    height: 100vh !important;
+                    z-index: 10000 !important;
+                    background-color: rgba(0, 0, 0, 0.9) !important;
+                `;
+            }
+
+            // Ajustar contenido del modal
+            const modalDialog = modal.querySelector('.modal-dialog');
+            if (modalDialog) {
+                modalDialog.style.cssText = `
+                    margin: auto !important;
+                    max-height: 90vh !important;
+                    max-width: 95vw !important;
+                `;
+            }
+
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.style.maxHeight = '90vh';
+                modalContent.style.overflow = 'hidden';
+            }
+        } else {
+            // En modo normal: restaurar estilos
+            modal.style.cssText = '';
+            const modalDialog = modal.querySelector('.modal-dialog');
+            if (modalDialog) modalDialog.style.cssText = '';
+            const modalContent = modal.querySelector('.modal-content');
+            if (modalContent) modalContent.style.cssText = '';
         }
     }
 
@@ -445,20 +647,26 @@
     }
 
     // ========================================
-    // MODAL CON CÁMARAS SELECCIONADAS
+    // MODAL CON CÁMARAS SELECCIONADAS - VERSIÓN MEJORADA
     // ========================================
     function showCamerasModal() {
+        // Cerrar modal existente si hay
+        $('#camerasPolygonModal').modal('hide');
+        $('#camerasPolygonModal').remove();
+        $('.modal-backdrop').remove();
+
+        // Crear nuevo modal
         const modalHtml = `
-        <div class="modal fade" id="camerasPolygonModal" tabindex="-1" role="dialog">
-            <div class="modal-dialog modal-xl" role="document">
+        <div class="modal fade" id="camerasPolygonModal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+            <div class="modal-dialog modal-xl modal-fullscreen-md-down" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
                             <i class="fas fa-video"></i>
                             Cámaras Seleccionadas: ${selectedCamerasInPolygon.length}
                         </h5>
-                        <button type="button" class="close" data-dismiss="modal">
-                            <span>&times;</span>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body">
@@ -515,14 +723,80 @@
         </div>
     `;
 
-        // Remover modal anterior si existe
-        $('#camerasPolygonModal').remove();
+        // Agregar modal al body del documento
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-        // Agregar modal al DOM
-        $('body').append(modalHtml);
+        // Agregar estilos inline para fullscreen
+        if (detectFullscreen()) {
+            const modal = document.getElementById('camerasPolygonModal');
+            modal.style.cssText = `
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                z-index: 10001 !important;
+                background: transparent !important;
+            `;
+
+            // Asegurar backdrop
+            const backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop fade show';
+            backdrop.style.cssText = `
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                z-index: 10000 !important;
+                background-color: rgba(0, 0, 0, 0.9) !important;
+            `;
+            document.body.appendChild(backdrop);
+        }
+
+        // Configurar modal
+        const modalElement = document.getElementById('camerasPolygonModal');
+
+        // Evento cuando se muestra el modal
+        $(modalElement).on('show.bs.modal', function () {
+            if (detectFullscreen()) {
+                repositionModalForFullscreen();
+            }
+        });
+
+        // Evento cuando se oculta el modal
+        $(modalElement).on('hidden.bs.modal', function () {
+            $(this).remove();
+            $('.modal-backdrop').remove();
+        });
 
         // Mostrar modal
-        $('#camerasPolygonModal').modal('show');
+        $(modalElement).modal({
+            backdrop: 'static',
+            keyboard: true,
+            show: true
+        });
+
+        // Ajustar tamaño en pantalla completa
+        if (detectFullscreen()) {
+            const modalDialog = modalElement.querySelector('.modal-dialog');
+            if (modalDialog) {
+                modalDialog.style.cssText = `
+                    margin: auto !important;
+                    max-height: 90vh !important;
+                    max-width: 95vw !important;
+                `;
+            }
+
+            const modalContent = modalElement.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.style.maxHeight = '90vh';
+                modalContent.style.overflow = 'hidden';
+            }
+        }
 
         // Agregar funcionalidad de búsqueda
         $('#searchCameraInList').on('keyup', function () {
@@ -2230,9 +2504,16 @@
     // ========================================
     $(document).ready(function () {
         // Esperar a que el mapa esté completamente cargado
-        loadLeafletImage();
+        if (typeof loadLeafletImage === 'function') {
+            loadLeafletImage();
+        }
+
+        // Inicializar sistema de polígonos después de un delay
         setTimeout(function () {
             initPolygonSelectionSystem();
-        }, 1000);
+        }, 1500);
+
+        // También detectar fullscreen al cargar
+        detectFullscreen();
     });
 </script>

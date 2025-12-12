@@ -1196,6 +1196,161 @@
     }
 
     /* ========================================
+   MODAL EN PANTALLA COMPLETA - ESTILOS CRÍTICOS
+   ======================================== */
+
+    /* Forzar modal por encima de todo en fullscreen */
+    :fullscreen .modal,
+    :-webkit-full-screen .modal,
+    :-moz-full-screen .modal,
+    :-ms-fullscreen .modal {
+        z-index: 10001 !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* Backdrop para fullscreen */
+    :fullscreen .modal-backdrop,
+    :-webkit-full-screen .modal-backdrop,
+    :-moz-full-screen .modal-backdrop,
+    :-ms-fullscreen .modal-backdrop {
+        z-index: 10000 !important;
+        background-color: rgba(0, 0, 0, 0.9) !important;
+    }
+
+    /* Modal dialog en fullscreen */
+    :fullscreen .modal-dialog,
+    :-webkit-full-screen .modal-dialog,
+    :-moz-full-screen .modal-dialog,
+    :-ms-fullscreen .modal-dialog {
+        margin: 20px auto !important;
+        max-height: 90vh !important;
+        max-width: 95vw !important;
+    }
+
+    /* Modal content en fullscreen */
+    :fullscreen .modal-content,
+    :-webkit-full-screen .modal-content,
+    :-moz-full-screen .modal-content,
+    :-ms-fullscreen .modal-content {
+        max-height: 90vh !important;
+        overflow: hidden !important;
+    }
+
+    /* Asegurar que el body no tenga overflow en fullscreen */
+    :fullscreen body,
+    :-webkit-full-screen body,
+    :-moz-full-screen body,
+    :-ms-fullscreen body {
+        overflow: hidden !important;
+    }
+
+    /* Estilos específicos para el contenedor del mapa en fullscreen */
+    #map:fullscreen,
+    #map:-webkit-full-screen,
+    #map:-moz-full-screen,
+    #map:-ms-fullscreen {
+        position: relative !important;
+        z-index: auto !important;
+    }
+
+    /* ========================================
+   ARREGLOS ESPECÍFICOS PARA BOOTSTRAP MODAL
+   ======================================== */
+    .modal.fade.show {
+        display: block !important;
+        padding-right: 17px;
+        /* Compensar scrollbar */
+    }
+
+    .modal-open {
+        overflow: hidden !important;
+    }
+
+    /* Backdrop fijo */
+    .modal-backdrop.fade.show {
+        opacity: 0.5;
+    }
+
+    /* ========================================
+   RESPONSIVE PARA MODAL EN FULLSCREEN
+   ======================================== */
+    @media (max-width: 768px) {
+
+        :fullscreen .modal-dialog,
+        :-webkit-full-screen .modal-dialog,
+        :-moz-full-screen .modal-dialog,
+        :-ms-fullscreen .modal-dialog {
+            margin: 10px auto !important;
+            max-height: 95vh !important;
+            max-width: 98vw !important;
+        }
+
+        :fullscreen .modal-body,
+        :-webkit-full-screen .modal-body,
+        :-moz-full-screen .modal-body,
+        :-msfullscreen .modal-body {
+            padding: 15px !important;
+        }
+    }
+
+    /* ========================================
+   EVITAR CONFLICTOS CON Z-INDEX DE LEAFLET
+   ======================================== */
+    .leaflet-container {
+        z-index: 1 !important;
+    }
+
+    .leaflet-top,
+    .leaflet-bottom {
+        z-index: 1000 !important;
+    }
+
+    /* ========================================
+   BOTÓN FULLSCREEN MEJORADO
+   ======================================== */
+    #fullscreen-button {
+        z-index: 1000 !important;
+        position: absolute !important;
+        bottom: 20px !important;
+        right: 20px !important;
+    }
+
+    /* ========================================
+   ANIMACIÓN SUAVE PARA MODAL
+   ======================================== */
+    .modal.fade .modal-dialog {
+        transition: transform 0.3s ease-out;
+    }
+
+    /* ========================================
+   SCROLLBAR PERSONALIZADO PARA MODAL
+   ======================================== */
+    .modal-body::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .modal-body::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    .modal-body::-webkit-scrollbar-thumb {
+        background: #888;
+        border-radius: 4px;
+    }
+
+    .modal-body::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* ========================================
    MEDIA QUERIES RESPONSIVO
    ======================================== */
     @media (min-width: 1150px) {

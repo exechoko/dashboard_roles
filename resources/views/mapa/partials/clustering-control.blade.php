@@ -11,7 +11,7 @@
     // ========================================
     function createSpiderfier(map) {
         // Configuración de OverlappingMarkerSpiderfier
-        return new OverlappingMarkerSpiderfier(map, {
+        const oms = new OverlappingMarkerSpiderfier(map, {
             keepSpiderfied: true,
             nearbyDistance: 20,
             circleSpiralSwitchover: 9,
@@ -24,6 +24,54 @@
                 highlighted: '#f00'
             }
         });
+
+        // Auto-spiderfy: Desplegar automáticamente marcadores superpuestos
+        oms.addListener('format', function(marker, status) {
+            // Este evento se dispara cuando se añaden marcadores
+        });
+
+        return oms;
+    }
+
+    // ========================================
+    // AUTO-SPIDERFY: DESPLEGAR TODOS LOS MARCADORES SUPERPUESTOS
+    // ========================================
+    function autoSpiderfyOverlappingMarkers() {
+        if (clusteringEnabled) return; // Solo funciona con clustering OFF
+
+        // Esperar un poco para que todos los marcadores se hayan añadido
+        setTimeout(() => {
+            Object.keys(spiderfiers).forEach(layerName => {
+                const oms = spiderfiers[layerName];
+                if (!oms) return;
+
+                // Obtener todos los marcadores del spiderfier
+                const markers = oms.getMarkers();
+
+                // Agrupar marcadores por posición
+                const locationGroups = new Map();
+
+                markers.forEach(marker => {
+                    const latLng = marker.getLatLng();
+                    const key = `${latLng.lat.toFixed(5)},${latLng.lng.toFixed(5)}`;
+
+                    if (!locationGroups.has(key)) {
+                        locationGroups.set(key, []);
+                    }
+                    locationGroups.get(key).push(marker);
+                });
+
+                // Desplegar automáticamente grupos con más de 1 marcador
+                locationGroups.forEach((group, location) => {
+                    if (group.length > 1) {
+                        // Simular click en el primer marcador para desplegar el spider
+                        oms.spiderfy(group[0].getLatLng(), group);
+                    }
+                });
+            });
+
+            console.log('✅ Auto-spider activado para marcadores superpuestos');
+        }, 500);
     }
 
     // ========================================
@@ -157,6 +205,11 @@
         if (layersOnMap.domos) mymap.addLayer(capaDomo);
         if (layersOnMap.domosDuales) mymap.addLayer(capaDomoDual);
         if (layersOnMap.bde) mymap.addLayer(capaBDE);
+
+        // Si clustering está OFF, auto-desplegar marcadores superpuestos
+        if (!clusteringEnabled) {
+            autoSpiderfyOverlappingMarkers();
+        }
     }
 
     // ========================================

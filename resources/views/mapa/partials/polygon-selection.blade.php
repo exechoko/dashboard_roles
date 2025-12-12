@@ -658,92 +658,518 @@
         try {
             showNotification('Generando PDF con mapa...', 'info');
 
+            // Mostrar loader con progreso
+            Swal.fire({
+                title: 'Generando PDF',
+                html: '<div id="pdf-progress">Preparando mapa... 0%</div>',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('landscape', 'mm', 'a4');
 
-            // Dimensiones de la página
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
 
             // Título
             doc.setFontSize(18);
-            doc.text('REPORTE DE CÁMARAS - ÁREA SELECCIONADA', 14, 15);
+            doc.setFont('helvetica', 'bold');
+            doc.text('REPORTE DE CÁMARAS - ÁREA SELECCIONADA', pageWidth / 2, 15, { align: 'center' });
 
             // Información del reporte
             doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
             const area = currentPolygon ?
                 (L.GeometryUtil.geodesicArea(currentPolygon.getLatLngs()[0]) / 1000000).toFixed(2) : 'N/A';
-            doc.text(`Fecha: ${new Date().toLocaleDateString()} | Cámaras: ${selectedCamerasInPolygon.length} | Área: ${area} km²`, 14, 22);
+            const reportInfo = `Fecha: ${new Date().toLocaleDateString('es-AR')} | Hora: ${new Date().toLocaleTimeString('es-AR')} | Cámaras: ${selectedCamerasInPolygon.length} | Área: ${area} km²`;
+            doc.text(reportInfo, pageWidth / 2, 22, { align: 'center' });
 
-            // Capturar y agregar imagen del mapa CENTRADA
-            const mapImage = await captureMapImage();
+            // Actualizar progreso
+            updateProgress(20, 'Capturando imagen del mapa...');
+
+            // CAPTURA DEL MAPA CON MÚLTIPLES ESTRATEGIAS
+            const mapImage = await captureMapImageOptimized();
 
             if (mapImage) {
-                // ARREGLADO: Calcular dimensiones para centrar la imagen
-                const imgWidth = 180; // Ancho fijo para A4 landscape
-                const imgHeight = 100; // Alto proporcional
-                const xPos = (pageWidth - imgWidth) / 2; // Centrar horizontalmente
+                updateProgress(60, 'Procesando imagen...');
+
+                // Dimensiones optimizadas para el mapa
+                const imgWidth = 250; // Ancho mayor para aprovechar A4 landscape
+                const imgHeight = 110; // Alto proporcional
+                const xPos = (pageWidth - imgWidth) / 2;
                 const yPos = 28;
 
-                doc.addImage(mapImage, 'PNG', xPos, yPos, imgWidth, imgHeight);
+                // Agregar imagen con bordes
+                doc.setDrawColor(100, 100, 100);
+                doc.setLineWidth(0.5);
+                doc.rect(xPos - 1, yPos - 1, imgWidth + 2, imgHeight + 2);
+                doc.addImage(mapImage, 'PNG', xPos, yPos, imgWidth, imgHeight, '', 'FAST');
+
+                console.log('✅ Imagen del mapa agregada al PDF');
             } else {
-                // Dibujar rectángulo placeholder
+                // Dibujar placeholder mejorado
+                const xPos = (pageWidth - 250) / 2;
+                const yPos = 28;
+
+                doc.setFillColor(240, 240, 240);
+                doc.rect(xPos, yPos, 250, 110, 'F');
                 doc.setDrawColor(200, 200, 200);
-                doc.rect(14, 28, 180, 100);
-                doc.text('Mapa no disponible', 100, 80, { align: 'center' });
+                doc.setLineWidth(1);
+                doc.rect(xPos, yPos, 250, 110);
+
+                doc.setFontSize(14);
+                doc.setTextColor(150, 150, 150);
+                doc.text('Mapa no disponible', pageWidth / 2, yPos + 55, { align: 'center' });
+
+                console.warn('⚠️ No se pudo capturar el mapa');
             }
 
-            // Tabla de datos
+            updateProgress(70, 'Generando tabla de datos...');
+
+            // Tabla de datos mejorada
             const tableData = selectedCamerasInPolygon.map((camera, index) => [
                 index + 1,
-                camera.titulo.substring(0, 30), // Limitar longitud
-                camera.tipo,
-                camera.sitio,
-                camera.dependencia,
+                camera.titulo.substring(0, 35),
+                camera.tipo || 'N/A',
+                camera.sitio || 'N/A',
+                camera.dependencia || 'N/A',
                 `${camera.latitud}, ${camera.longitud}`
             ]);
 
-            // Configurar tabla
             doc.autoTable({
                 head: [['#', 'Título', 'Tipo', 'Sitio', 'Dependencia', 'Ubicación']],
                 body: tableData,
-                startY: mapImage ? 135 : 135,
+                startY: 145,
                 theme: 'grid',
                 styles: {
                     fontSize: 8,
-                    cellPadding: 2
+                    cellPadding: 3,
+                    overflow: 'linebreak',
+                    halign: 'left'
                 },
                 headStyles: {
                     fillColor: [41, 128, 185],
-                    textColor: 255
+                    textColor: 255,
+                    fontStyle: 'bold',
+                    halign: 'center'
+                },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 10 },
+                    1: { cellWidth: 60 },
+                    2: { cellWidth: 30 },
+                    3: { cellWidth: 35 },
+                    4: { cellWidth: 40 },
+                    5: { cellWidth: 50, fontSize: 7 }
                 },
                 margin: { left: 14, right: 14 },
-                tableWidth: 'auto'
+                didDrawPage: function (data) {
+                    // Footer en cada página
+                    doc.setFontSize(8);
+                    doc.setTextColor(128);
+                    doc.text(
+                        `Sistema de Videovigilancia - Página ${doc.internal.getCurrentPageInfo().pageNumber}`,
+                        pageWidth / 2,
+                        pageHeight - 10,
+                        { align: 'center' }
+                    );
+                }
             });
 
-            // Pie de página
-            const pageCount = doc.internal.getNumberOfPages();
-            for (let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(8);
-                doc.text(
-                    `Página ${i} de ${pageCount} - Sistema de Videovigilancia`,
-                    pageWidth / 2,
-                    pageHeight - 10,
-                    { align: 'center' }
-                );
-            }
+            updateProgress(90, 'Finalizando PDF...');
 
             // Guardar PDF
-            const fileName = `camaras_${new Date().toISOString().slice(0, 10)}_${selectedCamerasInPolygon.length}.pdf`;
+            const fileName = `camaras_seleccionadas_${new Date().toISOString().slice(0, 10)}_${selectedCamerasInPolygon.length}.pdf`;
             doc.save(fileName);
 
-            showNotification('PDF exportado correctamente', 'success');
+            updateProgress(100, 'PDF generado exitosamente');
+
+            setTimeout(() => {
+                Swal.close();
+                showNotification('PDF exportado correctamente', 'success');
+            }, 500);
 
         } catch (error) {
-            console.error('Error exportando PDF:', error);
+            console.error('❌ Error exportando PDF:', error);
+            Swal.close();
             showNotification('Error al exportar PDF: ' + error.message, 'error');
         }
+    }
+
+    // ========================================
+    // CAPTURA OPTIMIZADA CON MÚLTIPLES ESTRATEGIAS
+    // ========================================
+    async function captureMapImageOptimized() {
+        try {
+            console.log('📸 Iniciando captura optimizada del mapa...');
+
+            if (!currentPolygon) {
+                console.warn('No hay polígono para capturar');
+                return null;
+            }
+
+            // Guardar estado original
+            const originalState = saveMapState();
+
+            // Preparar mapa para captura
+            await prepareMapForCapture();
+
+            let capturedImage = null;
+
+            // ESTRATEGIA 1: leaflet-image (mejor calidad para tiles)
+            if (typeof leafletImage !== 'undefined') {
+                console.log('🔄 Intentando con leaflet-image...');
+                capturedImage = await captureWithLeafletImage();
+                if (capturedImage) {
+                    console.log('✅ Captura exitosa con leaflet-image');
+                    await restoreMapState(originalState);
+                    return capturedImage;
+                }
+            }
+
+            // ESTRATEGIA 2: html2canvas optimizado para Leaflet
+            if (typeof html2canvas !== 'undefined') {
+                console.log('🔄 Intentando con html2canvas optimizado...');
+                capturedImage = await captureWithHtml2Canvas();
+                if (capturedImage) {
+                    console.log('✅ Captura exitosa con html2canvas');
+                    await restoreMapState(originalState);
+                    return capturedImage;
+                }
+            }
+
+            // ESTRATEGIA 3: Canvas manual (fallback)
+            console.log('🔄 Usando método de canvas manual...');
+            capturedImage = await captureWithManualCanvas();
+
+            await restoreMapState(originalState);
+            return capturedImage;
+
+        } catch (error) {
+            console.error('❌ Error en captura optimizada:', error);
+            return null;
+        }
+    }
+
+    // ========================================
+    // GUARDAR ESTADO DEL MAPA
+    // ========================================
+    function saveMapState() {
+        return {
+            center: mymap.getCenter(),
+            zoom: mymap.getZoom(),
+            controls: []
+        };
+    }
+
+    // ========================================
+    // PREPARAR MAPA PARA CAPTURA
+    // ========================================
+    async function prepareMapForCapture() {
+        // Ocultar todos los controles
+        const controlSelectors = [
+            '.leaflet-control-zoom',
+            '.leaflet-control-attribution',
+            '.leaflet-control-scale',
+            '.leaflet-bar',
+            '.geocoder-control',
+            '#customLayerControl',
+            '#ver-lista',
+            '#limpiar-seleccion'
+        ];
+
+        controlSelectors.forEach(selector => {
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => {
+                el.style.display = 'none';
+                el.setAttribute('data-hidden-for-capture', 'true');
+            });
+        });
+
+        // Ajustar vista al polígono
+        if (currentPolygon) {
+            const bounds = currentPolygon.getBounds();
+            mymap.fitBounds(bounds, {
+                padding: [50, 50],
+                animate: false,
+                maxZoom: 17
+            });
+        }
+
+        // Forzar renderizado
+        mymap.invalidateSize(true);
+
+        // Esperar a que se carguen todos los tiles
+        await waitForTilesToLoad();
+
+        // Espera adicional para estabilidad
+        await new Promise(resolve => setTimeout(resolve, 1500));
+    }
+
+    // ========================================
+    // ESPERAR CARGA DE TILES
+    // ========================================
+    function waitForTilesToLoad() {
+        return new Promise((resolve) => {
+            let tilesLoading = 0;
+            let checkInterval;
+
+            const checkTiles = () => {
+                const tiles = document.querySelectorAll('.leaflet-tile');
+                tilesLoading = 0;
+
+                tiles.forEach(tile => {
+                    if (!tile.complete) {
+                        tilesLoading++;
+                    }
+                });
+
+                if (tilesLoading === 0) {
+                    clearInterval(checkInterval);
+                    console.log('✅ Todos los tiles cargados');
+                    resolve();
+                } else {
+                    console.log(`⏳ Esperando ${tilesLoading} tiles...`);
+                }
+            };
+
+            checkInterval = setInterval(checkTiles, 300);
+
+            // Timeout de seguridad
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                console.log('⚠️ Timeout en carga de tiles, continuando...');
+                resolve();
+            }, 5000);
+        });
+    }
+
+    // ========================================
+    // CAPTURA CON HTML2CANVAS OPTIMIZADO
+    // ========================================
+    async function captureWithHtml2Canvas() {
+        try {
+            const mapContainer = document.getElementById('map');
+
+            // Opciones optimizadas para Leaflet
+            const options = {
+                useCORS: true,
+                allowTaint: true,
+                backgroundColor: '#e5e3df', // Color del fondo de OpenStreetMap
+                scale: 2, // Alta calidad
+                logging: false,
+                windowWidth: mapContainer.scrollWidth,
+                windowHeight: mapContainer.scrollHeight,
+                scrollX: 0,
+                scrollY: 0,
+                imageTimeout: 15000,
+                removeContainer: false,
+                foreignObjectRendering: false, // Importante para tiles
+                onclone: function (clonedDoc) {
+                    const clonedMap = clonedDoc.getElementById('map');
+                    if (clonedMap) {
+                        // Forzar dimensiones exactas
+                        clonedMap.style.width = mapContainer.offsetWidth + 'px';
+                        clonedMap.style.height = mapContainer.offsetHeight + 'px';
+
+                        // Asegurar que todos los tiles sean visibles
+                        const tiles = clonedMap.querySelectorAll('.leaflet-tile');
+                        tiles.forEach(tile => {
+                            tile.style.opacity = '1';
+                            tile.style.visibility = 'visible';
+                        });
+                    }
+                }
+            };
+
+            const canvas = await html2canvas(mapContainer, options);
+            return canvas.toDataURL('image/png', 0.95);
+
+        } catch (error) {
+            console.error('Error en html2canvas:', error);
+            return null;
+        }
+    }
+
+    // ========================================
+    // CAPTURA CON CANVAS MANUAL (FALLBACK)
+    // ========================================
+    async function captureWithManualCanvas() {
+        try {
+            const mapContainer = document.getElementById('map');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Dimensiones del mapa
+            const width = mapContainer.offsetWidth;
+            const height = mapContainer.offsetHeight;
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // Fondo del mapa
+            ctx.fillStyle = '#e5e3df';
+            ctx.fillRect(0, 0, width, height);
+
+            // Capturar tiles del mapa
+            const tiles = mapContainer.querySelectorAll('.leaflet-tile');
+            const tilePromises = [];
+
+            tiles.forEach(tile => {
+                if (tile.complete && tile.naturalWidth > 0) {
+                    const promise = new Promise((resolve) => {
+                        const rect = tile.getBoundingClientRect();
+                        const mapRect = mapContainer.getBoundingClientRect();
+
+                        const x = rect.left - mapRect.left;
+                        const y = rect.top - mapRect.top;
+
+                        ctx.drawImage(tile, x, y, rect.width, rect.height);
+                        resolve();
+                    });
+                    tilePromises.push(promise);
+                }
+            });
+
+            await Promise.all(tilePromises);
+
+            // Dibujar polígono encima
+            if (currentPolygon) {
+                drawPolygonOnCanvas(ctx, currentPolygon, mapContainer);
+            }
+
+            // Dibujar marcadores de cámaras
+            drawMarkersOnCanvas(ctx, mapContainer);
+
+            return canvas.toDataURL('image/png', 0.95);
+
+        } catch (error) {
+            console.error('Error en canvas manual:', error);
+            return null;
+        }
+    }
+
+    // ========================================
+    // DIBUJAR POLÍGONO EN CANVAS
+    // ========================================
+    function drawPolygonOnCanvas(ctx, polygon, mapContainer) {
+        const bounds = polygon.getLatLngs()[0];
+        const mapRect = mapContainer.getBoundingClientRect();
+
+        ctx.beginPath();
+        ctx.strokeStyle = '#3388ff';
+        ctx.lineWidth = 3;
+        ctx.fillStyle = 'rgba(51, 136, 255, 0.2)';
+
+        bounds.forEach((latlng, index) => {
+            const point = mymap.latLngToContainerPoint(latlng);
+            if (index === 0) {
+                ctx.moveTo(point.x, point.y);
+            } else {
+                ctx.lineTo(point.x, point.y);
+            }
+        });
+
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
+
+    // ========================================
+    // DIBUJAR MARCADORES EN CANVAS
+    // ========================================
+    function drawMarkersOnCanvas(ctx, mapContainer) {
+        selectedCamerasInPolygon.forEach(camera => {
+            const point = mymap.latLngToContainerPoint([camera.latitud, camera.longitud]);
+
+            // Dibujar marcador simple
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 6, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ff0000';
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        });
+    }
+
+    // ========================================
+    // RECORTAR CANVAS AL ÁREA DEL POLÍGONO
+    // ========================================
+    function cropCanvasToPolygon(canvas) {
+        if (!currentPolygon) return canvas;
+
+        const bounds = currentPolygon.getBounds();
+        const nw = mymap.latLngToContainerPoint(bounds.getNorthWest());
+        const se = mymap.latLngToContainerPoint(bounds.getSouthEast());
+
+        const cropWidth = se.x - nw.x;
+        const cropHeight = se.y - nw.y;
+
+        const croppedCanvas = document.createElement('canvas');
+        croppedCanvas.width = cropWidth;
+        croppedCanvas.height = cropHeight;
+
+        const ctx = croppedCanvas.getContext('2d');
+        ctx.drawImage(canvas, nw.x, nw.y, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
+        return croppedCanvas;
+    }
+
+    // ========================================
+    // RESTAURAR ESTADO DEL MAPA
+    // ========================================
+    async function restoreMapState(state) {
+        // Restaurar vista
+        mymap.setView(state.center, state.zoom, { animate: false });
+
+        // Mostrar controles ocultos
+        const hiddenElements = document.querySelectorAll('[data-hidden-for-capture]');
+        hiddenElements.forEach(el => {
+            el.style.display = '';
+            el.removeAttribute('data-hidden-for-capture');
+        });
+
+        // Forzar renderizado
+        mymap.invalidateSize(true);
+
+        await new Promise(resolve => setTimeout(resolve, 300));
+    }
+
+    // ========================================
+    // ACTUALIZAR PROGRESO EN EL LOADER
+    // ========================================
+    function updateProgress(percent, message) {
+        const progressElement = document.getElementById('pdf-progress');
+        if (progressElement) {
+            progressElement.innerHTML = `${message} ${percent}%`;
+        }
+    }
+
+    // ========================================
+    // FUNCIÓN AUXILIAR: AGREGAR LIBRERÍA LEAFLET-IMAGE
+    // ========================================
+    function loadLeafletImage() {
+        return new Promise((resolve, reject) => {
+            if (typeof leafletImage !== 'undefined') {
+                resolve();
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet-image/0.4.0/leaflet-image.min.js';
+            script.onload = () => {
+                console.log('✅ leaflet-image cargado');
+                resolve();
+            };
+            script.onerror = () => {
+                console.warn('⚠️ No se pudo cargar leaflet-image');
+                resolve(); // No rechazar, continuar con fallback
+            };
+            document.head.appendChild(script);
+        });
     }
 
     // ========================================
@@ -1144,29 +1570,30 @@
     }
 
     // ========================================
-    // MÉTODO ALTERNATIVO CON leaflet-image
+    // CAPTURA CON LEAFLET-IMAGE
     // ========================================
-    async function captureWithLeafletImage() {
-        return new Promise((resolve, reject) => {
-            if (typeof L.canvasLayer !== 'undefined') {
-                L.canvasLayer().delegate(this).addTo(mymap).once('render', function () {
-                    const bounds = currentPolygon.getBounds();
-                    const size = mymap.getSize();
+    function captureWithLeafletImage() {
+        return new Promise((resolve) => {
+            if (typeof leafletImage === 'undefined') {
+                resolve(null);
+                return;
+            }
 
-                    // Crear canvas para la captura
-                    const canvas = document.createElement('canvas');
-                    canvas.width = size.x;
-                    canvas.height = size.y;
-                    const ctx = canvas.getContext('2d');
+            try {
+                leafletImage(mymap, function (err, canvas) {
+                    if (err) {
+                        console.error('Error en leafletImage:', err);
+                        resolve(null);
+                        return;
+                    }
 
-                    // Aquí necesitarías implementar la lógica específica de leaflet-image
-                    // Esta es una implementación simplificada
-
-                    const imageData = canvas.toDataURL('image/png');
-                    resolve(imageData);
+                    // Recortar canvas al área visible
+                    const croppedCanvas = cropCanvasToPolygon(canvas);
+                    resolve(croppedCanvas.toDataURL('image/png', 0.95));
                 });
-            } else {
-                reject(new Error('leaflet-image no disponible'));
+            } catch (error) {
+                console.error('Error ejecutando leafletImage:', error);
+                resolve(null);
             }
         });
     }
@@ -1315,6 +1742,7 @@
     // ========================================
     $(document).ready(function () {
         // Esperar a que el mapa esté completamente cargado
+        loadLeafletImage();
         setTimeout(function () {
             initPolygonSelectionSystem();
         }, 1000);

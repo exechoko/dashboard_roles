@@ -40,4 +40,5 @@
     {{-- Scripts del mapa --}}
     @include('mapa.partials.scripts')
     @include('mapa.partials.polygon-selection')
+    @include('mapa.partials.clustering-control')
 @endsection

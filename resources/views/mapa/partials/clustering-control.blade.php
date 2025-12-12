@@ -1,0 +1,375 @@
+<script>
+
+    // ========================================
+    // VARIABLES GLOBALES PARA CLUSTERING
+    // ========================================
+    let clusteringEnabled = true;
+    let clusterControlButton = null;
+
+    // ========================================
+    // CONFIGURACIÓN DE MARKERCLUSTERGROUP CON SPIDER
+    // ========================================
+    function createClusterGroupWithSpider() {
+        return L.markerClusterGroup({
+            // Configuración básica
+            maxClusterRadius: 80,
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: true,
+            zoomToBoundsOnClick: true,
+
+            // SPIDER CONFIGURATION - Para cámaras en la misma ubicación
+            spiderfyDistanceMultiplier: 1.5, // Distancia entre marcadores en spider
+            spiderLegPolylineOptions: {
+                weight: 2,
+                color: '#222',
+                opacity: 0.5
+            },
+
+            // Iconos de clusters personalizados
+            iconCreateFunction: function (cluster) {
+                const childCount = cluster.getChildCount();
+                let className = 'marker-cluster-';
+
+                if (childCount < 10) {
+                    className += 'small';
+                } else if (childCount < 50) {
+                    className += 'medium';
+                } else {
+                    className += 'large';
+                }
+
+                return L.divIcon({
+                    html: '<div><span>' + childCount + '</span></div>',
+                    className: 'marker-cluster ' + className,
+                    iconSize: L.point(40, 40)
+                });
+            }
+        });
+    }
+
+    // ========================================
+    // RECREAR GRUPOS DE CLUSTERS CON NUEVA CONFIGURACIÓN
+    // ========================================
+    function recreateClusterGroups() {
+        // Guardar las capas actuales en el mapa
+        const layersOnMap = {
+            todas: mymap.hasLayer(capa2),
+            lpr: mymap.hasLayer(capaLPR),
+            fr: mymap.hasLayer(capaFR),
+            fijas: mymap.hasLayer(capaFija),
+            domos: mymap.hasLayer(capaDomo),
+            domosDuales: mymap.hasLayer(capaDomoDual),
+            bde: mymap.hasLayer(capaBDE)
+        };
+
+        // Remover capas actuales
+        mymap.removeLayer(capa2);
+        mymap.removeLayer(capaLPR);
+        mymap.removeLayer(capaFR);
+        mymap.removeLayer(capaFija);
+        mymap.removeLayer(capaDomo);
+        mymap.removeLayer(capaDomoDual);
+        mymap.removeLayer(capaBDE);
+
+        // Recrear grupos con o sin clustering
+        if (clusteringEnabled) {
+            marcadores = createClusterGroupWithSpider();
+            markersCamarasLPR = createClusterGroupWithSpider();
+            markersCamarasFR = createClusterGroupWithSpider();
+            markersCamarasFijas = createClusterGroupWithSpider();
+            markersCamarasDomos = createClusterGroupWithSpider();
+            markersCamarasDomosDuales = createClusterGroupWithSpider();
+            markersBDE = createClusterGroupWithSpider();
+        } else {
+            // Sin clustering - usar L.layerGroup normal
+            marcadores = L.layerGroup();
+            markersCamarasLPR = L.layerGroup();
+            markersCamarasFR = L.layerGroup();
+            markersCamarasFijas = L.layerGroup();
+            markersCamarasDomos = L.layerGroup();
+            markersCamarasDomosDuales = L.layerGroup();
+            markersBDE = L.layerGroup();
+        }
+
+        // Recrear las capas
+        capa2 = L.geoJSON();
+        capaLPR = L.layerGroup();
+        capaFR = L.layerGroup();
+        capaFija = L.layerGroup();
+        capaDomo = L.layerGroup();
+        capaDomoDual = L.layerGroup();
+        capaBDE = L.layerGroup();
+
+        // Recargar los marcadores
+        loadCameraMarkers();
+
+        // Restaurar las capas que estaban visibles
+        if (layersOnMap.todas) mymap.addLayer(capa2);
+        if (layersOnMap.lpr) mymap.addLayer(capaLPR);
+        if (layersOnMap.fr) mymap.addLayer(capaFR);
+        if (layersOnMap.fijas) mymap.addLayer(capaFija);
+        if (layersOnMap.domos) mymap.addLayer(capaDomo);
+        if (layersOnMap.domosDuales) mymap.addLayer(capaDomoDual);
+        if (layersOnMap.bde) mymap.addLayer(capaBDE);
+    }
+
+    // ========================================
+    // ALTERNAR CLUSTERING
+    // ========================================
+    function toggleClustering() {
+        clusteringEnabled = !clusteringEnabled;
+
+        // Actualizar botón
+        updateClusterButton();
+
+        // Recrear grupos y marcadores
+        recreateClusterGroups();
+
+        // Mostrar notificación
+        const message = clusteringEnabled
+            ? 'Clustering activado - Las cámaras se agruparán por proximidad'
+            : 'Clustering desactivado - Se muestran todas las cámaras individualmente';
+
+        showNotification(message, clusteringEnabled ? 'success' : 'info');
+    }
+
+    // ========================================
+    // ACTUALIZAR APARIENCIA DEL BOTÓN
+    // ========================================
+    function updateClusterButton() {
+        const button = document.getElementById('toggleClusterBtn');
+        if (!button) return;
+
+        if (clusteringEnabled) {
+            button.classList.remove('btn-secondary');
+            button.classList.add('btn-success');
+            button.innerHTML = '<i class="fas fa-object-group"></i> Clustering ON';
+            button.title = 'Click para desactivar agrupación de cámaras';
+        } else {
+            button.classList.remove('btn-success');
+            button.classList.add('btn-secondary');
+            button.innerHTML = '<i class="fas fa-object-ungroup"></i> Clustering OFF';
+            button.title = 'Click para activar agrupación de cámaras';
+        }
+    }
+
+    // ========================================
+    // INICIALIZAR CONTROL DE CLUSTERING
+    // ========================================
+    function initClusteringControl() {
+        // Esperar a que el mapa esté listo
+        if (!mymap) {
+            console.error('El mapa no está inicializado');
+            setTimeout(initClusteringControl, 500);
+            return;
+        }
+
+        // Agregar estilos CSS
+        if (!document.getElementById('cluster-styles')) {
+            const styleElement = document.createElement('div');
+            styleElement.id = 'cluster-styles';
+            styleElement.innerHTML = clusterStyles;
+            document.head.appendChild(styleElement);
+        }
+
+        // Agregar botón de control
+        addClusterControlButton();
+
+        console.log('✅ Control de clustering inicializado');
+    }
+
+    // ========================================
+    // AGREGAR CONTROL DE CLUSTERING AL MAPA
+    // ========================================
+    function addClusterControlButton() {
+        const clusterControl = L.control({ position: 'topleft' });
+
+        clusterControl.onAdd = function () {
+            const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+            div.innerHTML = `
+            <button id="toggleClusterBtn"
+                    class="btn btn-success"
+                    style="padding: 8px 12px; border-radius: 4px; border: none; cursor: pointer; margin-top: 5px;"
+                    title="Click para desactivar agrupación de cámaras">
+                <i class="fas fa-object-group"></i> Clustering ON
+            </button>
+        `;
+            div.style.backgroundColor = 'transparent';
+            div.style.border = 'none';
+            L.DomEvent.disableClickPropagation(div);
+            return div;
+        };
+
+        clusterControl.addTo(mymap);
+        clusterControlButton = clusterControl;
+
+        // Agregar evento al botón
+        setTimeout(() => {
+            const button = document.getElementById('toggleClusterBtn');
+            if (button) {
+                button.addEventListener('click', toggleClustering);
+            }
+        }, 100);
+    }
+
+    // ========================================
+    // FUNCIÓN AUXILIAR PARA DEBUGGING
+    // ========================================
+    function debugClusterInfo() {
+        console.log('=== DEBUG CLUSTER INFO ===');
+        console.log('Clustering enabled:', clusteringEnabled);
+        console.log('Marcadores totales:', marcadores.getLayers().length);
+        console.log('Clusters visibles:', document.querySelectorAll('.marker-cluster').length);
+
+        // Contar cámaras por ubicación exacta
+        const locations = new Map();
+        marcadores.eachLayer(function (marker) {
+            if (marker instanceof L.Marker) {
+                const key = `${marker.getLatLng().lat},${marker.getLatLng().lng}`;
+                locations.set(key, (locations.get(key) || 0) + 1);
+            }
+        });
+
+        console.log('Ubicaciones únicas:', locations.size);
+        console.log('Ubicaciones con múltiples cámaras:');
+        locations.forEach((count, location) => {
+            if (count > 1) {
+                console.log(`  ${location}: ${count} cámaras`);
+            }
+        });
+        console.log('========================');
+    }
+
+    // Exponer función de debug globalmente
+    window.debugClusterInfo = debugClusterInfo;
+
+    const clusterStyles = `
+<style>
+    /* Estilos base para clusters */
+    .marker-cluster-small {
+        background-color: rgba(181, 226, 140, 0.6);
+    }
+
+    .marker-cluster-small div {
+        background-color: rgba(110, 204, 57, 0.6);
+    }
+
+    .marker-cluster-medium {
+        background-color: rgba(241, 211, 87, 0.6);
+    }
+
+    .marker-cluster-medium div {
+        background-color: rgba(240, 194, 12, 0.6);
+    }
+
+    .marker-cluster-large {
+        background-color: rgba(253, 156, 115, 0.6);
+    }
+
+    .marker-cluster-large div {
+        background-color: rgba(241, 128, 23, 0.6);
+    }
+
+    /* Estilos comunes para todos los clusters */
+    .marker-cluster {
+        background-clip: padding-box;
+        border-radius: 20px;
+    }
+
+    .marker-cluster div {
+        width: 30px;
+        height: 30px;
+        margin-left: 5px;
+        margin-top: 5px;
+        text-align: center;
+        border-radius: 15px;
+        font: 12px "Helvetica Neue", Arial, Helvetica, sans-serif;
+        font-weight: bold;
+    }
+
+    .marker-cluster span {
+        line-height: 30px;
+        color: #fff;
+    }
+
+    /* Animación para spider legs */
+    .leaflet-cluster-spider-leg {
+        animation: spiderLegFade 0.3s ease-in-out;
+    }
+
+    @keyframes spiderLegFade {
+        from {
+            opacity: 0;
+            stroke-width: 0;
+        }
+
+        to {
+            opacity: 0.5;
+            stroke-width: 2;
+        }
+    }
+
+    /* Estilos para modo oscuro */
+    [data-theme="dark"] .marker-cluster-small {
+        background-color: rgba(110, 204, 57, 0.8);
+    }
+
+    [data-theme="dark"] .marker-cluster-small div {
+        background-color: rgba(110, 204, 57, 0.9);
+    }
+
+    [data-theme="dark"] .marker-cluster-medium {
+        background-color: rgba(240, 194, 12, 0.8);
+    }
+
+    [data-theme="dark"] .marker-cluster-medium div {
+        background-color: rgba(240, 194, 12, 0.9);
+    }
+
+    [data-theme="dark"] .marker-cluster-large {
+        background-color: rgba(241, 128, 23, 0.8);
+    }
+
+    [data-theme="dark"] .marker-cluster-large div {
+        background-color: rgba(241, 128, 23, 0.9);
+    }
+
+    /* Botón de clustering responsive */
+    #toggleClusterBtn {
+        transition: all 0.3s ease;
+        font-size: 13px;
+        min-width: 140px;
+    }
+
+    #toggleClusterBtn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="dark"] #toggleClusterBtn {
+        background-color: var(--card-bg, #1e1e1e) !important;
+        color: var(--text-primary, #ffffff) !important;
+    }
+
+    [data-theme="dark"] #toggleClusterBtn.btn-success {
+        background-color: #28a745 !important;
+    }
+
+    [data-theme="dark"] #toggleClusterBtn.btn-secondary {
+        background-color: #6c757d !important;
+    }
+
+    @media (max-width: 768px) {
+        #toggleClusterBtn {
+            font-size: 11px;
+            padding: 6px 8px !important;
+            min-width: 120px;
+        }
+
+        #toggleClusterBtn i {
+            font-size: 10px;
+        }
+    }
+</style>
+`;
+</script>

@@ -317,13 +317,9 @@ var mymap = L.map('map', {
 var polygonLayer = L.featureGroup();
 var drawControl = null;
 var selectedCameras = [];
-var marcadores = L.markerClusterGroup();
-var markersCamarasLPR = L.markerClusterGroup();
-var markersCamarasFR = L.markerClusterGroup();
-var markersCamarasFijas = L.markerClusterGroup();
-var markersCamarasDomos = L.markerClusterGroup();
-var markersCamarasDomosDuales = L.markerClusterGroup();
-var markersBDE = L.markerClusterGroup();
+var polygonLayer = L.featureGroup();
+var drawControl = null;
+var selectedCameras = [];
 var marcadoresSitios = L.markerClusterGroup();
 var capaSitios = L.layerGroup();
 var capa1 = L.layerGroup();
@@ -355,6 +351,51 @@ let layerStates = {
     sitios: false,
     'camaras-comisarias': false
 };
+
+// ========================================
+// FUNCIÓN PARA CREAR GRUPOS CON SPIDER
+// ========================================
+function createClusterGroupWithSpider() {
+    return L.markerClusterGroup({
+        maxClusterRadius: 80,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: true,
+        zoomToBoundsOnClick: true,
+        spiderfyDistanceMultiplier: 1.5,
+        spiderLegPolylineOptions: {
+            weight: 2,
+            color: '#222',
+            opacity: 0.5
+        },
+        iconCreateFunction: function(cluster) {
+            const childCount = cluster.getChildCount();
+            let className = 'marker-cluster-';
+
+            if (childCount < 10) {
+                className += 'small';
+            } else if (childCount < 50) {
+                className += 'medium';
+            } else {
+                className += 'large';
+            }
+
+            return L.divIcon({
+                html: '<div><span>' + childCount + '</span></div>',
+                className: 'marker-cluster ' + className,
+                iconSize: L.point(40, 40)
+            });
+        }
+    });
+}
+
+// Inicializar grupos con spider mode
+var marcadores = createClusterGroupWithSpider();
+var markersCamarasLPR = createClusterGroupWithSpider();
+var markersCamarasFR = createClusterGroupWithSpider();
+var markersCamarasFijas = createClusterGroupWithSpider();
+var markersCamarasDomos = createClusterGroupWithSpider();
+var markersCamarasDomosDuales = createClusterGroupWithSpider();
+var markersBDE = createClusterGroupWithSpider();
 
 // MAPA CLARO
 var mapaClaro = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -565,6 +606,11 @@ $(document).ready(function() {
 
     // Añadir capa inicial de cámaras
     mymap.addLayer(capa2);
+
+    // Inicializar control de clustering
+    setTimeout(function() {
+        initClusteringControl();
+    }, 1000);
 });
 
 function ensureLayerControlVisibility() {

@@ -1,31 +1,46 @@
 <script>
-
     // ========================================
-    // VARIABLES GLOBALES PARA CLUSTERING
+    // VARIABLES GLOBALES PARA CLUSTERING Y SPIDER
     // ========================================
     let clusteringEnabled = true;
     let clusterControlButton = null;
+    let spiderfiers = {}; // Almacenar instancias de spider por capa
+
+    // ========================================
+    // INICIALIZAR OVERLAPPING MARKER SPIDERFIER
+    // ========================================
+    function createSpiderfier(map) {
+        // Configuración de OverlappingMarkerSpiderfier
+        return new OverlappingMarkerSpiderfier(map, {
+            keepSpiderfied: true,
+            nearbyDistance: 20,
+            circleSpiralSwitchover: 9,
+            spiralFootSeparation: 28,
+            spiralLengthStart: 15,
+            spiralLengthFactor: 4,
+            legWeight: 2,
+            legColors: {
+                usual: '#222',
+                highlighted: '#f00'
+            }
+        });
+    }
 
     // ========================================
     // CONFIGURACIÓN DE MARKERCLUSTERGROUP CON SPIDER
     // ========================================
     function createClusterGroupWithSpider() {
         return L.markerClusterGroup({
-            // Configuración básica
             maxClusterRadius: 80,
             spiderfyOnMaxZoom: true,
             showCoverageOnHover: true,
             zoomToBoundsOnClick: true,
-
-            // SPIDER CONFIGURATION - Para cámaras en la misma ubicación
-            spiderfyDistanceMultiplier: 1.5, // Distancia entre marcadores en spider
+            spiderfyDistanceMultiplier: 1.5,
             spiderLegPolylineOptions: {
                 weight: 2,
                 color: '#222',
                 opacity: 0.5
             },
-
-            // Iconos de clusters personalizados
             iconCreateFunction: function (cluster) {
                 const childCount = cluster.getChildCount();
                 let className = 'marker-cluster-';
@@ -45,6 +60,29 @@
                 });
             }
         });
+    }
+
+    // ========================================
+    // CREAR LAYER GROUP CON SPIDER PARA MARCADORES SUPERPUESTOS
+    // ========================================
+    function createLayerGroupWithSpider(layerName) {
+        const layerGroup = L.layerGroup();
+
+        // Crear una instancia de spiderfier para esta capa
+        const oms = createSpiderfier(mymap);
+        spiderfiers[layerName] = oms;
+
+        // Override del método addLayer para añadir markers al spiderfier
+        const originalAddLayer = layerGroup.addLayer.bind(layerGroup);
+        layerGroup.addLayer = function(layer) {
+            originalAddLayer(layer);
+            if (layer instanceof L.Marker) {
+                oms.addMarker(layer);
+            }
+            return this;
+        };
+
+        return layerGroup;
     }
 
     // ========================================
@@ -71,6 +109,14 @@
         mymap.removeLayer(capaDomoDual);
         mymap.removeLayer(capaBDE);
 
+        // Limpiar spiderfiers anteriores
+        Object.values(spiderfiers).forEach(oms => {
+            if (oms && oms.clearMarkers) {
+                oms.clearMarkers();
+            }
+        });
+        spiderfiers = {};
+
         // Recrear grupos con o sin clustering
         if (clusteringEnabled) {
             marcadores = createClusterGroupWithSpider();
@@ -81,14 +127,14 @@
             markersCamarasDomosDuales = createClusterGroupWithSpider();
             markersBDE = createClusterGroupWithSpider();
         } else {
-            // Sin clustering - usar L.layerGroup normal
-            marcadores = L.layerGroup();
-            markersCamarasLPR = L.layerGroup();
-            markersCamarasFR = L.layerGroup();
-            markersCamarasFijas = L.layerGroup();
-            markersCamarasDomos = L.layerGroup();
-            markersCamarasDomosDuales = L.layerGroup();
-            markersBDE = L.layerGroup();
+            // Sin clustering - usar LayerGroup con Spider para marcadores superpuestos
+            marcadores = createLayerGroupWithSpider('marcadores');
+            markersCamarasLPR = createLayerGroupWithSpider('lpr');
+            markersCamarasFR = createLayerGroupWithSpider('fr');
+            markersCamarasFijas = createLayerGroupWithSpider('fijas');
+            markersCamarasDomos = createLayerGroupWithSpider('domos');
+            markersCamarasDomosDuales = createLayerGroupWithSpider('domosDuales');
+            markersBDE = createLayerGroupWithSpider('bde');
         }
 
         // Recrear las capas
@@ -128,7 +174,7 @@
         // Mostrar notificación
         const message = clusteringEnabled
             ? 'Clustering activado - Las cámaras se agruparán por proximidad'
-            : 'Clustering desactivado - Se muestran todas las cámaras individualmente';
+            : 'Clustering desactivado - Marcadores superpuestos se mostrarán en spider';
 
         showNotification(message, clusteringEnabled ? 'success' : 'info');
     }
@@ -166,7 +212,7 @@
 
         // Agregar estilos CSS
         if (!document.getElementById('cluster-styles')) {
-            const styleElement = document.createElement('div');
+            const styleElement = document.createElement('style');
             styleElement.id = 'cluster-styles';
             styleElement.innerHTML = clusterStyles;
             document.head.appendChild(styleElement);
@@ -218,17 +264,19 @@
     function debugClusterInfo() {
         console.log('=== DEBUG CLUSTER INFO ===');
         console.log('Clustering enabled:', clusteringEnabled);
-        console.log('Marcadores totales:', marcadores.getLayers().length);
+        console.log('Marcadores totales:', marcadores.getLayers ? marcadores.getLayers().length : 'N/A');
         console.log('Clusters visibles:', document.querySelectorAll('.marker-cluster').length);
 
         // Contar cámaras por ubicación exacta
         const locations = new Map();
-        marcadores.eachLayer(function (marker) {
-            if (marker instanceof L.Marker) {
-                const key = `${marker.getLatLng().lat},${marker.getLatLng().lng}`;
-                locations.set(key, (locations.get(key) || 0) + 1);
-            }
-        });
+        if (marcadores.eachLayer) {
+            marcadores.eachLayer(function (marker) {
+                if (marker instanceof L.Marker) {
+                    const key = `${marker.getLatLng().lat},${marker.getLatLng().lng}`;
+                    locations.set(key, (locations.get(key) || 0) + 1);
+                }
+            });
+        }
 
         console.log('Ubicaciones únicas:', locations.size);
         console.log('Ubicaciones con múltiples cámaras:');
@@ -237,6 +285,7 @@
                 console.log(`  ${location}: ${count} cámaras`);
             }
         });
+        console.log('Spiderfiers activos:', Object.keys(spiderfiers).length);
         console.log('========================');
     }
 
@@ -244,7 +293,6 @@
     window.debugClusterInfo = debugClusterInfo;
 
     const clusterStyles = `
-<style>
     /* Estilos base para clusters */
     .marker-cluster-small {
         background-color: rgba(181, 226, 140, 0.6);
@@ -297,6 +345,13 @@
         animation: spiderLegFade 0.3s ease-in-out;
     }
 
+    /* Estilos para OverlappingMarkerSpiderfier */
+    .oms-spider-leg {
+        stroke: #222;
+        stroke-width: 2;
+        stroke-opacity: 0.5;
+    }
+
     @keyframes spiderLegFade {
         from {
             opacity: 0;
@@ -332,6 +387,11 @@
 
     [data-theme="dark"] .marker-cluster-large div {
         background-color: rgba(241, 128, 23, 0.9);
+    }
+
+    [data-theme="dark"] .oms-spider-leg {
+        stroke: #ffffff;
+        stroke-opacity: 0.7;
     }
 
     /* Botón de clustering responsive */
@@ -370,6 +430,5 @@
             font-size: 10px;
         }
     }
-</style>
 `;
 </script>

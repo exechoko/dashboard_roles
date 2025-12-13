@@ -470,58 +470,62 @@
             return inside;
         }
 
-        // ARREGLADO: Procesar clusters expandidos
+        // Procesar clusters expandidos Y LayerGroups con Spider
         function processMarkerClusters(layer) {
             if (!layer) return 0;
             let count = 0;
 
+            // Función común para procesar cada marcador
+            function processMarker(marker) {
+                if (!(marker instanceof L.Marker)) return;
+
+                const position = marker.getLatLng();
+
+                // Usar ID único de la cámara en lugar de coordenadas
+                const popup = marker.getPopup();
+                let cameraId = marker.options.cameraId ||
+                    (popup ? popup.getContent().hashCode() : null) ||
+                    `${position.lat.toFixed(6)}_${position.lng.toFixed(6)}_${Date.now()}`;
+
+                if (seenCameras.has(cameraId)) {
+                    console.log(`  ⚠️ Cámara duplicada (${cameraId}), saltando...`);
+                    return;
+                }
+
+                // Verificar si está dentro del polígono
+                const polygonPoints = polygon.getLatLngs()[0];
+                if (bounds.contains(position) &&
+                    isPointInPolygon(position, polygonPoints)) {
+                    console.log(`  ✅ Cámara DENTRO del polígono: ${cameraId}`);
+
+                    // Extraer información de la cámara
+                    const cameraInfo = extractCameraInfo(marker);
+                    if (cameraInfo) {
+                        cameraInfo.id = cameraId; // Agregar ID único
+                        selectedCamerasInPolygon.push(cameraInfo);
+                        seenCameras.add(cameraId);
+                        highlightCameraMarker(marker);
+                        count++;
+                    }
+                }
+            }
+
             // Si es un MarkerClusterGroup, obtener todos los hijos
             if (layer instanceof L.MarkerClusterGroup) {
-                console.log(`Procesando cluster con ${layer.getLayers().length} markers`);
-
-                // Recorrer todos los markers en el cluster
-                layer.eachLayer(function (marker) {
-                    if (marker instanceof L.Marker) {
-                        const position = marker.getLatLng();
-
-                        // Usar ID único de la cámara en lugar de coordenadas
-                        const popup = marker.getPopup();
-                        let cameraId = marker.options.cameraId ||
-                            (popup ? popup.getContent().hashCode() : null) ||
-                            `${position.lat.toFixed(6)}_${position.lng.toFixed(6)}_${Date.now()}`;
-
-                        if (seenCameras.has(cameraId)) {
-                            console.log(`  ⚠️ Cámara duplicada (${cameraId}), saltando...`);
-                            return;
-                        }
-
-                        // Verificar si está dentro del polígono
-                        const polygonPoints = polygon.getLatLngs()[0];
-                        if (bounds.contains(position) &&
-                            isPointInPolygon(position, polygonPoints)) {
-                            console.log(`  ✅ Cámara DENTRO del polígono: ${cameraId}`);
-
-                            // Extraer información de la cámara
-                            const cameraInfo = extractCameraInfo(marker);
-                            if (cameraInfo) {
-                                cameraInfo.id = cameraId; // Agregar ID único
-                                selectedCamerasInPolygon.push(cameraInfo);
-                                seenCameras.add(cameraId);
-                                highlightCameraMarker(marker);
-                                count++;
-                            }
-                        }
-                    }
-                });
-            } else if (layer.eachLayer) {
-                // Para otras capas
-                layer.eachLayer(function (marker) {
-                    if (marker instanceof L.Marker) {
-                        const position = marker.getLatLng();
-                        // ... mismo procesamiento
-                    }
-                });
+                console.log(`Procesando MarkerClusterGroup con ${layer.getLayers().length} markers`);
+                layer.eachLayer(processMarker);
             }
+            // Si es un LayerGroup regular (modo clustering OFF)
+            else if (layer instanceof L.LayerGroup) {
+                console.log(`Procesando LayerGroup con ${layer.getLayers().length} markers`);
+                layer.eachLayer(processMarker);
+            }
+            // Fallback para cualquier otra capa con eachLayer
+            else if (layer.eachLayer) {
+                console.log(`Procesando capa genérica...`);
+                layer.eachLayer(processMarker);
+            }
+
             return count;
         }
 

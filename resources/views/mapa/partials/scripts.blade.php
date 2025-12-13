@@ -510,14 +510,15 @@ function actualizarBotonesMapaConTema(mymap, botonesConfig) {
 
 function setupMapToggleButton() {
     var toggleControl = L.control({
-        position: 'bottomleft'
+        position: 'bottomright'
     });
 
     toggleControl.onAdd = function() {
         var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
-        div.innerHTML = '<button id="toggleMapBtn" class="btn btn-primary">Mapa Satelital</button>';
-        div.style.backgroundColor = 'white';
+        div.innerHTML = '<button id="toggleMapBtn" class="btn btn-primary" style="border-radius: 4px; border: none; cursor: pointer">Mapa Satelital</button>';
+        div.style.backgroundColor = 'transparent';
         div.style.padding = '5px';
+        div.style.marginRight = '100px';
         L.DomEvent.disableClickPropagation(div);
         return div;
     };
@@ -938,6 +939,6 @@ function setupFullscreenControl() {
         return div;
     };
 
-    fullscreenButton.addTo(mymap);
+    //fullscreenButton.addTo(mymap);
 }
 </script>

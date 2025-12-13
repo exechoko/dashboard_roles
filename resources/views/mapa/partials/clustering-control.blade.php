@@ -281,14 +281,14 @@
     // AGREGAR CONTROL DE CLUSTERING AL MAPA
     // ========================================
     function addClusterControlButton() {
-        const clusterControl = L.control({ position: 'topleft' });
+        const clusterControl = L.control({ position: 'bottomright' });
 
         clusterControl.onAdd = function () {
             const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
             div.innerHTML = `
             <button id="toggleClusterBtn"
                     class="btn btn-success"
-                    style="padding: 8px 12px; border-radius: 4px; border: none; cursor: pointer; margin-top: 5px;"
+                    style="padding: 8px 12px; border-radius: 4px; border: none; cursor: pointer; margin-bottom: 5px;"
                     title="Click para desactivar agrupación de cámaras">
                 <i class="fas fa-object-group"></i> Clustering ON
             </button>

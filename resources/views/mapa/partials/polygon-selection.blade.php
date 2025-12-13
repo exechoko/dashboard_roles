@@ -116,7 +116,7 @@
     // ========================================
     function addPolygonDrawControl() {
         // Crear botón de control personalizado
-        const polygonControlDiv = L.control({ position: 'topleft' });
+        const polygonControlDiv = L.control({ position: 'bottomright' });
 
         polygonControlDiv.onAdd = function (map) {
             const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
@@ -2013,12 +2013,12 @@
     // ========================================
     function addPolygonControls(polygon) {
         // Crear controles de polígono
-        const controlDiv = L.control({ position: 'topleft' });
+        const controlDiv = L.control({ position: 'bottomright' });
 
         controlDiv.onAdd = function () {
             const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
             div.innerHTML = `
-            <div style="background: white; padding: 10px; border-radius: 4px;">
+            <div style="background: white; padding: 10px; border-radius: 4px; margin-bottom: 50px;">
                 <button id="ver-lista" class="btn btn-sm btn-primary" onclick="showCamerasModal()">
                     <i class="fas fa-list"></i> Ver Lista (${selectedCamerasInPolygon.length})
                 </button>

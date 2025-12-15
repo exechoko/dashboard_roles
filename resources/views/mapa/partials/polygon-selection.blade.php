@@ -470,10 +470,19 @@
             return inside;
         }
 
-        // Procesar clusters expandidos Y LayerGroups con Spider
+        // Función para procesar marcadores en clusters
         function processMarkerClusters(layer) {
             if (!layer) return 0;
             let count = 0;
+
+            // Verificar si es un MarkerClusterGroup antes de usar métodos específicos
+            const isMarkerCluster = layer instanceof L.MarkerClusterGroup;
+            const isLayerGroup = layer instanceof L.LayerGroup;
+
+            if (!isMarkerCluster && !isLayerGroup) {
+                console.log('  ⚠️ Capa no compatible:', layer);
+                return 0;
+            }
 
             // Función común para procesar cada marcador
             function processMarker(marker) {
@@ -510,19 +519,11 @@
                 }
             }
 
-            // Si es un MarkerClusterGroup, obtener todos los hijos
-            if (layer instanceof L.MarkerClusterGroup) {
+            if (isMarkerCluster) {
                 console.log(`Procesando MarkerClusterGroup con ${layer.getLayers().length} markers`);
                 layer.eachLayer(processMarker);
-            }
-            // Si es un LayerGroup regular (modo clustering OFF)
-            else if (layer instanceof L.LayerGroup) {
+            } else if (isLayerGroup) {
                 console.log(`Procesando LayerGroup con ${layer.getLayers().length} markers`);
-                layer.eachLayer(processMarker);
-            }
-            // Fallback para cualquier otra capa con eachLayer
-            else if (layer.eachLayer) {
-                console.log(`Procesando capa genérica...`);
                 layer.eachLayer(processMarker);
             }
 
@@ -1099,30 +1100,34 @@
                 zoom: mymap.getZoom()
             };
 
-            // Preparar mapa (ocultar controles y marcadores)
-            await prepareMapForCapture();
+            try {
+                // Preparar mapa (ocultar controles y marcadores)
+                await prepareMapForCapture();
 
-            // Capturar imagen del área completa
-            let capturedImage = null;
+                // Capturar imagen del área completa
+                let capturedImage = null;
 
-            if (typeof html2canvas !== 'undefined') {
-                console.log('🔄 Capturando con html2canvas...');
-                capturedImage = await captureMapAreaOnly();
+                if (typeof html2canvas !== 'undefined') {
+                    console.log('🔄 Capturando con html2canvas...');
+                    capturedImage = await captureMapAreaOnly();
+                }
+
+                // Si falla html2canvas, usar canvas manual
+                if (!capturedImage) {
+                    console.log('🔄 Usando captura manual...');
+                    capturedImage = await captureWithManualCanvasSimple();
+                }
+
+                return capturedImage;
+
+            } finally {
+                // Asegurar que siempre se restaure el estado
+                await restoreMapState(originalState);
             }
-
-            // Si falla html2canvas, usar canvas manual
-            if (!capturedImage) {
-                console.log('🔄 Usando captura manual...');
-                capturedImage = await captureWithManualCanvasSimple();
-            }
-
-            // Restaurar estado
-            await restoreMapState(originalState);
-
-            return capturedImage;
 
         } catch (error) {
             console.error('❌ Error en captura:', error);
+            showNotification('Error al capturar el mapa: ' + error.message, 'error');
             return null;
         }
     }
@@ -1297,10 +1302,13 @@
     }
 
     // ========================================
-    // PREPARAR MAPA PARA CAPTURA - VERSIÓN SIMPLIFICADA
+    // PREPARAR MAPA PARA CAPTURA - VERSIÓN MEJORADA
+    // Oculta marcadores fuera del área y prepara solo las cámaras seleccionadas
+    // Respeta el estado del clustering (ON/OFF)
     // ========================================
     async function prepareMapForCapture() {
         console.log('🔧 Preparando mapa para captura...');
+        console.log(`📊 Estado de clustering: ${clusteringEnabled ? 'ACTIVADO' : 'DESACTIVADO'}`);
 
         // 1. Ocultar todos los controles
         const controlSelectors = [
@@ -1313,7 +1321,8 @@
             '#ver-lista',
             '#limpiar-seleccion',
             '.leaflet-popup',
-            '.leaflet-tooltip'
+            '.leaflet-tooltip',
+            '#toggleClusterBtn' // También ocultar el botón de clustering
         ];
 
         controlSelectors.forEach(selector => {
@@ -1334,8 +1343,9 @@
             overlayPane.setAttribute('data-hidden-for-capture', 'true');
         }
 
-        // 3. Ocultar temporalmente los marcadores con iconos problemáticos
+        // 3. Preparar marcadores según estado del clustering
         const tempHiddenMarkers = [];
+        const tempHiddenClusters = [];
         const markerLayers = [
             marcadores,
             markersCamarasLPR,
@@ -1346,32 +1356,101 @@
             markersBDE
         ];
 
-        markerLayers.forEach(layer => {
-            if (layer && layer.getLayers) {
-                layer.eachLayer(function (marker) {
-                    if (marker instanceof L.Marker) {
-                        tempHiddenMarkers.push({
-                            marker: marker,
-                            originalOpacity: marker.options.opacity || 1
-                        });
-                        marker.setOpacity(0);
-                    }
-                });
-            }
-        });
+        if (clusteringEnabled) {
+            // ========================================
+            // MODO CLUSTERING ACTIVADO
+            // ========================================
+            console.log('🔵 Modo CLUSTERING ON - Ocultando clusters fuera del área...');
+
+            markerLayers.forEach(layer => {
+                if (layer && layer instanceof L.MarkerClusterGroup) {
+                    // Obtener todos los clusters visibles
+                    const clusters = document.querySelectorAll('.marker-cluster');
+
+                    clusters.forEach(clusterElement => {
+                        // Intentar obtener el cluster asociado
+                        const clusterLatLng = getClusterPosition(clusterElement);
+
+                        if (clusterLatLng) {
+                            const isInside = isClusterInsidePolygon(clusterLatLng);
+
+                            if (!isInside) {
+                                // Ocultar cluster fuera del área
+                                tempHiddenClusters.push({
+                                    element: clusterElement,
+                                    originalDisplay: clusterElement.style.display
+                                });
+                                clusterElement.style.display = 'none';
+                            }
+                        }
+                    });
+
+                    // También ocultar marcadores individuales fuera del área
+                    layer.eachLayer(function (marker) {
+                        if (marker instanceof L.Marker) {
+                            const position = marker.getLatLng();
+                            const isInside = isMarkerInsidePolygon(position);
+
+                            if (!isInside) {
+                                tempHiddenMarkers.push({
+                                    marker: marker,
+                                    originalOpacity: marker.options.opacity || 1
+                                });
+                                marker.setOpacity(0);
+                            }
+                        }
+                    });
+                }
+            });
+
+            console.log(`  ✅ ${tempHiddenClusters.length} clusters ocultos`);
+            console.log(`  ✅ ${tempHiddenMarkers.length} marcadores ocultos`);
+
+        } else {
+            // ========================================
+            // MODO CLUSTERING DESACTIVADO
+            // ========================================
+            console.log('🟢 Modo CLUSTERING OFF - Ocultando marcadores individuales fuera del área...');
+
+            markerLayers.forEach(layer => {
+                if (layer && layer.getLayers) {
+                    layer.eachLayer(function (marker) {
+                        if (marker instanceof L.Marker) {
+                            const position = marker.getLatLng();
+                            const isInside = isMarkerInsidePolygon(position);
+
+                            if (!isInside) {
+                                // Ocultar marcador fuera del área
+                                tempHiddenMarkers.push({
+                                    marker: marker,
+                                    originalOpacity: marker.options.opacity || 1
+                                });
+                                marker.setOpacity(0);
+                            } else {
+                                console.log(`  ✓ Marcador visible: ${position.lat}, ${position.lng}`);
+                            }
+                        }
+                    });
+                }
+            });
+
+            console.log(`  ✅ ${tempHiddenMarkers.length} marcadores ocultos fuera del área`);
+            console.log(`  ✅ ${selectedCamerasInPolygon.length} marcadores dentro del área (visibles)`);
+        }
 
         window._tempHiddenMarkers = tempHiddenMarkers;
+        window._tempHiddenClusters = tempHiddenClusters;
 
-        // 4. Ajustar vista al polígono con MUCHO padding para capturar área amplia
+        // 4. Ajustar vista al polígono con padding para contexto
         if (currentPolygon) {
             const bounds = currentPolygon.getBounds();
 
             console.log('🎯 Ajustando vista al área del polígono...');
 
             mymap.fitBounds(bounds, {
-                padding: [50, 50], // Más padding para contexto
+                padding: [50, 50],
                 animate: false,
-                maxZoom: 20, // Zoom moderado para ver contexto
+                maxZoom: clusteringEnabled ? 18 : 20, // Zoom más alejado con clustering
                 duration: 0
             });
         }
@@ -1383,10 +1462,72 @@
         // 6. Esperar tiles
         await waitForTilesToLoad();
 
-        // 7. Espera final
+        // 7. Si clustering está ON, refrescar clusters
+        if (clusteringEnabled) {
+            markerLayers.forEach(layer => {
+                if (layer && layer.refreshClusters && layer instanceof L.MarkerClusterGroup) {
+                    try {
+                        layer.refreshClusters();
+                    } catch (error) {
+                        console.warn('Error refrescando clusters:', error);
+                        // Continuar sin refrescar esta capa
+                    }
+                }
+            });
+            await new Promise(resolve => setTimeout(resolve, 300));
+        }
+
+        // 8. Espera final
         await new Promise(resolve => setTimeout(resolve, 800));
 
-        console.log('✅ Mapa preparado - polígono oculto, área lista');
+        console.log('✅ Mapa preparado para captura');
+    }
+
+    // ========================================
+    // VERIFICAR SI UN MARCADOR ESTÁ DENTRO DEL POLÍGONO
+    // ========================================
+    function isMarkerInsidePolygon(latLng) {
+        if (!currentPolygon) return false;
+
+        const bounds = currentPolygon.getBounds();
+        if (!bounds.contains(latLng)) return false;
+
+        const polygonPoints = currentPolygon.getLatLngs()[0];
+        return isPointInPolygon(latLng, polygonPoints);
+    }
+
+    // ========================================
+    // VERIFICAR SI UN CLUSTER ESTÁ DENTRO DEL POLÍGONO
+    // ========================================
+    function isClusterInsidePolygon(latLng) {
+        if (!currentPolygon) return false;
+
+        const bounds = currentPolygon.getBounds();
+        return bounds.contains(latLng);
+    }
+
+    // ========================================
+    // OBTENER POSICIÓN DE UN CLUSTER DESDE EL DOM
+    // ========================================
+    function getClusterPosition(clusterElement) {
+        try {
+            // Intentar obtener la posición desde los atributos de transformación
+            const transform = clusterElement.style.transform;
+            if (transform) {
+                const match = transform.match(/translate3d\((.+?)px,\s*(.+?)px/);
+                if (match) {
+                    const x = parseFloat(match[1]);
+                    const y = parseFloat(match[2]);
+
+                    // Convertir coordenadas de pantalla a LatLng
+                    const point = L.point(x, y);
+                    return mymap.containerPointToLatLng(point);
+                }
+            }
+        } catch (error) {
+            console.warn('No se pudo obtener posición del cluster:', error);
+        }
+        return null;
     }
 
     // ========================================
@@ -1901,36 +2042,51 @@
     async function restoreMapState(state) {
         console.log('🔄 Restaurando estado del mapa...');
 
-        // 1. Restaurar vista original
+        // 1. Restaurar vista original si está disponible
         if (state && state.center && state.zoom) {
             mymap.setView(state.center, state.zoom, { animate: false });
         }
 
-        // 2. Mostrar todos los elementos ocultos
+        // 2. Mostrar todos los elementos ocultos (forma segura)
         const hiddenElements = document.querySelectorAll('[data-hidden-for-capture]');
         hiddenElements.forEach(el => {
-            el.style.display = '';
-            el.removeAttribute('data-hidden-for-capture');
+            try {
+                el.style.display = '';
+                el.removeAttribute('data-hidden-for-capture');
+            } catch (e) {
+                console.warn('Error restaurando elemento:', e);
+            }
         });
 
-        // 3. Restaurar opacidad de los marcadores
-        if (window._tempHiddenMarkers && window._tempHiddenMarkers.length > 0) {
+        // 3. Restaurar opacidad de los marcadores (si existen)
+        if (window._tempHiddenMarkers && Array.isArray(window._tempHiddenMarkers)) {
             console.log(`🔄 Restaurando ${window._tempHiddenMarkers.length} marcadores...`);
 
             window._tempHiddenMarkers.forEach(item => {
-                if (item.marker && item.marker.setOpacity) {
-                    item.marker.setOpacity(item.originalOpacity);
+                try {
+                    if (item.marker && item.marker.setOpacity && typeof item.marker.setOpacity === 'function') {
+                        item.marker.setOpacity(item.originalOpacity);
+                    }
+                } catch (error) {
+                    console.warn('Error restaurando marcador:', error);
                 }
             });
 
             window._tempHiddenMarkers = [];
         }
 
-        // 4. Forzar renderizado completo
+        // 4. Mostrar el overlay-pane (polígono) si estaba oculto
+        const overlayPane = document.querySelector('.leaflet-overlay-pane');
+        if (overlayPane && overlayPane.hasAttribute('data-hidden-for-capture')) {
+            overlayPane.style.display = 'block';
+            overlayPane.removeAttribute('data-hidden-for-capture');
+        }
+
+        // 5. Forzar renderizado completo
         mymap.invalidateSize(true);
         await new Promise(resolve => setTimeout(resolve, 300));
 
-        console.log('✅ Estado restaurado - polígono visible nuevamente');
+        console.log('✅ Estado restaurado completamente');
     }
 
     // ========================================

@@ -538,8 +538,8 @@
                                                         </h2>
                                                         @can('ver-equipo')
                                                             <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                    data-target="#modal-uom-disponibles"
-                                                                    id="btn-uom-disponibles"
+                                                                    data-target="#modal-bodycams-disponibles"
+                                                                    id="btn-bodycams-disponibles"
                                                                     style="color: rgb(253, 253, 253)">Ver
                                                                     más</a>
                                                             </p>
@@ -561,8 +561,8 @@
                                                         </h2>
                                                         @can('ver-equipo')
                                                             <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                    data-target="#modal-uom-no-disponibles"
-                                                                    id="btn-uom-no-disponibles"
+                                                                    data-target="#modal-bodycams-no-disponibles"
+                                                                    id="btn-bodycams-no-disponibles"
                                                                     style="color: rgb(253, 253, 253)">Ver
                                                                     más</a>
                                                             </p>
@@ -2493,6 +2493,60 @@
             columns.push({ title: 'ID', field: 'nombre_issi', sortable: true });
             columns.push({ title: 'TEI', field: 'tei', sortable: true });
             columns.push({ title: 'ISSI', field: 'issi', sortable: true });
+
+            table.bootstrapTable({
+                striped: true,
+                fixedColumns: true,
+                fixedNumber: 1,
+                sortable: true,
+                paginationVAlign: 'both',
+                columns: columns,
+                data: rows
+            });
+
+            table.find('thead').css({ backgroundColor: 'white' });
+            table.closest('.fixed-table-body').css({ height: '350px' });
+        }
+
+        //agrego las consultas de bodycams disponibles y no disponibles
+        function consultarBodycamsDisponibles() {
+            $.post(
+                "{{ route('get-bodycams-disponibles-json') }}",
+                { _token: "{{ csrf_token() }}" },
+
+                function (data) {
+                    console.log('BODYCAMS DISPONIBLES:', data);
+                    setTableBodycams('tabla-bodycams-disponibles', data);
+                }
+            ).fail(function (data) {
+                swal('Error', 'Ocurrió un error al cargar las bodycams.', 'error');
+            });
+        }
+
+        function consultarBodycamsNoDisponibles() {
+            $.post(
+                "{{ route('get-bodycams-no-disponibles-json') }}",
+                { _token: "{{ csrf_token() }}" },
+
+                function (data) {
+                    console.log('BODYCAMS NO DISPONIBLES:', data);
+                    setTableBodycams('tabla-bodycams-no-disponibles', data);
+                }
+            ).fail(function (data) {
+                swal('Error', 'Ocurrió un error al cargar las bodycams.', 'error');
+            });
+        }
+
+        //agrego la forma de la tabla de bodycams disponibles y no disponibles - CORREGIR
+        function setTableBodycams(table_id, rows) {
+            var table = $('#' + table_id);
+            var columns = [];
+
+            table.bootstrapTable('destroy');
+
+            columns.push({ title: 'ID', field: 'id_bodycam', sortable: true });
+            columns.push({ title: 'Estado', field: 'estado', sortable: true });
+            columns.push({ title: 'Recurso Asignado', field: 'recurso_asignado', sortable: true });
 
             table.bootstrapTable({
                 striped: true,

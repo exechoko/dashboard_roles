@@ -112,6 +112,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/get-equipos-division-bancaria-json', [App\Http\Controllers\DashboardController::class, 'getEquiposDivisionBancariaJSON'])->name('get-equipos-division-bancaria-json');
     Route::post('/get-uom-disponibles-json', [App\Http\Controllers\DashboardController::class, 'getUOMDisponiblesJSON'])->name('get-uom-disponibles-json'); //agrego rutas 11/12/2025
     Route::post('/get-uom-no-disponibles-json', [App\Http\Controllers\DashboardController::class, 'getUOMNoDisponiblesJSON'])->name('get-uom-no-disponibles-json');
+    Route::post('/get-bodycams-disponibles-json', [App\Http\Controllers\DashboardController::class, 'getBodycamsDisponiblesJSON'])->name('get-bodycams-disponibles-json');//agrego estas rutas para las bodycams
+    Route::post('/get-bodycams-no-disponibles-json', [App\Http\Controllers\DashboardController::class, 'getBodycamsNoDisponiblesJSON'])->name('get-bodycams-no-disponibles-json');
+
 
 
     //Route::get('/showmap', [App\Http\Controllers\MapaController::class, 'showMap'])->name('mapa.showMap');

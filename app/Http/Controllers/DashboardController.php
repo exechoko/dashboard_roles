@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\FlotaGeneral;
 use Illuminate\Support\Facades\DB;
+use app\Models\Bodycam;
 use App\Models\Recurso;
 use App\Models\Destino;
 use App\Models\Equipo;
@@ -626,6 +627,26 @@ class DashboardController extends Controller
 
         return response()->json($equipos);
     }
+
+    //agrego metodos para bodycams 15/12/2025
+    public function getBodycamsDisponiblesJSON()
+    {
+        $bodycams = Bodycam::whereDoesntHave('entregasActivas')
+            ->select('id', 'codigo', 'modelo', 'serie')
+            ->get();
+
+        return response()->json($bodycams);
+    }
+
+    public function getBodycamsNoDisponiblesJSON()
+    {
+        $bodycams = Bodycam::whereHas('entregasActivas')
+            ->select('id', 'codigo', 'modelo', 'serie')
+            ->get();
+
+        return response()->json($bodycams);
+    }
+
 
 
 }

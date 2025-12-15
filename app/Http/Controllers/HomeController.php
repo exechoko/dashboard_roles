@@ -10,6 +10,7 @@ use App\Models\Camara;
 use App\Models\Equipo;
 use App\Models\Estado;
 use App\Models\FlotaGeneral;
+use App\Models\Bodycam;
 use App\Models\Destino;
 use App\Models\Recurso;
 use App\Models\Historico;
@@ -165,6 +166,13 @@ class HomeController extends Controller
             })
             ->count();
 
+        // Bodycams disponibles
+        $cant_bodycams_disponibles = Bodycam::where('estado', 'disponible')->count();
+        // Bodycams no disponibles
+        $cant_bodycams_no_disponibles = Bodycam::where('estado', 'entregada')->count();
+            //reusé el modelo Bodycam para contar las bodycams no disponibles,
+            //por eso no es igual a las funciones anteriores de equipos UOM
+
 
         return view('home', compact(
             'cant_usuarios',
@@ -188,7 +196,9 @@ class HomeController extends Controller
             'cant_equipos_en_revision',
             'cant_equipos_en_div_bancaria',
             'cant_equipos_uom_stock',
-            'cant_equipos_uom_no_disponibles'
+            'cant_equipos_uom_no_disponibles',
+            'cant_bodycams_disponibles',
+            'cant_bodycams_no_disponibles'
         ));
     }
 }

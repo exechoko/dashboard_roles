@@ -523,6 +523,55 @@
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            <div class="col-md-4 col-xl-3">
+                                                <div class="card-item bg-c-green order-card">
+                                                    <div class="card-block">
+                                                        <h5>
+                                                            Bodycams disponibles
+                                                            <i class="fas fa-info-circle ml-1" data-toggle="tooltip"
+                                                                data-placement="top"
+                                                                title="Bodycams Hytera VM780 no entregados"></i>
+                                                        </h5>
+                                                        <h2 class="text-right"><i
+                                                                class="fas fa-check f-left"></i><span>{{ $cant_bodycams_disponibles }}</span>
+                                                        </h2>
+                                                        @can('ver-equipo')
+                                                            <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                                    data-target="#modal-uom-disponibles"
+                                                                    id="btn-uom-disponibles"
+                                                                    style="color: rgb(253, 253, 253)">Ver
+                                                                    más</a>
+                                                            </p>
+                                                        @endcan
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 col-xl-3">
+                                                <div class="card-item bg-c-red order-card">
+                                                    <div class="card-block">
+                                                        <h5>
+                                                            Bodycams entregadas
+                                                            <i class="fas fa-info-circle ml-1" data-toggle="tooltip"
+                                                                data-placement="top"
+                                                                title="Bodycams Hytera VM780 entregados y no disponibles"></i>
+                                                        </h5>
+                                                        <h2 class="text-right"><i
+                                                                class="fas fa-check f-left"></i><span>{{ $cant_bodycams_no_disponibles }}</span>
+                                                        </h2>
+                                                        @can('ver-equipo')
+                                                            <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                                    data-target="#modal-uom-no-disponibles"
+                                                                    id="btn-uom-no-disponibles"
+                                                                    style="color: rgb(253, 253, 253)">Ver
+                                                                    más</a>
+                                                            </p>
+                                                        @endcan
+                                                    </div>
+                                                </div>
+                                            </div>
+
+
                                         </div>    
                                     </div>
                                 </div>
@@ -1078,7 +1127,65 @@
             </div>
         </div>
 
+        <!-- agrego las modals de Bodycams disponibles y no disponibles -->
+        
+        <div id="modal-bodycams-disponibles" class="modal fade" data-backdrop="false" style="background-color: rgba(0,0,0,0.5);"
+         role="dialog">
 
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+
+                    <div class="modal-header bg-c-green">
+                        <h4 class="modal-title text-white">Bodycams Disponibles</h4>
+                        <button type="button" class="close" data-dismiss="modal">
+                                <span>&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body" style="min-height: 400px;">
+                        <table id="tabla-bodycams-disponibles"
+                       class="table table-condensed table-bordered table-striped"></table>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" data-dismiss="modal">
+                        <i class="fa fa-times"></i> Cerrar
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-bodycams-no-disponibles" class="modal fade" data-backdrop="false" style="background-color: rgba(0,0,0,0.5);"
+         role="dialog">
+
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+
+                    <div class="modal-header bg-c-red">
+                        <h4 class="modal-title text-white">Bodycams no Disponibles</h4>
+                        <button type="button" class="close" data-dismiss="modal">
+                                <span>&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body" style="min-height: 400px;">
+                        <table id="tabla-bodycams-no-disponibles"
+                       class="table table-condensed table-bordered table-striped"></table>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" data-dismiss="modal">
+                        <i class="fa fa-times"></i> Cerrar
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    
         
     </section>
 
@@ -1112,6 +1219,9 @@
             // agrego la parte de los botones de equipos UOM 11/12/2025
             handleClickEvent('#btn-uom-disponibles', consultarUOMDisponibles);
             handleClickEvent('#btn-uom-no-disponibles', consultarUOMNoDisponibles);
+            // agrego la parte de los botones de bodycams 15/12/2025
+            handleClickEvent('#btn-bodycams-disponibles', consultarBodycamsDisponibles);
+            handleClickEvent('#btn-bodycams-no-disponibles', consultarBodycamsNoDisponibles);
 
             handleClickEvent('#btn-buscar-camaras', function () {
                 // Tu función de consulta para cámaras, si es diferente

@@ -577,8 +577,9 @@ class DashboardController extends Controller
                 $query->where('uso', 'portatil');
             })
             //acá hay que agregar una comprobación por si estos nombres dejan de existir. NOLI ME TANGERE
+            //lo dejé en concordancia con la función que está en "EntregasEquiposController" para que no haya inconsistencias
             ->whereHas('recurso', function ($query) {
-                $query->whereIn('nombre', ['Unidad Operativa Móvil', 'Stock 911']);
+                $query->where('nombre', 'Unidad Operativa Móvil');
             })
             //agrego otro filtro por estado, sea nuevo, usado o reparado
             ->whereHas('equipo', function ($query) {

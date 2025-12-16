@@ -1853,35 +1853,68 @@
         return true;
     }
 
-    function calculateMarkerOffset(camera, allCameras, groupIndex) {
+    function calculateMarkerOffset(camera, allCameras, globalIndex) {
         const currentLat = parseFloat(camera.latitud);
         const currentLng = parseFloat(camera.longitud);
 
-        // 1. Tolerancia más flexible (aprox 1 metro de diferencia se considera "mismo lugar")
-        const samePositionCameras = allCameras.filter(cam => {
+        // Tolerancia más amplia (aprox 10 metros de diferencia se considera "mismo lugar")
+        const tolerance = 0.0001;
+
+        // Encontrar todas las cámaras en la misma posición
+        const samePositionCameras = [];
+        let indexInGroup = 0;
+
+        allCameras.forEach((cam, idx) => {
             const latDiff = Math.abs(parseFloat(cam.latitud) - currentLat);
             const lngDiff = Math.abs(parseFloat(cam.longitud) - currentLng);
-            return latDiff < 0.00005 && lngDiff < 0.00005;
+
+            if (latDiff < tolerance && lngDiff < tolerance) {
+                samePositionCameras.push({ cam, idx });
+                // Si encontramos la cámara actual, guardamos su índice en el grupo
+                if (idx === globalIndex) {
+                    indexInGroup = samePositionCameras.length - 1;
+                }
+            }
         });
 
         const totalInPosition = samePositionCameras.length;
-        if (totalInPosition <= 1) return { lat: 0, lng: 0 };
 
-        const indexInGroup = samePositionCameras.findIndex(cam => cam.id === camera.id);
+        console.log(`📍 Cámara ${globalIndex + 1}: ${totalInPosition} en misma posición, índice en grupo: ${indexInGroup}`);
 
-        // AJUSTE: Radio dinámico (Espiral de Arquímedes)
-        // El radio base es pequeño, pero crece por cada marcador en el grupo
-        const baseRadius = 0.0002;
-        const distanceStep = 0.00015; // Cuánto se aleja por cada vuelta
-        const angleStep = (2 * Math.PI) / (totalInPosition > 8 ? 8 : totalInPosition);
+        // Si solo hay una cámara en esta posición, no necesita offset
+        if (totalInPosition <= 1) {
+            return { lat: 0, lng: 0 };
+        }
 
-        const angle = indexInGroup * angleStep;
-        const dynamicRadius = baseRadius + (indexInGroup * distanceStep);
+        // Radio dinámico: más marcadores = mayor separación
+        // Base: 50m, aumenta 15m por cada marcador adicional
+        const baseRadius = 0.0005; // ~50 metros base
+        const radiusIncrement = 0.00015; // ~15 metros extra por marcador
+        const dynamicRadius = baseRadius + (totalInPosition * radiusIncrement);
 
-        return {
-            lat: dynamicRadius * Math.cos(angle),
-            lng: dynamicRadius * Math.sin(angle)
+        let angle;
+
+        if (totalInPosition === 2) {
+            // Caso especial: 2 marcadores → expansión HORIZONTAL (izquierda/derecha)
+            // Primer marcador a la izquierda, segundo a la derecha
+            angle = indexInGroup === 0 ? Math.PI : 0; // π = izquierda, 0 = derecha
+        } else {
+            // Múltiples marcadores: distribución circular
+            // Rotar 45° (π/4) para evitar alineación vertical/horizontal pura
+            const rotationOffset = Math.PI / 4;
+            const angleStep = (2 * Math.PI) / totalInPosition;
+            angle = rotationOffset + (indexInGroup * angleStep);
+        }
+
+        // TODOS los marcadores tienen offset (incluido el primero)
+        const offset = {
+            lat: dynamicRadius * Math.sin(angle),  // sin para latitud (norte/sur)
+            lng: dynamicRadius * Math.cos(angle)   // cos para longitud (este/oeste)
         };
+
+        console.log(`   → Offset aplicado: lat=${offset.lat.toFixed(6)}, lng=${offset.lng.toFixed(6)} (radio: ${(dynamicRadius * 111000).toFixed(0)}m)`);
+
+        return offset;
     }
 
     // ========================================
@@ -2127,12 +2160,33 @@
 
         selectedCamerasInPolygon.forEach((camera, index) => {
             try {
-                const point = mymap.latLngToContainerPoint([camera.latitud, camera.longitud]);
+                // Calcular offset para separar marcadores superpuestos
+                const offset = calculateMarkerOffset(camera, selectedCamerasInPolygon, index);
+
+                const adjustedLat = parseFloat(camera.latitud) + offset.lat;
+                const adjustedLng = parseFloat(camera.longitud) + offset.lng;
+
+                const point = mymap.latLngToContainerPoint([adjustedLat, adjustedLng]);
 
                 if (point.x < 0 || point.y < 0 ||
                     point.x > mapContainer.offsetWidth ||
                     point.y > mapContainer.offsetHeight) {
                     return;
+                }
+
+                // Si hay offset, dibujar línea spider al punto original
+                if (offset.lat !== 0 || offset.lng !== 0) {
+                    const originalPoint = mymap.latLngToContainerPoint([camera.latitud, camera.longitud]);
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(originalPoint.x, originalPoint.y);
+                    ctx.lineTo(point.x, point.y);
+                    ctx.strokeStyle = '#ff4444';
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([3, 3]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.restore();
                 }
 
                 const pinHeight = 30;

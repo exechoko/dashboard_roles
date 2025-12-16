@@ -10,6 +10,28 @@
     let isFullscreen = false;
 
     // ========================================
+    // CONFIGURACIÓN DE SEPARACIÓN DE MARCADORES (PDF)
+    // Ajustar estos valores para regular la separación
+    // ========================================
+    const MARKER_SEPARATION_CONFIG = {
+        // Tolerancia para detectar marcadores en "mismo lugar" (en grados)
+        // 0.0001 ≈ 10 metros
+        tolerance: 0.0001,
+
+        // Radio base de separación (en grados)
+        // 0.0005 ≈ 50 metros
+        baseRadius: 0.00025,
+
+        // Incremento de radio por cada marcador adicional (en grados)
+        // 0.00015 ≈ 15 metros extra por marcador
+        radiusIncrement: 0.00005,
+
+        // Rotación inicial del patrón circular (en radianes)
+        // Math.PI / 4 = 45 grados
+        rotationOffset: Math.PI / 4
+    };
+
+    // ========================================
     // FUNCIÓN GLOBAL PARA VERIFICAR PUNTO EN POLÍGONO
     // ========================================
     function isPointInPolygon(point, polygonPoints) {
@@ -1857,8 +1879,8 @@
         const currentLat = parseFloat(camera.latitud);
         const currentLng = parseFloat(camera.longitud);
 
-        // Tolerancia más amplia (aprox 10 metros de diferencia se considera "mismo lugar")
-        const tolerance = 0.0001;
+        // Usar configuración global
+        const config = MARKER_SEPARATION_CONFIG;
 
         // Encontrar todas las cámaras en la misma posición
         const samePositionCameras = [];
@@ -1868,9 +1890,8 @@
             const latDiff = Math.abs(parseFloat(cam.latitud) - currentLat);
             const lngDiff = Math.abs(parseFloat(cam.longitud) - currentLng);
 
-            if (latDiff < tolerance && lngDiff < tolerance) {
+            if (latDiff < config.tolerance && lngDiff < config.tolerance) {
                 samePositionCameras.push({ cam, idx });
-                // Si encontramos la cámara actual, guardamos su índice en el grupo
                 if (idx === globalIndex) {
                     indexInGroup = samePositionCameras.length - 1;
                 }
@@ -1886,33 +1907,27 @@
             return { lat: 0, lng: 0 };
         }
 
-        // Radio dinámico: más marcadores = mayor separación
-        // Base: 50m, aumenta 15m por cada marcador adicional
-        const baseRadius = 0.0005; // ~50 metros base
-        const radiusIncrement = 0.00015; // ~15 metros extra por marcador
-        const dynamicRadius = baseRadius + (totalInPosition * radiusIncrement);
+        // Radio dinámico usando configuración
+        const dynamicRadius = config.baseRadius + (totalInPosition * config.radiusIncrement);
 
         let angle;
 
         if (totalInPosition === 2) {
             // Caso especial: 2 marcadores → expansión HORIZONTAL (izquierda/derecha)
-            // Primer marcador a la izquierda, segundo a la derecha
-            angle = indexInGroup === 0 ? Math.PI : 0; // π = izquierda, 0 = derecha
+            angle = indexInGroup === 0 ? Math.PI : 0;
         } else {
-            // Múltiples marcadores: distribución circular
-            // Rotar 45° (π/4) para evitar alineación vertical/horizontal pura
-            const rotationOffset = Math.PI / 4;
+            // Múltiples marcadores: distribución circular con rotación
             const angleStep = (2 * Math.PI) / totalInPosition;
-            angle = rotationOffset + (indexInGroup * angleStep);
+            angle = config.rotationOffset + (indexInGroup * angleStep);
         }
 
         // TODOS los marcadores tienen offset (incluido el primero)
         const offset = {
-            lat: dynamicRadius * Math.sin(angle),  // sin para latitud (norte/sur)
-            lng: dynamicRadius * Math.cos(angle)   // cos para longitud (este/oeste)
+            lat: dynamicRadius * Math.sin(angle),
+            lng: dynamicRadius * Math.cos(angle)
         };
 
-        console.log(`   → Offset aplicado: lat=${offset.lat.toFixed(6)}, lng=${offset.lng.toFixed(6)} (radio: ${(dynamicRadius * 111000).toFixed(0)}m)`);
+        console.log(`   → Offset: lat=${offset.lat.toFixed(6)}, lng=${offset.lng.toFixed(6)} (radio: ${(dynamicRadius * 111000).toFixed(0)}m)`);
 
         return offset;
     }

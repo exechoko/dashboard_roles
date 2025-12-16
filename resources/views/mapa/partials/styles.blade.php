@@ -1350,6 +1350,23 @@
         background: #555;
     }
 
+    /* Estilo para marcadores individuales en captura */
+    .simple-marker-icon {
+        background: transparent !important;
+        border: none !important;
+    }
+
+    .pdf-camera-marker {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .pdf-camera-marker svg {
+        filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.3));
+    }
+
+
     /* ========================================
    MEDIA QUERIES RESPONSIVO
    ======================================== */

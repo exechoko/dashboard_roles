@@ -1283,168 +1283,266 @@
     // PREPARAR MAPA PARA CAPTURA
     // ========================================
     async function prepareMapForCapture() {
-        console.log('🔧 Preparando mapa para captura...');
-        console.log(`📊 Estado de clustering: ${clusteringEnabled ? 'ACTIVADO' : 'DESACTIVADO'}`);
+        console.log('🔧 Preparando mapa para captura con desagrupación de clusters...');
 
-        // 1. Ocultar todos los controles
+        // Guardar estado original
+        const originalState = {
+            clusteringEnabled: clusteringEnabled,
+            zoom: mymap.getZoom(),
+            center: mymap.getCenter()
+        };
+
+        // Array para marcadores temporales
+        window._tempPdfMarkers = [];
+        window._originalState = originalState;
+
+        // ============================================
+        // PASO 1: OCULTAR CONTROLES Y UI
+        // ============================================
+        console.log('📦 Ocultando elementos de UI...');
+
         const controlSelectors = [
             '.leaflet-control-zoom',
             '.leaflet-control-attribution',
             '.leaflet-control-scale',
-            '.leaflet-bar',
+            '.leaflet-bar:not(.leaflet-control-custom)',
             '.geocoder-control',
             '#customLayerControl',
             '#ver-lista',
             '#limpiar-seleccion',
             '.leaflet-popup',
             '.leaflet-tooltip',
-            '#toggleClusterBtn'
+            '#toggleClusterBtn',
+            '#header-toggle',
+            '#map-header'
         ];
 
         controlSelectors.forEach(selector => {
-            const elements = document.querySelectorAll(selector);
-            elements.forEach(el => {
-                if (el) {
-                    el.style.display = 'none';
-                    el.setAttribute('data-hidden-for-capture', 'true');
-                }
+            document.querySelectorAll(selector).forEach(el => {
+                el.style.display = 'none';
+                el.setAttribute('data-hidden-for-pdf', 'true');
             });
         });
 
-        // 2. Ocultar el polígono
+        // Ocultar el polígono temporalmente
         const overlayPane = document.querySelector('.leaflet-overlay-pane');
         if (overlayPane) {
-            console.log('🔒 Ocultando polígono...');
             overlayPane.style.display = 'none';
-            overlayPane.setAttribute('data-hidden-for-capture', 'true');
+            overlayPane.setAttribute('data-hidden-for-pdf', 'true');
         }
 
-        // 3. Preparar marcadores según estado del clustering
-        const tempHiddenMarkers = [];
-        const tempHiddenClusters = [];
-        const markerLayers = [
-            marcadores,
-            markersCamarasLPR,
-            markersCamarasFR,
-            markersCamarasFijas,
-            markersCamarasDomos,
-            markersCamarasDomosDuales,
-            markersBDE
+        // ============================================
+        // PASO 2: REMOVER TODAS LAS CAPAS DE CLUSTERS
+        // ============================================
+        console.log('🗑️ Removiendo capas de clusters...');
+
+        const layersToRemove = [
+            { name: 'Todas', layer: capa2, cluster: marcadores },
+            { name: 'LPR', layer: capaLPR, cluster: markersCamarasLPR },
+            { name: 'FR', layer: capaFR, cluster: markersCamarasFR },
+            { name: 'Fijas', layer: capaFija, cluster: markersCamarasFijas },
+            { name: 'Domos', layer: capaDomo, cluster: markersCamarasDomos },
+            { name: 'Domos Duales', layer: capaDomoDual, cluster: markersCamarasDomosDuales },
+            { name: 'BDE', layer: capaBDE, cluster: markersBDE }
         ];
 
-        if (clusteringEnabled) {
-            console.log('🔵 Modo CLUSTERING ON - Ocultando clusters fuera del área...');
+        // Guardar estado de visibilidad
+        window._layerVisibilityState = {};
 
-            markerLayers.forEach(layer => {
-                if (layer && layer instanceof L.MarkerClusterGroup) {
-                    const clusters = document.querySelectorAll('.marker-cluster');
+        layersToRemove.forEach(({ name, layer, cluster }) => {
+            window._layerVisibilityState[name] = mymap.hasLayer(layer) || mymap.hasLayer(cluster);
 
-                    clusters.forEach(clusterElement => {
-                        const clusterLatLng = getClusterPosition(clusterElement);
+            if (mymap.hasLayer(layer)) {
+                mymap.removeLayer(layer);
+            }
+            if (mymap.hasLayer(cluster)) {
+                mymap.removeLayer(cluster);
+            }
+        });
 
-                        if (clusterLatLng) {
-                            const isInside = isClusterInsidePolygon(clusterLatLng);
+        console.log('📊 Estado de capas guardado:', window._layerVisibilityState);
 
-                            if (!isInside) {
-                                tempHiddenClusters.push({
-                                    element: clusterElement,
-                                    originalDisplay: clusterElement.style.display
-                                });
-                                clusterElement.style.display = 'none';
-                            }
-                        }
-                    });
+        // ============================================
+        // PASO 3: CREAR MARCADORES INDIVIDUALES SEPARADOS
+        // ============================================
+        console.log('🎯 Creando marcadores individuales para cámaras en el polígono...');
+        console.log(`   Total de cámaras seleccionadas: ${selectedCamerasInPolygon.length}`);
 
-                    layer.eachLayer(function (marker) {
-                        if (marker instanceof L.Marker) {
-                            const position = marker.getLatLng();
-                            const isInside = isMarkerInsidePolygon(position);
+        // Agrupar cámaras por posición para debugging
+        const positionGroups = {};
+        selectedCamerasInPolygon.forEach(camera => {
+            const key = `${parseFloat(camera.latitud).toFixed(6)},${parseFloat(camera.longitud).toFixed(6)}`;
+            if (!positionGroups[key]) {
+                positionGroups[key] = [];
+            }
+            positionGroups[key].push(camera);
+        });
 
-                            if (!isInside) {
-                                tempHiddenMarkers.push({
-                                    marker: marker,
-                                    originalOpacity: marker.options.opacity || 1
-                                });
-                                marker.setOpacity(0);
-                            }
-                        }
-                    });
+        console.log('📍 Grupos de cámaras por posición:');
+        Object.entries(positionGroups).forEach(([pos, cameras]) => {
+            console.log(`   ${pos}: ${cameras.length} cámara(s)`);
+        });
+
+        // Crear marcadores con offsets para separación
+        selectedCamerasInPolygon.forEach((camera, index) => {
+            try {
+                // Calcular offset para separar marcadores superpuestos
+                const offset = calculateMarkerOffset(camera, selectedCamerasInPolygon, index);
+
+                const originalCoords = [parseFloat(camera.latitud), parseFloat(camera.longitud)];
+                const adjustedCoords = [originalCoords[0] + offset.lat, originalCoords[1] + offset.lng];
+
+                // Solo si hubo desplazamiento, dibujamos la línea "araña"
+                if (offset.lat !== 0 || offset.lng !== 0) {
+                    const spiderLine = L.polyline([originalCoords, adjustedCoords], {
+                        color: '#ff4444', // Color llamativo para el reporte
+                        weight: 1.5,
+                        opacity: 0.6,
+                        dashArray: '3, 5'
+                    }).addTo(mymap);
+
+                    window._tempPdfMarkers.push(spiderLine);
                 }
-            });
 
-            console.log(`  ✅ ${tempHiddenClusters.length} clusters ocultos`);
-            console.log(`  ✅ ${tempHiddenMarkers.length} marcadores ocultos`);
+                const marker = L.marker(adjustedCoords, {
+                    icon: createSimpleCameraIcon(index + 1, selectedCamerasInPolygon.length),
+                    zIndexOffset: 1000 + index
+                });
 
-        } else {
-            console.log('🟢 Modo CLUSTERING OFF - Ocultando marcadores individuales fuera del área...');
+                // Agregar al mapa
+                marker.addTo(mymap);
+                window._tempPdfMarkers.push(marker);
 
-            markerLayers.forEach(layer => {
-                if (layer && layer.getLayers) {
-                    layer.eachLayer(function (marker) {
-                        if (marker instanceof L.Marker) {
-                            const position = marker.getLatLng();
-                            const isInside = isMarkerInsidePolygon(position);
+                console.log(`   ✓ Marcador ${index + 1}: ${camera.titulo.substring(0, 30)}... (offset: ${offset.lat.toFixed(6)}, ${offset.lng.toFixed(6)})`);
 
-                            if (!isInside) {
-                                tempHiddenMarkers.push({
-                                    marker: marker,
-                                    originalOpacity: marker.options.opacity || 1
-                                });
-                                marker.setOpacity(0);
-                            } else {
-                                console.log(`  ✓ Marcador visible: ${position.lat}, ${position.lng}`);
-                            }
-                        }
-                    });
-                }
-            });
+            } catch (error) {
+                console.error(`   ✗ Error creando marcador ${index + 1}:`, error);
+            }
+        });
 
-            console.log(`  ✅ ${tempHiddenMarkers.length} marcadores ocultos fuera del área`);
-            console.log(`  ✅ ${selectedCamerasInPolygon.length} marcadores dentro del área (visibles)`);
-        }
+        console.log(`✅ Creados ${window._tempPdfMarkers.length} marcadores individuales`);
 
-        window._tempHiddenMarkers = tempHiddenMarkers;
-        window._tempHiddenClusters = tempHiddenClusters;
-
-        // 4. Ajustar vista al polígono
+        // ============================================
+        // PASO 4: AJUSTAR VISTA AL POLÍGONO
+        // ============================================
         if (currentPolygon) {
+            console.log('🎯 Ajustando vista al polígono...');
             const bounds = currentPolygon.getBounds();
 
-            console.log('🎯 Ajustando vista al área del polígono...');
-
             mymap.fitBounds(bounds, {
-                padding: [50, 50],
+                padding: [60, 60],
                 animate: false,
-                maxZoom: clusteringEnabled ? 18 : 20,
+                maxZoom: 17,
                 duration: 0
             });
         }
 
-        // 5. Forzar renderizado
-        mymap.invalidateSize(true);
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // ============================================
+        // PASO 5: FORZAR RENDERIZADO Y ESPERAR
+        // ============================================
+        console.log('⏳ Esperando estabilización del mapa...');
 
-        // 6. Esperar tiles
+        mymap.invalidateSize(true);
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Esperar carga de tiles
         await waitForTilesToLoad();
 
-        // 7. Si clustering está ON, refrescar clusters
-        if (clusteringEnabled) {
-            markerLayers.forEach(layer => {
-                if (layer && layer.refreshClusters && layer instanceof L.MarkerClusterGroup) {
-                    try {
-                        layer.refreshClusters();
-                    } catch (error) {
-                        console.warn('Error refrescando clusters:', error);
-                    }
-                }
-            });
-            await new Promise(resolve => setTimeout(resolve, 300));
-        }
+        // Espera adicional para asegurar renderizado completo
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // 8. Espera final
-        await new Promise(resolve => setTimeout(resolve, 800));
+        console.log('✅ Mapa preparado y listo para captura');
 
-        console.log('✅ Mapa preparado para captura');
+        return true;
+    }
+
+    function calculateMarkerOffset(camera, allCameras, groupIndex) {
+        const currentLat = parseFloat(camera.latitud);
+        const currentLng = parseFloat(camera.longitud);
+
+        // 1. Tolerancia más flexible (aprox 1 metro de diferencia se considera "mismo lugar")
+        const samePositionCameras = allCameras.filter(cam => {
+            const latDiff = Math.abs(parseFloat(cam.latitud) - currentLat);
+            const lngDiff = Math.abs(parseFloat(cam.longitud) - currentLng);
+            return latDiff < 0.00005 && lngDiff < 0.00005;
+        });
+
+        const totalInPosition = samePositionCameras.length;
+        if (totalInPosition <= 1) return { lat: 0, lng: 0 };
+
+        const indexInGroup = samePositionCameras.findIndex(cam => cam.id === camera.id);
+
+        // AJUSTE: Radio dinámico (Espiral de Arquímedes)
+        // El radio base es pequeño, pero crece por cada marcador en el grupo
+        const baseRadius = 0.0002;
+        const distanceStep = 0.00015; // Cuánto se aleja por cada vuelta
+        const angleStep = (2 * Math.PI) / (totalInPosition > 8 ? 8 : totalInPosition);
+
+        const angle = indexInGroup * angleStep;
+        const dynamicRadius = baseRadius + (indexInGroup * distanceStep);
+
+        return {
+            lat: dynamicRadius * Math.cos(angle),
+            lng: dynamicRadius * Math.sin(angle)
+        };
+    }
+
+    // ========================================
+    // CREAR ÍCONO SIMPLIFICADO PARA CAPTURA
+    // ========================================
+    function createSimpleCameraIcon(number, totalCameras) {
+        // Colores según cantidad para mejor visualización
+        const color = totalCameras > 50 ? '#dc3545' :
+            totalCameras > 20 ? '#fd7e14' :
+                '#28a745';
+
+        return L.divIcon({
+            className: 'pdf-camera-marker',
+            html: `
+            <div style="position: relative; width: 35px; height: 45px;">
+                <svg width="35" height="45" viewBox="0 0 35 45" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Sombra -->
+                    <ellipse cx="17.5" cy="42" rx="10" ry="4" fill="rgba(0,0,0,0.25)"/>
+
+                    <!-- Cuerpo del pin -->
+                    <path d="M17.5 3 C10 3 4 9 4 16.5 C4 26 17.5 38 17.5 38 C17.5 38 31 26 31 16.5 C31 9 25 3 17.5 3 Z"
+                          fill="${color}"
+                          stroke="#ffffff"
+                          stroke-width="2.5"
+                          filter="url(#shadow)"/>
+
+                    <!-- Círculo interior blanco -->
+                    <circle cx="17.5" cy="16.5" r="8" fill="#ffffff" stroke="${color}" stroke-width="1"/>
+
+                    <!-- Número -->
+                    <text x="17.5" y="21"
+                          font-family="Arial, sans-serif"
+                          font-size="11"
+                          font-weight="bold"
+                          text-anchor="middle"
+                          fill="${color}">${number}</text>
+
+                    <!-- Sombra para el texto -->
+                    <defs>
+                        <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+                            <feOffset dx="1" dy="2" result="offsetblur"/>
+                            <feComponentTransfer>
+                                <feFuncA type="linear" slope="0.3"/>
+                            </feComponentTransfer>
+                            <feMerge>
+                                <feMergeNode/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                </svg>
+            </div>
+        `,
+            iconSize: [35, 45],
+            iconAnchor: [17.5, 45],
+            popupAnchor: [0, -45]
+        });
     }
 
     // ========================================
@@ -1621,53 +1719,114 @@
     // RESTAURAR ESTADO DEL MAPA
     // ========================================
     async function restoreMapState(state) {
-        console.log('🔄 Restaurando estado del mapa...');
+        console.log('🔄 Restaurando estado original del mapa...');
 
-        // 1. Restaurar vista original
-        if (state && state.center && state.zoom) {
-            mymap.setView(state.center, state.zoom, { animate: false });
-        }
+        try {
+            // ============================================
+            // PASO 1: REMOVER MARCADORES TEMPORALES
+            // ============================================
+            if (window._tempPdfMarkers && window._tempPdfMarkers.length > 0) {
+                console.log(`🗑️ Removiendo ${window._tempPdfMarkers.length} marcadores temporales...`);
 
-        // 2. Mostrar todos los elementos ocultos
-        const hiddenElements = document.querySelectorAll('[data-hidden-for-capture]');
-        hiddenElements.forEach(el => {
-            try {
-                el.style.display = '';
-                el.removeAttribute('data-hidden-for-capture');
-            } catch (e) {
-                console.warn('Error restaurando elemento:', e);
-            }
-        });
-
-        // 3. Restaurar opacidad de los marcadores
-        if (window._tempHiddenMarkers && Array.isArray(window._tempHiddenMarkers)) {
-            console.log(`🔄 Restaurando ${window._tempHiddenMarkers.length} marcadores...`);
-
-            window._tempHiddenMarkers.forEach(item => {
-                try {
-                    if (item.marker && item.marker.setOpacity && typeof item.marker.setOpacity === 'function') {
-                        item.marker.setOpacity(item.originalOpacity);
+                window._tempPdfMarkers.forEach(marker => {
+                    try {
+                        if (mymap.hasLayer(marker)) {
+                            mymap.removeLayer(marker);
+                        }
+                    } catch (e) {
+                        console.warn('Error removiendo marcador:', e);
                     }
-                } catch (error) {
-                    console.warn('Error restaurando marcador:', error);
-                }
+                });
+
+                window._tempPdfMarkers = [];
+            }
+
+            // ============================================
+            // PASO 2: RESTAURAR CAPAS ORIGINALES
+            // ============================================
+            console.log('📦 Restaurando capas de clusters...');
+
+            const layersToRestore = [
+                { name: 'Todas', layer: capa2, cluster: marcadores },
+                { name: 'LPR', layer: capaLPR, cluster: markersCamarasLPR },
+                { name: 'FR', layer: capaFR, cluster: markersCamarasFR },
+                { name: 'Fijas', layer: capaFija, cluster: markersCamarasFijas },
+                { name: 'Domos', layer: capaDomo, cluster: markersCamarasDomos },
+                { name: 'Domos Duales', layer: capaDomoDual, cluster: markersCamarasDomosDuales },
+                { name: 'BDE', layer: capaBDE, cluster: markersBDE }
+            ];
+
+            if (window._layerVisibilityState) {
+                layersToRestore.forEach(({ name, layer, cluster }) => {
+                    if (window._layerVisibilityState[name]) {
+                        console.log(`   ✓ Restaurando capa: ${name}`);
+
+                        if (clusteringEnabled) {
+                            if (!mymap.hasLayer(cluster)) {
+                                mymap.addLayer(cluster);
+                            }
+                        } else {
+                            if (!mymap.hasLayer(layer)) {
+                                mymap.addLayer(layer);
+                            }
+                        }
+                    }
+                });
+            }
+
+            // ============================================
+            // PASO 3: RESTAURAR VISTA ORIGINAL
+            // ============================================
+            if (window._originalState) {
+                console.log('🎯 Restaurando vista original...');
+                mymap.setView(
+                    window._originalState.center,
+                    window._originalState.zoom,
+                    { animate: false }
+                );
+            } else if (state && state.center && state.zoom) {
+                mymap.setView(state.center, state.zoom, { animate: false });
+            }
+
+            // ============================================
+            // PASO 4: MOSTRAR ELEMENTOS OCULTOS
+            // ============================================
+            console.log('👁️ Mostrando elementos de UI...');
+
+            document.querySelectorAll('[data-hidden-for-pdf]').forEach(el => {
+                el.style.display = '';
+                el.removeAttribute('data-hidden-for-pdf');
             });
 
-            window._tempHiddenMarkers = [];
+            // Restaurar overlay-pane
+            const overlayPane = document.querySelector('.leaflet-overlay-pane');
+            if (overlayPane) {
+                overlayPane.style.display = '';
+                overlayPane.removeAttribute('data-hidden-for-pdf');
+            }
+
+            // ============================================
+            // PASO 5: LIMPIAR Y FORZAR RENDERIZADO
+            // ============================================
+            mymap.invalidateSize(true);
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            // Limpiar variables temporales
+            window._originalState = null;
+            window._layerVisibilityState = null;
+
+            console.log('✅ Estado restaurado completamente');
+
+        } catch (error) {
+            console.error('❌ Error restaurando estado:', error);
+
+            // Intentar recuperación básica
+            mymap.invalidateSize(true);
+            document.querySelectorAll('[data-hidden-for-pdf]').forEach(el => {
+                el.style.display = '';
+                el.removeAttribute('data-hidden-for-pdf');
+            });
         }
-
-        // 4. Mostrar el overlay-pane
-        const overlayPane = document.querySelector('.leaflet-overlay-pane');
-        if (overlayPane && overlayPane.hasAttribute('data-hidden-for-capture')) {
-            overlayPane.style.display = 'block';
-            overlayPane.removeAttribute('data-hidden-for-capture');
-        }
-
-        // 5. Forzar renderizado completo
-        mymap.invalidateSize(true);
-        await new Promise(resolve => setTimeout(resolve, 300));
-
-        console.log('✅ Estado restaurado completamente');
     }
 
     // ========================================

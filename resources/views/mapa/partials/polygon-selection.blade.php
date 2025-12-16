@@ -10,6 +10,28 @@
     let isFullscreen = false;
 
     // ========================================
+    // FUNCIÓN GLOBAL PARA VERIFICAR PUNTO EN POLÍGONO
+    // ========================================
+    function isPointInPolygon(point, polygonPoints) {
+        const x = point.lat;
+        const y = point.lng;
+        let inside = false;
+
+        for (let i = 0, j = polygonPoints.length - 1; i < polygonPoints.length; j = i++) {
+            const xi = polygonPoints[i].lat;
+            const yi = polygonPoints[i].lng;
+            const xj = polygonPoints[j].lat;
+            const yj = polygonPoints[j].lng;
+
+            const intersect = ((yi > y) !== (yj > y)) &&
+                (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+        }
+
+        return inside;
+    }
+
+    // ========================================
     // DETECTAR MODO FULLSCREEN
     // ========================================
     function detectFullscreen() {
@@ -460,19 +482,19 @@
             const y = point.lng;
             let inside = false;
 
-        for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
-            const xi = vs[i].lat;
-            const yi = vs[i].lng;
-            const xj = vs[j].lat;
-            const yj = vs[j].lng;
+            for (let i = 0, j = polygonPoints.length - 1; i < polygonPoints.length; j = i++) {
+                const xi = polygonPoints[i].lat;
+                const yi = polygonPoints[i].lng;
+                const xj = polygonPoints[j].lat;
+                const yj = polygonPoints[j].lng;
 
-            const intersect = ((yi > y) !== (yj > y)) &&
-                (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
-            if (intersect) inside = !inside;
+                const intersect = ((yi > y) !== (yj > y)) &&
+                    (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+
+            return inside;
         }
-
-        return inside;
-    }
 
         // Procesar clusters expandidos Y LayerGroups con Spider
         function processMarkerClusters(layer) {
@@ -648,6 +670,15 @@
             console.error('Error extrayendo info de sitio:', error);
             return null;
         }
+    }
+
+    // ========================================
+    // EXTRAER CAMPO DEL CONTENIDO HTML
+    // ========================================
+    function extractField(html, label) {
+        const regex = new RegExp(label + '\\s*<b>([^<]*)</b>', 'i');
+        const match = html.match(regex);
+        return match ? match[1].trim() : 'N/A';
     }
 
     // ========================================
@@ -1238,7 +1269,6 @@
             updateProgress(20, 'Capturando imagen del mapa...');
 
             // CAPTURA DEL MAPA
-            // CAPTURA DEL MAPA
             const mapImage = await captureMapImageOptimized();
 
             if (mapImage) {
@@ -1258,7 +1288,6 @@
 
                 console.log('✅ Imagen del mapa agregada al PDF');
             } else {
-                // Dibujar placeholder
                 // Dibujar placeholder
                 const xPos = (pageWidth - 250) / 2;
                 const yPos = 28;

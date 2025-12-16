@@ -1990,6 +1990,50 @@
     // ========================================
     // ESPERAR CARGA DE TILES
     // ========================================
+    function waitForTilesToLoad() {
+        return new Promise((resolve) => {
+            let checksCount = 0;
+            const maxChecks = 15;
+            let checkInterval;
+
+            const checkTiles = () => {
+                checksCount++;
+
+                const tiles = document.querySelectorAll('.leaflet-tile-pane .leaflet-tile');
+                let tilesLoading = 0;
+
+                tiles.forEach(tile => {
+                    if (!tile.complete || tile.naturalWidth === 0) {
+                        tilesLoading++;
+                    }
+                });
+
+                console.log(`⏳ Check ${checksCount}/${maxChecks}: ${tilesLoading} tiles pendientes`);
+
+                if (tilesLoading === 0 || checksCount >= maxChecks) {
+                    clearInterval(checkInterval);
+                    if (tilesLoading === 0) {
+                        console.log('✅ Todos los tiles del mapa base cargados');
+                    } else {
+                        console.log(`⚠️ Continuando con ${tilesLoading} tiles pendientes`);
+                    }
+                    resolve();
+                }
+            };
+
+            checkInterval = setInterval(checkTiles, 300);
+
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                console.log('⏰ Timeout alcanzado, continuando con la captura...');
+                resolve();
+            }, 6000);
+        });
+    }
+
+    // ========================================
+    // DIBUJAR LEYENDA EN CANVAS
+    // ========================================
     function drawLegendOnCanvas(ctx, canvasWidth, canvasHeight) {
         try {
             const area = currentPolygon ?

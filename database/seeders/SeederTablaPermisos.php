@@ -152,6 +152,7 @@ class SeederTablaPermisos extends Seeder
 
             //Acciones varias
             'reiniciar-camara',
+            'herramientas-mapa',
         ];
 
         // Crear permisos si no existen

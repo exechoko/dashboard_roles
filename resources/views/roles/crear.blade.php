@@ -106,7 +106,8 @@
                                                     'Operaciones' => [
                                                         'buscar-moviles-parados',
                                                         'buscar-moviles-recorridos',
-                                                        'reiniciar-camara'
+                                                        'reiniciar-camara',
+                                                        'herramientas-mapa'
                                                     ]
                                                 ];
 

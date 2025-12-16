@@ -148,8 +148,11 @@
 
     {{-- Scripts del mapa --}}
     @include('mapa.partials.scripts')
-    @include('mapa.partials.polygon-selection')
-    @include('mapa.partials.clustering-control')
+
+    @can('herramientas-mapa')
+        @include('mapa.partials.polygon-selection')
+        @include('mapa.partials.clustering-control')
+    @endcan
 @endsection
 
 @section('scripts')

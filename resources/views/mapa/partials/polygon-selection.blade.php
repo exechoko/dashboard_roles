@@ -5,6 +5,7 @@
     let drawingEnabled = false;
     let currentPolygon = null;
     let selectedCamerasInPolygon = [];
+    let selectedSitiosInPolygon = [];
     let polygonDrawControl = null;
     let isFullscreen = false;
 
@@ -441,12 +442,23 @@
     }
 
     // ========================================
-    // FUNCIÓN AUXILIAR PARA VERIFICAR PUNTO EN POLÍGONO
+    // BUSCAR CÁMARAS Y SITIOS INACTIVOS DENTRO DEL POLÍGONO
     // ========================================
-    function isPointInPolygon(point, vs) {
-        const x = point.lat;
-        const y = point.lng;
-        let inside = false;
+    function findCamerasInPolygon(polygon) {
+        console.log('🔍 Buscando cámaras y sitios inactivos en polígono...');
+        selectedCamerasInPolygon = [];
+        selectedSitiosInPolygon = [];
+        const bounds = polygon.getBounds();
+        const seenCameras = new Set();
+        const seenSitios = new Set();
+
+        console.log('📦 Bounds del polígono:', bounds);
+
+        // Función mejorada para verificar punto en polígono
+        function isPointInPolygon(point, polygonPoints) {
+            const x = point.lat;
+            const y = point.lng;
+            let inside = false;
 
         for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
             const xi = vs[i].lat;
@@ -462,15 +474,216 @@
         return inside;
     }
 
+        // Procesar clusters expandidos Y LayerGroups con Spider
+        function processMarkerClusters(layer) {
+            if (!layer) return 0;
+            let count = 0;
+
+            // Función común para procesar cada marcador
+            function processMarker(marker) {
+                if (!(marker instanceof L.Marker)) return;
+
+                const position = marker.getLatLng();
+
+                // Usar ID único de la cámara en lugar de coordenadas
+                const popup = marker.getPopup();
+                let cameraId = marker.options.cameraId ||
+                    (popup ? popup.getContent().hashCode() : null) ||
+                    `${position.lat.toFixed(6)}_${position.lng.toFixed(6)}_${Date.now()}`;
+
+                if (seenCameras.has(cameraId)) {
+                    console.log(`  ⚠️ Cámara duplicada (${cameraId}), saltando...`);
+                    return;
+                }
+
+                // Verificar si está dentro del polígono
+                const polygonPoints = polygon.getLatLngs()[0];
+                if (bounds.contains(position) &&
+                    isPointInPolygon(position, polygonPoints)) {
+                    console.log(`  ✅ Cámara DENTRO del polígono: ${cameraId}`);
+
+                    // Extraer información de la cámara
+                    const cameraInfo = extractCameraInfo(marker);
+                    if (cameraInfo) {
+                        cameraInfo.id = cameraId; // Agregar ID único
+                        selectedCamerasInPolygon.push(cameraInfo);
+                        seenCameras.add(cameraId);
+                        highlightCameraMarker(marker);
+                        count++;
+                    }
+                }
+            }
+
+            // Si es un MarkerClusterGroup, obtener todos los hijos
+            if (layer instanceof L.MarkerClusterGroup) {
+                console.log(`Procesando MarkerClusterGroup con ${layer.getLayers().length} markers`);
+                layer.eachLayer(processMarker);
+            }
+            // Si es un LayerGroup regular (modo clustering OFF)
+            else if (layer instanceof L.LayerGroup) {
+                console.log(`Procesando LayerGroup con ${layer.getLayers().length} markers`);
+                layer.eachLayer(processMarker);
+            }
+            // Fallback para cualquier otra capa con eachLayer
+            else if (layer.eachLayer) {
+                console.log(`Procesando capa genérica...`);
+                layer.eachLayer(processMarker);
+            }
+
+            return count;
+        }
+
+        // Procesar todas las capas
+        const allCameraLayers = [
+            { name: 'marcadores', layer: marcadores },
+            { name: 'LPR', layer: markersCamarasLPR },
+            { name: 'FR', layer: markersCamarasFR },
+            { name: 'Fijas', layer: markersCamarasFijas },
+            { name: 'Domos', layer: markersCamarasDomos },
+            { name: 'DomosDuales', layer: markersCamarasDomosDuales },
+            { name: 'BDE', layer: markersBDE }
+        ];
+
+        let totalFound = 0;
+        allCameraLayers.forEach(({ name, layer }) => {
+            console.log(`Revisando capa ${name}...`);
+            const found = processMarkerClusters(layer);
+            totalFound += found;
+            console.log(`  → Encontradas en ${name}: ${found}`);
+        });
+
+        console.log(`📊 Total de cámaras encontradas: ${selectedCamerasInPolygon.length}`);
+
+        // ========================================
+        // BUSCAR SITIOS INACTIVOS
+        // ========================================
+        console.log('🔍 Buscando sitios inactivos...');
+
+        function processSitiosLayer(layer) {
+            if (!layer) return 0;
+            let count = 0;
+
+            function processSitioMarker(marker) {
+                if (!(marker instanceof L.Marker)) return;
+
+                const position = marker.getLatLng();
+                const sitioId = `sitio_${position.lat.toFixed(6)}_${position.lng.toFixed(6)}`;
+
+                if (seenSitios.has(sitioId)) return;
+
+                const polygonPoints = polygon.getLatLngs()[0];
+                if (bounds.contains(position) && isPointInPolygon(position, polygonPoints)) {
+                    console.log(`  ✅ Sitio inactivo DENTRO del polígono: ${sitioId}`);
+
+                    const sitioInfo = extractSitioInfo(marker);
+                    if (sitioInfo) {
+                        sitioInfo.id = sitioId;
+                        selectedSitiosInPolygon.push(sitioInfo);
+                        seenSitios.add(sitioId);
+                        highlightSitioMarker(marker);
+                        count++;
+                    }
+                }
+            }
+
+            if (layer instanceof L.MarkerClusterGroup) {
+                layer.eachLayer(processSitioMarker);
+            } else if (layer instanceof L.LayerGroup) {
+                layer.eachLayer(processSitioMarker);
+            } else if (layer.eachLayer) {
+                layer.eachLayer(processSitioMarker);
+            }
+
+            return count;
+        }
+
+        // Procesar capa de sitios inactivos
+        if (typeof marcadoresSitios !== 'undefined') {
+            const sitiosFound = processSitiosLayer(marcadoresSitios);
+            console.log(`  → Sitios inactivos encontrados: ${sitiosFound}`);
+        }
+
+        console.log(`📊 Total de sitios inactivos encontrados: ${selectedSitiosInPolygon.length}`);
+
+        // Mostrar resultados
+        const totalItems = selectedCamerasInPolygon.length + selectedSitiosInPolygon.length;
+        if (totalItems > 0) {
+            showNotification(`${selectedCamerasInPolygon.length} cámaras y ${selectedSitiosInPolygon.length} sitios inactivos encontrados`, 'success');
+            showCamerasModal();
+        } else {
+            showNotification('No se encontraron cámaras ni sitios inactivos en esta área', 'warning');
+        }
+    }
+
     // ========================================
-    // EXTRAER CAMPO DEL CONTENIDO HTML
+    // EXTRAER INFORMACIÓN DEL SITIO INACTIVO
     // ========================================
-    function extractField(html, label) {
-        const regex = new RegExp(label + '\\s*<b>([^<]*)</b>', 'i');
+    function extractSitioInfo(marker) {
+        try {
+            const popup = marker.getPopup();
+            if (!popup) return null;
+
+            const content = popup.getContent();
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+
+            const titulo = tempDiv.querySelector('h5')?.textContent ||
+                tempDiv.querySelector('strong')?.textContent ||
+                'Sitio sin nombre';
+
+            const position = marker.getLatLng();
+
+            const info = {
+                titulo: titulo,
+                latitud: position.lat.toFixed(6),
+                longitud: position.lng.toFixed(6),
+                estado: 'INACTIVO',
+                cartel: extractField(content, 'Cartel:'),
+                observaciones: extractFieldText(content, 'Observaciones:'),
+                marker: marker
+            };
+
+            return info;
+        } catch (error) {
+            console.error('Error extrayendo info de sitio:', error);
+            return null;
+        }
+    }
+
+    // ========================================
+    // EXTRAER CAMPO DE TEXTO SIN BOLD
+    // ========================================
+    function extractFieldText(html, label) {
+        const regex = new RegExp(label + '\\s*([^<]*)', 'i');
         const match = html.match(regex);
         return match ? match[1].trim() : 'N/A';
     }
 
+    // ========================================
+    // RESALTAR MARCADOR DE SITIO
+    // ========================================
+    function highlightSitioMarker(marker) {
+        if (!marker._originalStyle) {
+            marker._originalStyle = {
+                icon: marker.options.icon
+            };
+        }
+
+        const icon = marker.options.icon;
+        if (icon && icon.options && icon.options.html) {
+            const highlightedHtml = icon.options.html.replace(
+                /background-color:\s*#dc3545/,
+                'background-color: #ff6b6b; border: 3px solid #ffff00; box-shadow: 0 0 15px #ffff00'
+            );
+
+            const highlightedIcon = L.divIcon({
+                ...icon.options,
+                html: highlightedHtml
+            });
+
+            marker.setIcon(highlightedIcon);
+        }
+    }
     // ========================================
     // EXTRAER INFORMACIÓN DE LA CÁMARA
     // ========================================
@@ -554,108 +767,7 @@
     }
 
     // ========================================
-    // BUSCAR CÁMARAS DENTRO DEL POLÍGONO
-    // ========================================
-    function findCamerasInPolygon(polygon) {
-        console.log('🔍 Buscando cámaras en polígono...');
-        selectedCamerasInPolygon = [];
-        const bounds = polygon.getBounds();
-        const seenCameras = new Set();
-
-        console.log('📦 Bounds del polígono:', bounds);
-
-        // Función para procesar marcadores en clusters
-        function processMarkerClusters(layer) {
-            if (!layer) return 0;
-            let count = 0;
-
-            // Verificar si es un MarkerClusterGroup antes de usar métodos específicos
-            const isMarkerCluster = layer instanceof L.MarkerClusterGroup;
-            const isLayerGroup = layer instanceof L.LayerGroup;
-
-            if (!isMarkerCluster && !isLayerGroup) {
-                console.log('  ⚠️ Capa no compatible:', layer);
-                return 0;
-            }
-
-            // Función común para procesar cada marcador
-            function processMarker(marker) {
-                if (!(marker instanceof L.Marker)) return;
-
-                const position = marker.getLatLng();
-
-                // Usar ID único de la cámara en lugar de coordenadas
-                const popup = marker.getPopup();
-                let cameraId = marker.options.cameraId ||
-                    (popup ? popup.getContent().hashCode() : null) ||
-                    `${position.lat.toFixed(6)}_${position.lng.toFixed(6)}_${Date.now()}`;
-
-                if (seenCameras.has(cameraId)) {
-                    console.log(`  ⚠️ Cámara duplicada (${cameraId}), saltando...`);
-                    return;
-                }
-
-                // Verificar si está dentro del polígono
-                const polygonPoints = polygon.getLatLngs()[0];
-                if (bounds.contains(position) &&
-                    isPointInPolygon(position, polygonPoints)) {
-                    console.log(`  ✅ Cámara DENTRO del polígono: ${cameraId}`);
-
-                    // Extraer información de la cámara
-                    const cameraInfo = extractCameraInfo(marker);
-                    if (cameraInfo) {
-                        cameraInfo.id = cameraId;
-                        selectedCamerasInPolygon.push(cameraInfo);
-                        seenCameras.add(cameraId);
-                        highlightCameraMarker(marker);
-                        count++;
-                    }
-                }
-            }
-
-            if (isMarkerCluster) {
-                console.log(`Procesando MarkerClusterGroup con ${layer.getLayers().length} markers`);
-                layer.eachLayer(processMarker);
-            } else if (isLayerGroup) {
-                console.log(`Procesando LayerGroup con ${layer.getLayers().length} markers`);
-                layer.eachLayer(processMarker);
-            }
-
-            return count;
-        }
-
-        // Procesar todas las capas
-        const allCameraLayers = [
-            { name: 'marcadores', layer: marcadores },
-            { name: 'LPR', layer: markersCamarasLPR },
-            { name: 'FR', layer: markersCamarasFR },
-            { name: 'Fijas', layer: markersCamarasFijas },
-            { name: 'Domos', layer: markersCamarasDomos },
-            { name: 'DomosDuales', layer: markersCamarasDomosDuales },
-            { name: 'BDE', layer: markersBDE }
-        ];
-
-        let totalFound = 0;
-        allCameraLayers.forEach(({ name, layer }) => {
-            console.log(`Revisando capa ${name}...`);
-            const found = processMarkerClusters(layer);
-            totalFound += found;
-            console.log(`  → Encontradas en ${name}: ${found}`);
-        });
-
-        console.log(`📊 Total de cámaras encontradas: ${selectedCamerasInPolygon.length}`);
-
-        // Mostrar resultados
-        if (selectedCamerasInPolygon.length > 0) {
-            showNotification(`${selectedCamerasInPolygon.length} cámaras encontradas`, 'success');
-            showCamerasModal();
-        } else {
-            showNotification('No se encontraron cámaras en esta área', 'warning');
-        }
-    }
-
-    // ========================================
-    // MODAL CON CÁMARAS SELECCIONADAS
+    // MODAL CON PESTAÑAS - CÁMARAS Y SITIOS INACTIVOS
     // ========================================
     function showCamerasModal() {
         // Cerrar modal existente si hay
@@ -663,64 +775,117 @@
         $('#camerasPolygonModal').remove();
         $('.modal-backdrop').remove();
 
-        // Crear nuevo modal
+        // Crear nuevo modal con pestañas
         const modalHtml = `
         <div class="modal fade" id="camerasPolygonModal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
             <div class="modal-dialog modal-xl modal-fullscreen-md-down" role="document">
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title">
-                            <i class="fas fa-video"></i>
-                            Cámaras Seleccionadas: ${selectedCamerasInPolygon.length}
+                            <i class="fas fa-map-marked-alt"></i>
+                            Área Seleccionada - Total: ${selectedCamerasInPolygon.length + selectedSitiosInPolygon.length} elementos
                         </h5>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
                     <div class="modal-body">
-                        <!-- Barra de búsqueda y botones de exportación -->
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <input type="text"
-                                       id="searchCameraInList"
-                                       class="form-control"
-                                       placeholder="Buscar en la lista...">
-                            </div>
-                            <div class="col-md-6 text-right">
-                                <button class="btn btn-success" onclick="exportToExcel()">
-                                    <i class="fas fa-file-excel"></i> Excel
-                                </button>
-                                <button class="btn btn-danger" onclick="exportToPDF()">
-                                    <i class="fas fa-file-pdf"></i> PDF
-                                </button>
-                                <button class="btn btn-info" onclick="exportToCSV()">
-                                    <i class="fas fa-file-csv"></i> CSV
-                                </button>
-                            </div>
-                        </div>
+                        <!-- Pestañas de navegación -->
+                        <ul class="nav nav-tabs" id="polygonResultsTabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="camaras-tab" data-toggle="tab" href="#camarasTabContent" role="tab" aria-controls="camarasTabContent" aria-selected="true">
+                                    <i class="fas fa-video text-primary"></i>
+                                    Cámaras <span class="badge badge-primary">${selectedCamerasInPolygon.length}</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="sitios-tab" data-toggle="tab" href="#sitiosTabContent" role="tab" aria-controls="sitiosTabContent" aria-selected="false">
+                                    <i class="fas fa-times-circle text-danger"></i>
+                                    Sitios Inactivos <span class="badge badge-danger">${selectedSitiosInPolygon.length}</span>
+                                </a>
+                            </li>
+                        </ul>
 
-                        <!-- Tabla de cámaras -->
-                        <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                            <table class="table table-striped table-hover" id="camerasTable">
-                                <thead class="thead-dark" style="position: sticky; top: 0; z-index: 10;">
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Título</th>
-                                        <th>Tipo</th>
-                                        <th>Sitio</th>
-                                        <th>Dependencia</th>
-                                        <th>Latitud</th>
-                                        <th>Longitud</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="camerasTableBody">
-                                    ${generateCamerasTableRows()}
-                                </tbody>
-                            </table>
+                        <!-- Contenido de las pestañas -->
+                        <div class="tab-content" id="polygonResultsTabContent">
+                            <!-- Pestaña de Cámaras -->
+                            <div class="tab-pane fade show active" id="camarasTabContent" role="tabpanel" aria-labelledby="camaras-tab">
+                                <div class="row mb-3 mt-3">
+                                    <div class="col-md-6">
+                                        <input type="text" id="searchCameraInList" class="form-control" placeholder="Buscar cámaras...">
+                                    </div>
+                                    <div class="col-md-6 text-right">
+                                        <button class="btn btn-success btn-sm" onclick="exportToExcel()">
+                                            <i class="fas fa-file-excel"></i> Excel
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" onclick="exportToPDF()">
+                                            <i class="fas fa-file-pdf"></i> PDF
+                                        </button>
+                                        <button class="btn btn-info btn-sm" onclick="exportToCSV()">
+                                            <i class="fas fa-file-csv"></i> CSV
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                    <table class="table table-striped table-hover table-sm" id="camerasTable">
+                                        <thead class="thead-dark" style="position: sticky; top: 0; z-index: 10;">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Título</th>
+                                                <th>Tipo</th>
+                                                <th>Sitio</th>
+                                                <th>Dependencia</th>
+                                                <th>Ubicación</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="camerasTableBody">
+                                            ${generateCamerasTableRows()}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                ${selectedCamerasInPolygon.length === 0 ? '<div class="alert alert-info mt-3"><i class="fas fa-info-circle"></i> No se encontraron cámaras en el área seleccionada.</div>' : ''}
+                            </div>
+
+                            <!-- Pestaña de Sitios Inactivos -->
+                            <div class="tab-pane fade" id="sitiosTabContent" role="tabpanel" aria-labelledby="sitios-tab">
+                                <div class="row mb-3 mt-3">
+                                    <div class="col-md-6">
+                                        <input type="text" id="searchSitioInList" class="form-control" placeholder="Buscar sitios inactivos...">
+                                    </div>
+                                    <div class="col-md-6 text-right">
+                                        <span class="text-muted">Los sitios inactivos se incluyen en la exportación PDF</span>
+                                    </div>
+                                </div>
+                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                    <table class="table table-striped table-hover table-sm" id="sitiosTable">
+                                        <thead class="thead-danger" style="position: sticky; top: 0; z-index: 10;">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Nombre</th>
+                                                <th>Estado</th>
+                                                <th>Cartel</th>
+                                                <th>Observaciones</th>
+                                                <th>Ubicación</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="sitiosTableBody">
+                                            ${generateSitiosTableRows()}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                ${selectedSitiosInPolygon.length === 0 ? '<div class="alert alert-info mt-3"><i class="fas fa-info-circle"></i> No se encontraron sitios inactivos en el área seleccionada.</div>' : ''}
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
+                        <div class="mr-auto">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i>
+                                ${selectedCamerasInPolygon.length} cámaras | ${selectedSitiosInPolygon.length} sitios inactivos
+                            </small>
+                        </div>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
                         <button type="button" class="btn btn-primary" onclick="zoomToPolygon()">
                             <i class="fas fa-search-location"></i> Ver Área
@@ -806,7 +971,7 @@
             }
         }
 
-        // Agregar funcionalidad de búsqueda
+        // Agregar funcionalidad de búsqueda para cámaras
         $('#searchCameraInList').on('keyup', function () {
             const searchTerm = $(this).val().toLowerCase();
             $('#camerasTableBody tr').each(function () {
@@ -814,35 +979,97 @@
                 $(this).toggle(text.indexOf(searchTerm) > -1);
             });
         });
+
+        // Agregar funcionalidad de búsqueda para sitios
+        $('#searchSitioInList').on('keyup', function () {
+            const searchTerm = $(this).val().toLowerCase();
+            $('#sitiosTableBody tr').each(function () {
+                const text = $(this).text().toLowerCase();
+                $(this).toggle(text.indexOf(searchTerm) > -1);
+            });
+        });
     }
 
     // ========================================
-    // GENERAR FILAS DE LA TABLA
+    // GENERAR FILAS DE LA TABLA DE CÁMARAS
     // ========================================
     function generateCamerasTableRows() {
         return selectedCamerasInPolygon.map((camera, index) => `
         <tr>
             <td>${index + 1}</td>
             <td><strong>${camera.titulo}</strong></td>
-            <td>${camera.tipo}</td>
+            <td><span class="badge badge-info">${camera.tipo}</span></td>
             <td>${camera.sitio}</td>
             <td>${camera.dependencia}</td>
-            <td>${camera.latitud}</td>
-            <td>${camera.longitud}</td>
+            <td><small>${camera.latitud}, ${camera.longitud}</small></td>
             <td>
-                <button class="btn btn-sm btn-info"
-                        onclick="zoomToCamera(${index})"
-                        title="Ver en mapa">
+                <button class="btn btn-sm btn-info" onclick="zoomToCamera(${index})" title="Ver en mapa">
                     <i class="fas fa-map-marker-alt"></i>
                 </button>
-                <button class="btn btn-sm btn-primary"
-                        onclick="showCameraDetails(${index})"
-                        title="Ver detalles">
+                <button class="btn btn-sm btn-primary" onclick="showCameraDetails(${index})" title="Ver detalles">
                     <i class="fas fa-info-circle"></i>
                 </button>
             </td>
         </tr>
     `).join('');
+    }
+
+    // ========================================
+    // GENERAR FILAS DE LA TABLA DE SITIOS INACTIVOS
+    // ========================================
+    function generateSitiosTableRows() {
+        return selectedSitiosInPolygon.map((sitio, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td><strong>${sitio.titulo}</strong></td>
+            <td><span class="badge badge-danger">${sitio.estado}</span></td>
+            <td>${sitio.cartel}</td>
+            <td><small>${sitio.observaciones !== 'N/A' ? sitio.observaciones.substring(0, 50) + '...' : 'Sin observaciones'}</small></td>
+            <td><small>${sitio.latitud}, ${sitio.longitud}</small></td>
+            <td>
+                <button class="btn btn-sm btn-info" onclick="zoomToSitio(${index})" title="Ver en mapa">
+                    <i class="fas fa-map-marker-alt"></i>
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="showSitioDetails(${index})" title="Ver detalles">
+                    <i class="fas fa-info-circle"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+    }
+
+    // ========================================
+    // ZOOM A SITIO ESPECÍFICO
+    // ========================================
+    function zoomToSitio(index) {
+        const sitio = selectedSitiosInPolygon[index];
+        if (sitio && sitio.marker) {
+            mymap.setView([sitio.latitud, sitio.longitud], 18);
+            sitio.marker.openPopup();
+            $('#camerasPolygonModal').modal('hide');
+        }
+    }
+
+    // ========================================
+    // MOSTRAR DETALLES DE SITIO
+    // ========================================
+    function showSitioDetails(index) {
+        const sitio = selectedSitiosInPolygon[index];
+
+        Swal.fire({
+            title: sitio.titulo,
+            html: `
+            <table class="table table-sm table-bordered">
+                <tr><td><strong>Estado:</strong></td><td><span class="badge badge-danger">${sitio.estado}</span></td></tr>
+                <tr><td><strong>Cartel:</strong></td><td>${sitio.cartel}</td></tr>
+                <tr><td><strong>Observaciones:</strong></td><td>${sitio.observaciones}</td></tr>
+                <tr><td><strong>Latitud:</strong></td><td>${sitio.latitud}</td></tr>
+                <tr><td><strong>Longitud:</strong></td><td>${sitio.longitud}</td></tr>
+            </table>
+        `,
+            width: '500px',
+            confirmButtonText: 'Cerrar'
+        });
     }
 
     // ========================================
@@ -895,7 +1122,7 @@
     }
 
     // ========================================
-    // EXPORTAR A EXCEL
+    // EXPORTAR A EXCEL - CON HOJAS SEPARADAS
     // ========================================
     function exportToExcel() {
         if (typeof XLSX === 'undefined') {
@@ -903,33 +1130,67 @@
             return;
         }
 
-        const data = selectedCamerasInPolygon.map((camera, index) => ({
-            'Nº': index + 1,
-            'Título': camera.titulo,
-            'Tipo': camera.tipo,
-            'Sitio': camera.sitio,
-            'Dependencia': camera.dependencia,
-            'Latitud': camera.latitud,
-            'Longitud': camera.longitud,
-            'Etapa': camera.etapa,
-            'Instalación': camera.instalacion,
-            'Marca': camera.marca,
-            'Modelo': camera.modelo,
-            'Nº Serie': camera.serie
-        }));
-
-        const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Cámaras');
 
-        const fileName = `camaras_seleccionadas_${new Date().toISOString().split('T')[0]}.xlsx`;
+        // Hoja 1: Cámaras
+        if (selectedCamerasInPolygon.length > 0) {
+            const camarasData = selectedCamerasInPolygon.map((camera, index) => ({
+                'Nº': index + 1,
+                'Título': camera.titulo,
+                'Tipo': camera.tipo,
+                'Sitio': camera.sitio,
+                'Dependencia': camera.dependencia,
+                'Latitud': camera.latitud,
+                'Longitud': camera.longitud,
+                'Etapa': camera.etapa,
+                'Instalación': camera.instalacion,
+                'Marca': camera.marca,
+                'Modelo': camera.modelo,
+                'Nº Serie': camera.serie
+            }));
+            const wsCamaras = XLSX.utils.json_to_sheet(camarasData);
+            XLSX.utils.book_append_sheet(wb, wsCamaras, 'Cámaras');
+        }
+
+        // Hoja 2: Sitios Inactivos
+        if (selectedSitiosInPolygon.length > 0) {
+            const sitiosData = selectedSitiosInPolygon.map((sitio, index) => ({
+                'Nº': index + 1,
+                'Nombre': sitio.titulo,
+                'Estado': sitio.estado,
+                'Cartel': sitio.cartel,
+                'Observaciones': sitio.observaciones,
+                'Latitud': sitio.latitud,
+                'Longitud': sitio.longitud
+            }));
+            const wsSitios = XLSX.utils.json_to_sheet(sitiosData);
+            XLSX.utils.book_append_sheet(wb, wsSitios, 'Sitios Inactivos');
+        }
+
+        // Hoja 3: Resumen
+        const resumenData = [{
+            'Total Cámaras': selectedCamerasInPolygon.length,
+            'Total Sitios Inactivos': selectedSitiosInPolygon.length,
+            'Total Elementos': selectedCamerasInPolygon.length + selectedSitiosInPolygon.length,
+            'Fecha Exportación': new Date().toLocaleDateString('es-AR'),
+            'Hora Exportación': new Date().toLocaleTimeString('es-AR')
+        }];
+        const wsResumen = XLSX.utils.json_to_sheet(resumenData);
+        XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+
+        const totalItems = selectedCamerasInPolygon.length + selectedSitiosInPolygon.length;
+        const fileName = `reporte_area_${new Date().toISOString().split('T')[0]}_${totalItems}_elementos.xlsx`;
         XLSX.writeFile(wb, fileName);
 
-        showNotification('Archivo Excel exportado correctamente', 'success');
+        showNotification('Archivo Excel exportado con cámaras y sitios inactivos', 'success');
     }
 
     // ========================================
-    // EXPORTAR A PDF - VERSIÓN MEJORADA
+    // CAPTURA MEJORADA DEL MAPA PARA PDF
+    // ========================================
+
+    // ========================================
+    // EXPORTAR A PDF - CON TABLAS SEPARADAS PARA CÁMARAS Y SITIOS
     // ========================================
     async function exportToPDF() {
         if (typeof jspdf === 'undefined') {
@@ -956,31 +1217,36 @@
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
 
-            // Título
+            // ========================================
+            // PÁGINA 1: TÍTULO, MAPA Y RESUMEN
+            // ========================================
+
+            // Título principal
             doc.setFontSize(18);
             doc.setFont('helvetica', 'bold');
-            doc.text('REPORTE DE CÁMARAS - ÁREA SELECCIONADA', pageWidth / 2, 15, { align: 'center' });
+            doc.text('REPORTE DE ÁREA SELECCIONADA', pageWidth / 2, 15, { align: 'center' });
 
             // Información del reporte
             doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
             const area = currentPolygon ?
                 (L.GeometryUtil.geodesicArea(currentPolygon.getLatLngs()[0]) / 1000000).toFixed(2) : 'N/A';
-            const reportInfo = `Fecha: ${new Date().toLocaleDateString('es-AR')} | Hora: ${new Date().toLocaleTimeString('es-AR')} | Cámaras: ${selectedCamerasInPolygon.length} | Área: ${area} km²`;
+            const reportInfo = `Fecha: ${new Date().toLocaleDateString('es-AR')} | Hora: ${new Date().toLocaleTimeString('es-AR')} | Cámaras: ${selectedCamerasInPolygon.length} | Sitios Inactivos: ${selectedSitiosInPolygon.length} | Área: ${area} km²`;
             doc.text(reportInfo, pageWidth / 2, 22, { align: 'center' });
 
             // Actualizar progreso
             updateProgress(20, 'Capturando imagen del mapa...');
 
             // CAPTURA DEL MAPA
+            // CAPTURA DEL MAPA
             const mapImage = await captureMapImageOptimized();
 
             if (mapImage) {
-                updateProgress(60, 'Procesando imagen...');
+                updateProgress(50, 'Procesando imagen...');
 
                 // Dimensiones optimizadas para el mapa
                 const imgWidth = 250;
-                const imgHeight = 110;
+                const imgHeight = 100;
                 const xPos = (pageWidth - imgWidth) / 2;
                 const yPos = 28;
 
@@ -993,84 +1259,186 @@
                 console.log('✅ Imagen del mapa agregada al PDF');
             } else {
                 // Dibujar placeholder
+                // Dibujar placeholder
                 const xPos = (pageWidth - 250) / 2;
                 const yPos = 28;
 
                 doc.setFillColor(240, 240, 240);
-                doc.rect(xPos, yPos, 250, 110, 'F');
+                doc.rect(xPos, yPos, 250, 100, 'F');
                 doc.setDrawColor(200, 200, 200);
                 doc.setLineWidth(1);
-                doc.rect(xPos, yPos, 250, 110);
+                doc.rect(xPos, yPos, 250, 100);
 
                 doc.setFontSize(14);
                 doc.setTextColor(150, 150, 150);
-                doc.text('Mapa no disponible', pageWidth / 2, yPos + 55, { align: 'center' });
-
-                console.warn('⚠️ No se pudo capturar el mapa');
+                doc.text('Mapa no disponible', pageWidth / 2, yPos + 50, { align: 'center' });
             }
 
-            updateProgress(70, 'Generando tabla de datos...');
+            // ========================================
+            // RESUMEN EN PÁGINA 1
+            // ========================================
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('RESUMEN', 14, 140);
 
-            // Tabla de datos mejorada
-            const tableData = selectedCamerasInPolygon.map((camera, index) => [
-                index + 1,
-                camera.titulo.substring(0, 35),
-                camera.tipo || 'N/A',
-                camera.sitio || 'N/A',
-                camera.dependencia || 'N/A',
-                `${camera.latitud}, ${camera.longitud}`
-            ]);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.text(`• Total de Cámaras: ${selectedCamerasInPolygon.length}`, 20, 148);
+            doc.text(`• Total de Sitios Inactivos: ${selectedSitiosInPolygon.length}`, 20, 155);
+            doc.text(`• Superficie del Área: ${area} km²`, 20, 162);
 
-            doc.autoTable({
-                head: [['#', 'Título', 'Tipo', 'Sitio', 'Dependencia', 'Ubicación']],
-                body: tableData,
-                startY: 145,
-                theme: 'grid',
-                styles: {
-                    fontSize: 8,
-                    cellPadding: 3,
-                    overflow: 'linebreak',
-                    halign: 'left'
-                },
-                headStyles: {
-                    fillColor: [41, 128, 185],
-                    textColor: 255,
-                    fontStyle: 'bold',
-                    halign: 'center'
-                },
-                columnStyles: {
-                    0: { halign: 'center', cellWidth: 10 },
-                    1: { cellWidth: 60 },
-                    2: { cellWidth: 30 },
-                    3: { cellWidth: 35 },
-                    4: { cellWidth: 40 },
-                    5: { cellWidth: 50, fontSize: 7 }
-                },
-                margin: { left: 14, right: 14 },
-                didDrawPage: function (data) {
-                    // Footer en cada página
-                    doc.setFontSize(8);
-                    doc.setTextColor(128);
-                    doc.text(
-                        `Sistema de Videovigilancia - Página ${doc.internal.getCurrentPageInfo().pageNumber}`,
-                        pageWidth / 2,
-                        pageHeight - 10,
-                        { align: 'center' }
-                    );
-                }
-            });
+            // Footer página 1
+            doc.setFontSize(8);
+            doc.setTextColor(128);
+            doc.text(`Sistema de Videovigilancia - Página 1`, pageWidth / 2, pageHeight - 10, { align: 'center' });
 
-            updateProgress(90, 'Finalizando PDF...');
+            updateProgress(60, 'Generando tabla de cámaras...');
+
+            // ========================================
+            // PÁGINA 2+: TABLA DE CÁMARAS
+            // ========================================
+            if (selectedCamerasInPolygon.length > 0) {
+                doc.addPage();
+
+                // Título de sección
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(14);
+                doc.setFont('helvetica', 'bold');
+                doc.text('LISTADO DE CÁMARAS', pageWidth / 2, 15, { align: 'center' });
+
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`Total: ${selectedCamerasInPolygon.length} cámaras en el área seleccionada`, pageWidth / 2, 22, { align: 'center' });
+
+                // Tabla de cámaras
+                const camerasTableData = selectedCamerasInPolygon.map((camera, index) => [
+                    index + 1,
+                    camera.titulo.substring(0, 30),
+                    camera.tipo || 'N/A',
+                    camera.sitio || 'N/A',
+                    camera.dependencia || 'N/A',
+                    `${camera.latitud}, ${camera.longitud}`
+                ]);
+
+                doc.autoTable({
+                    head: [['#', 'Título', 'Tipo', 'Sitio', 'Dependencia', 'Ubicación']],
+                    body: camerasTableData,
+                    startY: 28,
+                    theme: 'grid',
+                    styles: {
+                        fontSize: 8,
+                        cellPadding: 2,
+                        overflow: 'linebreak',
+                        halign: 'left'
+                    },
+                    headStyles: {
+                        fillColor: [41, 128, 185],
+                        textColor: 255,
+                        fontStyle: 'bold',
+                        halign: 'center'
+                    },
+                    columnStyles: {
+                        0: { halign: 'center', cellWidth: 10 },
+                        1: { cellWidth: 55 },
+                        2: { cellWidth: 30 },
+                        3: { cellWidth: 35 },
+                        4: { cellWidth: 40 },
+                        5: { cellWidth: 45, fontSize: 7 }
+                    },
+                    margin: { left: 14, right: 14 },
+                    didDrawPage: function (data) {
+                        doc.setFontSize(8);
+                        doc.setTextColor(128);
+                        doc.text(
+                            `Sistema de Videovigilancia - Cámaras - Página ${doc.internal.getCurrentPageInfo().pageNumber}`,
+                            pageWidth / 2,
+                            pageHeight - 10,
+                            { align: 'center' }
+                        );
+                    }
+                });
+            }
+
+            updateProgress(80, 'Generando tabla de sitios inactivos...');
+
+            // ========================================
+            // PÁGINA NUEVA: TABLA DE SITIOS INACTIVOS
+            // ========================================
+            if (selectedSitiosInPolygon.length > 0) {
+                doc.addPage();
+
+                // Título de sección
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(14);
+                doc.setFont('helvetica', 'bold');
+                doc.text('LISTADO DE SITIOS INACTIVOS', pageWidth / 2, 15, { align: 'center' });
+
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`Total: ${selectedSitiosInPolygon.length} sitios inactivos en el área seleccionada`, pageWidth / 2, 22, { align: 'center' });
+
+                // Tabla de sitios inactivos
+                const sitiosTableData = selectedSitiosInPolygon.map((sitio, index) => [
+                    index + 1,
+                    sitio.titulo.substring(0, 35),
+                    sitio.estado,
+                    sitio.cartel || 'N/A',
+                    (sitio.observaciones && sitio.observaciones !== 'N/A') ? sitio.observaciones.substring(0, 40) : 'Sin obs.',
+                    `${sitio.latitud}, ${sitio.longitud}`
+                ]);
+
+                doc.autoTable({
+                    head: [['#', 'Nombre', 'Estado', 'Cartel', 'Observaciones', 'Ubicación']],
+                    body: sitiosTableData,
+                    startY: 28,
+                    theme: 'grid',
+                    styles: {
+                        fontSize: 8,
+                        cellPadding: 2,
+                        overflow: 'linebreak',
+                        halign: 'left'
+                    },
+                    headStyles: {
+                        fillColor: [220, 53, 69],
+                        textColor: 255,
+                        fontStyle: 'bold',
+                        halign: 'center'
+                    },
+                    columnStyles: {
+                        0: { halign: 'center', cellWidth: 10 },
+                        1: { cellWidth: 55 },
+                        2: { cellWidth: 25 },
+                        3: { cellWidth: 20 },
+                        4: { cellWidth: 60 },
+                        5: { cellWidth: 45, fontSize: 7 }
+                    },
+                    margin: { left: 14, right: 14 },
+                    didDrawPage: function (data) {
+                        doc.setFontSize(8);
+                        doc.setTextColor(128);
+                        doc.text(
+                            `Sistema de Videovigilancia - Sitios Inactivos - Página ${doc.internal.getCurrentPageInfo().pageNumber}`,
+                            pageWidth / 2,
+                            pageHeight - 10,
+                            { align: 'center' }
+                        );
+                    }
+                });
+            }
+
+            updateProgress(95, 'Finalizando PDF...');
 
             // Guardar PDF
-            const fileName = `camaras_seleccionadas_${new Date().toISOString().slice(0, 10)}_${selectedCamerasInPolygon.length}.pdf`;
+            const totalItems = selectedCamerasInPolygon.length + selectedSitiosInPolygon.length;
+            const fileName = `reporte_area_${new Date().toISOString().slice(0, 10)}_${totalItems}_elementos.pdf`;
             doc.save(fileName);
 
             updateProgress(100, 'PDF generado exitosamente');
 
             setTimeout(() => {
                 Swal.close();
-                showNotification('PDF exportado correctamente', 'success');
+                showNotification('PDF exportado correctamente con cámaras y sitios inactivos', 'success');
             }, 500);
 
         } catch (error) {
@@ -1593,45 +1961,89 @@
     // ========================================
     // ESPERAR CARGA DE TILES
     // ========================================
-    function waitForTilesToLoad() {
-        return new Promise((resolve) => {
-            let checksCount = 0;
-            const maxChecks = 15;
-            let checkInterval;
+    function drawLegendOnCanvas(ctx, canvasWidth, canvasHeight) {
+        try {
+            const area = currentPolygon ?
+                (L.GeometryUtil.geodesicArea(currentPolygon.getLatLngs()[0]) / 1000000).toFixed(2) : 'N/A';
 
-            const checkTiles = () => {
-                checksCount++;
+            const legendWidth = 250;
+            const legendHeight = 140;
+            const padding = 15;
+            const x = canvasWidth - legendWidth - padding;
+            const y = padding;
 
-                const tiles = document.querySelectorAll('.leaflet-tile-pane .leaflet-tile');
-                let tilesLoading = 0;
+            // Fondo con sombra
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetX = 3;
+            ctx.shadowOffsetY = 3;
 
-                tiles.forEach(tile => {
-                    if (!tile.complete || tile.naturalWidth === 0) {
-                        tilesLoading++;
-                    }
-                });
+            // Fondo semi-transparente
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.strokeStyle = '#3388ff';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.roundRect(x, y, legendWidth, legendHeight, 8);
+            ctx.fill();
+            ctx.stroke();
 
-                console.log(`⏳ Check ${checksCount}/${maxChecks}: ${tilesLoading} tiles pendientes`);
+            ctx.restore();
 
-                if (tilesLoading === 0 || checksCount >= maxChecks) {
-                    clearInterval(checkInterval);
-                    if (tilesLoading === 0) {
-                        console.log('✅ Todos los tiles del mapa base cargados');
-                    } else {
-                        console.log(`⚠️ Continuando con ${tilesLoading} tiles pendientes`);
-                    }
-                    resolve();
-                }
-            };
+            // Título
+            ctx.fillStyle = '#3388ff';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('📍 ÁREA SELECCIONADA', x + legendWidth / 2, y + 25);
 
-            checkInterval = setInterval(checkTiles, 300);
+            // Línea separadora
+            ctx.strokeStyle = '#dddddd';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x + 15, y + 35);
+            ctx.lineTo(x + legendWidth - 15, y + 35);
+            ctx.stroke();
 
-            setTimeout(() => {
-                clearInterval(checkInterval);
-                console.log('⏰ Timeout alcanzado, continuando con la captura...');
-                resolve();
-            }, 6000);
-        });
+            // Información
+            ctx.textAlign = 'left';
+            ctx.font = '13px Arial';
+            ctx.fillStyle = '#333333';
+
+            const info = [
+                { icon: '📹', label: 'Cámaras:', value: selectedCamerasInPolygon.length, color: '#2980b9' },
+                { icon: '❌', label: 'Sitios Inactivos:', value: selectedSitiosInPolygon.length, color: '#dc3545' },
+                { icon: '📐', label: 'Superficie:', value: area + ' km²', color: '#27ae60' }
+            ];
+
+            let currentY = y + 55;
+            info.forEach(item => {
+                ctx.fillStyle = '#666666';
+                ctx.fillText(item.icon + ' ' + item.label, x + 20, currentY);
+
+                ctx.fillStyle = item.color;
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'right';
+                ctx.fillText(item.value.toString(), x + legendWidth - 20, currentY);
+
+                ctx.textAlign = 'left';
+                ctx.font = '13px Arial';
+                currentY += 22;
+            });
+
+            // Fecha
+            const fecha = new Date().toLocaleDateString('es-AR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+            ctx.fillStyle = '#999999';
+            ctx.font = '11px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('📅 ' + fecha, x + legendWidth / 2, y + legendHeight - 10);
+
+        } catch (error) {
+            console.error('Error dibujando leyenda:', error);
+        }
     }
 
     // ========================================
@@ -1864,15 +2276,15 @@
     }
 
     // ========================================
-    // EXPORTAR A CSV
+    // EXPORTAR A CSV - CON CÁMARAS Y SITIOS INACTIVOS
     // ========================================
     function exportToCSV() {
         let csvContent = "data:text/csv;charset=utf-8,";
 
-        // Encabezados
+        // ========== SECCIÓN CÁMARAS ==========
+        csvContent += "=== CÁMARAS ===\n";
         csvContent += "Nº,Título,Tipo,Sitio,Dependencia,Latitud,Longitud,Etapa,Instalación,Marca,Modelo,Nº Serie\n";
 
-        // Datos
         selectedCamerasInPolygon.forEach((camera, index) => {
             const row = [
                 index + 1,
@@ -1892,16 +2304,42 @@
             csvContent += row + "\n";
         });
 
+        // ========== SECCIÓN SITIOS INACTIVOS ==========
+        csvContent += "\n=== SITIOS INACTIVOS ===\n";
+        csvContent += "Nº,Nombre,Estado,Cartel,Observaciones,Latitud,Longitud\n";
+
+        selectedSitiosInPolygon.forEach((sitio, index) => {
+            const row = [
+                index + 1,
+                `"${sitio.titulo}"`,
+                `"${sitio.estado}"`,
+                `"${sitio.cartel}"`,
+                `"${sitio.observaciones}"`,
+                sitio.latitud,
+                sitio.longitud
+            ].join(',');
+
+            csvContent += row + "\n";
+        });
+
+        // ========== RESUMEN ==========
+        csvContent += "\n=== RESUMEN ===\n";
+        csvContent += `Total Cámaras,${selectedCamerasInPolygon.length}\n`;
+        csvContent += `Total Sitios Inactivos,${selectedSitiosInPolygon.length}\n`;
+        csvContent += `Total Elementos,${selectedCamerasInPolygon.length + selectedSitiosInPolygon.length}\n`;
+        csvContent += `Fecha Exportación,${new Date().toLocaleDateString('es-AR')}\n`;
+
         // Crear link de descarga
+        const totalItems = selectedCamerasInPolygon.length + selectedSitiosInPolygon.length;
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `camaras_seleccionadas_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute("download", `reporte_area_${new Date().toISOString().split('T')[0]}_${totalItems}_elementos.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
 
-        showNotification('Archivo CSV exportado correctamente', 'success');
+        showNotification('Archivo CSV exportado con cámaras y sitios inactivos', 'success');
     }
 
     // ========================================
@@ -1916,7 +2354,7 @@
             div.innerHTML = `
             <div style="background: white; padding: 10px; border-radius: 4px; margin-bottom: 50px;">
                 <button id="ver-lista" class="btn btn-sm btn-primary" onclick="showCamerasModal()">
-                    <i class="fas fa-list"></i> Ver Lista (${selectedCamerasInPolygon.length})
+                    <i class="fas fa-list"></i> Ver Lista (${selectedCamerasInPolygon.length + selectedSitiosInPolygon.length})
                 </button>
                 <button id="limpiar-seleccion" class="btn btn-sm btn-danger" onclick="clearPolygonSelection()">
                     <i class="fas fa-trash"></i> Limpiar
@@ -1948,14 +2386,22 @@
             currentPolygon = null;
         }
 
-        // Restaurar marcadores
+        // Restaurar marcadores de cámaras
         selectedCamerasInPolygon.forEach(camera => {
             if (camera.marker && camera.marker._originalStyle) {
                 camera.marker.setIcon(camera.marker._originalStyle.icon);
             }
         });
 
+        // Restaurar marcadores de sitios inactivos
+        selectedSitiosInPolygon.forEach(sitio => {
+            if (sitio.marker && sitio.marker._originalStyle) {
+                sitio.marker.setIcon(sitio.marker._originalStyle.icon);
+            }
+        });
+
         selectedCamerasInPolygon = [];
+        selectedSitiosInPolygon = [];
 
         // Cerrar modal si está abierto
         $('#camerasPolygonModal').modal('hide');

@@ -2168,9 +2168,57 @@
     }
 
     // ========================================
+    // DIBUJAR POLÍGONO EN CANVAS
+    // ========================================
+    function drawPolygonOnCanvas(ctx, mapContainer) {
+        if (!currentPolygon) {
+            console.log('⚠️ No hay polígono para dibujar');
+            return;
+        }
+
+        try {
+            console.log('📐 Dibujando polígono en canvas...');
+
+            const latLngs = currentPolygon.getLatLngs()[0];
+            if (!latLngs || latLngs.length < 3) return;
+
+            ctx.save();
+
+            // Convertir coordenadas a puntos del canvas
+            ctx.beginPath();
+            const firstPoint = mymap.latLngToContainerPoint(latLngs[0]);
+            ctx.moveTo(firstPoint.x, firstPoint.y);
+
+            for (let i = 1; i < latLngs.length; i++) {
+                const point = mymap.latLngToContainerPoint(latLngs[i]);
+                ctx.lineTo(point.x, point.y);
+            }
+            ctx.closePath();
+
+            // Relleno semi-transparente azul
+            ctx.fillStyle = 'rgba(51, 136, 255, 0.2)';
+            ctx.fill();
+
+            // Borde azul
+            ctx.strokeStyle = '#3388ff';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            ctx.restore();
+            console.log('✅ Polígono dibujado en canvas');
+
+        } catch (error) {
+            console.error('Error dibujando polígono:', error);
+        }
+    }
+
+    // ========================================
     // DIBUJAR MARCADORES EN CANVAS
     // ========================================
     function drawMarkersOnCanvas(ctx, mapContainer) {
+        // Primero dibujar el polígono
+        drawPolygonOnCanvas(ctx, mapContainer);
+
         console.log(`🎯 Dibujando ${selectedCamerasInPolygon.length} marcadores en canvas...`);
 
         selectedCamerasInPolygon.forEach((camera, index) => {

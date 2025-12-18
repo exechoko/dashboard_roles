@@ -16,6 +16,7 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         $schedule->command('tareas:generar')->dailyAt('01:00');
+        $schedule->command('tareas:avisar')->dailyAt('08:00');
     }
 
     /**

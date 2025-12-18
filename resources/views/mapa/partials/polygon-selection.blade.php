@@ -1192,13 +1192,11 @@
         // Hoja 1: Cámaras
         if (selectedCamerasInPolygon.length > 0) {
             const camarasData = selectedCamerasInPolygon.map((camera, index) => ({
-                'Nº': index + 1,
+                '#': index + 1,
                 'Título': camera.titulo,
                 'Tipo': camera.tipo,
                 'Sitio': camera.sitio,
                 'Dependencia': camera.dependencia,
-                'Latitud': camera.latitud,
-                'Longitud': camera.longitud,
                 'Etapa': camera.etapa,
                 'Instalación': camera.instalacion,
                 'Marca': camera.marca,
@@ -1212,13 +1210,11 @@
         // Hoja 2: Sitios Inactivos
         if (selectedSitiosInPolygon.length > 0) {
             const sitiosData = selectedSitiosInPolygon.map((sitio, index) => ({
-                'Nº': index + 1,
+                '#': index + 1,
                 'Nombre': sitio.titulo,
                 'Estado': sitio.estado,
                 'Cartel': sitio.cartel,
-                'Observaciones': sitio.observaciones,
-                'Latitud': sitio.latitud,
-                'Longitud': sitio.longitud
+                'Observaciones': sitio.observaciones
             }));
             const wsSitios = XLSX.utils.json_to_sheet(sitiosData);
             XLSX.utils.book_append_sheet(wb, wsSitios, 'Sitios Inactivos');
@@ -1372,12 +1368,11 @@
                     camera.titulo.substring(0, 30),
                     camera.tipo || 'N/A',
                     camera.sitio || 'N/A',
-                    camera.dependencia || 'N/A',
-                    `${camera.latitud}, ${camera.longitud}`
+                    camera.dependencia || 'N/A'
                 ]);
 
                 doc.autoTable({
-                    head: [['#', 'Título', 'Tipo', 'Sitio', 'Dependencia', 'Ubicación']],
+                    head: [['#', 'Título', 'Tipo', 'Sitio', 'Dependencia']],
                     body: camerasTableData,
                     startY: 28,
                     theme: 'grid',
@@ -1395,11 +1390,10 @@
                     },
                     columnStyles: {
                         0: { halign: 'center', cellWidth: 10 },
-                        1: { cellWidth: 55 },
-                        2: { cellWidth: 30 },
-                        3: { cellWidth: 35 },
-                        4: { cellWidth: 40 },
-                        5: { cellWidth: 45, fontSize: 7 }
+                        1: { cellWidth: 70 },
+                        2: { cellWidth: 35 },
+                        3: { cellWidth: 45 },
+                        4: { cellWidth: 65 }
                     },
                     margin: { left: 14, right: 14 },
                     didDrawPage: function (data) {
@@ -1439,12 +1433,11 @@
                     sitio.titulo.substring(0, 35),
                     sitio.estado,
                     sitio.cartel || 'N/A',
-                    (sitio.observaciones && sitio.observaciones !== 'N/A') ? sitio.observaciones.substring(0, 40) : 'Sin obs.',
-                    `${sitio.latitud}, ${sitio.longitud}`
+                    (sitio.observaciones && sitio.observaciones !== 'N/A') ? sitio.observaciones.substring(0, 40) : 'Sin obs.'
                 ]);
 
                 doc.autoTable({
-                    head: [['#', 'Nombre', 'Estado', 'Cartel', 'Observaciones', 'Ubicación']],
+                    head: [['#', 'Nombre', 'Estado', 'Cartel', 'Observaciones']],
                     body: sitiosTableData,
                     startY: 28,
                     theme: 'grid',
@@ -1462,11 +1455,10 @@
                     },
                     columnStyles: {
                         0: { halign: 'center', cellWidth: 10 },
-                        1: { cellWidth: 55 },
-                        2: { cellWidth: 25 },
-                        3: { cellWidth: 20 },
-                        4: { cellWidth: 60 },
-                        5: { cellWidth: 45, fontSize: 7 }
+                        1: { cellWidth: 70 },
+                        2: { cellWidth: 30 },
+                        3: { cellWidth: 25 },
+                        4: { cellWidth: 115 }
                     },
                     margin: { left: 14, right: 14 },
                     didDrawPage: function (data) {
@@ -2707,8 +2699,7 @@
                         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Título', bold: true })] })] }),
                         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Tipo', bold: true })] })] }),
                         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Sitio', bold: true })] })] }),
-                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Dependencia', bold: true })] })] }),
-                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Ubicación', bold: true })] })] })
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Dependencia', bold: true })] })] })
                     ]
                 });
 
@@ -2718,8 +2709,7 @@
                         new TableCell({ children: [new Paragraph(String(camera.titulo || 'N/A'))] }),
                         new TableCell({ children: [new Paragraph(String(camera.tipo || 'N/A'))] }),
                         new TableCell({ children: [new Paragraph(String(camera.sitio || 'N/A'))] }),
-                        new TableCell({ children: [new Paragraph(String(camera.dependencia || 'N/A'))] }),
-                        new TableCell({ children: [new Paragraph(`${camera.latitud}, ${camera.longitud}`)] })
+                        new TableCell({ children: [new Paragraph(String(camera.dependencia || 'N/A'))] })
                     ]
                 }));
 
@@ -2742,8 +2732,7 @@
                         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Nombre', bold: true })] })] }),
                         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Estado', bold: true })] })] }),
                         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Cartel', bold: true })] })] }),
-                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Observaciones', bold: true })] })] }),
-                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Ubicación', bold: true })] })] })
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Observaciones', bold: true })] })] })
                     ]
                 });
 
@@ -2753,8 +2742,7 @@
                         new TableCell({ children: [new Paragraph(String(sitio.titulo || 'N/A'))] }),
                         new TableCell({ children: [new Paragraph(String(sitio.estado || 'N/A'))] }),
                         new TableCell({ children: [new Paragraph(String(sitio.cartel || 'N/A'))] }),
-                        new TableCell({ children: [new Paragraph(String(sitio.observaciones || 'N/A'))] }),
-                        new TableCell({ children: [new Paragraph(`${sitio.latitud}, ${sitio.longitud}`)] })
+                        new TableCell({ children: [new Paragraph(String(sitio.observaciones || 'N/A'))] })
                     ]
                 }));
 
@@ -2796,22 +2784,20 @@
 
         // ========== SECCIÓN CÁMARAS ==========
         csvContent += "=== CÁMARAS ===\n";
-        csvContent += "Nº,Título,Tipo,Sitio,Dependencia,Latitud,Longitud,Etapa,Instalación,Marca,Modelo,Nº Serie\n";
+        csvContent += "Nº,Título,Tipo,Sitio,Dependencia,Etapa,Instalación,Marca,Modelo,Nº Serie\n";
 
         selectedCamerasInPolygon.forEach((camera, index) => {
             const row = [
                 index + 1,
-                `"${camera.titulo}"`,
-                `"${camera.tipo}"`,
-                `"${camera.sitio}"`,
-                `"${camera.dependencia}"`,
-                camera.latitud,
-                camera.longitud,
-                `"${camera.etapa}"`,
-                `"${camera.instalacion}"`,
-                `"${camera.marca}"`,
-                `"${camera.modelo}"`,
-                `"${camera.serie}"`
+                `\"${camera.titulo}\"`,
+                `\"${camera.tipo}\"`,
+                `\"${camera.sitio}\"`,
+                `\"${camera.dependencia}\"`,
+                `\"${camera.etapa}\"`,
+                `\"${camera.instalacion}\"`,
+                `\"${camera.marca}\"`,
+                `\"${camera.modelo}\"`,
+                `\"${camera.serie}\"`
             ].join(',');
 
             csvContent += row + "\n";
@@ -2819,17 +2805,15 @@
 
         // ========== SECCIÓN SITIOS INACTIVOS ==========
         csvContent += "\n=== SITIOS INACTIVOS ===\n";
-        csvContent += "Nº,Nombre,Estado,Cartel,Observaciones,Latitud,Longitud\n";
+        csvContent += "Nº,Nombre,Estado,Cartel,Observaciones\n";
 
         selectedSitiosInPolygon.forEach((sitio, index) => {
             const row = [
                 index + 1,
-                `"${sitio.titulo}"`,
-                `"${sitio.estado}"`,
-                `"${sitio.cartel}"`,
-                `"${sitio.observaciones}"`,
-                sitio.latitud,
-                sitio.longitud
+                `\"${sitio.titulo}\"`,
+                `\"${sitio.estado}\"`,
+                `\"${sitio.cartel}\"`,
+                `\"${sitio.observaciones}\"`
             ].join(',');
 
             csvContent += row + "\n";

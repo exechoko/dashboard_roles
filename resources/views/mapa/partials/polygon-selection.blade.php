@@ -878,8 +878,8 @@
                                         <button class="btn btn-danger btn-sm" onclick="exportToPDF()">
                                             <i class="fas fa-file-pdf"></i> PDF
                                         </button>
-                                        <button class="btn btn-info btn-sm" onclick="exportToCSV()">
-                                            <i class="fas fa-file-csv"></i> CSV
+                                        <button class="btn btn-info btn-sm" onclick="exportToDOCX()">
+                                            <i class="fas fa-file-word"></i> DOCX
                                         </button>
                                     </div>
                                 </div>
@@ -2560,6 +2560,232 @@
             };
             document.head.appendChild(script);
         });
+    }
+
+    function loadDocxLibrary() {
+        return new Promise((resolve) => {
+            if (typeof window.docx !== 'undefined') {
+                resolve();
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = 'https://unpkg.com/docx@8.2.4/build/index.umd.js';
+            script.onload = () => resolve();
+            script.onerror = () => resolve();
+            document.head.appendChild(script);
+        });
+    }
+
+    function dataUrlToUint8Array(dataUrl) {
+        const parts = (dataUrl || '').split(',');
+        if (parts.length < 2) return null;
+        const base64 = parts[1];
+        const binary = atob(base64);
+        const len = binary.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes;
+    }
+
+    function downloadBlob(blob, fileName) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    async function exportToDOCX() {
+        try {
+            await loadDocxLibrary();
+            if (typeof window.docx === 'undefined') {
+                showNotification('No se pudo cargar la librería DOCX', 'error');
+                return;
+            }
+
+            showNotification('Generando DOCX con mapa...', 'info');
+
+            Swal.fire({
+                title: 'Generando DOCX',
+                html: '<div id="pdf-progress">Preparando mapa... 0%</div>',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            const totalItems = selectedCamerasInPolygon.length + selectedSitiosInPolygon.length;
+            const fileName = `reporte_area_${new Date().toISOString().slice(0, 10)}_${totalItems}_elementos.docx`;
+
+            const area = currentPolygon ?
+                (L.GeometryUtil.geodesicArea(currentPolygon.getLatLngs()[0]) / 1000000).toFixed(2) : 'N/A';
+
+            updateProgress(20, 'Capturando imagen del mapa...');
+            const mapImage = await captureMapImageOptimized();
+
+            const mapBytes = mapImage ? dataUrlToUint8Array(mapImage) : null;
+
+            updateProgress(50, 'Armando documento...');
+
+            const {
+                Document,
+                Packer,
+                Paragraph,
+                TextRun,
+                HeadingLevel,
+                AlignmentType,
+                Table,
+                TableRow,
+                TableCell,
+                WidthType,
+                ImageRun
+            } = window.docx;
+
+            const nowDate = new Date().toLocaleDateString('es-AR');
+            const nowTime = new Date().toLocaleTimeString('es-AR');
+            const reportInfo = `Fecha: ${nowDate} | Hora: ${nowTime} | Cámaras: ${selectedCamerasInPolygon.length} | Sitios Inactivos: ${selectedSitiosInPolygon.length} | Área: ${area} km²`;
+
+            const children = [];
+
+            children.push(new Paragraph({
+                text: 'REPORTE DE ÁREA SELECCIONADA',
+                heading: HeadingLevel.HEADING_1,
+                alignment: AlignmentType.CENTER
+            }));
+
+            children.push(new Paragraph({
+                children: [new TextRun({ text: reportInfo })],
+                alignment: AlignmentType.CENTER
+            }));
+
+            children.push(new Paragraph({ text: '' }));
+
+            if (mapBytes) {
+                children.push(new Paragraph({
+                    children: [
+                        new ImageRun({
+                            data: mapBytes,
+                            transformation: { width: 800, height: 320 }
+                        })
+                    ],
+                    alignment: AlignmentType.CENTER
+                }));
+            } else {
+                children.push(new Paragraph({
+                    children: [new TextRun({ text: 'Mapa no disponible' })],
+                    alignment: AlignmentType.CENTER
+                }));
+            }
+
+            children.push(new Paragraph({ text: '' }));
+
+            children.push(new Paragraph({
+                text: 'RESUMEN',
+                heading: HeadingLevel.HEADING_2
+            }));
+
+            children.push(new Paragraph({ text: `• Total de Cámaras: ${selectedCamerasInPolygon.length}` }));
+            children.push(new Paragraph({ text: `• Total de Sitios Inactivos: ${selectedSitiosInPolygon.length}` }));
+            children.push(new Paragraph({ text: `• Superficie del Área: ${area} km²` }));
+
+            if (selectedCamerasInPolygon.length > 0) {
+                children.push(new Paragraph({ text: '' }));
+                children.push(new Paragraph({
+                    text: 'LISTADO DE CÁMARAS',
+                    heading: HeadingLevel.HEADING_2
+                }));
+
+                const cameraHeaderRow = new TableRow({
+                    children: [
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '#', bold: true })] })] }),
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Título', bold: true })] })] }),
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Tipo', bold: true })] })] }),
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Sitio', bold: true })] })] }),
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Dependencia', bold: true })] })] }),
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Ubicación', bold: true })] })] })
+                    ]
+                });
+
+                const cameraRows = selectedCamerasInPolygon.map((camera, index) => new TableRow({
+                    children: [
+                        new TableCell({ children: [new Paragraph(String(index + 1))] }),
+                        new TableCell({ children: [new Paragraph(String(camera.titulo || 'N/A'))] }),
+                        new TableCell({ children: [new Paragraph(String(camera.tipo || 'N/A'))] }),
+                        new TableCell({ children: [new Paragraph(String(camera.sitio || 'N/A'))] }),
+                        new TableCell({ children: [new Paragraph(String(camera.dependencia || 'N/A'))] }),
+                        new TableCell({ children: [new Paragraph(`${camera.latitud}, ${camera.longitud}`)] })
+                    ]
+                }));
+
+                children.push(new Table({
+                    width: { size: 100, type: WidthType.PERCENTAGE },
+                    rows: [cameraHeaderRow, ...cameraRows]
+                }));
+            }
+
+            if (selectedSitiosInPolygon.length > 0) {
+                children.push(new Paragraph({ text: '' }));
+                children.push(new Paragraph({
+                    text: 'LISTADO DE SITIOS INACTIVOS',
+                    heading: HeadingLevel.HEADING_2
+                }));
+
+                const sitioHeaderRow = new TableRow({
+                    children: [
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '#', bold: true })] })] }),
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Nombre', bold: true })] })] }),
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Estado', bold: true })] })] }),
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Cartel', bold: true })] })] }),
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Observaciones', bold: true })] })] }),
+                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: 'Ubicación', bold: true })] })] })
+                    ]
+                });
+
+                const sitioRows = selectedSitiosInPolygon.map((sitio, index) => new TableRow({
+                    children: [
+                        new TableCell({ children: [new Paragraph(String(index + 1))] }),
+                        new TableCell({ children: [new Paragraph(String(sitio.titulo || 'N/A'))] }),
+                        new TableCell({ children: [new Paragraph(String(sitio.estado || 'N/A'))] }),
+                        new TableCell({ children: [new Paragraph(String(sitio.cartel || 'N/A'))] }),
+                        new TableCell({ children: [new Paragraph(String(sitio.observaciones || 'N/A'))] }),
+                        new TableCell({ children: [new Paragraph(`${sitio.latitud}, ${sitio.longitud}`)] })
+                    ]
+                }));
+
+                children.push(new Table({
+                    width: { size: 100, type: WidthType.PERCENTAGE },
+                    rows: [sitioHeaderRow, ...sitioRows]
+                }));
+            }
+
+            const doc = new Document({
+                sections: [{
+                    properties: {},
+                    children
+                }]
+            });
+
+            updateProgress(90, 'Generando archivo...');
+            const blob = await Packer.toBlob(doc);
+            downloadBlob(blob, fileName);
+
+            updateProgress(100, 'DOCX generado exitosamente');
+            setTimeout(() => {
+                Swal.close();
+                showNotification('DOCX exportado correctamente con mapa, cámaras y sitios inactivos', 'success');
+            }, 500);
+
+        } catch (error) {
+            console.error('❌ Error exportando DOCX:', error);
+            Swal.close();
+            showNotification('Error al exportar DOCX: ' + error.message, 'error');
+        }
     }
 
     // ========================================

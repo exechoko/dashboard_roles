@@ -157,6 +157,14 @@
 </li>
 @endcan
 
+@can('ver-menu-tareas')
+    <li class="{{ request()->is('tareas*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('tareas.index') }}">
+            <i class="fas fa-tasks"></i><span>Tareas</span>
+        </a>
+    </li>
+@endcan
+
 @can('ver-menu-dependencias')
     <li class="{{ request()->is('dependencias*') ? 'active' : '' }}">
         <a class="nav-link" href="/dependencias">

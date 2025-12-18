@@ -7,6 +7,7 @@ use App\Http\Controllers\EntregasEquiposController;
 use App\Http\Controllers\PasswordVaultController;
 use App\Http\Controllers\PatrimonioBienController;
 use App\Http\Controllers\PatrimonioTipoBienController;
+use App\Http\Controllers\TareaController;
 use Illuminate\Support\Facades\Route;
 //agregamos los controladores
 use App\Http\Controllers\HomeController;
@@ -54,6 +55,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('equipos', EquipoController::class);
     Route::resource('terminales', TipoTerminalController::class);
     Route::resource('bodycams', BodycamController::class);
+    Route::resource('tareas', TareaController::class);
+    Route::patch('tareas-items/{id}', [TareaController::class, 'updateItem'])->name('tareas.items.update');
 
     Route::post('/profile/update', [UsuarioController::class, 'updateProfile'])->name('profile.update');
     Route::post('/profile/update-theme', [UsuarioController::class, 'updateTheme'])->name('profile.updateTheme')->middleware('auth');

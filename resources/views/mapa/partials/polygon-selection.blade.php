@@ -749,6 +749,9 @@
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = content;
 
+            const cameraImageElement = tempDiv.querySelector('img');
+            const cameraImageSrc = cameraImageElement ? (cameraImageElement.getAttribute('src') || cameraImageElement.src) : null;
+
             // Extraer título
             const titulo = tempDiv.querySelector('h5')?.textContent ||
                 tempDiv.querySelector('strong')?.textContent ||
@@ -773,6 +776,7 @@
                 titulo: titulo,
                 latitud: position.lat.toFixed(6),
                 longitud: position.lng.toFixed(6),
+                imagen: cameraImageSrc,
                 tipo: extractField(content, 'Tipo:'),
                 sitio: extractField(content, 'Sitio:'),
                 dependencia: extractField(content, 'Dependencia:'),
@@ -1517,6 +1521,8 @@
                 zoom: mymap.getZoom()
             };
 
+            await preloadPdfCameraIcons(selectedCamerasInPolygon);
+
             try {
                 // Preparar mapa (ocultar controles y marcadores)
                 await prepareMapForCapture();
@@ -1641,6 +1647,77 @@
             console.error('❌ Error en captura:', error);
             return null;
         }
+    }
+
+    function normalizePdfIconUrl(src) {
+        if (!src) return null;
+        try {
+            return new URL(src, window.location.href).toString();
+        } catch (e) {
+            return src;
+        }
+    }
+
+    function preloadPdfIconImage(url) {
+        return new Promise(resolve => {
+            if (!url) {
+                resolve(null);
+                return;
+            }
+
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.decoding = 'async';
+
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+            img.src = url;
+
+            if (img.complete && img.naturalWidth > 0) {
+                resolve(img);
+            }
+        });
+    }
+
+    async function preloadPdfCameraIcons(cameras) {
+        try {
+            const urls = Array.from(new Set(
+                (cameras || [])
+                    .map(c => normalizePdfIconUrl(c?.imagen))
+                    .filter(Boolean)
+            ));
+
+            if (urls.length === 0) {
+                window._pdfCameraIconCache = new Map();
+                return;
+            }
+
+            const results = await Promise.all(urls.map(async (url) => {
+                const img = await preloadPdfIconImage(url);
+                return { url, img };
+            }));
+
+            const cache = new Map();
+            results.forEach(({ url, img }) => {
+                if (img) {
+                    cache.set(url, img);
+                }
+            });
+
+            window._pdfCameraIconCache = cache;
+        } catch (e) {
+            window._pdfCameraIconCache = new Map();
+        }
+    }
+
+    function getPreloadedPdfCameraIcon(camera) {
+        const cache = window._pdfCameraIconCache;
+        if (!cache || !(cache instanceof Map)) return null;
+
+        const url = normalizePdfIconUrl(camera?.imagen);
+        if (!url) return null;
+
+        return cache.get(url) || null;
     }
 
     // ========================================
@@ -2256,6 +2333,26 @@
                 const pinWidth = 24;
                 const x = point.x;
                 const y = point.y;
+
+                const cameraIconImage = getPreloadedPdfCameraIcon(camera);
+                if (cameraIconImage) {
+                    const size = 40;
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(x, y, size / 2, 0, 2 * Math.PI);
+                    ctx.closePath();
+                    ctx.clip();
+
+                    ctx.drawImage(cameraIconImage, x - size / 2, y - size / 2, size, size);
+                    ctx.restore();
+
+                    ctx.beginPath();
+                    ctx.arc(x, y, size / 2, 0, 2 * Math.PI);
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    return;
+                }
 
                 // Sombra
                 ctx.save();

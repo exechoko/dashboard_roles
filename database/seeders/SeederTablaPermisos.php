@@ -103,6 +103,7 @@ class SeederTablaPermisos extends Seeder
             'ver-menu-bodycams',
             'ver-menu-gestor-claves',
             'ver-menu-patrimonio',
+            'ver-menu-tareas',
 
             //CeCoCo
             'ver-llamadas-cecoco',
@@ -149,6 +150,12 @@ class SeederTablaPermisos extends Seeder
             'crear-tipo-bien',
             'editar-tipo-bien',
             'borrar-tipo-bien',
+
+            //Tareas
+            'ver-tarea',
+            'crear-tarea',
+            'editar-tarea',
+            'borrar-tarea',
 
             //Acciones varias
             'reiniciar-camara',

@@ -18,9 +18,14 @@
                                     <label class="alert alert-dark mb-2 mb-md-0">
                                         <i class="fas fa-list"></i> Registros: {{ $totalRegistros }}
                                     </label>
-                                    <a href="{{ route('flota.busquedaAvanzada') }}" class="btn btn-outline-secondary">
-                                        <i class="fas fa-sync-alt"></i> Limpiar
-                                    </a>
+                                    <div class="d-flex gap-2">
+                                        <a href="{{ route('flota.busquedaAvanzada.export', request()->query()) }}" class="btn btn-outline-success">
+                                            <i class="fas fa-file-excel"></i> Exportar Excel
+                                        </a>
+                                        <a href="{{ route('flota.busquedaAvanzada') }}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-sync-alt"></i> Limpiar
+                                        </a>
+                                    </div>
                                 </div>
                             @else
                                 <div class="alert alert-info mb-3">

@@ -2,8 +2,10 @@
 
 namespace App\Exports;
 
+use App\Models\Destino;
 use App\Models\Equipo;
 use App\Models\FlotaGeneral;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -18,12 +20,35 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
 {
     protected $rowNumber = 0;
 
+    protected $filters = [];
+
+    public function __construct(array $filters = [])
+    {
+        $this->filters = $this->normalizeFilters($filters);
+    }
+
+    private function normalizeFilters(array $filters): array
+    {
+        return [
+            'texto' => isset($filters['texto']) ? trim((string) $filters['texto']) : null,
+            'equipo_id' => (array) ($filters['equipo_id'] ?? []),
+            'recurso_id' => (array) ($filters['recurso_id'] ?? []),
+            'destino_id' => (array) ($filters['destino_id'] ?? []),
+            'estado_id' => (array) ($filters['estado_id'] ?? []),
+            'destino_actual_id' => (array) ($filters['destino_actual_id'] ?? []),
+            'tipo_terminal_id' => (array) ($filters['tipo_terminal_id'] ?? []),
+            'fecha_rango' => isset($filters['fecha_rango']) ? trim((string) $filters['fecha_rango']) : null,
+            'ticket_per' => isset($filters['ticket_per']) ? trim((string) $filters['ticket_per']) : null,
+            'observaciones' => isset($filters['observaciones']) ? trim((string) $filters['observaciones']) : null,
+        ];
+    }
+
     /**
      * @return \Illuminate\Support\Collection
      */
     public function collection()
     {
-        $equipos = Equipo::select(
+        $query = Equipo::select(
             'equipos.id', // A (ID original, será reemplazado en el mapeo)
             DB::raw("CONCAT(tipo_terminales.marca, ' ', tipo_terminales.modelo) AS terminal"), // B
             'estados.nombre as estado', // C
@@ -81,9 +106,106 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
                 'vehiculos.dominio',
                 'flota_general.observaciones'
             )
-            ->get();
 
-        return $equipos;
+            ;
+
+        $query = $this->applyFilters($query);
+
+        return $query->get();
+    }
+
+    private function applyFilters($query)
+    {
+        $filters = $this->filters;
+
+        if (!empty($filters['texto'])) {
+            $texto = $filters['texto'];
+            $query->where(function ($q) use ($texto) {
+                $q->where('equipos.issi', 'like', '%' . $texto . '%')
+                    ->orWhere('equipos.tei', 'like', '%' . $texto . '%')
+                    ->orWhere('recursos.nombre', 'like', '%' . $texto . '%')
+                    ->orWhere('destino.nombre', 'like', '%' . $texto . '%');
+            });
+        }
+
+        if (!empty($filters['equipo_id'])) {
+            $query->whereIn('equipos.id', $filters['equipo_id']);
+        }
+
+        if (!empty($filters['recurso_id'])) {
+            $query->whereIn('flota_general.recurso_id', $filters['recurso_id']);
+        }
+
+        if (!empty($filters['destino_actual_id'])) {
+            $todosLosDestinosActuales = collect();
+
+            foreach ($filters['destino_actual_id'] as $destinoId) {
+                $destinosHijos = Destino::obtenerTodosLosHijos($destinoId);
+                $todosLosDestinosActuales = $todosLosDestinosActuales->merge($destinosHijos);
+            }
+
+            $destinosActualesIds = $todosLosDestinosActuales->unique()->values()->all();
+
+            if (!empty($destinosActualesIds)) {
+                $query->whereExists(function ($subQuery) use ($destinosActualesIds) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('historico as historico_actual')
+                        ->whereColumn('historico_actual.equipo_id', 'equipos.id')
+                        ->whereIn('historico_actual.destino_id', $destinosActualesIds)
+                        ->whereNull('historico_actual.fecha_desasignacion');
+                });
+            }
+        }
+
+        if (!empty($filters['destino_id'])) {
+            $todosLosDestinos = collect();
+
+            foreach ($filters['destino_id'] as $destinoId) {
+                $destinosHijos = Destino::obtenerTodosLosHijos($destinoId);
+                $todosLosDestinos = $todosLosDestinos->merge($destinosHijos);
+            }
+
+            $destinosIds = $todosLosDestinos->unique()->values()->all();
+
+            if (!empty($destinosIds)) {
+                $query->whereIn('flota_general.destino_id', $destinosIds);
+            }
+        }
+
+        if (!empty($filters['tipo_terminal_id'])) {
+            $query->whereIn('equipos.tipo_terminal_id', $filters['tipo_terminal_id']);
+        }
+
+        if (!empty($filters['estado_id'])) {
+            $query->whereIn('equipos.estado_id', $filters['estado_id']);
+        }
+
+        if (!empty($filters['fecha_rango'])) {
+            $partes = explode(' - ', $filters['fecha_rango']);
+
+            if (count($partes) === 2) {
+                $fechaInicio = Carbon::parse($partes[0])->startOfDay();
+                $fechaFin = Carbon::parse($partes[1])->endOfDay();
+
+                $query->whereExists(function ($subQuery) use ($fechaInicio, $fechaFin) {
+                    $subQuery->select(DB::raw(1))
+                        ->from('historico as historico_fecha')
+                        ->whereColumn('historico_fecha.equipo_id', 'equipos.id')
+                        ->whereBetween('historico_fecha.fecha_asignacion', [$fechaInicio, $fechaFin])
+                        ->whereNull('historico_fecha.fecha_desasignacion');
+                });
+            }
+        }
+
+        if (!empty($filters['ticket_per'])) {
+            $query->where('flota_general.ticket_per', 'like', '%' . $filters['ticket_per'] . '%');
+        }
+
+        if (!empty($filters['observaciones'])) {
+            $query->where('flota_general.observaciones', 'like', '%' . $filters['observaciones'] . '%');
+        }
+
+        return $query;
     }
 
     /**

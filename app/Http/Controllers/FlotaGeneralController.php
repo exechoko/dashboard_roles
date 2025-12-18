@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\EquiposExport;
 use App\Models\Destino;
 use App\Models\Equipo;
 use App\Models\Estado;
@@ -14,6 +15,7 @@ use App\Models\Vehiculo;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Calculation\Engine\BranchPruner;
 use PhpOffice\PhpWord\Element\TextRun;
 use PhpOffice\PhpWord\PhpWord;
@@ -25,7 +27,11 @@ class FlotaGeneralController extends Controller
 {
     function __construct()
     {
-        $this->middleware('permission:ver-flota|crear-flota|editar-flota|borrar-flota')->only('index');
+        $this->middleware('permission:ver-flota|crear-flota|editar-flota|borrar-flota')->only([
+            'index',
+            'busquedaAvanzada',
+            'exportExcelBusquedaAvanzada',
+        ]);
         $this->middleware('permission:crear-flota', ['only' => ['create', 'store']]);
         $this->middleware('permission:editar-flota', ['only' => ['edit', 'update']]);
         $this->middleware('permission:borrar-flota', ['only' => ['destroy']]);
@@ -112,6 +118,27 @@ class FlotaGeneralController extends Controller
             'totalRegistros' => $totalRegistros,
             'hayBusqueda' => $hayBusqueda
         ]));
+    }
+
+    public function exportExcelBusquedaAvanzada(Request $request)
+    {
+        $filters = [
+            'texto' => trim($request->get('texto')),
+            'equipo_id' => (array) $request->input('equipo_id', []),
+            'recurso_id' => (array) $request->input('recurso_id', []),
+            'destino_id' => (array) $request->input('destino_id', []),
+            'estado_id' => (array) $request->input('estado_id', []),
+            'destino_actual_id' => (array) $request->input('destino_actual_id', []),
+            'tipo_terminal_id' => (array) $request->input('tipo_terminal_id', []),
+            'fecha_rango' => $request->get('fecha_rango'),
+            'ticket_per' => $request->get('ticket_per'),
+            'observaciones' => $request->get('observaciones'),
+        ];
+
+        return Excel::download(
+            new EquiposExport($filters),
+            'BusquedaAvanzadaFlota_' . Carbon::now() . '.xlsx'
+        );
     }
 
     private function ejecutarBusqueda(array $parametros, Request $request)

@@ -92,6 +92,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/flota/historico/{id}/imprimir', [FlotaGeneralController::class, 'imprimirHistorico'])->name('flota.historico.imprimir');
     Route::get('/ver-historico-desde-equipo/{id}', [App\Http\Controllers\EquipoController::class, 'verHistoricoDesdeEquipo'])->name('verHistoricoDesdeEquipo');
     Route::get('/busqueda-avanzada', [App\Http\Controllers\FlotaGeneralController::class, 'busquedaAvanzada'])->name('flota.busquedaAvanzada');
+    Route::get('/busqueda-avanzada/export-excel', [App\Http\Controllers\FlotaGeneralController::class, 'exportExcelBusquedaAvanzada'])->name('flota.busquedaAvanzada.export');
     Route::post('/update-historico/{id}', [App\Http\Controllers\FlotaGeneralController::class, 'update_historico'])->name('flota.update_historico');
     Route::get('get-recursos', [App\Http\Controllers\FlotaGeneralController::class, 'getRecursosJSON'])->name('getRecursosJSON');
 

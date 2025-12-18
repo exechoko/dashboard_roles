@@ -57,6 +57,7 @@
                                                         'menu-auditoria',
                                                         'menu-cecoco',
                                                         'menu-entregas',
+                                                        'menu-tareas',
                                                         'menu-documentacion',
                                                         'menu-transcripcion',
                                                         'menu-transcripcion-aws',
@@ -99,6 +100,9 @@
                                                     'Entregas' => [
                                                         'entrega-equipos',
                                                         'entrega-bodycams'
+                                                    ],
+                                                    'Tareas' => [
+                                                        'tarea'
                                                     ],
                                                     'Claves' => [
                                                         'clave'

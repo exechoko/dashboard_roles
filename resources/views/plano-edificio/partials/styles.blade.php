@@ -35,6 +35,8 @@
     display: block;
     pointer-events: none;
     user-select: none;
+    opacity: 1;
+    filter: contrast(1.05) brightness(0.98);
 }
 
 /* Soporte tema claro/oscuro */
@@ -45,6 +47,10 @@
 
 [data-theme="dark"] .plano-viewport {
     background-color: #1f2d3a;
+}
+
+[data-theme="dark"] .plano-svg {
+    filter: none;
 }
 
 .dispositivos-layer {

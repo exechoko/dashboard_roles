@@ -319,8 +319,29 @@ function showDeviceTooltip(device, event) {
 
     // Posicionar tooltip
     const rect = event.target.getBoundingClientRect();
-    tooltip.style.left = rect.left + 'px';
-    tooltip.style.top = (rect.top - tooltip.offsetHeight - 10) + 'px';
+    const container = document.getElementById('plano-container');
+    const containerRect = container ? container.getBoundingClientRect() : null;
+
+    const tooltipWidth = tooltip.offsetWidth;
+    const tooltipHeight = tooltip.offsetHeight;
+
+    let left = rect.left;
+    let top = rect.top - tooltipHeight - 10;
+
+    // Convertir a coordenadas relativas al contenedor del plano
+    if (containerRect) {
+        left = left - containerRect.left;
+        top = top - containerRect.top;
+
+        const maxLeft = Math.max(0, containerRect.width - tooltipWidth - 6);
+        const maxTop = Math.max(0, containerRect.height - tooltipHeight - 6);
+
+        left = Math.min(Math.max(left, 6), maxLeft);
+        top = Math.min(Math.max(top, 6), maxTop);
+    }
+
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
 }
 
 function hideDeviceTooltip() {

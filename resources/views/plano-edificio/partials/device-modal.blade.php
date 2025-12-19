@@ -229,10 +229,16 @@ document.addEventListener('DOMContentLoaded', function() {
         saveDevice();
     });
 
-    // Resetear modal al cerrar
-    document.getElementById('deviceModal').addEventListener('hidden.bs.modal', function() {
-        resetDeviceForm();
-    });
+    // Resetear modal al cerrar (Bootstrap 4)
+    if (window.jQuery) {
+        window.jQuery('#deviceModal').on('hidden.bs.modal', function() {
+            resetDeviceForm();
+        });
+    } else {
+        document.getElementById('deviceModal').addEventListener('hidden.bs.modal', function() {
+            resetDeviceForm();
+        });
+    }
 });
 
 function updateDeviceIconPreview(tipo) {
@@ -329,8 +335,9 @@ function abrirModalCrear(posicionX = null, posicionY = null) {
     document.getElementById('modal-title-text').textContent = 'Nuevo Dispositivo';
     document.getElementById('modal-subtitle-text').textContent = 'Complete los datos del dispositivo';
 
-    const modal = new bootstrap.Modal(document.getElementById('deviceModal'));
-    modal.show();
+    if (window.jQuery) {
+        window.jQuery('#deviceModal').modal('show');
+    }
 }
 
 function abrirModalEditar(deviceId) {
@@ -372,8 +379,9 @@ function abrirModalEditar(deviceId) {
                 document.getElementById('modal-title-text').textContent = 'Editar Dispositivo';
                 document.getElementById('modal-subtitle-text').textContent = 'Modifique los datos del dispositivo';
 
-                const modal = new bootstrap.Modal(document.getElementById('deviceModal'));
-                modal.show();
+                if (window.jQuery) {
+                    window.jQuery('#deviceModal').modal('show');
+                }
             } else {
                 showToast('Error al cargar dispositivo', 'error');
             }

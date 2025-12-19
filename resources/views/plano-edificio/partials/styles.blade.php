@@ -15,10 +15,9 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: url('{{ asset('img/edificio_911.svg') }}') no-repeat center;
+    background: none;
     background-color: #ffffff;
-    background-size: contain;
-    transition: transform 0.3s ease;
+    cursor: grab;
 }
 
 /* Contenedor interno transformable (zoom/pan) */

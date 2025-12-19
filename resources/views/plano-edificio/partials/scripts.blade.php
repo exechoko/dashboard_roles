@@ -7,6 +7,8 @@ let draggedDevice = null;
 let viewport = null;
 let dispositivosLayer = null;
 let inner = null;
+let panX = 0;
+let panY = 0;
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
@@ -40,15 +42,18 @@ function initializeViewer() {
 function setupZoomAndPan() {
     let isPanning = false;
     let startX, startY;
-    let panX = 0, panY = 0;
 
     viewport.addEventListener('mousedown', function(e) {
-        if (e.target === viewport || e.target.classList.contains('plano-viewport') || e.target.classList.contains('plano-svg')) {
-            isPanning = true;
-            viewport.style.cursor = 'grabbing';
-            startX = e.clientX;
-            startY = e.clientY;
-        }
+        if (e.button !== 0) return;
+        if (isDragging) return;
+        if (e.target && e.target.closest && e.target.closest('.device-icon')) return;
+        if (e.target && e.target.closest && e.target.closest('#customLayerControl')) return;
+        if (e.target && e.target.closest && e.target.closest('.modal')) return;
+
+        isPanning = true;
+        viewport.style.cursor = 'grabbing';
+        startX = e.clientX;
+        startY = e.clientY;
     });
 
     viewport.addEventListener('mouseleave', function() {
@@ -554,11 +559,14 @@ function resetZoom() {
 }
 
 function updateZoom() {
-    applyTransform(0, 0);
+    applyTransform(panX, panY);
 }
 
 function resetearVista() {
     resetZoom();
+    panX = 0;
+    panY = 0;
+    applyTransform(panX, panY);
     document.getElementById('filtro-oficina').value = '';
     document.getElementById('filtro-piso').value = '';
     document.getElementById('filtro-activos').checked = true;

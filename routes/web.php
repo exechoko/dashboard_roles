@@ -29,6 +29,7 @@ use App\Http\Controllers\CamaraFisicaController;
 use App\Http\Controllers\SitioController;
 use App\Http\Controllers\CecocoController;
 use App\Http\Controllers\TranscripcionController;
+use App\Http\Controllers\PlanoEdificioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -78,6 +79,19 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('tipo-camara', TipoCamaraController::class);
     Route::resource('auditoria', AuditoriaController::class);
     Route::resource('sitios', SitioController::class);
+    Route::resource('plano-edificio', PlanoEdificioController::class);
+
+    // API endpoints para el plano del edificio
+    Route::prefix('api/plano-edificio')->group(function () {
+        Route::get('/devices', [PlanoEdificioController::class, 'getDevices']);
+        Route::get('/devices/{id}', [PlanoEdificioController::class, 'getDevice']);
+        Route::post('/devices', [PlanoEdificioController::class, 'store']);
+        Route::put('/devices/{id}', [PlanoEdificioController::class, 'update']);
+        Route::put('/devices/{id}/position', [PlanoEdificioController::class, 'updatePosition']);
+        Route::delete('/devices/{id}', [PlanoEdificioController::class, 'destroy']);
+        Route::get('/devices/{id}/credentials', [PlanoEdificioController::class, 'getCredentials']);
+        Route::get('/export', [PlanoEdificioController::class, 'export']);
+    });
 
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 

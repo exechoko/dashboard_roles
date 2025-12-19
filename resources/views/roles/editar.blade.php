@@ -62,7 +62,8 @@
                                                         'menu-transcripcion',
                                                         'menu-transcripcion-aws',
                                                         'menu-gestor-claves',
-                                                        'menu-patrimonio'
+                                                        'menu-patrimonio',
+                                                        'menu-plano-edificio'
                                                     ],
                                                     'Administración' => [
                                                         'rol',
@@ -110,6 +111,9 @@
                                                     'Patrimonio' => [
                                                         'bien',
                                                         'tipo-bien'
+                                                    ],
+                                                    'Plano Edificio' => [
+                                                        'plano-edificio'
                                                     ],
                                                     'Operaciones' => [
                                                         'buscar-moviles-parados',

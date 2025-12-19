@@ -104,6 +104,7 @@ class SeederTablaPermisos extends Seeder
             'ver-menu-gestor-claves',
             'ver-menu-patrimonio',
             'ver-menu-tareas',
+            'ver-menu-plano-edificio',
 
             //CeCoCo
             'ver-llamadas-cecoco',
@@ -160,6 +161,15 @@ class SeederTablaPermisos extends Seeder
             //Acciones varias
             'reiniciar-camara',
             'herramientas-mapa',
+
+            // Plano del Edificio 911
+            'plano-edificio-ver',
+            'plano-edificio-crear',
+            'plano-edificio-editar',
+            'plano-edificio-borrar',
+            'plano-edificio-posicionar',
+            'plano-edificio-credenciales',
+            'plano-edificio-exportar',
         ];
 
         // Crear permisos si no existen

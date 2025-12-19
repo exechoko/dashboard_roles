@@ -163,13 +163,13 @@ class SeederTablaPermisos extends Seeder
             'herramientas-mapa',
 
             // Plano del Edificio 911
-            'plano-edificio-ver',
-            'plano-edificio-crear',
-            'plano-edificio-editar',
-            'plano-edificio-borrar',
-            'plano-edificio-posicionar',
-            'plano-edificio-credenciales',
-            'plano-edificio-exportar',
+            'ver-plano-edificio',
+            'crear-plano-edificio',
+            'editar-plano-edificio',
+            'borrar-plano-edificio',
+            'posicionar-plano-edificio',
+            'credenciales-plano-edificio',
+            'exportar-plano-edificio',
         ];
 
         // Crear permisos si no existen

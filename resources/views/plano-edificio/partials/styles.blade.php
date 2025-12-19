@@ -202,14 +202,14 @@
 /* Iconos de dispositivos */
 .device-icon {
     position: absolute;
-    width: 40px;
-    height: 40px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 18px;
+    font-size: 16px;
     cursor: pointer;
     pointer-events: all;
     transition: all 0.3s ease;

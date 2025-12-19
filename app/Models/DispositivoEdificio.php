@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Crypt;
 
 class DispositivoEdificio extends Model
 {
@@ -26,7 +28,8 @@ class DispositivoEdificio extends Model
         'posicion_y',
         'sistema_operativo',
         'puertos',
-        'password_vault_id',
+        'username',
+        'password',
         'observaciones',
         'activo',
         'created_by',
@@ -40,10 +43,27 @@ class DispositivoEdificio extends Model
         'activo' => 'boolean',
     ];
 
-    // Relaciones
-    public function passwordVault()
+    public function setPasswordAttribute($value)
     {
-        return $this->belongsTo(PasswordVault::class);
+        if ($value !== null && $value !== '') {
+            $this->attributes['password'] = Crypt::encryptString($value);
+            return;
+        }
+
+        $this->attributes['password'] = $value;
+    }
+
+    public function getPasswordAttribute($value)
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+
+        try {
+            return Crypt::decryptString($value);
+        } catch (Exception $e) {
+            return $value;
+        }
     }
 
     public function createdBy()
@@ -79,7 +99,9 @@ class DispositivoEdificio extends Model
 
     public function scopeConCredenciales($query)
     {
-        return $query->whereNotNull('password_vault_id');
+        return $query
+            ->whereNotNull('username')->where('username', '!=', '')
+            ->whereNotNull('password')->where('password', '!=', '');
     }
 
     // Métodos auxiliares
@@ -127,7 +149,7 @@ class DispositivoEdificio extends Model
 
     public function tieneCredenciales()
     {
-        return $this->password_vault_id && $this->passwordVault;
+        return !empty($this->username) && !empty($this->password);
     }
 
     public function getCredenciales()
@@ -137,8 +159,8 @@ class DispositivoEdificio extends Model
         }
 
         return [
-            'username' => $this->passwordVault->username,
-            'password' => $this->passwordVault->password,
+            'username' => $this->username,
+            'password' => $this->password,
         ];
     }
 

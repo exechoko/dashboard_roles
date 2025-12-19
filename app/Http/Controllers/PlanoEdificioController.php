@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\DispositivoEdificio;
-use App\Models\PasswordVault;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -47,7 +46,7 @@ class PlanoEdificioController extends Controller
      */
     public function getDevices(Request $request): JsonResponse
     {
-        $query = DispositivoEdificio::with(['passwordVault', 'createdBy', 'updatedBy']);
+        $query = DispositivoEdificio::with(['createdBy', 'updatedBy']);
 
         // Filtros
         if ($request->has('tipos') && !empty($request->tipos)) {
@@ -111,7 +110,7 @@ class PlanoEdificioController extends Controller
      */
     public function getDevice($id): JsonResponse
     {
-        $dispositivo = DispositivoEdificio::with(['passwordVault', 'createdBy', 'updatedBy'])
+        $dispositivo = DispositivoEdificio::with(['createdBy', 'updatedBy'])
             ->findOrFail($id);
 
         $data = [
@@ -135,7 +134,8 @@ class PlanoEdificioController extends Controller
             'icono' => $dispositivo->icono,
             'color' => $dispositivo->color,
             'tipo_label' => $dispositivo->tipo_label,
-            'password_vault_id' => $dispositivo->password_vault_id,
+            'username' => auth()->user()->can('credenciales-plano-edificio') ? $dispositivo->username : null,
+            'password' => auth()->user()->can('credenciales-plano-edificio') ? $dispositivo->password : null,
             'created_by' => $dispositivo->createdBy ? $dispositivo->createdBy->name : null,
             'updated_by' => $dispositivo->updatedBy ? $dispositivo->updatedBy->name : null,
             'created_at' => $dispositivo->created_at->format('d/m/Y H:i'),
@@ -167,6 +167,8 @@ class PlanoEdificioController extends Controller
             'posicion_y' => 'nullable|numeric|between:0,100',
             'sistema_operativo' => 'nullable|required_if:tipo,pc|string|max:100',
             'puertos' => 'nullable|required_if:tipo,router,switch|integer|min:1|max:48',
+            'username' => 'nullable|string|max:255',
+            'password' => 'nullable|string|max:2048',
             'observaciones' => 'nullable|string|max:1000',
             'activo' => 'boolean',
         ]);
@@ -184,10 +186,9 @@ class PlanoEdificioController extends Controller
             $data['created_by'] = Auth::id();
             $data['updated_by'] = Auth::id();
 
-            // Si se proporcionaron credenciales, crear PasswordVault
-            if ($request->has('username') || $request->has('password')) {
-                $passwordVault = $this->createPasswordVault($request);
-                $data['password_vault_id'] = $passwordVault->id;
+            // Credenciales: solo si tiene permiso
+            if (!auth()->user()->can('credenciales-plano-edificio')) {
+                unset($data['username'], $data['password']);
             }
 
             $dispositivo = DispositivoEdificio::create($data);
@@ -227,6 +228,8 @@ class PlanoEdificioController extends Controller
             'piso' => 'nullable|string|max:50',
             'sistema_operativo' => 'nullable|required_if:tipo,pc|string|max:100',
             'puertos' => 'nullable|required_if:tipo,router,switch|integer|min:1|max:48',
+            'username' => 'nullable|string|max:255',
+            'password' => 'nullable|string|max:2048',
             'observaciones' => 'nullable|string|max:1000',
             'activo' => 'boolean',
         ]);
@@ -243,25 +246,9 @@ class PlanoEdificioController extends Controller
             $data = $request->all();
             $data['updated_by'] = Auth::id();
 
-            // Actualizar credenciales si se proporcionaron
-            if ($request->has('username') || $request->has('password')) {
-                if ($dispositivo->password_vault_id) {
-                    // Actualizar PasswordVault existente
-                    $passwordVault = PasswordVault::find($dispositivo->password_vault_id);
-                    if ($passwordVault) {
-                        $mappedSystemType = $this->mapDeviceTypeToVaultType($dispositivo->tipo);
-                        $passwordVault->update([
-                            'username' => $request->username,
-                            'password' => $request->password,
-                            'system_name' => $dispositivo->nombre,
-                            'system_type' => $mappedSystemType,
-                        ]);
-                    }
-                } else {
-                    // Crear nuevo PasswordVault
-                    $passwordVault = $this->createPasswordVault($request, $dispositivo);
-                    $data['password_vault_id'] = $passwordVault->id;
-                }
+            // Credenciales: solo si tiene permiso
+            if (!auth()->user()->can('credenciales-plano-edificio')) {
+                unset($data['username'], $data['password']);
             }
 
             $dispositivo->update($data);
@@ -323,11 +310,6 @@ class PlanoEdificioController extends Controller
 
         DB::beginTransaction();
         try {
-            // Eliminar PasswordVault asociado si existe
-            if ($dispositivo->password_vault_id) {
-                PasswordVault::find($dispositivo->password_vault_id)?->delete();
-            }
-
             $dispositivo->delete();
 
             DB::commit();
@@ -350,7 +332,7 @@ class PlanoEdificioController extends Controller
      */
     public function getCredentials($id): JsonResponse
     {
-        $dispositivo = DispositivoEdificio::with('passwordVault')->findOrFail($id);
+        $dispositivo = DispositivoEdificio::findOrFail($id);
 
         if (!$dispositivo->tieneCredenciales()) {
             return response()->json([
@@ -359,49 +341,14 @@ class PlanoEdificioController extends Controller
             ], 404);
         }
 
-        // Registrar acceso
-        $dispositivo->passwordVault->recordAccess();
-
+        $creds = $dispositivo->getCredenciales();
         return response()->json([
             'success' => true,
             'data' => [
-                'username' => $dispositivo->passwordVault->username,
-                'password' => $dispositivo->passwordVault->password,
+                'username' => $creds['username'],
+                'password' => $creds['password'],
             ],
         ]);
-    }
-
-    /**
-     * Crea un PasswordVault para las credenciales
-     */
-    private function createPasswordVault(Request $request, ?DispositivoEdificio $dispositivo = null): PasswordVault
-    {
-        $mappedSystemType = $this->mapDeviceTypeToVaultType($dispositivo?->tipo ?? $request->tipo);
-        return PasswordVault::create([
-            'user_id' => Auth::id(),
-            'system_name' => $dispositivo?->nombre ?? $request->nombre,
-            'system_type' => $mappedSystemType,
-            'username' => $request->username,
-            'password' => $request->password,
-            'notes' => "Dispositivo en {$request->oficina}" . ($request->piso ? " - Piso {$request->piso}" : ""),
-            'icon' => 'fas fa-network-wired',
-        ]);
-    }
-
-    private function mapDeviceTypeToVaultType(?string $deviceType): string
-    {
-        $type = (string) $deviceType;
-
-        $map = [
-            'pc' => 'windows',
-            'puesto_cecoco' => 'cecoco',
-            'puesto_video' => 'dss',
-            'router' => 'router',
-            'switch' => 'router',
-            'camara_interna' => 'camara_interna',
-        ];
-
-        return $map[$type] ?? 'otro';
     }
 
     /**

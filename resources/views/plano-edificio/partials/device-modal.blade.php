@@ -320,7 +320,10 @@ function resetDeviceForm() {
     updateDeviceIconPreview('');
 
     // Ocultar botón de prueba de conexión
-    document.getElementById('test-connection').style.display = 'none';
+    const testBtn = document.getElementById('test-connection');
+    if (testBtn) {
+        testBtn.style.display = 'none';
+    }
 }
 
 function abrirModalCrear(posicionX = null, posicionY = null) {
@@ -364,6 +367,8 @@ function abrirModalEditar(deviceId) {
                 document.getElementById('device-so').value = device.sistema_operativo || '';
                 document.getElementById('device-puertos').value = device.puertos || '';
                 document.getElementById('device-observaciones').value = device.observaciones || '';
+                document.getElementById('device-username').value = device.username || '';
+                document.getElementById('device-password').value = device.password || '';
                 document.getElementById('device-activo').checked = device.activo;
                 document.getElementById('device-posicion-x').value = device.posicion_x || '';
                 document.getElementById('device-posicion-y').value = device.posicion_y || '';
@@ -373,8 +378,10 @@ function abrirModalEditar(deviceId) {
                 toggleConditionalFields(device.tipo);
 
                 // Mostrar botón de prueba de conexión si tiene credenciales
-                document.getElementById('test-connection').style.display =
-                    device.tiene_credenciales ? 'block' : 'none';
+                const testBtn = document.getElementById('test-connection');
+                if (testBtn) {
+                    testBtn.style.display = (device.username && device.password) ? 'block' : 'none';
+                }
 
                 document.getElementById('modal-title-text').textContent = 'Editar Dispositivo';
                 document.getElementById('modal-subtitle-text').textContent = 'Modifique los datos del dispositivo';

@@ -171,7 +171,7 @@
                         <div id="plano-container" class="plano-container">
                             <div id="plano-viewport" class="plano-viewport">
                                 <div id="plano-inner" class="plano-inner">
-                                    <img id="svg-image" class="plano-svg" src="{{ asset('img/edificio_911.svg') }}" alt="Plano del Edificio" draggable="false">
+                                    <img id="svg-image" class="plano-svg" src="{{ asset('img/edificio_911_grande.svg') }}" alt="Plano del Edificio" draggable="false">
 
                                     <!-- Canvas para dispositivos -->
                                     <div id="dispositivos-layer" class="dispositivos-layer"></div>

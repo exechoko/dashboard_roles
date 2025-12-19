@@ -128,12 +128,12 @@
                         </h4>
                     </div>
                     <div class="card-body">
-                        @can('plano-edificio-crear')
+                        @can('crear-plano-edificio')
                             <button class="btn btn-success btn-sm btn-block mb-2" onclick="abrirModalCrear()">
                                 <i class="fas fa-plus"></i> Agregar Dispositivo
                             </button>
                         @endcan
-                        @can('plano-edificio-exportar')
+                        @can('exportar-plano-edificio')
                             <button class="btn btn-info btn-sm btn-block mb-2" onclick="exportarDispositivos()">
                                 <i class="fas fa-download"></i> Exportar
                             </button>

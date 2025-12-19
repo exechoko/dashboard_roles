@@ -14,11 +14,13 @@ class PlanoEdificioController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:plano-edificio-ver')->only(['index', 'show', 'getDevices', 'getDevice']);
-        $this->middleware('permission:plano-edificio-crear')->only(['store', 'createPasswordVault']);
-        $this->middleware('permission:plano-edificio-editar')->only(['update', 'updatePosition']);
-        $this->middleware('permission:plano-edificio-borrar')->only(['destroy']);
-        $this->middleware('permission:plano-edificio-credenciales')->only(['getCredentials']);
+        $this->middleware('permission:ver-plano-edificio')->only(['index', 'show', 'getDevices', 'getDevice']);
+        $this->middleware('permission:crear-plano-edificio')->only(['store']);
+        $this->middleware('permission:editar-plano-edificio')->only(['update']);
+        $this->middleware('permission:posicionar-plano-edificio')->only(['updatePosition']);
+        $this->middleware('permission:borrar-plano-edificio')->only(['destroy']);
+        $this->middleware('permission:credenciales-plano-edificio')->only(['getCredentials']);
+        $this->middleware('permission:exportar-plano-edificio')->only(['export']);
     }
 
     /**
@@ -247,11 +249,12 @@ class PlanoEdificioController extends Controller
                     // Actualizar PasswordVault existente
                     $passwordVault = PasswordVault::find($dispositivo->password_vault_id);
                     if ($passwordVault) {
+                        $mappedSystemType = $this->mapDeviceTypeToVaultType($dispositivo->tipo);
                         $passwordVault->update([
                             'username' => $request->username,
                             'password' => $request->password,
                             'system_name' => $dispositivo->nombre,
-                            'system_type' => $dispositivo->tipo,
+                            'system_type' => $mappedSystemType,
                         ]);
                     }
                 } else {
@@ -373,15 +376,32 @@ class PlanoEdificioController extends Controller
      */
     private function createPasswordVault(Request $request, ?DispositivoEdificio $dispositivo = null): PasswordVault
     {
+        $mappedSystemType = $this->mapDeviceTypeToVaultType($dispositivo?->tipo ?? $request->tipo);
         return PasswordVault::create([
             'user_id' => Auth::id(),
             'system_name' => $dispositivo?->nombre ?? $request->nombre,
-            'system_type' => $dispositivo?->tipo ?? $request->tipo,
+            'system_type' => $mappedSystemType,
             'username' => $request->username,
             'password' => $request->password,
             'notes' => "Dispositivo en {$request->oficina}" . ($request->piso ? " - Piso {$request->piso}" : ""),
             'icon' => 'fas fa-network-wired',
         ]);
+    }
+
+    private function mapDeviceTypeToVaultType(?string $deviceType): string
+    {
+        $type = (string) $deviceType;
+
+        $map = [
+            'pc' => 'windows',
+            'puesto_cecoco' => 'cecoco',
+            'puesto_video' => 'dss',
+            'router' => 'router',
+            'switch' => 'router',
+            'camara_interna' => 'camara_interna',
+        ];
+
+        return $map[$type] ?? 'otro';
     }
 
     /**

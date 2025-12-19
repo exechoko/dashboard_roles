@@ -15,6 +15,14 @@ let pinnedDeviceId = null;
 let pinnedDeviceData = null;
 let pinnedAnchorEl = null;
 
+const planoPerms = {
+    canCreate: @json(auth()->user()->can('crear-plano-edificio')),
+    canEdit: @json(auth()->user()->can('editar-plano-edificio')),
+    canPosition: @json(auth()->user()->can('posicionar-plano-edificio')),
+    canCredentials: @json(auth()->user()->can('credenciales-plano-edificio')),
+    canExport: @json(auth()->user()->can('exportar-plano-edificio')),
+};
+
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
     viewport = document.getElementById('plano-viewport');
@@ -119,6 +127,10 @@ function applyTransform(panX, panY) {
 function setupDragAndDrop() {
     // Click en el plano para agregar dispositivo
     viewport.addEventListener('dblclick', function(e) {
+        if (!planoPerms.canCreate) {
+            showToast('No tiene permisos para crear dispositivos en el plano', 'error');
+            return;
+        }
         if (e.target === viewport || e.target.classList.contains('plano-viewport') || e.target.classList.contains('plano-svg')) {
             const pos = getRelativePercentPosition(e.clientX, e.clientY);
             if (!pos) return;
@@ -129,6 +141,9 @@ function setupDragAndDrop() {
     // Drag de dispositivos existentes
     dispositivosLayer.addEventListener('mousedown', function(e) {
         if (e.target.classList.contains('device-icon')) {
+            if (!planoPerms.canPosition) {
+                return;
+            }
             draggedDevice = e.target;
             draggedDevice.classList.add('dragging');
             isDragging = true;
@@ -296,6 +311,10 @@ function createDeviceElement(device) {
     // Click derecho para editar
     div.addEventListener('contextmenu', function(e) {
         e.preventDefault();
+        if (!planoPerms.canEdit) {
+            showToast('No tiene permisos para editar dispositivos', 'error');
+            return;
+        }
         abrirModalEditar(device.id);
     });
 
@@ -350,13 +369,15 @@ function showDeviceTooltip(device, event, pinned) {
 
     content += `
         <div class="actions">
-            <button class="btn btn-xs btn-primary" onclick="abrirModalEditar(${device.id})">
-                <i class="fas fa-edit"></i>
-            </button>
+            ${planoPerms.canEdit ? `
+                <button class="btn btn-xs btn-primary" onclick="abrirModalEditar(${device.id})">
+                    <i class="fas fa-edit"></i>
+                </button>
+            ` : ''}
             <button class="btn btn-xs btn-info" onclick="showDeviceDetails(${device.id})">
                 <i class="fas fa-info-circle"></i>
             </button>
-            ${device.tiene_credenciales ? `
+            ${(planoPerms.canCredentials && device.tiene_credenciales) ? `
                 <button class="btn btn-xs btn-success" onclick="showCredentials(${device.id})">
                     <i class="fas fa-key"></i>
                 </button>

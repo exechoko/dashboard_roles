@@ -198,7 +198,7 @@
                 <div class="modal-footer">
                     <input type="hidden" name="device_id" id="device-id">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    @can('plano-edificio-credenciales')
+                    @can('credenciales-plano-edificio')
                         <button type="button" class="btn btn-info" id="test-connection" style="display: none;">
                             <i class="fas fa-plug"></i> Probar Conexión
                         </button>

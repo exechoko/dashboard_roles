@@ -10,6 +10,11 @@ let inner = null;
 let panX = 0;
 let panY = 0;
 
+let tooltipPinned = false;
+let pinnedDeviceId = null;
+let pinnedDeviceData = null;
+let pinnedAnchorEl = null;
+
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
     viewport = document.getElementById('plano-viewport');
@@ -24,6 +29,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Event listeners
     setupEventListeners();
+
+    document.addEventListener('click', function(e) {
+        if (!tooltipPinned) return;
+
+        const tooltip = document.getElementById('device-tooltip');
+        const clickedOnTooltip = tooltip && tooltip.contains(e.target);
+        const clickedOnDevice = e.target && e.target.closest && e.target.closest('.device-icon');
+        if (clickedOnTooltip || clickedOnDevice) return;
+
+        unpinTooltip();
+    });
 
     // Ocultar loader
     setTimeout(() => {
@@ -94,6 +110,10 @@ function setupZoomAndPan() {
 function applyTransform(panX, panY) {
     if (!inner) return;
     inner.style.transform = `translate(${panX}px, ${panY}px) scale(${currentZoom})`;
+
+    if (tooltipPinned && pinnedDeviceData && pinnedAnchorEl) {
+        positionTooltip(pinnedAnchorEl);
+    }
 }
 
 function setupDragAndDrop() {
@@ -257,11 +277,20 @@ function createDeviceElement(device) {
 
     // Tooltip
     div.addEventListener('mouseenter', function(e) {
-        showDeviceTooltip(device, e);
+        if (tooltipPinned) return;
+        showDeviceTooltip(device, e, false);
     });
 
     div.addEventListener('mouseleave', function() {
+        if (tooltipPinned) return;
         hideDeviceTooltip();
+    });
+
+    // Click para fijar tooltip
+    div.addEventListener('click', function(e) {
+        if (isDragging) return;
+        e.stopPropagation();
+        togglePinnedTooltip(device, e);
     });
 
     // Click derecho para editar
@@ -279,7 +308,28 @@ function createDeviceElement(device) {
     return div;
 }
 
-function showDeviceTooltip(device, event) {
+function togglePinnedTooltip(device, event) {
+    if (tooltipPinned && pinnedDeviceId === device.id) {
+        unpinTooltip();
+        return;
+    }
+
+    tooltipPinned = true;
+    pinnedDeviceId = device.id;
+    pinnedDeviceData = device;
+    pinnedAnchorEl = event.currentTarget;
+    showDeviceTooltip(device, event, true);
+}
+
+function unpinTooltip() {
+    tooltipPinned = false;
+    pinnedDeviceId = null;
+    pinnedDeviceData = null;
+    pinnedAnchorEl = null;
+    hideDeviceTooltip();
+}
+
+function showDeviceTooltip(device, event, pinned) {
     const tooltip = document.getElementById('device-tooltip');
 
     let content = `
@@ -317,10 +367,22 @@ function showDeviceTooltip(device, event) {
     tooltip.innerHTML = content;
     tooltip.style.display = 'block';
 
-    // Posicionar tooltip
-    const rect = event.target.getBoundingClientRect();
+    if (pinned) {
+        tooltip.classList.add('pinned');
+    } else {
+        tooltip.classList.remove('pinned');
+    }
+
+    positionTooltip(event.currentTarget || event.target);
+}
+
+function positionTooltip(anchorEl) {
+    const tooltip = document.getElementById('device-tooltip');
+    if (!tooltip || !anchorEl) return;
+
     const container = document.getElementById('plano-container');
     const containerRect = container ? container.getBoundingClientRect() : null;
+    const rect = anchorEl.getBoundingClientRect();
 
     const tooltipWidth = tooltip.offsetWidth;
     const tooltipHeight = tooltip.offsetHeight;
@@ -328,7 +390,6 @@ function showDeviceTooltip(device, event) {
     let left = rect.left;
     let top = rect.top - tooltipHeight - 10;
 
-    // Convertir a coordenadas relativas al contenedor del plano
     if (containerRect) {
         left = left - containerRect.left;
         top = top - containerRect.top;
@@ -345,7 +406,10 @@ function showDeviceTooltip(device, event) {
 }
 
 function hideDeviceTooltip() {
-    document.getElementById('device-tooltip').style.display = 'none';
+    const tooltip = document.getElementById('device-tooltip');
+    if (!tooltip) return;
+    tooltip.style.display = 'none';
+    tooltip.classList.remove('pinned');
 }
 
 function showDeviceDetails(deviceId) {

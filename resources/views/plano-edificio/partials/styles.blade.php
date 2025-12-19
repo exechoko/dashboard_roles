@@ -4,7 +4,7 @@
     position: relative;
     width: 100%;
     height: 600px;
-    background: #f8f9fa;
+    background: #2c3e50;
     border: 2px solid #dee2e6;
     border-radius: 8px;
     overflow: hidden;
@@ -16,7 +16,7 @@
     height: 100%;
     overflow: hidden;
     background: none;
-    background-color: #ffffff;
+    background-color: #1f2d3a;
     cursor: grab;
 }
 
@@ -246,6 +246,10 @@
     z-index: 1000;
     max-width: 250px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.device-tooltip.pinned {
+    pointer-events: auto;
 }
 
 .device-tooltip h6 {

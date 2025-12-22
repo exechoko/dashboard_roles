@@ -202,23 +202,24 @@
 /* Iconos de dispositivos */
 .device-icon {
     position: absolute;
-    width: 30px;
-    height: 30px;
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 16px;
+    font-size: 12px;
     cursor: pointer;
     pointer-events: all;
     transition: all 0.3s ease;
     box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     z-index: 20;
+    transform: scale(var(--device-scale, 1));
 }
 
 .device-icon:hover {
-    transform: scale(1.2);
+    transform: scale(calc(1.2 * var(--device-scale, 1)));
     z-index: 30;
     box-shadow: 0 4px 12px rgba(0,0,0,0.4);
 }

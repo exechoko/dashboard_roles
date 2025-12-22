@@ -106,7 +106,7 @@ function setupZoomAndPan() {
     viewport.addEventListener('wheel', function(e) {
         e.preventDefault();
         const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        const newZoom = Math.min(Math.max(currentZoom * delta, 0.5), 3);
+        const newZoom = Math.min(Math.max(currentZoom * delta, 0.5), 10);
 
         if (newZoom !== currentZoom) {
             currentZoom = newZoom;
@@ -650,7 +650,7 @@ function aplicarFiltros() {
 
 // Funciones de zoom
 function zoomIn() {
-    currentZoom = Math.min(currentZoom * 1.2, 3);
+    currentZoom = Math.min(currentZoom * 1.2, 10);
     updateZoom();
 }
 
@@ -666,6 +666,7 @@ function resetZoom() {
 
 function updateZoom() {
     applyTransform(panX, panY);
+    updateDeviceScale();
 }
 
 function resetearVista() {
@@ -677,6 +678,15 @@ function resetearVista() {
     document.getElementById('filtro-piso').value = '';
     document.getElementById('filtro-activos').checked = true;
     loadDevices();
+}
+
+function updateDeviceScale() {
+    const root = document.documentElement;
+    if (!root) return;
+
+    const safeZoom = currentZoom || 1;
+    const scaleValue = (1 / safeZoom).toFixed(3);
+    root.style.setProperty('--device-scale', scaleValue);
 }
 
 function toggleFullscreen() {

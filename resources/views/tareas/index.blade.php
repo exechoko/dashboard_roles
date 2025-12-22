@@ -98,79 +98,87 @@
                                 </div>
                             </div>
 
-                            <div class="table-responsive">
-                                <table class="table table-striped mobile-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Tarea</th>
-                                            <th>Fecha programada</th>
-                                            <th>Estado</th>
-                                            <th>Realizado por</th>
-                                            <th>Fecha realizada</th>
-                                            <th>Observaciones</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @forelse($items as $item)
-                                            <tr class="mobile-table-row">
-                                                <td data-label="Tarea">
-                                                    <div class="font-weight-bold">{{ $item->tarea->nombre ?? '-' }}</div>
-                                                    <small class="text-muted">ID tarea: {{ $item->tarea_id }}</small>
-                                                </td>
-                                                <td data-label="Fecha programada">
-                                                    {{ optional($item->fecha_programada)->format('d/m/Y') }}
-                                                </td>
-                                                <td data-label="Estado">
-                                                    @php
-                                                        $badge = 'secondary';
-                                                        if ($item->estado === \App\Models\TareaItem::ESTADO_PENDIENTE) $badge = 'warning';
-                                                        if ($item->estado === \App\Models\TareaItem::ESTADO_EN_PROCESO) $badge = 'info';
-                                                        if ($item->estado === \App\Models\TareaItem::ESTADO_REALIZADA) $badge = 'success';
-                                                    @endphp
-                                                    <span class="badge badge-{{ $badge }}">{{ $estados[$item->estado] ?? $item->estado }}</span>
-                                                </td>
-                                                <td data-label="Realizado por" class="d-none d-md-table-cell">
-                                                    {{ $item->realizadoPor->name ?? '-' }}
-                                                </td>
-                                                <td data-label="Fecha realizada" class="d-none d-md-table-cell">
-                                                    {{ $item->fecha_realizada ? $item->fecha_realizada->format('d/m/Y H:i') : '-' }}
-                                                </td>
-                                                <td data-label="Observaciones" class="text-truncate" style="max-width: 260px;" title="{{ $item->observaciones }}">
-                                                    {{ $item->observaciones ? \Illuminate\Support\Str::limit($item->observaciones, 60) : '-' }}
-                                                </td>
-                                                <td data-label="Acciones" style="min-width: 260px;">
+                            <div class="task-cards-wrapper">
+                                <div class="row task-cards-row">
+                                    @forelse($items as $item)
+                                        @php
+                                            $statusClasses = [
+                                                \App\Models\TareaItem::ESTADO_PENDIENTE => 'task-card--pending',
+                                                \App\Models\TareaItem::ESTADO_EN_PROCESO => 'task-card--progress',
+                                                \App\Models\TareaItem::ESTADO_REALIZADA => 'task-card--done',
+                                            ];
+                                            $badge = 'secondary';
+                                            if ($item->estado === \App\Models\TareaItem::ESTADO_PENDIENTE) $badge = 'warning';
+                                            if ($item->estado === \App\Models\TareaItem::ESTADO_EN_PROCESO) $badge = 'info';
+                                            if ($item->estado === \App\Models\TareaItem::ESTADO_REALIZADA) $badge = 'success';
+                                        @endphp
+                                        <div class="col-md-6 col-lg-4 task-card-col">
+                                            <div class="card task-card {{ $statusClasses[$item->estado] ?? '' }}">
+                                                <div class="card-body">
+                                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                                        <div>
+                                                            <h5 class="mb-1">{{ $item->tarea->nombre ?? 'Tarea sin nombre' }}</h5>
+                                                            <small class="text-muted">ID tarea: {{ $item->tarea_id }}</small>
+                                                        </div>
+                                                        <span class="badge badge-{{ $badge }}">{{ $estados[$item->estado] ?? $item->estado }}</span>
+                                                    </div>
+
+                                                    <ul class="list-unstyled task-card-details mb-3">
+                                                        <li>
+                                                            <i class="fas fa-calendar-day text-primary mr-2"></i>
+                                                            <strong>Programada:</strong>
+                                                            {{ optional($item->fecha_programada)->format('d/m/Y') ?? 'Sin fecha' }}
+                                                        </li>
+                                                        <li>
+                                                            <i class="fas fa-user text-info mr-2"></i>
+                                                            <strong>Responsable:</strong>
+                                                            {{ $item->realizadoPor->name ?? '-' }}
+                                                        </li>
+                                                        <li>
+                                                            <i class="fas fa-check-circle text-success mr-2"></i>
+                                                            <strong>Realizada:</strong>
+                                                            {{ $item->fecha_realizada ? $item->fecha_realizada->format('d/m/Y H:i') : '-' }}
+                                                        </li>
+                                                    </ul>
+
+                                                    <div class="task-card-observaciones mb-3">
+                                                        <small class="text-muted d-block mb-1">Observaciones</small>
+                                                        <p class="mb-0 text-break">{{ $item->observaciones ? \Illuminate\Support\Str::limit($item->observaciones, 140) : 'Sin observaciones' }}</p>
+                                                    </div>
+
                                                     @can('editar-tarea')
-                                                        <form action="{{ route('tareas.items.update', $item->id) }}" method="POST" class="mb-2">
+                                                        <form action="{{ route('tareas.items.update', $item->id) }}" method="POST" class="task-card-actions">
                                                             @csrf
                                                             @method('PATCH')
 
-                                                            <div class="d-flex flex-row flex-nowrap align-items-center mb-2" style="gap: 8px;">
-                                                                <div style="width: 140px;">
-                                                                    <select name="estado" class="form-control">
+                                                            <div class="form-row align-items-center">
+                                                                <div class="col-sm-5 mb-2">
+                                                                    <label class="sr-only" for="estado-{{ $item->id }}">Estado</label>
+                                                                    <select id="estado-{{ $item->id }}" name="estado" class="form-control">
                                                                         @foreach($estados as $key => $label)
                                                                             <option value="{{ $key }}" {{ $item->estado === $key ? 'selected' : '' }}>{{ $label }}</option>
                                                                         @endforeach
                                                                     </select>
                                                                 </div>
-                                                                <div class="flex-grow-1">
-                                                                    <input type="text" name="observaciones" class="form-control" placeholder="Observaciones" value="{{ $item->observaciones }}">
+                                                                <div class="col-sm-7 mb-2">
+                                                                    <label class="sr-only" for="observaciones-{{ $item->id }}">Observaciones</label>
+                                                                    <input id="observaciones-{{ $item->id }}" type="text" name="observaciones" class="form-control" placeholder="Observaciones" value="{{ $item->observaciones }}">
                                                                 </div>
                                                             </div>
 
-                                                            <div class="d-flex flex-row flex-nowrap align-items-center" style="gap: 6px;">
-                                                                <button type="submit" class="btn btn-primary btn-sm btn-mobile-action" title="Guardar">
-                                                                    <i class="fas fa-save"></i>
+                                                            <div class="d-flex align-items-center flex-wrap task-card-buttons">
+                                                                <button type="submit" class="btn btn-primary btn-sm mr-2 mb-2" title="Guardar">
+                                                                    <i class="fas fa-save mr-1"></i> Guardar
                                                                 </button>
 
-                                                                <a href="{{ route('tareas.edit', $item->tarea_id) }}" class="btn btn-warning btn-sm btn-mobile-action" title="Editar tarea">
-                                                                    <i class="fas fa-edit"></i>
+                                                                <a href="{{ route('tareas.edit', $item->tarea_id) }}" class="btn btn-warning btn-sm mr-2 mb-2" title="Editar tarea">
+                                                                    <i class="fas fa-edit mr-1"></i> Editar
                                                                 </a>
 
                                                                 @can('borrar-tarea')
-                                                                    <button type="button" class="btn btn-danger btn-sm btn-mobile-action" title="Eliminar tarea"
+                                                                    <button type="button" class="btn btn-danger btn-sm mb-2" title="Eliminar tarea"
                                                                             onclick="if(confirm('¿Eliminar la tarea y todas sus instancias?')) document.getElementById('delete-tarea-{{ $item->tarea_id }}').submit();">
-                                                                        <i class="fas fa-trash"></i>
+                                                                        <i class="fas fa-trash mr-1"></i> Eliminar
                                                                     </button>
                                                                 @endcan
                                                             </div>
@@ -183,15 +191,17 @@
                                                             </form>
                                                         @endcan
                                                     @endcan
-                                                </td>
-                                            </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="7" class="text-center text-muted">Sin resultados</td>
-                                            </tr>
-                                        @endforelse
-                                    </tbody>
-                                </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <div class="col-12">
+                                            <div class="alert alert-light text-center text-muted mb-0">
+                                                <i class="fas fa-info-circle mr-1"></i> Sin resultados
+                                            </div>
+                                        </div>
+                                    @endforelse
+                                </div>
                             </div>
 
                             <div class="d-flex justify-content-center">
@@ -209,16 +219,24 @@
 <style>
     .card-mobile-optimized{border-radius:10px;overflow:hidden;}
     .btn-lg-mobile{padding:12px 20px;font-size:16px;}
-    .btn-mobile-action{min-width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;margin:2px;}
-    .action-buttons{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;}
-    @media (max-width: 767.98px){
-        .mobile-table{border:0;}
-        .mobile-table thead{display:none;}
-        .mobile-table-row{display:block;margin-bottom:1rem;border:1px solid #dee2e6;border-radius:0.375rem;padding:0.75rem;}
-        .mobile-table-row td{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid #f8f9fa;}
-        .mobile-table-row td:last-child{border-bottom:none;}
-        .mobile-table-row td::before{content:attr(data-label);font-weight:bold;margin-right:1rem;flex:0 0 40%;}
-        .mobile-table-row td:last-child::before{display:none;}
+
+    .task-cards-row{display:flex;flex-wrap:wrap;}
+    .task-card-col{display:flex;margin-bottom:1.5rem;}
+    .task-card{width:100%;display:flex;flex-direction:column;transition:all .2s;border-left:4px solid transparent;}
+    .task-card:hover{transform:translateY(-4px);box-shadow:0 8px 20px rgba(0,0,0,.08);}
+    .task-card--pending{border-color:#ffc10733;}
+    .task-card--progress{border-color:#17a2b833;}
+    .task-card--done{border-color:#28a74533;}
+    .task-card-details li{margin-bottom:.35rem;font-size:.9rem;}
+    .task-card-observaciones{background:#f8f9fa;border-radius:8px;padding:.75rem;}
+    .task-card-actions{border-top:1px solid #f0f0f0;padding-top:1rem;margin-top:1.5rem;}
+    .task-card-buttons button,
+    .task-card-buttons a{min-width:95px;}
+
+    @media (max-width: 575.98px){
+        .task-card-buttons button,
+        .task-card-buttons a{width:100%;}
+        .task-card-buttons{width:100%;}
     }
 </style>
 @endpush

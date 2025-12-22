@@ -275,6 +275,14 @@
     </li>
 @endcan
 
+@can('ver-menu-plano-edificio')
+    <li class="{{ request()->is('plano-edificio*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('plano-edificio.index') }}">
+            <i class="fas fa-building"></i><span>Plano 911</span>
+        </a>
+    </li>
+@endcan
+
 @can('ver-menu-gestor-claves')
 <li class="{{ request()->is('password-vault*') ? 'active' : '' }}">
     <a class="nav-link" href="{{ route('password-vault.index') }}">

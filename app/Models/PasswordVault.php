@@ -198,6 +198,7 @@ class PasswordVault extends Model
             'email' => ['label' => 'Email', 'icon' => 'fas fa-envelope'],
             'ftp' => ['label' => 'FTP/SFTP', 'icon' => 'fas fa-server'],
             'ssh' => ['label' => 'SSH', 'icon' => 'fas fa-terminal'],
+            'camara_interna' => ['label' => 'Cámara interna', 'icon' => 'fas fa-video'],
             'otro' => ['label' => 'Otro', 'icon' => 'fas fa-key'],
         ];
     }

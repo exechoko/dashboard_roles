@@ -10,6 +10,35 @@
     overflow: hidden;
 }
 
+.fullscreen-reset-btn {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: none;
+    z-index: 50;
+    pointer-events: auto;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+}
+
+.plano-container.fullscreen .fullscreen-reset-btn {
+    display: inline-flex;
+}
+
+.fullscreen-controls {
+    position: absolute;
+    right: 20px;
+    bottom: 20px;
+    display: none;
+    gap: 10px;
+    flex-wrap: wrap;
+    z-index: 60;
+    pointer-events: auto;
+}
+
+.plano-container.fullscreen .fullscreen-controls {
+    display: flex;
+}
+
 .plano-viewport {
     position: absolute;
     width: 100%;

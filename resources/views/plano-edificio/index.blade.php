@@ -182,6 +182,21 @@
                                 </div>
                             </div>
 
+                            <div class="fullscreen-controls" id="fullscreen-controls">
+                                <button type="button" class="btn btn-light btn-sm" onclick="zoomIn()">
+                                    <i class="fas fa-search-plus"></i> Acercar
+                                </button>
+                                <button type="button" class="btn btn-light btn-sm" onclick="zoomOut()">
+                                    <i class="fas fa-search-minus"></i> Alejar
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="resetearVista()">
+                                    <i class="fas fa-sync-alt"></i> Resetear vista
+                                </button>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="toggleFullscreen()">
+                                    <i class="fas fa-compress"></i> Salir fullscreen
+                                </button>
+                            </div>
+
                             <!-- Control de capas (overlay) -->
                             @include('plano-edificio.partials.layer-control')
 

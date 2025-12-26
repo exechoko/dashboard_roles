@@ -154,7 +154,7 @@ class PlanoEdificioController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'tipo' => 'required|in:pc,puesto_cecoco,puesto_video,router,switch,camara_interna',
+            'tipo' => 'required|in:' . implode(',', DispositivoEdificio::TIPOS),
             'nombre' => 'required|string|max:200',
             'ip' => 'nullable|ip',
             'mac' => 'nullable|string|regex:/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/',
@@ -165,13 +165,21 @@ class PlanoEdificioController extends Controller
             'piso' => 'nullable|string|max:50',
             'posicion_x' => 'nullable|numeric|between:0,100',
             'posicion_y' => 'nullable|numeric|between:0,100',
-            'sistema_operativo' => 'nullable|required_if:tipo,pc|string|max:100',
-            'puertos' => 'nullable|required_if:tipo,router,switch|integer|min:1|max:48',
+            'sistema_operativo' => 'nullable|string|max:100',
+            'puertos' => 'nullable|integer|min:1|max:48',
             'username' => 'nullable|string|max:255',
             'password' => 'nullable|string|max:2048',
             'observaciones' => 'nullable|string|max:1000',
             'activo' => 'boolean',
         ]);
+
+        $validator->sometimes('sistema_operativo', 'required|string|max:100', function ($input) {
+            return in_array($input->tipo, DispositivoEdificio::TIPOS_CON_SO, true);
+        });
+
+        $validator->sometimes('puertos', 'required|integer|min:1|max:48', function ($input) {
+            return in_array($input->tipo, DispositivoEdificio::TIPOS_CON_PUERTOS, true);
+        });
 
         if ($validator->fails()) {
             return response()->json([
@@ -217,7 +225,7 @@ class PlanoEdificioController extends Controller
         $dispositivo = DispositivoEdificio::findOrFail($id);
 
         $validator = Validator::make($request->all(), [
-            'tipo' => 'required|in:pc,puesto_cecoco,puesto_video,router,switch,camara_interna',
+            'tipo' => 'required|in:' . implode(',', DispositivoEdificio::TIPOS),
             'nombre' => 'required|string|max:200',
             'ip' => 'nullable|ip',
             'mac' => 'nullable|string|regex:/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/',
@@ -226,13 +234,21 @@ class PlanoEdificioController extends Controller
             'serie' => 'nullable|string|max:100',
             'oficina' => 'required|string|max:200',
             'piso' => 'nullable|string|max:50',
-            'sistema_operativo' => 'nullable|required_if:tipo,pc|string|max:100',
-            'puertos' => 'nullable|required_if:tipo,router,switch|integer|min:1|max:48',
+            'sistema_operativo' => 'nullable|string|max:100',
+            'puertos' => 'nullable|integer|min:1|max:48',
             'username' => 'nullable|string|max:255',
             'password' => 'nullable|string|max:2048',
             'observaciones' => 'nullable|string|max:1000',
             'activo' => 'boolean',
         ]);
+
+        $validator->sometimes('sistema_operativo', 'required|string|max:100', function ($input) {
+            return in_array($input->tipo, DispositivoEdificio::TIPOS_CON_SO, true);
+        });
+
+        $validator->sometimes('puertos', 'required|integer|min:1|max:48', function ($input) {
+            return in_array($input->tipo, DispositivoEdificio::TIPOS_CON_PUERTOS, true);
+        });
 
         if ($validator->fails()) {
             return response()->json([

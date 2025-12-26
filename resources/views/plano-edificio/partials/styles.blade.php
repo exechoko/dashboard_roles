@@ -206,6 +206,64 @@
     user-select: none;
 }
 
+.layer-group {
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.layer-group:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.layer-group__header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: linear-gradient(90deg, #f8f9fb, #eef2f8);
+    border: none;
+    outline: none;
+    cursor: pointer;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: #444;
+    transition: background 0.2s ease;
+}
+
+.layer-group__header i {
+    transition: transform 0.2s ease;
+}
+
+.layer-group__header.open {
+    background: linear-gradient(90deg, #f1f5ff, #e1e9ff);
+    color: #1f4ba5;
+}
+
+.layer-group__content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease, padding 0.2s ease;
+    padding: 0 12px;
+}
+
+.layer-group__content.is-open {
+    padding: 8px 12px 12px;
+    max-height: 800px;
+}
+
+.layer-group__content .layer-item:last-child {
+    margin-bottom: 0;
+}
+
 [data-theme="dark"] .custom-layer-control {
     background-color: var(--card-bg, #1e1e1e) !important;
     border: 1px solid var(--border-color, #333333) !important;

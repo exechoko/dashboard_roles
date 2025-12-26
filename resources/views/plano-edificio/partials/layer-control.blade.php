@@ -6,18 +6,72 @@
     <div class="layer-control-content" id="layerControlContentPlanoEdificio">
         @php
             $tiposDispositivos = \App\Models\DispositivoEdificio::getTiposDispositivos();
+            $groups = [
+                'PCs' => ['pc', 'puesto_cecoco', 'puesto_video'],
+                'Servidores' => ['servidor', 'servidor_cecoco', 'servidor_nebula'],
+                'CCTV' => ['camara_interna', 'nvr'],
+                'Red' => ['router', 'switch', 'access_point'],
+            ];
+            $agrupados = collect($groups)->flatten()->all();
         @endphp
 
-        @foreach($tiposDispositivos as $tipo => $info)
-            <div class="layer-item" data-tipo="{{ $tipo }}">
-                <label class="switch">
-                    <input type="checkbox" class="layer-toggle" id="switch-{{ $tipo }}" data-tipo="{{ $tipo }}" checked>
-                    <span class="slider" style="background-color: {{ $info['color'] }}"></span>
-                </label>
-                <span class="layer-label" onclick="toggleSwitchPlanoEdificio('switch-{{ $tipo }}')">{{ $info['label'] }}</span>
-                <span class="layer-count" data-tipo-count="{{ $tipo }}">{{ $stats['por_tipo'][$tipo] ?? 0 }}</span>
-            </div>
+        @foreach($groups as $groupName => $tipos)
+            @php
+                $tiposValidos = array_filter($tipos, fn($tipo) => isset($tiposDispositivos[$tipo]));
+                $groupId = \Illuminate\Support\Str::slug($groupName, '-');
+            @endphp
+            @if(!empty($tiposValidos))
+                <div class="layer-group" data-group="{{ $groupId }}">
+                    <button type="button"
+                            class="layer-group__header"
+                            onclick="toggleLayerGroup('{{ $groupId }}')">
+                        <span>{{ $groupName }}</span>
+                        <i class="fas fa-chevron-down" id="layer-group-icon-{{ $groupId }}"></i>
+                    </button>
+                    <div class="layer-group__content" id="layer-group-content-{{ $groupId }}">
+                        @foreach($tiposValidos as $tipo)
+                            @php $info = $tiposDispositivos[$tipo]; @endphp
+                            <div class="layer-item" data-tipo="{{ $tipo }}">
+                                <label class="switch">
+                                    <input type="checkbox" class="layer-toggle" id="switch-{{ $tipo }}" data-tipo="{{ $tipo }}" checked>
+                                    <span class="slider" style="background-color: {{ $info['color'] }}"></span>
+                                </label>
+                                <span class="layer-label" onclick="toggleSwitchPlanoEdificio('switch-{{ $tipo }}')">{{ $info['label'] }}</span>
+                                <span class="layer-count" data-tipo-count="{{ $tipo }}">{{ $stats['por_tipo'][$tipo] ?? 0 }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         @endforeach
+
+        @php
+            $otrosTipos = array_diff(array_keys($tiposDispositivos), $agrupados);
+        @endphp
+
+        @if(!empty($otrosTipos))
+            <div class="layer-group" data-group="otros">
+                <button type="button"
+                        class="layer-group__header"
+                        onclick="toggleLayerGroup('otros')">
+                    <span>Otros</span>
+                    <i class="fas fa-chevron-down" id="layer-group-icon-otros"></i>
+                </button>
+                <div class="layer-group__content" id="layer-group-content-otros">
+                    @foreach($otrosTipos as $tipo)
+                        @php $info = $tiposDispositivos[$tipo]; @endphp
+                        <div class="layer-item" data-tipo="{{ $tipo }}">
+                            <label class="switch">
+                                <input type="checkbox" class="layer-toggle" id="switch-{{ $tipo }}" data-tipo="{{ $tipo }}" checked>
+                                <span class="slider" style="background-color: {{ $info['color'] }}"></span>
+                            </label>
+                            <span class="layer-label" onclick="toggleSwitchPlanoEdificio('switch-{{ $tipo }}')">{{ $info['label'] }}</span>
+                            <span class="layer-count" data-tipo-count="{{ $tipo }}">{{ $stats['por_tipo'][$tipo] ?? 0 }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
 
         <div class="layer-item" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(0,0,0,0.08);">
             <label class="switch">
@@ -54,6 +108,14 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('show-inactive').addEventListener('change', function() {
         const showInactive = this.checked;
         toggleInactiveDevices(showInactive);
+    });
+
+    // Inicializar grupos colapsables
+    document.querySelectorAll('.layer-group').forEach(group => {
+        const groupId = group.dataset.group;
+        if (groupId) {
+            setLayerGroupState(groupId, false);
+        }
     });
 
 });
@@ -143,5 +205,34 @@ function deselectAllLayersPlanoEdificio() {
         toggle.checked = false;
         toggle.dispatchEvent(new Event('change'));
     });
+}
+
+function toggleLayerGroup(groupId) {
+    const content = document.getElementById(`layer-group-content-${groupId}`);
+
+    if (!content) return;
+
+    const isOpen = content.classList.contains('is-open');
+    setLayerGroupState(groupId, !isOpen);
+}
+
+function setLayerGroupState(groupId, open) {
+    const content = document.getElementById(`layer-group-content-${groupId}`);
+    const icon = document.getElementById(`layer-group-icon-${groupId}`);
+    const header = document.querySelector(`.layer-group[data-group="${groupId}"] .layer-group__header`);
+
+    if (!content || !icon || !header) return;
+
+    if (open) {
+        content.classList.add('is-open');
+        header.classList.add('open');
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+    } else {
+        content.classList.remove('is-open');
+        header.classList.remove('open');
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+    }
 }
 </script>

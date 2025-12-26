@@ -12,6 +12,34 @@ class DispositivoEdificio extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const TIPOS = [
+        'pc',
+        'puesto_cecoco',
+        'puesto_video',
+        'router',
+        'switch',
+        'camara_interna',
+        'servidor',
+        'servidor_cecoco',
+        'servidor_nebula',
+        'grabador_nebula',
+        'nvr',
+        'access_point',
+    ];
+
+    public const TIPOS_CON_SO = [
+        'pc',
+        'servidor',
+        'servidor_cecoco',
+        'servidor_nebula',
+    ];
+
+    public const TIPOS_CON_PUERTOS = [
+        'router',
+        'switch',
+        'access_point',
+    ];
+
     protected $table = 'dispositivos_edificio';
 
     protected $fillable = [
@@ -114,6 +142,12 @@ class DispositivoEdificio extends Model
             'router' => 'fas fa-wifi',
             'switch' => 'fas fa-network-wired',
             'camara_interna' => 'fas fa-camera',
+            'servidor' => 'fas fa-server',
+            'servidor_cecoco' => 'fas fa-server',
+            'servidor_nebula' => 'fas fa-cloud',
+            'grabador_nebula' => 'fas fa-record-vinyl',
+            'nvr' => 'fas fa-hdd',
+            'access_point' => 'fas fa-broadcast-tower',
         ];
 
         return $iconos[$this->tipo] ?? 'fas fa-cube';
@@ -128,6 +162,12 @@ class DispositivoEdificio extends Model
             'router' => '#dc3545',
             'switch' => '#6610f2',
             'camara_interna' => '#17a2b8',
+            'servidor' => '#6f42c1',
+            'servidor_cecoco' => '#20c997',
+            'servidor_nebula' => '#0dcaf0',
+            'grabador_nebula' => '#fd7e14',
+            'nvr' => '#e83e8c',
+            'access_point' => '#198754',
         ];
 
         return $colores[$this->tipo] ?? '#6c757d';
@@ -142,6 +182,12 @@ class DispositivoEdificio extends Model
             'router' => 'Router',
             'switch' => 'Switch',
             'camara_interna' => 'Cámara Interna',
+            'servidor' => 'Servidor',
+            'servidor_cecoco' => 'Servidor CECOCO',
+            'servidor_nebula' => 'Servidor Nebula',
+            'grabador_nebula' => 'Grabador Nebula',
+            'nvr' => 'NVR',
+            'access_point' => 'Access Point',
         ];
 
         return $labels[$this->tipo] ?? ucfirst($this->tipo);
@@ -204,6 +250,42 @@ class DispositivoEdificio extends Model
                 'color' => '#17a2b8',
                 'campos_especificos' => []
             ],
+            'servidor' => [
+                'label' => 'Servidor',
+                'icon' => 'fas fa-server',
+                'color' => '#6f42c1',
+                'campos_especificos' => ['sistema_operativo']
+            ],
+            'servidor_cecoco' => [
+                'label' => 'Servidor CECOCO',
+                'icon' => 'fas fa-server',
+                'color' => '#20c997',
+                'campos_especificos' => ['sistema_operativo']
+            ],
+            'servidor_nebula' => [
+                'label' => 'Servidor Nebula',
+                'icon' => 'fas fa-cloud',
+                'color' => '#0dcaf0',
+                'campos_especificos' => ['sistema_operativo']
+            ],
+            'grabador_nebula' => [
+                'label' => 'Grabador Nebula',
+                'icon' => 'fas fa-record-vinyl',
+                'color' => '#fd7e14',
+                'campos_especificos' => []
+            ],
+            'nvr' => [
+                'label' => 'NVR',
+                'icon' => 'fas fa-hdd',
+                'color' => '#e83e8c',
+                'campos_especificos' => []
+            ],
+            'access_point' => [
+                'label' => 'Access Point',
+                'icon' => 'fas fa-broadcast-tower',
+                'color' => '#198754',
+                'campos_especificos' => ['puertos']
+            ],
         ];
     }
 
@@ -212,6 +294,7 @@ class DispositivoEdificio extends Model
         return [
             'Windows 10' => 'Windows 10',
             'Windows 11' => 'Windows 11',
+            'Windows Server 2012 R2' => 'Windows Server 2012 R2',
             'Windows Server 2019' => 'Windows Server 2019',
             'Windows Server 2022' => 'Windows Server 2022',
             'Ubuntu 20.04' => 'Ubuntu 20.04',

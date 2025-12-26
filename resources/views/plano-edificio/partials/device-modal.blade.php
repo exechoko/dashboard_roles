@@ -32,9 +32,15 @@
                                         $tipos = \App\Models\DispositivoEdificio::getTiposDispositivos();
                                     @endphp
                                     @foreach($tipos as $tipo => $info)
+                                        @php
+                                            $requiresSO = in_array($tipo, \App\Models\DispositivoEdificio::TIPOS_CON_SO, true);
+                                            $requiresPuertos = in_array($tipo, \App\Models\DispositivoEdificio::TIPOS_CON_PUERTOS, true);
+                                        @endphp
                                         <option value="{{ $tipo }}"
                                                 data-icon="{{ $info['icon'] }}"
-                                                data-color="{{ $info['color'] }}">
+                                                data-color="{{ $info['color'] }}"
+                                                data-requires-so="{{ $requiresSO ? '1' : '0' }}"
+                                                data-requires-puertos="{{ $requiresPuertos ? '1' : '0' }}">
                                             {{ $info['label'] }}
                                         </option>
                                     @endforeach
@@ -258,24 +264,30 @@ function updateDeviceIconPreview(tipo) {
 function toggleConditionalFields(tipo) {
     const soField = document.getElementById('so-field');
     const puertosField = document.getElementById('puertos-field');
+    const select = document.getElementById('device-tipo');
+    const option = select ? select.querySelector(`option[value="${tipo}"]`) : null;
 
-    // Resetear campos
-    soField.classList.remove('show');
-    puertosField.classList.remove('show');
+    const requiresSO = option && option.dataset.requiresSo === '1';
+    const requiresPuertos = option && option.dataset.requiresPuertos === '1';
 
-    // Mostrar campos según el tipo
-    if (tipo === 'pc') {
+    // Sistema operativo
+    if (requiresSO) {
         soField.classList.add('show');
         document.getElementById('device-so').required = true;
     } else {
+        soField.classList.remove('show');
         document.getElementById('device-so').required = false;
+        document.getElementById('device-so').value = '';
     }
 
-    if (tipo === 'router' || tipo === 'switch') {
+    // Puertos
+    if (requiresPuertos) {
         puertosField.classList.add('show');
         document.getElementById('device-puertos').required = true;
     } else {
+        puertosField.classList.remove('show');
         document.getElementById('device-puertos').required = false;
+        document.getElementById('device-puertos').value = '';
     }
 }
 

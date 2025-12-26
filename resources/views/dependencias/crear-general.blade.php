@@ -82,6 +82,7 @@
                                                 <option value="comisaria" {{ old('tipo') == 'comisaria' ? 'selected' : '' }}>Comisaría</option>
                                                 <option value="seccion" {{ old('tipo') == 'seccion' ? 'selected' : '' }}>Sección</option>
                                                 <option value="destacamento" {{ old('tipo') == 'destacamento' ? 'selected' : '' }}>Destacamento</option>
+                                                <option value="area" {{ old('tipo') == 'area' ? 'selected' : '' }}>Área</option>
                                             </select>
                                         </div>
                                     </div>

@@ -68,7 +68,8 @@ class DependenciaController extends Controller
             'division' => 'success',
             'comisaria' => 'warning',
             'seccion' => 'info',
-            'destacamento' => 'danger'
+            'destacamento' => 'danger',
+            'area' => 'purple'
         ];
 
         return $clases[$tipo] ?? 'light';
@@ -238,7 +239,8 @@ class DependenciaController extends Controller
             'division' => ['jefatura', 'direccion', 'departamental'],
             'comisaria' => ['departamental'],
             'seccion' => ['direccion', 'departamental', 'division', 'comisaria'],
-            'destacamento' => ['departamental', 'division', 'comisaria']
+            'destacamento' => ['departamental', 'division', 'comisaria'],
+            'area' => ['jefatura', 'subjefatura', 'direccion', 'departamental', 'division', 'comisaria', 'seccion', 'destacamento', 'area']
         ];
 
         $tiposValidos = $tiposPadresValidos[$dependencia->tipo] ?? [];
@@ -422,7 +424,7 @@ class DependenciaController extends Controller
     {
         $request->validate([
             'nombre' => 'required|string|max:255',
-            'tipo' => 'required|in:subjefatura,direccion,departamental,division,comisaria,seccion,destacamento',
+            'tipo' => 'required|in:subjefatura,direccion,departamental,division,comisaria,seccion,destacamento,area',
             'parent_id' => 'nullable|exists:destino,id',
             'telefono' => 'nullable|string|max:50',
             'ubicacion' => 'nullable|string|max:255',
@@ -490,7 +492,8 @@ class DependenciaController extends Controller
             'division' => ['jefatura', 'direccion', 'departamental'],
             'comisaria' => ['departamental'],
             'seccion' => ['direccion', 'departamental', 'division', 'comisaria'],
-            'destacamento' => ['departamental', 'division', 'comisaria']
+            'destacamento' => ['departamental', 'division', 'comisaria'],
+            'area' => ['jefatura', 'subjefatura', 'direccion', 'departamental', 'division', 'comisaria', 'seccion', 'destacamento', 'area']
         ];
 
         return in_array($padre->tipo, $jerarquiaValida[$tipo] ?? []);
@@ -508,7 +511,8 @@ class DependenciaController extends Controller
             'division' => 'División',
             'comisaria' => 'Comisaría',
             'seccion' => 'Sección',
-            'destacamento' => 'Destacamento'
+            'destacamento' => 'Destacamento',
+            'area' => 'Área'
         ];
 
         $prefijo = $prefijos[$tipo] ?? '';
@@ -554,7 +558,8 @@ class DependenciaController extends Controller
             'division' => ['jefatura', 'direccion', 'departamental'],
             'comisaria' => ['departamental'],
             'seccion' => ['direccion', 'departamental', 'division', 'comisaria'],
-            'destacamento' => ['departamental', 'division', 'comisaria']
+            'destacamento' => ['departamental,', 'division', 'comisaria'],
+            'area' => ['jefatura', 'subjefatura', 'direccion', 'departamental', 'division', 'comisaria', 'seccion', 'destacamento', 'area']
         ];
 
         $tiposValidos = $tiposPadresValidos[$tipo] ?? [];

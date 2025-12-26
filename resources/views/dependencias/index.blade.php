@@ -37,6 +37,7 @@
                                         <option value="comisaria">Comisarías</option>
                                         <option value="seccion">Secciones</option>
                                         <option value="destacamento">Destacamentos</option>
+                                        <option value="area">Áreas</option>
                                     </select>
                                 </div>
                             </div>

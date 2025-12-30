@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\DispositivosEdificioExport;
 use App\Models\DispositivoEdificio;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
+use Carbon\Carbon;
 
 class PlanoEdificioController extends Controller
 {
@@ -372,10 +375,18 @@ class PlanoEdificioController extends Controller
      */
     public function export(Request $request)
     {
-        // TODO: Implementar exportación a Excel
-        return response()->json([
-            'success' => false,
-            'message' => 'Función de exportación en desarrollo',
-        ]);
+        $filters = [
+            'tipos' => (array) $request->input('tipos', []),
+            'oficina' => $request->get('oficina'),
+            'piso' => $request->get('piso'),
+            'activo' => $request->get('activo'),
+        ];
+
+        $canCredentials = auth()->user() && auth()->user()->can('credenciales-plano-edificio');
+
+        return Excel::download(
+            new DispositivosEdificioExport($filters, $canCredentials),
+            'DispositivosEdificio_' . Carbon::now() . '.xlsx'
+        );
     }
 }

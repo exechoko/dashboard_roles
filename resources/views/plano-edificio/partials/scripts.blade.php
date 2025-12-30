@@ -727,7 +727,27 @@ document.addEventListener('keydown', function(e) {
 });
 
 function exportarDispositivos() {
-    window.open('/api/plano-edificio/export', '_blank');
+    const params = new URLSearchParams();
+
+    const oficina = document.getElementById('filtro-oficina') ? document.getElementById('filtro-oficina').value : '';
+    const piso = document.getElementById('filtro-piso') ? document.getElementById('filtro-piso').value : '';
+    const activo = document.getElementById('filtro-activos') ? document.getElementById('filtro-activos').checked : null;
+
+    if (oficina) params.append('oficina', oficina);
+    if (piso) params.append('piso', piso);
+    if (activo !== null) params.append('activo', activo);
+
+    const selectedTipos = Array.from(document.querySelectorAll('#customLayerControl .layer-toggle:checked'))
+        .map(el => el.dataset.tipo)
+        .filter(Boolean);
+
+    selectedTipos.forEach(tipo => params.append('tipos[]', tipo));
+
+    const url = params.toString()
+        ? `/api/plano-edificio/export?${params.toString()}`
+        : '/api/plano-edificio/export';
+
+    window.open(url, '_blank');
 }
 
 // Utilidades

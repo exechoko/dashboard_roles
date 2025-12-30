@@ -10,10 +10,6 @@
         <h1 class="page__heading">
             <i class="fas fa-building"></i> Plano del Edificio 911
         </h1>
-        <div class="section-header-breadcrumb">
-            <div class="breadcrumb-item active"><a href="{{ route('home') }}">Dashboard</a></div>
-            <div class="breadcrumb-item">Plano del Edificio</div>
-        </div>
     </div>
 
     <div class="section-body">

@@ -141,7 +141,7 @@ class DispositivoEdificio extends Model
             'puesto_video' => 'fas fa-video',
             'router' => 'fas fa-wifi',
             'switch' => 'fas fa-network-wired',
-            'camara_interna' => 'fas fa-camera',
+            'camara_interna' => 'fas fa-video',
             'servidor' => 'fas fa-server',
             'servidor_cecoco' => 'fas fa-server',
             'servidor_nebula' => 'fas fa-cloud',
@@ -246,7 +246,7 @@ class DispositivoEdificio extends Model
             ],
             'camara_interna' => [
                 'label' => 'Cámara Interna',
-                'icon' => 'fas fa-camera',
+                'icon' => 'fas fa-video',
                 'color' => '#17a2b8',
                 'campos_especificos' => []
             ],

@@ -638,7 +638,7 @@ function ensureLayerControlVisibility() {
 
 function setupSearchControl() {
     var searchControl = new L.esri.Controls.Geosearch({
-        position: 'topleft'
+        position: 'topright'
     }).addTo(mymap);
 
     var geocodeService = new L.esri.Services.Geocoding();

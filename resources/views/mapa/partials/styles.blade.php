@@ -657,6 +657,16 @@
         pointer-events: auto;
     }
 
+    /* Ajuste para el control de búsqueda de Esri */
+    .leaflet-top.leaflet-right .leaflet-control.geocoder-control {
+        margin-top: 90px; /* Aumentar el margen superior */
+        margin-right: 250px; 
+        z-index: 10001 !important; /* Asegurar que esté por encima de otros controles */
+        background: #fff; /* Fondo blanco para visibilidad en tema oscuro */
+        border-radius: 5px; /* Bordes redondeados para estética */
+        box-shadow: 0 1px 5px rgba(0,0,0,0.65); /* Sombra para destacar */
+    }
+
     .custom-layer-control h6 {
         margin: 0 0 10px 0;
         font-weight: bold;

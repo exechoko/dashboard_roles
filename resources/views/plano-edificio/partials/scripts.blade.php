@@ -7,6 +7,7 @@ let draggedDevice = null;
 let viewport = null;
 let dispositivosLayer = null;
 let inner = null;
+let planoImage = null;
 let panX = 0;
 let panY = 0;
 
@@ -28,6 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
     viewport = document.getElementById('plano-viewport');
     dispositivosLayer = document.getElementById('dispositivos-layer');
     inner = document.getElementById('plano-inner');
+    planoImage = document.getElementById('svg-image');
 
     // Inicializar visor
     initializeViewer();
@@ -109,10 +111,29 @@ function setupZoomAndPan() {
         const newZoom = Math.min(Math.max(currentZoom * delta, 0.5), 10);
 
         if (newZoom !== currentZoom) {
-            currentZoom = newZoom;
-            updateZoom();
+            zoomAt(e.clientX, e.clientY, newZoom);
         }
     });
+}
+
+function zoomAt(clientX, clientY, newZoom) {
+    if (!viewport) return;
+    const viewportRect = viewport.getBoundingClientRect();
+
+    const sx = clientX - viewportRect.left;
+    const sy = clientY - viewportRect.top;
+
+    const prevZoom = currentZoom || 1;
+    const worldX = (sx - panX) / prevZoom;
+    const worldY = (sy - panY) / prevZoom;
+
+    currentZoom = newZoom;
+
+    // Ajustar pan para mantener el punto bajo el mouse fijo en pantalla
+    panX = sx - worldX * newZoom;
+    panY = sy - worldY * newZoom;
+
+    updateZoom();
 }
 
 function applyTransform(panX, panY) {
@@ -148,18 +169,33 @@ function setupDragAndDrop() {
             draggedDevice.classList.add('dragging');
             isDragging = true;
 
-            const deviceRect = draggedDevice.getBoundingClientRect();
-            const offsetX = e.clientX - deviceRect.left;
-            const offsetY = e.clientY - deviceRect.top;
+            const startPointerWorld = getWorldPositionFromClient(e.clientX, e.clientY);
+            if (!startPointerWorld) return;
+
+            const startLeftPct = parseFloat(draggedDevice.style.left);
+            const startTopPct = parseFloat(draggedDevice.style.top);
+            const innerW = inner?.offsetWidth || 1;
+            const innerH = inner?.offsetHeight || 1;
+
+            const deviceWorldX = (Number.isFinite(startLeftPct) ? (startLeftPct / 100) : 0) * innerW;
+            const deviceWorldY = (Number.isFinite(startTopPct) ? (startTopPct / 100) : 0) * innerH;
+
+            const offsetWorldX = startPointerWorld.x - deviceWorldX;
+            const offsetWorldY = startPointerWorld.y - deviceWorldY;
 
             function handleMouseMove(e) {
                 if (!isDragging) return;
 
-                const pos = getRelativePercentPosition(e.clientX - offsetX, e.clientY - offsetY, true);
-                if (!pos) return;
+                const pointerWorld = getWorldPositionFromClient(e.clientX, e.clientY);
+                if (!pointerWorld) return;
 
-                draggedDevice.style.left = `${pos.x}%`;
-                draggedDevice.style.top = `${pos.y}%`;
+                const newWorldX = pointerWorld.x - offsetWorldX;
+                const newWorldY = pointerWorld.y - offsetWorldY;
+                const innerPos = worldPxToInnerPercent(newWorldX, newWorldY);
+                if (!innerPos) return;
+
+                draggedDevice.style.left = `${innerPos.x}%`;
+                draggedDevice.style.top = `${innerPos.y}%`;
             }
 
             function handleMouseUp(e) {
@@ -168,8 +204,18 @@ function setupDragAndDrop() {
                 isDragging = false;
                 draggedDevice.classList.remove('dragging');
 
-                const pos = getRelativePercentPosition(e.clientX, e.clientY);
-                if (!pos) {
+                const finalX = parseFloat(draggedDevice.style.left);
+                const finalY = parseFloat(draggedDevice.style.top);
+                if (!Number.isFinite(finalX) || !Number.isFinite(finalY)) {
+                    draggedDevice = null;
+                    document.removeEventListener('mousemove', handleMouseMove);
+                    document.removeEventListener('mouseup', handleMouseUp);
+                    return;
+                }
+
+                const finalWorld = innerPercentToWorldPx(finalX, finalY);
+                const imagePct = finalWorld ? worldPxToImagePercent(finalWorld.x, finalWorld.y) : null;
+                if (!imagePct) {
                     draggedDevice = null;
                     document.removeEventListener('mousemove', handleMouseMove);
                     document.removeEventListener('mouseup', handleMouseUp);
@@ -177,7 +223,7 @@ function setupDragAndDrop() {
                 }
 
                 // Actualizar posición en la base de datos
-                updateDevicePosition(draggedDevice.dataset.deviceId, pos.x.toFixed(2), pos.y.toFixed(2));
+                updateDevicePosition(draggedDevice.dataset.deviceId, imagePct.x.toFixed(2), imagePct.y.toFixed(2));
 
                 draggedDevice = null;
                 document.removeEventListener('mousemove', handleMouseMove);
@@ -190,19 +236,84 @@ function setupDragAndDrop() {
     });
 }
 
-function getRelativePercentPosition(clientX, clientY, isAlreadyTopLeft = false) {
-    if (!inner) return null;
-    const rect = inner.getBoundingClientRect();
-    const xPx = isAlreadyTopLeft ? (clientX - rect.left) : (clientX - rect.left);
-    const yPx = isAlreadyTopLeft ? (clientY - rect.top) : (clientY - rect.top);
-
-    const x = (xPx / rect.width) * 100;
-    const y = (yPx / rect.height) * 100;
+function getWorldPositionFromClient(clientX, clientY) {
+    if (!viewport) return null;
+    const rect = viewport.getBoundingClientRect();
+    const sx = clientX - rect.left;
+    const sy = clientY - rect.top;
+    const zoom = currentZoom || 1;
 
     return {
-        x: Math.min(Math.max(x, 0), 100),
-        y: Math.min(Math.max(y, 0), 100)
+        x: (sx - panX) / zoom,
+        y: (sy - panY) / zoom,
     };
+}
+
+function getImageWorldRect() {
+    if (!planoImage) return null;
+    const r = planoImage.getBoundingClientRect();
+
+    const tl = getWorldPositionFromClient(r.left, r.top);
+    const br = getWorldPositionFromClient(r.right, r.bottom);
+    if (!tl || !br) return null;
+
+    const w = br.x - tl.x;
+    const h = br.y - tl.y;
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return null;
+
+    return { x: tl.x, y: tl.y, w, h };
+}
+
+function clampPct(p) {
+    return Math.min(Math.max(p, 0), 100);
+}
+
+function worldPxToInnerPercent(worldX, worldY) {
+    if (!inner) return null;
+    const w = inner.offsetWidth || 1;
+    const h = inner.offsetHeight || 1;
+
+    return {
+        x: clampPct((worldX / w) * 100),
+        y: clampPct((worldY / h) * 100),
+    };
+}
+
+function innerPercentToWorldPx(xPct, yPct) {
+    if (!inner) return null;
+    const w = inner.offsetWidth || 1;
+    const h = inner.offsetHeight || 1;
+
+    return {
+        x: (xPct / 100) * w,
+        y: (yPct / 100) * h,
+    };
+}
+
+function worldPxToImagePercent(worldX, worldY) {
+    const img = getImageWorldRect();
+    if (!img) return null;
+
+    return {
+        x: clampPct(((worldX - img.x) / img.w) * 100),
+        y: clampPct(((worldY - img.y) / img.h) * 100),
+    };
+}
+
+function imagePercentToInnerPercent(xPct, yPct) {
+    const img = getImageWorldRect();
+    if (!img) return null;
+
+    const worldX = img.x + (xPct / 100) * img.w;
+    const worldY = img.y + (yPct / 100) * img.h;
+    return worldPxToInnerPercent(worldX, worldY);
+}
+
+function getRelativePercentPosition(clientX, clientY) {
+    // Opción 1: % relativo al área visible de la imagen, independiente de object-fit/letterbox
+    const world = getWorldPositionFromClient(clientX, clientY);
+    if (!world) return null;
+    return worldPxToImagePercent(world.x, world.y);
 }
 
 function setupEventListeners() {
@@ -286,8 +397,15 @@ function createDeviceElement(device) {
     div.dataset.deviceId = device.id;
     div.dataset.tipo = device.tipo;
     div.style.backgroundColor = device.color;
-    div.style.left = `${device.posicion_x}%`;
-    div.style.top = `${device.posicion_y}%`;
+
+    const imgX = parseFloat(device.posicion_x);
+    const imgY = parseFloat(device.posicion_y);
+    const innerPos = (Number.isFinite(imgX) && Number.isFinite(imgY))
+        ? imagePercentToInnerPercent(imgX, imgY)
+        : null;
+
+    div.style.left = `${(innerPos?.x ?? 0)}%`;
+    div.style.top = `${(innerPos?.y ?? 0)}%`;
     div.innerHTML = `<i class="${device.icono}"></i>`;
 
     // Tooltip

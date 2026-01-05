@@ -13,75 +13,55 @@
     </div>
 
     <div class="section-body">
-        <!-- Estadísticas -->
-        <div class="row mb-4">
-            <div class="col-lg-3 col-md-6">
-                <div class="card bg-primary text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 class="card-title">{{ $stats['total'] }}</h4>
-                                <p class="card-text">Total Dispositivos</p>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-network-wired fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="card bg-success text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 class="card-title">{{ $stats['activos'] }}</h4>
-                                <p class="card-text">Activos</p>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-check-circle fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="card bg-info text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 class="card-title">{{ $stats['con_credenciales'] }}</h4>
-                                <p class="card-text">Con Credenciales</p>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-key fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-3 col-md-6">
-                <div class="card bg-warning text-white">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <h4 class="card-title">{{ $stats['total'] - $stats['activos'] }}</h4>
-                                <p class="card-text">Inactivos</p>
-                            </div>
-                            <div class="align-self-center">
-                                <i class="fas fa-times-circle fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Contenedor Principal -->
         <div class="row">
+            <!-- Visor del Plano -->
+            <div class="col-lg-10">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-map"></i> Plano del Edificio
+                        </h4>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="zoomIn()">
+                                <i class="fas fa-search-plus"></i>
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="zoomOut()">
+                                <i class="fas fa-search-minus"></i>
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="resetZoom()">
+                                <i class="fas fa-compress"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="plano-container" class="plano-container">
+                            <div id="plano-viewport" class="plano-viewport">
+                                <div id="plano-inner" class="plano-inner">
+                                    <img id="svg-image" class="plano-svg" src="{{ asset('img/edificio_911_grande.svg') }}" alt="Plano del Edificio" draggable="false">
+
+                                    <!-- Canvas para dispositivos -->
+                                    <div id="dispositivos-layer" class="dispositivos-layer"></div>
+
+                                    <div id="svg-loader" class="svg-loader">
+                                        <i class="fas fa-spinner fa-spin"></i> Cargando plano...
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Control de capas (overlay) -->
+                            @include('plano-edificio.partials.layer-control')
+
+                            <!-- Tooltip flotante -->
+                            <div id="device-tooltip" class="device-tooltip" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Panel de Control Izquierdo -->
-            <div class="col-lg-3">
-                <div class="card mt-3">
+            <div class="col-lg-2">
+                <div class="card">
                     <div class="card-header">
                         <h4 class="card-title">
                             <i class="fas fa-filter"></i> Filtros
@@ -137,68 +117,6 @@
                         <button class="btn btn-secondary btn-sm btn-block" onclick="resetearVista()">
                             <i class="fas fa-sync-alt"></i> Resetear Vista
                         </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Visor del Plano -->
-            <div class="col-lg-9">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="card-title mb-0">
-                            <i class="fas fa-map"></i> Plano del Edificio
-                        </h4>
-                        <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-primary" onclick="zoomIn()">
-                                <i class="fas fa-search-plus"></i>
-                            </button>
-                            <button class="btn btn-outline-primary" onclick="zoomOut()">
-                                <i class="fas fa-search-minus"></i>
-                            </button>
-                            <button class="btn btn-outline-primary" onclick="resetZoom()">
-                                <i class="fas fa-compress"></i>
-                            </button>
-                            <button class="btn btn-outline-primary" id="fullscreen-btn" onclick="toggleFullscreen()">
-                                <i class="fas fa-expand" id="fullscreen-icon"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="card-body p-0">
-                        <div id="plano-container" class="plano-container">
-                            <div id="plano-viewport" class="plano-viewport">
-                                <div id="plano-inner" class="plano-inner">
-                                    <img id="svg-image" class="plano-svg" src="{{ asset('img/edificio_911_grande.svg') }}" alt="Plano del Edificio" draggable="false">
-
-                                    <!-- Canvas para dispositivos -->
-                                    <div id="dispositivos-layer" class="dispositivos-layer"></div>
-
-                                    <div id="svg-loader" class="svg-loader">
-                                        <i class="fas fa-spinner fa-spin"></i> Cargando plano...
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="fullscreen-controls" id="fullscreen-controls">
-                                <button type="button" class="btn btn-light btn-sm" onclick="zoomIn()">
-                                    <i class="fas fa-search-plus"></i> Acercar
-                                </button>
-                                <button type="button" class="btn btn-light btn-sm" onclick="zoomOut()">
-                                    <i class="fas fa-search-minus"></i> Alejar
-                                </button>
-                                <button type="button" class="btn btn-secondary btn-sm" onclick="resetearVista()">
-                                    <i class="fas fa-sync-alt"></i> Resetear vista
-                                </button>
-                                <button type="button" class="btn btn-primary btn-sm" onclick="toggleFullscreen()">
-                                    <i class="fas fa-compress"></i> Salir fullscreen
-                                </button>
-                            </div>
-
-                            <!-- Control de capas (overlay) -->
-                            @include('plano-edificio.partials.layer-control')
-
-                            <!-- Tooltip flotante -->
-                            <div id="device-tooltip" class="device-tooltip" style="display: none;"></div>
-                        </div>
                     </div>
                 </div>
             </div>

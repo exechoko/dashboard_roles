@@ -3,11 +3,18 @@
 .plano-container {
     position: relative;
     width: 100%;
-    height: 600px;
+    height: 780px;
     background: #2c3e50;
     border: 2px solid #dee2e6;
     border-radius: 8px;
     overflow: hidden;
+}
+
+@media (min-height: 900px) {
+    .plano-container {
+        height: calc(100vh - 260px);
+        min-height: 780px;
+    }
 }
 
 .fullscreen-reset-btn {

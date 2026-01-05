@@ -10,6 +10,7 @@ let inner = null;
 let planoImage = null;
 let panX = 0;
 let panY = 0;
+let lastViewportSize = { w: 0, h: 0 };
 
 let tooltipPinned = false;
 let pinnedDeviceId = null;
@@ -31,6 +32,11 @@ document.addEventListener('DOMContentLoaded', function() {
     inner = document.getElementById('plano-inner');
     planoImage = document.getElementById('svg-image');
 
+    if (viewport) {
+        const r = viewport.getBoundingClientRect();
+        lastViewportSize = { w: r.width, h: r.height };
+    }
+
     // Inicializar visor
     initializeViewer();
 
@@ -39,6 +45,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Event listeners
     setupEventListeners();
+
+    // Recalcular layout al cambiar tamaño o fullscreen
+    setupLayoutStabilizers();
 
     document.addEventListener('click', function(e) {
         if (!tooltipPinned) return;
@@ -50,6 +59,73 @@ document.addEventListener('DOMContentLoaded', function() {
 
         unpinTooltip();
     });
+
+function setupLayoutStabilizers() {
+    const schedule = debounce(() => {
+        stabilizeAfterViewportResize();
+    }, 80);
+
+    window.addEventListener('resize', schedule);
+    document.addEventListener('fullscreenchange', schedule);
+}
+
+function debounce(fn, waitMs) {
+    let t = null;
+    return function(...args) {
+        if (t) window.clearTimeout(t);
+        t = window.setTimeout(() => fn.apply(this, args), waitMs);
+    };
+}
+
+function stabilizeAfterViewportResize() {
+    if (!viewport) return;
+    const prevW = lastViewportSize.w || 0;
+    const prevH = lastViewportSize.h || 0;
+    const zoom = currentZoom || 1;
+
+    // Centro actual del mundo (antes del resize)
+    const centerWorldX = prevW ? ((prevW / 2) - panX) / zoom : 0;
+    const centerWorldY = prevH ? ((prevH / 2) - panY) / zoom : 0;
+
+    // Esperar a que el layout (fullscreen/resize) termine de asentarse
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            const r = viewport.getBoundingClientRect();
+            lastViewportSize = { w: r.width, h: r.height };
+
+            // Mantener el mismo centro del mundo en el centro del viewport
+            panX = (r.width / 2) - centerWorldX * zoom;
+            panY = (r.height / 2) - centerWorldY * zoom;
+            updateZoom();
+
+            // Recalcular marcadores desde % de imagen (por cambios de object-fit/letterbox)
+            refreshDevicePositionsFromImage();
+        });
+    });
+}
+
+function refreshDevicePositionsFromImage() {
+    if (!dispositivosLayer) return;
+    const nodes = dispositivosLayer.querySelectorAll('.device-icon');
+
+    nodes.forEach((el) => {
+        const id = parseInt(el.dataset.deviceId, 10);
+        if (!Number.isFinite(id)) return;
+
+        const device = dispositivos.find(d => d.id === id);
+        if (!device) return;
+
+        const imgX = parseFloat(device.posicion_x);
+        const imgY = parseFloat(device.posicion_y);
+        if (!Number.isFinite(imgX) || !Number.isFinite(imgY)) return;
+
+        const innerPos = imagePercentToInnerPercent(imgX, imgY);
+        if (!innerPos) return;
+
+        el.style.left = `${innerPos.x}%`;
+        el.style.top = `${innerPos.y}%`;
+    });
+}
 
     // Ocultar loader
     setTimeout(() => {
@@ -808,30 +884,7 @@ function updateDeviceScale() {
 }
 
 function toggleFullscreen() {
-    const container = document.querySelector('.plano-container');
-    const icon = document.getElementById('fullscreen-icon');
-
-    if (!container) return;
-
-    container.classList.toggle('fullscreen');
-
-    if (icon) {
-        if (container.classList.contains('fullscreen')) {
-            if (icon.classList.contains('fa-expand')) {
-                icon.classList.replace('fa-expand', 'fa-compress');
-            } else {
-                icon.classList.add('fa-compress');
-                icon.classList.remove('fa-expand');
-            }
-        } else {
-            if (icon.classList.contains('fa-compress')) {
-                icon.classList.replace('fa-compress', 'fa-expand');
-            } else {
-                icon.classList.add('fa-expand');
-                icon.classList.remove('fa-compress');
-            }
-        }
-    }
+    return;
 }
 
 // Permitir salir del fullscreen con ESC

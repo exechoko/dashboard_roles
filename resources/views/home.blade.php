@@ -57,8 +57,12 @@
                     @can('ver-menu-dashboard')
                         <ul class="nav nav-pills" id="myTab3" role="tablist">
                             <li class="nav-item">
-                                <a class="nav-link active" id="terminales-tab3" data-toggle="tab" href="#terminales3" role="tab"
-                                    aria-controls="home" aria-selected="true">Terminales</a>
+                                <a class="nav-link active" id="novedades-tab3" data-toggle="tab" href="#novedades3" role="tab"
+                                    aria-controls="novedades" aria-selected="true">Novedades</a>
+                            </li>    
+                            <li class="nav-item">
+                                <a class="nav-link" id="terminales-tab3" data-toggle="tab" href="#terminales3" role="tab"
+                                    aria-controls="home" aria-selected="false">Terminales</a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" id="recursos-tab3" data-toggle="tab" href="#recursos3" role="tab"
@@ -96,7 +100,7 @@
                             @can('ver-menu-dashboard')
                                 <div class="tab-content" id="myTabContent2">
                                     <!-- TAB Terminales -->
-                                    <div class="tab-pane fade show active" id="terminales3" role="tabpanel"
+                                    <div class="tab-pane fade" id="terminales3" role="tabpanel"
                                         aria-labelledby="terminales-tab3">
 
                                         <!-- Sección: Equipos por Estado -->
@@ -464,6 +468,66 @@
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
                                                                                                                                                                                                                                                                                                                                                                                  data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- TAB Novedades -->
+                                    <div class="tab-pane fade show active" id="novedades3" role="tabpanel" aria-labelledby="novedades-tab3">
+                                        <div class="row">
+                                            <div class="col-md-12 mb-4">
+                                                <div class="card-item bg-c-blue order-card">
+                                                    <div class="card-block text-center">
+                                                        <h5>Fecha y Hora Actual</h5>
+                                                        <h2><i class="fas fa-calendar-day f-left"></i><span>{{ $fecha_actual }}</span></h2>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4 col-xl-4">
+                                                <div class="card-item bg-c-green order-card">
+                                                    <div class="card-block">
+                                                        <h5>Equipos entregados</h5>
+                                                        <h2 class="text-right">
+                                                            <i class="fas fa-satellite-dish f-left"></i>
+                                                            <span>{{ $cant_equipos_entregados_hoy }}</span>
+                                                        </h2>
+                                                        <p class="m-b-0 text-right">
+                                                            <a href="{{ route('entrega-equipos.index') }}" style="color: rgb(253, 253, 253)">Ir a Entregas Equipos
+                                                            </a>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 col-xl-4">
+                                                <div class="card-item bg-c-orange order-card">
+                                                    <div class="card-block">
+                                                        <h5>Bodycams entregadas</h5>
+                                                        <h2 class="text-right">
+                                                            <i class="fas fa-mobile f-left"></i>
+                                                            <span>{{ $cant_bodycams_entregadas_hoy }}</span>
+                                                        </h2>
+                                                        <p class="m-b-0 text-right">
+                                                            <a href="{{ route('entrega-bodycams.index') }}" style="color: rgb(253, 253, 253)">Ir a Entregas Bodycams
+                                                            </a>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 col-xl-4">
+                                                <div class="card-item bg-c-yellow order-card">
+                                                    <div class="card-block">
+                                                        <h5>Tareas del día</h5>
+                                                        <h2 class="text-right">
+                                                            <i class="fas fa-tasks f-left"></i>
+                                                            <span>{{ $cant_tareas_hoy }}</span>
+                                                        </h2>
+                                                        <p class="m-b-0 text-right">
+                                                            <a href="{{ route('tareas.index') }}" style="color: rgb(253, 253, 253)">Ir a Tareas
+                                                            </a>
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </div>

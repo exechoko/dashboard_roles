@@ -14,6 +14,10 @@ use App\Models\Destino;
 use App\Models\Recurso;
 use App\Models\Historico;
 use Illuminate\Support\Facades\DB;
+use App\Models\EntregaEquipo;
+use App\Models\EntregaBodycam;
+use App\Models\TareaItem;
+use Carbon\Carbon;
 
 class HomeController extends Controller
 {
@@ -145,6 +149,16 @@ class HomeController extends Controller
             })
             ->count();
 
+        // Datos para pestaña Novedades
+        $fecha_actual = Carbon::now()->format('d/m/Y H:i');
+        $hoy = Carbon::today();
+        
+        $cant_equipos_entregados_hoy = EntregaEquipo::whereDate('fecha_entrega', $hoy)->count();
+        $cant_bodycams_entregadas_hoy = EntregaBodycam::whereDate('fecha_entrega', $hoy)->count();
+        $cant_tareas_hoy = TareaItem::whereDate('fecha_programada', $hoy)
+            ->whereIn('estado', [TareaItem::ESTADO_PENDIENTE, TareaItem::ESTADO_EN_PROCESO])
+            ->count();
+
         return view('home', compact(
             'cant_usuarios',
             'cant_roles',
@@ -165,7 +179,11 @@ class HomeController extends Controller
             'cant_equipos_temporales',
             'cant_equipos_baja',
             'cant_equipos_en_revision',
-            'cant_equipos_en_div_bancaria'
+            'cant_equipos_en_div_bancaria',
+            'fecha_actual',
+            'cant_equipos_entregados_hoy',
+            'cant_bodycams_entregadas_hoy',
+            'cant_tareas_hoy'
         ));
     }
 }

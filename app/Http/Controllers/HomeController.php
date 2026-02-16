@@ -153,23 +153,49 @@ class HomeController extends Controller
         $fecha_actual = Carbon::now()->format('d/m/Y H:i');
         $hoy = Carbon::today();
         
-        $cant_equipos_entregados_total = EntregaEquipo::count();
-        $cant_bodycams_entregadas_total = EntregaBodycam::count();
-        $cant_tareas_hoy = TareaItem::whereDate('fecha_programada', $hoy)
-            ->whereIn('estado', [TareaItem::ESTADO_PENDIENTE, TareaItem::ESTADO_EN_PROCESO])
-            ->count();
-
         // Entregas activas de equipos (no devueltas completamente)
-        $entregas_equipos_activas = EntregaEquipo::with('equipos')
+        $entregas_equipos_activas = EntregaEquipo::with(['equipos', 'devoluciones.equipos'])
             ->whereIn('estado', ['entregado', 'devolucion_parcial'])
             ->orderBy('fecha_entrega', 'desc')
             ->get();
         
         // Entregas activas de bodycams (no devueltas completamente)
-        $entregas_bodycams_activas = EntregaBodycam::with('bodycams')
+        $entregas_bodycams_activas = EntregaBodycam::with(['bodycams', 'devoluciones.bodycams'])
             ->whereIn('estado', [EntregaBodycam::ESTADO_ENTREGADA, EntregaBodycam::ESTADO_PARCIALMENTE_DEVUELTA])
             ->orderBy('fecha_entrega', 'desc')
             ->get();
+
+        // Contar equipos actualmente entregados (sin devolver)
+        $cant_equipos_entregados_total = 0;
+        foreach ($entregas_equipos_activas as $entrega) {
+            $equiposDevueltos = $entrega->devoluciones()
+                ->with('equipos')
+                ->get()
+                ->pluck('equipos')
+                ->flatten()
+                ->pluck('id')
+                ->unique()
+                ->count();
+            $cant_equipos_entregados_total += ($entrega->equipos->count() - $equiposDevueltos);
+        }
+
+        // Contar bodycams actualmente entregadas (sin devolver)
+        $cant_bodycams_entregadas_total = 0;
+        foreach ($entregas_bodycams_activas as $entrega) {
+            $bodycamsDevueltas = $entrega->devoluciones()
+                ->with('bodycams')
+                ->get()
+                ->pluck('bodycams')
+                ->flatten()
+                ->pluck('id')
+                ->unique()
+                ->count();
+            $cant_bodycams_entregadas_total += ($entrega->bodycams->count() - $bodycamsDevueltas);
+        }
+
+        $cant_tareas_hoy = TareaItem::whereDate('fecha_programada', $hoy)
+            ->whereIn('estado', [TareaItem::ESTADO_PENDIENTE, TareaItem::ESTADO_EN_PROCESO])
+            ->count();
 
         return view('home', compact(
             'cant_usuarios',

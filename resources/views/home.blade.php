@@ -499,10 +499,14 @@
                                                             <div style="font-size: 11px; line-height: 1.4; max-height: 150px; overflow-y: auto;">
                                                                 <strong>Entregas activas:</strong>
                                                                 @foreach($entregas_equipos_activas as $entrega)
+                                                                    @php
+                                                                        $equiposDevueltos = $entrega->devoluciones->pluck('equipos')->flatten()->pluck('id')->unique()->count();
+                                                                        $equiposPendientes = $entrega->equipos->count() - $equiposDevueltos;
+                                                                    @endphp
                                                                     <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
                                                                         {{ $entrega->fecha_entrega->format('d/m/Y') }} - 
                                                                         {{ Str::limit($entrega->dependencia, 20) }} - 
-                                                                        {{ $entrega->equipos->count() }} eq.
+                                                                        {{ $equiposPendientes }} eq.
                                                                     </div>
                                                                 @endforeach
                                                             </div>
@@ -526,10 +530,14 @@
                                                             <div style="font-size: 11px; line-height: 1.4; max-height: 150px; overflow-y: auto;">
                                                                 <strong>Entregas activas:</strong>
                                                                 @foreach($entregas_bodycams_activas as $entrega)
+                                                                    @php
+                                                                        $bodycamsDevueltas = $entrega->devoluciones->pluck('bodycams')->flatten()->pluck('id')->unique()->count();
+                                                                        $bodycamsPendientes = $entrega->bodycams->count() - $bodycamsDevueltas;
+                                                                    @endphp
                                                                     <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
                                                                         {{ $entrega->fecha_entrega->format('d/m/Y') }} - 
                                                                         {{ Str::limit($entrega->dependencia, 20) }} - 
-                                                                        {{ $entrega->bodycams->count() }} bc.
+                                                                        {{ $bodycamsPendientes }} bc.
                                                                     </div>
                                                                 @endforeach
                                                             </div>

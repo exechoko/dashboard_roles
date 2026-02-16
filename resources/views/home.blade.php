@@ -489,14 +489,26 @@
                                             <div class="col-md-4 col-xl-4">
                                                 <div class="card-item bg-c-green order-card">
                                                     <div class="card-block">
-                                                        <h5>Equipos entregados</h5>
+                                                        <h5>Equipos entregados ({{ $entregas_equipos_activas->count() }} activas)</h5>
                                                         <h2 class="text-right">
                                                             <i class="fas fa-satellite-dish f-left"></i>
-                                                            <span>{{ $cant_equipos_entregados_hoy }}</span>
+                                                            <span>{{ $cant_equipos_entregados_total }}</span>
                                                         </h2>
-                                                        <p class="m-b-0 text-right">
-                                                            <a href="{{ route('entrega-equipos.index') }}" style="color: rgb(253, 253, 253)">Ir a Entregas Equipos
-                                                            </a>
+                                                        @if($entregas_equipos_activas->count() > 0)
+                                                            <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
+                                                            <div style="font-size: 11px; line-height: 1.4; max-height: 150px; overflow-y: auto;">
+                                                                <strong>Entregas activas:</strong>
+                                                                @foreach($entregas_equipos_activas as $entrega)
+                                                                    <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                                                        {{ $entrega->fecha_entrega->format('d/m/Y') }} - 
+                                                                        {{ Str::limit($entrega->dependencia, 20) }} - 
+                                                                        {{ $entrega->equipos->count() }} eq.
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
+                                                        <p class="m-b-0 text-right" style="margin-top: 10px;">
+                                                            <a href="{{ route('entrega-equipos.index') }}" style="color: rgb(253, 253, 253)">Ir a Entregas Equipos</a>
                                                         </p>
                                                     </div>
                                                 </div>
@@ -504,14 +516,26 @@
                                             <div class="col-md-4 col-xl-4">
                                                 <div class="card-item bg-c-orange order-card">
                                                     <div class="card-block">
-                                                        <h5>Bodycams entregadas</h5>
+                                                        <h5>Bodycams entregadas ({{ $entregas_bodycams_activas->count() }} activas)</h5>
                                                         <h2 class="text-right">
                                                             <i class="fas fa-mobile f-left"></i>
-                                                            <span>{{ $cant_bodycams_entregadas_hoy }}</span>
+                                                            <span>{{ $cant_bodycams_entregadas_total }}</span>
                                                         </h2>
-                                                        <p class="m-b-0 text-right">
-                                                            <a href="{{ route('entrega-bodycams.index') }}" style="color: rgb(253, 253, 253)">Ir a Entregas Bodycams
-                                                            </a>
+                                                        @if($entregas_bodycams_activas->count() > 0)
+                                                            <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
+                                                            <div style="font-size: 11px; line-height: 1.4; max-height: 150px; overflow-y: auto;">
+                                                                <strong>Entregas activas:</strong>
+                                                                @foreach($entregas_bodycams_activas as $entrega)
+                                                                    <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                                                        {{ $entrega->fecha_entrega->format('d/m/Y') }} - 
+                                                                        {{ Str::limit($entrega->dependencia, 20) }} - 
+                                                                        {{ $entrega->bodycams->count() }} bc.
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
+                                                        <p class="m-b-0 text-right" style="margin-top: 10px;">
+                                                            <a href="{{ route('entrega-bodycams.index') }}" style="color: rgb(253, 253, 253)">Ir a Entregas Bodycams</a>
                                                         </p>
                                                     </div>
                                                 </div>

@@ -133,6 +133,7 @@ class TareaController extends Controller
             'recurrencia_dia_semana' => 'nullable|integer|min:1|max:7',
             'recurrencia_dia_mes' => 'nullable|integer|min:1|max:31',
             'fecha_inicio' => 'nullable|date',
+            'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
             'activa' => 'nullable|boolean',
         ]);
 
@@ -180,6 +181,7 @@ class TareaController extends Controller
             'recurrencia_dia_semana' => 'nullable|integer|min:1|max:7',
             'recurrencia_dia_mes' => 'nullable|integer|min:1|max:31',
             'fecha_inicio' => 'nullable|date',
+            'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
             'activa' => 'nullable|boolean',
 
             'impacto_recurrencia' => 'nullable|in:solo_tarea,futuras_instancias',

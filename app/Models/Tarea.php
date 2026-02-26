@@ -20,12 +20,14 @@ class Tarea extends Model
         'recurrencia_dia_semana',
         'recurrencia_dia_mes',
         'fecha_inicio',
+        'fecha_fin',
         'activa',
         'created_by',
     ];
 
     protected $casts = [
         'fecha_inicio' => 'date',
+        'fecha_fin' => 'date',
         'activa' => 'boolean',
     ];
 
@@ -58,6 +60,16 @@ class Tarea extends Model
         $inicio = $this->fecha_inicio ? Carbon::parse($this->fecha_inicio)->startOfDay() : $desde->copy();
         if ($inicio->lt($desde)) {
             $inicio = $desde->copy();
+        }
+
+        if ($this->fecha_fin) {
+            $fin = Carbon::parse($this->fecha_fin)->endOfDay();
+            if ($hasta->gt($fin)) {
+                $hasta = $fin;
+            }
+            if ($inicio->gt($fin)) {
+                return 0;
+            }
         }
 
         if ($this->recurrencia_tipo === 'none') {

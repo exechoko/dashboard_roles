@@ -70,6 +70,19 @@
                                     </div>
                                 </div>
 
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="fecha_fin">Fecha fin (hasta cuándo repetir)</label>
+                                            <input type="date" class="form-control @error('fecha_fin') is-invalid @enderror" id="fecha_fin" name="fecha_fin" value="{{ old('fecha_fin', $tarea->fecha_fin ? $tarea->fecha_fin->toDateString() : null) }}">
+                                            <small class="form-text text-muted">Opcional. Si no se especifica, la tarea se repetirá indefinidamente.</small>
+                                            @error('fecha_fin')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="row" id="weeklyFields" style="display:none;">
                                     <div class="col-md-6">
                                         <div class="form-group">

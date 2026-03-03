@@ -59,7 +59,7 @@
                             <li class="nav-item">
                                 <a class="nav-link active" id="novedades-tab3" data-toggle="tab" href="#novedades3" role="tab"
                                     aria-controls="novedades" aria-selected="true">Novedades</a>
-                            </li>    
+                            </li>
                             <li class="nav-item">
                                 <a class="nav-link" id="terminales-tab3" data-toggle="tab" href="#terminales3" role="tab"
                                     aria-controls="home" aria-selected="false">Terminales</a>
@@ -504,8 +504,8 @@
                                                                         $equiposPendientes = $entrega->equipos->count() - $equiposDevueltos;
                                                                     @endphp
                                                                     <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                                                                        {{ $entrega->fecha_entrega->format('d/m/Y') }} - 
-                                                                        {{ Str::limit($entrega->dependencia, 20) }} - 
+                                                                        {{ $entrega->fecha_entrega->format('d/m/Y') }} -
+                                                                        {{ Str::limit($entrega->dependencia, 20) }} -
                                                                         {{ $equiposPendientes }} eq.
                                                                     </div>
                                                                 @endforeach
@@ -535,8 +535,8 @@
                                                                         $bodycamsPendientes = $entrega->bodycams->count() - $bodycamsDevueltas;
                                                                     @endphp
                                                                     <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                                                                        {{ $entrega->fecha_entrega->format('d/m/Y') }} - 
-                                                                        {{ Str::limit($entrega->dependencia, 20) }} - 
+                                                                        {{ $entrega->fecha_entrega->format('d/m/Y') }} -
+                                                                        {{ Str::limit($entrega->dependencia, 20) }} -
                                                                         {{ $bodycamsPendientes }} bc.
                                                                     </div>
                                                                 @endforeach
@@ -551,14 +551,26 @@
                                             <div class="col-md-4 col-xl-4">
                                                 <div class="card-item bg-c-yellow order-card">
                                                     <div class="card-block">
-                                                        <h5>Tareas del día</h5>
+                                                        <h5>Tareas del día ({{ $tareas_hoy->count() }} pendientes)</h5>
                                                         <h2 class="text-right">
                                                             <i class="fas fa-tasks f-left"></i>
                                                             <span>{{ $cant_tareas_hoy }}</span>
                                                         </h2>
-                                                        <p class="m-b-0 text-right">
-                                                            <a href="{{ route('tareas.index') }}" style="color: rgb(253, 253, 253)">Ir a Tareas
-                                                            </a>
+                                                        @if($tareas_hoy->count() > 0)
+                                                            <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
+                                                            <div style="font-size: 11px; line-height: 1.4; max-height: 150px; overflow-y: auto;">
+                                                                <strong>Tareas programadas:</strong>
+                                                                @foreach($tareas_hoy as $tarea)
+                                                                    <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                                                        {{ \Carbon\Carbon::parse($tarea->fecha_programada)->format('H:i') }} -
+                                                                        {{ Str::limit($tarea->tarea->titulo ?? 'Sin título', 30) }} -
+                                                                        <span style="text-transform: capitalize;">{{ $tarea->estado }}</span>
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
+                                                        <p class="m-b-0 text-right" style="margin-top: 10px;">
+                                                            <a href="{{ route('tareas.index') }}" style="color: rgb(253, 253, 253)">Ir a Tareas</a>
                                                         </p>
                                                     </div>
                                                 </div>

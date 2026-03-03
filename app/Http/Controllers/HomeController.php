@@ -152,13 +152,13 @@ class HomeController extends Controller
         // Datos para pestaña Novedades
         $fecha_actual = Carbon::now()->format('d/m/Y H:i');
         $hoy = Carbon::today();
-        
+
         // Entregas activas de equipos (no devueltas completamente)
         $entregas_equipos_activas = EntregaEquipo::with(['equipos', 'devoluciones.equipos'])
             ->whereIn('estado', ['entregado', 'devolucion_parcial'])
             ->orderBy('fecha_entrega', 'desc')
             ->get();
-        
+
         // Entregas activas de bodycams (no devueltas completamente)
         $entregas_bodycams_activas = EntregaBodycam::with(['bodycams', 'devoluciones.bodycams'])
             ->whereIn('estado', [EntregaBodycam::ESTADO_ENTREGADA, EntregaBodycam::ESTADO_PARCIALMENTE_DEVUELTA])
@@ -193,9 +193,13 @@ class HomeController extends Controller
             $cant_bodycams_entregadas_total += ($entrega->bodycams->count() - $bodycamsDevueltas);
         }
 
-        $cant_tareas_hoy = TareaItem::whereDate('fecha_programada', $hoy)
+        $tareas_hoy = TareaItem::with(['tarea'])
+            ->whereDate('fecha_programada', $hoy)
             ->whereIn('estado', [TareaItem::ESTADO_PENDIENTE, TareaItem::ESTADO_EN_PROCESO])
-            ->count();
+            ->orderBy('fecha_programada', 'asc')
+            ->get();
+
+        $cant_tareas_hoy = $tareas_hoy->count();
 
         return view('home', compact(
             'cant_usuarios',
@@ -222,6 +226,7 @@ class HomeController extends Controller
             'cant_equipos_entregados_total',
             'cant_bodycams_entregadas_total',
             'cant_tareas_hoy',
+            'tareas_hoy',
             'entregas_equipos_activas',
             'entregas_bodycams_activas'
         ));

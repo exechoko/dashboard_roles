@@ -40,6 +40,94 @@
                                                                                                                                                                                                                                                                         .card-item:hover::before {
                                                                                                                                                                                                                                                                             transform: scale(1);
                                                                                                                                                                                                                                                                         }*/
+
+    .banner-fecha-hora {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(16, 185, 129, 0.25));
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        padding: 14px 16px;
+        color: #fff;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
+
+    .banner-fecha-hora__fila {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .banner-fecha-hora__izq {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .banner-fecha-hora__icono {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        flex: 0 0 auto;
+    }
+
+    .banner-fecha-hora__texto {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.15;
+        min-width: 0;
+    }
+
+    .banner-fecha-hora__fecha {
+        font-size: 12px;
+        opacity: 0.9;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .banner-fecha-hora__hora {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+
+    .banner-fecha-hora__der {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 0 0 auto;
+    }
+
+    .banner-clima {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.22);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        min-height: 36px;
+    }
+
+    .banner-clima__temp {
+        font-size: 14px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .banner-clima__desc {
+        font-size: 11px;
+        opacity: 0.9;
+        white-space: nowrap;
+    }
 </style>
 
 @stop
@@ -476,11 +564,32 @@
                                     <!-- TAB Novedades -->
                                     <div class="tab-pane fade show active" id="novedades3" role="tabpanel" aria-labelledby="novedades-tab3">
                                         <div class="row">
-                                            <div class="col-md-12 mb-4">
-                                                <div class="card-item bg-c-blue order-card">
-                                                    <div class="card-block text-center">
-                                                        <h5>Fecha y Hora Actual</h5>
-                                                        <h2><i class="fas fa-calendar-day f-left"></i><span>{{ $fecha_actual }}</span></h2>
+                                            <div class="col-md-12 mb-3">
+                                                <div class="banner-fecha-hora">
+                                                    <div class="banner-fecha-hora__fila">
+                                                        <div class="banner-fecha-hora__izq">
+                                                            <div class="banner-fecha-hora__icono" aria-hidden="true">
+                                                                <i class="fas fa-clock"></i>
+                                                            </div>
+                                                            <div class="banner-fecha-hora__texto">
+                                                                <div class="banner-fecha-hora__fecha" id="banner-fecha">
+                                                                    {{ $fecha_actual }}
+                                                                </div>
+                                                                <div class="banner-fecha-hora__hora" id="banner-hora">
+                                                                    --:--:--
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="banner-fecha-hora__der">
+                                                            <div class="banner-clima" id="banner-clima" title="Clima actual">
+                                                                <i class="fas fa-cloud" id="clima-icono" aria-hidden="true"></i>
+                                                                <div style="display:flex; flex-direction:column; line-height:1.1;">
+                                                                    <div class="banner-clima__temp" id="clima-temp">--°C</div>
+                                                                    <div class="banner-clima__desc" id="clima-desc">Cargando clima…</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1080,6 +1189,135 @@
 
     <script>
         $(document).ready(function () {
+            function pad2(value) {
+                return String(value).padStart(2, '0');
+            }
+
+            function actualizarReloj() {
+                var ahora = new Date();
+                var hora = pad2(ahora.getHours()) + ':' + pad2(ahora.getMinutes()) + ':' + pad2(ahora.getSeconds());
+
+                var elHora = document.getElementById('banner-hora');
+                if (elHora) {
+                    elHora.textContent = hora;
+                }
+
+                var elFecha = document.getElementById('banner-fecha');
+                if (elFecha) {
+                    try {
+                        var formatoFecha = new Intl.DateTimeFormat('es-AR', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: '2-digit'
+                        });
+                        elFecha.textContent = formatoFecha.format(ahora);
+                    } catch (error) {
+                        // fallback: dejamos el valor inicial renderizado por el servidor
+                    }
+                }
+            }
+
+            function getClimaUiDeCodigo(codigo) {
+                if (codigo === 0) return { icono: 'fa-sun', texto: 'Soleado' };
+                if (codigo === 1) return { icono: 'fa-sun', texto: 'Mayormente despejado' };
+                if (codigo === 2) return { icono: 'fa-cloud-sun', texto: 'Parcialmente nublado' };
+                if (codigo === 3) return { icono: 'fa-cloud', texto: 'Nublado' };
+
+                if (codigo === 45 || codigo === 48) return { icono: 'fa-smog', texto: 'Niebla' };
+
+                if (codigo === 51 || codigo === 53 || codigo === 55) return { icono: 'fa-cloud-rain', texto: 'Llovizna' };
+                if (codigo === 56 || codigo === 57) return { icono: 'fa-cloud-rain', texto: 'Llovizna helada' };
+
+                if (codigo === 61 || codigo === 63 || codigo === 65) return { icono: 'fa-cloud-showers-heavy', texto: 'Lluvia' };
+                if (codigo === 66 || codigo === 67) return { icono: 'fa-cloud-showers-heavy', texto: 'Lluvia helada' };
+
+                if (codigo === 71 || codigo === 73 || codigo === 75) return { icono: 'fa-snowflake', texto: 'Nieve' };
+                if (codigo === 77) return { icono: 'fa-snowflake', texto: 'Granizo' };
+
+                if (codigo === 80 || codigo === 81 || codigo === 82) return { icono: 'fa-cloud-showers-heavy', texto: 'Chubascos' };
+                if (codigo === 85 || codigo === 86) return { icono: 'fa-snowflake', texto: 'Chubascos de nieve' };
+
+                if (codigo === 95) return { icono: 'fa-bolt', texto: 'Tormenta' };
+                if (codigo === 96 || codigo === 99) return { icono: 'fa-bolt', texto: 'Tormenta con granizo' };
+
+                return { icono: 'fa-cloud', texto: 'Clima' };
+            }
+
+            function setClimaEnUi(temperaturaC, codigoClima) {
+                var elTemp = document.getElementById('clima-temp');
+                var elDesc = document.getElementById('clima-desc');
+                var elIcono = document.getElementById('clima-icono');
+
+                if (!elTemp || !elDesc || !elIcono) {
+                    return;
+                }
+
+                var tempRedondeada = (typeof temperaturaC === 'number')
+                    ? Math.round(temperaturaC)
+                    : null;
+
+                var ui = getClimaUiDeCodigo(codigoClima);
+
+                elTemp.textContent = (tempRedondeada === null ? '--' : tempRedondeada) + '°C';
+                elDesc.textContent = ui.texto;
+                elIcono.className = 'fas ' + ui.icono;
+            }
+
+            async function obtenerClimaPorCoordenadas(lat, lon) {
+                var url = 'https://api.open-meteo.com/v1/forecast'
+                    + '?latitude=' + encodeURIComponent(lat)
+                    + '&longitude=' + encodeURIComponent(lon)
+                    + '&current=temperature_2m,weather_code'
+                    + '&timezone=auto';
+
+                var response = await fetch(url, { method: 'GET' });
+                if (!response.ok) {
+                    throw new Error('Error al consultar clima: ' + response.status);
+                }
+                return await response.json();
+            }
+
+            async function actualizarClima() {
+                var fallback = { lat: -31.73197, lon: -60.5238 };
+
+                function usarCoordenadas(lat, lon) {
+                    obtenerClimaPorCoordenadas(lat, lon)
+                        .then(function (data) {
+                            var temperatura = data && data.current ? data.current.temperature_2m : null;
+                            var codigo = data && data.current ? data.current.weather_code : null;
+                            setClimaEnUi(temperatura, codigo);
+                        })
+                        .catch(function () {
+                            setClimaEnUi(null, null);
+                            var elDesc = document.getElementById('clima-desc');
+                            if (elDesc) {
+                                elDesc.textContent = 'No disponible';
+                            }
+                        });
+                }
+
+                if (navigator.geolocation && window.isSecureContext) {
+                    navigator.geolocation.getCurrentPosition(
+                        function (pos) {
+                            usarCoordenadas(pos.coords.latitude, pos.coords.longitude);
+                        },
+                        function () {
+                            usarCoordenadas(fallback.lat, fallback.lon);
+                        },
+                        { enableHighAccuracy: false, timeout: 6000, maximumAge: 300000 }
+                    );
+                    return;
+                }
+
+                usarCoordenadas(fallback.lat, fallback.lon);
+            }
+
+            actualizarReloj();
+            setInterval(actualizarReloj, 1000);
+            actualizarClima();
+            setInterval(actualizarClima, 10 * 60 * 1000);
+
             // Definir funciones de manejo de eventos
             function handleClickEvent(id, consultarFunction) {
                 $(id).click(function () {

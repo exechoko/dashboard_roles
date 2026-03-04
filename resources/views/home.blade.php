@@ -668,7 +668,7 @@
                                                         @if($tareas_en_proceso->count() > 0)
                                                             <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
                                                             <div style="font-size: 11px; line-height: 1.4; max-height: 100px; overflow-y: auto;">
-                                                                <strong>En proceso:</strong>
+                                                                <span class="badge badge-info">En proceso</span>
                                                                 @foreach($tareas_en_proceso as $tarea_item)
                                                                     <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
                                                                         {{ $tarea_item->fecha_programada->format('d/m/Y') }} -
@@ -680,7 +680,7 @@
                                                         @if($tareas_hoy->count() > 0)
                                                             <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
                                                             <div style="font-size: 11px; line-height: 1.4; max-height: 100px; overflow-y: auto;">
-                                                                <strong>Pendientes hoy:</strong>
+                                                                <span class="badge badge-warning">Pendientes hoy</span>
                                                                 @foreach($tareas_hoy as $tarea_item)
                                                                     <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
                                                                         {{ $tarea_item->fecha_programada->format('d/m/Y') }} -
@@ -692,7 +692,7 @@
                                                         @if($tareas_manana->count() > 0)
                                                             <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
                                                             <div style="font-size: 11px; line-height: 1.4; max-height: 100px; overflow-y: auto;">
-                                                                <strong>Próximas (mañana):</strong>
+                                                                <span class="badge badge-secondary">Próximas (mañana)</span>
                                                                 @foreach($tareas_manana as $tarea_item)
                                                                     <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
                                                                         {{ $tarea_item->fecha_programada->format('d/m/Y') }} -

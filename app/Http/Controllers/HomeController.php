@@ -193,18 +193,23 @@ class HomeController extends Controller
             $cant_bodycams_entregadas_total += ($entrega->bodycams->count() - $bodycamsDevueltas);
         }
 
-        $tareas_hoy = TareaItem::with(['tarea'])
-            ->whereDate('fecha_programada', $hoy)
-            ->whereIn('estado', [TareaItem::ESTADO_PENDIENTE, TareaItem::ESTADO_EN_PROCESO])
+        $tareas_en_proceso = TareaItem::with(['tarea'])
+            ->where('estado', TareaItem::ESTADO_EN_PROCESO)
             ->orderBy('fecha_programada', 'asc')
             ->get();
 
-        $cant_tareas_hoy = $tareas_hoy->count();
+        $tareas_hoy = TareaItem::with(['tarea'])
+            ->whereDate('fecha_programada', $hoy)
+            ->where('estado', TareaItem::ESTADO_PENDIENTE)
+            ->orderBy('fecha_programada', 'asc')
+            ->get();
+
+        $cant_tareas_hoy = $tareas_hoy->count() + $tareas_en_proceso->count();
 
         $manana = Carbon::tomorrow();
         $tareas_manana = TareaItem::with('tarea')
             ->whereDate('fecha_programada', $manana)
-            ->whereIn('estado', [TareaItem::ESTADO_PENDIENTE, TareaItem::ESTADO_EN_PROCESO])
+            ->where('estado', TareaItem::ESTADO_PENDIENTE)
             ->orderBy('fecha_programada')
             ->get();
 
@@ -233,6 +238,7 @@ class HomeController extends Controller
             'cant_equipos_entregados_total',
             'cant_bodycams_entregadas_total',
             'cant_tareas_hoy',
+            'tareas_en_proceso',
             'tareas_hoy',
             'tareas_manana',
             'entregas_equipos_activas',

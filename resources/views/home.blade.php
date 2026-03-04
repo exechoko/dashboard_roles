@@ -665,11 +665,11 @@
                                                             <i class="fas fa-tasks f-left"></i>
                                                             <span>{{ $cant_tareas_hoy }}</span>
                                                         </h2>
-                                                        @if($tareas_hoy->where('estado', 'en_proceso')->count() > 0)
+                                                        @if($tareas_en_proceso->count() > 0)
                                                             <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
                                                             <div style="font-size: 11px; line-height: 1.4; max-height: 100px; overflow-y: auto;">
                                                                 <strong>En proceso:</strong>
-                                                                @foreach($tareas_hoy->where('estado', 'en_proceso') as $tarea_item)
+                                                                @foreach($tareas_en_proceso as $tarea_item)
                                                                     <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
                                                                         {{ $tarea_item->fecha_programada->format('d/m/Y') }} -
                                                                         {{ Str::limit($tarea_item->tarea->nombre ?? 'Sin título', 25) }}
@@ -677,11 +677,11 @@
                                                                 @endforeach
                                                             </div>
                                                         @endif
-                                                        @if($tareas_hoy->where('estado', 'pendiente')->count() > 0)
+                                                        @if($tareas_hoy->count() > 0)
                                                             <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
                                                             <div style="font-size: 11px; line-height: 1.4; max-height: 100px; overflow-y: auto;">
-                                                                <strong>Pendientes:</strong>
-                                                                @foreach($tareas_hoy->where('estado', 'pendiente') as $tarea_item)
+                                                                <strong>Pendientes hoy:</strong>
+                                                                @foreach($tareas_hoy as $tarea_item)
                                                                     <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
                                                                         {{ $tarea_item->fecha_programada->format('d/m/Y') }} -
                                                                         {{ Str::limit($tarea_item->tarea->nombre ?? 'Sin título', 25) }}

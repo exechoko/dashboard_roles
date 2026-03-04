@@ -660,7 +660,7 @@
                                             <div class="col-md-4 col-xl-4">
                                                 <div class="card-item bg-c-yellow order-card">
                                                     <div class="card-block">
-                                                        <h5>Tareas del día ({{ $tareas_hoy->count() }} pendientes)</h5>
+                                                        <h5>Tareas del día ({{ $cant_tareas_hoy }})</h5>
                                                         <h2 class="text-right">
                                                             <i class="fas fa-tasks f-left"></i>
                                                             <span>{{ $cant_tareas_hoy }}</span>
@@ -668,12 +668,24 @@
                                                         @if($tareas_hoy->count() > 0)
                                                             <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
                                                             <div style="font-size: 11px; line-height: 1.4; max-height: 150px; overflow-y: auto;">
-                                                                <strong>Tareas programadas:</strong>
-                                                                @foreach($tareas_hoy as $tarea)
+                                                                <strong>Tareas de hoy:</strong>
+                                                                @foreach($tareas_hoy as $tarea_item)
                                                                     <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                                                                        {{ \Carbon\Carbon::parse($tarea->fecha_programada)->format('H:i') }} -
-                                                                        {{ Str::limit($tarea->tarea->titulo ?? 'Sin título', 30) }} -
-                                                                        <span style="text-transform: capitalize;">{{ $tarea->estado }}</span>
+                                                                        {{ $tarea_item->fecha_programada->format('d/m/Y') }} -
+                                                                        {{ Str::limit($tarea_item->tarea->nombre ?? 'Sin título', 25) }} -
+                                                                        <span style="font-style: italic;">{{ App\Models\TareaItem::ESTADOS[$tarea_item->estado] }}</span>
+                                                                    </div>
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
+                                                        @if($tareas_manana->count() > 0)
+                                                            <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
+                                                            <div style="font-size: 11px; line-height: 1.4; max-height: 100px; overflow-y: auto;">
+                                                                <strong>Próximas (mañana):</strong>
+                                                                @foreach($tareas_manana as $tarea_item)
+                                                                    <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                                                        {{ $tarea_item->fecha_programada->format('d/m/Y') }} -
+                                                                        {{ Str::limit($tarea_item->tarea->nombre ?? 'Sin título', 25) }}
                                                                     </div>
                                                                 @endforeach
                                                             </div>

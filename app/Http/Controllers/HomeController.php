@@ -201,6 +201,13 @@ class HomeController extends Controller
 
         $cant_tareas_hoy = $tareas_hoy->count();
 
+        $manana = Carbon::tomorrow();
+        $tareas_manana = TareaItem::with('tarea')
+            ->whereDate('fecha_programada', $manana)
+            ->whereIn('estado', [TareaItem::ESTADO_PENDIENTE, TareaItem::ESTADO_EN_PROCESO])
+            ->orderBy('fecha_programada')
+            ->get();
+
         return view('home', compact(
             'cant_usuarios',
             'cant_roles',
@@ -227,6 +234,7 @@ class HomeController extends Controller
             'cant_bodycams_entregadas_total',
             'cant_tareas_hoy',
             'tareas_hoy',
+            'tareas_manana',
             'entregas_equipos_activas',
             'entregas_bodycams_activas'
         ));

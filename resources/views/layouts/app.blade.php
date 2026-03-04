@@ -6,16 +6,16 @@
         // CRITICAL: Apply theme IMMEDIATELY before page renders to prevent flash
         (function () {
             @auth
-                // Si el usuario está autenticado, usar su preferencia de la BD
-                const userTheme = @json(auth()->user()->theme ?? 'light');
+                    // Si el usuario está autenticado, usar su preferencia de la BD
+                    const userTheme = @json(auth()->user()->theme ?? 'light');
                 if (userTheme === 'dark') {
                     document.documentElement.setAttribute('data-theme', 'dark');
                 }
                 // Sincronizar con localStorage
                 localStorage.setItem('theme', userTheme);
             @else
-                // Si no está autenticado, usar localStorage
-                const savedTheme = localStorage.getItem('theme');
+                    // Si no está autenticado, usar localStorage
+                    const savedTheme = localStorage.getItem('theme');
                 if (savedTheme === 'dark') {
                     document.documentElement.setAttribute('data-theme', 'dark');
                 }
@@ -40,14 +40,14 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-daterangepicker/daterangepicker.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
         integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
 
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
         integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/OverlappingMarkerSpiderfier-Leaflet/0.2.6/oms.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/OverlappingMarkerSpiderfier-Leaflet/0.2.6/oms.min.js"></script>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.1/MarkerCluster.css" />

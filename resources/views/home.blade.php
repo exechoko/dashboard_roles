@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="{{ asset('/plugins/JQueryUi/jquery-ui.css') }}" rel="stylesheet">
 <link href="{{ asset('/plugins/bootstrap-dialog/bootstrap-dialog.min.css') }}" rel="stylesheet">
 <link href="{{ asset('/plugins/bootstrap-toggle/bootstrap-toggle.min.css') }}" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
     .card-item {
@@ -20,113 +21,88 @@
 
     .card-item:hover {
         transform: translateY(-5px);
-        /*translate: 0 -20px;
-                                                                                                                                                                                                                                                                                box-shadow: 5px 3px rgb(217 220 242 / 75%),
-                                                                                                                                                                                                                                                                                    10px 6px rgb(44 217 255 / 50%),
-                                                                                                                                                                                                                                                                                    15px 9px rgb(126 255 178 / 25%),*/
     }
 
-    /*.card-item::before {
-                                                                                                                                                                                                                                                                            content: '';
-                                                                                                                                                                                                                                                                            position: absolute;
-                                                                                                                                                                                                                                                                            inset: 0;
-                                                                                                                                                                                                                                                                            transform: scaleY(0.75);
-                                                                                                                                                                                                                                                                            transform-origin: bottom;
-                                                                                                                                                                                                                                                                            background: linear-gradient(transparent,
-                                                                                                                                                                                                                                                                                    rgba(0, 0, 0, 0.02), #000);
-                                                                                                                                                                                                                                                                            transition: transform 0.25s;
-                                                                                                                                                                                                                                                                        }
-
-                                                                                                                                                                                                                                                                        .card-item:hover::before {
-                                                                                                                                                                                                                                                                            transform: scale(1);
-                                                                                                                                                                                                                                                                        }*/
-
-    .banner-fecha-hora {
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(16, 185, 129, 0.25));
-        border: 1px solid rgba(255, 255, 255, 0.15);
+    /* Gráficos - soporte light/dark */
+    .chart-card {
         border-radius: 12px;
-        padding: 14px 16px;
-        color: #fff;
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-    }
-
-    .banner-fecha-hora__fila {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-    }
-
-    .banner-fecha-hora__izq {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        min-width: 0;
-    }
-
-    .banner-fecha-hora__icono {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 0, 0, 0.25);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        flex: 0 0 auto;
-    }
-
-    .banner-fecha-hora__texto {
-        display: flex;
-        flex-direction: column;
-        line-height: 1.15;
-        min-width: 0;
-    }
-
-    .banner-fecha-hora__fecha {
-        font-size: 12px;
-        opacity: 0.9;
-        white-space: nowrap;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border: 1px solid rgba(0, 0, 0, 0.1);
         overflow: hidden;
-        text-overflow: ellipsis;
     }
 
-    .banner-fecha-hora__hora {
-        font-size: 20px;
+    .chart-card .card-header {
+        border-bottom: none;
+        background: transparent;
+    }
+
+    .chart-card .chart-title {
+        font-weight: 600;
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    /* Dark theme overrides */
+    [data-theme="dark"] .chart-card {
+        background-color: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="dark"] .chart-card .chart-title {
+        color: #e2e8f0 !important;
+    }
+
+    /* Bienvenida - soporte light/dark */
+    .welcome-card {
+        border-radius: 15px;
+        overflow: hidden;
+        position: relative;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .welcome-card .welcome-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(59, 130, 246, 0.12) 0%, rgba(16, 185, 129, 0.12) 100%);
+        z-index: 1;
+    }
+
+    .welcome-card .card-body {
+        position: relative;
+        z-index: 2;
+        padding: 2rem;
+    }
+
+    .welcome-card h3 {
         font-weight: 700;
-        letter-spacing: 0.5px;
-        white-space: nowrap;
     }
 
-    .banner-fecha-hora__der {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex: 0 0 auto;
+    .welcome-card p {
+        margin-bottom: 0;
     }
 
-    .banner-clima {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 10px;
-        border-radius: 10px;
-        background: rgba(0, 0, 0, 0.22);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        min-height: 36px;
+    [data-theme="dark"] .welcome-card {
+        background-color: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
     }
 
-    .banner-clima__temp {
-        font-size: 14px;
-        font-weight: 700;
-        white-space: nowrap;
+    [data-theme="dark"] .welcome-card h3 {
+        color: #2ecc71 !important;
     }
 
-    .banner-clima__desc {
-        font-size: 11px;
-        opacity: 0.9;
-        white-space: nowrap;
+    [data-theme="dark"] .welcome-card p {
+        color: #cbd5e1 !important;
+    }
+
+    /* Responsive charts */
+    @media (max-width: 767px) {
+        .chart-card .card-body {
+            padding: 0.75rem;
+        }
     }
 </style>
 
@@ -222,8 +198,7 @@
                                                         <h5>
                                                             Sin funcionar
                                                             <i class="fas fa-info-circle ml-1" data-toggle="tooltip"
-                                                                data-placement="top"
-                                                                title="Equipos con estado No funciona"></i>
+                                                                data-placement="top" title="Equipos con estado No funciona"></i>
                                                         </h5>
                                                         <h2 class="text-right">
                                                             <i class="fas fa-times f-left"></i>
@@ -311,8 +286,42 @@
                                             </div>
                                         </div>
 
+                                        <!-- Gráficos de Estado -->
+                                        <div class="row mt-4">
+                                            <div class="col-md-6 col-12 mb-4">
+                                                <div class="card chart-card">
+                                                    <div class="card-header pb-0">
+                                                        <h4 class="chart-title"><i
+                                                                class="fas fa-chart-pie mr-2 text-primary"></i>Estado de los
+                                                            Equipos</h4>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div style="height: 300px;">
+                                                            <canvas id="equiposEstadoChart"></canvas>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 col-12 mb-4">
+                                                <div class="card chart-card">
+                                                    <div class="card-header pb-0">
+                                                        <h4 class="chart-title"><i
+                                                                class="fas fa-chart-bar mr-2 text-success"></i>Origen de
+                                                            Provisión</h4>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div style="height: 300px;">
+                                                            <canvas id="equiposProvisionChart"></canvas>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+
                                         <!-- Separador -->
-                                        <hr style="border: 0; height: 2px; background: linear-gradient(to right, transparent, #6c757d, transparent); margin: 30px 0;">
+                                        <hr
+                                            style="border: 0; height: 2px; background: linear-gradient(to right, transparent, #6c757d, transparent); margin: 30px 0;">
 
                                         <!-- Sección: Equipos Provistos Por -->
                                         <div class="row">
@@ -499,6 +508,39 @@
                                                 </div>
                                             </div>
                                         </div>
+
+                                        <!-- Gráficos: Equipos por Departamental + por División -->
+                                        <div class="row mt-4">
+                                            <div class="col-md-6 col-12 mb-4">
+                                                <div class="card chart-card">
+                                                    <div class="card-header pb-0">
+                                                        <h4 class="chart-title"><i
+                                                                class="fas fa-building mr-2 text-info"></i>Equipos por
+                                                            Departamental</h4>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div style="height: 350px;">
+                                                            <canvas id="equiposDepartamentalChart"></canvas>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6 col-12 mb-4">
+                                                <div class="card chart-card">
+                                                    <div class="card-header pb-0">
+                                                        <h4 class="chart-title"><i
+                                                                class="fas fa-sitemap mr-2 text-primary"></i>Equipos por
+                                                            División</h4>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div style="height: 350px;">
+                                                            <canvas id="equiposDivisionChart"></canvas>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                     </div>
                                     <!-- TAB Camaras -->
                                     <div class="tab-pane fade" id="camaras3" role="tabpanel" aria-labelledby="camaras-tab3">
@@ -512,7 +554,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                                 data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -526,7 +568,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                                 data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -540,7 +582,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                                 data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -554,65 +596,72 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                                 data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <!-- TAB Novedades -->
-                                    <div class="tab-pane fade show active" id="novedades3" role="tabpanel" aria-labelledby="novedades-tab3">
-                                        <div class="row">
-                                            <div class="col-md-12 mb-3">
-                                                <div class="banner-fecha-hora">
-                                                    <div class="banner-fecha-hora__fila">
-                                                        <div class="banner-fecha-hora__izq">
-                                                            <div class="banner-fecha-hora__icono" aria-hidden="true">
-                                                                <i class="fas fa-clock"></i>
-                                                            </div>
-                                                            <div class="banner-fecha-hora__texto">
-                                                                <div class="banner-fecha-hora__fecha" id="banner-fecha">
-                                                                    {{ $fecha_actual }}
-                                                                </div>
-                                                                <div class="banner-fecha-hora__hora" id="banner-hora">
-                                                                    --:--:--
-                                                                </div>
-                                                            </div>
-                                                        </div>
 
-                                                        <div class="banner-fecha-hora__der">
-                                                            <div class="banner-clima" id="banner-clima" title="Clima actual">
-                                                                <i class="fas fa-cloud" id="clima-icono" aria-hidden="true"></i>
-                                                                <div style="display:flex; flex-direction:column; line-height:1.1;">
-                                                                    <div class="banner-clima__temp" id="clima-temp">--°C</div>
-                                                                    <div class="banner-clima__desc" id="clima-desc">Cargando clima…</div>
-                                                                </div>
-                                                            </div>
+                                        <!-- Gráfico: Cámaras por Tipo -->
+                                        <div class="row mt-4">
+                                            <div class="col-md-8 col-12 mb-4 mx-auto">
+                                                <div class="card chart-card">
+                                                    <div class="card-header pb-0">
+                                                        <h4 class="chart-title"><i
+                                                                class="fas fa-video mr-2 text-warning"></i>Cámaras por Tipo</h4>
+                                                    </div>
+                                                    <div class="card-body">
+                                                        <div style="height: 300px;">
+                                                            <canvas id="camarasTipoChart"></canvas>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
+
+                                    </div>
+                                    <!-- TAB Novedades -->
+                                    <div class="tab-pane fade show active" id="novedades3" role="tabpanel"
+                                        aria-labelledby="novedades-tab3">
+
+                                        <div class="row mb-4">
+                                            <div class="col-12">
+                                                <div class="card welcome-card shadow-sm">
+                                                    <div class="welcome-overlay"></div>
+                                                    <div class="card-body">
+                                                        <h3 class="mb-2" style="color: #1e40af;"><i
+                                                                class="fas fa-tachometer-alt mr-2"></i>¡Bienvenido al Dashboard
+                                                            del Sistema!</h3>
+                                                        <p class="lead" style="color: #475569;">Aquí encontrarás un resumen
+                                                            completo de los equipos, entregas y tareas pendientes.</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div class="row">
                                             <div class="col-md-4 col-xl-4">
                                                 <div class="card-item bg-c-green order-card">
                                                     <div class="card-block">
-                                                        <h5>Equipos entregados ({{ $entregas_equipos_activas->count() }} activas)</h5>
+                                                        <h5>Equipos entregados ({{ $entregas_equipos_activas->count() }}
+                                                            activas)</h5>
                                                         <h2 class="text-right">
                                                             <i class="fas fa-satellite-dish f-left"></i>
                                                             <span>{{ $cant_equipos_entregados_total }}</span>
                                                         </h2>
                                                         @if($entregas_equipos_activas->count() > 0)
                                                             <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
-                                                            <div style="font-size: 11px; line-height: 1.4; max-height: 150px; overflow-y: auto;">
+                                                            <div
+                                                                style="font-size: 11px; line-height: 1.4; max-height: 150px; overflow-y: auto;">
                                                                 <strong>Entregas activas:</strong>
                                                                 @foreach($entregas_equipos_activas as $entrega)
                                                                     @php
                                                                         $equiposDevueltos = $entrega->devoluciones->pluck('equipos')->flatten()->pluck('id')->unique()->count();
                                                                         $equiposPendientes = $entrega->equipos->count() - $equiposDevueltos;
                                                                     @endphp
-                                                                    <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                                                    <div
+                                                                        style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
                                                                         {{ $entrega->fecha_entrega->format('d/m/Y') }} -
                                                                         {{ Str::limit($entrega->dependencia, 20) }} -
                                                                         {{ $equiposPendientes }} eq.
@@ -621,7 +670,8 @@
                                                             </div>
                                                         @endif
                                                         <p class="m-b-0 text-right" style="margin-top: 10px;">
-                                                            <a href="{{ route('entrega-equipos.index') }}" style="color: rgb(253, 253, 253)">Ir a Entregas Equipos</a>
+                                                            <a href="{{ route('entrega-equipos.index') }}"
+                                                                style="color: rgb(253, 253, 253)">Ir a Entregas Equipos</a>
                                                         </p>
                                                     </div>
                                                 </div>
@@ -629,21 +679,24 @@
                                             <div class="col-md-4 col-xl-4">
                                                 <div class="card-item bg-c-orange order-card">
                                                     <div class="card-block">
-                                                        <h5>Bodycams entregadas ({{ $entregas_bodycams_activas->count() }} activas)</h5>
+                                                        <h5>Bodycams entregadas ({{ $entregas_bodycams_activas->count() }}
+                                                            activas)</h5>
                                                         <h2 class="text-right">
                                                             <i class="fas fa-mobile f-left"></i>
                                                             <span>{{ $cant_bodycams_entregadas_total }}</span>
                                                         </h2>
                                                         @if($entregas_bodycams_activas->count() > 0)
                                                             <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
-                                                            <div style="font-size: 11px; line-height: 1.4; max-height: 150px; overflow-y: auto;">
+                                                            <div
+                                                                style="font-size: 11px; line-height: 1.4; max-height: 150px; overflow-y: auto;">
                                                                 <strong>Entregas activas:</strong>
                                                                 @foreach($entregas_bodycams_activas as $entrega)
                                                                     @php
                                                                         $bodycamsDevueltas = $entrega->devoluciones->pluck('bodycams')->flatten()->pluck('id')->unique()->count();
                                                                         $bodycamsPendientes = $entrega->bodycams->count() - $bodycamsDevueltas;
                                                                     @endphp
-                                                                    <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                                                    <div
+                                                                        style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
                                                                         {{ $entrega->fecha_entrega->format('d/m/Y') }} -
                                                                         {{ Str::limit($entrega->dependencia, 20) }} -
                                                                         {{ $bodycamsPendientes }} bc.
@@ -652,7 +705,8 @@
                                                             </div>
                                                         @endif
                                                         <p class="m-b-0 text-right" style="margin-top: 10px;">
-                                                            <a href="{{ route('entrega-bodycams.index') }}" style="color: rgb(253, 253, 253)">Ir a Entregas Bodycams</a>
+                                                            <a href="{{ route('entrega-bodycams.index') }}"
+                                                                style="color: rgb(253, 253, 253)">Ir a Entregas Bodycams</a>
                                                         </p>
                                                     </div>
                                                 </div>
@@ -667,10 +721,12 @@
                                                         </h2>
                                                         @if($tareas_en_proceso->count() > 0)
                                                             <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
-                                                            <div style="font-size: 11px; line-height: 1.4; max-height: 100px; overflow-y: auto;">
+                                                            <div
+                                                                style="font-size: 11px; line-height: 1.4; max-height: 100px; overflow-y: auto;">
                                                                 <span class="badge badge-info">En proceso</span>
                                                                 @foreach($tareas_en_proceso as $tarea_item)
-                                                                    <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                                                    <div
+                                                                        style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
                                                                         {{ $tarea_item->fecha_programada->format('d/m/Y') }} -
                                                                         {{ Str::limit($tarea_item->tarea->nombre ?? 'Sin título', 25) }}
                                                                     </div>
@@ -679,10 +735,12 @@
                                                         @endif
                                                         @if($tareas_hoy->count() > 0)
                                                             <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
-                                                            <div style="font-size: 11px; line-height: 1.4; max-height: 100px; overflow-y: auto;">
+                                                            <div
+                                                                style="font-size: 11px; line-height: 1.4; max-height: 100px; overflow-y: auto;">
                                                                 <span class="badge badge-warning">Pendientes hoy</span>
                                                                 @foreach($tareas_hoy as $tarea_item)
-                                                                    <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                                                    <div
+                                                                        style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
                                                                         {{ $tarea_item->fecha_programada->format('d/m/Y') }} -
                                                                         {{ Str::limit($tarea_item->tarea->nombre ?? 'Sin título', 25) }}
                                                                     </div>
@@ -691,10 +749,12 @@
                                                         @endif
                                                         @if($tareas_manana->count() > 0)
                                                             <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
-                                                            <div style="font-size: 11px; line-height: 1.4; max-height: 100px; overflow-y: auto;">
+                                                            <div
+                                                                style="font-size: 11px; line-height: 1.4; max-height: 100px; overflow-y: auto;">
                                                                 <span class="badge badge-secondary">Próximas (mañana)</span>
                                                                 @foreach($tareas_manana as $tarea_item)
-                                                                    <div style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                                                    <div
+                                                                        style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
                                                                         {{ $tarea_item->fecha_programada->format('d/m/Y') }} -
                                                                         {{ Str::limit($tarea_item->tarea->nombre ?? 'Sin título', 25) }}
                                                                     </div>
@@ -702,7 +762,8 @@
                                                             </div>
                                                         @endif
                                                         <p class="m-b-0 text-right" style="margin-top: 10px;">
-                                                            <a href="{{ route('tareas.index') }}" style="color: rgb(253, 253, 253)">Ir a Tareas</a>
+                                                            <a href="{{ route('tareas.index') }}"
+                                                                style="color: rgb(253, 253, 253)">Ir a Tareas</a>
                                                         </p>
                                                     </div>
                                                 </div>
@@ -758,8 +819,8 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--ul id="equiposFuncionalesList" class="mt-3">
-                                </ul>
-                                <hr-->
+                                                                        </ul>
+                                                                        <hr-->
                         <h5>Equipos para móviles</h5>
                         <ul id="cantidadTotalEquiposMoviles" class="mt-3">
                             <!-- Lista de equipos -->
@@ -973,9 +1034,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                                                <button id="btn-buscar-moviles" href="consultarMoviles"
-                                                                                                                                                                                                                                                                                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                                            </div-->
+                                                                                                                                                                                                                                                                                                                                        <button id="btn-buscar-moviles" href="consultarMoviles"
+                                                                                                                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                                                                                    </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-moviles" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -1160,9 +1221,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                                                <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                                                                                                                                                                                                                                                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                                            </div-->
+                                                                                                                                                                                                                                                                                                                                        <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                                                                                    </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-motos" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -1189,9 +1250,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                                                <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                                                                                                                                                                                                                                                                    class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                                            </div-->
+                                                                                                                                                                                                                                                                                                                                        <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                                                                                    </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-camaras" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -1208,138 +1269,12 @@
 
     </section>
 
+@endsection
 
-
+@section('scripts')
     <script>
         $(document).ready(function () {
-            function pad2(value) {
-                return String(value).padStart(2, '0');
-            }
 
-            function actualizarReloj() {
-                var ahora = new Date();
-                var hora = pad2(ahora.getHours()) + ':' + pad2(ahora.getMinutes()) + ':' + pad2(ahora.getSeconds());
-
-                var elHora = document.getElementById('banner-hora');
-                if (elHora) {
-                    elHora.textContent = hora;
-                }
-
-                var elFecha = document.getElementById('banner-fecha');
-                if (elFecha) {
-                    try {
-                        var formatoFecha = new Intl.DateTimeFormat('es-AR', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: '2-digit'
-                        });
-                        elFecha.textContent = formatoFecha.format(ahora);
-                    } catch (error) {
-                        // fallback: dejamos el valor inicial renderizado por el servidor
-                    }
-                }
-            }
-
-            function getClimaUiDeCodigo(codigo) {
-                if (codigo === 0) return { icono: 'fa-sun', texto: 'Soleado' };
-                if (codigo === 1) return { icono: 'fa-sun', texto: 'Mayormente despejado' };
-                if (codigo === 2) return { icono: 'fa-cloud-sun', texto: 'Parcialmente nublado' };
-                if (codigo === 3) return { icono: 'fa-cloud', texto: 'Nublado' };
-
-                if (codigo === 45 || codigo === 48) return { icono: 'fa-smog', texto: 'Niebla' };
-
-                if (codigo === 51 || codigo === 53 || codigo === 55) return { icono: 'fa-cloud-rain', texto: 'Llovizna' };
-                if (codigo === 56 || codigo === 57) return { icono: 'fa-cloud-rain', texto: 'Llovizna helada' };
-
-                if (codigo === 61 || codigo === 63 || codigo === 65) return { icono: 'fa-cloud-showers-heavy', texto: 'Lluvia' };
-                if (codigo === 66 || codigo === 67) return { icono: 'fa-cloud-showers-heavy', texto: 'Lluvia helada' };
-
-                if (codigo === 71 || codigo === 73 || codigo === 75) return { icono: 'fa-snowflake', texto: 'Nieve' };
-                if (codigo === 77) return { icono: 'fa-snowflake', texto: 'Granizo' };
-
-                if (codigo === 80 || codigo === 81 || codigo === 82) return { icono: 'fa-cloud-showers-heavy', texto: 'Chubascos' };
-                if (codigo === 85 || codigo === 86) return { icono: 'fa-snowflake', texto: 'Chubascos de nieve' };
-
-                if (codigo === 95) return { icono: 'fa-bolt', texto: 'Tormenta' };
-                if (codigo === 96 || codigo === 99) return { icono: 'fa-bolt', texto: 'Tormenta con granizo' };
-
-                return { icono: 'fa-cloud', texto: 'Clima' };
-            }
-
-            function setClimaEnUi(temperaturaC, codigoClima) {
-                var elTemp = document.getElementById('clima-temp');
-                var elDesc = document.getElementById('clima-desc');
-                var elIcono = document.getElementById('clima-icono');
-
-                if (!elTemp || !elDesc || !elIcono) {
-                    return;
-                }
-
-                var tempRedondeada = (typeof temperaturaC === 'number')
-                    ? Math.round(temperaturaC)
-                    : null;
-
-                var ui = getClimaUiDeCodigo(codigoClima);
-
-                elTemp.textContent = (tempRedondeada === null ? '--' : tempRedondeada) + '°C';
-                elDesc.textContent = ui.texto;
-                elIcono.className = 'fas ' + ui.icono;
-            }
-
-            async function obtenerClimaPorCoordenadas(lat, lon) {
-                var url = 'https://api.open-meteo.com/v1/forecast'
-                    + '?latitude=' + encodeURIComponent(lat)
-                    + '&longitude=' + encodeURIComponent(lon)
-                    + '&current=temperature_2m,weather_code'
-                    + '&timezone=auto';
-
-                var response = await fetch(url, { method: 'GET' });
-                if (!response.ok) {
-                    throw new Error('Error al consultar clima: ' + response.status);
-                }
-                return await response.json();
-            }
-
-            async function actualizarClima() {
-                var fallback = { lat: -31.73197, lon: -60.5238 };
-
-                function usarCoordenadas(lat, lon) {
-                    obtenerClimaPorCoordenadas(lat, lon)
-                        .then(function (data) {
-                            var temperatura = data && data.current ? data.current.temperature_2m : null;
-                            var codigo = data && data.current ? data.current.weather_code : null;
-                            setClimaEnUi(temperatura, codigo);
-                        })
-                        .catch(function () {
-                            setClimaEnUi(null, null);
-                            var elDesc = document.getElementById('clima-desc');
-                            if (elDesc) {
-                                elDesc.textContent = 'No disponible';
-                            }
-                        });
-                }
-
-                if (navigator.geolocation && window.isSecureContext) {
-                    navigator.geolocation.getCurrentPosition(
-                        function (pos) {
-                            usarCoordenadas(pos.coords.latitude, pos.coords.longitude);
-                        },
-                        function () {
-                            usarCoordenadas(fallback.lat, fallback.lon);
-                        },
-                        { enableHighAccuracy: false, timeout: 6000, maximumAge: 300000 }
-                    );
-                    return;
-                }
-
-                usarCoordenadas(fallback.lat, fallback.lon);
-            }
-
-            actualizarReloj();
-            setInterval(actualizarReloj, 1000);
-            actualizarClima();
-            setInterval(actualizarClima, 10 * 60 * 1000);
 
             // Definir funciones de manejo de eventos
             function handleClickEvent(id, consultarFunction) {
@@ -1395,6 +1330,22 @@
                 exportarAExcel('table-equipos-division-bancaria', 'equipos_bancaria', ['fecha', 'marca',
                     'modelo', 'issi', 'tei', 'nombre_recurso', 'ticket_per', 'observaciones'
                 ]);
+            });
+
+            // Fail-safe: Re-bind sidebar dropdowns if they lost their listeners on the Home page
+            $('.main-sidebar .sidebar-menu li a.has-dropdown').off('click').on('click', function (e) {
+                var $this = $(this);
+                var $parent = $this.parent();
+                if ($parent.hasClass('active')) {
+                    $parent.removeClass('active');
+                    $parent.find('> .dropdown-menu').slideUp(500);
+                } else {
+                    $parent.parent().find('> li.active .dropdown-menu').slideUp(500);
+                    $parent.parent().find('> li.active').removeClass('active');
+                    $parent.addClass('active');
+                    $parent.find('> .dropdown-menu').slideDown(500);
+                }
+                return false;
             });
         });
 
@@ -2594,5 +2545,277 @@
                 height: '400px'
             })
         }
+
+        // Inicialización de Gráficos con Chart.js
+        document.addEventListener('DOMContentLoaded', function () {
+            // Detectar tema actual
+            function detectTheme() {
+                const html = document.documentElement;
+                const theme = html.getAttribute('data-theme') || html.getAttribute('data-bs-theme') || '';
+                if (theme === 'dark') return true;
+                // fallback: check body background
+                const bg = getComputedStyle(document.body).backgroundColor;
+                if (bg) {
+                    const match = bg.match(/\d+/g);
+                    if (match && match.length >= 3) {
+                        const brightness = (parseInt(match[0]) + parseInt(match[1]) + parseInt(match[2])) / 3;
+                        return brightness < 128;
+                    }
+                }
+                return false;
+            }
+
+            const isDark = detectTheme();
+            const textColor = isDark ? '#e2e8f0' : '#475569';
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)';
+
+            const tooltipStyle = {
+                backgroundColor: isDark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
+                titleColor: isDark ? '#f1f5f9' : '#1e293b',
+                bodyColor: isDark ? '#cbd5e1' : '#475569',
+                borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
+                borderWidth: 1,
+                padding: 10,
+                boxPadding: 4,
+                cornerRadius: 8
+            };
+
+            // 1. Gráfico de Estado de Equipos (Doughnut)
+            const canvasEstado = document.getElementById('equiposEstadoChart');
+            if (canvasEstado) {
+                new Chart(canvasEstado.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Funcionales', 'Sin Funcionar', 'Baja', 'En Revisión', 'Temporales'],
+                        datasets: [{
+                            data: [
+                                                    {{ $cant_equipos_funcionales ?? 0 }},
+                                                    {{ $cant_equipos_sin_funcionar ?? 0 }},
+                                                    {{ $cant_equipos_baja ?? 0 }},
+                                                    {{ $cant_equipos_en_revision ?? 0 }},
+                                {{ $cant_equipos_temporales ?? 0 }}
+                            ],
+                            backgroundColor: ['#8b5cf6', '#ef4444', '#3b82f6', '#6366f1', '#10b981'],
+                            borderWidth: 2,
+                            borderColor: isDark ? '#1e293b' : '#ffffff',
+                            hoverOffset: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: window.innerWidth < 768 ? 'bottom' : 'right',
+                                labels: {
+                                    color: textColor,
+                                    padding: 12,
+                                    font: { size: 12, family: "'Nunito', sans-serif" },
+                                    usePointStyle: true,
+                                    pointStyle: 'circle'
+                                }
+                            },
+                            tooltip: tooltipStyle
+                        },
+                        cutout: '65%'
+                    }
+                });
+            }
+
+            // 2. Gráfico de Provisión (Bar)
+            const canvasProvision = document.getElementById('equiposProvisionChart');
+            if (canvasProvision) {
+                new Chart(canvasProvision.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['P.G.', 'TELECOM', 'P.E.R.'],
+                        datasets: [{
+                            label: 'Cantidad de Equipos',
+                            data: [
+                                                    {{ $cant_equipos_provisto_por_pg ?? 0 }},
+                                                    {{ $cant_equipos_provisto_por_telecom ?? 0 }},
+                                {{ $cant_equipos_provisto_por_per ?? 0 }}
+                            ],
+                            backgroundColor: ['#f59e0b', '#3b82f6', '#64748b'],
+                            borderRadius: 6,
+                            borderWidth: 0,
+                            barThickness: 40
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: tooltipStyle
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: gridColor, borderDash: [5, 5] },
+                                ticks: { color: textColor, precision: 0 }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: textColor }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 3. Equipos por Departamental (Horizontal Bar)
+            const canvasDept = document.getElementById('equiposDepartamentalChart');
+            if (canvasDept) {
+                const deptData = @json($equipos_por_departamental ?? []);
+                const deptLabels = deptData.map(function (d) {
+                    var name = d.nombre || '';
+                    return name.length > 25 ? name.substring(0, 22) + '...' : name;
+                });
+                const deptValues = deptData.map(function (d) { return d.total; });
+
+                const barColors = ['#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd', '#818cf8',
+                    '#7c3aed', '#5b21b6', '#4c1d95', '#3730a3', '#4338ca'];
+
+                new Chart(canvasDept.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: deptLabels,
+                        datasets: [{
+                            label: 'Equipos',
+                            data: deptValues,
+                            backgroundColor: barColors.slice(0, deptValues.length),
+                            borderRadius: 4,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: tooltipStyle
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: { color: gridColor, borderDash: [5, 5] },
+                                ticks: { color: textColor, precision: 0 }
+                            },
+                            y: {
+                                grid: { display: false },
+                                ticks: {
+                                    color: textColor,
+                                    font: { size: 11 }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 4. Cámaras por Tipo (Bar)
+            const canvasCam = document.getElementById('camarasTipoChart');
+            if (canvasCam) {
+                const camData = @json($camaras_por_tipo ?? []);
+                const camLabels = camData.map(function (c) { return c.tipo; });
+                const camValues = camData.map(function (c) { return c.total; });
+
+                const camColors = ['#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6',
+                    '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16'];
+
+                new Chart(canvasCam.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: camLabels,
+                        datasets: [{
+                            label: 'Cantidad',
+                            data: camValues,
+                            backgroundColor: camColors.slice(0, camValues.length),
+                            borderRadius: 6,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: tooltipStyle
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: { color: gridColor, borderDash: [5, 5] },
+                                ticks: { color: textColor, precision: 0 }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: {
+                                    color: textColor,
+                                    font: { size: 11 },
+                                    maxRotation: 45,
+                                    minRotation: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            // 5. Equipos por División (Horizontal Bar)
+            const canvasDiv = document.getElementById('equiposDivisionChart');
+            if (canvasDiv) {
+                const divData = @json($equipos_por_division ?? []);
+                const divLabels = divData.map(function (d) {
+                    var name = (d.nombre || '').replace(/División/ig, 'Div.').replace(/General/ig, 'Gral.');
+                    var dep = (d.dependencia || '').replace(/División/ig, 'Div.').replace(/General/ig, 'Gral.');
+                    if (name.length > 25) name = name.substring(0, 23) + '…';
+                    if (dep.length > 25) dep = dep.substring(0, 23) + '…';
+                    return dep ? name + ' (' + dep + ')' : name;
+                });
+                const divValues = divData.map(function (d) { return d.total; });
+
+                const divColors = ['#3b82f6', '#6366f1', '#0ea5e9', '#8b5cf6', '#06b6d4',
+                    '#2563eb', '#4f46e5', '#0284c7', '#7c3aed', '#0891b2'];
+
+                new Chart(canvasDiv.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: divLabels,
+                        datasets: [{
+                            label: 'Equipos',
+                            data: divValues,
+                            backgroundColor: divColors.slice(0, divValues.length),
+                            borderRadius: 4,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: tooltipStyle
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: { color: gridColor, borderDash: [5, 5] },
+                                ticks: { color: textColor, precision: 0 }
+                            },
+                            y: {
+                                grid: { display: false },
+                                ticks: {
+                                    color: textColor,
+                                    font: { size: 10 }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
     </script>
 @endsection

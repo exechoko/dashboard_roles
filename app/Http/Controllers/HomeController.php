@@ -30,8 +30,15 @@ class HomeController extends Controller
     {
         // Obtener IDs de estados una sola vez
         $estados = Estado::whereIn('nombre', [
-            'Nuevo', 'Usado', 'Reparado', 'Baja',
-            'No funciona', 'Perdido', 'Recambio', 'Temporal', 'En revision'
+            'Nuevo',
+            'Usado',
+            'Reparado',
+            'Baja',
+            'No funciona',
+            'Perdido',
+            'Recambio',
+            'Temporal',
+            'En revision'
         ])->pluck('id', 'nombre');
 
         // Contadores básicos
@@ -39,7 +46,7 @@ class HomeController extends Controller
         $cant_roles = Role::count();
         //Camaras activas que no sean BDE (Totem)
         $cant_camaras = Camara::whereHas('tipoCamara', function ($query) {
-            $query->where('tipo','!=', 'BDE (Totem)');
+            $query->where('tipo', '!=', 'BDE (Totem)');
         })->whereHas('sitio', fn($q) => $q->where('activo', true))->count();
         //BDE (Totem)
         $cant_camaras_bde = Camara::whereHas('tipoCamara', function ($query) {
@@ -76,72 +83,78 @@ class HomeController extends Controller
             ? FlotaGeneral::where('recurso_id', $stock911->id)
                 ->where('destino_id', $stock911->destino_id)
                 ->where('fecha_desasignacion', null)
-                ->whereHas('equipo', fn($q) => $q->where('estado_id', '!=', $estados['No funciona']))
+                ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', [
+                    $estados['No funciona'],
+                    $estados['Baja'],
+                    $estados['Perdido']
+                ]))
                 ->count()
             : 0;
 
         // Equipos en Departamental Paraná
         $departamentalParana = Destino::where('nombre', 'Departamental Paraná (JDP)')->first();
-        $cant_equipos_en_departamental = $departamentalParana
-            ? FlotaGeneral::whereHas('destino', fn($q) =>
-                $q->where('departamental_id', $departamentalParana->departamental_id)
-              )
-              ->whereExists(fn($q) =>
-                $q->select(DB::raw(1))
-                  ->from('historico')
-                  ->whereRaw('flota_general.equipo_id = historico.equipo_id')
-                  ->where('historico.fecha_desasignacion', null)
-              )
-              ->whereHas('equipo', fn($q) => $q->where('estado_id', '!=', $estados['No funciona']))
-              ->count()
-            : 0;
+        $cant_equipos_en_departamental = 0;
+        if ($departamentalParana) {
+            $destinosHijos = $departamentalParana->getDestinosHijosRecursivo();
+            $cant_equipos_en_departamental = Historico::whereIn('destino_id', $destinosHijos)
+                ->whereNull('fecha_desasignacion')
+                ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', [
+                    $estados['No funciona'],
+                    $estados['Baja'],
+                    $estados['Perdido']
+                ]))
+                ->count();
+        }
 
         // Equipos en División 911
         $division911 = Destino::where('nombre', 'División 911 y Videovigilancia')->first();
-        $cant_equipos_en_div_911 = $division911
-            ? FlotaGeneral::whereHas('destino', fn($q) =>
-                $q->where('division_id', $division911->division_id)
-              )
-              ->whereExists(fn($q) =>
-                $q->select(DB::raw(1))
-                  ->from('historico')
-                  ->whereRaw('flota_general.equipo_id = historico.equipo_id')
-                  ->where('historico.fecha_desasignacion', null)
-              )
-              ->whereHas('equipo', fn($q) => $q->where('estado_id', '!=', $estados['No funciona']))
-              ->count()
-            : 0;
+        $cant_equipos_en_div_911 = 0;
+        if ($division911) {
+            $destinosHijos = $division911->getDestinosHijosRecursivo();
+            $cant_equipos_en_div_911 = Historico::whereIn('destino_id', $destinosHijos)
+                ->whereNull('fecha_desasignacion')
+                ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', [
+                    $estados['No funciona'],
+                    $estados['Baja'],
+                    $estados['Perdido']
+                ]))
+                ->count();
+        }
 
         // Equipos en División Bancaria
         $divisionBancaria = Destino::where('nombre', 'División Seguridad Urbana y Bancaria')->first();
-        $cant_equipos_en_div_bancaria = $divisionBancaria
-            ? FlotaGeneral::whereHas('destino', fn($q) =>
-                $q->where('division_id', $divisionBancaria->division_id)
-              )
-              ->whereExists(fn($q) =>
-                $q->select(DB::raw(1))
-                  ->from('historico')
-                  ->whereRaw('flota_general.equipo_id = historico.equipo_id')
-                  ->where('historico.fecha_desasignacion', null)
-              )
-              ->whereHas('equipo', fn($q) => $q->where('estado_id', '!=', $estados['No funciona']))
-              ->count()
-            : 0;
+        $cant_equipos_en_div_bancaria = 0;
+        if ($divisionBancaria) {
+            $destinosHijos = $divisionBancaria->getDestinosHijosRecursivo();
+            $cant_equipos_en_div_bancaria = Historico::whereIn('destino_id', $destinosHijos)
+                ->whereNull('fecha_desasignacion')
+                ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', [
+                    $estados['No funciona'],
+                    $estados['Baja'],
+                    $estados['Perdido']
+                ]))
+                ->count();
+        }
 
         // Equipos en Patagonia Green
         $destPG = Destino::where('nombre', 'Patagonia Green')->first();
         $cant_equipos_en_pg = $destPG
             ? Historico::where('destino_id', $destPG->id)
                 ->where('fecha_desasignacion', null)
+                ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', [
+                    $estados['No funciona'],
+                    $estados['Baja'],
+                    $estados['Perdido']
+                ]))
                 ->count()
             : 0;
 
         // Desinstalaciones parciales
         $cant_desinstalaciones = Historico::whereIn('id', function ($query) {
-                $query->select(DB::raw('MAX(id)'))
-                    ->from('historico')
-                    ->groupBy('equipo_id');
-            })
+            $query->select(DB::raw('MAX(id)'))
+                ->from('historico')
+                ->groupBy('equipo_id');
+        })
             ->where('tipo_movimiento_id', function ($subquery) {
                 $subquery->select('id')
                     ->from('tipo_movimiento')
@@ -213,6 +226,75 @@ class HomeController extends Controller
             ->orderBy('fecha_programada')
             ->get();
 
+        // Datos agrupados para gráficos
+        // Cámaras por tipo
+        $camaras_por_tipo = Camara::selectRaw('tipo_camara_id, COUNT(*) as total')
+            ->whereHas('sitio', fn($q) => $q->where('activo', true))
+            ->groupBy('tipo_camara_id')
+            ->with('tipoCamara')
+            ->get()
+            ->map(fn($item) => [
+                'tipo' => $item->tipoCamara->tipo ?? 'Sin tipo',
+                'total' => $item->total,
+            ]);
+
+        // Equipos por departamental (top 10) - contando todas las dependencias hijas
+        $departamentales = Destino::where('tipo', 'departamental')->get();
+        $equipos_por_departamental = collect();
+        
+        foreach ($departamentales as $dept) {
+            $destinosHijos = $dept->getDestinosHijosRecursivo();
+            $total = Historico::whereIn('destino_id', $destinosHijos)
+                ->whereNull('fecha_desasignacion')
+                ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', [
+                    $estados['No funciona'],
+                    $estados['Baja'],
+                    $estados['Perdido']
+                ]))
+                ->count();
+            
+            if ($total > 0) {
+                $equipos_por_departamental->push((object)[
+                    'nombre' => $dept->nombre,
+                    'total' => $total
+                ]);
+            }
+        }
+        
+        $equipos_por_departamental = $equipos_por_departamental
+            ->sortByDesc('total')
+            ->take(10)
+            ->values();
+
+        // Equipos por división (top 10) - contando todas las dependencias hijas
+        $divisiones = Destino::where('tipo', 'division')->with('padre')->get();
+        $equipos_por_division = collect();
+        
+        foreach ($divisiones as $div) {
+            $destinosHijos = $div->getDestinosHijosRecursivo();
+            $total = Historico::whereIn('destino_id', $destinosHijos)
+                ->whereNull('fecha_desasignacion')
+                ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', [
+                    $estados['No funciona'],
+                    $estados['Baja'],
+                    $estados['Perdido']
+                ]))
+                ->count();
+            
+            if ($total > 0) {
+                $equipos_por_division->push((object)[
+                    'nombre' => $div->nombre,
+                    'dependencia' => $div->padre->nombre ?? null,
+                    'total' => $total
+                ]);
+            }
+        }
+        
+        $equipos_por_division = $equipos_por_division
+            ->sortByDesc('total')
+            ->take(10)
+            ->values();
+
         return view('home', compact(
             'cant_usuarios',
             'cant_roles',
@@ -242,7 +324,10 @@ class HomeController extends Controller
             'tareas_hoy',
             'tareas_manana',
             'entregas_equipos_activas',
-            'entregas_bodycams_activas'
+            'entregas_bodycams_activas',
+            'camaras_por_tipo',
+            'equipos_por_departamental',
+            'equipos_por_division'
         ));
     }
 }

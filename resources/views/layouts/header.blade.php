@@ -57,6 +57,14 @@
         text-overflow: ellipsis;
     }
 
+    .banner-fecha-hora__fecha-completa {
+        display: inline;
+    }
+
+    .banner-fecha-hora__fecha-corta {
+        display: none;
+    }
+
     .banner-fecha-hora__hora {
         font-size: 16px;
         font-weight: 700;
@@ -95,26 +103,39 @@
     }
 
     /* Responsive: en móviles compactar */
-    /* Responsive: en móviles compactar drásticamente */
     @media (max-width: 767px) {
         .banner-fecha-hora {
-            padding: 2px 6px;
-            border-radius: 6px;
-            max-width: 60%;
+            padding: 4px 8px;
+            border-radius: 8px;
+            max-width: 70%;
             margin: 0;
-            margin-right: -10px;
-            /* Acercarlo más hacia la derecha para dar espacio al menú hamburguesa */
-            transform: scale(0.9);
-            /* Slightly scale down the container */
-            transform-origin: right center;
-            /* Scale from the right */
+            margin-right: -5px;
         }
-
 
         .banner-fecha-hora__fila {
             justify-content: center;
             gap: 8px;
-            /* Reduced gap */
+        }
+
+        .banner-fecha-hora__icono {
+            width: 28px;
+            height: 28px;
+        }
+
+        .banner-fecha-hora__fecha {
+            font-size: 10px;
+        }
+
+        .banner-fecha-hora__hora {
+            font-size: 14px;
+        }
+
+        .banner-fecha-hora__fecha-completa {
+            display: none;
+        }
+
+        .banner-fecha-hora__fecha-corta {
+            display: inline;
         }
 
         .banner-clima {
@@ -164,7 +185,8 @@
             </div>
             <div class="banner-fecha-hora__texto">
                 <div class="banner-fecha-hora__fecha" id="banner-fecha">
-                    {{ \Carbon\Carbon::now()->translatedFormat('l, d \d\e F \d\e Y') }}
+                    <span class="banner-fecha-hora__fecha-completa">{{ \Carbon\Carbon::now()->translatedFormat('l, d \d\e F \d\e Y') }}</span>
+                    <span class="banner-fecha-hora__fecha-corta">{{ \Carbon\Carbon::now()->translatedFormat('D, d/m/Y') }}</span>
                 </div>
                 <div class="banner-fecha-hora__hora" id="banner-hora">
                     --:--:--
@@ -199,16 +221,33 @@
                 elHora.textContent = hora;
             }
 
-            var elFecha = document.getElementById('banner-fecha');
-            if (elFecha) {
+            // Actualizar fecha completa
+            var elFechaCompleta = document.querySelector('.banner-fecha-hora__fecha-completa');
+            if (elFechaCompleta) {
                 try {
-                    var formatoFecha = new Intl.DateTimeFormat('es-AR', {
+                    var formatoCompleto = new Intl.DateTimeFormat('es-AR', {
                         weekday: 'long',
                         year: 'numeric',
                         month: 'long',
                         day: '2-digit'
                     });
-                    elFecha.textContent = formatoFecha.format(ahora);
+                    elFechaCompleta.textContent = formatoCompleto.format(ahora);
+                } catch (error) {
+                    // fallback
+                }
+            }
+
+            // Actualizar fecha corta para móviles
+            var elFechaCorta = document.querySelector('.banner-fecha-hora__fecha-corta');
+            if (elFechaCorta) {
+                try {
+                    var formatoCorto = new Intl.DateTimeFormat('es-AR', {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                    });
+                    elFechaCorta.textContent = formatoCorto.format(ahora);
                 } catch (error) {
                     // fallback
                 }

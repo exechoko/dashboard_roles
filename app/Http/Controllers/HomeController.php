@@ -83,72 +83,69 @@ class HomeController extends Controller
             ? FlotaGeneral::where('recurso_id', $stock911->id)
                 ->where('destino_id', $stock911->destino_id)
                 ->where('fecha_desasignacion', null)
-                ->whereHas('equipo', fn($q) => $q->where('estado_id', '!=', $estados['No funciona']))
+                ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', [
+                    $estados['No funciona'],
+                    $estados['Baja'],
+                    $estados['Perdido']
+                ]))
                 ->count()
             : 0;
 
         // Equipos en Departamental Paraná
         $departamentalParana = Destino::where('nombre', 'Departamental Paraná (JDP)')->first();
-        $cant_equipos_en_departamental = $departamentalParana
-            ? FlotaGeneral::whereHas(
-                'destino',
-                fn($q) =>
-                $q->where('departamental_id', $departamentalParana->departamental_id)
-            )
-                ->whereExists(
-                    fn($q) =>
-                    $q->select(DB::raw(1))
-                        ->from('historico')
-                        ->whereRaw('flota_general.equipo_id = historico.equipo_id')
-                        ->where('historico.fecha_desasignacion', null)
-                )
-                ->whereHas('equipo', fn($q) => $q->where('estado_id', '!=', $estados['No funciona']))
-                ->count()
-            : 0;
+        $cant_equipos_en_departamental = 0;
+        if ($departamentalParana) {
+            $destinosHijos = $departamentalParana->getDestinosHijosRecursivo();
+            $cant_equipos_en_departamental = Historico::whereIn('destino_id', $destinosHijos)
+                ->whereNull('fecha_desasignacion')
+                ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', [
+                    $estados['No funciona'],
+                    $estados['Baja'],
+                    $estados['Perdido']
+                ]))
+                ->count();
+        }
 
         // Equipos en División 911
         $division911 = Destino::where('nombre', 'División 911 y Videovigilancia')->first();
-        $cant_equipos_en_div_911 = $division911
-            ? FlotaGeneral::whereHas(
-                'destino',
-                fn($q) =>
-                $q->where('division_id', $division911->division_id)
-            )
-                ->whereExists(
-                    fn($q) =>
-                    $q->select(DB::raw(1))
-                        ->from('historico')
-                        ->whereRaw('flota_general.equipo_id = historico.equipo_id')
-                        ->where('historico.fecha_desasignacion', null)
-                )
-                ->whereHas('equipo', fn($q) => $q->where('estado_id', '!=', $estados['No funciona']))
-                ->count()
-            : 0;
+        $cant_equipos_en_div_911 = 0;
+        if ($division911) {
+            $destinosHijos = $division911->getDestinosHijosRecursivo();
+            $cant_equipos_en_div_911 = Historico::whereIn('destino_id', $destinosHijos)
+                ->whereNull('fecha_desasignacion')
+                ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', [
+                    $estados['No funciona'],
+                    $estados['Baja'],
+                    $estados['Perdido']
+                ]))
+                ->count();
+        }
 
         // Equipos en División Bancaria
         $divisionBancaria = Destino::where('nombre', 'División Seguridad Urbana y Bancaria')->first();
-        $cant_equipos_en_div_bancaria = $divisionBancaria
-            ? FlotaGeneral::whereHas(
-                'destino',
-                fn($q) =>
-                $q->where('division_id', $divisionBancaria->division_id)
-            )
-                ->whereExists(
-                    fn($q) =>
-                    $q->select(DB::raw(1))
-                        ->from('historico')
-                        ->whereRaw('flota_general.equipo_id = historico.equipo_id')
-                        ->where('historico.fecha_desasignacion', null)
-                )
-                ->whereHas('equipo', fn($q) => $q->where('estado_id', '!=', $estados['No funciona']))
-                ->count()
-            : 0;
+        $cant_equipos_en_div_bancaria = 0;
+        if ($divisionBancaria) {
+            $destinosHijos = $divisionBancaria->getDestinosHijosRecursivo();
+            $cant_equipos_en_div_bancaria = Historico::whereIn('destino_id', $destinosHijos)
+                ->whereNull('fecha_desasignacion')
+                ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', [
+                    $estados['No funciona'],
+                    $estados['Baja'],
+                    $estados['Perdido']
+                ]))
+                ->count();
+        }
 
         // Equipos en Patagonia Green
         $destPG = Destino::where('nombre', 'Patagonia Green')->first();
         $cant_equipos_en_pg = $destPG
             ? Historico::where('destino_id', $destPG->id)
                 ->where('fecha_desasignacion', null)
+                ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', [
+                    $estados['No funciona'],
+                    $estados['Baja'],
+                    $estados['Perdido']
+                ]))
                 ->count()
             : 0;
 
@@ -241,32 +238,62 @@ class HomeController extends Controller
                 'total' => $item->total,
             ]);
 
-        // Equipos por departamental (top 10)
-        $equipos_por_departamental = DB::table('historico')
-            ->join('destino', 'historico.destino_id', '=', 'destino.id')
-            ->whereNull('historico.fecha_desasignacion')
-            ->whereIn('destino.tipo', ['departamental'])
-            ->select('destino.nombre', DB::raw('COUNT(*) as total'))
-            ->groupBy('destino.nombre')
-            ->orderByDesc('total')
-            ->limit(10)
-            ->get();
+        // Equipos por departamental (top 10) - contando todas las dependencias hijas
+        $departamentales = Destino::where('tipo', 'departamental')->get();
+        $equipos_por_departamental = collect();
+        
+        foreach ($departamentales as $dept) {
+            $destinosHijos = $dept->getDestinosHijosRecursivo();
+            $total = Historico::whereIn('destino_id', $destinosHijos)
+                ->whereNull('fecha_desasignacion')
+                ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', [
+                    $estados['No funciona'],
+                    $estados['Baja'],
+                    $estados['Perdido']
+                ]))
+                ->count();
+            
+            if ($total > 0) {
+                $equipos_por_departamental->push((object)[
+                    'nombre' => $dept->nombre,
+                    'total' => $total
+                ]);
+            }
+        }
+        
+        $equipos_por_departamental = $equipos_por_departamental
+            ->sortByDesc('total')
+            ->take(10)
+            ->values();
 
-        // Equipos por división (top 10) con nombre de la departamental padre
-        $equipos_por_division = DB::table('historico')
-            ->join('destino', 'historico.destino_id', '=', 'destino.id')
-            ->leftJoin('destino as padre', 'destino.parent_id', '=', 'padre.id')
-            ->whereNull('historico.fecha_desasignacion')
-            ->where('destino.tipo', 'division')
-            ->select(
-                'destino.nombre',
-                'padre.nombre as dependencia',
-                DB::raw('COUNT(*) as total')
-            )
-            ->groupBy('destino.nombre', 'padre.nombre')
-            ->orderByDesc('total')
-            ->limit(10)
-            ->get();
+        // Equipos por división (top 10) - contando todas las dependencias hijas
+        $divisiones = Destino::where('tipo', 'division')->with('padre')->get();
+        $equipos_por_division = collect();
+        
+        foreach ($divisiones as $div) {
+            $destinosHijos = $div->getDestinosHijosRecursivo();
+            $total = Historico::whereIn('destino_id', $destinosHijos)
+                ->whereNull('fecha_desasignacion')
+                ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', [
+                    $estados['No funciona'],
+                    $estados['Baja'],
+                    $estados['Perdido']
+                ]))
+                ->count();
+            
+            if ($total > 0) {
+                $equipos_por_division->push((object)[
+                    'nombre' => $div->nombre,
+                    'dependencia' => $div->padre->nombre ?? null,
+                    'total' => $total
+                ]);
+            }
+        }
+        
+        $equipos_por_division = $equipos_por_division
+            ->sortByDesc('total')
+            ->take(10)
+            ->values();
 
         return view('home', compact(
             'cant_usuarios',

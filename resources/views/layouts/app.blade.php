@@ -62,6 +62,9 @@
     <script src="{{ asset('leaflet/leaflet-heat.js') }}"></script>
     <script src="https://unpkg.com/leaflet-fullscreen@1.6.0/dist/Leaflet.fullscreen.min.js"></script>
 
+    <!-- jQuery debe cargarse en el head para estar disponible en todos los scripts -->
+    <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
+
     @yield('page_css')
     <!-- Template CSS -->
     <link rel="stylesheet" href="{{ asset('web/css/style.css') }}">
@@ -117,7 +120,6 @@
     @include('themes.toggle-button')
 
 </body>
-<script src="{{ asset('assets/js/jquery.min.js') }}"></script>
 <script src="{{ asset('assets/js/popper.min.js') }}"></script>
 <script src="{{ asset('assets/js/bootstrap.min.js') }}"></script>
 <script src="{{ asset('assets/js/sweetalert.min.js') }}"></script>
@@ -128,9 +130,8 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script type="text/javascript" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
 <script src="https://unpkg.com/tableexport.jquery.plugin/tableExport.min.js"></script>
-<script type="text/javascript" src="libs/FileSaver/FileSaver.min.js"></script>
-<script type="text/javascript" src="libs/js-xlsx/xlsx.core.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.1/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/moment/min/moment.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap-daterangepicker/daterangepicker.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>

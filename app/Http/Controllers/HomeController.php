@@ -227,16 +227,18 @@ class HomeController extends Controller
             ->get();
 
         // Datos agrupados para gráficos
-        // Cámaras por tipo
-        $camaras_por_tipo = Camara::selectRaw('tipo_camara_id, COUNT(*) as total')
-            ->whereHas('sitio', fn($q) => $q->where('activo', true))
-            ->groupBy('tipo_camara_id')
+        // Cámaras por tipo (agrupadas por el campo 'tipo' exacto de tipo_camara)
+        $camaras_por_tipo = Camara::whereHas('sitio', fn($q) => $q->where('activo', true))
             ->with('tipoCamara')
             ->get()
-            ->map(fn($item) => [
-                'tipo' => $item->tipoCamara->tipo ?? 'Sin tipo',
-                'total' => $item->total,
-            ]);
+            ->groupBy(function($camara) {
+                return $camara->tipoCamara->tipo ?? 'Sin tipo';
+            })
+            ->map(fn($group, $tipo) => [
+                'tipo' => $tipo,
+                'total' => $group->count(),
+            ])
+            ->values();
 
         // Equipos por departamental (top 10) - contando todas las dependencias hijas
         $departamentales = Destino::where('tipo', 'departamental')->get();

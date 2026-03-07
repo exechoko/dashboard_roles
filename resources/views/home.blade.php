@@ -2565,257 +2565,299 @@
                 return false;
             }
 
-            const isDark = detectTheme();
-            const textColor = isDark ? '#e2e8f0' : '#475569';
-            const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)';
+            // Almacenar instancias de gráficos
+            let chartInstances = {};
 
-            const tooltipStyle = {
-                backgroundColor: isDark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
-                titleColor: isDark ? '#f1f5f9' : '#1e293b',
-                bodyColor: isDark ? '#cbd5e1' : '#475569',
-                borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
-                borderWidth: 1,
-                padding: 10,
-                boxPadding: 4,
-                cornerRadius: 8
-            };
-
-            // 1. Gráfico de Estado de Equipos (Doughnut)
-            const canvasEstado = document.getElementById('equiposEstadoChart');
-            if (canvasEstado) {
-                new Chart(canvasEstado.getContext('2d'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Funcionales', 'Sin Funcionar', 'Baja', 'En Revisión', 'Temporales'],
-                        datasets: [{
-                            data: [
-                                                    {{ $cant_equipos_funcionales ?? 0 }},
-                                                    {{ $cant_equipos_sin_funcionar ?? 0 }},
-                                                    {{ $cant_equipos_baja ?? 0 }},
-                                                    {{ $cant_equipos_en_revision ?? 0 }},
-                                {{ $cant_equipos_temporales ?? 0 }}
-                            ],
-                            backgroundColor: ['#8b5cf6', '#ef4444', '#3b82f6', '#6366f1', '#10b981'],
-                            borderWidth: 2,
-                            borderColor: isDark ? '#1e293b' : '#ffffff',
-                            hoverOffset: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: window.innerWidth < 768 ? 'bottom' : 'right',
-                                labels: {
-                                    color: textColor,
-                                    padding: 12,
-                                    font: { size: 12, family: "'Nunito', sans-serif" },
-                                    usePointStyle: true,
-                                    pointStyle: 'circle'
-                                }
-                            },
-                            tooltip: tooltipStyle
-                        },
-                        cutout: '65%'
-                    }
+            // Función para crear todos los gráficos
+            function createCharts() {
+                // Destruir gráficos existentes
+                Object.values(chartInstances).forEach(chart => {
+                    if (chart) chart.destroy();
                 });
-            }
+                chartInstances = {};
 
-            // 2. Gráfico de Provisión (Bar)
-            const canvasProvision = document.getElementById('equiposProvisionChart');
-            if (canvasProvision) {
-                new Chart(canvasProvision.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: ['P.G.', 'TELECOM', 'P.E.R.'],
-                        datasets: [{
-                            label: 'Cantidad de Equipos',
-                            data: [
-                                                    {{ $cant_equipos_provisto_por_pg ?? 0 }},
-                                                    {{ $cant_equipos_provisto_por_telecom ?? 0 }},
-                                {{ $cant_equipos_provisto_por_per ?? 0 }}
-                            ],
-                            backgroundColor: ['#f59e0b', '#3b82f6', '#64748b'],
-                            borderRadius: 6,
-                            borderWidth: 0,
-                            barThickness: 40
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: tooltipStyle
+                const isDark = detectTheme();
+                const textColor = isDark ? '#e2e8f0' : '#0f172a';
+                const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.15)';
+
+                const tooltipStyle = {
+                    backgroundColor: isDark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
+                    titleColor: isDark ? '#f1f5f9' : '#1e293b',
+                    bodyColor: isDark ? '#cbd5e1' : '#475569',
+                    borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
+                    borderWidth: 1,
+                    padding: 10,
+                    boxPadding: 4,
+                    cornerRadius: 8
+                };
+
+                // 1. Gráfico de Estado de Equipos (Doughnut)
+                const canvasEstado = document.getElementById('equiposEstadoChart');
+                if (canvasEstado) {
+                    chartInstances.estado = new Chart(canvasEstado.getContext('2d'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Funcionales', 'Sin Funcionar', 'Baja', 'En Revisión', 'Temporales'],
+                            datasets: [{
+                                data: [
+                                    {{ $cant_equipos_funcionales ?? 0 }},
+                                    {{ $cant_equipos_sin_funcionar ?? 0 }},
+                                    {{ $cant_equipos_baja ?? 0 }},
+                                    {{ $cant_equipos_en_revision ?? 0 }},
+                                    {{ $cant_equipos_temporales ?? 0 }}
+                                ],
+                                backgroundColor: ['#8b5cf6', '#ef4444', '#3b82f6', '#6366f1', '#10b981'],
+                                borderWidth: 2,
+                                borderColor: isDark ? '#1e293b' : '#ffffff',
+                                hoverOffset: 6
+                            }]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: { color: gridColor, borderDash: [5, 5] },
-                                ticks: { color: textColor, precision: 0 }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: window.innerWidth < 768 ? 'bottom' : 'right',
+                                    labels: {
+                                        color: textColor,
+                                        padding: 12,
+                                        font: { size: 12, family: "'Nunito', sans-serif" },
+                                        usePointStyle: true,
+                                        pointStyle: 'circle'
+                                    }
+                                },
+                                tooltip: tooltipStyle
                             },
-                            x: {
-                                grid: { display: false },
-                                ticks: { color: textColor }
-                            }
+                            cutout: '65%'
                         }
-                    }
-                });
-            }
+                    });
+                }
 
-            // 3. Equipos por Departamental (Horizontal Bar)
-            const canvasDept = document.getElementById('equiposDepartamentalChart');
-            if (canvasDept) {
-                const deptData = @json($equipos_por_departamental ?? []);
-                const deptLabels = deptData.map(function (d) {
-                    var name = d.nombre || '';
-                    return name.length > 25 ? name.substring(0, 22) + '...' : name;
-                });
-                const deptValues = deptData.map(function (d) { return d.total; });
-
-                const barColors = ['#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd', '#818cf8',
-                    '#7c3aed', '#5b21b6', '#4c1d95', '#3730a3', '#4338ca'];
-
-                new Chart(canvasDept.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: deptLabels,
-                        datasets: [{
-                            label: 'Equipos',
-                            data: deptValues,
-                            backgroundColor: barColors.slice(0, deptValues.length),
-                            borderRadius: 4,
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: tooltipStyle
+                // 2. Gráfico de Provisión (Bar)
+                const canvasProvision = document.getElementById('equiposProvisionChart');
+                if (canvasProvision) {
+                    chartInstances.provision = new Chart(canvasProvision.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: ['P.G.', 'TELECOM', 'P.E.R.'],
+                            datasets: [{
+                                label: 'Cantidad de Equipos',
+                                data: [
+                                    {{ $cant_equipos_provisto_por_pg ?? 0 }},
+                                    {{ $cant_equipos_provisto_por_telecom ?? 0 }},
+                                    {{ $cant_equipos_provisto_por_per ?? 0 }}
+                                ],
+                                backgroundColor: ['#f59e0b', '#3b82f6', '#64748b'],
+                                borderRadius: 6,
+                                borderWidth: 0,
+                                barThickness: 40
+                            }]
                         },
-                        scales: {
-                            x: {
-                                beginAtZero: true,
-                                grid: { color: gridColor, borderDash: [5, 5] },
-                                ticks: { color: textColor, precision: 0 }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: tooltipStyle
                             },
-                            y: {
-                                grid: { display: false },
-                                ticks: {
-                                    color: textColor,
-                                    font: { size: 11 }
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: { color: gridColor, borderDash: [5, 5] },
+                                    ticks: { color: textColor, precision: 0 }
+                                },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: { color: textColor }
                                 }
                             }
                         }
-                    }
-                });
-            }
+                    });
+                }
 
-            // 4. Cámaras por Tipo (Bar)
-            const canvasCam = document.getElementById('camarasTipoChart');
-            if (canvasCam) {
-                const camData = @json($camaras_por_tipo ?? []);
-                const camLabels = camData.map(function (c) { return c.tipo; });
-                const camValues = camData.map(function (c) { return c.total; });
+                // 3. Equipos por Departamental (Horizontal Bar)
+                const canvasDept = document.getElementById('equiposDepartamentalChart');
+                if (canvasDept) {
+                    const deptData = @json($equipos_por_departamental ?? []);
+                    const deptLabels = deptData.map(function (d) {
+                        var name = d.nombre || '';
+                        return name.length > 25 ? name.substring(0, 22) + '...' : name;
+                    });
+                    const deptValues = deptData.map(function (d) { return d.total; });
 
-                const camColors = ['#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6',
-                    '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16'];
+                    const barColors = ['#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd', '#818cf8',
+                        '#7c3aed', '#5b21b6', '#4c1d95', '#3730a3', '#4338ca'];
 
-                new Chart(canvasCam.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: camLabels,
-                        datasets: [{
-                            label: 'Cantidad',
-                            data: camValues,
-                            backgroundColor: camColors.slice(0, camValues.length),
-                            borderRadius: 6,
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: tooltipStyle
+                    chartInstances.departamental = new Chart(canvasDept.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: deptLabels,
+                            datasets: [{
+                                label: 'Equipos',
+                                data: deptValues,
+                                backgroundColor: barColors.slice(0, deptValues.length),
+                                borderRadius: 4,
+                                borderWidth: 0
+                            }]
                         },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                grid: { color: gridColor, borderDash: [5, 5] },
-                                ticks: { color: textColor, precision: 0 }
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: tooltipStyle
                             },
-                            x: {
-                                grid: { display: false },
-                                ticks: {
-                                    color: textColor,
-                                    font: { size: 11 },
-                                    maxRotation: 45,
-                                    minRotation: 0
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    grid: { color: gridColor, borderDash: [5, 5] },
+                                    ticks: { color: textColor, precision: 0 }
+                                },
+                                y: {
+                                    grid: { display: false },
+                                    ticks: {
+                                        color: textColor,
+                                        font: { size: 11, weight: '500' }
+                                    }
                                 }
                             }
                         }
-                    }
-                });
-            }
-            // 5. Equipos por División (Horizontal Bar)
-            const canvasDiv = document.getElementById('equiposDivisionChart');
-            if (canvasDiv) {
-                const divData = @json($equipos_por_division ?? []);
-                const divLabels = divData.map(function (d) {
-                    var name = (d.nombre || '').replace(/División/ig, 'Div.').replace(/General/ig, 'Gral.');
-                    var dep = (d.dependencia || '').replace(/División/ig, 'Div.').replace(/General/ig, 'Gral.');
-                    if (name.length > 25) name = name.substring(0, 23) + '…';
-                    if (dep.length > 25) dep = dep.substring(0, 23) + '…';
-                    return dep ? name + ' (' + dep + ')' : name;
-                });
-                const divValues = divData.map(function (d) { return d.total; });
+                    });
+                }
 
-                const divColors = ['#3b82f6', '#6366f1', '#0ea5e9', '#8b5cf6', '#06b6d4',
-                    '#2563eb', '#4f46e5', '#0284c7', '#7c3aed', '#0891b2'];
+                // 4. Cámaras por Tipo (Bar)
+                const canvasCam = document.getElementById('camarasTipoChart');
+                if (canvasCam) {
+                    const camData = @json($camaras_por_tipo ?? []);
+                    const camLabels = camData.map(function (c) { return c.tipo; });
+                    const camValues = camData.map(function (c) { return c.total; });
 
-                new Chart(canvasDiv.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: divLabels,
-                        datasets: [{
-                            label: 'Equipos',
-                            data: divValues,
-                            backgroundColor: divColors.slice(0, divValues.length),
-                            borderRadius: 4,
-                            borderWidth: 0
-                        }]
-                    },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: tooltipStyle
+                    const camColors = ['#f59e0b', '#ef4444', '#10b981', '#3b82f6', '#8b5cf6',
+                        '#ec4899', '#14b8a6', '#f97316', '#06b6d4', '#84cc16'];
+
+                    chartInstances.camaras = new Chart(canvasCam.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: camLabels,
+                            datasets: [{
+                                label: 'Cantidad',
+                                data: camValues,
+                                backgroundColor: camColors.slice(0, camValues.length),
+                                borderRadius: 6,
+                                borderWidth: 0
+                            }]
                         },
-                        scales: {
-                            x: {
-                                beginAtZero: true,
-                                grid: { color: gridColor, borderDash: [5, 5] },
-                                ticks: { color: textColor, precision: 0 }
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: tooltipStyle
                             },
-                            y: {
-                                grid: { display: false },
-                                ticks: {
-                                    color: textColor,
-                                    font: { size: 10 }
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: { color: gridColor, borderDash: [5, 5] },
+                                    ticks: { color: textColor, precision: 0 }
+                                },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: {
+                                        color: textColor,
+                                        font: { size: 11 },
+                                        maxRotation: 45,
+                                        minRotation: 0
+                                    }
                                 }
                             }
                         }
+                    });
+                }
+
+                // 5. Equipos por División (Horizontal Bar)
+                const canvasDiv = document.getElementById('equiposDivisionChart');
+                if (canvasDiv) {
+                    const divData = @json($equipos_por_division ?? []);
+                    const divLabels = divData.map(function (d) {
+                        var name = (d.nombre || '')
+                            .replace(/División/ig, 'Div.')
+                            .replace(/Dirección/ig, 'Dir.')
+                            .replace(/Operaciones/ig, 'Oper.')
+                            .replace(/Seguridad/ig, 'Seg.')
+                            .replace(/Investigaciones/ig, 'Inv.')
+                            .replace(/General/ig, 'Gral.');
+                        var dep = (d.dependencia || '')
+                            .replace(/División/ig, 'Div.')
+                            .replace(/Dirección/ig, 'Dir.')
+                            .replace(/Operaciones/ig, 'Oper.')
+                            .replace(/Seguridad/ig, 'Seg.')
+                            .replace(/Investigaciones/ig, 'Inv.')
+                            .replace(/General/ig, 'Gral.');
+                        if (name.length > 25) name = name.substring(0, 23) + '…';
+                        if (dep.length > 25) dep = dep.substring(0, 23) + '…';
+                        return dep ? name + ' (' + dep + ')' : name;
+                    });
+                    const divValues = divData.map(function (d) { return d.total; });
+
+                    const divColors = ['#3b82f6', '#6366f1', '#0ea5e9', '#8b5cf6', '#06b6d4',
+                        '#2563eb', '#4f46e5', '#0284c7', '#7c3aed', '#0891b2'];
+
+                    chartInstances.division = new Chart(canvasDiv.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: divLabels,
+                            datasets: [{
+                                label: 'Equipos',
+                                data: divValues,
+                                backgroundColor: divColors.slice(0, divValues.length),
+                                borderRadius: 4,
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: tooltipStyle
+                            },
+                            scales: {
+                                x: {
+                                    beginAtZero: true,
+                                    grid: { color: gridColor, borderDash: [5, 5] },
+                                    ticks: { color: textColor, precision: 0 }
+                                },
+                                y: {
+                                    grid: { display: false },
+                                    ticks: {
+                                        color: textColor,
+                                        font: { size: 10, weight: '500' }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Crear gráficos inicialmente
+            createCharts();
+
+            // Observar cambios de tema y re-renderizar gráficos
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
+                        createCharts();
                     }
                 });
-            }
+            });
+
+            observer.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['data-theme']
+            });
         });
     </script>
 @endsection

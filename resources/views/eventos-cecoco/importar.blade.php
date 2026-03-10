@@ -1,11 +1,16 @@
 @extends('layouts.app')
 
 @section('content')
-<h2 class="mb-4">Importar archivo Excel CECOCO</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Importar archivo Excel CECOCO</h2>
+    <a href="{{ route('cecoco.index') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Volver al listado
+    </a>
+</div>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card">
+<div class="row g-3">
+    <div class="col-12 col-lg-6">
+        <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0"><i class="bi bi-cloud-upload"></i> Formulario de importación</h5>
             </div>
@@ -55,21 +60,21 @@
         </div>
     </div>
 
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-12 col-lg-6">
+        <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0"><i class="bi bi-clock-history"></i> Historial de importaciones</h5>
             </div>
             <div class="card-body">
-                <div class="row mb-3">
+                <div class="row g-2 mb-3">
                     <div class="col-6">
-                        <div class="text-center p-2 bg-light rounded">
+                        <div class="text-center p-2 rounded" style="background-color: var(--bs-secondary-bg);">
                             <small class="text-muted d-block">Archivos importados</small>
                             <strong class="fs-5">{{ $totalArchivosImportados }}</strong>
                         </div>
                     </div>
                     <div class="col-6">
-                        <div class="text-center p-2 bg-light rounded">
+                        <div class="text-center p-2 rounded" style="background-color: var(--bs-secondary-bg);">
                             <small class="text-muted d-block">Registros en BD</small>
                             <strong class="fs-5">{{ number_format($totalRegistrosEnBd) }}</strong>
                         </div>

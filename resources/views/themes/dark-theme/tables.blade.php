@@ -116,6 +116,20 @@
         color: #ffffff !important;
     }
 
+    [data-theme="dark"] .badge-primary {
+        background-color: #007bff !important;
+        color: #ffffff !important;
+    }
+
+    [data-theme="dark"] .badge-dark {
+        background-color: #343a40 !important;
+        color: #ffffff !important;
+    }
+    
+    [data-theme="dark"] .badge small {
+        color: #ffffff !important;
+    }
+
     [data-theme="dark"] .table small {
         color: var(--text-secondary) !important;
     }

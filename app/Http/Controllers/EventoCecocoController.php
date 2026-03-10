@@ -49,7 +49,9 @@ class EventoCecocoController extends Controller
         }
 
         if ($request->filled('desde') && $request->filled('hasta')) {
-            $query->entreFechas($request->desde, $request->hasta);
+            $desdeCompleto = $request->desde . ' ' . ($request->filled('hora_desde') ? $request->hora_desde : '00:00:00');
+            $hastaCompleto = $request->hasta . ' ' . ($request->filled('hora_hasta') ? $request->hora_hasta : '23:59:59');
+            $query->whereBetween('fecha_hora', [$desdeCompleto, $hastaCompleto]);
         }
 
         if ($request->filled('buscar')) {
@@ -181,7 +183,9 @@ class EventoCecocoController extends Controller
         }
 
         if ($request->filled('desde') && $request->filled('hasta')) {
-            $query->entreFechas($request->desde, $request->hasta);
+            $desdeCompleto = $request->desde . ' ' . ($request->filled('hora_desde') ? $request->hora_desde : '00:00:00');
+            $hastaCompleto = $request->hasta . ' ' . ($request->filled('hora_hasta') ? $request->hora_hasta : '23:59:59');
+            $query->whereBetween('fecha_hora', [$desdeCompleto, $hastaCompleto]);
         }
 
         if ($request->filled('buscar')) {

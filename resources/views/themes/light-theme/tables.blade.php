@@ -101,6 +101,20 @@
         color: #ffffff !important;
     }
 
+    .badge-primary {
+        background-color: #007bff !important;
+        color: #ffffff !important;
+    }
+
+    .badge-dark {
+        background-color: #343a40 !important;
+        color: #ffffff !important;
+    }
+
+    .badge small {
+        color: #ffffff !important;
+    }
+
     .table small {
         font-size: 0.85rem !important;
         color: var(--text-secondary) !important;

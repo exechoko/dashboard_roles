@@ -215,6 +215,13 @@
                     </a>
                 </li>
             @endcan
+            @can('ver-analizador-eventos-cecoco')
+                <li class="{{ request()->is('cecoco*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('cecoco.index') }}">
+                        <i class="fas fa-database"></i><span>Analizador de Eventos</span>
+                    </a>
+                </li>
+            @endcan
         </ul>
     </li>
 @endcan

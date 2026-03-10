@@ -353,6 +353,18 @@ Route::group(['middleware' => ['auth']], function () {
         Route::resource('bienes', PatrimonioBienController::class);
     });
 
+    Route::prefix('cecoco')->name('cecoco.')->group(function () {
+        Route::get('/', [App\Http\Controllers\EventoCecocoController::class, 'index'])->name('index');
+        Route::get('/importar/form', [App\Http\Controllers\EventoCecocoController::class, 'importarForm'])->name('importar');
+        Route::post('/importar', [App\Http\Controllers\EventoCecocoController::class, 'importar'])->name('importar.post');
+        Route::get('/exportar/csv', [App\Http\Controllers\EventoCecocoController::class, 'exportarCsv'])->name('exportar.csv');
+        Route::get('/{eventoCecoco}', [App\Http\Controllers\EventoCecocoController::class, 'show'])->name('show');
+    });
+
+    Route::prefix('api/cecoco')->name('api.cecoco.')->group(function () {
+        Route::get('/eventos', [App\Http\Controllers\EventoCecocoController::class, 'apiListar'])->name('eventos');
+    });
+
     //Optimizar sistema
     Route::get('optimizar', function () {
         Artisan::call('optimize:clear');

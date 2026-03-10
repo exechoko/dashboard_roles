@@ -92,7 +92,8 @@
                                                         'moviles-cecoco',
                                                         'eventos-cecoco',
                                                         'mapa-calor-servicios-cecoco',
-                                                        'mapa-cecoco-en-vivo'
+                                                        'mapa-cecoco-en-vivo',
+                                                        'ver-analizador-eventos-cecoco'
                                                     ],
                                                     'Entregas' => [
                                                         'entrega-equipos',

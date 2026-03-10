@@ -13,16 +13,55 @@
         @php
             $tipoLower = strtolower($eventoCecoco->tipo_servicio ?? '');
             $badgeClass = 'primary';
-            if(str_contains($tipoLower, 'llamada falsa')) {
-                $badgeClass = 'secondary';
-            } elseif(str_contains($tipoLower, 'incendio') || str_contains($tipoLower, 'fuego')) {
+            
+            // NIVEL 1: CRÍTICO (Rojo - Danger)
+            if(str_contains($tipoLower, 'incendio') || str_contains($tipoLower, 'fuego') ||
+               str_contains($tipoLower, 'herido con arma') || str_contains($tipoLower, 'persona armada') ||
+               str_contains($tipoLower, 'persona fallecida') || str_contains($tipoLower, 'abuso de arma') ||
+               str_contains($tipoLower, 'violencia de genero con detenidos') || str_contains($tipoLower, 'tentativa de suicidio') ||
+               str_contains($tipoLower, 'persona ajena en los fondos') || str_contains($tipoLower, 'solicitud de ambulancia') ||
+               str_contains($tipoLower, 'accidente de transito con fallecido') || str_contains($tipoLower, 'accidente de transito con lesionados')) {
                 $badgeClass = 'danger';
-            } elseif(str_contains($tipoLower, 'accidente')) {
+            }
+            // NIVEL 2: URGENTE (Naranja - Warning)
+            elseif(str_contains($tipoLower, 'accidente') || str_contains($tipoLower, 'amenazas') ||
+                    str_contains($tipoLower, 'alarma activada') || str_contains($tipoLower, 'persona extraviada') ||
+                    str_contains($tipoLower, 'persona tirada en la via publica') || str_contains($tipoLower, 'lesiones') ||
+                    str_contains($tipoLower, 'violacion de domicilio') || str_contains($tipoLower, 'violencia de genero') ||
+                    str_contains($tipoLower, 'tentativa de arrebato') || str_contains($tipoLower, 'tentativa de hurto') ||
+                    str_contains($tipoLower, 'tentativa de robo') || str_contains($tipoLower, 'tentativa de estafa') ||
+                    str_contains($tipoLower, 'hurto') || str_contains($tipoLower, 'robo') ||
+                    str_contains($tipoLower, 'arrebato') || str_contains($tipoLower, 'estafa') ||
+                    str_contains($tipoLower, 'usurpacion') || str_contains($tipoLower, 'sustraccion') ||
+                    str_contains($tipoLower, 'detencion') || str_contains($tipoLower, 'secuestro de elementos') ||
+                    str_contains($tipoLower, 'derrame quimicos') || str_contains($tipoLower, 'ebrios')) {
                 $badgeClass = 'warning';
-            } elseif(str_contains($tipoLower, 'personas') || str_contains($tipoLower, 'rescate')) {
+            }
+            // NIVEL 3: IMPORTANTE (Azul - Info)
+            elseif(str_contains($tipoLower, 'aviso') || str_contains($tipoLower, 'animales sueltos') ||
+                    str_contains($tipoLower, 'daños') || str_contains($tipoLower, 'ruidos molestos') ||
+                    str_contains($tipoLower, 'elementos abandonados') || str_contains($tipoLower, 'cuidacoches') ||
+                    str_contains($tipoLower, 'problemas entre vecinos') || str_contains($tipoLower, 'problemas familiares') ||
+                    str_contains($tipoLower, 'maltrato animal') || str_contains($tipoLower, 'pedido de captura') ||
+                    str_contains($tipoLower, 'pedido de localizacion') || str_contains($tipoLower, 'persona en actitud sospechosa') ||
+                    str_contains($tipoLower, 'allanamiento') || str_contains($tipoLower, 'corte de calle') ||
+                    str_contains($tipoLower, 'desorden en la via publica') || str_contains($tipoLower, 'delitos contra la honestidad') ||
+                    str_contains($tipoLower, 'portacion de arma blanca') || str_contains($tipoLower, 'tiroteo') ||
+                    str_contains($tipoLower, 'inclemencias climaticas')) {
                 $badgeClass = 'info';
-            } elseif(str_contains($tipoLower, 'broma')) {
-                $badgeClass = 'dark';
+            }
+            // NIVEL 4: MODERADO (Gris - Secondary)
+            elseif(str_contains($tipoLower, 'colaboracion') || str_contains($tipoLower, 'informa datos') ||
+                    str_contains($tipoLower, 'llamada falsa') || str_contains($tipoLower, 'broma') ||
+                    str_contains($tipoLower, 'no responde') || str_contains($tipoLower, 'reiteracion de llamada') ||
+                    str_contains($tipoLower, 'equivocado') || str_contains($tipoLower, 'insulto') ||
+                    str_contains($tipoLower, 'correcta identificacion') || str_contains($tipoLower, 'recepcion sospechosa') ||
+                    str_contains($tipoLower, 'servicio bancario')) {
+                $badgeClass = 'secondary';
+            }
+            // NIVEL 5: LEVE (Verde - Success)
+            elseif(str_contains($tipoLower, 'consulta') || str_contains($tipoLower, 'psicologico')) {
+                $badgeClass = 'success';
             }
         @endphp
         <span class="badge badge-{{ $badgeClass }}">{{ $eventoCecoco->tipo_servicio }}</span>

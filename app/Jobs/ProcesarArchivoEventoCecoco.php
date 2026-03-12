@@ -35,6 +35,11 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
     public function handle(EventoCecocoParser $parser)
     {
         try {
+            Log::info("Iniciando procesamiento de archivo: {$this->nombreOriginal}", [
+                'archivo_path' => $this->archivoPath,
+                'importacion_id' => $this->importacionId,
+            ]);
+
             $importacion = null;
 
             if ($this->importacionId) {
@@ -52,10 +57,22 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
             }
 
             if (!Storage::disk('local')->exists($this->archivoPath)) {
+                $fullPath = Storage::disk('local')->path($this->archivoPath);
+                Log::error("Archivo temporal no encontrado", [
+                    'archivo_path' => $this->archivoPath,
+                    'full_path' => $fullPath,
+                    'storage_path' => storage_path('app'),
+                    'exists_check' => file_exists($fullPath),
+                ]);
                 throw new \RuntimeException("Archivo temporal no encontrado: {$this->archivoPath}");
             }
 
             $archivoTemporal = Storage::disk('local')->path($this->archivoPath);
+            
+            Log::info("Archivo temporal encontrado", [
+                'path' => $archivoTemporal,
+                'size' => filesize($archivoTemporal),
+            ]);
 
             $uploadedFile = new \Illuminate\Http\UploadedFile(
                 $archivoTemporal,
@@ -148,6 +165,8 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
 
         Log::error("Job falló definitivamente: {$this->nombreOriginal}", [
             'error' => $exception->getMessage(),
+            'archivo_path' => $this->archivoPath,
+            'importacion_id' => $this->importacionId,
         ]);
     }
 }

@@ -131,11 +131,44 @@ class EventoCecocoController extends Controller
     public function importar(Request $request)
     {
         $request->validate([
-            'archivo' => 'required|file|mimes:xls,xlsx,xml|max:102400',
+            'archivos' => 'required|array|min:1',
+            'archivos.*' => 'required|file|mimes:xls,xlsx,xml|max:102400',
         ]);
 
-        $resultado = $this->parser->procesar($request->file('archivo'));
-        $importacion = $resultado['importacion'];
+        $archivos = $request->file('archivos');
+        $totalArchivos = count($archivos);
+        $importacionesExitosas = 0;
+        $importacionesConError = 0;
+        $totalRegistrosImportados = 0;
+        $totalDuplicados = 0;
+        $totalOmitidos = 0;
+        $tiempoTotal = 0;
+        $erroresGenerales = [];
+
+        foreach ($archivos as $index => $archivo) {
+            try {
+                $resultado = $this->parser->procesar($archivo);
+                $importacion = $resultado['importacion'];
+
+                if ($importacion->estado === 'completado') {
+                    $importacionesExitosas++;
+                    $totalRegistrosImportados += $importacion->registros_importados;
+                    $totalDuplicados += $importacion->registros_duplicados;
+                    $totalOmitidos += $importacion->registros_omitidos;
+                    $tiempoTotal += $importacion->tiempo_procesamiento;
+
+                    if ($importacion->anio) {
+                        Cache::forget('cecoco_meses_' . $importacion->anio);
+                    }
+                } else {
+                    $importacionesConError++;
+                    $erroresGenerales[] = "Archivo {$archivo->getClientOriginalName()}: {$importacion->errores}";
+                }
+            } catch (\Exception $e) {
+                $importacionesConError++;
+                $erroresGenerales[] = "Archivo {$archivo->getClientOriginalName()}: {$e->getMessage()}";
+            }
+        }
 
         Cache::forget('cecoco_anios');
         Cache::forget('cecoco_tipos');
@@ -143,21 +176,30 @@ class EventoCecocoController extends Controller
         Cache::forget('cecoco_total_bd');
         Cache::forget('cecoco_total_importaciones');
 
-        if ($importacion->anio) {
-            Cache::forget('cecoco_meses_' . $importacion->anio);
+        $mensaje = "📊 Procesados {$totalArchivos} archivo(s): ";
+        $mensaje .= "✅ {$importacionesExitosas} exitoso(s), ";
+        
+        if ($importacionesConError > 0) {
+            $mensaje .= "❌ {$importacionesConError} con error(es). ";
         }
 
-        $mensaje = "✅ {$importacion->registros_importados} registros nuevos importados.";
+        $mensaje .= "📥 {$totalRegistrosImportados} registros nuevos importados.";
 
-        if ($importacion->registros_duplicados > 0) {
-            $mensaje .= " ⏭️ {$importacion->registros_duplicados} ya existían y fueron omitidos.";
+        if ($totalDuplicados > 0) {
+            $mensaje .= " ⏭️ {$totalDuplicados} duplicados omitidos.";
         }
 
-        if ($importacion->registros_omitidos > 0) {
-            $mensaje .= " ⚠️ {$importacion->registros_omitidos} filas con datos insuficientes.";
+        if ($totalOmitidos > 0) {
+            $mensaje .= " ⚠️ {$totalOmitidos} filas con datos insuficientes.";
         }
 
-        $mensaje .= " ⏱️ Procesado en {$importacion->tiempo_procesamiento} segundos.";
+        $mensaje .= " ⏱️ Tiempo total: {$tiempoTotal} segundos.";
+
+        if (!empty($erroresGenerales)) {
+            return redirect()->route('cecoco.importar')
+                ->with('warning', $mensaje)
+                ->with('errores', $erroresGenerales);
+        }
 
         return redirect()->route('cecoco.importar')->with('success', $mensaje);
     }

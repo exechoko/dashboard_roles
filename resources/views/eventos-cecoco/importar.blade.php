@@ -8,24 +8,44 @@
     </a>
 </div>
 
+@if(session('errores'))
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <h5 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Algunos archivos tuvieron errores</h5>
+        <hr>
+        <ul class="mb-0">
+            @foreach(session('errores') as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
 <div class="row g-3">
     <div class="col-12 col-lg-6">
         <div class="card h-100">
             <div class="card-header">
-                <h5 class="mb-0"><i class="bi bi-cloud-upload"></i> Formulario de importación</h5>
+                <h5 class="mb-0"><i class="bi bi-cloud-upload"></i> Importación masiva de archivos</h5>
             </div>
             <div class="card-body">
                 <form method="POST" action="{{ route('cecoco.importar.post') }}" enctype="multipart/form-data" id="formImportar">
                     @csrf
                     <div class="mb-3">
-                        <label for="archivo" class="form-label">Seleccionar archivo</label>
-                        <input type="file" class="form-control @error('archivo') is-invalid @enderror" 
-                               id="archivo" name="archivo" accept=".xls,.xlsx,.xml" required>
-                        @error('archivo')
+                        <label for="archivos" class="form-label">Seleccionar archivos (múltiples)</label>
+                        <input type="file" class="form-control @error('archivos.*') is-invalid @enderror" 
+                               id="archivos" name="archivos[]" accept=".xls,.xlsx,.xml" multiple required>
+                        @error('archivos.*')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                         <div class="form-text">
-                            Archivos mensuales del sistema de despacho (máx. 100MB). Se detectan duplicados automáticamente por número de expediente.
+                            Puedes seleccionar múltiples archivos a la vez (máx. 100MB cada uno). Se detectan duplicados automáticamente por número de expediente.
+                        </div>
+                    </div>
+
+                    <div id="archivosSeleccionados" class="mb-3" style="display: none;">
+                        <div class="alert alert-light border">
+                            <h6 class="mb-2"><i class="bi bi-files"></i> Archivos seleccionados: <span id="totalArchivos">0</span></h6>
+                            <div id="listaArchivos" class="small" style="max-height: 150px; overflow-y: auto;"></div>
                         </div>
                     </div>
 
@@ -45,14 +65,24 @@
 
                     <div id="loadingIndicator" class="alert alert-warning" style="display: none;">
                         <div class="d-flex align-items-center">            
+                            <div class="spinner-border spinner-border-sm me-3" role="status">
+                                <span class="visually-hidden">Procesando...</span>
+                            </div>
                             <div>
-                                <strong>Procesando archivo...</strong><br>
-                                <small>Esto puede tardar varios minutos dependiendo del tamaño del archivo. Por favor, no cierre esta ventana.</small>
+                                <strong>Procesando archivos...</strong><br>
+                                <small>Esto puede tardar varios minutos dependiendo de la cantidad y tamaño de los archivos. Por favor, no cierre esta ventana.</small>
+                                <div class="mt-2">
+                                    <div class="progress" style="height: 20px;">
+                                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                            <span id="progressText">0%</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100" id="btnImportar">
+                    <button type="submit" class="btn btn-primary w-100" id="btnImportar" disabled>
                         <i class="bi bi-upload"></i> Procesar e importar
                     </button>
                 </form>
@@ -172,16 +202,98 @@ document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('formImportar');
     const btnImportar = document.getElementById('btnImportar');
     const loadingIndicator = document.getElementById('loadingIndicator');
-    const archivoInput = document.getElementById('archivo');
+    const archivosInput = document.getElementById('archivos');
+    const archivosSeleccionados = document.getElementById('archivosSeleccionados');
+    const listaArchivos = document.getElementById('listaArchivos');
+    const totalArchivos = document.getElementById('totalArchivos');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
 
-    form.addEventListener('submit', function(e) {
-        if (!archivoInput.files || archivoInput.files.length === 0) {
+    archivosInput.addEventListener('change', function(e) {
+        const files = e.target.files;
+        
+        if (files.length === 0) {
+            archivosSeleccionados.style.display = 'none';
+            btnImportar.disabled = true;
             return;
         }
 
+        let totalSize = 0;
+        const maxSizePerFile = 100 * 1024 * 1024;
+        const maxTotalSize = 400 * 1024 * 1024;
+        let hasError = false;
+        
+        archivosSeleccionados.style.display = 'block';
+        totalArchivos.textContent = files.length;
+        
+        listaArchivos.innerHTML = '';
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+            totalSize += file.size;
+            
+            const div = document.createElement('div');
+            div.className = 'border-bottom py-1';
+            
+            let icon = '<i class="bi bi-file-earmark-excel text-success"></i>';
+            let sizeClass = 'text-muted';
+            
+            if (file.size > maxSizePerFile) {
+                icon = '<i class="bi bi-exclamation-triangle text-danger"></i>';
+                sizeClass = 'text-danger';
+                hasError = true;
+            }
+            
+            div.innerHTML = `${icon} ${file.name} <span class="${sizeClass}">(${sizeInMB} MB)</span>`;
+            listaArchivos.appendChild(div);
+        }
+        
+        const totalSizeInMB = (totalSize / (1024 * 1024)).toFixed(2);
+        const totalDiv = document.createElement('div');
+        totalDiv.className = 'border-top pt-2 mt-2 fw-bold';
+        
+        if (totalSize > maxTotalSize) {
+            totalDiv.innerHTML = `<i class="bi bi-exclamation-triangle text-danger"></i> Tamaño total: <span class="text-danger">${totalSizeInMB} MB (excede límite de 400 MB)</span>`;
+            hasError = true;
+        } else {
+            totalDiv.innerHTML = `<i class="bi bi-info-circle text-info"></i> Tamaño total: <span class="text-info">${totalSizeInMB} MB</span>`;
+        }
+        
+        listaArchivos.appendChild(totalDiv);
+        
+        if (hasError) {
+            btnImportar.disabled = true;
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger mt-2 mb-0 small';
+            errorDiv.innerHTML = '<i class="bi bi-x-circle"></i> Algunos archivos exceden el límite permitido. Por favor, reduce la cantidad o tamaño de archivos.';
+            listaArchivos.appendChild(errorDiv);
+        } else {
+            btnImportar.disabled = false;
+        }
+    });
+
+    form.addEventListener('submit', function(e) {
+        if (!archivosInput.files || archivosInput.files.length === 0) {
+            return;
+        }
+
+        const totalFiles = archivosInput.files.length;
         loadingIndicator.style.display = 'block';
         btnImportar.disabled = true;
         btnImportar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
+        
+        let processedFiles = 0;
+        const interval = setInterval(function() {
+            if (processedFiles < totalFiles) {
+                processedFiles++;
+                const percentage = Math.round((processedFiles / totalFiles) * 100);
+                progressBar.style.width = percentage + '%';
+                progressBar.setAttribute('aria-valuenow', percentage);
+                progressText.textContent = `${processedFiles}/${totalFiles} archivos (${percentage}%)`;
+            } else {
+                clearInterval(interval);
+            }
+        }, 2000);
     });
 });
 </script>

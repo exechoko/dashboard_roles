@@ -51,11 +51,11 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
                 ]);
             }
 
-            $archivoTemporal = Storage::disk('local')->path($this->archivoPath);
-
-            if (!file_exists($archivoTemporal)) {
+            if (!Storage::disk('local')->exists($this->archivoPath)) {
                 throw new \RuntimeException("Archivo temporal no encontrado: {$this->archivoPath}");
             }
+
+            $archivoTemporal = Storage::disk('local')->path($this->archivoPath);
 
             $uploadedFile = new \Illuminate\Http\UploadedFile(
                 $archivoTemporal,
@@ -93,7 +93,9 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
             Cache::forget('cecoco_total_bd');
             Cache::forget('cecoco_total_importaciones');
 
-            Storage::disk('local')->delete($this->archivoPath);
+            if (Storage::disk('local')->exists($this->archivoPath)) {
+                Storage::disk('local')->delete($this->archivoPath);
+            }
 
             Log::info("Archivo procesado exitosamente: {$this->nombreOriginal}", [
                 'importacion_id' => $importacion->id,
@@ -107,9 +109,6 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
                     'errores' => $e->getMessage(),
                 ]);
             }
-
-            Storage::disk('local')->delete($this->archivoPath);
-
             Log::error("Error procesando archivo: {$this->nombreOriginal}", [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -146,8 +145,6 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
                 ]);
             }
         }
-
-        Storage::disk('local')->delete($this->archivoPath);
 
         Log::error("Job falló definitivamente: {$this->nombreOriginal}", [
             'error' => $exception->getMessage(),

@@ -208,7 +208,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         let totalSize = 0;
         const maxSizePerFile = 100 * 1024 * 1024;
-        const maxTotalSize = 400 * 1024 * 1024;
         let hasError = false;
         
         archivosSeleccionados.style.display = 'block';
@@ -239,13 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const totalSizeInMB = (totalSize / (1024 * 1024)).toFixed(2);
         const totalDiv = document.createElement('div');
         totalDiv.className = 'border-top pt-2 mt-2 fw-bold';
-        
-        if (totalSize > maxTotalSize) {
-            totalDiv.innerHTML = `<i class="bi bi-exclamation-triangle text-danger"></i> Tamaño total: <span class="text-danger">${totalSizeInMB} MB (excede límite de 400 MB)</span>`;
-            hasError = true;
-        } else {
-            totalDiv.innerHTML = `<i class="bi bi-info-circle text-info"></i> Tamaño total: <span class="text-info">${totalSizeInMB} MB</span>`;
-        }
+        totalDiv.innerHTML = `<i class="bi bi-info-circle text-info"></i> Tamaño total: <span class="text-info">${totalSizeInMB} MB</span>`;
         
         listaArchivos.appendChild(totalDiv);
         
@@ -253,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
             btnImportar.disabled = true;
             const errorDiv = document.createElement('div');
             errorDiv.className = 'alert alert-danger mt-2 mb-0 small';
-            errorDiv.innerHTML = '<i class="bi bi-x-circle"></i> Algunos archivos exceden el límite permitido. Por favor, reduce la cantidad o tamaño de archivos.';
+            errorDiv.innerHTML = '<i class="bi bi-x-circle"></i> Algunos archivos exceden el límite de 100 MB por archivo.';
             listaArchivos.appendChild(errorDiv);
         } else {
             btnImportar.disabled = false;

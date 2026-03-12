@@ -21,7 +21,7 @@
         <div class="card">
             <div class="card-body">
                 <h6 class="text-muted mb-2">Resultados de búsqueda</h6>
-                <h3 class="mb-0">{{ number_format($eventos->total()) }}</h3>
+                <h3 class="mb-0">{{ $eventos ? number_format($eventos->total()) : '-' }}</h3>
             </div>
         </div>
     </div>
@@ -133,7 +133,14 @@
 
 <div class="card">
     <div class="card-body">
-        @if($eventos->count() > 0)
+        @if($eventos === null)
+            <div class="alert alert-info text-center py-5">
+                <i class="bi bi-funnel" style="font-size: 3rem;"></i>
+                <h4 class="mt-3">Selecciona filtros para buscar eventos</h4>
+                <p class="mb-0">Por razones de rendimiento, debes aplicar al menos un filtro para ver los resultados.</p>
+                <p class="text-muted small">Puedes filtrar por año, mes, tipo de servicio, operador, rango de fechas o búsqueda general.</p>
+            </div>
+        @elseif($eventos->count() > 0)
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
                     <thead class="table-secondary">

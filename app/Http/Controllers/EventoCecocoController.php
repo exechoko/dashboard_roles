@@ -137,69 +137,30 @@ class EventoCecocoController extends Controller
 
         $archivos = $request->file('archivos');
         $totalArchivos = count($archivos);
-        $importacionesExitosas = 0;
-        $importacionesConError = 0;
-        $totalRegistrosImportados = 0;
-        $totalDuplicados = 0;
-        $totalOmitidos = 0;
-        $tiempoTotal = 0;
-        $erroresGenerales = [];
+        $archivosEncolados = [];
 
-        foreach ($archivos as $index => $archivo) {
-            try {
-                $resultado = $this->parser->procesar($archivo);
-                $importacion = $resultado['importacion'];
+        foreach ($archivos as $archivo) {
+            $nombreOriginal = $archivo->getClientOriginalName();
+            
+            $importacion = Importacion::create([
+                'nombre_archivo' => $nombreOriginal,
+                'estado' => 'pendiente',
+            ]);
 
-                if ($importacion->estado === 'completado') {
-                    $importacionesExitosas++;
-                    $totalRegistrosImportados += $importacion->registros_importados;
-                    $totalDuplicados += $importacion->registros_duplicados;
-                    $totalOmitidos += $importacion->registros_omitidos;
-                    $tiempoTotal += $importacion->tiempo_procesamiento;
+            $archivoPath = $archivo->store('importaciones_temp');
 
-                    if ($importacion->anio) {
-                        Cache::forget('cecoco_meses_' . $importacion->anio);
-                    }
-                } else {
-                    $importacionesConError++;
-                    $erroresGenerales[] = "Archivo {$archivo->getClientOriginalName()}: {$importacion->errores}";
-                }
-            } catch (\Exception $e) {
-                $importacionesConError++;
-                $erroresGenerales[] = "Archivo {$archivo->getClientOriginalName()}: {$e->getMessage()}";
-            }
+            \App\Jobs\ProcesarArchivoEventoCecoco::dispatch(
+                $archivoPath,
+                $nombreOriginal,
+                $importacion->id
+            );
+
+            $archivosEncolados[] = $nombreOriginal;
         }
 
-        Cache::forget('cecoco_anios');
-        Cache::forget('cecoco_tipos');
-        Cache::forget('cecoco_operadores');
-        Cache::forget('cecoco_total_bd');
-        Cache::forget('cecoco_total_importaciones');
-
-        $mensaje = "📊 Procesados {$totalArchivos} archivo(s): ";
-        $mensaje .= "✅ {$importacionesExitosas} exitoso(s), ";
-        
-        if ($importacionesConError > 0) {
-            $mensaje .= "❌ {$importacionesConError} con error(es). ";
-        }
-
-        $mensaje .= "📥 {$totalRegistrosImportados} registros nuevos importados.";
-
-        if ($totalDuplicados > 0) {
-            $mensaje .= " ⏭️ {$totalDuplicados} duplicados omitidos.";
-        }
-
-        if ($totalOmitidos > 0) {
-            $mensaje .= " ⚠️ {$totalOmitidos} filas con datos insuficientes.";
-        }
-
-        $mensaje .= " ⏱️ Tiempo total: {$tiempoTotal} segundos.";
-
-        if (!empty($erroresGenerales)) {
-            return redirect()->route('cecoco.importar')
-                ->with('warning', $mensaje)
-                ->with('errores', $erroresGenerales);
-        }
+        $mensaje = "📋 {$totalArchivos} archivo(s) agregado(s) a la cola de procesamiento. ";
+        $mensaje .= "Los archivos se procesarán en segundo plano. ";
+        $mensaje .= "Puedes ver el progreso en el historial de importaciones.";
 
         return redirect()->route('cecoco.importar')->with('success', $mensaje);
     }

@@ -38,7 +38,7 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                         <div class="form-text">
-                            Puedes seleccionar múltiples archivos a la vez (máx. 100MB cada uno). Se detectan duplicados automáticamente por número de expediente.
+                            <i class="bi bi-info-circle"></i> Puedes seleccionar múltiples archivos a la vez (máx. 100MB cada uno). Los archivos se procesarán en segundo plano mediante un sistema de colas.
                         </div>
                     </div>
 
@@ -63,24 +63,20 @@
                         </ul>
                     </div>
 
-                    <div id="loadingIndicator" class="alert alert-warning" style="display: none;">
+                    <div id="loadingIndicator" class="alert alert-info" style="display: none;">
                         <div class="d-flex align-items-center">      
+                            <div class="spinner-border spinner-border-sm me-3" role="status">
+                                <span class="visually-hidden">Encolando...</span>
+                            </div>
                             <div>
-                                <strong>Procesando archivos...</strong><br>
-                                <small>Esto puede tardar varios minutos dependiendo de la cantidad y tamaño de los archivos. Por favor, no cierre esta ventana.</small>
-                                <div class="mt-2">
-                                    <div class="progress" style="height: 20px;">
-                                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                                            <span id="progressText">0%</span>
-                                        </div>
-                                    </div>
-                                </div>
+                                <strong>Agregando archivos a la cola...</strong><br>
+                                <small>Los archivos se procesarán en segundo plano. Puedes cerrar esta ventana y revisar el progreso más tarde.</small>
                             </div>
                         </div>
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100" id="btnImportar" disabled>
-                        <i class="bi bi-upload"></i> Procesar e importar
+                        <i class="bi bi-cloud-upload"></i> Agregar a cola de procesamiento
                     </button>
                 </form>
             </div>
@@ -203,8 +199,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const archivosSeleccionados = document.getElementById('archivosSeleccionados');
     const listaArchivos = document.getElementById('listaArchivos');
     const totalArchivos = document.getElementById('totalArchivos');
-    const progressBar = document.getElementById('progressBar');
-    const progressText = document.getElementById('progressText');
 
     archivosInput.addEventListener('change', function(e) {
         const files = e.target.files;
@@ -274,23 +268,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const totalFiles = archivosInput.files.length;
         loadingIndicator.style.display = 'block';
         btnImportar.disabled = true;
-        btnImportar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
-        
-        let processedFiles = 0;
-        const interval = setInterval(function() {
-            if (processedFiles < totalFiles) {
-                processedFiles++;
-                const percentage = Math.round((processedFiles / totalFiles) * 100);
-                progressBar.style.width = percentage + '%';
-                progressBar.setAttribute('aria-valuenow', percentage);
-                progressText.textContent = `${processedFiles}/${totalFiles} archivos (${percentage}%)`;
-            } else {
-                clearInterval(interval);
-            }
-        }, 2000);
+        btnImportar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Encolando archivos...';
     });
 });
 </script>

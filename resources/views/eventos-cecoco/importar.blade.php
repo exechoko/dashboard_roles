@@ -64,10 +64,7 @@
                     </div>
 
                     <div id="loadingIndicator" class="alert alert-warning" style="display: none;">
-                        <div class="d-flex align-items-center">            
-                            <div class="spinner-border spinner-border-sm me-3" role="status">
-                                <span class="visually-hidden">Procesando...</span>
-                            </div>
+                        <div class="d-flex align-items-center">      
                             <div>
                                 <strong>Procesando archivos...</strong><br>
                                 <small>Esto puede tardar varios minutos dependiendo de la cantidad y tamaño de los archivos. Por favor, no cierre esta ventana.</small>

@@ -65,9 +65,6 @@
 
                     <div id="loadingIndicator" class="alert alert-info" style="display: none;">
                         <div class="d-flex align-items-center">      
-                            <div class="spinner-border spinner-border-sm me-3" role="status">
-                                <span class="visually-hidden">Encolando...</span>
-                            </div>
                             <div>
                                 <strong>Agregando archivos a la cola...</strong><br>
                                 <small>Los archivos se procesarán en segundo plano. Puedes cerrar esta ventana y revisar el progreso más tarde.</small>

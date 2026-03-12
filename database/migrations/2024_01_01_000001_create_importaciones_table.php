@@ -19,7 +19,7 @@ return new class extends Migration
             $table->unsignedInteger('registros_duplicados')->default(0);
             $table->unsignedInteger('registros_omitidos')->default(0);
             $table->unsignedInteger('registros_con_error')->default(0);
-            $table->enum('estado', ['procesando', 'completado', 'error'])->default('procesando');
+            $table->enum('estado', ['pendiente', 'procesando', 'completado', 'error'])->default('procesando');
             $table->text('errores')->nullable();
             $table->unsignedInteger('tiempo_procesamiento')->nullable();
             $table->timestamps();

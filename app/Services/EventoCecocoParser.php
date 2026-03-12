@@ -66,29 +66,41 @@ class EventoCecocoParser
 
     private function parsearSpreadsheetML(string $xml): array
     {
+        $filas = [];
+        $reader = new \XMLReader();
+        
         libxml_use_internal_errors(true);
-        $xmlObj = simplexml_load_string($xml);
-
-        if ($xmlObj === false) {
+        
+        if (!$reader->XML($xml)) {
             throw new RuntimeException('Error al parsear XML: ' . implode(', ', libxml_get_errors()));
         }
 
-        $xmlObj->registerXPathNamespace('ss', 'urn:schemas-microsoft-com:office:spreadsheet');
-        $rows = $xmlObj->xpath('//ss:Row');
-
-        $filas = [];
-        foreach ($rows as $row) {
-            $fila = [];
-            $cells = $row->xpath('ss:Cell');
-
-            foreach ($cells as $cell) {
-                $data = $cell->xpath('ss:Data');
-                $fila[] = $data ? (string)$data[0] : '';
+        $namespace = 'urn:schemas-microsoft-com:office:spreadsheet';
+        
+        while ($reader->read()) {
+            if ($reader->nodeType === \XMLReader::ELEMENT && 
+                $reader->localName === 'Row' && 
+                $reader->namespaceURI === $namespace) {
+                
+                $rowXml = $reader->readOuterXML();
+                $rowNode = new \SimpleXMLElement($rowXml);
+                $rowNode->registerXPathNamespace('ss', $namespace);
+                
+                $fila = [];
+                $cells = $rowNode->xpath('ss:Cell');
+                
+                foreach ($cells as $cell) {
+                    $data = $cell->xpath('ss:Data');
+                    $fila[] = $data ? (string)$data[0] : '';
+                }
+                
+                $filas[] = $fila;
+                unset($rowNode, $cells);
             }
-
-            $filas[] = $fila;
         }
-
+        
+        $reader->close();
+        
         return $filas;
     }
 

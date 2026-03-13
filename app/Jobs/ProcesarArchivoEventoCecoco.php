@@ -109,6 +109,8 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
             Cache::forget('cecoco_operadores');
             Cache::forget('cecoco_total_bd');
             Cache::forget('cecoco_total_importaciones');
+            Cache::forget('cecoco_total_archivos_importados');
+            Cache::forget('cecoco_importaciones_por_anio');
 
             if (Storage::disk('local')->exists($this->archivoPath)) {
                 Storage::disk('local')->delete($this->archivoPath);

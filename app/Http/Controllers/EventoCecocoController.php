@@ -65,21 +65,21 @@ class EventoCecocoController extends Controller
             $eventos = $query->orderBy('fecha_hora', 'desc')->paginate(50)->withQueryString();
         }
 
-        $anios = Cache::remember('cecoco_anios', 3600, function () {
+        $anios = Cache::rememberForever('cecoco_anios', function () {
             return EventoCecoco::distinct()->orderByDesc('anio')->pluck('anio');
         });
 
-        $tipos = Cache::remember('cecoco_tipos', 3600, function () {
+        $tipos = Cache::rememberForever('cecoco_tipos', function () {
             return EventoCecoco::distinct()->orderBy('tipo_servicio')->pluck('tipo_servicio');
         });
 
-        $operadores = Cache::remember('cecoco_operadores', 3600, function () {
+        $operadores = Cache::rememberForever('cecoco_operadores', function () {
             return EventoCecoco::distinct()->orderBy('operador')->limit(300)->pluck('operador');
         });
 
         $meses = [];
         if ($request->filled('anio')) {
-            $meses = Cache::remember('cecoco_meses_' . $request->anio, 3600, function () use ($request) {
+            $meses = Cache::rememberForever('cecoco_meses_' . $request->anio, function () use ($request) {
                 return EventoCecoco::where('anio', $request->anio)
                     ->distinct()
                     ->orderBy('mes')
@@ -87,11 +87,11 @@ class EventoCecocoController extends Controller
             });
         }
 
-        $totalEnBd = Cache::remember('cecoco_total_bd', 300, function () {
+        $totalEnBd = Cache::rememberForever('cecoco_total_bd', function () {
             return EventoCecoco::count();
         });
 
-        $totalImportaciones = Cache::remember('cecoco_total_importaciones', 300, function () {
+        $totalImportaciones = Cache::rememberForever('cecoco_total_importaciones', function () {
             return Importacion::count();
         });
 
@@ -114,16 +114,23 @@ class EventoCecocoController extends Controller
 
     public function importarForm()
     {
-        $importaciones = Importacion::orderByDesc('created_at')->paginate(20);
+        $importaciones = Importacion::orderByDesc('created_at')->simplePaginate(20);
 
-        $totalArchivosImportados = Importacion::where('estado', 'completado')->count();
-        $totalRegistrosEnBd = EventoCecoco::count();
+        $totalArchivosImportados = Cache::remember('cecoco_total_archivos_importados', 300, function () {
+            return Importacion::where('estado', 'completado')->count();
+        });
 
-        $aniosCounts = Importacion::where('estado', 'completado')
-            ->selectRaw('anio, COUNT(*) as total')
-            ->groupBy('anio')
-            ->orderByDesc('anio')
-            ->pluck('total', 'anio');
+        $totalRegistrosEnBd = Cache::rememberForever('cecoco_total_bd', function () {
+            return EventoCecoco::count();
+        });
+
+        $aniosCounts = Cache::remember('cecoco_importaciones_por_anio', 300, function () {
+            return Importacion::where('estado', 'completado')
+                ->selectRaw('anio, COUNT(*) as total')
+                ->groupBy('anio')
+                ->orderByDesc('anio')
+                ->pluck('total', 'anio');
+        });
 
         return view('eventos-cecoco.importar', compact(
             'importaciones',
@@ -162,6 +169,8 @@ class EventoCecocoController extends Controller
 
             $archivosEncolados[] = $nombreOriginal;
         }
+
+        Cache::forget('cecoco_total_importaciones');
 
         $mensaje = "📋 {$totalArchivos} archivo(s) agregado(s) a la cola de procesamiento. ";
         $mensaje .= "Los archivos se procesarán en segundo plano. ";

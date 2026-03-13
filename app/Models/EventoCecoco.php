@@ -83,7 +83,8 @@ class EventoCecoco extends Model
             $q->where('nro_expediente', 'LIKE', "%{$texto}%")
               ->orWhere('direccion', 'LIKE', "%{$texto}%")
               ->orWhere('operador', 'LIKE', "%{$texto}%")
-              ->orWhere('tipo_servicio', 'LIKE', "%{$texto}%");
+              ->orWhere('tipo_servicio', 'LIKE', "%{$texto}%")
+              ->orWhere('descripcion', 'LIKE', "%{$texto}%");
         });
     }
 }

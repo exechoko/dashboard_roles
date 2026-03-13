@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="mb-4">
-    <a href="{{ route('cecoco.index') }}" class="btn btn-outline-secondary">
+    <a href="{{ !empty($filtros) ? route('cecoco.index', $filtros) : route('cecoco.index') }}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Volver al listado
     </a>
 </div>

@@ -20,7 +20,8 @@ class EventoCecocoController extends Controller
     public function index(Request $request)
     {
         $eventos = null;
-        $tieneFiltros = $request->hasAny(['anio', 'mes', 'operador', 'tipo', 'desde', 'hasta', 'buscar']);
+        $totalResultados = null;
+        $tieneFiltros = $request->hasAny(['anio', 'mes', 'operador', 'tipo', 'desde_datetime', 'hasta_datetime', 'desde', 'hasta', 'buscar']);
 
         if ($tieneFiltros) {
             $query = EventoCecoco::select([
@@ -52,7 +53,19 @@ class EventoCecocoController extends Controller
                 $query->porTipo($request->tipo);
             }
 
-            if ($request->filled('desde') && $request->filled('hasta')) {
+            if ($request->filled('desde_datetime') && $request->filled('hasta_datetime')) {
+                $desdeCompleto = str_replace('T', ' ', $request->input('desde_datetime'));
+                $hastaCompleto = str_replace('T', ' ', $request->input('hasta_datetime'));
+
+                if (strlen($desdeCompleto) === 16) {
+                    $desdeCompleto .= ':00';
+                }
+
+                if (strlen($hastaCompleto) === 16) {
+                    $hastaCompleto .= ':59';
+                }
+                $query->whereBetween('fecha_hora', [$desdeCompleto, $hastaCompleto]);
+            } elseif ($request->filled('desde') && $request->filled('hasta')) {
                 $desdeCompleto = $request->desde . ' ' . ($request->filled('hora_desde') ? $request->hora_desde : '00:00:00');
                 $hastaCompleto = $request->hasta . ' ' . ($request->filled('hora_hasta') ? $request->hora_hasta : '23:59:59');
                 $query->whereBetween('fecha_hora', [$desdeCompleto, $hastaCompleto]);
@@ -62,7 +75,26 @@ class EventoCecocoController extends Controller
                 $query->buscar($request->buscar);
             }
 
-            $eventos = $query->orderBy('fecha_hora', 'desc')->paginate(50)->withQueryString();
+            $filtrosConteo = [
+                'anio' => $request->input('anio'),
+                'mes' => $request->input('mes'),
+                'operador' => $request->input('operador'),
+                'tipo' => $request->input('tipo'),
+                'desde_datetime' => $request->input('desde_datetime'),
+                'hasta_datetime' => $request->input('hasta_datetime'),
+                'desde' => $request->input('desde'),
+                'hasta' => $request->input('hasta'),
+                'hora_desde' => $request->input('hora_desde'),
+                'hora_hasta' => $request->input('hora_hasta'),
+                'buscar' => $request->input('buscar'),
+            ];
+
+            $cacheKeyConteo = 'cecoco_count_filtros_' . md5(json_encode($filtrosConteo));
+            $totalResultados = Cache::remember($cacheKeyConteo, 120, function () use ($query) {
+                return (clone $query)->count();
+            });
+
+            $eventos = $query->orderBy('fecha_hora', 'desc')->simplePaginate(50)->withQueryString();
         }
 
         $anios = Cache::rememberForever('cecoco_anios', function () {
@@ -87,29 +119,35 @@ class EventoCecocoController extends Controller
             });
         }
 
-        $totalEnBd = Cache::rememberForever('cecoco_total_bd', function () {
-            return EventoCecoco::count();
-        });
-
-        $totalImportaciones = Cache::rememberForever('cecoco_total_importaciones', function () {
-            return Importacion::count();
-        });
-
         return view('eventos-cecoco.index', compact(
             'eventos',
+            'totalResultados',
             'anios',
             'tipos',
             'operadores',
-            'meses',
-            'totalEnBd',
-            'totalImportaciones'
+            'meses'
         ));
     }
 
-    public function show(EventoCecoco $eventoCecoco)
+    public function show(Request $request, EventoCecoco $eventoCecoco)
     {
         $eventoCecoco->load('importacion');
-        return view('eventos-cecoco.show', compact('eventoCecoco'));
+        $filtros = $request->only([
+            'anio',
+            'mes',
+            'operador',
+            'tipo',
+            'desde_datetime',
+            'hasta_datetime',
+            'desde',
+            'hasta',
+            'hora_desde',
+            'hora_hasta',
+            'buscar',
+            'page',
+        ]);
+
+        return view('eventos-cecoco.show', compact('eventoCecoco', 'filtros'));
     }
 
     public function importarForm()
@@ -199,7 +237,19 @@ class EventoCecocoController extends Controller
             $query->porTipo($request->tipo);
         }
 
-        if ($request->filled('desde') && $request->filled('hasta')) {
+        if ($request->filled('desde_datetime') && $request->filled('hasta_datetime')) {
+            $desdeCompleto = str_replace('T', ' ', $request->input('desde_datetime'));
+            $hastaCompleto = str_replace('T', ' ', $request->input('hasta_datetime'));
+
+            if (strlen($desdeCompleto) === 16) {
+                $desdeCompleto .= ':00';
+            }
+
+            if (strlen($hastaCompleto) === 16) {
+                $hastaCompleto .= ':59';
+            }
+            $query->whereBetween('fecha_hora', [$desdeCompleto, $hastaCompleto]);
+        } elseif ($request->filled('desde') && $request->filled('hasta')) {
             $desdeCompleto = $request->desde . ' ' . ($request->filled('hora_desde') ? $request->hora_desde : '00:00:00');
             $hastaCompleto = $request->hasta . ' ' . ($request->filled('hora_hasta') ? $request->hora_hasta : '23:59:59');
             $query->whereBetween('fecha_hora', [$desdeCompleto, $hastaCompleto]);

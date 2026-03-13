@@ -8,32 +8,11 @@
     </a>
 </div>
 
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="text-muted mb-2">Total en BD</h6>
-                <h3 class="mb-0">{{ number_format($totalEnBd) }}</h3>
-            </div>
-        </div>
+@if($eventos !== null)
+    <div class="alert alert-light border mb-4">
+        <strong>Eventos encontrados:</strong> {{ number_format($totalResultados ?? 0) }}
     </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="text-muted mb-2">Resultados de búsqueda</h6>
-                <h3 class="mb-0">{{ $eventos ? number_format($eventos->total()) : '-' }}</h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="text-muted mb-2">Total importaciones</h6>
-                <h3 class="mb-0">{{ number_format($totalImportaciones) }}</h3>
-            </div>
-        </div>
-    </div>
-</div>
+@endif
 
 <div class="card mb-4">
     <div class="card-header">
@@ -88,23 +67,15 @@
                             </div>
                         </div>
 
-                        {{-- Fila 3: Rango de fechas y horas --}}
+                        {{-- Fila 3: Rango Fecha/Hora --}}
                         <div class="row g-3 mb-3">
-                            <div class="col-6 col-md-3">
-                                <label class="form-label">Fecha Desde</label>
-                                <input type="date" name="desde" class="form-control" value="{{ request('desde') }}">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Desde</label>
+                                <input type="datetime-local" name="desde_datetime" class="form-control" value="{{ request('desde_datetime') }}">
                             </div>
-                            <div class="col-6 col-md-3">
-                                <label class="form-label">Hora Desde</label>
-                                <input type="time" name="hora_desde" class="form-control" value="{{ request('hora_desde') }}">
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <label class="form-label">Fecha Hasta</label>
-                                <input type="date" name="hasta" class="form-control" value="{{ request('hasta') }}">
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <label class="form-label">Hora Hasta</label>
-                                <input type="time" name="hora_hasta" class="form-control" value="{{ request('hora_hasta') }}">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Hasta</label>
+                                <input type="datetime-local" name="hasta_datetime" class="form-control" value="{{ request('hasta_datetime') }}">
                             </div>
                         </div>
 
@@ -239,7 +210,7 @@
                                     <small>{{ $evento->periodo }}</small>
                                 </td>
                                 <td class="text-center">
-                                    <a href="{{ route('cecoco.show', $evento) }}" class="btn btn-sm btn-outline-primary">
+                                    <a href="{{ route('cecoco.show', $evento) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-sm btn-outline-primary">
                                         <i class="bi bi-eye"></i><span class="d-none d-sm-inline"> Ver</span>
                                     </a>
                                 </td>
@@ -251,7 +222,7 @@
 
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <div class="text-muted">
-                    Mostrando {{ $eventos->firstItem() }}–{{ $eventos->lastItem() }} de {{ number_format($eventos->total()) }} registros
+                    Mostrando {{ $eventos->firstItem() }}–{{ $eventos->lastItem() }} de {{ number_format($totalResultados ?? 0) }} registros
                 </div>
                 <div>
                     {{ $eventos->links() }}

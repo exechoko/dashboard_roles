@@ -164,6 +164,7 @@ class EventoCecocoController extends Controller
 
         $aniosCounts = Cache::remember('cecoco_importaciones_por_anio', 300, function () {
             return Importacion::where('estado', 'completado')
+                ->whereNotNull('anio')
                 ->selectRaw('anio, COUNT(*) as total')
                 ->groupBy('anio')
                 ->orderByDesc('anio')
@@ -217,7 +218,7 @@ class EventoCecocoController extends Controller
         return redirect()->route('cecoco.importar')->with('success', $mensaje);
     }
 
-    public function exportarCsv(Request $request)
+    public function exportarTxt(Request $request)
     {
         $query = EventoCecoco::query();
 
@@ -259,7 +260,7 @@ class EventoCecocoController extends Controller
             $query->buscar($request->buscar);
         }
 
-        $filename = 'cecoco_eventos_' . now()->format('Ymd_His') . '.csv';
+        $filename = 'cecoco_eventos_' . now()->format('Ymd_His') . '.txt';
 
         return response()->streamDownload(function () use ($query) {
             $handle = fopen('php://output', 'w');
@@ -302,7 +303,7 @@ class EventoCecocoController extends Controller
 
             fclose($handle);
         }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Type' => 'text/plain; charset=UTF-8',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
     }

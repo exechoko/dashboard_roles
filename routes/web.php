@@ -357,7 +357,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/', [App\Http\Controllers\EventoCecocoController::class, 'index'])->name('index');
         Route::get('/importar/form', [App\Http\Controllers\EventoCecocoController::class, 'importarForm'])->name('importar');
         Route::post('/importar', [App\Http\Controllers\EventoCecocoController::class, 'importar'])->name('importar.post');
-        Route::get('/exportar/csv', [App\Http\Controllers\EventoCecocoController::class, 'exportarCsv'])->name('exportar.csv');
+        Route::get('/exportar/txt', [App\Http\Controllers\EventoCecocoController::class, 'exportarTxt'])->name('exportar.txt');
         Route::get('/{eventoCecoco}', [App\Http\Controllers\EventoCecocoController::class, 'show'])->name('show');
     });
 

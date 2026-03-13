@@ -88,9 +88,9 @@
                                 <a href="{{ route('cecoco.index') }}" class="btn btn-outline-secondary">
                                     <i class="bi bi-x-circle"></i> Limpiar
                                 </a>
-                                <a href="{{ route('cecoco.exportar.csv') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" 
+                                <a href="{{ route('cecoco.exportar.txt') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" 
                                 class="btn btn-outline-success ms-auto">
-                                    <i class="bi bi-download"></i> Exportar CSV
+                                    <i class="bi bi-download"></i> Exportar TXT
                                 </a>
                             </div>
                         </div>

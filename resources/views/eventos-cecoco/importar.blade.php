@@ -120,7 +120,6 @@
                         <thead class="sticky-top bg-white">
                             <tr>
                                 <th>Archivo</th>
-                                <th>Período</th>
                                 <th>Nuevos</th>
                                 <th>Duplicados</th>
                                 <th>Omitidos</th>
@@ -137,7 +136,6 @@
                                             {{ Str::limit($imp->nombre_archivo_corto, 20) }}
                                         </small>
                                     </td>
-                                    <td><small>{{ $imp->periodo }}</small></td>
                                     <td><span class="badge bg-success">{{ $imp->registros_importados }}</span></td>
                                     <td>
                                         @if($imp->registros_duplicados > 0)
@@ -166,7 +164,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center text-muted">
+                                    <td colspan="7" class="text-center text-muted">
                                         <em>No hay importaciones registradas</em>
                                     </td>
                                 </tr>

@@ -112,8 +112,10 @@ class SeederTablaPermisos extends Seeder
             'buscar-moviles-parados',
             'buscar-moviles-recorridos',
             'ver-eventos-cecoco',
+            'ver-expediente-cecoco',
             'ver-mapa-calor-servicios-cecoco',
             'ver-mapa-cecoco-en-vivo',
+            'ver-analizador-eventos-cecoco',
 
             //ENTREGAS – Equipos
             'ver-entrega-equipos',

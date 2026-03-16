@@ -5,16 +5,19 @@ namespace App\Http\Controllers;
 use App\Models\EventoCecoco;
 use App\Models\Importacion;
 use App\Services\EventoCecocoParser;
+use App\Services\CecocoExpedienteService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 class EventoCecocoController extends Controller
 {
     private EventoCecocoParser $parser;
+    private CecocoExpedienteService $expedienteService;
 
-    public function __construct(EventoCecocoParser $parser)
+    public function __construct(EventoCecocoParser $parser, CecocoExpedienteService $expedienteService)
     {
         $this->parser = $parser;
+        $this->expedienteService = $expedienteService;
     }
 
     public function index(Request $request)
@@ -340,5 +343,36 @@ class EventoCecocoController extends Controller
         $eventos = $query->orderBy('fecha_hora', 'desc')->paginate(100);
 
         return response()->json($eventos);
+    }
+
+    public function verExpediente(Request $request, EventoCecoco $eventoCecoco)
+    {
+        $this->authorize('ver-expediente-cecoco');
+
+        try {
+            $detalle = $this->expedienteService->obtenerDetalleExpediente($eventoCecoco->nro_expediente);
+
+            $filtros = $request->only([
+                'anio',
+                'mes',
+                'operador',
+                'tipo',
+                'desde_datetime',
+                'hasta_datetime',
+                'desde',
+                'hasta',
+                'hora_desde',
+                'hora_hasta',
+                'buscar',
+                'page',
+            ]);
+
+            return view('eventos-cecoco.expediente', compact('eventoCecoco', 'detalle', 'filtros'));
+
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('cecoco.show', $eventoCecoco)
+                ->with('error', 'Error al obtener el detalle del expediente: ' . $e->getMessage());
+        }
     }
 }

@@ -210,9 +210,20 @@
                                     <small>{{ $evento->periodo }}</small>
                                 </td>
                                 <td class="text-center">
-                                    <a href="{{ route('cecoco.show', $evento) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i><span class="d-none d-sm-inline"> Ver</span>
-                                    </a>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ route('cecoco.show', $evento) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" 
+                                           class="btn btn-sm btn-outline-primary" 
+                                           title="Ver resumen">
+                                            <i class="bi bi-eye"></i><span class="d-none d-lg-inline"> Ver</span>
+                                        </a>
+                                        @can('ver-expediente-cecoco')
+                                        <a href="{{ route('cecoco.expediente', $evento) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" 
+                                           class="btn btn-sm btn-outline-success" 
+                                           title="Ver detalle completo del expediente">
+                                            <i class="bi bi-file-earmark-text"></i><span class="d-none d-lg-inline"> Detalle</span>
+                                        </a>
+                                        @endcan
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach

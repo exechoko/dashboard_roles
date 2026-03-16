@@ -5,6 +5,11 @@
     <a href="{{ !empty($filtros) ? route('cecoco.index', $filtros) : route('cecoco.index') }}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left"></i> Volver al listado
     </a>
+    @can('ver-expediente-cecoco')
+    <a href="{{ route('cecoco.expediente', $eventoCecoco) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-success">
+        <i class="bi bi-file-earmark-text"></i> Ver Detalle Completo
+    </a>
+    @endcan
 </div>
 
 <div class="card">

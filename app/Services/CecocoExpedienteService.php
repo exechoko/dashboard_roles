@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Reader\Security\XmlScanner;
 use Exception;
 
 class CecocoExpedienteService
@@ -201,7 +202,21 @@ class CecocoExpedienteService
     private function parsearArchivoExpediente(string $rutaArchivo): array
     {
         try {
-            $spreadsheet = IOFactory::load($rutaArchivo);
+            // Crear un XmlScanner personalizado que no valide entidades
+            $xmlScanner = new class extends XmlScanner {
+                public function scan($xml): string {
+                    return $xml;
+                }
+                public function scanFile($filename): string {
+                    return file_get_contents($filename);
+                }
+            };
+            
+            $reader = IOFactory::createReader('Xls');
+            $reader->setReadDataOnly(true);
+            $reader->setSecurityScanner($xmlScanner);
+            
+            $spreadsheet = $reader->load($rutaArchivo);
             $sheet = $spreadsheet->getActiveSheet();
             $filas = $sheet->toArray();
 

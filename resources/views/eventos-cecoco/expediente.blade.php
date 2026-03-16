@@ -13,10 +13,10 @@
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <h4 class="mb-0">
-            <i class="bi bi-file-earmark-text"></i> Expediente Completo N° {{ $detalle['nro_expediente'] ?? $eventoCecoco->nro_expediente }}
+            <i class="bi bi-file-earmark-text"></i> Expediente Completo N° {{ str_replace('Expediente: ', '', $detalle['nro_expediente'] ?? $eventoCecoco->nro_expediente) }}
         </h4>
         @php
-            $tipoLower = strtolower($detalle['tipo_servicio'] ?? $eventoCecoco->tipo_servicio ?? '');
+            $tipoLower = strtolower($detalle['tipo_servicio'] ?: ($eventoCecoco->tipo_servicio ?? ''));
             $badgeClass = 'primary';
             
             if(str_contains($tipoLower, 'incendio') || str_contains($tipoLower, 'fuego') ||
@@ -64,7 +64,7 @@
                 $badgeClass = 'success';
             }
         @endphp
-        <span class="badge badge-{{ $badgeClass }}">{{ $detalle['tipo_servicio'] ?? $eventoCecoco->tipo_servicio }}</span>
+        <span class="badge badge-{{ $badgeClass }}">{{ $detalle['tipo_servicio'] ?: ($eventoCecoco->tipo_servicio ?? '') }}</span>
     </div>
     <div class="card-body">
         <h5 class="mb-3"><i class="bi bi-file-text"></i> Historial de la Incidencia</h5>
@@ -78,15 +78,15 @@
                         </tr>
                         <tr>
                             <th class="table-secondary">Tipo Servicio:</th>
-                            <td>{{ $detalle['tipo_servicio'] ?? $eventoCecoco->tipo_servicio }}</td>
+                            <td>{{ $detalle['tipo_servicio'] ?: ($eventoCecoco->tipo_servicio ?? '') }}</td>
                         </tr>
                         <tr>
                             <th class="table-secondary">Operador:</th>
-                            <td>{{ $detalle['operador_inicial'] ?? $eventoCecoco->operador ?? '-' }}</td>
+                            <td>{{ $detalle['operador_inicial'] ?: ($eventoCecoco->operador ?? '-') }}</td>
                         </tr>
                         <tr>
                             <th class="table-secondary">Fecha Creación:</th>
-                            <td>{{ $detalle['fecha_hora_inicial'] ?? ($eventoCecoco->fecha_hora ? $eventoCecoco->fecha_hora->format('d/m/Y H:i:s') : '-') }}</td>
+                            <td>{{ $detalle['fecha_hora_inicial'] ?: ($eventoCecoco->fecha_hora ? $eventoCecoco->fecha_hora->format('d/m/Y H:i:s') : '-') }}</td>
                         </tr>
                         @if(!empty($detalle['historial']['estado']))
                         <tr>
@@ -102,14 +102,14 @@
                     <tbody>
                         <tr>
                             <th width="40%" class="table-secondary">Dirección:</th>
-                            <td class="text-break">{{ $detalle['direccion'] ?? $eventoCecoco->direccion ?? '-' }}</td>
+                            <td class="text-break">{{ $detalle['direccion'] ?: ($eventoCecoco->direccion ?? '-') }}</td>
                         </tr>
                         <tr>
                             <th class="table-secondary">Teléfono:</th>
                             <td>
                                 @if(!empty($detalle['telefono']) || $eventoCecoco->telefono)
-                                    <a href="tel:{{ $detalle['telefono'] ?? $eventoCecoco->telefono }}">
-                                        {{ $detalle['telefono'] ?? $eventoCecoco->telefono }}
+                                    <a href="tel:{{ $detalle['telefono'] ?: $eventoCecoco->telefono }}">
+                                        {{ $detalle['telefono'] ?: $eventoCecoco->telefono }}
                                     </a>
                                 @else
                                     -

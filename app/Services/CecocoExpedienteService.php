@@ -381,12 +381,12 @@ class CecocoExpedienteService
 
             return [
                 'nro_expediente' => $resumen['expediente'] ?? $nroExpediente,
-                'fecha_hora_inicial' => $primerEvento['fecha_hora'] ?? ($resumen['fecha_inicio'] ?? ''),
-                'operador_inicial' => $primerEvento['operador'] ?? ($resumen['operador'] ?? ''),
-                'tipo_servicio' => $resumen['tipo'] ?? ($primerEvento['tipo_servicio'] ?? ''),
-                'direccion' => $resumen['direccion'] ?? ($primerEvento['direccion'] ?? ''),
-                'telefono' => $resumen['telefono'] ?? ($primerEvento['telefono'] ?? ''),
-                'descripcion_inicial' => $primerEvento['descripcion'] ?? ($resumen['descripcion'] ?? ''),
+                'fecha_hora_inicial' => $primerEvento['fecha_hora'] ?? ($resumen['fecha_inicio'] ?? null),
+                'operador_inicial' => $primerEvento['operador'] ?? ($resumen['operador'] ?? null),
+                'tipo_servicio' => $resumen['tipo'] ?? null,
+                'direccion' => $resumen['direccion'] ?? null,
+                'telefono' => $resumen['telefono'] ?? null,
+                'descripcion_inicial' => $resumen['descripcion'] ?? ($primerEvento['descripcion'] ?? null),
                 'historial' => $resumen,
                 'timeline' => $timeline,
                 'total_eventos' => count($timeline),
@@ -862,11 +862,15 @@ class CecocoExpedienteService
         $objetivos = [
             'expediente'   => ['expediente:','expediente'],
             'tipo'         => ['tipo:','tipo','tipo_servicio:','tipo_servicio'],
-            'operador'     => ['operador:','operador','usuario:','usuario'],
-            'fecha_inicio' => ['fecha_inicio:','fecha de creacion:','fecha de creación:','fecha de ejecucion:','fecha de ejecución:','fecha:'],
-            'direccion'    => ['direccion:','dirección:','domicilio:','ubicacion:','ubicación:'],
-            'telefono'     => ['telefono:','teléfono:','tel:'],
-            'descripcion'  => ['descripcion:','descripción:','observaciones:','detalle:'],
+            'operador'     => ['operador:','operador','usuario:','usuario','telefonista:','telefonista'],
+            'fecha_inicio' => ['fecha_inicio:','fecha de creacion:','fecha de creación:','fecha de ejecucion:','fecha de ejecución:','fecha:','fecha/hora:'],
+            'direccion'    => ['direccion:','dirección:','domicilio:','ubicacion:','ubicación:','calle:'],
+            'telefono'     => ['telefono:','teléfono:','tel:','nro telefono:','nro. telefono:'],
+            'descripcion'  => ['descripcion:','descripción:','observaciones:','detalle:','motivo:'],
+            'estado'       => ['estado:','estado'],
+            'barrio'       => ['barrio:','barrio'],
+            'jurisdiccion' => ['jurisdiccion:','jurisdicción:','comisaria:','comisaría:'],
+            'municipio'    => ['municipio:','municipio','localidad:','localidad'],
         ];
 
         $tablas = $xpath->query('//table');
@@ -879,28 +883,52 @@ class CecocoExpedienteService
                     $cells[] = $celda;
                 }
                 $n = count($cells);
-                if ($n < 2) continue;
 
-                for ($i = 0; $i < $n - 1; $i++) {
-                    $labelText = trim($cells[$i]->textContent);
-                    $labelNorm = $this->normalizarClaveColumna($labelText);
-                    if ($labelNorm === '') continue;
+                if ($n >= 2) {
+                    // Caso típico: celda etiqueta + celda valor en la misma fila
+                    for ($i = 0; $i < $n - 1; $i++) {
+                        $labelText = trim($cells[$i]->textContent);
+                        $labelNorm = $this->normalizarClaveColumna($labelText);
+                        if ($labelNorm === '') continue;
 
-                    foreach ($objetivos as $clave => $variantes) {
-                        foreach ($variantes as $token) {
-                            $tokenNorm = $this->normalizarClaveColumna($token);
-                            if ($tokenNorm !== '' && strpos($labelNorm, $tokenNorm) !== false) {
-                                // Tomar el valor de la próxima celda de datos si existe
-                                $j = $i + 1;
-                                if ($j < $n) {
-                                    $valor = trim($cells[$j]->textContent);
-                                    if ($valor !== '') {
-                                        if (!isset($resumen[$clave]) || $resumen[$clave] === '') {
-                                            $resumen[$clave] = $valor;
+                        foreach ($objetivos as $clave => $variantes) {
+                            foreach ($variantes as $token) {
+                                $tokenNorm = $this->normalizarClaveColumna($token);
+                                if ($tokenNorm !== '' && strpos($labelNorm, $tokenNorm) !== false) {
+                                    // Tomar el valor de la próxima celda de datos si existe
+                                    $j = $i + 1;
+                                    if ($j < $n) {
+                                        $valor = trim($cells[$j]->textContent);
+                                        if ($valor !== '') {
+                                            if (!isset($resumen[$clave]) || $resumen[$clave] === '') {
+                                                $resumen[$clave] = $valor;
+                                            }
                                         }
                                     }
+                                    break 2;
                                 }
-                                break 2;
+                            }
+                        }
+                    }
+                } else {
+                    // Caso alternativo: "Etiqueta: valor" en una sola celda
+                    foreach ($cells as $celda) {
+                        $texto = trim($celda->textContent);
+                        if (strpos($texto, ':') === false) continue;
+                        $partes = explode(':', $texto, 2);
+                        $labelNorm = $this->normalizarClaveColumna($partes[0]);
+                        $valor = trim($partes[1]);
+                        if ($labelNorm === '' || $valor === '') continue;
+
+                        foreach ($objetivos as $clave => $variantes) {
+                            foreach ($variantes as $token) {
+                                $tokenNorm = $this->normalizarClaveColumna($token);
+                                if ($tokenNorm !== '' && $labelNorm === $tokenNorm) {
+                                    if (!isset($resumen[$clave]) || $resumen[$clave] === '') {
+                                        $resumen[$clave] = $valor;
+                                    }
+                                    break 2;
+                                }
                             }
                         }
                     }

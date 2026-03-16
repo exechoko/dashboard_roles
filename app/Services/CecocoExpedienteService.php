@@ -69,9 +69,11 @@ class CecocoExpedienteService
     private function iniciarSesion()
     {
         try {
+            $cookieJar = new \GuzzleHttp\Cookie\CookieJar();
+            
             $client = Http::withOptions([
                 'verify' => false,
-                'cookies' => true,
+                'cookies' => $cookieJar,
             ]);
 
             $client->timeout($this->timeout)->get($this->baseUrl);
@@ -90,7 +92,9 @@ class CecocoExpedienteService
                 throw new Exception("Error al iniciar sesión en CECOCO: " . $response->status());
             }
 
-            Log::info('Sesión CECOCO iniciada correctamente');
+            Log::info('Sesión CECOCO iniciada correctamente', [
+                'cookies_count' => count($cookieJar)
+            ]);
 
             return $client;
 

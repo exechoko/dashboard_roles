@@ -363,7 +363,10 @@ class CecocoExpedienteService
                 }
                 if (!empty($datos)) {
                     $eventoNorm = $this->normalizarDatosEvento($datos, $nroExpediente);
-                    $timeline[] = $eventoNorm;
+                    // Solo considerar eventos con fecha/hora válida (evita filas de cabecera y otras secciones)
+                    if ($this->parseFecha($eventoNorm['fecha_hora'] ?? '') !== PHP_INT_MAX) {
+                        $timeline[] = $eventoNorm;
+                    }
                 }
             }
             

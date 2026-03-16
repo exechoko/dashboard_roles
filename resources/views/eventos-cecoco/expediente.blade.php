@@ -226,13 +226,13 @@
                 <tbody>
                     @foreach($detalle['tramites'] as $tramite)
                     <tr>
-                        <td><strong>{{ $tramite['unidad'] ?? $tramite['tr_amites'] ?? '-' }}</strong></td>
-                        <td><small>{{ $tramite['h_asig'] ?? '-' }}</small></td>
-                        <td><small>{{ $tramite['h_sal'] ?? '-' }}</small></td>
-                        <td><small>{{ $tramite['h_llegada'] ?? '-' }}</small></td>
-                        <td><small>{{ $tramite['h_f_atenci_on'] ?? $tramite['h_f_atencion'] ?? '-' }}</small></td>
-                        <td><small>{{ $tramite['h_desasig'] ?? '-' }}</small></td>
-                        <td><small>{{ $tramite['h_invalido'] ?? $tramite['h_inv_alido'] ?? '-' }}</small></td>
+                        <td><strong>{{ ($tramite['unidad'] ?? $tramite['tr_amites'] ?? '') ?: '-' }}</strong></td>
+                        <td><small>{{ ($tramite['h_asig'] ?? '') ?: '-' }}</small></td>
+                        <td><small>{{ ($tramite['h_sal'] ?? '') ?: '-' }}</small></td>
+                        <td><small>{{ ($tramite['h_llegada'] ?? '') ?: '-' }}</small></td>
+                        <td><small>{{ ($tramite['h_f_atenci_on'] ?? $tramite['h_f_atencion'] ?? '') ?: '-' }}</small></td>
+                        <td><small>{{ ($tramite['h_desasig'] ?? '') ?: '-' }}</small></td>
+                        <td><small>{{ ($tramite['h_invalido'] ?? $tramite['h_inv_alido'] ?? '') ?: '-' }}</small></td>
                     </tr>
                     @endforeach
                 </tbody>

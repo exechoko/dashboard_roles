@@ -784,10 +784,11 @@ class CecocoExpedienteService
         $tablas = $xpath->query('//table');
 
         foreach ($tablas as $tabla) {
-            // Buscar tabla con encabezados típicos de Trámites
+            // Buscar la fila de encabezados con MÁS DE UNA celda <th>
+            // (evita tomar la fila de título "Trámites" que tiene colspan)
             $headerTr = null;
             foreach ($xpath->query('.//tr', $tabla) as $trPosible) {
-                if ($xpath->query('.//th', $trPosible)->length > 0) { $headerTr = $trPosible; break; }
+                if ($xpath->query('.//th', $trPosible)->length > 1) { $headerTr = $trPosible; break; }
             }
             if (!$headerTr) continue;
 
@@ -803,6 +804,15 @@ class CecocoExpedienteService
 
             if (!$esTramites) continue;
 
+            // Detectar la clave de "Unidad" en los encabezados
+            $unidadKey = '';
+            foreach ($enc as $k) {
+                if (strpos($k, 'unidad') !== false || strpos($k, 'tr_amites') !== false) {
+                    $unidadKey = $k;
+                    break;
+                }
+            }
+
             // Parsear filas de trámites
             foreach ($xpath->query('.//tr', $tabla) as $fila) {
                 if ($headerTr && $fila->isSameNode($headerTr)) { continue; }
@@ -814,7 +824,12 @@ class CecocoExpedienteService
                     $valor = $celda->textContent;
                     $valor = preg_replace('/\x{00A0}|\xC2\xA0/u', ' ', $valor);
                     $valor = preg_replace('/\s+/u', ' ', (string)$valor);
-                    $valores[] = trim((string)$valor);
+                    $valor = trim((string)$valor);
+                    // Normalizar sentinel de fecha nula de CECOCO
+                    if ($valor === '01/01/2000 00:00:00' || $valor === '01/01/2000') {
+                        $valor = '';
+                    }
+                    $valores[] = $valor;
                 }
 
                 // Construir trámite con encabezados detectados
@@ -825,19 +840,13 @@ class CecocoExpedienteService
                     }
                 }
 
-                // Solo agregar trámites con al menos un campo con datos válidos
-                if (!empty($tramite)) {
-                    $tieneValor = false;
-                    foreach ($tramite as $k => $v) {
-                        if ($v !== '' && $v !== '-' && !in_array($k, ['tr_amites'])) {
-                            $tieneValor = true;
-                            break;
-                        }
-                    }
-                    if ($tieneValor) {
-                        $tramites[] = $tramite;
-                    }
+                // Requerir que la columna "Unidad" tenga un valor real
+                $unidad = $unidadKey !== '' ? ($tramite[$unidadKey] ?? '') : '';
+                if ($unidad === '' || $unidad === '-') {
+                    continue;
                 }
+
+                $tramites[] = $tramite;
             }
 
             // Si encontramos trámites, terminar

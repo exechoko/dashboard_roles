@@ -95,6 +95,7 @@
                                                         'llamadas-cecoco',
                                                         'moviles-cecoco',
                                                         'eventos-cecoco',
+                                                        'ver-expediente-cecoco',
                                                         'mapa-calor-servicios-cecoco',
                                                         'mapa-cecoco-en-vivo',
                                                         'ver-analizador-eventos-cecoco'

@@ -871,6 +871,8 @@ class CecocoExpedienteService
             'barrio'       => ['barrio:','barrio'],
             'jurisdiccion' => ['jurisdiccion:','jurisdicción:','comisaria:','comisaría:'],
             'municipio'    => ['municipio:','municipio','localidad:','localidad'],
+            'puesto'       => ['puesto:','puesto','box:','box'],
+            'sector'       => ['sector:','sector'],
         ];
 
         $tablas = $xpath->query('//table');

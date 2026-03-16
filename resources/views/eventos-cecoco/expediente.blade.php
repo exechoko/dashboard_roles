@@ -18,7 +18,7 @@
         @php
             $tipoLower = strtolower($detalle['tipo_servicio'] ?: ($eventoCecoco->tipo_servicio ?? ''));
             $badgeClass = 'primary';
-            
+
             if(str_contains($tipoLower, 'incendio') || str_contains($tipoLower, 'fuego') ||
                str_contains($tipoLower, 'herido con arma') || str_contains($tipoLower, 'persona armada') ||
                str_contains($tipoLower, 'persona fallecida') || str_contains($tipoLower, 'abuso de arma') ||
@@ -66,55 +66,32 @@
         @endphp
         <span class="badge badge-{{ $badgeClass }}">{{ $detalle['tipo_servicio'] ?: ($eventoCecoco->tipo_servicio ?? '') }}</span>
     </div>
+
     <div class="card-body">
+
+        {{-- ===== HISTORIAL DE LA INCIDENCIA ===== --}}
         <h5 class="mb-3"><i class="bi bi-file-text"></i> Historial de la Incidencia</h5>
-        <div class="row mb-4">
+        <div class="row mb-3">
             <div class="col-md-6">
-                <table class="table table-sm table-bordered">
+                <table class="table table-sm table-bordered mb-0">
                     <tbody>
                         <tr>
                             <th width="40%" class="table-secondary">Nº Expediente:</th>
                             <td><strong>{{ str_replace('Expediente: ', '', $detalle['nro_expediente'] ?? $eventoCecoco->nro_expediente) }}</strong></td>
                         </tr>
+                        @if(!empty($detalle['historial']['puesto']) || $eventoCecoco->box)
                         <tr>
-                            <th class="table-secondary">Tipo Servicio:</th>
-                            <td>{{ $detalle['tipo_servicio'] ?: ($eventoCecoco->tipo_servicio ?? '') }}</td>
-                        </tr>
-                        <tr>
-                            <th class="table-secondary">Operador:</th>
-                            <td>{{ $detalle['operador_inicial'] ?: ($eventoCecoco->operador ?? '-') }}</td>
-                        </tr>
-                        <tr>
-                            <th class="table-secondary">Fecha Creación:</th>
-                            <td>{{ $detalle['fecha_hora_inicial'] ?: ($eventoCecoco->fecha_hora ? $eventoCecoco->fecha_hora->format('d/m/Y H:i:s') : '-') }}</td>
-                        </tr>
-                        @if(!empty($detalle['historial']['estado']))
-                        <tr>
-                            <th class="table-secondary">Estado:</th>
-                            <td><span class="badge bg-info">{{ $detalle['historial']['estado'] }}</span></td>
+                            <th class="table-secondary">Puesto:</th>
+                            <td>{{ $detalle['historial']['puesto'] ?: $eventoCecoco->box }}</td>
                         </tr>
                         @endif
-                    </tbody>
-                </table>
-            </div>
-            <div class="col-md-6">
-                <table class="table table-sm table-bordered">
-                    <tbody>
                         <tr>
-                            <th width="40%" class="table-secondary">Dirección:</th>
-                            <td class="text-break">{{ $detalle['direccion'] ?: ($eventoCecoco->direccion ?? '-') }}</td>
+                            <th class="table-secondary">Tipo Servicio:</th>
+                            <td>{{ $detalle['tipo_servicio'] ?: ($eventoCecoco->tipo_servicio ?? '-') }}</td>
                         </tr>
                         <tr>
-                            <th class="table-secondary">Teléfono:</th>
-                            <td>
-                                @if(!empty($detalle['telefono']) || $eventoCecoco->telefono)
-                                    <a href="tel:{{ $detalle['telefono'] ?: $eventoCecoco->telefono }}">
-                                        {{ $detalle['telefono'] ?: $eventoCecoco->telefono }}
-                                    </a>
-                                @else
-                                    -
-                                @endif
-                            </td>
+                            <th class="table-secondary">Dirección:</th>
+                            <td class="text-break">{{ $detalle['direccion'] ?: ($eventoCecoco->direccion ?? '-') }}</td>
                         </tr>
                         @if(!empty($detalle['historial']['barrio']))
                         <tr>
@@ -122,10 +99,41 @@
                             <td>{{ $detalle['historial']['barrio'] }}</td>
                         </tr>
                         @endif
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <table class="table table-sm table-bordered mb-0">
+                    <tbody>
+                        <tr>
+                            <th width="40%" class="table-secondary">Fecha Creación:</th>
+                            <td>{{ $detalle['fecha_hora_inicial'] ?: ($eventoCecoco->fecha_hora ? $eventoCecoco->fecha_hora->format('d/m/Y H:i:s') : '-') }}</td>
+                        </tr>
+                        <tr>
+                            <th class="table-secondary">Operador:</th>
+                            <td>{{ $detalle['operador_inicial'] ?: ($eventoCecoco->operador ?? '-') }}</td>
+                        </tr>
+                        <tr>
+                            <th class="table-secondary">Teléfono:</th>
+                            <td>
+                                @php $tel = $detalle['telefono'] ?: ($eventoCecoco->telefono ?? ''); @endphp
+                                @if($tel)
+                                    <a href="tel:{{ $tel }}">{{ $tel }}</a>
+                                @else
+                                    -
+                                @endif
+                            </td>
+                        </tr>
                         @if(!empty($detalle['historial']['jurisdiccion']))
                         <tr>
                             <th class="table-secondary">Jurisdicción:</th>
                             <td>{{ $detalle['historial']['jurisdiccion'] }}</td>
+                        </tr>
+                        @endif
+                        @if(!empty($detalle['historial']['estado']))
+                        <tr>
+                            <th class="table-secondary">Estado:</th>
+                            <td><span class="badge bg-info">{{ $detalle['historial']['estado'] }}</span></td>
                         </tr>
                         @endif
                         @if(!empty($detalle['historial']['municipio']))
@@ -134,92 +142,76 @@
                             <td>{{ $detalle['historial']['municipio'] }}</td>
                         </tr>
                         @endif
+                        @if(!empty($detalle['historial']['sector']))
+                        <tr>
+                            <th class="table-secondary">Sector:</th>
+                            <td>{{ $detalle['historial']['sector'] }}</td>
+                        </tr>
+                        @endif
                     </tbody>
                 </table>
             </div>
         </div>
 
         @if(!empty($detalle['descripcion_inicial']))
-        <div class="mb-4">
-            <h5 class="mb-3"><i class="bi bi-chat-left-text"></i> Descripción Inicial</h5>
-            <div class="p-3 border rounded" style="white-space: pre-wrap; font-family: monospace; font-size: 14px; background-color: var(--bs-secondary-bg);">{{ $detalle['descripcion_inicial'] }}</div>
+        <div class="mb-3">
+            <h6 class="text-muted"><i class="bi bi-chat-left-text"></i> Descripción</h6>
+            <div class="p-3 border rounded" style="white-space: pre-wrap; font-size: 13px; background-color: var(--bs-secondary-bg);">{{ $detalle['descripcion_inicial'] }}</div>
         </div>
         @endif
 
-        <hr class="my-4">
+        <hr class="my-3">
 
-        <h5 class="mb-3"><i class="bi bi-clock-history"></i> Acciones</h5>
-        <p class="text-muted mb-3"><small>Total de eventos: <strong>{{ $detalle['total_eventos'] ?? 0 }}</strong></small></p>
+        {{-- ===== ACCIONES ===== --}}
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0"><i class="bi bi-list-check"></i> Acciones</h5>
+            <small class="text-muted">Total: <strong>{{ $detalle['total_eventos'] ?? 0 }}</strong> eventos</small>
+        </div>
 
         @if(!empty($detalle['timeline']) && count($detalle['timeline']) > 0)
-            <div class="timeline-container">
-                @foreach($detalle['timeline'] as $index => $evento)
-                    <div class="timeline-item mb-4">
-                        <div class="row">
-                            <div class="col-md-2 text-md-end">
-                                <div class="timeline-badge">
-                                    <span class="badge bg-primary">{{ $index + 1 }}</span>
-                                </div>
-                                <div class="timeline-time mt-2">
-                                    <small class="text-muted">
-                                        <i class="bi bi-clock"></i>
-                                        <strong>{{ $evento['fecha_hora'] ?? '-' }}</strong>
-                                    </small>
-                                </div>
-                            </div>
-                            <div class="col-md-10">
-                                <div class="card shadow-sm">
-                                    <div class="card-body">
-                                        <div class="row g-2 mb-2">
-                                            @if(!empty($evento['operador']))
-                                            <div class="col-md-6">
-                                                <small class="text-muted">
-                                                    <i class="bi bi-person"></i> <strong>Operador:</strong> {{ $evento['operador'] }}
-                                                </small>
-                                            </div>
-                                            @endif
-                                            @if(!empty($evento['recurso']))
-                                            <div class="col-md-6">
-                                                <small class="text-muted">
-                                                    <i class="bi bi-truck"></i> <strong>Recurso:</strong> {{ $evento['recurso'] }}
-                                                </small>
-                                            </div>
-                                            @endif
-                                            @if(!empty($evento['estado']))
-                                            <div class="col-md-6">
-                                                <small class="text-muted">
-                                                    <i class="bi bi-flag"></i> <strong>Estado:</strong> 
-                                                    <span class="badge bg-secondary">{{ $evento['estado'] }}</span>
-                                                </small>
-                                            </div>
-                                            @endif
-                                        </div>
-                                        @if(!empty($evento['descripcion']))
-                                        <div class="mt-2 p-2 rounded" style="background-color: var(--bs-light); border-left: 3px solid var(--bs-primary);">
-                                            <small style="white-space: pre-wrap;">{{ $evento['descripcion'] }}</small>
-                                        </div>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width:155px;">Fecha - Hora</th>
+                        <th style="width:185px;">Operador</th>
+                        <th>Acción</th>
+                        <th style="width:200px;">Características</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($detalle['timeline'] as $evento)
+                    <tr>
+                        <td class="text-nowrap"><small>{{ $evento['fecha_hora'] ?? '-' }}</small></td>
+                        <td><small>{{ $evento['operador'] ?? '-' }}</small></td>
+                        <td><small>{{ $evento['descripcion'] ?? '' }}</small></td>
+                        <td>
+                            @if(!empty($evento['estado']))
+                                <small class="badge bg-secondary text-wrap text-start" style="font-size:0.75em;">{{ $evento['estado'] }}</small>
+                            @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
         @else
-            <div class="alert alert-warning">
-                <i class="bi bi-exclamation-triangle"></i> No se encontraron eventos en la línea de tiempo del expediente.
-            </div>
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> No se encontraron eventos en el expediente.
+        </div>
         @endif
 
+        {{-- ===== TRÁMITES ===== --}}
         @if(!empty($detalle['tramites']) && count($detalle['tramites']) > 0)
-        <hr class="my-4">
-        
-        <h5 class="mb-3"><i class="bi bi-truck"></i> Trámites / Recursos Asignados</h5>
-        <p class="text-muted mb-3"><small>Total de trámites: <strong>{{ $detalle['total_tramites'] ?? 0 }}</strong></small></p>
-        
+        <hr class="my-3">
+
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0"><i class="bi bi-truck"></i> Trámites / Recursos Asignados</h5>
+            <small class="text-muted">Total: <strong>{{ $detalle['total_tramites'] ?? 0 }}</strong></small>
+        </div>
+
         <div class="table-responsive">
-            <table class="table table-sm table-bordered table-hover">
+            <table class="table table-sm table-bordered table-hover mb-0">
                 <thead class="table-secondary">
                     <tr>
                         <th>Unidad</th>
@@ -228,78 +220,29 @@
                         <th>H. Llegada</th>
                         <th>H. Fin Atención</th>
                         <th>H. Desasignación</th>
+                        <th>H. Inválido</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($detalle['tramites'] as $tramite)
                     <tr>
                         <td><strong>{{ $tramite['unidad'] ?? $tramite['tr_amites'] ?? '-' }}</strong></td>
-                        <td>{{ $tramite['h_asig'] ?? '-' }}</td>
-                        <td>{{ $tramite['h_sal'] ?? '-' }}</td>
-                        <td>{{ $tramite['h_llegada'] ?? '-' }}</td>
-                        <td>{{ $tramite['h_f_atenci_on'] ?? $tramite['h_f_atencion'] ?? '-' }}</td>
-                        <td>{{ $tramite['h_desasig'] ?? '-' }}</td>
+                        <td><small>{{ $tramite['h_asig'] ?? '-' }}</small></td>
+                        <td><small>{{ $tramite['h_sal'] ?? '-' }}</small></td>
+                        <td><small>{{ $tramite['h_llegada'] ?? '-' }}</small></td>
+                        <td><small>{{ $tramite['h_f_atenci_on'] ?? $tramite['h_f_atencion'] ?? '-' }}</small></td>
+                        <td><small>{{ $tramite['h_desasig'] ?? '-' }}</small></td>
+                        <td><small>{{ $tramite['h_invalido'] ?? $tramite['h_inv_alido'] ?? '-' }}</small></td>
                     </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
         @endif
+
     </div>
     <div class="card-footer text-muted">
-        <small>
-            <i class="bi bi-database"></i> 
-            Datos obtenidos desde sistema CECOCO en tiempo real
-        </small>
+        <small><i class="bi bi-database"></i> Datos obtenidos desde sistema CECOCO en tiempo real</small>
     </div>
 </div>
-
-<style>
-.timeline-container {
-    position: relative;
-}
-
-.timeline-item {
-    position: relative;
-}
-
-.timeline-badge {
-    display: inline-block;
-}
-
-@media (min-width: 768px) {
-    .timeline-container::before {
-        content: '';
-        position: absolute;
-        left: calc(16.666% + 10px);
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: linear-gradient(to bottom, #dee2e6 0%, #dee2e6 100%);
-    }
-    
-    .timeline-item::before {
-        content: '';
-        position: absolute;
-        left: calc(16.666% + 1px);
-        top: 30px;
-        width: 20px;
-        height: 2px;
-        background: #dee2e6;
-    }
-}
-
-.timeline-time {
-    font-size: 0.85rem;
-}
-
-.card {
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1) !important;
-}
-</style>
 @endsection

@@ -205,6 +205,31 @@ class CecocoExpedienteService
                 '__locale' => 'es',
             ];
 
+            // Intentar obtener el HTML del reporte directamente desde /output (formato HTML)
+            $outputParams = $params + [
+                '__format' => 'html',
+                '__page' => 'all',
+                '__asattachment' => 'false',
+                '__overwrite' => 'false',
+                '__dpi' => '96',
+                '__pageoverflow' => '0',
+                '__designer' => 'false',
+                '__rtl' => 'false',
+                '__isnull' => 'p_shift_interval',
+            ];
+
+            $respOutput = $client->get($this->baseUrl . '/output', $outputParams);
+            if ($respOutput->successful()) {
+                $htmlOut = $respOutput->body();
+                if (stripos($htmlOut, '<frameset') === false && stripos($htmlOut, '<table') !== false) {
+                    // Chequear si parece incluir la sección Acciones
+                    if (stripos($htmlOut, 'Acciones') !== false || stripos($htmlOut, 'Fecha - Hora') !== false) {
+                        Log::info('Reporte HTML obtenido desde /output', ['tamaño' => strlen($htmlOut)]);
+                        return $htmlOut;
+                    }
+                }
+            }
+
             // Intentar obtener el HTML del reporte directamente desde /run
             $respRun = $client->get($this->baseUrl . '/run', $params);
             if ($respRun->successful()) {
@@ -294,80 +319,33 @@ class CecocoExpedienteService
             
             $timeline = [];
 
-            // Intentar primero seleccionar la tabla 'Acciones'
-            $tabla = $this->seleccionarTablaAcciones($xpath);
-            if ($tabla === null) {
-                // Seleccionar la mejor tabla de datos (más filas/columnas)
-                $tabla = $this->seleccionarTablaDatos($xpath);
-            }
-
-            if ($tabla === null) {
-                $totalTablas = $xpath->query('//table')->length;
-                $dump = $this->tempPath . '/cecoco_reporte_' . $nroExpediente . '_' . time() . '.html';
-                @file_put_contents($dump, $html);
-                Log::warning('No se encontró una tabla de datos adecuada en el HTML del reporte', [
-                    'total_tablas' => $totalTablas,
-                    'dump' => $dump,
-                    'html_sample' => substr(strip_tags($html), 0, 300)
-                ]);
-                throw new Exception("No se encontraron eventos en el expediente");
-            }
-
-            // Detectar fila de encabezados: elegir la fila con MÁS th o que contenga tokens clave
-            $headerTr = null;
-            $maxTh = -1;
-            foreach ($xpath->query('.//tr', $tabla) as $trPosible) {
-                $thCount = $xpath->query('.//th', $trPosible)->length;
-                $rowText = $this->normalizarClaveColumna(trim($trPosible->textContent));
-                $hasTokens = (strpos($rowText, 'fecha') !== false && strpos($rowText, 'operador') !== false)
-                           || (strpos($rowText, 'accion') !== false && strpos($rowText, 'caracteristicas') !== false);
-                if ($thCount > $maxTh || ($hasTokens && $thCount >= $maxTh)) {
-                    $maxTh = $thCount;
-                    $headerTr = $trPosible;
-                }
-            }
-            $encabezados = [];
-            if ($headerTr) {
-                foreach ($xpath->query('.//th|.//td', $headerTr) as $celda) {
-                    $encabezados[] = $this->normalizarClaveColumna(trim($celda->textContent));
-                }
-                Log::info('Encabezados tabla seleccionada CECOCO', ['encabezados' => $encabezados]);
-            }
-
-            // Recorrer filas de datos (excluir la cabecera detectada)
-            foreach ($xpath->query('.//tr', $tabla) as $fila) {
-                if ($headerTr && $fila->isSameNode($headerTr)) {
-                    continue;
-                }
-                $celdas = $xpath->query('.//td', $fila);
-                if ($celdas->length === 0) {
-                    continue;
-                }
-                $datos = [];
-                $i = 0;
-                // Elegir la mejor ventana de encabezados que coincida con la cantidad de columnas de esta fila
-                $headersWin = $this->bestHeaderWindow($encabezados, $celdas->length);
-                foreach ($celdas as $celda) {
-                    $valor = $celda->textContent;
-                    // Reemplazar NBSP y colapsar espacios
-                    $valor = preg_replace('/\x{00A0}|\xC2\xA0/u', ' ', $valor);
-                    $valor = preg_replace('/\s+/u', ' ', (string)$valor);
-                    $valor = trim((string)$valor);
-                    if ($i < count($headersWin)) {
-                        $clave = $headersWin[$i];
-                        if ($clave !== '') {
-                            $datos[$clave] = $valor;
-                        }
-                    }
-                    $i++;
-                }
-                if (!empty($datos)) {
-                    $eventoNorm = $this->normalizarDatosEvento($datos, $nroExpediente);
-                    // Solo considerar eventos con fecha/hora válida (evita filas de cabecera y otras secciones)
-                    if ($this->parseFecha($eventoNorm['fecha_hora'] ?? '') !== PHP_INT_MAX) {
-                        $timeline[] = $eventoNorm;
+            // Intentar obtener todas las tablas de Acciones (hay reportes con varias tablas paginadas)
+            $tablasAcciones = $this->seleccionarTablasAcciones($xpath);
+            if (!empty($tablasAcciones)) {
+                foreach ($tablasAcciones as $t) {
+                    $fragmento = $this->parseEventosEnTabla($xpath, $t, $nroExpediente);
+                    if (!empty($fragmento)) {
+                        $timeline = array_merge($timeline, $fragmento);
                     }
                 }
+            } else {
+                // Fallback a una sola tabla
+                $tabla = $this->seleccionarTablaAcciones($xpath);
+                if ($tabla === null) {
+                    $tabla = $this->seleccionarTablaDatos($xpath);
+                }
+                if ($tabla === null) {
+                    $totalTablas = $xpath->query('//table')->length;
+                    $dump = $this->tempPath . '/cecoco_reporte_' . $nroExpediente . '_' . time() . '.html';
+                    @file_put_contents($dump, $html);
+                    Log::warning('No se encontró una tabla de datos adecuada en el HTML del reporte', [
+                        'total_tablas' => $totalTablas,
+                        'dump' => $dump,
+                        'html_sample' => substr(strip_tags($html), 0, 300)
+                    ]);
+                    throw new Exception("No se encontraron eventos en el expediente");
+                }
+                $timeline = $this->parseEventosEnTabla($xpath, $tabla, $nroExpediente);
             }
             
             if (empty($timeline)) {
@@ -439,6 +417,84 @@ class CecocoExpedienteService
         }
 
         return $mejor;
+    }
+
+    private function seleccionarTablasAcciones(\DOMXPath $xpath): array
+    {
+        $tablas = $xpath->query('//table');
+        $candidatas = [];
+        foreach ($tablas as $tabla) {
+            $headerTr = null;
+            foreach ($xpath->query('.//tr', $tabla) as $trPosible) {
+                if ($xpath->query('.//th', $trPosible)->length > 0) { $headerTr = $trPosible; break; }
+            }
+            if (!$headerTr) continue;
+            $enc = [];
+            foreach ($xpath->query('.//th|.//td', $headerTr) as $celda) {
+                $enc[] = $this->normalizarClaveColumna(trim($celda->textContent));
+            }
+            $h = implode(' ', $enc);
+            $ok = strpos($h, 'fecha') !== false && strpos($h, 'operador') !== false &&
+                  (strpos($h, 'accion') !== false || strpos($h, 'acci_on') !== false) &&
+                  (strpos($h, 'caracteristicas') !== false || strpos($h, 'caracter_isticas') !== false);
+            if ($ok) {
+                $candidatas[] = $tabla;
+            }
+        }
+        return $candidatas;
+    }
+
+    private function parseEventosEnTabla(\DOMXPath $xpath, \DOMNode $tabla, string $nroExpediente): array
+    {
+        // Detectar fila de encabezados: elegir la fila con MÁS th o que contenga tokens clave
+        $headerTr = null;
+        $maxTh = -1;
+        foreach ($xpath->query('.//tr', $tabla) as $trPosible) {
+            $thCount = $xpath->query('.//th', $trPosible)->length;
+            $rowText = $this->normalizarClaveColumna(trim($trPosible->textContent));
+            $hasTokens = (strpos($rowText, 'fecha') !== false && strpos($rowText, 'operador') !== false)
+                       || (strpos($rowText, 'accion') !== false && strpos($rowText, 'caracteristicas') !== false);
+            if ($thCount > $maxTh || ($hasTokens && $thCount >= $maxTh)) {
+                $maxTh = $thCount;
+                $headerTr = $trPosible;
+            }
+        }
+        $encabezados = [];
+        if ($headerTr) {
+            foreach ($xpath->query('.//th|.//td', $headerTr) as $celda) {
+                $encabezados[] = $this->normalizarClaveColumna(trim($celda->textContent));
+            }
+            Log::info('Encabezados tabla Acciones', ['encabezados' => $encabezados]);
+        }
+
+        $result = [];
+        foreach ($xpath->query('.//tr', $tabla) as $fila) {
+            if ($headerTr && $fila->isSameNode($headerTr)) { continue; }
+            $celdas = $xpath->query('.//td', $fila);
+            if ($celdas->length === 0) { continue; }
+            $datos = [];
+            $i = 0;
+            $headersWin = $this->bestHeaderWindow($encabezados, $celdas->length);
+            foreach ($celdas as $celda) {
+                $valor = $celda->textContent;
+                $valor = preg_replace('/\x{00A0}|\xC2\xA0/u', ' ', $valor);
+                $valor = preg_replace('/\s+/u', ' ', (string)$valor);
+                $valor = trim((string)$valor);
+                if ($i < count($headersWin)) {
+                    $clave = $headersWin[$i];
+                    if ($clave !== '') { $datos[$clave] = $valor; }
+                }
+                $i++;
+            }
+            if (!empty($datos)) {
+                $eventoNorm = $this->normalizarDatosEvento($datos, $nroExpediente);
+                if ($this->parseFecha($eventoNorm['fecha_hora'] ?? '') !== PHP_INT_MAX) {
+                    $result[] = $eventoNorm;
+                }
+            }
+        }
+
+        return $result;
     }
 
     private function seleccionarTablaAcciones(\DOMXPath $xpath): ?\DOMNode

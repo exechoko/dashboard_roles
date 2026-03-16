@@ -9,7 +9,7 @@ class ValidarConfiguracionCecoco extends Command
 {
     protected $signature = 'cecoco:validar-config';
 
-    protected $description = 'Valida la configuración de integración con CECOCO para expedientes';
+    protected $description = 'Valida la configuración de integración PHP nativa con CECOCO para expedientes (sin Python)';
 
     public function handle(CecocoExpedienteService $service)
     {
@@ -21,9 +21,9 @@ class ValidarConfiguracionCecoco extends Command
         $this->table(
             ['Configuración', 'Valor'],
             [
-                ['Python Path', $validacion['configuracion']['python_path']],
-                ['Script Path', $validacion['configuracion']['script_path']],
-                ['Output Path', $validacion['configuracion']['output_path']],
+                ['CECOCO URL', $validacion['configuracion']['cecoco_url']],
+                ['Usuario', $validacion['configuracion']['cecoco_user']],
+                ['Timeout', $validacion['configuracion']['timeout'] . ' segundos'],
             ]
         );
 

@@ -2,24 +2,29 @@
 
 ## Descripción
 
-Este módulo permite visualizar el detalle completo de expedientes desde el sistema CECOCO mediante la ejecución de scripts Python que consultan el servidor CECOCO en tiempo real.
+Este módulo permite visualizar el detalle completo de expedientes desde el sistema CECOCO mediante conexión HTTP directa en PHP nativo, sin necesidad de Python. El sistema se conecta al servidor CECOCO, descarga reportes BIRT en formato Excel y los procesa para mostrar una línea de tiempo completa del expediente.
 
 ## Características
 
-- **Consulta en tiempo real**: Ejecuta script Python para obtener datos actualizados desde CECOCO
+- **PHP Nativo**: Sin dependencia de Python, compatible con Windows Server 2012 R2
+- **Consulta en tiempo real**: Conexión HTTP directa al servidor CECOCO
+- **Reportes BIRT**: Descarga y procesa reportes Excel generados por BIRT
 - **Línea de tiempo organizada**: Muestra todos los eventos del expediente en orden cronológico
 - **Permisos granulares**: Control de acceso mediante Spatie Permission
 - **Interfaz responsive**: Vista optimizada para dispositivos móviles y escritorio
-- **Manejo de errores**: Detección de expedientes que requieren restauración
+- **Manejo de errores**: Detección automática de expedientes que requieren restauración
+- **Limpieza automática**: Archivos temporales se eliminan después de procesar
 
 ## Arquitectura
 
 ### Componentes Principales
 
 1. **Servicio**: `App\Services\CecocoExpedienteService`
-   - Ejecuta el script Python `scrapcoco_expediente.py`
-   - Parsea el archivo Excel generado
-   - Estructura los datos en formato timeline
+   - Inicia sesión en CECOCO mediante login AJAX
+   - Inicializa reporte BIRT (report_history.rptdesign)
+   - Descarga archivo Excel con datos del expediente
+   - Parsea el Excel y estructura timeline cronológica
+   - Limpia archivos temporales automáticamente
 
 2. **Controlador**: `App\Http\Controllers\EventoCecocoController@verExpediente`
    - Autoriza acceso mediante permiso `ver-expediente-cecoco`
@@ -33,6 +38,20 @@ Este módulo permite visualizar el detalle completo de expedientes desde el sist
 
 4. **Ruta**: `GET /cecoco/{eventoCecoco}/expediente`
 
+### Flujo de Operación
+
+```
+1. Usuario → Click "Ver Detalle"
+2. Controlador → Verifica permiso ver-expediente-cecoco
+3. Servicio → GET http://172.26.100.34:8080/CECOCO_webapp
+4. Servicio → POST /ajax/perfil/AjaxServletPerfil (Login)
+5. Servicio → GET /run (Inicializar reporte BIRT)
+6. Servicio → POST /frameset (Descargar Excel)
+7. Servicio → Parsear Excel → Estructurar datos
+8. Vista → Renderizar timeline
+9. Servicio → Limpiar archivo temporal
+```
+
 ## Configuración
 
 ### 1. Variables de Entorno
@@ -40,10 +59,10 @@ Este módulo permite visualizar el detalle completo de expedientes desde el sist
 Agregar al archivo `.env`:
 
 ```env
-# Configuración CECOCO Expedientes
-CECOCO_PYTHON_PATH=python
-CECOCO_SCRIPT_EXPEDIENTE_PATH=F:\Scripts_Eventos\scrapcoco_expediente.py
-CECOCO_OUTPUT_PATH=F:\Scripts_Eventos
+# Configuración CECOCO Expedientes (PHP Nativo - Sin Python)
+CECOCO_URL=http://172.26.100.34:8080
+CECOCO_USER=tecnica
+CECOCO_PASSWORD=tecnica
 CECOCO_TIMEOUT=60
 ```
 
@@ -53,19 +72,21 @@ Ya creado en: `config/cecoco.php`
 
 ```php
 return [
-    'python_path' => env('CECOCO_PYTHON_PATH', 'python'),
-    'script_expediente_path' => env('CECOCO_SCRIPT_EXPEDIENTE_PATH', 'F:\Scripts_Eventos\scrapcoco_expediente.py'),
-    'output_path' => env('CECOCO_OUTPUT_PATH', 'F:\Scripts_Eventos'),
+    'url' => env('CECOCO_URL', 'http://172.26.100.34:8080'),
+    'user' => env('CECOCO_USER', 'tecnica'),
+    'password' => env('CECOCO_PASSWORD', 'tecnica'),
     'timeout' => env('CECOCO_TIMEOUT', 60),
 ];
 ```
 
-### 3. Scripts Python Requeridos
+### 3. Requisitos del Sistema
 
-Asegurarse de que existan en `F:\Scripts_Eventos\`:
-
-- `scrapcoco_expediente.py` - Script para obtener expediente individual
-- `scrapcoco3.py` - Script para obtener eventos diarios (ya existente)
+- ✅ PHP 7.4 o superior
+- ✅ Laravel HTTP Client (incluido en Laravel)
+- ✅ PhpSpreadsheet (para parsear Excel)
+- ✅ Acceso de red al servidor CECOCO (172.26.100.34:8080)
+- ✅ Permisos de escritura en `storage/app/temp`
+- ❌ **NO requiere Python** (compatible con Windows Server 2012 R2)
 
 ### 4. Permisos del Sistema
 

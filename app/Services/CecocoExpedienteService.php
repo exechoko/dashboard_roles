@@ -27,6 +27,93 @@ class CecocoExpedienteService
         }
     }
 
+    private function extraerHtmlDeFrameset(string $framesetHtml, $client): string
+    {
+        $dom = new \DOMDocument();
+        @$dom->loadHTML(mb_convert_encoding($framesetHtml, 'HTML-ENTITIES', 'UTF-8'));
+        $xpath = new \DOMXPath($dom);
+
+        $nodos = [];
+        foreach (['//frame', '//iframe'] as $query) {
+            foreach ($xpath->query($query) as $node) {
+                $nodos[] = $node;
+            }
+        }
+
+        // Priorizar frames con nombre/id que indiquen contenido de reporte
+        usort($nodos, function($a, $b) {
+            $score = function($n) {
+                $name = strtolower($n->getAttribute('name') . ' ' . $n->getAttribute('id'));
+                if (strpos($name, 'report') !== false) return 0;
+                if (strpos($name, 'birt') !== false) return 1;
+                return 2;
+            };
+            return $score($a) <=> $score($b);
+        });
+
+        foreach ($nodos as $node) {
+            $src = trim($node->getAttribute('src'));
+            if ($src === '') continue;
+
+            $url = $this->resolverUrlAbsoluta($src);
+            try {
+                $res = $client->get($url);
+                if (!$res->successful()) {
+                    continue;
+                }
+                $body = $res->body();
+                // Heurística simple: debe contener al menos una tabla con filas
+                if (stripos($body, '<table') !== false && stripos($body, '<tr') !== false) {
+                    return $body;
+                }
+            } catch (Exception $e) {
+                // Ignorar y probar siguiente frame
+                continue;
+            }
+        }
+
+        // Si no encontramos una tabla, devolver el primero exitoso por si el reporte es puro HTML sin tablas
+        foreach ($nodos as $node) {
+            $src = trim($node->getAttribute('src'));
+            if ($src === '') continue;
+            $url = $this->resolverUrlAbsoluta($src);
+            try {
+                $res = $client->get($url);
+                if ($res->successful()) {
+                    return $res->body();
+                }
+            } catch (Exception $e) {
+                continue;
+            }
+        }
+
+        return $framesetHtml; // fallback
+    }
+
+    private function resolverUrlAbsoluta(string $src): string
+    {
+        // Si ya es absoluta, devolverla
+        if (preg_match('/^https?:\/\//i', $src)) {
+            return $src;
+        }
+
+        // Base CECOCO_webapp
+        $base = rtrim($this->baseUrl, '/');
+
+        if (strpos($src, '/') === 0) {
+            // Ruta absoluta en el host
+            // Extraer esquema+host+puerto de baseUrl
+            $parts = parse_url($base);
+            $scheme = $parts['scheme'] ?? 'http';
+            $host = $parts['host'] ?? '';
+            $port = isset($parts['port']) ? ':' . $parts['port'] : '';
+            return $scheme . '://' . $host . $port . $src;
+        }
+
+        // Ruta relativa
+        return $base . '/' . ltrim($src, '/');
+    }
+
     public function obtenerDetalleExpediente(string $nroExpediente): array
     {
         try {
@@ -118,9 +205,32 @@ class CecocoExpedienteService
 
             $client->get($this->baseUrl . '/run', $params);
             
-            // Ahora obtener el frameset con el contenido renderizado
-            $response = $client->get($this->baseUrl . '/frameset', [
-                '__report' => 'reports/issues/report_history.rptdesign',
+            // Intentar obtener directamente el HTML del reporte con POST (sin viewer)
+            $postData = $params + [
+                '__pageoverflow' => '0',
+                '__asattachment' => 'false',
+                '__navigationbar' => 'false',
+                '__page' => 'all',
+            ];
+
+            $respDirecto = $client->asForm()
+                ->withHeaders([
+                    'Content-Type' => 'application/x-www-form-urlencoded',
+                    'Referer' => $this->baseUrl . '/frameset?__report=reports/issues/report_history.rptdesign',
+                    'User-Agent' => 'Mozilla/5.0',
+                ])
+                ->post($this->baseUrl . '/frameset?__report=reports/issues/report_history.rptdesign', $postData);
+
+            if ($respDirecto->successful()) {
+                $htmlDirecto = $respDirecto->body();
+                if (stripos($htmlDirecto, '<frameset') === false && strlen($htmlDirecto) > 500) {
+                    Log::info('Reporte HTML directo obtenido correctamente', ['tamaño' => strlen($htmlDirecto)]);
+                    return $htmlDirecto;
+                }
+            }
+
+            // Si aún así es frameset, obtener el frameset renderizado, reenviando los mismos parámetros del reporte
+            $response = $client->get($this->baseUrl . '/frameset', $params + [
                 '__navigationbar' => 'false',
             ]);
 
@@ -128,15 +238,23 @@ class CecocoExpedienteService
                 throw new Exception("Error al obtener reporte: " . $response->status());
             }
 
-            $html = $response->body();
-            
-            if (strlen($html) < 1000) {
+            $framesetHtml = $response->body();
+            if (strlen($framesetHtml) < 500) {
                 throw new Exception('El expediente requiere restauración desde backup. Contacte al administrador del sistema CECOCO.');
             }
 
-            Log::info('Reporte HTML obtenido correctamente', ['tamaño' => strlen($html)]);
+            Log::info('Frameset HTML obtenido correctamente', ['tamaño' => strlen($framesetHtml)]);
 
-            return $html;
+            // Extraer el contenido real del reporte desde el frame/iframe
+            $contenidoHtml = $this->extraerHtmlDeFrameset($framesetHtml, $client);
+
+            if (strlen($contenidoHtml) < 500) {
+                throw new Exception('No se pudo obtener el contenido del reporte desde el frameset');
+            }
+
+            Log::info('Contenido de reporte obtenido correctamente', ['tamaño' => strlen($contenidoHtml)]);
+
+            return $contenidoHtml;
 
         } catch (Exception $e) {
             Log::error('Error al obtener reporte HTML', ['error' => $e->getMessage()]);
@@ -152,30 +270,48 @@ class CecocoExpedienteService
             $xpath = new \DOMXPath($dom);
             
             $timeline = [];
-            
-            // Buscar todas las filas de la tabla (tr)
-            $filas = $xpath->query('//table//tr');
-            
+
+            // Seleccionar la mejor tabla de datos (más filas/columnas)
+            $tabla = $this->seleccionarTablaDatos($xpath);
+
+            if ($tabla === null) {
+                $totalTablas = $xpath->query('//table')->length;
+                $dump = $this->tempPath . '/cecoco_reporte_' . $nroExpediente . '_' . time() . '.html';
+                @file_put_contents($dump, $html);
+                Log::warning('No se encontró una tabla de datos adecuada en el HTML del reporte', [
+                    'total_tablas' => $totalTablas,
+                    'dump' => $dump,
+                    'html_sample' => substr(strip_tags($html), 0, 300)
+                ]);
+                throw new Exception("No se encontraron eventos en el expediente");
+            }
+
+            // Detectar fila de encabezados (thead o primera con th)
+            $headerTr = $xpath->query('.//thead/tr[1]', $tabla)->item(0);
+            if (!$headerTr) {
+                foreach ($xpath->query('.//tr', $tabla) as $trPosible) {
+                    if ($xpath->query('.//th', $trPosible)->length > 0) {
+                        $headerTr = $trPosible;
+                        break;
+                    }
+                }
+            }
             $encabezados = [];
-            $primeraFila = true;
-            
-            foreach ($filas as $fila) {
-                $celdas = $xpath->query('.//td | .//th', $fila);
-                
+            if ($headerTr) {
+                foreach ($xpath->query('.//th|.//td', $headerTr) as $celda) {
+                    $encabezados[] = $this->normalizarClaveColumna(trim($celda->textContent));
+                }
+            }
+
+            // Recorrer filas de datos (excluir la cabecera detectada)
+            foreach ($xpath->query('.//tr', $tabla) as $fila) {
+                if ($headerTr && $fila->isSameNode($headerTr)) {
+                    continue;
+                }
+                $celdas = $xpath->query('.//td', $fila);
                 if ($celdas->length === 0) {
                     continue;
                 }
-                
-                // Primera fila son los encabezados
-                if ($primeraFila) {
-                    foreach ($celdas as $celda) {
-                        $encabezados[] = $this->normalizarClaveColumna(trim($celda->textContent));
-                    }
-                    $primeraFila = false;
-                    continue;
-                }
-                
-                // Extraer datos de la fila
                 $datos = [];
                 $i = 0;
                 foreach ($celdas as $celda) {
@@ -188,13 +324,17 @@ class CecocoExpedienteService
                     }
                     $i++;
                 }
-                
                 if (!empty($datos)) {
                     $timeline[] = $this->normalizarDatosEvento($datos, $nroExpediente);
                 }
             }
             
             if (empty($timeline)) {
+                $dump = $this->tempPath . '/cecoco_reporte_' . $nroExpediente . '_' . time() . '.html';
+                @file_put_contents($dump, $html);
+                Log::warning('No se pudieron extraer filas de eventos de la tabla seleccionada', [
+                    'dump' => $dump,
+                ]);
                 throw new Exception("No se encontraron eventos en el expediente");
             }
             
@@ -223,6 +363,35 @@ class CecocoExpedienteService
             Log::error('Error al parsear HTML expediente', ['error' => $e->getMessage()]);
             throw new Exception("Error al procesar el reporte del expediente: " . $e->getMessage());
         }
+    }
+
+    private function seleccionarTablaDatos(\DOMXPath $xpath): ?\DOMNode
+    {
+        $tablas = $xpath->query('//table');
+        if ($tablas->length === 0) {
+            return null;
+        }
+
+        $mejor = null;
+        $mejorScore = -1;
+
+        foreach ($tablas as $tabla) {
+            $ths = $xpath->query('.//th', $tabla)->length;
+            $trs = $xpath->query('.//tr', $tabla)->length;
+            $tds = $xpath->query('.//td', $tabla)->length;
+
+            // Heurística: más filas y celdas; ignorar tablas pequeñas (ej. toolbars)
+            $score = ($trs * 10) + $tds + ($ths * 2);
+            if ($trs < 2 || $tds < 4) {
+                continue; // probablemente no es tabla de datos
+            }
+            if ($score > $mejorScore) {
+                $mejorScore = $score;
+                $mejor = $tabla;
+            }
+        }
+
+        return $mejor;
     }
 
     private function normalizarDatosEvento(array $datos, string $nroExpediente): array

@@ -313,14 +313,17 @@ class CecocoExpedienteService
                 throw new Exception("No se encontraron eventos en el expediente");
             }
 
-            // Detectar fila de encabezados (thead o primera con th)
-            $headerTr = $xpath->query('.//thead/tr[1]', $tabla)->item(0);
-            if (!$headerTr) {
-                foreach ($xpath->query('.//tr', $tabla) as $trPosible) {
-                    if ($xpath->query('.//th', $trPosible)->length > 0) {
-                        $headerTr = $trPosible;
-                        break;
-                    }
+            // Detectar fila de encabezados: elegir la fila con MÁS th o que contenga tokens clave
+            $headerTr = null;
+            $maxTh = -1;
+            foreach ($xpath->query('.//tr', $tabla) as $trPosible) {
+                $thCount = $xpath->query('.//th', $trPosible)->length;
+                $rowText = $this->normalizarClaveColumna(trim($trPosible->textContent));
+                $hasTokens = (strpos($rowText, 'fecha') !== false && strpos($rowText, 'operador') !== false)
+                           || (strpos($rowText, 'accion') !== false && strpos($rowText, 'caracteristicas') !== false);
+                if ($thCount > $maxTh || ($hasTokens && $thCount >= $maxTh)) {
+                    $maxTh = $thCount;
+                    $headerTr = $trPosible;
                 }
             }
             $encabezados = [];
@@ -342,10 +345,16 @@ class CecocoExpedienteService
                 }
                 $datos = [];
                 $i = 0;
+                // Elegir la mejor ventana de encabezados que coincida con la cantidad de columnas de esta fila
+                $headersWin = $this->bestHeaderWindow($encabezados, $celdas->length);
                 foreach ($celdas as $celda) {
-                    $valor = trim($celda->textContent);
-                    if ($i < count($encabezados)) {
-                        $clave = $encabezados[$i];
+                    $valor = $celda->textContent;
+                    // Reemplazar NBSP y colapsar espacios
+                    $valor = preg_replace('/\x{00A0}|\xC2\xA0/u', ' ', $valor);
+                    $valor = preg_replace('/\s+/u', ' ', (string)$valor);
+                    $valor = trim((string)$valor);
+                    if ($i < count($headersWin)) {
+                        $clave = $headersWin[$i];
                         if ($clave !== '') {
                             $datos[$clave] = $valor;
                         }
@@ -375,6 +384,7 @@ class CecocoExpedienteService
             });
             
             $primerEvento = $this->primerEventoConDatos($timeline);
+            Log::info('Muestra eventos CECOCO (3)', [ 'sample' => array_slice($timeline, 0, 3) ]);
 
             // Extraer resumen general (encabezados) del reporte
             $resumen = $this->extraerResumenKeyValue($xpath);
@@ -511,6 +521,40 @@ class CecocoExpedienteService
         return $ts !== false ? $ts : PHP_INT_MAX;
     }
 
+    private function bestHeaderWindow(array $headers, int $nCols): array
+    {
+        $headers = array_values(array_filter($headers, function($h){ return $h !== null && $h !== ''; }));
+        $m = count($headers);
+        if ($m === 0 || $nCols <= 0) {
+            return [];
+        }
+        if ($m === $nCols) {
+            return $headers;
+        }
+        $tokens = ['fecha_hora','fecha','hora','operador','accion','acci_on','caracteristicas','caracter_isticas'];
+        $best = [];
+        $bestScore = -1;
+        for ($i = 0; $i <= $m - $nCols; $i++) {
+            $win = array_slice($headers, $i, $nCols);
+            $score = 0;
+            foreach ($win as $h) {
+                foreach ($tokens as $t) {
+                    if (strpos($h, $t) !== false) { $score++; break; }
+                }
+            }
+            // prefer ventanas con menos vacíos
+            $nonEmpty = count(array_filter($win, function($h){ return $h !== ''; }));
+            $score += $nonEmpty * 0.1;
+            if ($score > $bestScore) { $bestScore = $score; $best = $win; }
+        }
+        if (!empty($best)) {
+            return $best;
+        }
+        // Fallback: encabezados por defecto
+        $defaults = ['fecha_hora','operador','accion','caracteristicas_de_la_accion'];
+        return array_slice($defaults, 0, $nCols);
+    }
+
     private function normalizarDatosEvento(array $datos, string $nroExpediente): array
     {
         $camposPosibles = [
@@ -537,14 +581,58 @@ class CecocoExpedienteService
                     break;
                 }
             }
+
+            // Si no hubo match exacto, intentar búsqueda aproximada por tokens
+            if ($evento[$campoNormalizado] === '') {
+                $valorAprox = $this->buscarEnDatosPorTokens($datos, $variantes);
+                if ($valorAprox !== '') {
+                    $evento[$campoNormalizado] = $valorAprox;
+                }
+            }
         }
         
         // Si no se encontró el número de expediente en los datos, usar el parámetro
         if (empty($evento['nro_expediente'])) {
             $evento['nro_expediente'] = $nroExpediente;
         }
+        // Si la descripción quedó vacía pero hay estado, usar estado como descripción
+        if (empty($evento['descripcion']) && !empty($evento['estado'])) {
+            $evento['descripcion'] = $evento['estado'];
+        }
         
         return $evento;
+    }
+
+    private function buscarEnDatosPorTokens(array $datos, array $tokens): string
+    {
+        if (empty($datos)) { return ''; }
+
+        // Mapa de claves normalizadas existentes en los datos
+        $map = [];
+        foreach ($datos as $k => $v) {
+            $kn = $this->normalizarClaveColumna((string)$k);
+            if ($kn !== '') { $map[$kn] = $v; }
+        }
+
+        foreach ($tokens as $tok) {
+            $t = $this->normalizarClaveColumna($tok);
+            if ($t === '') { continue; }
+            // 1) Coincidencia exacta
+            if (isset($map[$t])) {
+                $val = $map[$t];
+                return is_string($val) ? trim($val) : (string)$val;
+            }
+            // 2) Coincidencia por contiene (sin guiones bajos)
+            $t2 = str_replace('_', '', $t);
+            foreach ($map as $kn => $val) {
+                $k2 = str_replace('_', '', $kn);
+                if ($t2 !== '' && strpos($k2, $t2) !== false) {
+                    return is_string($val) ? trim($val) : (string)$val;
+                }
+            }
+        }
+
+        return '';
     }
 
     private function normalizarClaveColumna(string $texto): string

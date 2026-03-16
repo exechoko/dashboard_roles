@@ -4,7 +4,6 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 use Exception;
 
 class CecocoExpedienteService
@@ -170,7 +169,7 @@ class CecocoExpedienteService
                 // Primera fila son los encabezados
                 if ($primeraFila) {
                     foreach ($celdas as $celda) {
-                        $encabezados[] = trim($celda->textContent);
+                        $encabezados[] = $this->normalizarClaveColumna(trim($celda->textContent));
                     }
                     $primeraFila = false;
                     continue;
@@ -182,7 +181,10 @@ class CecocoExpedienteService
                 foreach ($celdas as $celda) {
                     $valor = trim($celda->textContent);
                     if ($i < count($encabezados)) {
-                        $datos[$encabezados[$i]] = $valor;
+                        $clave = $encabezados[$i];
+                        if ($clave !== '') {
+                            $datos[$clave] = $valor;
+                        }
                     }
                     $i++;
                 }
@@ -201,7 +203,7 @@ class CecocoExpedienteService
                 return strtotime($a['fecha_hora']) - strtotime($b['fecha_hora']);
             });
             
-            $primerEvento = $timeline[0];
+            $primerEvento = $this->primerEventoConDatos($timeline);
             
             Log::info('HTML parseado correctamente', ['eventos' => count($timeline)]);
             
@@ -226,15 +228,15 @@ class CecocoExpedienteService
     private function normalizarDatosEvento(array $datos, string $nroExpediente): array
     {
         $camposPosibles = [
-            'nro_expediente' => ['Nro Expediente', 'Expediente', 'Nro. Expediente', 'Número de Expediente'],
-            'fecha_hora' => ['Fecha Hora', 'Fecha y Hora', 'Fecha', 'FechaHora'],
-            'operador' => ['Operador', 'Usuario'],
-            'descripcion' => ['Descripción', 'Descripcion', 'Detalle'],
-            'tipo_servicio' => ['Tipo Servicio', 'Tipo de Servicio', 'Tipo', 'Servicio'],
-            'direccion' => ['Dirección', 'Direccion', 'Domicilio'],
-            'telefono' => ['Teléfono', 'Telefono', 'Tel'],
-            'estado' => ['Estado'],
-            'recurso' => ['Recurso', 'Móvil', 'Movil'],
+            'nro_expediente' => ['nro_expediente', 'expediente', 'numero_expediente', 'nro'],
+            'fecha_hora' => ['fecha_hora', 'fecha_y_hora', 'fecha', 'fechahora', 'fecha_hora_creacion', 'fecha_hora_evento'],
+            'operador' => ['operador', 'usuario', 'operador_telefonista'],
+            'descripcion' => ['descripcion', 'detalle', 'observacion', 'observaciones'],
+            'tipo_servicio' => ['tipo_servicio', 'tipo_de_servicio', 'tipo', 'servicio'],
+            'direccion' => ['direccion', 'domicilio', 'ubicacion'],
+            'telefono' => ['telefono', 'tel', 'numero_telefono'],
+            'estado' => ['estado'],
+            'recurso' => ['recurso', 'movil', 'unidad'],
         ];
         
         $evento = [];
@@ -243,8 +245,9 @@ class CecocoExpedienteService
             $evento[$campoNormalizado] = '';
             
             foreach ($variantes as $variante) {
-                if (isset($datos[$variante])) {
-                    $evento[$campoNormalizado] = $datos[$variante];
+                $clave = $this->normalizarClaveColumna($variante);
+                if ($clave !== '' && isset($datos[$clave])) {
+                    $evento[$campoNormalizado] = $datos[$clave];
                     break;
                 }
             }
@@ -258,6 +261,35 @@ class CecocoExpedienteService
         return $evento;
     }
 
+    private function normalizarClaveColumna(string $texto): string
+    {
+        $texto = trim($texto);
+        if ($texto === '') {
+            return '';
+        }
+
+        $texto = mb_strtolower($texto, 'UTF-8');
+        $texto = iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $texto);
+        if ($texto === false) {
+            $texto = '';
+        }
+
+        $texto = preg_replace('/[^a-z0-9]+/', '_', $texto);
+        $texto = trim((string)$texto, '_');
+
+        return $texto;
+    }
+
+    private function primerEventoConDatos(array $timeline): array
+    {
+        foreach ($timeline as $evento) {
+            if (!empty($evento['fecha_hora']) || !empty($evento['operador']) || !empty($evento['descripcion']) || !empty($evento['tipo_servicio'])) {
+                return $evento;
+            }
+        }
+
+        return $timeline[0] ?? [];
+    }
 
     public function validarConfiguracion(): array
     {

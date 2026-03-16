@@ -188,6 +188,7 @@ class CecocoExpedienteService
             $params = [
                 '__report' => 'reports/issues/report_history.rptdesign',
                 '__format' => 'html',
+                '__parameterpage' => 'false',
                 'p_dbworking_namedb' => 'bdmatriz',
                 'p_dbrestore_namedb' => 'bdrestauraciones',
                 'p_shift' => 'false',
@@ -200,10 +201,32 @@ class CecocoExpedienteService
                 'p_date_format' => 'dd/MM/yyyy HH:mm:ss',
                 'p_time_format' => 'HH:mm',
                 'p_id' => $nroExpediente,
+                'p_id_selection' => $nroExpediente,
                 '__locale' => 'es',
             ];
 
-            $client->get($this->baseUrl . '/run', $params);
+            // Intentar obtener el HTML del reporte directamente desde /run
+            $respRun = $client->get($this->baseUrl . '/run', $params);
+            if ($respRun->successful()) {
+                $htmlRun = $respRun->body();
+                // Si ya es HTML del reporte (no viewer) y contiene tablas, usarlo
+                if (stripos($htmlRun, '<frameset') === false && stripos($htmlRun, 'BirtViewer_Body') === false && stripos($htmlRun, '<table') !== false) {
+                    Log::info('Reporte HTML obtenido desde /run', ['tamaño' => strlen($htmlRun)]);
+                    return $htmlRun;
+                }
+            }
+
+            // Intentar /preview (HTML sin viewer)
+            $respPreview = $client->get($this->baseUrl . '/preview', $params + [
+                '__showtitle' => 'false',
+            ]);
+            if ($respPreview->successful()) {
+                $htmlPrev = $respPreview->body();
+                if (stripos($htmlPrev, '<frameset') === false && stripos($htmlPrev, 'BirtViewer_Body') === false && stripos($htmlPrev, '<table') !== false) {
+                    Log::info('Reporte HTML obtenido desde /preview', ['tamaño' => strlen($htmlPrev)]);
+                    return $htmlPrev;
+                }
+            }
             
             // Intentar obtener directamente el HTML del reporte con POST (sin viewer)
             $postData = $params + [

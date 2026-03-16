@@ -98,6 +98,7 @@ class CecocoExpedienteService
     private function obtenerReporteHTML($client, string $nroExpediente): string
     {
         try {
+            // Primero inicializar el reporte
             $params = [
                 '__report' => 'reports/issues/report_history.rptdesign',
                 '__format' => 'html',
@@ -116,7 +117,13 @@ class CecocoExpedienteService
                 '__locale' => 'es',
             ];
 
-            $response = $client->get($this->baseUrl . '/run', $params);
+            $client->get($this->baseUrl . '/run', $params);
+            
+            // Ahora obtener el frameset con el contenido renderizado
+            $response = $client->get($this->baseUrl . '/frameset', [
+                '__report' => 'reports/issues/report_history.rptdesign',
+                '__navigationbar' => 'false',
+            ]);
 
             if (!$response->successful()) {
                 throw new Exception("Error al obtener reporte: " . $response->status());

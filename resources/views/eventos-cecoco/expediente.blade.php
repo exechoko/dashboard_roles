@@ -67,9 +67,9 @@
         <span class="badge badge-{{ $badgeClass }}">{{ $detalle['tipo_servicio'] ?? $eventoCecoco->tipo_servicio }}</span>
     </div>
     <div class="card-body">
+        <h5 class="mb-3"><i class="bi bi-file-text"></i> Historial de la Incidencia</h5>
         <div class="row mb-4">
             <div class="col-md-6">
-                <h5 class="mb-3"><i class="bi bi-info-circle"></i> Información General</h5>
                 <table class="table table-sm table-bordered">
                     <tbody>
                         <tr>
@@ -77,28 +77,27 @@
                             <td><strong>{{ $detalle['nro_expediente'] ?? $eventoCecoco->nro_expediente }}</strong></td>
                         </tr>
                         <tr>
-                            <th class="table-secondary">Fecha Inicio:</th>
-                            <td>{{ $detalle['fecha_inicio'] ?? ($eventoCecoco->fecha_hora ? $eventoCecoco->fecha_hora->format('d/m/Y H:i:s') : '-') }}</td>
-                        </tr>
-                        @if(!empty($detalle['fecha_cierre']))
-                        <tr>
-                            <th class="table-secondary">Fecha Cierre:</th>
-                            <td>{{ $detalle['fecha_cierre'] }}</td>
-                        </tr>
-                        @endif
-                        <tr>
                             <th class="table-secondary">Tipo Servicio:</th>
                             <td>{{ $detalle['tipo_servicio'] ?? $eventoCecoco->tipo_servicio }}</td>
                         </tr>
                         <tr>
-                            <th class="table-secondary">Operador Inicial:</th>
+                            <th class="table-secondary">Operador:</th>
                             <td>{{ $detalle['operador_inicial'] ?? $eventoCecoco->operador ?? '-' }}</td>
                         </tr>
+                        <tr>
+                            <th class="table-secondary">Fecha Creación:</th>
+                            <td>{{ $detalle['fecha_hora_inicial'] ?? ($eventoCecoco->fecha_hora ? $eventoCecoco->fecha_hora->format('d/m/Y H:i:s') : '-') }}</td>
+                        </tr>
+                        @if(!empty($detalle['historial']['estado']))
+                        <tr>
+                            <th class="table-secondary">Estado:</th>
+                            <td><span class="badge bg-info">{{ $detalle['historial']['estado'] }}</span></td>
+                        </tr>
+                        @endif
                     </tbody>
                 </table>
             </div>
             <div class="col-md-6">
-                <h5 class="mb-3"><i class="bi bi-geo-alt"></i> Ubicación y Contacto</h5>
                 <table class="table table-sm table-bordered">
                     <tbody>
                         <tr>
@@ -117,10 +116,24 @@
                                 @endif
                             </td>
                         </tr>
+                        @if(!empty($detalle['historial']['barrio']))
                         <tr>
-                            <th class="table-secondary">Total Eventos:</th>
-                            <td><strong class="text-primary">{{ count($detalle['timeline'] ?? []) }}</strong> registros</td>
+                            <th class="table-secondary">Barrio:</th>
+                            <td>{{ $detalle['historial']['barrio'] }}</td>
                         </tr>
+                        @endif
+                        @if(!empty($detalle['historial']['jurisdiccion']))
+                        <tr>
+                            <th class="table-secondary">Jurisdicción:</th>
+                            <td>{{ $detalle['historial']['jurisdiccion'] }}</td>
+                        </tr>
+                        @endif
+                        @if(!empty($detalle['historial']['municipio']))
+                        <tr>
+                            <th class="table-secondary">Municipio:</th>
+                            <td>{{ $detalle['historial']['municipio'] }}</td>
+                        </tr>
+                        @endif
                     </tbody>
                 </table>
             </div>
@@ -135,7 +148,8 @@
 
         <hr class="my-4">
 
-        <h5 class="mb-4"><i class="bi bi-clock-history"></i> Línea de Tiempo del Expediente</h5>
+        <h5 class="mb-3"><i class="bi bi-clock-history"></i> Acciones</h5>
+        <p class="text-muted mb-3"><small>Total de eventos: <strong>{{ $detalle['total_eventos'] ?? 0 }}</strong></small></p>
 
         @if(!empty($detalle['timeline']) && count($detalle['timeline']) > 0)
             <div class="timeline-container">
@@ -196,6 +210,40 @@
             <div class="alert alert-warning">
                 <i class="bi bi-exclamation-triangle"></i> No se encontraron eventos en la línea de tiempo del expediente.
             </div>
+        @endif
+
+        @if(!empty($detalle['tramites']) && count($detalle['tramites']) > 0)
+        <hr class="my-4">
+        
+        <h5 class="mb-3"><i class="bi bi-truck"></i> Trámites / Recursos Asignados</h5>
+        <p class="text-muted mb-3"><small>Total de trámites: <strong>{{ $detalle['total_tramites'] ?? 0 }}</strong></small></p>
+        
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered table-hover">
+                <thead class="table-secondary">
+                    <tr>
+                        <th>Unidad</th>
+                        <th>H. Asignación</th>
+                        <th>H. Salida</th>
+                        <th>H. Llegada</th>
+                        <th>H. Fin Atención</th>
+                        <th>H. Desasignación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($detalle['tramites'] as $tramite)
+                    <tr>
+                        <td><strong>{{ $tramite['unidad'] ?? $tramite['tr_amites'] ?? '-' }}</strong></td>
+                        <td>{{ $tramite['h_asig'] ?? '-' }}</td>
+                        <td>{{ $tramite['h_sal'] ?? '-' }}</td>
+                        <td>{{ $tramite['h_llegada'] ?? '-' }}</td>
+                        <td>{{ $tramite['h_f_atenci_on'] ?? $tramite['h_f_atencion'] ?? '-' }}</td>
+                        <td>{{ $tramite['h_desasig'] ?? '-' }}</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
         @endif
     </div>
     <div class="card-footer text-muted">

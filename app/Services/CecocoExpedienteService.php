@@ -319,34 +319,26 @@ class CecocoExpedienteService
             
             $timeline = [];
 
-            // Intentar obtener todas las tablas de Acciones (hay reportes con varias tablas paginadas)
-            $tablasAcciones = $this->seleccionarTablasAcciones($xpath);
-            if (!empty($tablasAcciones)) {
-                foreach ($tablasAcciones as $t) {
-                    $fragmento = $this->parseEventosEnTabla($xpath, $t, $nroExpediente);
-                    if (!empty($fragmento)) {
-                        $timeline = array_merge($timeline, $fragmento);
-                    }
-                }
-            } else {
-                // Fallback a una sola tabla
+            // Seleccionar la MEJOR tabla de Acciones (la más completa, no todas)
+            $tabla = $this->seleccionarMejorTablaAcciones($xpath);
+            if ($tabla === null) {
                 $tabla = $this->seleccionarTablaAcciones($xpath);
-                if ($tabla === null) {
-                    $tabla = $this->seleccionarTablaDatos($xpath);
-                }
-                if ($tabla === null) {
-                    $totalTablas = $xpath->query('//table')->length;
-                    $dump = $this->tempPath . '/cecoco_reporte_' . $nroExpediente . '_' . time() . '.html';
-                    @file_put_contents($dump, $html);
-                    Log::warning('No se encontró una tabla de datos adecuada en el HTML del reporte', [
-                        'total_tablas' => $totalTablas,
-                        'dump' => $dump,
-                        'html_sample' => substr(strip_tags($html), 0, 300)
-                    ]);
-                    throw new Exception("No se encontraron eventos en el expediente");
-                }
-                $timeline = $this->parseEventosEnTabla($xpath, $tabla, $nroExpediente);
             }
+            if ($tabla === null) {
+                $tabla = $this->seleccionarTablaDatos($xpath);
+            }
+            if ($tabla === null) {
+                $totalTablas = $xpath->query('//table')->length;
+                $dump = $this->tempPath . '/cecoco_reporte_' . $nroExpediente . '_' . time() . '.html';
+                @file_put_contents($dump, $html);
+                Log::warning('No se encontró una tabla de datos adecuada en el HTML del reporte', [
+                    'total_tablas' => $totalTablas,
+                    'dump' => $dump,
+                    'html_sample' => substr(strip_tags($html), 0, 300)
+                ]);
+                throw new Exception("No se encontraron eventos en el expediente");
+            }
+            $timeline = $this->parseEventosEnTabla($xpath, $tabla, $nroExpediente);
             
             if (empty($timeline)) {
                 $dump = $this->tempPath . '/cecoco_reporte_' . $nroExpediente . '_' . time() . '.html';
@@ -356,6 +348,18 @@ class CecocoExpedienteService
                 ]);
                 throw new Exception("No se encontraron eventos en el expediente");
             }
+            
+            // Eliminar duplicados globales (entre todas las tablas parseadas)
+            $timelineUnique = [];
+            $seen = [];
+            foreach ($timeline as $evento) {
+                $key = $evento['fecha_hora'] . '|' . $evento['operador'] . '|' . $evento['descripcion'];
+                if (!isset($seen[$key])) {
+                    $seen[$key] = true;
+                    $timelineUnique[] = $evento;
+                }
+            }
+            $timeline = $timelineUnique;
             
             // Ordenar por fecha con soporte d/m/Y
             usort($timeline, function($a, $b) {
@@ -372,6 +376,9 @@ class CecocoExpedienteService
             
             Log::info('HTML parseado correctamente', ['eventos' => count($timeline)]);
             
+            // Extraer tabla de Trámites
+            $tramites = $this->extraerTramites($xpath);
+
             return [
                 'nro_expediente' => $resumen['expediente'] ?? $nroExpediente,
                 'fecha_hora_inicial' => $primerEvento['fecha_hora'] ?? ($resumen['fecha_inicio'] ?? ''),
@@ -380,8 +387,11 @@ class CecocoExpedienteService
                 'direccion' => $resumen['direccion'] ?? ($primerEvento['direccion'] ?? ''),
                 'telefono' => $resumen['telefono'] ?? ($primerEvento['telefono'] ?? ''),
                 'descripcion_inicial' => $primerEvento['descripcion'] ?? ($resumen['descripcion'] ?? ''),
+                'historial' => $resumen,
                 'timeline' => $timeline,
                 'total_eventos' => count($timeline),
+                'tramites' => $tramites,
+                'total_tramites' => count($tramites),
             ];
             
         } catch (Exception $e) {
@@ -419,6 +429,58 @@ class CecocoExpedienteService
         return $mejor;
     }
 
+    private function seleccionarMejorTablaAcciones(\DOMXPath $xpath): ?\DOMNode
+    {
+        $tablas = $xpath->query('//table');
+        $mejorTabla = null;
+        $maxEventos = 0;
+
+        foreach ($tablas as $tabla) {
+            // Verificar si es tabla de Acciones
+            $headerTr = null;
+            foreach ($xpath->query('.//tr', $tabla) as $trPosible) {
+                if ($xpath->query('.//th', $trPosible)->length > 0) { $headerTr = $trPosible; break; }
+            }
+            if (!$headerTr) continue;
+
+            $enc = [];
+            foreach ($xpath->query('.//th|.//td', $headerTr) as $celda) {
+                $enc[] = $this->normalizarClaveColumna(trim($celda->textContent));
+            }
+            $h = implode(' ', $enc);
+            $esAcciones = strpos($h, 'fecha') !== false && strpos($h, 'operador') !== false &&
+                          (strpos($h, 'accion') !== false || strpos($h, 'acci_on') !== false) &&
+                          (strpos($h, 'caracteristicas') !== false || strpos($h, 'caracter_isticas') !== false);
+            
+            if (!$esAcciones) continue;
+
+            // Contar filas válidas (4 columnas con fecha parseable)
+            $countValidas = 0;
+            foreach ($xpath->query('.//tr', $tabla) as $fila) {
+                $celdas = $xpath->query('.//td', $fila);
+                if ($celdas->length !== 4) continue;
+                $primeraColumna = trim($celdas->item(0)->textContent);
+                $primeraColumna = preg_replace('/\x{00A0}|\xC2\xA0/u', ' ', $primeraColumna);
+                $primeraColumna = preg_replace('/\s+/u', ' ', $primeraColumna);
+                $primeraColumna = trim($primeraColumna);
+                if ($this->parseFecha($primeraColumna) !== PHP_INT_MAX) {
+                    $countValidas++;
+                }
+            }
+
+            if ($countValidas > $maxEventos) {
+                $maxEventos = $countValidas;
+                $mejorTabla = $tabla;
+            }
+        }
+
+        if ($mejorTabla !== null) {
+            Log::info('Tabla de Acciones seleccionada', ['filas_validas' => $maxEventos]);
+        }
+
+        return $mejorTabla;
+    }
+
     private function seleccionarTablasAcciones(\DOMXPath $xpath): array
     {
         $tablas = $xpath->query('//table');
@@ -447,7 +509,6 @@ class CecocoExpedienteService
     private function parseEventosEnTabla(\DOMXPath $xpath, \DOMNode $tabla, string $nroExpediente): array
     {
         $result = [];
-        $seen = [];
 
         foreach ($xpath->query('.//tr', $tabla) as $fila) {
             $celdas = $xpath->query('.//td', $fila);
@@ -484,12 +545,7 @@ class CecocoExpedienteService
                 $evento['descripcion'] = $evento['estado'];
             }
 
-            // Eliminar duplicados por clave única
-            $key = $evento['fecha_hora'] . '|' . $evento['operador'] . '|' . $evento['descripcion'];
-            if (!isset($seen[$key])) {
-                $seen[$key] = true;
-                $result[] = $evento;
-            }
+            $result[] = $evento;
         }
 
         return $result;
@@ -720,6 +776,68 @@ class CecocoExpedienteService
         }
 
         return $timeline[0] ?? [];
+    }
+
+    private function extraerTramites(\DOMXPath $xpath): array
+    {
+        $tramites = [];
+        $tablas = $xpath->query('//table');
+
+        foreach ($tablas as $tabla) {
+            // Buscar tabla con encabezados típicos de Trámites
+            $headerTr = null;
+            foreach ($xpath->query('.//tr', $tabla) as $trPosible) {
+                if ($xpath->query('.//th', $trPosible)->length > 0) { $headerTr = $trPosible; break; }
+            }
+            if (!$headerTr) continue;
+
+            $enc = [];
+            foreach ($xpath->query('.//th|.//td', $headerTr) as $celda) {
+                $enc[] = $this->normalizarClaveColumna(trim($celda->textContent));
+            }
+            $h = implode(' ', $enc);
+
+            // Detectar tabla de Trámites por encabezados típicos
+            $esTramites = (strpos($h, 'unidad') !== false || strpos($h, 'tr_amites') !== false) &&
+                          (strpos($h, 'h_asig') !== false || strpos($h, 'asig') !== false);
+
+            if (!$esTramites) continue;
+
+            // Parsear filas de trámites
+            foreach ($xpath->query('.//tr', $tabla) as $fila) {
+                if ($headerTr && $fila->isSameNode($headerTr)) { continue; }
+                $celdas = $xpath->query('.//td', $fila);
+                if ($celdas->length < 2) { continue; }
+
+                $valores = [];
+                foreach ($celdas as $celda) {
+                    $valor = $celda->textContent;
+                    $valor = preg_replace('/\x{00A0}|\xC2\xA0/u', ' ', $valor);
+                    $valor = preg_replace('/\s+/u', ' ', (string)$valor);
+                    $valores[] = trim((string)$valor);
+                }
+
+                // Construir trámite con encabezados detectados
+                $tramite = [];
+                for ($i = 0; $i < count($valores) && $i < count($enc); $i++) {
+                    if ($enc[$i] !== '') {
+                        $tramite[$enc[$i]] = $valores[$i];
+                    }
+                }
+
+                if (!empty($tramite)) {
+                    $tramites[] = $tramite;
+                }
+            }
+
+            // Si encontramos trámites, terminar
+            if (!empty($tramites)) {
+                Log::info('Trámites extraídos', ['total' => count($tramites)]);
+                break;
+            }
+        }
+
+        return $tramites;
     }
 
     /**

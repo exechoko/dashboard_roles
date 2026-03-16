@@ -5,7 +5,6 @@ namespace App\Services;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Reader\Security\XmlScanner;
 use Exception;
 
 class CecocoExpedienteService
@@ -31,22 +30,17 @@ class CecocoExpedienteService
 
     public function obtenerDetalleExpediente(string $nroExpediente): array
     {
-        $archivoTemporal = null;
-        
         try {
             Log::info('Consultando expediente CECOCO', ['expediente' => $nroExpediente]);
 
             Log::info('Paso 1: Iniciando sesión CECOCO');
             $client = $this->iniciarSesion();
             
-            Log::info('Paso 2: Inicializando reporte expediente');
-            $this->inicializarReporte($client, $nroExpediente);
+            Log::info('Paso 2: Obteniendo reporte HTML del expediente');
+            $htmlReporte = $this->obtenerReporteHTML($client, $nroExpediente);
             
-            Log::info('Paso 3: Descargando Excel expediente');
-            $archivoTemporal = $this->descargarExcel($client, $nroExpediente);
-            
-            Log::info('Paso 4: Parseando datos del expediente');
-            $datosExpediente = $this->parsearArchivoExpediente($archivoTemporal);
+            Log::info('Paso 3: Parseando datos del HTML');
+            $datosExpediente = $this->parsearHTMLExpediente($htmlReporte, $nroExpediente);
 
             if (empty($datosExpediente)) {
                 throw new Exception("No se encontraron datos para el expediente {$nroExpediente}");
@@ -60,10 +54,6 @@ class CecocoExpedienteService
                 'error' => $e->getMessage()
             ]);
             throw $e;
-        } finally {
-            if ($archivoTemporal && file_exists($archivoTemporal)) {
-                @unlink($archivoTemporal);
-            }
         }
     }
 
@@ -105,7 +95,7 @@ class CecocoExpedienteService
         }
     }
 
-    private function inicializarReporte($client, string $nroExpediente): void
+    private function obtenerReporteHTML($client, string $nroExpediente): string
     {
         try {
             $params = [
@@ -129,213 +119,138 @@ class CecocoExpedienteService
             $response = $client->get($this->baseUrl . '/run', $params);
 
             if (!$response->successful()) {
-                throw new Exception("Error al inicializar reporte: " . $response->status());
+                throw new Exception("Error al obtener reporte: " . $response->status());
             }
 
-            Log::info('Reporte inicializado correctamente');
-
-        } catch (Exception $e) {
-            Log::error('Error al inicializar reporte', ['error' => $e->getMessage()]);
-            throw $e;
-        }
-    }
-
-    private function descargarExcel($client, string $nroExpediente): string
-    {
-        try {
-            $data = [
-                '__report' => 'reports/issues/report_history.rptdesign',
-                '__format' => 'xls',
-                'p_dbworking_namedb' => 'bdmatriz',
-                'p_dbrestore_namedb' => 'bdrestauraciones',
-                'p_shift' => 'false',
-                'p_shift_time_min' => '00:00:00',
-                'p_shift_time_max' => '23:59:59',
-                'p_exclude_operations' => 'false',
-                'p_exclude_system_operations' => 'false',
-                'p_exclude_involved' => 'false',
-                'p_activa_mostrar_informacion_duplicidad' => 'false',
-                'p_date_format' => 'dd/MM/yyyy HH:mm:ss',
-                'p_time_format' => 'HH:mm',
-                'p_id' => $nroExpediente,
-                '__locale' => 'es',
-                '__pageoverflow' => '0',
-                '__asattachment' => 'true',
-                '__emitterid' => 'uk.co.spudsoft.birt.emitters.excel.XlsEmitter',
-                '__ExcelEmitter.SingleSheet' => 'true',
-            ];
-
-            $response = $client->asForm()
-                ->withHeaders([
-                    'Content-Type' => 'application/x-www-form-urlencoded',
-                    'Referer' => $this->baseUrl . '/frameset?__report=reports/issues/report_history.rptdesign',
-                    'User-Agent' => 'Mozilla/5.0',
-                ])
-                ->post(
-                    $this->baseUrl . '/frameset?__report=reports/issues/report_history.rptdesign',
-                    $data
-                );
-
-            if (!$response->successful()) {
-                throw new Exception("Error al descargar Excel: " . $response->status());
-            }
-
-            $contenido = $response->body();
-
-            if (strlen($contenido) < 10000) {
+            $html = $response->body();
+            
+            if (strlen($html) < 1000) {
                 throw new Exception('El expediente requiere restauración desde backup. Contacte al administrador del sistema CECOCO.');
             }
 
-            $archivoTemporal = $this->tempPath . '/expediente_' . $nroExpediente . '_' . time() . '.xls';
-            file_put_contents($archivoTemporal, $contenido);
+            Log::info('Reporte HTML obtenido correctamente', ['tamaño' => strlen($html)]);
 
-            Log::info('Excel descargado correctamente', ['archivo' => $archivoTemporal, 'tamaño' => strlen($contenido)]);
-
-            return $archivoTemporal;
+            return $html;
 
         } catch (Exception $e) {
-            Log::error('Error al descargar Excel', ['error' => $e->getMessage()]);
+            Log::error('Error al obtener reporte HTML', ['error' => $e->getMessage()]);
             throw $e;
         }
     }
 
-    private function parsearArchivoExpediente(string $rutaArchivo): array
+    private function parsearHTMLExpediente(string $html, string $nroExpediente): array
     {
         try {
-            // Crear un XmlScanner personalizado que no valide entidades
-            $xmlScanner = new class extends XmlScanner {
-                public function scan($xml): string {
-                    return $xml;
-                }
-                public function scanFile($filename): string {
-                    return file_get_contents($filename);
-                }
-            };
+            $dom = new \DOMDocument();
+            @$dom->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'));
+            $xpath = new \DOMXPath($dom);
             
-            $reader = IOFactory::createReader('Xls');
-            $reader->setReadDataOnly(true);
-            $reader->setSecurityScanner($xmlScanner);
-            
-            $spreadsheet = $reader->load($rutaArchivo);
-            $sheet = $spreadsheet->getActiveSheet();
-            $filas = $sheet->toArray();
-
-            if (empty($filas)) {
-                throw new Exception("El archivo de expediente está vacío");
-            }
-
-            $mapa = $this->mapearColumnasExpediente($filas[0]);
-
-            if (empty($mapa)) {
-                throw new Exception("No se pudieron mapear las columnas del expediente");
-            }
-
             $timeline = [];
-            for ($i = 1; $i < count($filas); $i++) {
-                $fila = $filas[$i];
-                if ($this->filaVacia($fila)) {
+            
+            // Buscar todas las filas de la tabla (tr)
+            $filas = $xpath->query('//table//tr');
+            
+            $encabezados = [];
+            $primeraFila = true;
+            
+            foreach ($filas as $fila) {
+                $celdas = $xpath->query('.//td | .//th', $fila);
+                
+                if ($celdas->length === 0) {
                     continue;
                 }
-                $evento = $this->extraerEventoTimeline($fila, $mapa);
-                if (!empty($evento['fecha_hora'])) {
-                    $timeline[] = $evento;
+                
+                // Primera fila son los encabezados
+                if ($primeraFila) {
+                    foreach ($celdas as $celda) {
+                        $encabezados[] = trim($celda->textContent);
+                    }
+                    $primeraFila = false;
+                    continue;
+                }
+                
+                // Extraer datos de la fila
+                $datos = [];
+                $i = 0;
+                foreach ($celdas as $celda) {
+                    $valor = trim($celda->textContent);
+                    if ($i < count($encabezados)) {
+                        $datos[$encabezados[$i]] = $valor;
+                    }
+                    $i++;
+                }
+                
+                if (!empty($datos)) {
+                    $timeline[] = $this->normalizarDatosEvento($datos, $nroExpediente);
                 }
             }
-
+            
             if (empty($timeline)) {
                 throw new Exception("No se encontraron eventos en el expediente");
             }
-
+            
+            // Ordenar por fecha
             usort($timeline, function($a, $b) {
                 return strtotime($a['fecha_hora']) - strtotime($b['fecha_hora']);
             });
-
+            
             $primerEvento = $timeline[0];
-
+            
+            Log::info('HTML parseado correctamente', ['eventos' => count($timeline)]);
+            
             return [
-                'nro_expediente' => $primerEvento['nro_expediente'],
-                'fecha_hora_inicial' => $primerEvento['fecha_hora'],
-                'operador_inicial' => $primerEvento['operador'],
-                'tipo_servicio' => $primerEvento['tipo_servicio'],
-                'direccion' => $primerEvento['direccion'],
-                'telefono' => $primerEvento['telefono'],
-                'descripcion_inicial' => $primerEvento['descripcion'],
+                'nro_expediente' => $nroExpediente,
+                'fecha_hora_inicial' => $primerEvento['fecha_hora'] ?? '',
+                'operador_inicial' => $primerEvento['operador'] ?? '',
+                'tipo_servicio' => $primerEvento['tipo_servicio'] ?? '',
+                'direccion' => $primerEvento['direccion'] ?? '',
+                'telefono' => $primerEvento['telefono'] ?? '',
+                'descripcion_inicial' => $primerEvento['descripcion'] ?? '',
                 'timeline' => $timeline,
                 'total_eventos' => count($timeline),
             ];
-
+            
         } catch (Exception $e) {
-            Log::error('Error al parsear archivo expediente', [
-                'archivo' => $rutaArchivo,
-                'error' => $e->getMessage()
-            ]);
-            throw new Exception("Error al procesar el archivo de expediente: " . $e->getMessage());
+            Log::error('Error al parsear HTML expediente', ['error' => $e->getMessage()]);
+            throw new Exception("Error al procesar el reporte del expediente: " . $e->getMessage());
         }
     }
 
-    private function mapearColumnasExpediente(array $encabezados): array
+    private function normalizarDatosEvento(array $datos, string $nroExpediente): array
     {
-        $mapa = [];
-        $columnasEsperadas = [
-            'nro_expediente' => ['nro expediente', 'expediente', 'nro_expediente', 'número de expediente'],
-            'fecha_hora' => ['fecha hora', 'fecha_hora', 'fecha y hora', 'fecha'],
-            'operador' => ['operador', 'usuario'],
-            'descripcion' => ['descripcion', 'descripción', 'detalle'],
-            'tipo_servicio' => ['tipo servicio', 'tipo_servicio', 'tipo', 'servicio'],
-            'direccion' => ['direccion', 'dirección', 'domicilio'],
-            'telefono' => ['telefono', 'teléfono', 'tel'],
-            'estado' => ['estado'],
-            'recurso' => ['recurso', 'movil', 'móvil'],
+        $camposPosibles = [
+            'nro_expediente' => ['Nro Expediente', 'Expediente', 'Nro. Expediente', 'Número de Expediente'],
+            'fecha_hora' => ['Fecha Hora', 'Fecha y Hora', 'Fecha', 'FechaHora'],
+            'operador' => ['Operador', 'Usuario'],
+            'descripcion' => ['Descripción', 'Descripcion', 'Detalle'],
+            'tipo_servicio' => ['Tipo Servicio', 'Tipo de Servicio', 'Tipo', 'Servicio'],
+            'direccion' => ['Dirección', 'Direccion', 'Domicilio'],
+            'telefono' => ['Teléfono', 'Telefono', 'Tel'],
+            'estado' => ['Estado'],
+            'recurso' => ['Recurso', 'Móvil', 'Movil'],
         ];
-
-        foreach ($encabezados as $indice => $encabezado) {
-            $encabezadoLimpio = strtolower(trim($encabezado));
+        
+        $evento = [];
+        
+        foreach ($camposPosibles as $campoNormalizado => $variantes) {
+            $evento[$campoNormalizado] = '';
             
-            foreach ($columnasEsperadas as $campo => $variantes) {
-                foreach ($variantes as $variante) {
-                    if ($encabezadoLimpio === $variante) {
-                        $mapa[$campo] = $indice;
-                        break 2;
-                    }
+            foreach ($variantes as $variante) {
+                if (isset($datos[$variante])) {
+                    $evento[$campoNormalizado] = $datos[$variante];
+                    break;
                 }
             }
         }
-
-        return $mapa;
-    }
-
-    private function filaVacia(array $fila): bool
-    {
-        foreach ($fila as $celda) {
-            if (!empty($celda) && trim($celda) !== '') {
-                return false;
-            }
+        
+        // Si no se encontró el número de expediente en los datos, usar el parámetro
+        if (empty($evento['nro_expediente'])) {
+            $evento['nro_expediente'] = $nroExpediente;
         }
-        return true;
+        
+        return $evento;
     }
 
-    private function extraerEventoTimeline(array $fila, array $mapa): array
-    {
-        $get = function($campo) use ($fila, $mapa) {
-            if (!isset($mapa[$campo])) {
-                return '';
-            }
-            $valor = $fila[$mapa[$campo]] ?? '';
-            return is_string($valor) ? trim($valor) : (string)$valor;
-        };
-
-        return [
-            'nro_expediente' => $get('nro_expediente'),
-            'fecha_hora' => $get('fecha_hora'),
-            'operador' => $get('operador'),
-            'descripcion' => $get('descripcion'),
-            'tipo_servicio' => $get('tipo_servicio'),
-            'direccion' => $get('direccion'),
-            'telefono' => $get('telefono'),
-            'estado' => $get('estado'),
-            'recurso' => $get('recurso'),
-        ];
-    }
 
     public function validarConfiguracion(): array
     {

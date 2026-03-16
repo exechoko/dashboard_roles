@@ -825,8 +825,18 @@ class CecocoExpedienteService
                     }
                 }
 
+                // Solo agregar trámites con al menos un campo con datos válidos
                 if (!empty($tramite)) {
-                    $tramites[] = $tramite;
+                    $tieneValor = false;
+                    foreach ($tramite as $k => $v) {
+                        if ($v !== '' && $v !== '-' && !in_array($k, ['tr_amites'])) {
+                            $tieneValor = true;
+                            break;
+                        }
+                    }
+                    if ($tieneValor) {
+                        $tramites[] = $tramite;
+                    }
                 }
             }
 

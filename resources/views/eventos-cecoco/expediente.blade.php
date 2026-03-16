@@ -74,7 +74,7 @@
                     <tbody>
                         <tr>
                             <th width="40%" class="table-secondary">Nº Expediente:</th>
-                            <td><strong>{{ $detalle['nro_expediente'] ?? $eventoCecoco->nro_expediente }}</strong></td>
+                            <td><strong>{{ str_replace('Expediente: ', '', $detalle['nro_expediente'] ?? $eventoCecoco->nro_expediente) }}</strong></td>
                         </tr>
                         <tr>
                             <th class="table-secondary">Tipo Servicio:</th>

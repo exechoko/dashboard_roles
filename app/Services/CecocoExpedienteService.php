@@ -446,51 +446,49 @@ class CecocoExpedienteService
 
     private function parseEventosEnTabla(\DOMXPath $xpath, \DOMNode $tabla, string $nroExpediente): array
     {
-        // Detectar fila de encabezados: elegir la fila con MÁS th o que contenga tokens clave
-        $headerTr = null;
-        $maxTh = -1;
-        foreach ($xpath->query('.//tr', $tabla) as $trPosible) {
-            $thCount = $xpath->query('.//th', $trPosible)->length;
-            $rowText = $this->normalizarClaveColumna(trim($trPosible->textContent));
-            $hasTokens = (strpos($rowText, 'fecha') !== false && strpos($rowText, 'operador') !== false)
-                       || (strpos($rowText, 'accion') !== false && strpos($rowText, 'caracteristicas') !== false);
-            if ($thCount > $maxTh || ($hasTokens && $thCount >= $maxTh)) {
-                $maxTh = $thCount;
-                $headerTr = $trPosible;
-            }
-        }
-        $encabezados = [];
-        if ($headerTr) {
-            foreach ($xpath->query('.//th|.//td', $headerTr) as $celda) {
-                $encabezados[] = $this->normalizarClaveColumna(trim($celda->textContent));
-            }
-            Log::info('Encabezados tabla Acciones', ['encabezados' => $encabezados]);
-        }
-
         $result = [];
+        $seen = [];
+
         foreach ($xpath->query('.//tr', $tabla) as $fila) {
-            if ($headerTr && $fila->isSameNode($headerTr)) { continue; }
             $celdas = $xpath->query('.//td', $fila);
-            if ($celdas->length === 0) { continue; }
-            $datos = [];
-            $i = 0;
-            $headersWin = $this->bestHeaderWindow($encabezados, $celdas->length);
+            // Solo procesar filas con exactamente 4 columnas (fecha, operador, accion, caracteristicas)
+            if ($celdas->length !== 4) { continue; }
+
+            $valores = [];
             foreach ($celdas as $celda) {
                 $valor = $celda->textContent;
                 $valor = preg_replace('/\x{00A0}|\xC2\xA0/u', ' ', $valor);
                 $valor = preg_replace('/\s+/u', ' ', (string)$valor);
-                $valor = trim((string)$valor);
-                if ($i < count($headersWin)) {
-                    $clave = $headersWin[$i];
-                    if ($clave !== '') { $datos[$clave] = $valor; }
-                }
-                $i++;
+                $valores[] = trim((string)$valor);
             }
-            if (!empty($datos)) {
-                $eventoNorm = $this->normalizarDatosEvento($datos, $nroExpediente);
-                if ($this->parseFecha($eventoNorm['fecha_hora'] ?? '') !== PHP_INT_MAX) {
-                    $result[] = $eventoNorm;
-                }
+
+            // Validar que la primera columna sea una fecha válida
+            $fechaTs = $this->parseFecha($valores[0]);
+            if ($fechaTs === PHP_INT_MAX) { continue; }
+
+            // Construir evento directamente
+            $evento = [
+                'nro_expediente' => $nroExpediente,
+                'fecha_hora' => $valores[0],
+                'operador' => $valores[1],
+                'descripcion' => $valores[2],
+                'estado' => $valores[3],
+                'tipo_servicio' => '',
+                'direccion' => '',
+                'telefono' => '',
+                'recurso' => '',
+            ];
+
+            // Si descripción vacía pero hay estado, usar estado
+            if (empty($evento['descripcion']) && !empty($evento['estado'])) {
+                $evento['descripcion'] = $evento['estado'];
+            }
+
+            // Eliminar duplicados por clave única
+            $key = $evento['fecha_hora'] . '|' . $evento['operador'] . '|' . $evento['descripcion'];
+            if (!isset($seen[$key])) {
+                $seen[$key] = true;
+                $result[] = $evento;
             }
         }
 

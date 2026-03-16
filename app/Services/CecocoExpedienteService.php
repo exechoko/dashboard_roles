@@ -294,8 +294,12 @@ class CecocoExpedienteService
             
             $timeline = [];
 
-            // Seleccionar la mejor tabla de datos (más filas/columnas)
-            $tabla = $this->seleccionarTablaDatos($xpath);
+            // Intentar primero seleccionar la tabla 'Acciones'
+            $tabla = $this->seleccionarTablaAcciones($xpath);
+            if ($tabla === null) {
+                // Seleccionar la mejor tabla de datos (más filas/columnas)
+                $tabla = $this->seleccionarTablaDatos($xpath);
+            }
 
             if ($tabla === null) {
                 $totalTablas = $xpath->query('//table')->length;
@@ -324,6 +328,7 @@ class CecocoExpedienteService
                 foreach ($xpath->query('.//th|.//td', $headerTr) as $celda) {
                     $encabezados[] = $this->normalizarClaveColumna(trim($celda->textContent));
                 }
+                Log::info('Encabezados tabla seleccionada CECOCO', ['encabezados' => $encabezados]);
             }
 
             // Recorrer filas de datos (excluir la cabecera detectada)
@@ -348,7 +353,8 @@ class CecocoExpedienteService
                     $i++;
                 }
                 if (!empty($datos)) {
-                    $timeline[] = $this->normalizarDatosEvento($datos, $nroExpediente);
+                    $eventoNorm = $this->normalizarDatosEvento($datos, $nroExpediente);
+                    $timeline[] = $eventoNorm;
                 }
             }
             
@@ -361,23 +367,28 @@ class CecocoExpedienteService
                 throw new Exception("No se encontraron eventos en el expediente");
             }
             
-            // Ordenar por fecha
+            // Ordenar por fecha con soporte d/m/Y
             usort($timeline, function($a, $b) {
-                return strtotime($a['fecha_hora']) - strtotime($b['fecha_hora']);
+                $ta = $this->parseFecha($a['fecha_hora'] ?? '');
+                $tb = $this->parseFecha($b['fecha_hora'] ?? '');
+                return $ta <=> $tb;
             });
             
             $primerEvento = $this->primerEventoConDatos($timeline);
+
+            // Extraer resumen general (encabezados) del reporte
+            $resumen = $this->extraerResumenKeyValue($xpath);
             
             Log::info('HTML parseado correctamente', ['eventos' => count($timeline)]);
             
             return [
-                'nro_expediente' => $nroExpediente,
-                'fecha_hora_inicial' => $primerEvento['fecha_hora'] ?? '',
-                'operador_inicial' => $primerEvento['operador'] ?? '',
-                'tipo_servicio' => $primerEvento['tipo_servicio'] ?? '',
-                'direccion' => $primerEvento['direccion'] ?? '',
-                'telefono' => $primerEvento['telefono'] ?? '',
-                'descripcion_inicial' => $primerEvento['descripcion'] ?? '',
+                'nro_expediente' => $resumen['expediente'] ?? $nroExpediente,
+                'fecha_hora_inicial' => $primerEvento['fecha_hora'] ?? ($resumen['fecha_inicio'] ?? ''),
+                'operador_inicial' => $primerEvento['operador'] ?? ($resumen['operador'] ?? ''),
+                'tipo_servicio' => $resumen['tipo'] ?? ($primerEvento['tipo_servicio'] ?? ''),
+                'direccion' => $resumen['direccion'] ?? ($primerEvento['direccion'] ?? ''),
+                'telefono' => $resumen['telefono'] ?? ($primerEvento['telefono'] ?? ''),
+                'descripcion_inicial' => $primerEvento['descripcion'] ?? ($resumen['descripcion'] ?? ''),
                 'timeline' => $timeline,
                 'total_eventos' => count($timeline),
             ];
@@ -417,17 +428,100 @@ class CecocoExpedienteService
         return $mejor;
     }
 
+    private function seleccionarTablaAcciones(\DOMXPath $xpath): ?\DOMNode
+    {
+        $tablas = $xpath->query('//table');
+        $mejor = null;
+        $mejorScore = -1;
+
+        foreach ($tablas as $tabla) {
+            // Detectar encabezados
+            $headerTr = $xpath->query('.//thead/tr[1]', $tabla)->item(0);
+            if (!$headerTr) {
+                foreach ($xpath->query('.//tr', $tabla) as $trPosible) {
+                    if ($xpath->query('.//th', $trPosible)->length > 0) {
+                        $headerTr = $trPosible;
+                        break;
+                    }
+                }
+            }
+            if (!$headerTr) {
+                continue;
+            }
+
+            $enc = [];
+            foreach ($xpath->query('.//th|.//td', $headerTr) as $celda) {
+                $enc[] = $this->normalizarClaveColumna(trim($celda->textContent));
+            }
+
+            if (empty($enc)) {
+                continue;
+            }
+
+            // Calcular score por coincidencias típicas de la tabla Acciones
+            $tokens = [
+                'fecha',      // Fecha o Fecha - Hora
+                'hora',       // Hora cuando viene separada
+                'operador',
+                'accion',
+                'caracteristicas',
+            ];
+
+            $score = 0;
+            $hasFecha = false; $hasHora = false;
+            foreach ($enc as $h) {
+                if (strpos($h, 'fecha') !== false) { $hasFecha = true; $score += 2; }
+                if (strpos($h, 'hora') !== false) { $hasHora = true; $score += 1; }
+                if (strpos($h, 'operador') !== false) { $score += 2; }
+                if (strpos($h, 'accion') !== false) { $score += 2; }
+                if (strpos($h, 'caracteristicas') !== false) { $score += 2; }
+            }
+            // Bonus por tamaño (más filas de datos)
+            $trs = $xpath->query('.//tr', $tabla)->length;
+            $tds = $xpath->query('.//td', $tabla)->length;
+            $score += max(0, ($trs - 2));
+            $score += intdiv($tds, 10);
+
+            // Requerir al menos 3 señales y que tenga filas de datos
+            if ($score >= 6 && $trs >= 3) {
+                if ($score > $mejorScore) {
+                    $mejorScore = $score;
+                    $mejor = $tabla;
+                }
+            }
+        }
+
+        return $mejor;
+    }
+
+    private function parseFecha(string $val): int
+    {
+        $s = trim($val);
+        if ($s === '') {
+            return PHP_INT_MAX;
+        }
+        $formatos = ['d/m/Y H:i:s', 'd/m/Y H:i', 'd/m/Y', 'Y-m-d H:i:s', 'Y-m-d H:i', 'Y-m-d'];
+        foreach ($formatos as $fmt) {
+            $dt = \DateTime::createFromFormat($fmt, $s);
+            if ($dt instanceof \DateTime) {
+                return $dt->getTimestamp();
+            }
+        }
+        $ts = strtotime($s);
+        return $ts !== false ? $ts : PHP_INT_MAX;
+    }
+
     private function normalizarDatosEvento(array $datos, string $nroExpediente): array
     {
         $camposPosibles = [
             'nro_expediente' => ['nro_expediente', 'expediente', 'numero_expediente', 'nro'],
-            'fecha_hora' => ['fecha_hora', 'fecha_y_hora', 'fecha', 'fechahora', 'fecha_hora_creacion', 'fecha_hora_evento'],
+            'fecha_hora' => ['fecha_hora', 'fecha_y_hora', 'fecha_-_hora', 'fechahora', 'fecha', 'fecha_hora_creacion', 'fecha_hora_evento'],
             'operador' => ['operador', 'usuario', 'operador_telefonista'],
-            'descripcion' => ['descripcion', 'detalle', 'observacion', 'observaciones'],
+            'descripcion' => ['descripcion', 'detalle', 'observacion', 'observaciones', 'accion'],
             'tipo_servicio' => ['tipo_servicio', 'tipo_de_servicio', 'tipo', 'servicio'],
             'direccion' => ['direccion', 'domicilio', 'ubicacion'],
             'telefono' => ['telefono', 'tel', 'numero_telefono'],
-            'estado' => ['estado'],
+            'estado' => ['estado', 'caracteristicas_de_la_accion', 'caracteristicas', 'caracteristicas_accion'],
             'recurso' => ['recurso', 'movil', 'unidad'],
         ];
         
@@ -481,6 +575,69 @@ class CecocoExpedienteService
         }
 
         return $timeline[0] ?? [];
+    }
+
+    /**
+     * Extrae pares clave:valor del encabezado del reporte BIRT para completar
+     * expediente, tipo, operador, fecha_inicio, direccion, telefono, descripcion.
+     */
+    private function extraerResumenKeyValue(\DOMXPath $xpath): array
+    {
+        $resumen = [];
+
+        // Etiquetas objetivo vistas en el reporte BIRT
+        $objetivos = [
+            'expediente'   => ['expediente:','expediente'],
+            'tipo'         => ['tipo:','tipo','tipo_servicio:','tipo_servicio'],
+            'operador'     => ['operador:','operador','usuario:','usuario'],
+            'fecha_inicio' => ['fecha_inicio:','fecha de creacion:','fecha de creación:','fecha de ejecucion:','fecha de ejecución:','fecha:'],
+            'direccion'    => ['direccion:','dirección:','domicilio:','ubicacion:','ubicación:'],
+            'telefono'     => ['telefono:','teléfono:','tel:'],
+            'descripcion'  => ['descripcion:','descripción:','observaciones:','detalle:'],
+        ];
+
+        $tablas = $xpath->query('//table');
+        foreach ($tablas as $tabla) {
+            $filas = $xpath->query('.//tr', $tabla);
+            foreach ($filas as $fila) {
+                // Obtener celdas en orden (th y td)
+                $cells = [];
+                foreach ($xpath->query('.//th|.//td', $fila) as $celda) {
+                    $cells[] = $celda;
+                }
+                $n = count($cells);
+                if ($n < 2) continue;
+
+                for ($i = 0; $i < $n - 1; $i++) {
+                    $labelText = trim($cells[$i]->textContent);
+                    $labelNorm = $this->normalizarClaveColumna($labelText);
+                    if ($labelNorm === '') continue;
+
+                    foreach ($objetivos as $clave => $variantes) {
+                        foreach ($variantes as $token) {
+                            $tokenNorm = $this->normalizarClaveColumna($token);
+                            if ($tokenNorm !== '' && strpos($labelNorm, $tokenNorm) !== false) {
+                                // Tomar el valor de la próxima celda de datos si existe
+                                $j = $i + 1;
+                                if ($j < $n) {
+                                    $valor = trim($cells[$j]->textContent);
+                                    if ($valor !== '') {
+                                        if (!isset($resumen[$clave]) || $resumen[$clave] === '') {
+                                            $resumen[$clave] = $valor;
+                                        }
+                                    }
+                                }
+                                break 2;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (count($resumen) >= 5) break;
+        }
+
+        return $resumen;
     }
 
     public function validarConfiguracion(): array

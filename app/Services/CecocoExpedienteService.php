@@ -984,21 +984,25 @@ class CecocoExpedienteService
                                         if ($valor !== '') {
                                             // Verificar que el valor no sea otra etiqueta conocida
                                             $valorEsEtiqueta = false;
-                                            $valorNorm = $this->normalizarClaveColumna($valor);
-                                            // Si termina en ":" es otra etiqueta
+                                            // Si termina en ":" es otra etiqueta (aplica a cualquier longitud)
                                             if (preg_match('/:\s*$/', $valor)) {
                                                 $valorEsEtiqueta = true;
                                             }
-                                            // Si coincide con alguna clave objetivo conocida, es etiqueta
-                                            if (!$valorEsEtiqueta && $valorNorm !== '') {
-                                                foreach ($objetivos as $otraClave => $otrasVariantes) {
-                                                    if ($otraClave === $clave)
-                                                        continue;
-                                                    foreach ($otrasVariantes as $otraVar) {
-                                                        $otraVarNorm = $this->normalizarClaveColumna($otraVar);
-                                                        if ($otraVarNorm !== '' && ($valorNorm === $otraVarNorm || strpos($valorNorm, $otraVarNorm) !== false)) {
-                                                            $valorEsEtiqueta = true;
-                                                            break 2;
+                                            // Solo para valores cortos (<50 chars): verificar si coincide con
+                                            // otra clave objetivo (textos largos como descripciones pueden
+                                            // contener palabras como "calle", "estado", etc.)
+                                            if (!$valorEsEtiqueta && mb_strlen($valor) < 50) {
+                                                $valorNorm = $this->normalizarClaveColumna($valor);
+                                                if ($valorNorm !== '') {
+                                                    foreach ($objetivos as $otraClave => $otrasVariantes) {
+                                                        if ($otraClave === $clave)
+                                                            continue;
+                                                        foreach ($otrasVariantes as $otraVar) {
+                                                            $otraVarNorm = $this->normalizarClaveColumna($otraVar);
+                                                            if ($otraVarNorm !== '' && ($valorNorm === $otraVarNorm || strpos($valorNorm, $otraVarNorm) !== false)) {
+                                                                $valorEsEtiqueta = true;
+                                                                break 2;
+                                                            }
                                                         }
                                                     }
                                                 }

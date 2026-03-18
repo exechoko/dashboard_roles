@@ -94,7 +94,8 @@
                                                         'ver-expediente-cecoco',
                                                         'mapa-calor-servicios-cecoco',
                                                         'mapa-cecoco-en-vivo',
-                                                        'ver-analizador-eventos-cecoco'
+                                                        'ver-analizador-eventos-cecoco',
+                                                        'mapa-gis-cecoco',
                                                     ],
                                                     'Entregas' => [
                                                         'entrega-equipos',

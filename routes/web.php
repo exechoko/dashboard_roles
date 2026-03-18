@@ -358,11 +358,17 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/importar/form', [App\Http\Controllers\EventoCecocoController::class, 'importarForm'])->name('importar');
         Route::post('/importar', [App\Http\Controllers\EventoCecocoController::class, 'importar'])->name('importar.post');
         Route::get('/exportar/txt', [App\Http\Controllers\EventoCecocoController::class, 'exportarTxt'])->name('exportar.txt');
-        Route::get('/{eventoCecoco}/expediente', [App\Http\Controllers\EventoCecocoController::class, 'verExpediente'])->name('expediente');
+        Route::get('/mapa-gis', [App\Http\Controllers\GisViewerController::class, 'index'])->name('mapa-gis');
         Route::get('/mapa-calor', [App\Http\Controllers\EventoCecocoController::class, 'mapaCalor'])->name('mapa-calor');
         Route::get('/mapa-calor/datos', [App\Http\Controllers\EventoCecocoController::class, 'mapaCalorDatos'])->name('mapa-calor.datos');
+        Route::get('/{eventoCecoco}/expediente', [App\Http\Controllers\EventoCecocoController::class, 'verExpediente'])->name('expediente');
         Route::get('/{eventoCecoco}', [App\Http\Controllers\EventoCecocoController::class, 'show'])->name('show');
     });
+
+    // Proxy del Visor GIS CeCoCo — fuera del grupo prefix para admitir slashes en el path.
+    Route::any('/cecoco/gis-proxy/{path?}', [App\Http\Controllers\GisViewerController::class, 'proxy'])
+        ->name('cecoco.gis-proxy')
+        ->where('path', '.*');
 
     Route::prefix('api/cecoco')->name('api.cecoco.')->group(function () {
         Route::get('/eventos', [App\Http\Controllers\EventoCecocoController::class, 'apiListar'])->name('eventos');

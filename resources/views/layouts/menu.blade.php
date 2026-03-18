@@ -95,8 +95,7 @@
 @endcan
 
 @can('ver-menu-bodycams')
-    <li
-        class="dropdown {{ request()->is('bodycam*') ? 'active' : '' }} ">
+    <li class="dropdown {{ request()->is('bodycam*') ? 'active' : '' }} ">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-mobile"></i><span>Bodycams</span>
         </a>
@@ -138,23 +137,23 @@
 @endcan
 
 @can('ver-menu-patrimonio')
-<li class="dropdown {{ request()->is('patrimonio*') ? 'active' : '' }}">
-    <a class="nav-link has-dropdown" href="#">
-        <i class="fas fa-boxes"></i><span>Patrimonio</span>
-    </a>
-    <ul class="dropdown-menu">
-        <li class="{{ request()->is('patrimonio/bienes*') ? 'active' : '' }}">
-            <a class="nav-link" href="{{ route('patrimonio.bienes.index') }}">
-                <i class="fas fa-box"></i><span>Bienes</span>
-            </a>
-        </li>
-        <li class="{{ request()->is('patrimonio/tipos-bien*') ? 'active' : '' }}">
-            <a class="nav-link" href="{{ route('patrimonio.tipos-bien.index') }}">
-                <i class="fas fa-tags"></i><span>Tipos de Bien</span>
-            </a>
-        </li>
-    </ul>
-</li>
+    <li class="dropdown {{ request()->is('patrimonio*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-boxes"></i><span>Patrimonio</span>
+        </a>
+        <ul class="dropdown-menu">
+            <li class="{{ request()->is('patrimonio/bienes*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('patrimonio.bienes.index') }}">
+                    <i class="fas fa-box"></i><span>Bienes</span>
+                </a>
+            </li>
+            <li class="{{ request()->is('patrimonio/tipos-bien*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('patrimonio.tipos-bien.index') }}">
+                    <i class="fas fa-tags"></i><span>Tipos de Bien</span>
+                </a>
+            </li>
+        </ul>
+    </li>
 @endcan
 
 @can('ver-menu-tareas')
@@ -216,9 +215,14 @@
                 </li>
             @endcan
             @can('ver-analizador-eventos-cecoco')
-                <li class="{{ request()->is('cecoco*') ? 'active' : '' }}">
+                <li class="{{ request()->is('cecoco*') && !request()->routeIs('cecoco.mapa-calor') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('cecoco.index') }}">
                         <i class="fas fa-database"></i><span>Analizador de Eventos</span>
+                    </a>
+                </li>
+                <li class="{{ request()->routeIs('cecoco.mapa-calor') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('cecoco.mapa-calor') }}">
+                        <i class="fas fa-fire"></i><span>Mapa de Calor Analizador</span>
                     </a>
                 </li>
             @endcan
@@ -259,7 +263,8 @@
 @endcan
 
 @can('ver-menu-transcripcion')
-    <li class="dropdown {{ request()->is('transcribir*') ? 'active' : '' }} {{ request()->is('transcription*') ? 'active' : '' }}">
+    <li
+        class="dropdown {{ request()->is('transcribir*') ? 'active' : '' }} {{ request()->is('transcription*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-microphone-alt"></i><span>Transcripción</span>
         </a>
@@ -291,12 +296,12 @@
 @endcan
 
 @can('ver-menu-gestor-claves')
-<li class="{{ request()->is('password-vault*') ? 'active' : '' }}">
-    <a class="nav-link" href="{{ route('password-vault.index') }}">
-        <i class="fas fa-lock"></i>
-        <span>Gestor de Contraseñas</span>
-    </a>
-</li>
+    <li class="{{ request()->is('password-vault*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('password-vault.index') }}">
+            <i class="fas fa-lock"></i>
+            <span>Gestor de Contraseñas</span>
+        </a>
+    </li>
 @endcan
 
 @can('ver-menu-documentacion')

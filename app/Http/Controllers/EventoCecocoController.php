@@ -396,4 +396,107 @@ class EventoCecocoController extends Controller
                 ->with('error', 'Error al obtener el detalle del expediente: ' . $e->getMessage());
         }
     }
+
+    public function mapaCalor()
+    {
+        $tipos = Cache::rememberForever('cecoco_tipos', function () {
+            return EventoCecoco::distinct()->orderBy('tipo_servicio')->pluck('tipo_servicio');
+        });
+
+        return view('eventos-cecoco.mapa_calor_eventos', compact('tipos'));
+    }
+
+    public function mapaCalorDatos(Request $request)
+    {
+        $request->validate([
+            'fecha_desde' => 'required|date',
+            'fecha_hasta' => 'required|date',
+        ]);
+
+        // Aumentar el límite de tiempo a 5 minutos para permitir que las geocodificaciones 
+        // masivas a Google Maps terminen con éxito en su primera pasada.
+        set_time_limit(300);
+
+        try {
+            $geocoder = app(\App\Services\GeocodificacionService::class);
+
+            $query = EventoCecoco::whereBetween('fecha_hora', [
+                $request->fecha_desde,
+                $request->fecha_hasta,
+            ]);
+
+            if ($request->filled('tipo_servicio')) {
+                $query->where('tipo_servicio', $request->tipo_servicio);
+            }
+
+            // Calcular el total de eventos antes de modificar el query con el group by
+            $totalEventos = $query->count();
+
+            // Clonar para no arrastrar el count y aplicar agrupaciones
+            $eventosQuery = clone $query;
+
+            // Agrupar por dirección y contar ocurrencias
+            $eventos = $eventosQuery->selectRaw('direccion, COUNT(*) as total')
+                ->whereNotNull('direccion')
+                ->where('direccion', '!=', '')
+                ->groupBy('direccion')
+                ->orderByDesc('total')
+                ->limit(5000)
+                ->get();
+
+            $heatData = [];
+            $sinGeocod = 0;
+            $geocodificados = 0;
+
+            foreach ($eventos as $evento) {
+                $direccion = trim($evento->direccion);
+
+                // Si la dirección no tiene numeración, intentar extraer del primer
+                // evento con esa dirección que tenga descripción
+                if (!$geocoder->tieneNumeracion($direccion)) {
+                    $eventoConDesc = EventoCecoco::where('direccion', $evento->direccion)
+                        ->whereNotNull('descripcion')
+                        ->where('descripcion', '!=', '')
+                        ->whereBetween('fecha_hora', [$request->fecha_desde, $request->fecha_hasta])
+                        ->first();
+
+                    if ($eventoConDesc) {
+                        $dirExtraida = $geocoder->extraerDireccionDeDescripcion($eventoConDesc->descripcion);
+                        if ($dirExtraida) {
+                            $direccion = $dirExtraida;
+                        }
+                    }
+                }
+
+                $coords = $geocoder->geocodificar($direccion);
+
+                if ($coords) {
+                    $heatData[] = [
+                        'lat' => $coords['lat'],
+                        'lng' => $coords['lng'],
+                        'peso' => $evento->total,
+                        'direccion' => $evento->direccion,
+                        'total' => $evento->total,
+                    ];
+                    $geocodificados++;
+                } else {
+                    $sinGeocod++;
+                }
+            }
+
+            return response()->json([
+                'heat_data' => $heatData,
+                'total_eventos' => $totalEventos,
+                'total_direcciones' => count($eventos),
+                'geocodificados' => $geocodificados,
+                'sin_geocodificar' => $sinGeocod,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al procesar datos: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
+

@@ -127,11 +127,21 @@ class GeocodificacionService
             $data = json_decode($response);
             if ($data && $data->status === 'OK' && isset($data->results[0])) {
                 $result = $data->results[0];
-                return [
-                    'lat' => $result->geometry->location->lat,
-                    'lng' => $result->geometry->location->lng,
-                    'formatted_address' => $result->formatted_address,
-                ];
+                $lat = $result->geometry->location->lat;
+                $lng = $result->geometry->location->lng;
+
+                // Validación Geográfica Estricta (Gran Paraná: Oro Verde, San Benito, C. Avellaneda)
+                // Sur: -31.90, Norte: -31.60 | Oeste: -60.60, Este: -60.30
+                if ($lat >= -31.90 && $lat <= -31.60 && $lng >= -60.60 && $lng <= -60.30) {
+                    return [
+                        'lat' => $lat,
+                        'lng' => $lng,
+                        'formatted_address' => $result->formatted_address,
+                    ];
+                } else {
+                    Log::warning("Dirección fuera del Gran Paraná descartada", ['dir' => $direccion, 'lat' => $lat, 'lng' => $lng]);
+                    return null;
+                }
             }
 
             return null;

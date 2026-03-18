@@ -220,6 +220,8 @@
                         <i class="fas fa-database"></i><span>Analizador de Eventos</span>
                     </a>
                 </li>
+            @endcan
+            @can('ver-mapa-calor-servicios-cecoco')
                 <li class="{{ request()->routeIs('cecoco.mapa-calor') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('cecoco.mapa-calor') }}">
                         <i class="fas fa-fire"></i><span>Mapa de Calor Analizador</span>

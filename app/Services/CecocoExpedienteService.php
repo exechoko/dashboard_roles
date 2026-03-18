@@ -668,7 +668,8 @@ class CecocoExpedienteService
     private function bestHeaderWindow(array $headers, int $nCols): array
     {
         $headers = array_values(array_filter($headers, function ($h) {
-            return $h !== null && $h !== ''; }));
+            return $h !== null && $h !== '';
+        }));
         $m = count($headers);
         if ($m === 0 || $nCols <= 0) {
             return [];
@@ -692,7 +693,8 @@ class CecocoExpedienteService
             }
             // prefer ventanas con menos vacíos
             $nonEmpty = count(array_filter($win, function ($h) {
-                return $h !== ''; }));
+                return $h !== '';
+            }));
             $score += $nonEmpty * 0.1;
             if ($score > $bestScore) {
                 $bestScore = $score;
@@ -980,8 +982,32 @@ class CecocoExpedienteService
                                     if ($j < $n) {
                                         $valor = trim($cells[$j]->textContent);
                                         if ($valor !== '') {
-                                            if (!isset($resumen[$clave]) || $resumen[$clave] === '') {
-                                                $resumen[$clave] = $valor;
+                                            // Verificar que el valor no sea otra etiqueta conocida
+                                            $valorEsEtiqueta = false;
+                                            $valorNorm = $this->normalizarClaveColumna($valor);
+                                            // Si termina en ":" es otra etiqueta
+                                            if (preg_match('/:\s*$/', $valor)) {
+                                                $valorEsEtiqueta = true;
+                                            }
+                                            // Si coincide con alguna clave objetivo conocida, es etiqueta
+                                            if (!$valorEsEtiqueta && $valorNorm !== '') {
+                                                foreach ($objetivos as $otraClave => $otrasVariantes) {
+                                                    if ($otraClave === $clave)
+                                                        continue;
+                                                    foreach ($otrasVariantes as $otraVar) {
+                                                        $otraVarNorm = $this->normalizarClaveColumna($otraVar);
+                                                        if ($otraVarNorm !== '' && ($valorNorm === $otraVarNorm || strpos($valorNorm, $otraVarNorm) !== false)) {
+                                                            $valorEsEtiqueta = true;
+                                                            break 2;
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            if (!$valorEsEtiqueta) {
+                                                if (!isset($resumen[$clave]) || $resumen[$clave] === '') {
+                                                    $resumen[$clave] = $valor;
+                                                }
                                             }
                                         }
                                     }

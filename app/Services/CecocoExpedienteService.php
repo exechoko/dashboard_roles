@@ -21,7 +21,7 @@ class CecocoExpedienteService
         $this->cecocoPassword = config('cecoco.password', 'tecnica');
         $this->timeout = config('cecoco.timeout', 60);
         $this->tempPath = storage_path('app/temp');
-        
+
         if (!is_dir($this->tempPath)) {
             mkdir($this->tempPath, 0755, true);
         }
@@ -41,11 +41,13 @@ class CecocoExpedienteService
         }
 
         // Priorizar frames con nombre/id que indiquen contenido de reporte
-        usort($nodos, function($a, $b) {
-            $score = function($n) {
+        usort($nodos, function ($a, $b) {
+            $score = function ($n) {
                 $name = strtolower($n->getAttribute('name') . ' ' . $n->getAttribute('id'));
-                if (strpos($name, 'report') !== false) return 0;
-                if (strpos($name, 'birt') !== false) return 1;
+                if (strpos($name, 'report') !== false)
+                    return 0;
+                if (strpos($name, 'birt') !== false)
+                    return 1;
                 return 2;
             };
             return $score($a) <=> $score($b);
@@ -53,7 +55,8 @@ class CecocoExpedienteService
 
         foreach ($nodos as $node) {
             $src = trim($node->getAttribute('src'));
-            if ($src === '') continue;
+            if ($src === '')
+                continue;
 
             $url = $this->resolverUrlAbsoluta($src);
             try {
@@ -75,7 +78,8 @@ class CecocoExpedienteService
         // Si no encontramos una tabla, devolver el primero exitoso por si el reporte es puro HTML sin tablas
         foreach ($nodos as $node) {
             $src = trim($node->getAttribute('src'));
-            if ($src === '') continue;
+            if ($src === '')
+                continue;
             $url = $this->resolverUrlAbsoluta($src);
             try {
                 $res = $client->get($url);
@@ -121,10 +125,10 @@ class CecocoExpedienteService
 
             Log::info('Paso 1: Iniciando sesión CECOCO');
             $client = $this->iniciarSesion();
-            
+
             Log::info('Paso 2: Obteniendo reporte HTML del expediente');
             $htmlReporte = $this->obtenerReporteHTML($client, $nroExpediente);
-            
+
             Log::info('Paso 3: Parseando datos del HTML');
             $datosExpediente = $this->parsearHTMLExpediente($htmlReporte, $nroExpediente);
 
@@ -147,7 +151,7 @@ class CecocoExpedienteService
     {
         try {
             $cookieJar = new \GuzzleHttp\Cookie\CookieJar();
-            
+
             $client = Http::withOptions([
                 'verify' => false,
                 'cookies' => $cookieJar,
@@ -252,7 +256,7 @@ class CecocoExpedienteService
                     return $htmlPrev;
                 }
             }
-            
+
             // Intentar obtener directamente el HTML del reporte con POST (sin viewer)
             $postData = $params + [
                 '__pageoverflow' => '0',
@@ -316,7 +320,7 @@ class CecocoExpedienteService
             $dom = new \DOMDocument();
             @$dom->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'));
             $xpath = new \DOMXPath($dom);
-            
+
             $timeline = [];
 
             // Seleccionar la MEJOR tabla de Acciones (la más completa, no todas)
@@ -339,7 +343,7 @@ class CecocoExpedienteService
                 throw new Exception("No se encontraron eventos en el expediente");
             }
             $timeline = $this->parseEventosEnTabla($xpath, $tabla, $nroExpediente);
-            
+
             if (empty($timeline)) {
                 $dump = $this->tempPath . '/cecoco_reporte_' . $nroExpediente . '_' . time() . '.html';
                 @file_put_contents($dump, $html);
@@ -348,7 +352,7 @@ class CecocoExpedienteService
                 ]);
                 throw new Exception("No se encontraron eventos en el expediente");
             }
-            
+
             // Eliminar duplicados globales (entre todas las tablas parseadas)
             $timelineUnique = [];
             $seen = [];
@@ -360,22 +364,22 @@ class CecocoExpedienteService
                 }
             }
             $timeline = $timelineUnique;
-            
+
             // Ordenar por fecha con soporte d/m/Y
-            usort($timeline, function($a, $b) {
+            usort($timeline, function ($a, $b) {
                 $ta = $this->parseFecha($a['fecha_hora'] ?? '');
                 $tb = $this->parseFecha($b['fecha_hora'] ?? '');
                 return $ta <=> $tb;
             });
-            
+
             $primerEvento = $this->primerEventoConDatos($timeline);
-            Log::info('Muestra eventos CECOCO (3)', [ 'sample' => array_slice($timeline, 0, 3) ]);
+            Log::info('Muestra eventos CECOCO (3)', ['sample' => array_slice($timeline, 0, 3)]);
 
             // Extraer resumen general (encabezados) del reporte
             $resumen = $this->extraerResumenKeyValue($xpath);
-            
+
             Log::info('HTML parseado correctamente', ['eventos' => count($timeline)]);
-            
+
             // Extraer tabla de Trámites
             $tramites = $this->extraerTramites($xpath);
 
@@ -393,7 +397,7 @@ class CecocoExpedienteService
                 'tramites' => $tramites,
                 'total_tramites' => count($tramites),
             ];
-            
+
         } catch (Exception $e) {
             Log::error('Error al parsear HTML expediente', ['error' => $e->getMessage()]);
             throw new Exception("Error al procesar el reporte del expediente: " . $e->getMessage());
@@ -439,9 +443,13 @@ class CecocoExpedienteService
             // Verificar si es tabla de Acciones
             $headerTr = null;
             foreach ($xpath->query('.//tr', $tabla) as $trPosible) {
-                if ($xpath->query('.//th', $trPosible)->length > 0) { $headerTr = $trPosible; break; }
+                if ($xpath->query('.//th', $trPosible)->length > 0) {
+                    $headerTr = $trPosible;
+                    break;
+                }
             }
-            if (!$headerTr) continue;
+            if (!$headerTr)
+                continue;
 
             $enc = [];
             foreach ($xpath->query('.//th|.//td', $headerTr) as $celda) {
@@ -449,16 +457,18 @@ class CecocoExpedienteService
             }
             $h = implode(' ', $enc);
             $esAcciones = strpos($h, 'fecha') !== false && strpos($h, 'operador') !== false &&
-                          (strpos($h, 'accion') !== false || strpos($h, 'acci_on') !== false) &&
-                          (strpos($h, 'caracteristicas') !== false || strpos($h, 'caracter_isticas') !== false);
-            
-            if (!$esAcciones) continue;
+                (strpos($h, 'accion') !== false || strpos($h, 'acci_on') !== false) &&
+                (strpos($h, 'caracteristicas') !== false || strpos($h, 'caracter_isticas') !== false);
+
+            if (!$esAcciones)
+                continue;
 
             // Contar filas válidas (4 columnas con fecha parseable)
             $countValidas = 0;
             foreach ($xpath->query('.//tr', $tabla) as $fila) {
                 $celdas = $xpath->query('.//td', $fila);
-                if ($celdas->length !== 4) continue;
+                if ($celdas->length !== 4)
+                    continue;
                 $primeraColumna = trim($celdas->item(0)->textContent);
                 $primeraColumna = preg_replace('/\x{00A0}|\xC2\xA0/u', ' ', $primeraColumna);
                 $primeraColumna = preg_replace('/\s+/u', ' ', $primeraColumna);
@@ -488,17 +498,21 @@ class CecocoExpedienteService
         foreach ($tablas as $tabla) {
             $headerTr = null;
             foreach ($xpath->query('.//tr', $tabla) as $trPosible) {
-                if ($xpath->query('.//th', $trPosible)->length > 0) { $headerTr = $trPosible; break; }
+                if ($xpath->query('.//th', $trPosible)->length > 0) {
+                    $headerTr = $trPosible;
+                    break;
+                }
             }
-            if (!$headerTr) continue;
+            if (!$headerTr)
+                continue;
             $enc = [];
             foreach ($xpath->query('.//th|.//td', $headerTr) as $celda) {
                 $enc[] = $this->normalizarClaveColumna(trim($celda->textContent));
             }
             $h = implode(' ', $enc);
             $ok = strpos($h, 'fecha') !== false && strpos($h, 'operador') !== false &&
-                  (strpos($h, 'accion') !== false || strpos($h, 'acci_on') !== false) &&
-                  (strpos($h, 'caracteristicas') !== false || strpos($h, 'caracter_isticas') !== false);
+                (strpos($h, 'accion') !== false || strpos($h, 'acci_on') !== false) &&
+                (strpos($h, 'caracteristicas') !== false || strpos($h, 'caracter_isticas') !== false);
             if ($ok) {
                 $candidatas[] = $tabla;
             }
@@ -513,19 +527,23 @@ class CecocoExpedienteService
         foreach ($xpath->query('.//tr', $tabla) as $fila) {
             $celdas = $xpath->query('.//td', $fila);
             // Solo procesar filas con exactamente 4 columnas (fecha, operador, accion, caracteristicas)
-            if ($celdas->length !== 4) { continue; }
+            if ($celdas->length !== 4) {
+                continue;
+            }
 
             $valores = [];
             foreach ($celdas as $celda) {
                 $valor = $celda->textContent;
                 $valor = preg_replace('/\x{00A0}|\xC2\xA0/u', ' ', $valor);
-                $valor = preg_replace('/\s+/u', ' ', (string)$valor);
-                $valores[] = trim((string)$valor);
+                $valor = preg_replace('/\s+/u', ' ', (string) $valor);
+                $valores[] = trim((string) $valor);
             }
 
             // Validar que la primera columna sea una fecha válida
             $fechaTs = $this->parseFecha($valores[0]);
-            if ($fechaTs === PHP_INT_MAX) { continue; }
+            if ($fechaTs === PHP_INT_MAX) {
+                continue;
+            }
 
             // Construir evento directamente
             $evento = [
@@ -591,13 +609,26 @@ class CecocoExpedienteService
             ];
 
             $score = 0;
-            $hasFecha = false; $hasHora = false;
+            $hasFecha = false;
+            $hasHora = false;
             foreach ($enc as $h) {
-                if (strpos($h, 'fecha') !== false) { $hasFecha = true; $score += 2; }
-                if (strpos($h, 'hora') !== false) { $hasHora = true; $score += 1; }
-                if (strpos($h, 'operador') !== false) { $score += 2; }
-                if (strpos($h, 'accion') !== false) { $score += 2; }
-                if (strpos($h, 'caracteristicas') !== false) { $score += 2; }
+                if (strpos($h, 'fecha') !== false) {
+                    $hasFecha = true;
+                    $score += 2;
+                }
+                if (strpos($h, 'hora') !== false) {
+                    $hasHora = true;
+                    $score += 1;
+                }
+                if (strpos($h, 'operador') !== false) {
+                    $score += 2;
+                }
+                if (strpos($h, 'accion') !== false) {
+                    $score += 2;
+                }
+                if (strpos($h, 'caracteristicas') !== false) {
+                    $score += 2;
+                }
             }
             // Bonus por tamaño (más filas de datos)
             $trs = $xpath->query('.//tr', $tabla)->length;
@@ -636,7 +667,8 @@ class CecocoExpedienteService
 
     private function bestHeaderWindow(array $headers, int $nCols): array
     {
-        $headers = array_values(array_filter($headers, function($h){ return $h !== null && $h !== ''; }));
+        $headers = array_values(array_filter($headers, function ($h) {
+            return $h !== null && $h !== ''; }));
         $m = count($headers);
         if ($m === 0 || $nCols <= 0) {
             return [];
@@ -644,7 +676,7 @@ class CecocoExpedienteService
         if ($m === $nCols) {
             return $headers;
         }
-        $tokens = ['fecha_hora','fecha','hora','operador','accion','acci_on','caracteristicas','caracter_isticas'];
+        $tokens = ['fecha_hora', 'fecha', 'hora', 'operador', 'accion', 'acci_on', 'caracteristicas', 'caracter_isticas'];
         $best = [];
         $bestScore = -1;
         for ($i = 0; $i <= $m - $nCols; $i++) {
@@ -652,19 +684,26 @@ class CecocoExpedienteService
             $score = 0;
             foreach ($win as $h) {
                 foreach ($tokens as $t) {
-                    if (strpos($h, $t) !== false) { $score++; break; }
+                    if (strpos($h, $t) !== false) {
+                        $score++;
+                        break;
+                    }
                 }
             }
             // prefer ventanas con menos vacíos
-            $nonEmpty = count(array_filter($win, function($h){ return $h !== ''; }));
+            $nonEmpty = count(array_filter($win, function ($h) {
+                return $h !== ''; }));
             $score += $nonEmpty * 0.1;
-            if ($score > $bestScore) { $bestScore = $score; $best = $win; }
+            if ($score > $bestScore) {
+                $bestScore = $score;
+                $best = $win;
+            }
         }
         if (!empty($best)) {
             return $best;
         }
         // Fallback: encabezados por defecto
-        $defaults = ['fecha_hora','operador','accion','caracteristicas_de_la_accion'];
+        $defaults = ['fecha_hora', 'operador', 'accion', 'caracteristicas_de_la_accion'];
         return array_slice($defaults, 0, $nCols);
     }
 
@@ -681,12 +720,12 @@ class CecocoExpedienteService
             'estado' => ['estado', 'caracteristicas_de_la_accion', 'caracteristicas', 'caracteristicas_accion'],
             'recurso' => ['recurso', 'movil', 'unidad'],
         ];
-        
+
         $evento = [];
-        
+
         foreach ($camposPosibles as $campoNormalizado => $variantes) {
             $evento[$campoNormalizado] = '';
-            
+
             foreach ($variantes as $variante) {
                 $clave = $this->normalizarClaveColumna($variante);
                 if ($clave !== '' && isset($datos[$clave])) {
@@ -703,7 +742,7 @@ class CecocoExpedienteService
                 }
             }
         }
-        
+
         // Si no se encontró el número de expediente en los datos, usar el parámetro
         if (empty($evento['nro_expediente'])) {
             $evento['nro_expediente'] = $nroExpediente;
@@ -712,35 +751,41 @@ class CecocoExpedienteService
         if (empty($evento['descripcion']) && !empty($evento['estado'])) {
             $evento['descripcion'] = $evento['estado'];
         }
-        
+
         return $evento;
     }
 
     private function buscarEnDatosPorTokens(array $datos, array $tokens): string
     {
-        if (empty($datos)) { return ''; }
+        if (empty($datos)) {
+            return '';
+        }
 
         // Mapa de claves normalizadas existentes en los datos
         $map = [];
         foreach ($datos as $k => $v) {
-            $kn = $this->normalizarClaveColumna((string)$k);
-            if ($kn !== '') { $map[$kn] = $v; }
+            $kn = $this->normalizarClaveColumna((string) $k);
+            if ($kn !== '') {
+                $map[$kn] = $v;
+            }
         }
 
         foreach ($tokens as $tok) {
             $t = $this->normalizarClaveColumna($tok);
-            if ($t === '') { continue; }
+            if ($t === '') {
+                continue;
+            }
             // 1) Coincidencia exacta
             if (isset($map[$t])) {
                 $val = $map[$t];
-                return is_string($val) ? trim($val) : (string)$val;
+                return is_string($val) ? trim($val) : (string) $val;
             }
             // 2) Coincidencia por contiene (sin guiones bajos)
             $t2 = str_replace('_', '', $t);
             foreach ($map as $kn => $val) {
                 $k2 = str_replace('_', '', $kn);
                 if ($t2 !== '' && strpos($k2, $t2) !== false) {
-                    return is_string($val) ? trim($val) : (string)$val;
+                    return is_string($val) ? trim($val) : (string) $val;
                 }
             }
         }
@@ -762,7 +807,7 @@ class CecocoExpedienteService
         }
 
         $texto = preg_replace('/[^a-z0-9]+/', '_', $texto);
-        $texto = trim((string)$texto, '_');
+        $texto = trim((string) $texto, '_');
 
         return $texto;
     }
@@ -788,9 +833,13 @@ class CecocoExpedienteService
             // (evita tomar la fila de título "Trámites" que tiene colspan)
             $headerTr = null;
             foreach ($xpath->query('.//tr', $tabla) as $trPosible) {
-                if ($xpath->query('.//th', $trPosible)->length > 1) { $headerTr = $trPosible; break; }
+                if ($xpath->query('.//th', $trPosible)->length > 1) {
+                    $headerTr = $trPosible;
+                    break;
+                }
             }
-            if (!$headerTr) continue;
+            if (!$headerTr)
+                continue;
 
             $enc = [];
             foreach ($xpath->query('.//th|.//td', $headerTr) as $celda) {
@@ -800,9 +849,10 @@ class CecocoExpedienteService
 
             // Detectar tabla de Trámites por encabezados típicos
             $esTramites = (strpos($h, 'unidad') !== false || strpos($h, 'tr_amites') !== false) &&
-                          (strpos($h, 'h_asig') !== false || strpos($h, 'asig') !== false);
+                (strpos($h, 'h_asig') !== false || strpos($h, 'asig') !== false);
 
-            if (!$esTramites) continue;
+            if (!$esTramites)
+                continue;
 
             // Detectar la clave de "Unidad" en los encabezados
             $unidadKey = '';
@@ -815,16 +865,20 @@ class CecocoExpedienteService
 
             // Parsear filas de trámites
             foreach ($xpath->query('.//tr', $tabla) as $fila) {
-                if ($headerTr && $fila->isSameNode($headerTr)) { continue; }
+                if ($headerTr && $fila->isSameNode($headerTr)) {
+                    continue;
+                }
                 $celdas = $xpath->query('.//td', $fila);
-                if ($celdas->length < 2) { continue; }
+                if ($celdas->length < 2) {
+                    continue;
+                }
 
                 $valores = [];
                 foreach ($celdas as $celda) {
                     $valor = $celda->textContent;
                     $valor = preg_replace('/\x{00A0}|\xC2\xA0/u', ' ', $valor);
-                    $valor = preg_replace('/\s+/u', ' ', (string)$valor);
-                    $valor = trim((string)$valor);
+                    $valor = preg_replace('/\s+/u', ' ', (string) $valor);
+                    $valor = trim((string) $valor);
                     // Normalizar sentinel de fecha nula de CECOCO
                     if ($valor === '01/01/2000 00:00:00' || $valor === '01/01/2000') {
                         $valor = '';
@@ -843,6 +897,20 @@ class CecocoExpedienteService
                 // Requerir que la columna "Unidad" tenga un valor real
                 $unidad = $unidadKey !== '' ? ($tramite[$unidadKey] ?? '') : '';
                 if ($unidad === '' || $unidad === '-') {
+                    continue;
+                }
+
+                // Validar que al menos un horario tenga dato
+                $tieneHorario = false;
+                $columnasTiempo = ['h_asig', 'asig', 'h_sal', 'sal', 'h_llegada', 'llegada', 'h_f_atencion', 'f_atencion', 'h_f_atenci_on', 'f_atenci_on', 'h_desasig', 'desasig', 'h_invalido', 'invalido', 'h_inv_alido', 'inv_alido'];
+                foreach ($tramite as $k => $v) {
+                    if ($v !== '' && $v !== '-' && in_array($k, $columnasTiempo)) {
+                        $tieneHorario = true;
+                        break;
+                    }
+                }
+
+                if (!$tieneHorario) {
                     continue;
                 }
 
@@ -869,19 +937,19 @@ class CecocoExpedienteService
 
         // Etiquetas objetivo vistas en el reporte BIRT
         $objetivos = [
-            'expediente'   => ['expediente:','expediente'],
-            'tipo'         => ['tipo:','tipo','tipo_servicio:','tipo_servicio'],
-            'operador'     => ['operador:','operador','usuario:','usuario','telefonista:','telefonista'],
-            'fecha_inicio' => ['fecha_inicio:','fecha de creacion:','fecha de creación:','fecha de ejecucion:','fecha de ejecución:','fecha:','fecha/hora:'],
-            'direccion'    => ['direccion:','dirección:','domicilio:','ubicacion:','ubicación:','calle:'],
-            'telefono'     => ['telefono:','teléfono:','tel:','nro telefono:','nro. telefono:'],
-            'descripcion'  => ['descripcion:','descripción:','observaciones:','detalle:','motivo:'],
-            'estado'       => ['estado:','estado'],
-            'barrio'       => ['barrio:','barrio'],
-            'jurisdiccion' => ['jurisdiccion:','jurisdicción:','comisaria:','comisaría:'],
-            'municipio'    => ['municipio:','municipio','localidad:','localidad'],
-            'puesto'       => ['puesto:','puesto','box:','box'],
-            'sector'       => ['sector:','sector'],
+            'expediente' => ['expediente:', 'expediente'],
+            'tipo' => ['tipo:', 'tipo', 'tipo_servicio:', 'tipo_servicio'],
+            'operador' => ['operador:', 'operador', 'usuario:', 'usuario', 'telefonista:', 'telefonista'],
+            'fecha_inicio' => ['fecha_inicio:', 'fecha de creacion:', 'fecha de creación:', 'fecha de ejecucion:', 'fecha de ejecución:', 'fecha:', 'fecha/hora:'],
+            'direccion' => ['direccion:', 'dirección:', 'domicilio:', 'ubicacion:', 'ubicación:', 'calle:'],
+            'telefono' => ['telefono:', 'teléfono:', 'tel:', 'nro telefono:', 'nro. telefono:'],
+            'descripcion' => ['descripcion:', 'descripción:', 'observaciones:', 'detalle:', 'motivo:'],
+            'estado' => ['estado:', 'estado'],
+            'barrio' => ['barrio:', 'barrio'],
+            'jurisdiccion' => ['jurisdiccion:', 'jurisdicción:', 'comisaria:', 'comisaría:'],
+            'municipio' => ['municipio:', 'municipio', 'localidad:', 'localidad'],
+            'puesto' => ['puesto:', 'puesto', 'box:', 'box'],
+            'sector' => ['sector:', 'sector'],
         ];
 
         $tablas = $xpath->query('//table');
@@ -900,7 +968,8 @@ class CecocoExpedienteService
                     for ($i = 0; $i < $n - 1; $i++) {
                         $labelText = trim($cells[$i]->textContent);
                         $labelNorm = $this->normalizarClaveColumna($labelText);
-                        if ($labelNorm === '') continue;
+                        if ($labelNorm === '')
+                            continue;
 
                         foreach ($objetivos as $clave => $variantes) {
                             foreach ($variantes as $token) {
@@ -925,11 +994,13 @@ class CecocoExpedienteService
                     // Caso alternativo: "Etiqueta: valor" en una sola celda
                     foreach ($cells as $celda) {
                         $texto = trim($celda->textContent);
-                        if (strpos($texto, ':') === false) continue;
+                        if (strpos($texto, ':') === false)
+                            continue;
                         $partes = explode(':', $texto, 2);
                         $labelNorm = $this->normalizarClaveColumna($partes[0]);
                         $valor = trim($partes[1]);
-                        if ($labelNorm === '' || $valor === '') continue;
+                        if ($labelNorm === '' || $valor === '')
+                            continue;
 
                         foreach ($objetivos as $clave => $variantes) {
                             foreach ($variantes as $token) {
@@ -946,7 +1017,8 @@ class CecocoExpedienteService
                 }
             }
 
-            if (count($resumen) >= 5) break;
+            if (count($resumen) >= 5)
+                break;
         }
 
         return $resumen;
@@ -976,7 +1048,7 @@ class CecocoExpedienteService
             $response = Http::timeout(5)
                 ->withOptions(['verify' => false])
                 ->get($this->baseUrl);
-            
+
             if (!$response->successful() && $response->status() !== 302) {
                 $errores[] = "No se puede conectar con el servidor CECOCO: {$this->baseUrl}";
             }

@@ -40,6 +40,11 @@ class EventoCecoco extends Model
         return $this->belongsTo(Importacion::class, 'importacion_id');
     }
 
+    public function detalle(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(DetalleExpedienteCecoco::class, 'evento_cecoco_id');
+    }
+
     public function scopeDelPeriodo($query, string $periodo)
     {
         return $query->where('periodo', $periodo);
@@ -75,16 +80,16 @@ class EventoCecoco extends Model
         if (is_numeric($texto)) {
             return $query->where(function ($q) use ($texto) {
                 $q->where('nro_expediente', $texto)
-                  ->orWhere('telefono', $texto);
+                    ->orWhere('telefono', $texto);
             });
         }
 
         return $query->where(function ($q) use ($texto) {
             $q->where('nro_expediente', 'LIKE', "%{$texto}%")
-              ->orWhere('direccion', 'LIKE', "%{$texto}%")
-              ->orWhere('operador', 'LIKE', "%{$texto}%")
-              ->orWhere('tipo_servicio', 'LIKE', "%{$texto}%")
-              ->orWhere('descripcion', 'LIKE', "%{$texto}%");
+                ->orWhere('direccion', 'LIKE', "%{$texto}%")
+                ->orWhere('operador', 'LIKE', "%{$texto}%")
+                ->orWhere('tipo_servicio', 'LIKE', "%{$texto}%")
+                ->orWhere('descripcion', 'LIKE', "%{$texto}%");
         });
     }
 }

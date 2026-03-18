@@ -41,11 +41,11 @@ class EventoCecocoController extends Controller
             ]);
 
             if ($request->filled('anio')) {
-                $query->delAnio((int)$request->anio);
+                $query->delAnio((int) $request->anio);
             }
 
             if ($request->filled('mes')) {
-                $query->delMes((int)$request->mes);
+                $query->delMes((int) $request->mes);
             }
 
             if ($request->filled('operador')) {
@@ -195,7 +195,7 @@ class EventoCecocoController extends Controller
 
         foreach ($archivos as $archivo) {
             $nombreOriginal = $archivo->getClientOriginalName();
-            
+
             $importacion = Importacion::create([
                 'nombre_archivo' => $nombreOriginal,
                 'estado' => 'pendiente',
@@ -226,11 +226,11 @@ class EventoCecocoController extends Controller
         $query = EventoCecoco::query();
 
         if ($request->filled('anio')) {
-            $query->delAnio((int)$request->anio);
+            $query->delAnio((int) $request->anio);
         }
 
         if ($request->filled('mes')) {
-            $query->delMes((int)$request->mes);
+            $query->delMes((int) $request->mes);
         }
 
         if ($request->filled('operador')) {
@@ -329,11 +329,11 @@ class EventoCecocoController extends Controller
         }
 
         if ($request->filled('anio')) {
-            $query->delAnio((int)$request->anio);
+            $query->delAnio((int) $request->anio);
         }
 
         if ($request->filled('mes')) {
-            $query->delMes((int)$request->mes);
+            $query->delMes((int) $request->mes);
         }
 
         if ($request->filled('tipo')) {
@@ -350,7 +350,28 @@ class EventoCecocoController extends Controller
         $this->authorize('ver-expediente-cecoco');
 
         try {
-            $detalle = $this->expedienteService->obtenerDetalleExpediente($eventoCecoco->nro_expediente);
+            $refrescar = $request->query('refrescar', false);
+            $detalle = null;
+
+            if (!$refrescar) {
+                $cache = \App\Models\DetalleExpedienteCecoco::where('evento_cecoco_id', $eventoCecoco->id)->first();
+                if ($cache) {
+                    $detalle = $cache->detalle_json;
+                }
+            }
+
+            if (!$detalle) {
+                $detalle = $this->expedienteService->obtenerDetalleExpediente($eventoCecoco->nro_expediente);
+
+                \App\Models\DetalleExpedienteCecoco::updateOrCreate(
+                    ['evento_cecoco_id' => $eventoCecoco->id],
+                    [
+                        'nro_expediente' => $eventoCecoco->nro_expediente,
+                        'detalle_json' => $detalle,
+                        'fecha_consulta' => now(),
+                    ]
+                );
+            }
 
             $filtros = $request->only([
                 'anio',

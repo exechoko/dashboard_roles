@@ -26,6 +26,15 @@ class PersonalController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function update(Request $request, $id)
+    {
+    $personal = Personal::findOrFail($id);
+
+    $personal->update($request->all());
+
+    return response()->json(['ok' => true]);
+    }
+
     public function destroy($id)
     {
         Personal::findOrFail($id)->delete();

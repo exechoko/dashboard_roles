@@ -783,7 +783,7 @@
 
                                                                 <h5>Funcionarios</h5>
 
-                                                                <button class="btn btn-sm btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#modalPersonal">
+                                                                <button class="btn btn-sm btn-primary mb-3" data-toggle="modal" data-target="#modalPersonal">
                                                                     + Agregar Funcionario
                                                                 </button>
 
@@ -800,7 +800,7 @@
 
                                                                 <h5>Mensaje Generado</h5>
 
-                                                                <textarea id="mensaje" class="form-control mb-3" rows="15" readonly></textarea>
+                                                                <textarea id="mensaje" class="form-control mb-3" style="height: 50vh; resize: vertical; overflow:auto;"></textarea>
 
                                                                 <button id="whatsapp-web-btn" class="btn btn-success me-2" style="display:none;" onclick="enviarWhatsAppWeb()">
                                                                     WhatsApp Web
@@ -820,177 +820,275 @@
                                         </div>
 
                                             {{-- 🪟 MODAL --}}
-                                            <div class="modal fade" id="modalPersonal">
-                                                <div class="modal-dialog">
-                                                    <div class="modal-content">
-                                                        <div class="modal-header">
-                                                            <h5>Nuevo Funcionario</h5>
-                                                            <button class="btn-close" data-bs-dismiss="modal"></button>
-                                                        </div>
+                                        <div id="modalPersonal"
+                                            class="modal fade"
+                                            data-backdrop="false"
+                                            role="dialog">
 
-                                                        <div class="modal-body">
-                                                            <input type="text" id="nombre" class="form-control mb-2" placeholder="Nombre">
-                                                            <input type="text" id="apellido" class="form-control mb-2" placeholder="Apellido">
-                                                            <input type="text" id="lp" class="form-control mb-2" placeholder="LP (5 dígitos)">
-                                                            <input type="text" id="jerarquia" class="form-control mb-2" placeholder="Jerarquía">
-                                                        </div>
+                                            <div class="modal-dialog modal-md" role="document">
+                                                <div class="modal-content">
 
-                                                        <div class="modal-footer">
-                                                            <button class="btn btn-success" onclick="guardarFuncionario()">Guardar</button>
-                                                        </div>
+                                                    <div class="modal-header bg-primary">
+                                                        <h5 class="modal-title text-white">Nuevo Funcionario</h5>
+                                                        <button type="button" class="close" data-dismiss="modal">
+                                                            <span>&times;</span>
+                                                        </button>
                                                     </div>
+
+                                                    <div class="modal-body" style="min-height: 200px">
+
+                                                        <div class="form-group">
+                                                            <label>Nombre</label>
+                                                            <input type="text" id="nombre" class="form-control">
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label>Apellido</label>
+                                                            <input type="text" id="apellido" class="form-control">
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label>LP</label>
+                                                            <input type="text" id="lp" class="form-control" maxlength="5">
+                                                        </div>
+
+                                                        <div class="form-group">
+                                                            <label>Jerarquía</label>
+                                                            <input type="text" id="jerarquia" class="form-control">
+                                                        </div>
+
+                                                    </div>
+
+                                                    <div class="modal-footer">
+                                                        <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                                        <button class="btn btn-primary" onclick="guardarFuncionario()">Guardar</button>
+                                                    </div>
+
                                                 </div>
                                             </div>
+                                        </div>
                                             @push('scripts')
                                                 <script>
+                                                        let editandoId = null;
+                                                        const horarios = [
+                                                            { nombre: "Personal turno de 12 horas (07:30 hs. a 19:30 hs.)", tipo: "12h" },
+                                                            { nombre: "Personal turno mañana (07:30 hs. a 13:00 hs.)", tipo: "manana" },
+                                                            { nombre: "Personal turno (07:30 hs. a 13:00 hs. y 17:30 hs. a 21:00 hs.)", tipo: "manana" },
+                                                            { nombre: "Personal turno tarde (17:30 hs. a 21:00 hs.)", tipo: "tarde" },
+                                                            { nombre: "Personal turno tarde (16:30 hs. a 21:00 hs.)", tipo: "tarde" },
+                                                            { nombre: "Personal turno (08:00 hs. a 12:00 hs.)", tipo: "manana" },
+                                                            { nombre: "Personal turno (08:00 hs. a 12:00 hs. y 18:00 hs. a 20:00 hs.)", tipo: "mixto" },
+                                                            { nombre: "Personal turno (09:00 hs. a 11:00 hs.)", tipo: "manana" }
+                                                        ];
 
-                                                    const horarios = [
-                                                        { nombre: "Personal turno de 12 horas (07:30 hs. a 19:30 hs.)", tipo: "12h" },
-                                                        { nombre: "Personal turno mañana (07:30 hs. a 13:00 hs.)", tipo: "manana" },
-                                                        { nombre: "Personal turno (07:30 hs. a 13:00 hs. y 17:30 hs. a 21:00 hs.)", tipo: "manana" },
-                                                        { nombre: "Personal turno tarde (17:30 hs. a 21:00 hs.)", tipo: "tarde" },
-                                                        { nombre: "Personal turno tarde (16:30 hs. a 21:00 hs.)", tipo: "tarde" },
-                                                        { nombre: "Personal turno (08:00 hs. a 12:00 hs.)", tipo: "manana" },
-                                                        { nombre: "Personal turno (08:00 hs. a 12:00 hs. y 18:00 hs. a 20:00 hs.)", tipo: "mixto" },
-                                                        { nombre: "Personal turno (09:00 hs. a 11:00 hs.)", tipo: "manana" }
-                                                    ];
+                                                        // 🔵 CARGAR FUNCIONARIOS
+                                                        window.cargarFuncionarios = async function () {
 
-                                                    // 🔵 CARGAR FUNCIONARIOS DESDE BD
-                                                    async function cargarFuncionarios() {
+                                                            const res = await fetch('/personal');
+                                                            const data = await res.json();
 
-                                                        const res = await fetch('/personal');
-                                                        const data = await res.json();
+                                                            const div = document.getElementById("funcionarios-list");
+                                                            div.innerHTML = "";
 
-                                                        const div = document.getElementById("funcionarios-list");
-                                                        div.innerHTML = "";
+                                                            
 
-                                                        data.forEach(p => {
+                                                            data.forEach(p => {
 
-                                                            const f = p.nombre_completo;
+                                                                const f = `${p.jerarquia} ${p.apellido}, ${p.nombre}, L.P. Nº ${p.lp}`;
 
-                                                            const container = document.createElement("div");
-                                                            container.className = "funcionario-box";
+                                                                const container = document.createElement("div");
+                                                                container.className = "funcionario-box mb-3";
 
-                                                            const title = document.createElement("strong");
-                                                            title.textContent = f;
-                                                            container.appendChild(title);
+                                                                // 🔹 NOMBRE (arriba)
+                                                                const title = document.createElement("div");
+                                                                title.innerHTML = `<strong>${f}</strong>`;
+                                                                container.appendChild(title);
 
-                                                            // 🔴 BOTÓN ELIMINAR
-                                                            const btnDelete = document.createElement("button");
-                                                            btnDelete.className = "btn btn-sm btn-danger mb-2";
-                                                            btnDelete.textContent = "Eliminar";
-                                                            btnDelete.onclick = () => eliminarFuncionario(p.id);
-                                                            container.appendChild(btnDelete);
+                                                                // 🔹 CONTENEDOR DE BOTONES (debajo del nombre)
+                                                                const btnContainer = document.createElement("div");
+                                                                btnContainer.className = "d-flex gap-2 mb-2";
 
-                                                            horarios.forEach(h => {
+                                                                // EDITAR
+                                                                const btnEdit = document.createElement("button");
+                                                                btnEdit.className = "btn btn-sm btn-warning mr-2";
+                                                                btnEdit.textContent = "Editar";
+                                                                btnEdit.onclick = () => editarFuncionario(p);
 
-                                                                const label = document.createElement("label");
+                                                                // ELIMINAR
+                                                                const btnDelete = document.createElement("button");
+                                                                btnDelete.className = "btn btn-sm btn-danger";
+                                                                btnDelete.textContent = "Eliminar";
+                                                                btnDelete.onclick = () => eliminarFuncionario(p.id);
 
-                                                                let clase = "";
+                                                                // agregar botones al contenedor
+                                                                btnContainer.appendChild(btnEdit);
+                                                                btnContainer.appendChild(btnDelete);
 
-                                                                if (h.tipo === "manana") clase = "turno-manana";
-                                                                else if (h.tipo === "tarde") clase = "turno-tarde";
-                                                                else if (h.tipo === "mixto") clase = "turno-mixto";
-                                                                else if (h.tipo === "12h") clase = "turno-12h";
+                                                                // agregar contenedor al bloque principal
+                                                                container.appendChild(btnContainer);
 
-                                                                label.className = clase;
+                                                                
 
-                                                                label.innerHTML = `
-                                                                    <input type="checkbox" class="asignacion"
-                                                                    data-funcionario="${f}" value="${h.nombre}">
-                                                                    ${h.nombre}
-                                                                    <span class="contador" id="count-${h.nombre.replace(/\s/g,'')}">0</span>
-                                                                `;
+                                                                horarios.forEach(h => {
 
-                                                                container.appendChild(label);
+                                                                    let clase = "";
+
+                                                                    if (h.tipo === "manana") clase = "turno-manana";
+                                                                    else if (h.tipo === "tarde") clase = "turno-tarde";
+                                                                    else if (h.tipo === "mixto") clase = "turno-mixto";
+                                                                    else if (h.tipo === "12h") clase = "turno-12h";
+
+                                                                    const item = document.createElement("div");
+                                                                    item.className = `turno-box ${clase}`;
+
+                                                                    item.innerHTML = `
+                                                                        <label class="mb-0">
+                                                                            <input type="checkbox" class="asignacion"
+                                                                            data-funcionario="${f}" value="${h.nombre}">
+                                                                            ${h.nombre}
+                                                                        </label>
+                                                                        <span class="contador" id="count-${h.nombre.replace(/\s/g,'')}">0</span>
+                                                                    `;
+
+                                                                    container.appendChild(item);
+                                                                });
+
+                                                                div.appendChild(container);
                                                             });
+                                                        };  
 
-                                                            div.appendChild(container);
-                                                        });
-                                                    }
+                                                        //EDITAR
+                                                        window.editarFuncionario = function (p) {
 
-                                                    // 🔵 GUARDAR
-                                                    async function guardarFuncionario() {
+                                                            editandoId = p.id;
 
-                                                        const data = {
-                                                            nombre: nombre.value,
-                                                            apellido: apellido.value,
-                                                            lp: lp.value,
-                                                            jerarquia: jerarquia.value
+                                                            document.getElementById("nombre").value = p.nombre;
+                                                            document.getElementById("apellido").value = p.apellido;
+                                                            document.getElementById("lp").value = p.lp;
+                                                            document.getElementById("jerarquia").value = p.jerarquia;
+
+                                                            $('#modalPersonal').modal('show');
                                                         };
 
-                                                        const res = await fetch('/personal', {
-                                                            method: 'POST',
-                                                            headers: {
-                                                                'Content-Type': 'application/json',
-                                                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                                                            },
-                                                            body: JSON.stringify(data)
-                                                        });
+                                                        // 🔵 GUARDAR
+                                                        window.guardarFuncionario = async function () {
 
-                                                        if(res.ok){
-                                                            cargarFuncionarios();
-                                                            bootstrap.Modal.getInstance(modalPersonal).hide();
-                                                        } else {
-                                                            alert("Error al guardar");
-                                                        }
-                                                    }
+                                                            const data = {
+                                                                nombre: document.getElementById("nombre").value,
+                                                                apellido: document.getElementById("apellido").value,
+                                                                lp: document.getElementById("lp").value,
+                                                                jerarquia: document.getElementById("jerarquia").value
+                                                            };
 
-                                                    // 🔴 ELIMINAR
-                                                    async function eliminarFuncionario(id) {
+                                                            let url = '/personal';
+                                                            let method = 'POST';
 
-                                                        if(!confirm("¿Eliminar funcionario?")) return;
-
-                                                        const res = await fetch(`/personal/${id}`, {
-                                                            method: 'DELETE',
-                                                            headers: {
-                                                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                                            // ✏️ SI ESTÁ EDITANDO
+                                                            if (editandoId !== null) {
+                                                                url = `/personal/${editandoId}`;
+                                                                method = 'PUT';
                                                             }
-                                                        });
 
-                                                        if(res.ok){
-                                                            cargarFuncionarios();
-                                                        } else {
-                                                            alert("Error al eliminar");
-                                                        }
-                                                    }
+                                                            const res = await fetch(url, {
+                                                                method: method,
+                                                                headers: {
+                                                                    'Content-Type': 'application/json',
+                                                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                                                },
+                                                                body: JSON.stringify(data)
+                                                            });
 
-                                                    // 🧠 MENSAJE
-                                                    function generarMensaje() {
+                                                            if (res.ok) {
 
-                                                        const checked = document.querySelectorAll(".asignacion:checked");
+                                                                cargarFuncionarios();
 
-                                                        if(checked.length === 0){
-                                                            alert("Seleccionar al menos uno");
-                                                            return;
-                                                        }
+                                                                $('#modalPersonal').modal('hide');
 
-                                                        const funcionarios = [...new Set([...checked].map(c => c.dataset.funcionario))];
+                                                                // limpiar
+                                                                document.getElementById("nombre").value = "";
+                                                                document.getElementById("apellido").value = "";
+                                                                document.getElementById("lp").value = "";
+                                                                document.getElementById("jerarquia").value = "";
 
-                                                        let msg = `Buenos días:\nFuerza efectiva del Personal de la Sección Técnica ${new Date().toLocaleDateString('es-AR')}:\n\n`;
+                                                                editandoId = null;
 
-                                                        msg += "Funcionarios:\n";
-                                                        funcionarios.forEach(f => msg += `• ${f}\n`);
+                                                            } else {
+                                                                alert("Error al guardar");
+                                                            }
+                                                        };
 
-                                                        document.getElementById("mensaje").value = msg;
+                                                        // 🔴 ELIMINAR
+                                                        window.eliminarFuncionario = async function (id) {
 
-                                                        whatsapp-web-btn.style.display = "inline-block";
-                                                        whatsapp-desktop-btn.style.display = "inline-block";
-                                                    }
+                                                            if (!confirm("¿Eliminar funcionario?")) return;
 
-                                                    // 📲 WHATSAPP
-                                                    function enviarWhatsAppWeb(){
-                                                        const txt = encodeURIComponent(mensaje.value);
-                                                        window.open(`https://wa.me/5493434601937?text=${txt}`);
-                                                    }
+                                                            const res = await fetch(`/personal/${id}`, {
+                                                                method: 'DELETE',
+                                                                headers: {
+                                                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                                                }
+                                                            });
 
-                                                    function enviarWhatsAppDesktop(){
-                                                        const txt = encodeURIComponent(mensaje.value);
-                                                        window.open(`whatsapp://send?phone=5493434601937&text=${txt}`);
-                                                    }
+                                                            if (res.ok) {
+                                                                cargarFuncionarios();
+                                                            } else {
+                                                                alert("Error al eliminar");
+                                                            }
+                                                        };
 
-                                                    // INIT
-                                                    document.addEventListener("DOMContentLoaded", cargarFuncionarios);
+                                                        // 🧠 MENSAJE
+                                                        window.generarMensaje = function () {
+
+                                                            const checked = document.querySelectorAll(".asignacion:checked");
+
+                                                            if (checked.length === 0) {
+                                                                alert("Seleccionar al menos uno");
+                                                                return;
+                                                            }
+
+                                                            // 🧠 FUNCIONARIOS ÚNICOS
+                                                            const funcionarios = [...new Set([...checked].map(c => c.dataset.funcionario))];
+
+                                                            // 🧠 CONTAR HORARIOS
+                                                            const horarioCount = {};
+
+                                                            checked.forEach(c => {
+                                                                const h = c.value;
+                                                                if (!horarioCount[h]) horarioCount[h] = 0;
+                                                                horarioCount[h]++;
+                                                            });
+
+                                                            let msg = `Buenos días:\nFuerza efectiva del Personal de la Sección Técnica ${new Date().toLocaleDateString('es-AR')}:\n\n`;
+
+                                                            // 👮 FUNCIONARIOS
+                                                            msg += "Funcionarios:\n";
+                                                            funcionarios.forEach(f => msg += `• ${f}\n`);
+
+                                                            // ⏰ HORARIOS
+                                                            msg += "\nHorarios:\n";
+                                                            for (const [h, count] of Object.entries(horarioCount)) {
+                                                                msg += `${h}: ${count}\n`;
+                                                            }
+
+                                                            document.getElementById("mensaje").value = msg;
+
+                                                            document.getElementById("whatsapp-web-btn").style.display = "inline-block";
+                                                            document.getElementById("whatsapp-desktop-btn").style.display = "inline-block";
+                                                        };
+
+                                                        // 📲 WHATSAPP
+                                                        window.enviarWhatsAppWeb = function () {
+                                                            const txt = encodeURIComponent(document.getElementById("mensaje").value);
+                                                            window.open(`https://wa.me/5493434601937?text=${txt}`);
+                                                        };
+
+                                                        window.enviarWhatsAppDesktop = function () {
+                                                            const txt = encodeURIComponent(document.getElementById("mensaje").value);
+                                                            window.open(`whatsapp://send?phone=5493434601937&text=${txt}`);
+                                                        };
+
+                                                        // INIT
+                                                        document.addEventListener("DOMContentLoaded", cargarFuncionarios);
 
                                                 </script>
                                             @endpush

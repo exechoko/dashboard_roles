@@ -132,6 +132,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/personal', [PersonalController::class, 'index']);
     Route::post('/personal', [PersonalController::class, 'store']);
     Route::delete('/personal/{id}', [PersonalController::class, 'destroy']);
+    Route::put('/personal/{id}', [PersonalController::class, 'update']);
 
     //Route::get('/showmap', [App\Http\Controllers\MapaController::class, 'showMap'])->name('mapa.showMap');
     Route::post('/import-camaras', [App\Http\Controllers\CamaraController::class, 'importExcel'])->name('camaras.import');

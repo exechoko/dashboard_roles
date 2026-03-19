@@ -769,8 +769,233 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="row mb-4">
+                                            <div class="col-12">
+                                                <div class="card shadow-sm">
+                                                    <div class="card-body">
+
+                                                        <h4 class="mb-4">Informe de Personal - Sección Técnica</h4>
+
+                                                        <div class="row">
+                                                            
+                                                            {{-- 🔵 IZQUIERDA --}}
+                                                            <div class="col-md-6">
+
+                                                                <h5>Funcionarios</h5>
+
+                                                                <button class="btn btn-sm btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#modalPersonal">
+                                                                    + Agregar Funcionario
+                                                                </button>
+
+                                                                <div id="funcionarios-list"></div>
+
+                                                                <button class="btn btn-success mt-3" onclick="generarMensaje()">
+                                                                    Generar Mensaje
+                                                                </button>
+
+                                                            </div>
+
+                                                            {{-- 🔵 DERECHA --}}
+                                                            <div class="col-md-6">
+
+                                                                <h5>Mensaje Generado</h5>
+
+                                                                <textarea id="mensaje" class="form-control mb-3" rows="15" readonly></textarea>
+
+                                                                <button id="whatsapp-web-btn" class="btn btn-success me-2" style="display:none;" onclick="enviarWhatsAppWeb()">
+                                                                    WhatsApp Web
+                                                                </button>
+
+                                                                <button id="whatsapp-desktop-btn" class="btn btn-secondary" style="display:none;" onclick="enviarWhatsAppDesktop()">
+                                                                    WhatsApp Desktop
+                                                                </button>
+
+                                                            </div>
+
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                            {{-- 🪟 MODAL --}}
+                                            <div class="modal fade" id="modalPersonal">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5>Nuevo Funcionario</h5>
+                                                            <button class="btn-close" data-bs-dismiss="modal"></button>
+                                                        </div>
+
+                                                        <div class="modal-body">
+                                                            <input type="text" id="nombre" class="form-control mb-2" placeholder="Nombre">
+                                                            <input type="text" id="apellido" class="form-control mb-2" placeholder="Apellido">
+                                                            <input type="text" id="lp" class="form-control mb-2" placeholder="LP (5 dígitos)">
+                                                            <input type="text" id="jerarquia" class="form-control mb-2" placeholder="Jerarquía">
+                                                        </div>
+
+                                                        <div class="modal-footer">
+                                                            <button class="btn btn-success" onclick="guardarFuncionario()">Guardar</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            @push('scripts')
+                                                <script>
+
+                                                    const horarios = [
+                                                        { nombre: "Personal turno de 12 horas (07:30 hs. a 19:30 hs.)", tipo: "12h" },
+                                                        { nombre: "Personal turno mañana (07:30 hs. a 13:00 hs.)", tipo: "manana" },
+                                                        { nombre: "Personal turno (07:30 hs. a 13:00 hs. y 17:30 hs. a 21:00 hs.)", tipo: "manana" },
+                                                        { nombre: "Personal turno tarde (17:30 hs. a 21:00 hs.)", tipo: "tarde" },
+                                                        { nombre: "Personal turno tarde (16:30 hs. a 21:00 hs.)", tipo: "tarde" },
+                                                        { nombre: "Personal turno (08:00 hs. a 12:00 hs.)", tipo: "manana" },
+                                                        { nombre: "Personal turno (08:00 hs. a 12:00 hs. y 18:00 hs. a 20:00 hs.)", tipo: "mixto" },
+                                                        { nombre: "Personal turno (09:00 hs. a 11:00 hs.)", tipo: "manana" }
+                                                    ];
+
+                                                    // 🔵 CARGAR FUNCIONARIOS DESDE BD
+                                                    async function cargarFuncionarios() {
+
+                                                        const res = await fetch('/personal');
+                                                        const data = await res.json();
+
+                                                        const div = document.getElementById("funcionarios-list");
+                                                        div.innerHTML = "";
+
+                                                        data.forEach(p => {
+
+                                                            const f = p.nombre_completo;
+
+                                                            const container = document.createElement("div");
+                                                            container.className = "funcionario-box";
+
+                                                            const title = document.createElement("strong");
+                                                            title.textContent = f;
+                                                            container.appendChild(title);
+
+                                                            // 🔴 BOTÓN ELIMINAR
+                                                            const btnDelete = document.createElement("button");
+                                                            btnDelete.className = "btn btn-sm btn-danger mb-2";
+                                                            btnDelete.textContent = "Eliminar";
+                                                            btnDelete.onclick = () => eliminarFuncionario(p.id);
+                                                            container.appendChild(btnDelete);
+
+                                                            horarios.forEach(h => {
+
+                                                                const label = document.createElement("label");
+
+                                                                let clase = "";
+
+                                                                if (h.tipo === "manana") clase = "turno-manana";
+                                                                else if (h.tipo === "tarde") clase = "turno-tarde";
+                                                                else if (h.tipo === "mixto") clase = "turno-mixto";
+                                                                else if (h.tipo === "12h") clase = "turno-12h";
+
+                                                                label.className = clase;
+
+                                                                label.innerHTML = `
+                                                                    <input type="checkbox" class="asignacion"
+                                                                    data-funcionario="${f}" value="${h.nombre}">
+                                                                    ${h.nombre}
+                                                                    <span class="contador" id="count-${h.nombre.replace(/\s/g,'')}">0</span>
+                                                                `;
+
+                                                                container.appendChild(label);
+                                                            });
+
+                                                            div.appendChild(container);
+                                                        });
+                                                    }
+
+                                                    // 🔵 GUARDAR
+                                                    async function guardarFuncionario() {
+
+                                                        const data = {
+                                                            nombre: nombre.value,
+                                                            apellido: apellido.value,
+                                                            lp: lp.value,
+                                                            jerarquia: jerarquia.value
+                                                        };
+
+                                                        const res = await fetch('/personal', {
+                                                            method: 'POST',
+                                                            headers: {
+                                                                'Content-Type': 'application/json',
+                                                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                                            },
+                                                            body: JSON.stringify(data)
+                                                        });
+
+                                                        if(res.ok){
+                                                            cargarFuncionarios();
+                                                            bootstrap.Modal.getInstance(modalPersonal).hide();
+                                                        } else {
+                                                            alert("Error al guardar");
+                                                        }
+                                                    }
+
+                                                    // 🔴 ELIMINAR
+                                                    async function eliminarFuncionario(id) {
+
+                                                        if(!confirm("¿Eliminar funcionario?")) return;
+
+                                                        const res = await fetch(`/personal/${id}`, {
+                                                            method: 'DELETE',
+                                                            headers: {
+                                                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                                            }
+                                                        });
+
+                                                        if(res.ok){
+                                                            cargarFuncionarios();
+                                                        } else {
+                                                            alert("Error al eliminar");
+                                                        }
+                                                    }
+
+                                                    // 🧠 MENSAJE
+                                                    function generarMensaje() {
+
+                                                        const checked = document.querySelectorAll(".asignacion:checked");
+
+                                                        if(checked.length === 0){
+                                                            alert("Seleccionar al menos uno");
+                                                            return;
+                                                        }
+
+                                                        const funcionarios = [...new Set([...checked].map(c => c.dataset.funcionario))];
+
+                                                        let msg = `Buenos días:\nFuerza efectiva del Personal de la Sección Técnica ${new Date().toLocaleDateString('es-AR')}:\n\n`;
+
+                                                        msg += "Funcionarios:\n";
+                                                        funcionarios.forEach(f => msg += `• ${f}\n`);
+
+                                                        document.getElementById("mensaje").value = msg;
+
+                                                        whatsapp-web-btn.style.display = "inline-block";
+                                                        whatsapp-desktop-btn.style.display = "inline-block";
+                                                    }
+
+                                                    // 📲 WHATSAPP
+                                                    function enviarWhatsAppWeb(){
+                                                        const txt = encodeURIComponent(mensaje.value);
+                                                        window.open(`https://wa.me/5493434601937?text=${txt}`);
+                                                    }
+
+                                                    function enviarWhatsAppDesktop(){
+                                                        const txt = encodeURIComponent(mensaje.value);
+                                                        window.open(`whatsapp://send?phone=5493434601937&text=${txt}`);
+                                                    }
+
+                                                    // INIT
+                                                    document.addEventListener("DOMContentLoaded", cargarFuncionarios);
+
+                                                </script>
+                                            @endpush
+                                        </div>
                                     </div>
-                                </div>
                             @endcan
 
                             @can('ver-menu-dashboard')

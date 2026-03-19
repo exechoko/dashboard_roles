@@ -30,6 +30,7 @@ use App\Http\Controllers\SitioController;
 use App\Http\Controllers\CecocoController;
 use App\Http\Controllers\TranscripcionController;
 use App\Http\Controllers\PlanoEdificioController;
+use App\Http\Controllers\PersonalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -128,6 +129,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/get-equipos-departamental-json', [App\Http\Controllers\DashboardController::class, 'getEquiposPorDepartamentalJSON'])->name('get-equipos-departamental-json');
     Route::post('/get-equipos-division-911-json', [App\Http\Controllers\DashboardController::class, 'getEquiposDivision911JSON'])->name('get-equipos-division-911-json');
     Route::post('/get-equipos-division-bancaria-json', [App\Http\Controllers\DashboardController::class, 'getEquiposDivisionBancariaJSON'])->name('get-equipos-division-bancaria-json');
+    Route::get('/personal', [PersonalController::class, 'index']);
+    Route::post('/personal', [PersonalController::class, 'store']);
+    Route::delete('/personal/{id}', [PersonalController::class, 'destroy']);
 
     //Route::get('/showmap', [App\Http\Controllers\MapaController::class, 'showMap'])->name('mapa.showMap');
     Route::post('/import-camaras', [App\Http\Controllers\CamaraController::class, 'importExcel'])->name('camaras.import');

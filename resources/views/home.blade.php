@@ -769,138 +769,118 @@
                                                 </div>
                                             </div>
                                         </div>
-
-                                        {{-- Card estado servicios IA --}}
-                                        <div class="row mb-4">
-                                            <div class="col-12">
-                                                <div class="card shadow-sm">
-                                                    <div class="card-header d-flex align-items-center justify-content-between py-2" style="background: linear-gradient(135deg,#1e1b4b,#312e81); color:#fff;">
-                                                        <span><i class="fas fa-robot mr-2"></i><strong>Estado Servicios IA</strong></span>
-                                                        <small id="ia-ultima-actualizacion" class="text-white-50"></small>
-                                                    </div>
-                                                    <div class="card-body py-3">
-                                                        <div class="d-flex flex-wrap gap-3" id="ia-servicios-container" style="gap:1rem;">
-                                                            <div class="d-flex align-items-center mr-4">
-                                                                <span id="ia-dot-ollama" class="mr-2" style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
-                                                                <span><strong>Ollama</strong> <span id="ia-label-ollama" class="badge badge-secondary">Verificando...</span></span>
-                                                            </div>
-                                                            <div class="d-flex align-items-center mr-4">
-                                                                <span id="ia-dot-rag" class="mr-2" style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
-                                                                <span><strong>RAG (ChromaDB)</strong> <span id="ia-label-rag" class="badge badge-secondary">Verificando...</span></span>
-                                                            </div>
-                                                            <div class="d-flex align-items-center mr-4">
-                                                                <span id="ia-dot-whisper" class="mr-2" style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
-                                                                <span><strong>Whisper</strong> <span id="ia-label-whisper" class="badge badge-secondary">Verificando...</span></span>
-                                                            </div>
-                                                            <div class="d-flex align-items-center mr-4">
-                                                                <span id="ia-dot-callanalysis" class="mr-2" style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
-                                                                <span><strong>Análisis 911</strong> <span id="ia-label-callanalysis" class="badge badge-secondary">Verificando...</span></span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
                                         <div class="row mb-4">
                                             <div class="col-12">
                                                 <div class="card shadow-sm">
                                                     <div class="card-body">
 
-                                                        <h4 class="mb-4">Informe de Personal - Sección Técnica</h4>
+                                                                <h4 class="mb-4">Informe de Personal - Sección Técnica</h4>
 
-                                                        <div class="row">
-                                                            
-                                                            {{-- 🔵 IZQUIERDA --}}
-                                                            <div class="col-md-6">
+                                                                <div class="row">
+                                                                    
+                                                                    {{-- 🔵 IZQUIERDA --}}
+                                                                    <div class="col-md-6">
 
-                                                                <h5>Funcionarios</h5>
+                                                                        <h5>Funcionarios</h5>
 
-                                                                <button class="btn btn-sm btn-primary mb-3" data-toggle="modal" data-target="#modalPersonal">
-                                                                    + Agregar Funcionario
-                                                                </button>
 
-                                                                <div id="funcionarios-list"></div>
+                                                                        @can('crear-personal')
+                                                                        <button class="btn btn-sm btn-primary mb-3" data-toggle="modal" data-target="#modalPersonal">
+                                                                            + Agregar Funcionario
+                                                                        </button>
+                                                                        @endcan
 
-                                                                <button class="btn btn-success mt-3" onclick="generarMensaje()">
-                                                                    Generar Mensaje
-                                                                </button>
+
+                                                                        <div id="funcionarios-list"></div>
+
+                                                                        <button class="btn btn-success mt-3" onclick="generarMensaje()">
+                                                                            Generar Mensaje
+                                                                        </button>
+
+                                                                    </div>
+
+                                                                    {{-- 🔵 DERECHA --}}
+                                                                    <div class="col-md-6">
+
+                                                                        <h5>Mensaje Generado</h5>
+
+                                                                        <textarea id="mensaje" class="form-control mb-3" style="height: 50vh; resize: vertical; overflow:auto;"></textarea>
+
+                                                                        <button id="whatsapp-web-btn" class="btn btn-success me-2" style="display:none;" onclick="enviarWhatsAppWeb()">
+                                                                            WhatsApp Web
+                                                                        </button>
+
+                                                                        <button id="whatsapp-desktop-btn" class="btn btn-secondary" style="display:none;" onclick="enviarWhatsAppDesktop()">
+                                                                            WhatsApp Desktop
+                                                                        </button>
+
+                                                                    </div>
+
+                                                                </div>
 
                                                             </div>
-
-                                                            {{-- 🔵 DERECHA --}}
-                                                            <div class="col-md-6">
-
-                                                                <h5>Mensaje Generado</h5>
-
-                                                                <textarea id="mensaje" class="form-control mb-3" style="height: 50vh; resize: vertical; overflow:auto;"></textarea>
-
-                                                                <button id="whatsapp-web-btn" class="btn btn-success me-2" style="display:none;" onclick="enviarWhatsAppWeb()">
-                                                                    WhatsApp Web
-                                                                </button>
-
-                                                                <button id="whatsapp-desktop-btn" class="btn btn-secondary" style="display:none;" onclick="enviarWhatsAppDesktop()">
-                                                                    WhatsApp Desktop
-                                                                </button>
-
-                                                            </div>
-
                                                         </div>
-
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </div>
-
+                                            @endcan
                                             {{-- 🪟 MODAL --}}
-                                        <div id="modalPersonal"
-                                            class="modal fade"
-                                            data-backdrop="false"
-                                            role="dialog">
+                                            @can('crear-personal')
+                                                <div id="modalPersonal"
+                                                    class="modal fade"
+                                                    data-backdrop="false"
+                                                    role="dialog">
 
-                                            <div class="modal-dialog modal-md" role="document">
-                                                <div class="modal-content">
+                                                    <div class="modal-dialog modal-md" role="document">
+                                                        <div class="modal-content">
 
-                                                    <div class="modal-header bg-primary">
-                                                        <h5 class="modal-title text-white">Nuevo Funcionario</h5>
-                                                        <button type="button" class="close" data-dismiss="modal">
-                                                            <span>&times;</span>
-                                                        </button>
+                                                            <div class="modal-header bg-primary">
+                                                                <h5 class="modal-title text-white">Nuevo Funcionario</h5>
+                                                                <button type="button" class="close" data-dismiss="modal">
+                                                                    <span>&times;</span>
+                                                                </button>
+                                                            </div>
+
+                                                            <div class="modal-body" style="min-height: 200px">
+
+                                                                <div class="form-group">
+                                                                    <label>Nombre</label>
+                                                                    <input type="text" id="nombre" class="form-control">
+                                                                </div>
+
+                                                                <div class="form-group">
+                                                                    <label>Apellido</label>
+                                                                    <input type="text" id="apellido" class="form-control">
+                                                                </div>
+
+                                                                <div class="form-group">
+                                                                    <label>LP</label>
+                                                                    <input type="text" id="lp" class="form-control" maxlength="5">
+                                                                </div>
+
+                                                                <div class="form-group">
+                                                                    <label>Jerarquía</label>
+                                                                    <input type="text" id="jerarquia" class="form-control">
+                                                                </div>
+
+                                                            </div>
+
+                                                            <div class="modal-footer">
+                                                                <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                                                <button class="btn btn-primary" onclick="guardarFuncionario()">Guardar</button>
+                                                            </div>
+
+                                                        </div>
                                                     </div>
-
-                                                    <div class="modal-body" style="min-height: 200px">
-
-                                                        <div class="form-group">
-                                                            <label>Nombre</label>
-                                                            <input type="text" id="nombre" class="form-control">
-                                                        </div>
-
-                                                        <div class="form-group">
-                                                            <label>Apellido</label>
-                                                            <input type="text" id="apellido" class="form-control">
-                                                        </div>
-
-                                                        <div class="form-group">
-                                                            <label>LP</label>
-                                                            <input type="text" id="lp" class="form-control" maxlength="5">
-                                                        </div>
-
-                                                        <div class="form-group">
-                                                            <label>Jerarquía</label>
-                                                            <input type="text" id="jerarquia" class="form-control">
-                                                        </div>
-
-                                                    </div>
-
-                                                    <div class="modal-footer">
-                                                        <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                                                        <button class="btn btn-primary" onclick="guardarFuncionario()">Guardar</button>
-                                                    </div>
-
                                                 </div>
-                                            </div>
-                                        </div>
+                                            @endcan
+
+                                            
+                                            
+                                            
                                             @push('scripts')
+                                                
+                                                
+
                                                 <script>
                                                         let editandoId = null;
                                                         const horarios = [
@@ -1127,6 +1107,7 @@
                                             @endpush
                                         </div>
                                     </div>
+                                </div>    
                             @endcan
 
                             @can('ver-menu-dashboard')

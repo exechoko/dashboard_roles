@@ -7,6 +7,15 @@ use Illuminate\Http\Request;
 
 class PersonalController extends Controller
 {
+
+    public function __construct()
+    {
+        $this->middleware('permission:ver-personal')->only(['index', 'show']);
+        $this->middleware('permission:crear-personal')->only(['store']);
+        $this->middleware('permission:editar-personal')->only(['update']);
+        $this->middleware('permission:borrar-personal')->only(['destroy']);
+    }
+
     public function index()
     {
         return Personal::all();

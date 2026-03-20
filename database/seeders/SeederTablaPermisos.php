@@ -179,6 +179,12 @@ class SeederTablaPermisos extends Seeder
             'posicionar-plano-edificio',
             'credenciales-plano-edificio',
             'exportar-plano-edificio',
+
+            // Personal Efectivo
+            'ver-personal',
+            'crear-personal',
+            'editar-personal',
+            'borrar-personal',
         ];
 
         // Crear permisos si no existen

@@ -119,6 +119,9 @@
                                                         'buscar-moviles-recorridos',
                                                         'reiniciar-camara',
                                                         'herramientas-mapa'
+                                                    ],
+                                                    'Personal Efectivo' => [
+                                                        'personal'
                                                     ]
                                                 ];
 

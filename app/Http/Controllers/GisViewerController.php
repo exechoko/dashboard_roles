@@ -15,10 +15,12 @@ class GisViewerController extends Controller
     private string $password;
     private int    $timeout;
 
-    private const SESSION_KEY = 'gis_jsessionid';
-    private const LOGIN_PATH  = '/gisviewer/main/cecoco/?language=es_ES';
-    private const MAP_PATH    = '/gisviewer/main/cecoco/';
-    private const PROXY_BASE  = '/cecoco/gis-proxy';
+    private const SESSION_KEY        = 'gis_jsessionid';
+    private const SESSION_EXTRA_KEY  = 'gis_extra_cookies';
+    private const LOGIN_PATH         = '/gisviewer/main/cecoco/?language=es_ES';
+    private const MAP_PATH           = '/gisviewer/main/cecoco/';
+    private const PROXY_BASE         = '/cecoco/gis-proxy';
+    private const SPRING_CHECK_PATH  = '/gisviewer/j_security_check';
 
     private const BINARY_TYPES = [
         'image/', 'font/', 'audio/', 'video/',
@@ -41,16 +43,13 @@ class GisViewerController extends Controller
     public function index()
     {
         try {
-            [$jsid, $gisHtml] = $this->autenticarYCapturar();
-            session([self::SESSION_KEY => $jsid]);
-
-            // DEBUG: guardar HTML crudo para diagnóstico
-            file_put_contents(storage_path('logs/gis_raw.html'), $gisHtml);
+            [$jsid, $extraCookies, $gisHtml] = $this->autenticarYCapturar();
+            session([
+                self::SESSION_KEY       => $jsid,
+                self::SESSION_EXTRA_KEY => $extraCookies,
+            ]);
 
             $gisHtml = $this->procesarHtml($gisHtml);
-
-            // DEBUG: guardar HTML procesado para diagnóstico
-            file_put_contents(storage_path('logs/gis_processed.html'), $gisHtml);
 
             return response($gisHtml, 200)
                 ->header('Content-Type', 'text/html; charset=UTF-8');
@@ -91,20 +90,24 @@ class GisViewerController extends Controller
         try {
             $jsid = session(self::SESSION_KEY);
 
-            // Intentar con JSESSIONID en sesión (nuevo cliente Guzzle, sin problema de timeout
-            // porque es un proceso PHP nuevo sin conexiones previas al GIS)
             if ($jsid) {
                 [$status, $type, $body] = $this->fetchConJsid($jsid, $targetUrl, $request);
 
                 // Si el servidor devolvió la página de login, re-autenticar
                 if ($this->esRespuestaLogin($body, $type)) {
                     Log::info('GisViewer: sesión expirada, re-autenticando');
-                    [$jsid, $body, $status, $type] = $this->autenticarYFetch($targetUrl, $request);
-                    session([self::SESSION_KEY => $jsid]);
+                    [$jsid, $extraCookies, $body, $status, $type] = $this->autenticarYFetch($targetUrl, $request);
+                    session([
+                        self::SESSION_KEY       => $jsid,
+                        self::SESSION_EXTRA_KEY => $extraCookies,
+                    ]);
                 }
             } else {
-                [$jsid, $body, $status, $type] = $this->autenticarYFetch($targetUrl, $request);
-                session([self::SESSION_KEY => $jsid]);
+                [$jsid, $extraCookies, $body, $status, $type] = $this->autenticarYFetch($targetUrl, $request);
+                session([
+                    self::SESSION_KEY       => $jsid,
+                    self::SESSION_EXTRA_KEY => $extraCookies,
+                ]);
             }
 
             // Reescribir URLs en HTML y CSS (no en JS, el interceptor se encarga)
@@ -129,8 +132,16 @@ class GisViewerController extends Controller
     }
 
     // -----------------------------------------------------------------------
-    // Autentica y captura el HTML del mapa en una sola sesión Guzzle.
-    // La respuesta POST → redirect → mapa ES el HTML del GIS.
+    // Autentica en 4 pasos y captura el HTML del mapa en una sola sesión Guzzle.
+    //
+    // Paso 1: POST /gisviewer/rest/login/profiles  → nombre del perfil
+    // Paso 2: GET  /gisviewer/rest/login/organism  → id y nombre del organismo
+    // Paso 3: POST /gisviewer/login/cecoco/        → login CECOCO con todos los campos
+    //              → el GIS devuelve un formulario auto-submit a j_security_check
+    // Paso 4: POST /gisviewer/j_security_check     → login Spring Security
+    //              → redirige al mapa real
+    //
+    // Retorna: [jsid, extraCookies[], htmlDelMapa]
     // -----------------------------------------------------------------------
     private function autenticarYCapturar(): array
     {
@@ -138,46 +149,74 @@ class GisViewerController extends Controller
         $client    = $this->makeClient($cookieJar);
         $loginUrl  = $this->gisBaseUrl . self::LOGIN_PATH;
 
-        Log::info('GisViewer: autenticando', ['url' => $loginUrl]);
+        Log::info('GisViewer: iniciando autenticación', ['url' => $loginUrl]);
 
+        // Paso 3: POST al endpoint CECOCO (los pasos 1 y 2 los ejecuta buildLoginParams)
         $loginPage  = $client->get($loginUrl, ['headers' => $this->baseHeaders(), 'allow_redirects' => true]);
-        $html       = (string) $loginPage->getBody();
-        $formAction = $this->parseFormAction($html, $loginUrl);
+        $formAction = $this->parseFormAction((string) $loginPage->getBody(), $loginUrl);
 
-        $mapResponse = $client->post($formAction, [
-            'form_params'     => array_merge($this->parseHiddenFields($html), [
-                'username' => $this->user,
-                'password' => $this->password,
-            ]),
+        $cecocoResponse = $client->post($formAction, [
+            'form_params'     => $this->buildLoginParams($client),
             'allow_redirects' => true,
             'headers'         => array_merge($this->baseHeaders(), ['Referer' => $loginUrl]),
         ]);
 
-        $jsid = null;
-        foreach ($cookieJar as $cookie) {
-            if ($cookie->getName() === 'JSESSIONID') {
-                $jsid = $cookie->getValue();
-                break;
-            }
+        $responseHtml = (string) $cecocoResponse->getBody();
+
+        if ($this->esRespuestaError($responseHtml)) {
+            throw new \RuntimeException('El Visor GIS rechazó la autenticación: ' . $this->extraerMensajeError($responseHtml));
         }
 
-        if (!$jsid) {
-            throw new \RuntimeException('No se obtuvo JSESSIONID del Visor GIS.');
+        // Paso 4: el GIS devuelve un formulario auto-submit a /gisviewer/j_security_check
+        // (Spring Security). En el navegador JS lo envía automáticamente; nosotros lo hacemos manualmente.
+        if ($this->esFormAutoSubmit($responseHtml)) {
+            Log::info('GisViewer: ejecutando login Spring Security (j_security_check)');
+            $springUrl = $this->gisBaseUrl . self::SPRING_CHECK_PATH;
+
+            $springResponse = $client->post($springUrl, [
+                'form_params'     => [
+                    'j_username' => $this->user,
+                    'j_password' => $this->password,
+                ],
+                'allow_redirects' => true,
+                'headers'         => array_merge($this->baseHeaders(), [
+                    'Referer' => $this->gisBaseUrl . self::MAP_PATH,
+                ]),
+            ]);
+
+            $responseHtml = (string) $springResponse->getBody();
         }
 
-        Log::info('GisViewer: autenticado correctamente.');
-        return [$jsid, (string) $mapResponse->getBody()];
+        if ($this->esRespuestaError($responseHtml)) {
+            throw new \RuntimeException('El Visor GIS rechazó el login Spring Security: ' . $this->extraerMensajeError($responseHtml));
+        }
+
+        if ($this->esFormAutoSubmit($responseHtml)) {
+            throw new \RuntimeException('Loop de autenticación detectado en el Visor GIS.');
+        }
+
+        if ($this->esRespuestaLoginInteractivo($responseHtml)) {
+            throw new \RuntimeException('Credenciales rechazadas por el Visor GIS.');
+        }
+
+        [$jsid, $extraCookies] = $this->extraerCookies($cookieJar);
+
+        Log::info('GisViewer: autenticado correctamente.', [
+            'extra_cookies' => array_keys($extraCookies),
+        ]);
+
+        return [$jsid, $extraCookies, $responseHtml];
     }
 
     // -----------------------------------------------------------------------
-    // Fetch usando JSESSIONID de sesión (proceso PHP nuevo = sin timeout).
+    // Fetch usando JSESSIONID + cookies extras de sesión (JWT, etc.).
     // -----------------------------------------------------------------------
     private function fetchConJsid(string $jsid, string $targetUrl, Request $request): array
     {
-        $cookieJar = CookieJar::fromArray(
-            ['JSESSIONID' => $jsid],
-            parse_url($this->gisBaseUrl, PHP_URL_HOST)
-        );
+        $extraCookies = session(self::SESSION_EXTRA_KEY, []);
+        $allCookies   = array_merge(['JSESSIONID' => $jsid], $extraCookies);
+
+        $cookieJar = CookieJar::fromArray($allCookies, parse_url($this->gisBaseUrl, PHP_URL_HOST));
         $client    = $this->makeClient($cookieJar);
         $response  = $client->request(
             strtoupper($request->method()),
@@ -193,8 +232,8 @@ class GisViewerController extends Controller
     }
 
     // -----------------------------------------------------------------------
-    // Re-autentica Y fetchea el recurso en el MISMO cliente Guzzle.
-    // Evita el timeout TCP que ocurría con clientes separados.
+    // Re-autentica (4 pasos) Y fetchea el recurso en el MISMO cliente Guzzle.
+    // Retorna: [jsid, extraCookies[], body, status, contentType]
     // -----------------------------------------------------------------------
     private function autenticarYFetch(string $targetUrl, Request $request): array
     {
@@ -203,27 +242,31 @@ class GisViewerController extends Controller
         $loginUrl  = $this->gisBaseUrl . self::LOGIN_PATH;
 
         $loginPage  = $client->get($loginUrl, ['headers' => $this->baseHeaders(), 'allow_redirects' => true]);
-        $html       = (string) $loginPage->getBody();
-        $formAction = $this->parseFormAction($html, $loginUrl);
+        $formAction = $this->parseFormAction((string) $loginPage->getBody(), $loginUrl);
 
-        $client->post($formAction, [
-            'form_params'     => array_merge($this->parseHiddenFields($html), [
-                'username' => $this->user,
-                'password' => $this->password,
-            ]),
+        $cecocoResp = $client->post($formAction, [
+            'form_params'     => $this->buildLoginParams($client),
             'allow_redirects' => true,
             'headers'         => array_merge($this->baseHeaders(), ['Referer' => $loginUrl]),
         ]);
 
-        $jsid = null;
-        foreach ($cookieJar as $cookie) {
-            if ($cookie->getName() === 'JSESSIONID') {
-                $jsid = $cookie->getValue();
-                break;
-            }
+        // Paso 4: formulario auto-submit a Spring Security
+        if ($this->esFormAutoSubmit((string) $cecocoResp->getBody())) {
+            $client->post($this->gisBaseUrl . self::SPRING_CHECK_PATH, [
+                'form_params'     => [
+                    'j_username' => $this->user,
+                    'j_password' => $this->password,
+                ],
+                'allow_redirects' => true,
+                'headers'         => array_merge($this->baseHeaders(), [
+                    'Referer' => $this->gisBaseUrl . self::MAP_PATH,
+                ]),
+            ]);
         }
 
-        // Fetch del recurso con el MISMO cliente (misma conexión keep-alive)
+        [$jsid, $extraCookies] = $this->extraerCookies($cookieJar);
+
+        // Fetch del recurso con el MISMO cliente (cookies ya presentes en jar)
         $response = $client->request(
             strtoupper($request->method()),
             $targetUrl,
@@ -232,10 +275,126 @@ class GisViewerController extends Controller
 
         return [
             $jsid ?? '',
+            $extraCookies,
             (string) $response->getBody(),
             $response->getStatusCode(),
             $response->getHeaderLine('Content-Type') ?: 'application/octet-stream',
         ];
+    }
+
+    // -----------------------------------------------------------------------
+    // Construye los parámetros del formulario de login en 3 pasos:
+    // 1. Obtiene el perfil desde la API de perfiles
+    // 2. Obtiene el organismo desde la API de organismos
+    // 3. Devuelve todos los campos requeridos por el GIS
+    // -----------------------------------------------------------------------
+    private function buildLoginParams(Client $client): array
+    {
+        // Paso 1: cargar perfiles
+        $profile = $this->cargarPrimerPerfil($client);
+
+        // Paso 2: obtener organismo
+        [$orgId, $orgName] = $this->obtenerOrganismo($client, $profile);
+
+        return [
+            'j_username'     => $this->user,
+            'j_password'     => $this->password,
+            'j_profiles'     => $profile,
+            'j_subscriber'   => '0',
+            'j_profile_name' => $profile,
+            'j_organism_id'  => $orgId,
+            'j_organism_name'=> $orgName,
+            'j_language'     => 'es_ES',
+            'j_desktop_login'=> '0',
+        ];
+    }
+
+    // -----------------------------------------------------------------------
+    // POST /gisviewer/rest/login/profiles → devuelve el primer perfil disponible.
+    // Si CeCoCo está caído usa el endpoint de fallback.
+    // -----------------------------------------------------------------------
+    private function cargarPrimerPerfil(Client $client): string
+    {
+        $profilesUrl = $this->gisBaseUrl . '/gisviewer/rest/login/profiles';
+
+        $response = $client->post($profilesUrl, [
+            'form_params'     => [
+                'idsubscriber' => '0',
+                'username'     => $this->user,
+                'pwd'          => $this->password,
+            ],
+            'headers'         => $this->baseHeaders(),
+            'allow_redirects' => true,
+        ]);
+
+        $data = json_decode((string) $response->getBody(), true);
+
+        if (!is_array($data)) {
+            throw new \RuntimeException('Respuesta inválida al cargar perfiles del GIS.');
+        }
+
+        // CeCoCo caído → fallback a caché de BD
+        if (!empty($data['iscecocoerror'])) {
+            Log::warning('GisViewer: CeCoCo caído, usando fallback de perfiles.');
+            $fallbackUrl = $this->gisBaseUrl
+                . '/gisviewer/rest/login/profiles/0/'
+                . rawurlencode($this->user) . '/'
+                . rawurlencode($this->password) . '/fallback';
+
+            $fbResp = $client->get($fallbackUrl, ['headers' => $this->baseHeaders()]);
+            $fbData = json_decode((string) $fbResp->getBody(), true);
+
+            if (!empty($fbData) && is_array($fbData)) {
+                return (string) ($fbData[0]['value_id'] ?? '');
+            }
+
+            throw new \RuntimeException('No hay perfiles disponibles (CeCoCo caído, fallback vacío).');
+        }
+
+        // Error de validación
+        if (!empty($data['isresponseerror'])) {
+            $msg = $data['errormsg'] ?? 'Error desconocido';
+            throw new \RuntimeException('Error al cargar perfiles del GIS: ' . $msg);
+        }
+
+        $profiles = $data['response'] ?? [];
+        if (empty($profiles)) {
+            throw new \RuntimeException('No hay perfiles disponibles para el usuario GIS.');
+        }
+
+        Log::info('GisViewer: perfil seleccionado.', ['profile' => $profiles[0]]);
+        return (string) $profiles[0];
+    }
+
+    // -----------------------------------------------------------------------
+    // GET /gisviewer/rest/login/organism/... → devuelve [id, nombre] del organismo.
+    // -----------------------------------------------------------------------
+    private function obtenerOrganismo(Client $client, string $profile): array
+    {
+        $url = $this->gisBaseUrl
+            . '/gisviewer/rest/login/organism/get/id/name/0/'
+            . rawurlencode($this->user) . '/'
+            . rawurlencode($this->password) . '/'
+            . rawurlencode($profile);
+
+        try {
+            $response = $client->get($url, [
+                'headers'         => $this->baseHeaders(),
+                'allow_redirects' => true,
+                'timeout'         => 15,
+            ]);
+
+            $data = json_decode((string) $response->getBody(), true);
+
+            if (is_array($data) && isset($data['value_id'])) {
+                Log::info('GisViewer: organismo obtenido.', ['organism' => $data['value_name'] ?? '']);
+                return [(string) $data['value_id'], (string) ($data['value_name'] ?? '')];
+            }
+        } catch (\Exception $e) {
+            Log::warning('GisViewer: no se pudo obtener organismo.', ['error' => $e->getMessage()]);
+        }
+
+        return ['', ''];
     }
 
     // -----------------------------------------------------------------------
@@ -264,9 +423,7 @@ class GisViewerController extends Controller
             $html
         );
 
-        // 3. Catch-all: str_replace para cualquier ="... o ='... que todavía
-        //    apunte a /gisviewer/ (no puede causar doble-rewrite porque el paso 2
-        //    ya convirtió ="/gisviewer/ en ="[proxy]/gisviewer/).
+        // 3. Catch-all para cualquier ="... o ='... que apunte a /gisviewer/
         $html = str_replace('="/gisviewer/', '="' . $proxy . '/gisviewer/', $html);
         $html = str_replace("='/gisviewer/", "='" . $proxy . '/gisviewer/', $html);
 
@@ -283,8 +440,6 @@ class GisViewerController extends Controller
     // -----------------------------------------------------------------------
     // Interceptor JavaScript: redirige todas las llamadas XHR y fetch del GIS
     // que apunten a /gisviewer/ o al servidor GIS a través de nuestro proxy.
-    // Esto evita el rewrite frágil sobre código JS y resuelve el error
-    // "Wrong Parameters in authentication".
     // -----------------------------------------------------------------------
     private function interceptorJs(): string
     {
@@ -441,20 +596,7 @@ class GisViewerController extends Controller
         if (preg_match('/<form[^>]+action=["\']([^"\']+)["\'][^>]*/i', $html, $m)) {
             return $this->toAbsoluteUrl(html_entity_decode($m[1]), $currentUrl);
         }
-        return $this->gisBaseUrl . '/gisviewer/j_spring_security_check';
-    }
-
-    private function parseHiddenFields(string $html): array
-    {
-        $fields = [];
-        preg_match_all('/<input[^>]+type=["\']hidden["\'][^>]*>/i', $html, $inputs);
-        foreach ($inputs[0] as $input) {
-            $name = $value = null;
-            if (preg_match('/name=["\']([^"\']+)["\']/i', $input, $mn)) $name = $mn[1];
-            if (preg_match('/value=["\']([^"\']*)["\']?/i', $input, $mv)) $value = $mv[1];
-            if ($name !== null && $value !== null) $fields[$name] = $value;
-        }
-        return $fields;
+        return $this->gisBaseUrl . '/gisviewer/login/cecoco/';
     }
 
     private function toAbsoluteUrl(string $url, string $base): string
@@ -468,10 +610,64 @@ class GisViewerController extends Controller
         return rtrim(dirname($base), '/') . '/' . $url;
     }
 
+    // Detecta el formulario auto-submit que el GIS devuelve tras el login CECOCO.
+    // Este formulario hace POST a j_security_check (Spring Security).
+    private function esFormAutoSubmit(string $body): bool
+    {
+        return str_contains($body, 'loginFormFinal')
+            || str_contains($body, 'j_security_check');
+    }
+
+    // Detecta la página de login INTERACTIVA (credenciales rechazadas).
+    // No confundir con el formulario auto-submit (loginFormFinal).
+    private function esRespuestaLoginInteractivo(string $body): bool
+    {
+        return str_contains($body, 'id="password"')
+            || (str_contains($body, 'var loginPage = true') && !$this->esFormAutoSubmit($body));
+    }
+
+    // Compatibilidad: usado en proxy para detectar sesión expirada.
     private function esRespuestaLogin(string $body, string $type): bool
     {
         if (!str_contains($type, 'text/html')) return false;
-        return str_contains($body, 'loginForm') || str_contains($body, 'id="password"');
+        return $this->esRespuestaLoginInteractivo($body);
+    }
+
+    // Extrae JSESSIONID y las demás cookies del jar.
+    // Retorna: [jsid, ['cookieName' => 'cookieValue', ...]]
+    private function extraerCookies(CookieJar $cookieJar): array
+    {
+        $jsid  = null;
+        $extra = [];
+
+        foreach ($cookieJar as $cookie) {
+            $name = $cookie->getName();
+            if ($name === 'JSESSIONID') {
+                $jsid = $cookie->getValue();
+            } else {
+                $extra[$name] = $cookie->getValue();
+            }
+        }
+
+        if (!$jsid) {
+            throw new \RuntimeException('No se obtuvo JSESSIONID del Visor GIS.');
+        }
+
+        return [$jsid, $extra];
+    }
+
+    private function esRespuestaError(string $body): bool
+    {
+        return str_contains($body, 'errorPageTitle')
+            || (str_contains($body, 'msgWarning') && str_contains($body, 'ERROR:'));
+    }
+
+    private function extraerMensajeError(string $body): string
+    {
+        if (preg_match("/ERROR:\s*\\d+:\s*([^'\"<]+)/u", $body, $m)) {
+            return trim($m[1]);
+        }
+        return 'Error desconocido del Visor GIS.';
     }
 
     private function esBinario(string $type): bool

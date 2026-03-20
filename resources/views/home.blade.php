@@ -769,10 +769,11 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="row mb-4">
-                                            <div class="col-12">
-                                                <div class="card shadow-sm">
-                                                    <div class="card-body">
+                                            @can('ver-personal')
+                                                <div class="row mb-4">
+                                                    <div class="col-12">
+                                                        <div class="card shadow-sm">
+                                                            <div class="card-body">
 
                                                                 <h4 class="mb-4">Informe de Personal - Sección Técnica</h4>
 
@@ -874,6 +875,7 @@
                                                 </div>
                                             @endcan
 
+<<<<<<< HEAD
                                             @php
                                                 $puedeEditar = auth()->user()->can('editar-personal');
                                                 $puedeBorrar = auth()->user()->can('borrar-personal');
@@ -886,6 +888,14 @@
                                                     const puedeEditar = {{ $puedeEditar ? 'true' : 'false' }};
                                                     const puedeBorrar = {{ $puedeBorrar ? 'true' : 'false' }};
                                                 </script>
+=======
+                                            
+                                            
+                                            
+                                            @push('scripts')
+                                                
+                                                
+>>>>>>> c5c69c7 (ya está modelado lo de los permisos, falta aplicarlo a los que pueden editar y borrar)
 
                                                 <script>
                                                         let editandoId = null;

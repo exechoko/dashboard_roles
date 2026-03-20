@@ -875,12 +875,18 @@
                                                 </div>
                                             @endcan
 
-                                            
-                                            
+                                            @php
+                                                $puedeEditar = auth()->user()->can('editar-personal');
+                                                $puedeBorrar = auth()->user()->can('borrar-personal');
+                                            @endphp
+                                            // NOLI ME TANGERE , ASÍ FUNCIONA BIEN, NO TOCAR
                                             
                                             @push('scripts')
-                                                
-                                                
+                                                //acá tambien, no habia otra manera de hacerlo andar XD
+                                                <script>
+                                                    const puedeEditar = {{ $puedeEditar ? 'true' : 'false' }};
+                                                    const puedeBorrar = {{ $puedeBorrar ? 'true' : 'false' }};
+                                                </script>
 
                                                 <script>
                                                         let editandoId = null;
@@ -893,7 +899,9 @@
                                                             { nombre: "Personal turno (08:00 hs. a 12:00 hs.)", tipo: "manana" },
                                                             { nombre: "Personal turno (08:00 hs. a 12:00 hs. y 18:00 hs. a 20:00 hs.)", tipo: "mixto" },
                                                             { nombre: "Personal turno (09:00 hs. a 11:00 hs.)", tipo: "manana" }
-                                                        ];
+                                                        ];  
+
+
 
                                                         // 🔵 CARGAR FUNCIONARIOS
                                                         window.cargarFuncionarios = async function () {
@@ -923,20 +931,24 @@
                                                                 btnContainer.className = "d-flex gap-2 mb-2";
 
                                                                 // EDITAR
-                                                                const btnEdit = document.createElement("button");
-                                                                btnEdit.className = "btn btn-sm btn-warning mr-2";
-                                                                btnEdit.textContent = "Editar";
-                                                                btnEdit.onclick = () => editarFuncionario(p);
+                                                                if (puedeEditar) {
+                                                                    const btnEdit = document.createElement("button");
+                                                                    btnEdit.className = "btn btn-sm btn-warning mr-2";
+                                                                    btnEdit.textContent = "Editar";
+                                                                    btnEdit.onclick = () => editarFuncionario(p);
+
+                                                                    btnContainer.appendChild(btnEdit);
+                                                                }
 
                                                                 // ELIMINAR
-                                                                const btnDelete = document.createElement("button");
-                                                                btnDelete.className = "btn btn-sm btn-danger";
-                                                                btnDelete.textContent = "Eliminar";
-                                                                btnDelete.onclick = () => eliminarFuncionario(p.id);
+                                                                if (puedeBorrar) {
+                                                                    const btnDelete = document.createElement("button");
+                                                                    btnDelete.className = "btn btn-sm btn-danger";
+                                                                    btnDelete.textContent = "Eliminar";
+                                                                    btnDelete.onclick = () => eliminarFuncionario(p.id);
 
-                                                                // agregar botones al contenedor
-                                                                btnContainer.appendChild(btnEdit);
-                                                                btnContainer.appendChild(btnDelete);
+                                                                    btnContainer.appendChild(btnDelete);
+                                                                }
 
                                                                 // agregar contenedor al bloque principal
                                                                 container.appendChild(btnContainer);

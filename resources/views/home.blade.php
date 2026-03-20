@@ -876,11 +876,15 @@
                                             @endcan
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> ff09f52 (ahora si se pudo hacer andar de manera ortodoxa el permiso de editar y borrar)
                                             @php
                                                 $puedeEditar = auth()->user()->can('editar-personal');
                                                 $puedeBorrar = auth()->user()->can('borrar-personal');
                                             @endphp
                                             // NOLI ME TANGERE , ASÍ FUNCIONA BIEN, NO TOCAR
+<<<<<<< HEAD
                                             
                                             @push('scripts')
                                                 //acá tambien, no habia otra manera de hacerlo andar XD
@@ -896,6 +900,15 @@
                                                 
                                                 
 >>>>>>> c5c69c7 (ya está modelado lo de los permisos, falta aplicarlo a los que pueden editar y borrar)
+=======
+                                            
+                                            @push('scripts')
+                                                //acá tambien, no habia otra manera de hacerlo andar XD
+                                                <script>
+                                                    const puedeEditar = {{ $puedeEditar ? 'true' : 'false' }};
+                                                    const puedeBorrar = {{ $puedeBorrar ? 'true' : 'false' }};
+                                                </script>
+>>>>>>> ff09f52 (ahora si se pudo hacer andar de manera ortodoxa el permiso de editar y borrar)
 
                                                 <script>
                                                         let editandoId = null;

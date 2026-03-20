@@ -465,12 +465,17 @@ class GisViewerController extends Controller
 
             function rw(url){
                 if(!url || typeof url !== 'string') return url;
+                // Normalizar puerto :80 explícito que OpenLayers a veces agrega
+                // Ej: http://172.26.100.51:80/geoserver/... → http://172.26.100.51/geoserver/...
+                var u = url.replace(/^(https?:\/\/[^\/]+):80(\/|$)/, '$1$2');
                 // URL absoluta al GIS Viewer
-                if(url.indexOf(GIS_HOST) === 0) return PROXY + url.substring(GIS_HOST.length);
+                if(u.indexOf(GIS_HOST + '/') === 0) return PROXY + u.substring(GIS_HOST.length);
+                if(u === GIS_HOST)                  return PROXY + '/';
                 // URL absoluta al GeoServer (diferente IP)
-                if(url.indexOf(GEO_HOST) === 0) return PROXY + url.substring(GEO_HOST.length);
+                if(u.indexOf(GEO_HOST + '/') === 0) return PROXY + u.substring(GEO_HOST.length);
+                if(u === GEO_HOST)                  return PROXY + '/';
                 // Ruta absoluta /gisviewer/ o /geoserver/
-                if(url.indexOf('/gisviewer/') === 0 || url.indexOf('/geoserver/') === 0) return PROXY + url;
+                if(u.indexOf('/gisviewer/') === 0 || u.indexOf('/geoserver/') === 0) return PROXY + u;
                 return url;
             }
 

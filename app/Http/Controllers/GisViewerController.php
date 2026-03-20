@@ -438,8 +438,8 @@ class GisViewerController extends Controller
     }
 
     // -----------------------------------------------------------------------
-    // Interceptor JavaScript: redirige todas las llamadas XHR y fetch del GIS
-    // que apunten a /gisviewer/ o al servidor GIS a través de nuestro proxy.
+    // Interceptor JavaScript: redirige XHR, fetch y asignaciones de src/href
+    // dinámicas que apunten a /gisviewer/ o al servidor GIS.
     // -----------------------------------------------------------------------
     private function interceptorJs(): string
     {
@@ -454,14 +454,8 @@ class GisViewerController extends Controller
 
             function rw(url){
                 if(!url || typeof url !== 'string') return url;
-                // URL absoluta al servidor GIS
-                if(url.indexOf(GIS_HOST) === 0){
-                    return PROXY + url.substring(GIS_HOST.length);
-                }
-                // Ruta absoluta /gisviewer/
-                if(url.indexOf('/gisviewer/') === 0){
-                    return PROXY + url;
-                }
+                if(url.indexOf(GIS_HOST) === 0) return PROXY + url.substring(GIS_HOST.length);
+                if(url.indexOf('/gisviewer/') === 0) return PROXY + url;
                 return url;
             }
 
@@ -482,28 +476,46 @@ class GisViewerController extends Controller
                     return origFetch(input, init);
                 };
             }
+
+            // Interceptar img.src asignada dinámicamente por JS del GIS
+            var srcDesc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+            if(srcDesc && srcDesc.set){
+                Object.defineProperty(HTMLImageElement.prototype, 'src', {
+                    set: function(v){ srcDesc.set.call(this, rw(v)); },
+                    get: function(){ return srcDesc.get.call(this); },
+                    configurable: true
+                });
+            }
+
+            // Interceptar setAttribute('src',...) y setAttribute('href',...)
+            var origSetAttr = Element.prototype.setAttribute;
+            Element.prototype.setAttribute = function(name, value){
+                var n = name.toLowerCase();
+                if((n === 'src' || n === 'href' || n === 'action') && typeof value === 'string'){
+                    value = rw(value);
+                }
+                return origSetAttr.call(this, name, value);
+            };
         })();
         </script>
         JS;
     }
 
+    // Botón flotante pequeño en esquina inferior-derecha para no tapar la UI del GIS.
     private function barraNavegacion(): string
     {
-        $urlVolver = route('cecoco.index');
+        $urlVolver = route('home');
         return <<<HTML
-        <div id="gis-db-bar" style="position:fixed;top:0;left:0;right:0;z-index:999999;
-            background:rgba(20,20,40,0.93);backdrop-filter:blur(6px);
-            padding:5px 16px;display:flex;align-items:center;gap:12px;
-            box-shadow:0 2px 8px rgba(0,0,0,0.5);font-family:sans-serif;height:36px;">
-            <span style="color:#4fc3f7;font-size:1rem;">&#127947;</span>
-            <span style="color:#fff;font-size:0.83rem;font-weight:600;">Mapa GIS &mdash; CeCoCo</span>
-            <a href="{$urlVolver}" style="margin-left:auto;color:#fff;text-decoration:none;
-                background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);
-                padding:3px 10px;border-radius:4px;font-size:0.76rem;">
-                &larr; Volver al Dashboard
-            </a>
-        </div>
-        <div style="height:36px;"></div>
+        <a id="gis-back-btn" href="{$urlVolver}"
+            style="position:fixed;bottom:18px;right:18px;z-index:999999;
+                background:rgba(20,20,40,0.88);backdrop-filter:blur(4px);
+                color:#fff;text-decoration:none;font-family:sans-serif;font-size:0.78rem;
+                padding:6px 13px;border-radius:20px;
+                border:1px solid rgba(255,255,255,0.22);
+                box-shadow:0 2px 8px rgba(0,0,0,0.45);
+                display:flex;align-items:center;gap:5px;white-space:nowrap;">
+            &#8592; Dashboard
+        </a>
         HTML;
     }
 

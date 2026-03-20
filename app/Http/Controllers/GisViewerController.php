@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 class GisViewerController extends Controller
 {
     private string $gisBaseUrl;
+    private string $geoServerUrl;
     private string $user;
     private string $password;
     private int    $timeout;
@@ -30,8 +31,9 @@ class GisViewerController extends Controller
 
     public function __construct()
     {
-        $this->gisBaseUrl = rtrim(config('cecoco.gis_url', 'http://172.26.100.52'), '/');
-        $this->user       = config('cecoco.user', 'tecnica');
+        $this->gisBaseUrl   = rtrim(config('cecoco.gis_url',       'http://172.26.100.52'), '/');
+        $this->geoServerUrl = rtrim(config('cecoco.geoserver_url', 'http://172.26.100.51'), '/');
+        $this->user         = config('cecoco.user', 'tecnica');
         $this->password   = config('cecoco.password', 'tecnica');
         $this->timeout    = (int) config('cecoco.timeout', 60);
     }
@@ -71,7 +73,7 @@ class GisViewerController extends Controller
             $path = ltrim(self::MAP_PATH, '/');
         }
 
-        $targetUrl = $this->gisBaseUrl . '/' . ltrim($path, '/');
+        $targetUrl = $this->resolveTargetUrl($path);
         if ($qs = $request->getQueryString()) {
             $targetUrl .= '?' . $qs;
         }
@@ -403,29 +405,36 @@ class GisViewerController extends Controller
     // -----------------------------------------------------------------------
     private function procesarHtml(string $html): string
     {
-        $proxy   = self::PROXY_BASE;
-        $escaped = preg_quote($this->gisBaseUrl, '#');
+        $proxy      = self::PROXY_BASE;
+        $escapedGis = preg_quote($this->gisBaseUrl,    '#');
+        $escapedGeo = preg_quote($this->geoServerUrl,  '#');
 
         // 0. Eliminar <base> que el GIS pueda tener (interfiere con resolución de URLs)
         $html = preg_replace('/<base\b[^>]*>/i', '', $html);
 
-        // 1. Reescribir URLs absolutas al servidor GIS en atributos HTML
+        // 1. Reescribir URLs absolutas al GIS Viewer en atributos HTML
         $html = preg_replace(
-            "#((?:href|src|action|data-src|data-href)\\s*=\\s*['\"]){$escaped}(/[^'\"<>\\s]*)#i",
-            '$1' . $proxy . '$2',
-            $html
+            "#((?:href|src|action|data-src|data-href)\\s*=\\s*['\"]){$escapedGis}(/[^'\"<>\\s]*)#i",
+            '$1' . $proxy . '$2', $html
         );
 
-        // 2. Reescribir rutas absolutas /gisviewer/ en atributos HTML
+        // 1b. Reescribir URLs absolutas al GeoServer en atributos HTML
         $html = preg_replace(
-            '#((?:href|src|action|data-src|data-href|content|data-url)\s*=\s*["\'])(/gisviewer/[^"\'<>\s]*)#i',
-            '$1' . $proxy . '$2',
-            $html
+            "#((?:href|src|action|data-src|data-href)\\s*=\\s*['\"]){$escapedGeo}(/[^'\"<>\\s]*)#i",
+            '$1' . $proxy . '$2', $html
         );
 
-        // 3. Catch-all para cualquier ="... o ='... que apunte a /gisviewer/
-        $html = str_replace('="/gisviewer/', '="' . $proxy . '/gisviewer/', $html);
-        $html = str_replace("='/gisviewer/", "='" . $proxy . '/gisviewer/', $html);
+        // 2. Reescribir rutas absolutas /gisviewer/ y /geoserver/ en atributos HTML
+        $html = preg_replace(
+            '#((?:href|src|action|data-src|data-href|content|data-url)\s*=\s*["\'])(/(?:gisviewer|geoserver)/[^"\'<>\s]*)#i',
+            '$1' . $proxy . '$2', $html
+        );
+
+        // 3. Catch-all para ="... y ='... que apunten a /gisviewer/ o /geoserver/
+        $html = str_replace('="/gisviewer/',  '="' . $proxy . '/gisviewer/',  $html);
+        $html = str_replace("='/gisviewer/",  "='" . $proxy . '/gisviewer/',  $html);
+        $html = str_replace('="/geoserver/',  '="' . $proxy . '/geoserver/',  $html);
+        $html = str_replace("='/geoserver/",  "='" . $proxy . '/geoserver/',  $html);
 
         // 4. Inyectar interceptor XHR/fetch ANTES de cualquier script del GIS
         $interceptor = $this->interceptorJs();
@@ -443,19 +452,25 @@ class GisViewerController extends Controller
     // -----------------------------------------------------------------------
     private function interceptorJs(): string
     {
-        $proxy  = self::PROXY_BASE;
-        $gisUrl = $this->gisBaseUrl;
+        $proxy     = self::PROXY_BASE;
+        $gisUrl    = $this->gisBaseUrl;
+        $geoUrl    = $this->geoServerUrl;
 
         return <<<JS
         <script>
         (function(){
             var PROXY    = '{$proxy}';
             var GIS_HOST = '{$gisUrl}';
+            var GEO_HOST = '{$geoUrl}';
 
             function rw(url){
                 if(!url || typeof url !== 'string') return url;
+                // URL absoluta al GIS Viewer
                 if(url.indexOf(GIS_HOST) === 0) return PROXY + url.substring(GIS_HOST.length);
-                if(url.indexOf('/gisviewer/') === 0) return PROXY + url;
+                // URL absoluta al GeoServer (diferente IP)
+                if(url.indexOf(GEO_HOST) === 0) return PROXY + url.substring(GEO_HOST.length);
+                // Ruta absoluta /gisviewer/ o /geoserver/
+                if(url.indexOf('/gisviewer/') === 0 || url.indexOf('/geoserver/') === 0) return PROXY + url;
                 return url;
             }
 
@@ -609,6 +624,18 @@ class GisViewerController extends Controller
             return $this->toAbsoluteUrl(html_entity_decode($m[1]), $currentUrl);
         }
         return $this->gisBaseUrl . '/gisviewer/login/cecoco/';
+    }
+
+    // Resuelve la URL destino correcta según el path:
+    // - /geoserver/... → GeoServer (172.26.100.51)
+    // - /gisviewer/... → GIS Viewer (172.26.100.52)
+    private function resolveTargetUrl(string $path): string
+    {
+        $path = ltrim($path, '/');
+        if (str_starts_with($path, 'geoserver/') || $path === 'geoserver') {
+            return $this->geoServerUrl . '/' . $path;
+        }
+        return $this->gisBaseUrl . '/' . $path;
     }
 
     private function toAbsoluteUrl(string $url, string $base): string

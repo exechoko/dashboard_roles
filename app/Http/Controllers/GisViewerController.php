@@ -14,28 +14,34 @@ class GisViewerController extends Controller
     private string $geoServerUrl;
     private string $user;
     private string $password;
-    private int    $timeout;
+    private int $timeout;
 
-    private const SESSION_KEY        = 'gis_jsessionid';
-    private const SESSION_EXTRA_KEY  = 'gis_extra_cookies';
-    private const LOGIN_PATH         = '/gisviewer/main/cecoco/?language=es_ES';
-    private const MAP_PATH           = '/gisviewer/main/cecoco/';
-    private const PROXY_BASE         = '/cecoco/gis-proxy';
-    private const SPRING_CHECK_PATH  = '/gisviewer/j_security_check';
+    private const SESSION_KEY = 'gis_jsessionid';
+    private const SESSION_EXTRA_KEY = 'gis_extra_cookies';
+    private const LOGIN_PATH = '/gisviewer/main/cecoco/?language=es_ES';
+    private const MAP_PATH = '/gisviewer/main/cecoco/';
+    private const PROXY_BASE = '/cecoco/gis-proxy';
+    private const SPRING_CHECK_PATH = '/gisviewer/j_security_check';
 
     private const BINARY_TYPES = [
-        'image/', 'font/', 'audio/', 'video/',
-        'application/octet-stream', 'application/pdf',
-        'application/zip', 'application/wasm', 'application/x-font',
+        'image/',
+        'font/',
+        'audio/',
+        'video/',
+        'application/octet-stream',
+        'application/pdf',
+        'application/zip',
+        'application/wasm',
+        'application/x-font',
     ];
 
     public function __construct()
     {
-        $this->gisBaseUrl   = rtrim(config('cecoco.gis_url',       'http://172.26.100.52'), '/');
+        $this->gisBaseUrl = rtrim(config('cecoco.gis_url', 'http://172.26.100.52'), '/');
         $this->geoServerUrl = rtrim(config('cecoco.geoserver_url', 'http://172.26.100.51'), '/');
-        $this->user         = config('cecoco.user', 'tecnica');
-        $this->password   = config('cecoco.password', 'tecnica');
-        $this->timeout    = (int) config('cecoco.timeout', 60);
+        $this->user = config('cecoco.user', 'tecnica');
+        $this->password = config('cecoco.password', 'tecnica');
+        $this->timeout = (int) config('cecoco.timeout', 60);
     }
 
     // -----------------------------------------------------------------------
@@ -47,7 +53,7 @@ class GisViewerController extends Controller
         try {
             [$jsid, $extraCookies, $gisHtml] = $this->autenticarYCapturar();
             session([
-                self::SESSION_KEY       => $jsid,
+                self::SESSION_KEY => $jsid,
                 self::SESSION_EXTRA_KEY => $extraCookies,
             ]);
 
@@ -100,14 +106,14 @@ class GisViewerController extends Controller
                     Log::info('GisViewer: sesión expirada, re-autenticando');
                     [$jsid, $extraCookies, $body, $status, $type] = $this->autenticarYFetch($targetUrl, $request);
                     session([
-                        self::SESSION_KEY       => $jsid,
+                        self::SESSION_KEY => $jsid,
                         self::SESSION_EXTRA_KEY => $extraCookies,
                     ]);
                 }
             } else {
                 [$jsid, $extraCookies, $body, $status, $type] = $this->autenticarYFetch($targetUrl, $request);
                 session([
-                    self::SESSION_KEY       => $jsid,
+                    self::SESSION_KEY => $jsid,
                     self::SESSION_EXTRA_KEY => $extraCookies,
                 ]);
             }
@@ -148,19 +154,19 @@ class GisViewerController extends Controller
     private function autenticarYCapturar(): array
     {
         $cookieJar = new CookieJar();
-        $client    = $this->makeClient($cookieJar);
-        $loginUrl  = $this->gisBaseUrl . self::LOGIN_PATH;
+        $client = $this->makeClient($cookieJar);
+        $loginUrl = $this->gisBaseUrl . self::LOGIN_PATH;
 
         Log::info('GisViewer: iniciando autenticación', ['url' => $loginUrl]);
 
         // Paso 3: POST al endpoint CECOCO (los pasos 1 y 2 los ejecuta buildLoginParams)
-        $loginPage  = $client->get($loginUrl, ['headers' => $this->baseHeaders(), 'allow_redirects' => true]);
+        $loginPage = $client->get($loginUrl, ['headers' => $this->baseHeaders(), 'allow_redirects' => true]);
         $formAction = $this->parseFormAction((string) $loginPage->getBody(), $loginUrl);
 
         $cecocoResponse = $client->post($formAction, [
-            'form_params'     => $this->buildLoginParams($client),
+            'form_params' => $this->buildLoginParams($client),
             'allow_redirects' => true,
-            'headers'         => array_merge($this->baseHeaders(), ['Referer' => $loginUrl]),
+            'headers' => array_merge($this->baseHeaders(), ['Referer' => $loginUrl]),
         ]);
 
         $responseHtml = (string) $cecocoResponse->getBody();
@@ -176,12 +182,12 @@ class GisViewerController extends Controller
             $springUrl = $this->gisBaseUrl . self::SPRING_CHECK_PATH;
 
             $springResponse = $client->post($springUrl, [
-                'form_params'     => [
+                'form_params' => [
                     'j_username' => $this->user,
                     'j_password' => $this->password,
                 ],
                 'allow_redirects' => true,
-                'headers'         => array_merge($this->baseHeaders(), [
+                'headers' => array_merge($this->baseHeaders(), [
                     'Referer' => $this->gisBaseUrl . self::MAP_PATH,
                 ]),
             ]);
@@ -216,11 +222,11 @@ class GisViewerController extends Controller
     private function fetchConJsid(string $jsid, string $targetUrl, Request $request): array
     {
         $extraCookies = session(self::SESSION_EXTRA_KEY, []);
-        $allCookies   = array_merge(['JSESSIONID' => $jsid], $extraCookies);
+        $allCookies = array_merge(['JSESSIONID' => $jsid], $extraCookies);
 
         $cookieJar = CookieJar::fromArray($allCookies, parse_url($this->gisBaseUrl, PHP_URL_HOST));
-        $client    = $this->makeClient($cookieJar);
-        $response  = $client->request(
+        $client = $this->makeClient($cookieJar);
+        $response = $client->request(
             strtoupper($request->method()),
             $targetUrl,
             $this->buildOptions($request)
@@ -240,27 +246,27 @@ class GisViewerController extends Controller
     private function autenticarYFetch(string $targetUrl, Request $request): array
     {
         $cookieJar = new CookieJar();
-        $client    = $this->makeClient($cookieJar);
-        $loginUrl  = $this->gisBaseUrl . self::LOGIN_PATH;
+        $client = $this->makeClient($cookieJar);
+        $loginUrl = $this->gisBaseUrl . self::LOGIN_PATH;
 
-        $loginPage  = $client->get($loginUrl, ['headers' => $this->baseHeaders(), 'allow_redirects' => true]);
+        $loginPage = $client->get($loginUrl, ['headers' => $this->baseHeaders(), 'allow_redirects' => true]);
         $formAction = $this->parseFormAction((string) $loginPage->getBody(), $loginUrl);
 
         $cecocoResp = $client->post($formAction, [
-            'form_params'     => $this->buildLoginParams($client),
+            'form_params' => $this->buildLoginParams($client),
             'allow_redirects' => true,
-            'headers'         => array_merge($this->baseHeaders(), ['Referer' => $loginUrl]),
+            'headers' => array_merge($this->baseHeaders(), ['Referer' => $loginUrl]),
         ]);
 
         // Paso 4: formulario auto-submit a Spring Security
         if ($this->esFormAutoSubmit((string) $cecocoResp->getBody())) {
             $client->post($this->gisBaseUrl . self::SPRING_CHECK_PATH, [
-                'form_params'     => [
+                'form_params' => [
                     'j_username' => $this->user,
                     'j_password' => $this->password,
                 ],
                 'allow_redirects' => true,
-                'headers'         => array_merge($this->baseHeaders(), [
+                'headers' => array_merge($this->baseHeaders(), [
                     'Referer' => $this->gisBaseUrl . self::MAP_PATH,
                 ]),
             ]);
@@ -299,15 +305,15 @@ class GisViewerController extends Controller
         [$orgId, $orgName] = $this->obtenerOrganismo($client, $profile);
 
         return [
-            'j_username'     => $this->user,
-            'j_password'     => $this->password,
-            'j_profiles'     => $profile,
-            'j_subscriber'   => '0',
+            'j_username' => $this->user,
+            'j_password' => $this->password,
+            'j_profiles' => $profile,
+            'j_subscriber' => '0',
             'j_profile_name' => $profile,
-            'j_organism_id'  => $orgId,
-            'j_organism_name'=> $orgName,
-            'j_language'     => 'es_ES',
-            'j_desktop_login'=> '0',
+            'j_organism_id' => $orgId,
+            'j_organism_name' => $orgName,
+            'j_language' => 'es_ES',
+            'j_desktop_login' => '0',
         ];
     }
 
@@ -320,12 +326,12 @@ class GisViewerController extends Controller
         $profilesUrl = $this->gisBaseUrl . '/gisviewer/rest/login/profiles';
 
         $response = $client->post($profilesUrl, [
-            'form_params'     => [
+            'form_params' => [
                 'idsubscriber' => '0',
-                'username'     => $this->user,
-                'pwd'          => $this->password,
+                'username' => $this->user,
+                'pwd' => $this->password,
             ],
-            'headers'         => $this->baseHeaders(),
+            'headers' => $this->baseHeaders(),
             'allow_redirects' => true,
         ]);
 
@@ -381,9 +387,9 @@ class GisViewerController extends Controller
 
         try {
             $response = $client->get($url, [
-                'headers'         => $this->baseHeaders(),
+                'headers' => $this->baseHeaders(),
                 'allow_redirects' => true,
-                'timeout'         => 15,
+                'timeout' => 15,
             ]);
 
             $data = json_decode((string) $response->getBody(), true);
@@ -405,9 +411,9 @@ class GisViewerController extends Controller
     // -----------------------------------------------------------------------
     private function procesarHtml(string $html): string
     {
-        $proxy      = self::PROXY_BASE;
-        $escapedGis = preg_quote($this->gisBaseUrl,    '#');
-        $escapedGeo = preg_quote($this->geoServerUrl,  '#');
+        $proxy = self::PROXY_BASE;
+        $escapedGis = preg_quote($this->gisBaseUrl, '#');
+        $escapedGeo = preg_quote($this->geoServerUrl, '#');
 
         // 0. Eliminar <base> que el GIS pueda tener (interfiere con resolución de URLs)
         $html = preg_replace('/<base\b[^>]*>/i', '', $html);
@@ -415,26 +421,29 @@ class GisViewerController extends Controller
         // 1. Reescribir URLs absolutas al GIS Viewer en atributos HTML
         $html = preg_replace(
             "#((?:href|src|action|data-src|data-href)\\s*=\\s*['\"]){$escapedGis}(/[^'\"<>\\s]*)#i",
-            '$1' . $proxy . '$2', $html
+            '$1' . $proxy . '$2',
+            $html
         );
 
         // 1b. Reescribir URLs absolutas al GeoServer en atributos HTML
         $html = preg_replace(
             "#((?:href|src|action|data-src|data-href)\\s*=\\s*['\"]){$escapedGeo}(/[^'\"<>\\s]*)#i",
-            '$1' . $proxy . '$2', $html
+            '$1' . $proxy . '$2',
+            $html
         );
 
         // 2. Reescribir rutas absolutas /gisviewer/ y /geoserver/ en atributos HTML
         $html = preg_replace(
             '#((?:href|src|action|data-src|data-href|content|data-url)\s*=\s*["\'])(/(?:gisviewer|geoserver)/[^"\'<>\s]*)#i',
-            '$1' . $proxy . '$2', $html
+            '$1' . $proxy . '$2',
+            $html
         );
 
         // 3. Catch-all para ="... y ='... que apunten a /gisviewer/ o /geoserver/
-        $html = str_replace('="/gisviewer/',  '="' . $proxy . '/gisviewer/',  $html);
-        $html = str_replace("='/gisviewer/",  "='" . $proxy . '/gisviewer/',  $html);
-        $html = str_replace('="/geoserver/',  '="' . $proxy . '/geoserver/',  $html);
-        $html = str_replace("='/geoserver/",  "='" . $proxy . '/geoserver/',  $html);
+        $html = str_replace('="/gisviewer/', '="' . $proxy . '/gisviewer/', $html);
+        $html = str_replace("='/gisviewer/", "='" . $proxy . '/gisviewer/', $html);
+        $html = str_replace('="/geoserver/', '="' . $proxy . '/geoserver/', $html);
+        $html = str_replace("='/geoserver/", "='" . $proxy . '/geoserver/', $html);
 
         // 4. Inyectar interceptor XHR/fetch ANTES de cualquier script del GIS
         $interceptor = $this->interceptorJs();
@@ -452,9 +461,9 @@ class GisViewerController extends Controller
     // -----------------------------------------------------------------------
     private function interceptorJs(): string
     {
-        $proxy     = self::PROXY_BASE;
-        $gisUrl    = $this->gisBaseUrl;
-        $geoUrl    = $this->geoServerUrl;
+        $proxy = self::PROXY_BASE;
+        $gisUrl = $this->gisBaseUrl;
+        $geoUrl = $this->geoServerUrl;
 
         return <<<JS
         <script>
@@ -465,17 +474,26 @@ class GisViewerController extends Controller
 
             function rw(url){
                 if(!url || typeof url !== 'string') return url;
-                // Normalizar puerto :80 explícito que OpenLayers a veces agrega
-                // Ej: http://172.26.100.51:80/geoserver/... → http://172.26.100.51/geoserver/...
-                var u = url.replace(/^(https?:\/\/[^\/]+):80(\/|$)/, '$1$2');
-                // URL absoluta al GIS Viewer
+                if(url.indexOf(PROXY) === 0) return url;
+                
+                var u = url;
+                
+                // Si es una ruta absoluta que ya conocemos
+                if(u.indexOf('/gisviewer/') === 0 || u.indexOf('/geoserver/') === 0) return PROXY + u;
+
+                // Atrapar CUALQUIER URL absoluta que apunte a /geoserver/ o a /gisviewer/
+                // sin importar la IP, el puerto o el protocolo (http/https).
+                var match = u.match(/^(?:https?:)?\/\/[^\/]+(\/geoserver\/.*|\/gisviewer\/.*)$/i);
+                if(match) {
+                    return PROXY + match[1];
+                }
+
+                // Normalizar puerto :80 y fallbacks clásicos por si acaso
+                u = u.replace(/^(https?:\/\/[^\/]+):80(\/|$)/i, '$1$2');
                 if(u.indexOf(GIS_HOST + '/') === 0) return PROXY + u.substring(GIS_HOST.length);
                 if(u === GIS_HOST)                  return PROXY + '/';
-                // URL absoluta al GeoServer (diferente IP)
                 if(u.indexOf(GEO_HOST + '/') === 0) return PROXY + u.substring(GEO_HOST.length);
                 if(u === GEO_HOST)                  return PROXY + '/';
-                // Ruta absoluta /gisviewer/ o /geoserver/
-                if(u.indexOf('/gisviewer/') === 0 || u.indexOf('/geoserver/') === 0) return PROXY + u;
                 return url;
             }
 
@@ -544,16 +562,18 @@ class GisViewerController extends Controller
     // -----------------------------------------------------------------------
     private function reescribirHtml(string $html): string
     {
-        $proxy   = self::PROXY_BASE;
+        $proxy = self::PROXY_BASE;
         $escaped = preg_quote($this->gisBaseUrl, '#');
 
         $html = preg_replace(
             "#((?:href|src|action|data-src)\\s*=\\s*['\"]){$escaped}(/[^'\"<>\\s]*)#i",
-            '$1' . $proxy . '$2', $html
+            '$1' . $proxy . '$2',
+            $html
         );
         $html = preg_replace(
             '#((?:href|src|action|data-src|data-url)\s*=\s*["\'])(/gisviewer/[^"\'<>\s]*)#i',
-            '$1' . $proxy . '$2', $html
+            '$1' . $proxy . '$2',
+            $html
         );
         $html = str_replace('="/gisviewer/', '="' . $proxy . '/gisviewer/', $html);
         $html = str_replace("='/gisviewer/", "='" . $proxy . '/gisviewer/', $html);
@@ -562,7 +582,7 @@ class GisViewerController extends Controller
 
     private function reescribirCss(string $css): string
     {
-        $proxy   = self::PROXY_BASE;
+        $proxy = self::PROXY_BASE;
         $escaped = preg_quote($this->gisBaseUrl, '#');
 
         $css = preg_replace("#url\(['\"]?{$escaped}(/[^'\")\s]*)['\"]?\)#i", 'url("' . $proxy . '$1")', $css);
@@ -576,11 +596,11 @@ class GisViewerController extends Controller
     private function buildOptions(Request $request): array
     {
         $options = [
-            'headers'         => [
-                'Referer'          => $this->gisBaseUrl . self::MAP_PATH,
-                'User-Agent'       => $request->userAgent() ?? 'Mozilla/5.0',
-                'Accept'           => $request->header('Accept', '*/*'),
-                'Accept-Language'  => 'es-AR,es;q=0.9',
+            'headers' => [
+                'Referer' => $this->gisBaseUrl . self::MAP_PATH,
+                'User-Agent' => $request->userAgent() ?? 'Mozilla/5.0',
+                'Accept' => $request->header('Accept', '*/*'),
+                'Accept-Language' => 'es-AR,es;q=0.9',
                 'X-Requested-With' => $request->header('X-Requested-With', ''),
             ],
             'allow_redirects' => false,
@@ -606,19 +626,19 @@ class GisViewerController extends Controller
     private function makeClient(CookieJar $cookieJar): Client
     {
         return new Client([
-            'verify'          => false,
-            'cookies'         => $cookieJar,
-            'timeout'         => $this->timeout,
+            'verify' => false,
+            'cookies' => $cookieJar,
+            'timeout' => $this->timeout,
             'connect_timeout' => $this->timeout,
-            'http_errors'     => false,
+            'http_errors' => false,
         ]);
     }
 
     private function baseHeaders(): array
     {
         return [
-            'User-Agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Language' => 'es-AR,es;q=0.9',
         ];
     }
@@ -645,11 +665,12 @@ class GisViewerController extends Controller
 
     private function toAbsoluteUrl(string $url, string $base): string
     {
-        if (preg_match('#^https?://#i', $url)) return $url;
+        if (preg_match('#^https?://#i', $url))
+            return $url;
         if (str_starts_with($url, '/')) {
             $p = parse_url($base);
             return ($p['scheme'] ?? 'http') . '://' . ($p['host'] ?? '') .
-                   (isset($p['port']) ? ':' . $p['port'] : '') . $url;
+                (isset($p['port']) ? ':' . $p['port'] : '') . $url;
         }
         return rtrim(dirname($base), '/') . '/' . $url;
     }
@@ -673,7 +694,8 @@ class GisViewerController extends Controller
     // Compatibilidad: usado en proxy para detectar sesión expirada.
     private function esRespuestaLogin(string $body, string $type): bool
     {
-        if (!str_contains($type, 'text/html')) return false;
+        if (!str_contains($type, 'text/html'))
+            return false;
         return $this->esRespuestaLoginInteractivo($body);
     }
 
@@ -681,7 +703,7 @@ class GisViewerController extends Controller
     // Retorna: [jsid, ['cookieName' => 'cookieValue', ...]]
     private function extraerCookies(CookieJar $cookieJar): array
     {
-        $jsid  = null;
+        $jsid = null;
         $extra = [];
 
         foreach ($cookieJar as $cookie) {
@@ -717,7 +739,8 @@ class GisViewerController extends Controller
     private function esBinario(string $type): bool
     {
         foreach (self::BINARY_TYPES as $p) {
-            if (str_contains($type, $p)) return true;
+            if (str_contains($type, $p))
+                return true;
         }
         return false;
     }

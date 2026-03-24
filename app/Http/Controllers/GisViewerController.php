@@ -39,8 +39,8 @@ class GisViewerController extends Controller
     {
         $this->gisBaseUrl = rtrim(config('cecoco.gis_url', 'http://172.26.100.52'), '/');
         $this->geoServerUrl = rtrim(config('cecoco.geoserver_url', 'http://172.26.100.51'), '/');
-        $this->user = config('cecoco.user', 'tecnica');
-        $this->password = config('cecoco.password', 'tecnica');
+        $this->user = config('cecoco.user', '');
+        $this->password = config('cecoco.password', '');
         $this->timeout = (int) config('cecoco.timeout', 60);
     }
 

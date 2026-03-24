@@ -17,8 +17,8 @@ class CecocoExpedienteService
     public function __construct()
     {
         $this->baseUrl = config('cecoco.url', 'http://172.26.100.34:8080') . '/CECOCO_webapp';
-        $this->cecocoUser = config('cecoco.user', 'tecnica');
-        $this->cecocoPassword = config('cecoco.password', 'tecnica');
+        $this->cecocoUser = config('cecoco.user', '');
+        $this->cecocoPassword = config('cecoco.password', '');
         $this->timeout = config('cecoco.timeout', 60);
         $this->tempPath = storage_path('app/temp');
 

@@ -19,8 +19,6 @@ class ImportarEventosDiaAnterior extends Command
     protected $description = 'Descarga automáticamente el reporte XLS del día anterior desde CECOCO e importa los eventos';
 
     private const BASE_URL  = 'http://172.26.100.34:8080/CECOCO_webapp';
-    private const USUARIO   = 'tecnica';
-    private const PASSWORD  = 'tecnica';
 
     private const PARAMS_COMUNES = [
         'p_max_chars'                              => '3750',
@@ -83,8 +81,8 @@ class ImportarEventosDiaAnterior extends Command
             $client->get('/CECOCO_webapp');
             $client->post('/CECOCO_webapp/ajax/perfil/AjaxServletPerfil', [
                 'form_params' => [
-                    'LoginForm:Usuario'  => self::USUARIO,
-                    'LoginForm:Password' => self::PASSWORD,
+                    'LoginForm:Usuario'  => config('cecoco.user'),
+                    'LoginForm:Password' => config('cecoco.password'),
                 ],
             ]);
         } catch (\Exception $e) {

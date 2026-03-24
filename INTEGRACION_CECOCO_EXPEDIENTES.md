@@ -61,8 +61,8 @@ Agregar al archivo `.env`:
 ```env
 # Configuración CECOCO Expedientes (PHP Nativo - Sin Python)
 CECOCO_URL=http://172.26.100.34:8080
-CECOCO_USER=tecnica
-CECOCO_PASSWORD=tecnica
+CECOCO_USER=
+CECOCO_PASSWORD=
 CECOCO_TIMEOUT=60
 ```
 
@@ -73,8 +73,8 @@ Ya creado en: `config/cecoco.php`
 ```php
 return [
     'url' => env('CECOCO_URL', 'http://172.26.100.34:8080'),
-    'user' => env('CECOCO_USER', 'tecnica'),
-    'password' => env('CECOCO_PASSWORD', 'tecnica'),
+    'user' => env('CECOCO_USER', ''),
+    'password' => env('CECOCO_PASSWORD', ''),
     'timeout' => env('CECOCO_TIMEOUT', 60),
 ];
 ```

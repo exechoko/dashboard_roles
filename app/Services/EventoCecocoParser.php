@@ -287,9 +287,23 @@ class EventoCecocoParser
     {
         $get = fn($campo) => isset($mapa[$campo]) ? trim($fila[$mapa[$campo]] ?? '') : '';
 
+        $fechaHora = $this->parsearFecha($get('fecha_hora'));
+
+        // Si el archivo no tiene fila de periodo (p.ej. exportaciones BIRT),
+        // lo derivamos de la fecha del evento.
+        $periodoFinal = $periodo;
+        $mesFinal     = $mes;
+        $anioFinal    = $anio;
+        if ($periodoFinal === null && $fechaHora !== null) {
+            $dt = Carbon::parse($fechaHora);
+            $mesFinal     = $dt->month;
+            $anioFinal    = $dt->year;
+            $periodoFinal = str_pad($mesFinal, 2, '0', STR_PAD_LEFT) . '/' . $anioFinal;
+        }
+
         return [
             'nro_expediente' => $get('nro_expediente'),
-            'fecha_hora' => $this->parsearFecha($get('fecha_hora')),
+            'fecha_hora' => $fechaHora,
             'box' => $get('box') ?: null,
             'operador' => $get('operador') ?: null,
             'descripcion' => $get('descripcion') ?: null,
@@ -297,9 +311,9 @@ class EventoCecocoParser
             'telefono' => $get('telefono') ?: null,
             'fecha_cierre' => $this->parsearFecha($get('fecha_cierre')),
             'tipo_servicio' => $get('tipo_servicio') ?: null,
-            'periodo' => $periodo,
-            'mes' => $mes,
-            'anio' => $anio,
+            'periodo' => $periodoFinal,
+            'mes' => $mesFinal,
+            'anio' => $anioFinal,
             'importacion_id' => $importacionId,
             'created_at' => now()->toDateTimeString(),
             'updated_at' => now()->toDateTimeString(),

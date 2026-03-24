@@ -17,6 +17,9 @@ class Kernel extends ConsoleKernel
     {
         $schedule->command('tareas:generar')->dailyAt('01:00');
         $schedule->command('tareas:avisar')->dailyAt('08:00');
+        $schedule->command('cecoco:importar-dia-anterior')->dailyAt('06:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/cecoco_importacion.log'));
     }
 
     /**

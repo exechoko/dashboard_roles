@@ -294,7 +294,9 @@ function abrirGrabaciones() {
 
         data.grabaciones.forEach(function(g) {
             var nombre      = g.nombreFichero || g.nombre || 'grabacion';
-            var streamUrl   = g.url ? streamBase + '?url=' + encodeURIComponent(g.url) : null;
+            var streamUrl   = g.url
+                ? (g.fuente === 'local' ? g.url : streamBase + '?url=' + encodeURIComponent(g.url))
+                : null;
             var downloadUrl = streamUrl ? streamUrl + '&download=1' : null;
             var duracion    = g.duracion || '—';
 

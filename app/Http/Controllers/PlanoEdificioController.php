@@ -159,7 +159,7 @@ class PlanoEdificioController extends Controller
         $validator = Validator::make($request->all(), [
             'tipo' => 'required|in:' . implode(',', DispositivoEdificio::TIPOS),
             'nombre' => 'required|string|max:200',
-            'ip' => 'nullable|ip',
+            'ip' => 'nullable|string|max:45',
             'mac' => 'nullable|string|regex:/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/',
             'marca' => 'nullable|string|max:100',
             'modelo' => 'nullable|string|max:100',
@@ -230,7 +230,7 @@ class PlanoEdificioController extends Controller
         $validator = Validator::make($request->all(), [
             'tipo' => 'required|in:' . implode(',', DispositivoEdificio::TIPOS),
             'nombre' => 'required|string|max:200',
-            'ip' => 'nullable|ip',
+            'ip' => 'nullable|string|max:45',
             'mac' => 'nullable|string|regex:/^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$/',
             'marca' => 'nullable|string|max:100',
             'modelo' => 'nullable|string|max:100',

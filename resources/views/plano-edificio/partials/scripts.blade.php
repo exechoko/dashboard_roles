@@ -709,7 +709,11 @@ function showCredentials(deviceId) {
         });
 }
 
+let isSavingDevice = false;
+
 function saveDevice() {
+    if (isSavingDevice) return;
+
     const form = document.getElementById('deviceForm');
     const formData = new FormData(form);
     const deviceId = document.getElementById('device-id').value;
@@ -727,6 +731,13 @@ function saveDevice() {
 
     const url = deviceId ? `/api/plano-edificio/devices/${deviceId}` : '/api/plano-edificio/devices';
     const method = deviceId ? 'PUT' : 'POST';
+
+    isSavingDevice = true;
+    const saveBtn = form.querySelector('button[type="submit"]');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+    }
 
     fetch(url, {
         method: method,
@@ -755,7 +766,6 @@ function saveDevice() {
     .then(data => {
         if (data && data.success) {
             showToast(data.message || 'Dispositivo guardado correctamente', 'success');
-            // Bootstrap 4: cerrar modal con jQuery
             if (window.jQuery) {
                 window.jQuery('#deviceModal').modal('hide');
             }
@@ -780,6 +790,13 @@ function saveDevice() {
         }
 
         showToast(message, 'error');
+    })
+    .finally(() => {
+        isSavingDevice = false;
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar';
+        }
     });
 }
 

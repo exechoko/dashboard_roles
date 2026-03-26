@@ -366,6 +366,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/mapa-gis', [App\Http\Controllers\GisViewerController::class, 'index'])->name('mapa-gis');
         Route::get('/mapa-calor', [App\Http\Controllers\EventoCecocoController::class, 'mapaCalor'])->name('mapa-calor');
         Route::get('/mapa-calor/datos', [App\Http\Controllers\EventoCecocoController::class, 'mapaCalorDatos'])->name('mapa-calor.datos');
+        Route::get('/analitica', [App\Http\Controllers\EventoCecocoController::class, 'analitica'])->name('analitica');
         Route::get('/{eventoCecoco}/expediente', [App\Http\Controllers\EventoCecocoController::class, 'verExpediente'])->name('expediente');
         Route::get('/{eventoCecoco}', [App\Http\Controllers\EventoCecocoController::class, 'show'])->name('show');
     });
@@ -380,6 +381,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/eventos/{eventoCecoco}/grabaciones', [App\Http\Controllers\EventoCecocoController::class, 'grabaciones'])->name('grabaciones');
         Route::get('/grabacion/stream', [App\Http\Controllers\EventoCecocoController::class, 'streamGrabacion'])->name('grabacion.stream');
         Route::get('/grabacion/stream-local', [App\Http\Controllers\EventoCecocoController::class, 'streamGrabacionLocal'])->name('grabacion.stream.local');
+        Route::get('/analitica/datos', [App\Http\Controllers\EventoCecocoController::class, 'analiticaDatos'])->name('analitica.datos');
     });
 
     //Optimizar sistema

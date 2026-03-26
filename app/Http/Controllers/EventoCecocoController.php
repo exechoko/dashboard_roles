@@ -11,6 +11,7 @@ use App\Services\CecocoGrabacionesLocalService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class EventoCecocoController extends Controller
@@ -678,6 +679,110 @@ class EventoCecocoController extends Controller
             Log::error('stream grabacion cecoco', ['url' => $url, 'error' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => 'No se pudo acceder al audio.'], 404);
         }
+    }
+
+    public function analitica(Request $request)
+    {
+        $tipos = Cache::rememberForever('cecoco_tipos', function () {
+            return EventoCecoco::distinct()->orderBy('tipo_servicio')->pluck('tipo_servicio');
+        });
+
+        return view('eventos-cecoco.analitica', compact('tipos'));
+    }
+
+    public function analiticaDatos(Request $request): JsonResponse
+    {
+        $desde = $request->filled('desde')
+            ? $request->desde . ' 00:00:00'
+            : now()->subDays(6)->startOfDay()->format('Y-m-d H:i:s');
+
+        $hasta = $request->filled('hasta')
+            ? $request->hasta . ' 23:59:59'
+            : now()->endOfDay()->format('Y-m-d H:i:s');
+
+        $tipo = $request->input('tipo');
+
+        $base = EventoCecoco::whereBetween('fecha_hora', [$desde, $hasta]);
+
+        if ($tipo) {
+            $base->where('tipo_servicio', 'like', '%' . $tipo . '%');
+        }
+
+        // Total
+        $total = (clone $base)->count();
+
+        // Por hora del día (0-23)
+        $porHoraRaw = (clone $base)
+            ->select(DB::raw('HOUR(fecha_hora) as hora'), DB::raw('COUNT(*) as total'))
+            ->groupBy('hora')
+            ->orderBy('hora')
+            ->get()
+            ->keyBy('hora');
+
+        $porHora = [];
+        for ($h = 0; $h < 24; $h++) {
+            $porHora[$h] = $porHoraRaw->has($h) ? (int) $porHoraRaw[$h]->total : 0;
+        }
+
+        // Por día de semana (MySQL: 1=Dom, 2=Lun, ..., 7=Sáb → reordenar a Lun-Dom)
+        $porDiaRaw = (clone $base)
+            ->select(DB::raw('DAYOFWEEK(fecha_hora) as dia'), DB::raw('COUNT(*) as total'))
+            ->groupBy('dia')
+            ->orderBy('dia')
+            ->get()
+            ->keyBy('dia');
+
+        // MySQL DAYOFWEEK: 1=Dom, 2=Lun, 3=Mar, 4=Mié, 5=Jue, 6=Vie, 7=Sáb
+        $diasOrden = [2, 3, 4, 5, 6, 7, 1]; // Lun → Dom
+        $diasNombres = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+        $porDia = [];
+        foreach ($diasOrden as $idx => $mysqlDia) {
+            $porDia[$diasNombres[$idx]] = $porDiaRaw->has($mysqlDia) ? (int) $porDiaRaw[$mysqlDia]->total : 0;
+        }
+
+        // Top tipificaciones
+        $topTipos = (clone $base)
+            ->select('tipo_servicio', DB::raw('COUNT(*) as total'))
+            ->whereNotNull('tipo_servicio')
+            ->groupBy('tipo_servicio')
+            ->orderByDesc('total')
+            ->limit(15)
+            ->get()
+            ->map(fn($r) => ['tipo' => $r->tipo_servicio, 'total' => (int) $r->total]);
+
+        // Top calles (primer segmento de la dirección)
+        $topCalles = (clone $base)
+            ->select(
+                DB::raw("TRIM(SUBSTRING_INDEX(UPPER(direccion), ' AL ', 1)) as calle"),
+                DB::raw('COUNT(*) as total')
+            )
+            ->whereNotNull('direccion')
+            ->where('direccion', '!=', '')
+            ->groupBy('calle')
+            ->orderByDesc('total')
+            ->limit(15)
+            ->get()
+            ->map(fn($r) => ['calle' => $r->calle, 'total' => (int) $r->total]);
+
+        // Franja horaria pico
+        $horaPico = array_search(max($porHora), $porHora);
+        $horaPicoLabel = sprintf('%02d:00 - %02d:59', $horaPico, $horaPico);
+
+        // Dia pico
+        $diaPico = array_search(max(array_values($porDia)), array_values($porDia));
+        $diaPicoNombre = $diasNombres[$diaPico] ?? '-';
+
+        return response()->json([
+            'total'          => $total,
+            'desde'          => $desde,
+            'hasta'          => $hasta,
+            'por_hora'       => $porHora,
+            'por_dia'        => $porDia,
+            'top_tipos'      => $topTipos,
+            'top_calles'     => $topCalles,
+            'hora_pico'      => $horaPicoLabel,
+            'dia_pico'       => $diaPicoNombre,
+        ]);
     }
 }
 

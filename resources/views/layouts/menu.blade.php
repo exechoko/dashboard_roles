@@ -222,7 +222,7 @@
                 </li>
             @endcan
             @can('ver-analizador-eventos-cecoco')
-                <li class="{{ request()->is('cecoco*') && !request()->routeIs('cecoco.mapa-calor') ? 'active' : '' }}">
+                <li class="{{ request()->routeIs('cecoco.index') || request()->routeIs('cecoco.show') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('cecoco.index') }}">
                         <i class="fas fa-database"></i><span>Analizador de Eventos</span>
                     </a>
@@ -232,6 +232,13 @@
                 <li class="{{ request()->routeIs('cecoco.mapa-calor') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('cecoco.mapa-calor') }}">
                         <i class="fas fa-fire"></i><span>Mapa de Calor Analizador</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-analitica-eventos-cecoco')
+                <li class="{{ request()->routeIs('cecoco.analitica') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('cecoco.analitica') }}">
+                        <i class="fas fa-chart-bar"></i><span>Analítica de Delitos</span>
                     </a>
                 </li>
             @endcan

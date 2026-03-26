@@ -99,6 +99,7 @@
                                                         'mapa-calor-servicios-cecoco',
                                                         'mapa-cecoco-en-vivo',
                                                         'ver-analizador-eventos-cecoco',
+                                                        'ver-analitica-eventos-cecoco',
                                                         'mapa-gis-cecoco',
                                                         'importar-eventos',
                                                         'grabacion-evento',

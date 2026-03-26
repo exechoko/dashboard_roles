@@ -379,6 +379,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/eventos', [App\Http\Controllers\EventoCecocoController::class, 'apiListar'])->name('eventos');
         Route::get('/eventos/{eventoCecoco}/grabaciones', [App\Http\Controllers\EventoCecocoController::class, 'grabaciones'])->name('grabaciones');
         Route::get('/grabacion/stream', [App\Http\Controllers\EventoCecocoController::class, 'streamGrabacion'])->name('grabacion.stream');
+        Route::get('/grabacion/stream-local', [App\Http\Controllers\EventoCecocoController::class, 'streamGrabacionLocal'])->name('grabacion.stream.local');
     });
 
     //Optimizar sistema

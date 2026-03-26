@@ -7,6 +7,7 @@ use App\Models\Importacion;
 use App\Services\EventoCecocoParser;
 use App\Services\CecocoExpedienteService;
 use App\Services\CecocoGrabacionesService;
+use App\Services\CecocoGrabacionesLocalService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -503,7 +504,7 @@ class EventoCecocoController extends Controller
     }
 
     /**
-     * Busca grabaciones BRI en CECOCO web para el evento dado.
+     * Busca grabaciones para el evento: primero en disco local, luego en CECOCO web.
      */
     public function grabaciones(EventoCecoco $eventoCecoco): JsonResponse
     {
@@ -518,17 +519,37 @@ class EventoCecocoController extends Controller
         }
 
         try {
-            $servicio = new CecocoGrabacionesService();
-            $resultado = $servicio->buscarGrabaciones(
+            // 1. Buscar en disco local (rápido)
+            $localService = new CecocoGrabacionesLocalService();
+            $resultado    = $localService->buscarGrabaciones(
                 $eventoCecoco->telefono,
                 $eventoCecoco->fecha_hora
             );
+
+            // Completar la URL de stream local para cada grabación
+            foreach ($resultado['grabaciones'] as &$g) {
+                $g['url'] = route('api.cecoco.grabacion.stream.local', [
+                    'path' => base64_encode($g['path']),
+                ]);
+                unset($g['path']); // no exponer la ruta física al cliente
+            }
+            unset($g);
+
+            // 2. Si no se encontró nada localmente, intentar vía CECOCO web
+            if (empty($resultado['grabaciones']) && config('cecoco.url')) {
+                $cecocoService = new CecocoGrabacionesService();
+                $resultado     = $cecocoService->buscarGrabaciones(
+                    $eventoCecoco->telefono,
+                    $eventoCecoco->fecha_hora
+                );
+            }
 
             return response()->json([
                 'success'     => true,
                 'grabaciones' => $resultado['grabaciones'],
                 'total'       => count($resultado['grabaciones']),
                 'ventana'     => $resultado['ventana'],
+                'fuente'      => $resultado['fuente'] ?? 'cecoco',
             ]);
         } catch (\Exception $e) {
             Log::error('grabaciones evento cecoco', [
@@ -537,9 +558,51 @@ class EventoCecocoController extends Controller
             ]);
             return response()->json([
                 'success' => false,
-                'message' => 'Error al buscar grabaciones en CECOCO: ' . $e->getMessage(),
+                'message' => 'Error al buscar grabaciones: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Stream de grabación desde disco local.
+     */
+    public function streamGrabacionLocal(Request $request)
+    {
+        $this->authorize('ver-grabacion-evento');
+
+        $pathEncoded = $request->input('path');
+        if (!$pathEncoded) {
+            return response()->json(['success' => false, 'message' => 'Path requerido.'], 400);
+        }
+
+        $filepath = base64_decode($pathEncoded);
+
+        // Validar que el archivo esté dentro del directorio base permitido
+        $servicio = new CecocoGrabacionesLocalService();
+        if (!$servicio->validarPath($filepath)) {
+            return response()->json(['success' => false, 'message' => 'Archivo no permitido.'], 403);
+        }
+
+        if (!file_exists($filepath)) {
+            return response()->json(['success' => false, 'message' => 'Archivo no encontrado.'], 404);
+        }
+
+        $nombre = basename($filepath);
+        $ext    = strtolower(pathinfo($nombre, PATHINFO_EXTENSION));
+        $mime   = match ($ext) {
+            'wav'  => 'audio/wav',
+            'mp3'  => 'audio/mpeg',
+            'ogg'  => 'audio/ogg',
+            'aac'  => 'audio/aac',
+            default => 'application/octet-stream',
+        };
+
+        $disposition = $request->boolean('download') ? 'attachment' : 'inline';
+
+        return response()->file($filepath, [
+            'Content-Type'        => $mime,
+            'Content-Disposition' => $disposition . '; filename="' . rawurlencode($nombre) . '"',
+        ]);
     }
 
     /**

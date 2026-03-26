@@ -7,4 +7,5 @@ return [
     'user'    => env('CECOCO_USER', ''),
     'password' => env('CECOCO_PASSWORD', ''),
     'timeout' => env('CECOCO_TIMEOUT', 60),
+    'recordings_path' => env('CECOCO_RECORDINGS_PATH', 'G:\\Audios Cecoco'),
 ];

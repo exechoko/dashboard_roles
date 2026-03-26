@@ -339,6 +339,13 @@ function abrirGrabaciones() {
     });
 }
 
+$('#modalGrabaciones').on('hide.bs.modal', function() {
+    document.querySelectorAll('#grabaciones-lista audio').forEach(function(audio) {
+        audio.pause();
+        audio.currentTime = 0;
+    });
+});
+
 function calcularDuracion(inicio, fin) {
     try {
         var diff = Math.round((new Date(fin) - new Date(inicio)) / 1000);

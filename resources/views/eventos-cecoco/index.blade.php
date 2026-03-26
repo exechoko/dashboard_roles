@@ -3,9 +3,11 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0">Registro de Eventos CECOCO</h2>
+    @can('importar-eventos')
     <a href="{{ route('cecoco.importar') }}" class="btn btn-primary">
         <i class="bi bi-cloud-upload"></i> Importar
     </a>
+    @endcan
 </div>
 
 @if($eventos !== null)

@@ -96,6 +96,8 @@
                                                         'mapa-cecoco-en-vivo',
                                                         'ver-analizador-eventos-cecoco',
                                                         'mapa-gis-cecoco',
+                                                        'importar-eventos',
+                                                        'grabacion-evento',
                                                     ],
                                                     'Entregas' => [
                                                         'entrega-equipos',

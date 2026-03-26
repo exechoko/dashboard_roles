@@ -6,8 +6,11 @@ use App\Models\EventoCecoco;
 use App\Models\Importacion;
 use App\Services\EventoCecocoParser;
 use App\Services\CecocoExpedienteService;
+use App\Services\CecocoGrabacionesService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class EventoCecocoController extends Controller
 {
@@ -496,6 +499,121 @@ class EventoCecocoController extends Controller
             return response()->json([
                 'error' => 'Error al procesar datos: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Busca grabaciones BRI en CECOCO web para el evento dado.
+     */
+    public function grabaciones(EventoCecoco $eventoCecoco): JsonResponse
+    {
+        $this->authorize('ver-grabacion-evento');
+
+        if (empty($eventoCecoco->telefono)) {
+            return response()->json([
+                'success'     => false,
+                'message'     => 'El evento no tiene número de teléfono registrado. No es posible buscar grabaciones.',
+                'grabaciones' => [],
+            ]);
+        }
+
+        try {
+            $servicio = new CecocoGrabacionesService();
+            $resultado = $servicio->buscarGrabaciones(
+                $eventoCecoco->telefono,
+                $eventoCecoco->fecha_hora
+            );
+
+            return response()->json([
+                'success'     => true,
+                'grabaciones' => $resultado['grabaciones'],
+                'total'       => count($resultado['grabaciones']),
+                'ventana'     => $resultado['ventana'],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('grabaciones evento cecoco', [
+                'evento_id' => $eventoCecoco->id,
+                'error'     => $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al buscar grabaciones en CECOCO: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Proxy para reproducir o descargar un audio desde CECOCO (requiere auth).
+     */
+    public function streamGrabacion(Request $request)
+    {
+        $request->validate(['url' => 'required|string']);
+
+        $url = $request->input('url');
+
+        // Extraer nombre del archivo desde el query param "nombreFichero"
+        parse_str(parse_url($url, PHP_URL_QUERY) ?? '', $qParams);
+        $nombre = $qParams['nombreFichero'] ?? basename(parse_url($url, PHP_URL_PATH));
+        if (empty($nombre)) $nombre = 'grabacion.wav';
+
+        // Sanitizar: solo permitir URLs del servidor CECOCO
+        $cecocoHost = parse_url(config('cecoco.url'), PHP_URL_HOST);
+        $urlHost    = parse_url($url, PHP_URL_HOST);
+        if ($urlHost !== $cecocoHost) {
+            return response()->json(['success' => false, 'message' => 'URL no permitida.'], 403);
+        }
+
+        try {
+            $servicio  = new CecocoGrabacionesService();
+            $response  = $servicio->descargarAudio($url);
+
+            $statusCode  = $response->getStatusCode();
+            $contentType = $response->getHeaderLine('Content-Type');
+            $bodySize    = $response->getBody()->getSize();
+
+            Log::debug('streamGrabacion: respuesta CECOCO', [
+                'url'          => $url,
+                'status'       => $statusCode,
+                'content_type' => $contentType,
+                'body_size'    => $bodySize,
+            ]);
+
+            if ($statusCode !== 200) {
+                return response()->json(['success' => false, 'message' => 'Archivo no encontrado en CECOCO.'], 404);
+            }
+
+            // Si CECOCO devuelve HTML en lugar de audio, el archivo no existe o la sesión expiró
+            if (str_starts_with($contentType, 'text/html')) {
+                return response()->json(['success' => false, 'message' => 'El archivo de audio no está disponible en el servidor CECOCO.'], 404);
+            }
+
+            $ext  = strtolower(pathinfo($nombre, PATHINFO_EXTENSION));
+            $mime = match ($ext) {
+                'wav'  => 'audio/wav',
+                'mp3'  => 'audio/mpeg',
+                'ogg'  => 'audio/ogg',
+                'aac'  => 'audio/aac',
+                default => 'application/octet-stream',
+            };
+
+            $disposition = $request->boolean('download') ? 'attachment' : 'inline';
+
+            $headers = [
+                'Content-Type'        => $mime,
+                'Content-Disposition' => $disposition . '; filename="' . rawurlencode($nombre) . '"',
+                'Accept-Ranges'       => 'bytes',
+            ];
+
+            // Pasar Content-Length para que el navegador muestre la duración del audio
+            $contentLength = $response->getHeaderLine('Content-Length');
+            if ($contentLength !== '') {
+                $headers['Content-Length'] = $contentLength;
+            }
+
+            return response($response->getBody()->getContents(), 200, $headers);
+        } catch (\Exception $e) {
+            Log::error('stream grabacion cecoco', ['url' => $url, 'error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'No se pudo acceder al audio.'], 404);
         }
     }
 }

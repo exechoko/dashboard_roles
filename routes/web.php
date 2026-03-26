@@ -377,6 +377,8 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::prefix('api/cecoco')->name('api.cecoco.')->group(function () {
         Route::get('/eventos', [App\Http\Controllers\EventoCecocoController::class, 'apiListar'])->name('eventos');
+        Route::get('/eventos/{eventoCecoco}/grabaciones', [App\Http\Controllers\EventoCecocoController::class, 'grabaciones'])->name('grabaciones');
+        Route::get('/grabacion/stream', [App\Http\Controllers\EventoCecocoController::class, 'streamGrabacion'])->name('grabacion.stream');
     });
 
     //Optimizar sistema

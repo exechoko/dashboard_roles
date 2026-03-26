@@ -61,7 +61,10 @@ class ImportarEventosDiaAnterior extends Command
         $fechaMax = $fecha->format('Y-m-d') . ' 23:59:59';
         $nombreArchivo = 'reporte_' . $fecha->format('Y_m_d') . '.xls';
 
-        $this->info("Importando eventos del {$fecha->format('d/m/Y')}...");
+        $ahora = now()->format('Y-m-d H:i:s');
+        $this->line("========================================");
+        $this->line("[{$ahora}] cecoco:importar-dia-anterior iniciado");
+        $this->info("[{$ahora}] Importando eventos del {$fecha->format('d/m/Y')}...");
         Log::info('cecoco:importar-dia-anterior iniciado', ['fecha' => $fecha->toDateString()]);
 
         $jar = new CookieJar();
@@ -76,7 +79,7 @@ class ImportarEventosDiaAnterior extends Command
         ]);
 
         // 1) Iniciar sesión
-        $this->line('Autenticando...');
+        $this->line('[' . now()->format('Y-m-d H:i:s') . '] Autenticando...');
         try {
             $client->get('/CECOCO_webapp');
             $client->post('/CECOCO_webapp/ajax/perfil/AjaxServletPerfil', [
@@ -86,13 +89,13 @@ class ImportarEventosDiaAnterior extends Command
                 ],
             ]);
         } catch (\Exception $e) {
-            $this->error('Error de autenticación: ' . $e->getMessage());
+            $this->error('[' . now()->format('Y-m-d H:i:s') . '] Error de autenticación: ' . $e->getMessage());
             Log::error('cecoco:importar-dia-anterior - error autenticación', ['error' => $e->getMessage()]);
             return self::FAILURE;
         }
 
         // 2) Inicializar reporte
-        $this->line('Inicializando reporte...');
+        $this->line('[' . now()->format('Y-m-d H:i:s') . '] Inicializando reporte...');
         $paramsReporte = array_merge(self::PARAMS_COMUNES, [
             '__report'          => 'reports/issues/report_issues_list.rptdesign',
             'p_date_start_min'  => $fechaMin,
@@ -105,13 +108,13 @@ class ImportarEventosDiaAnterior extends Command
         try {
             $client->get('/CECOCO_webapp/run', ['query' => $paramsReporte]);
         } catch (\Exception $e) {
-            $this->error('Error inicializando reporte: ' . $e->getMessage());
+            $this->error('[' . now()->format('Y-m-d H:i:s') . '] Error inicializando reporte: ' . $e->getMessage());
             Log::error('cecoco:importar-dia-anterior - error init reporte', ['error' => $e->getMessage()]);
             return self::FAILURE;
         }
 
         // 3) Descargar Excel
-        $this->line('Descargando Excel...');
+        $this->line('[' . now()->format('Y-m-d H:i:s') . '] Descargando Excel...');
         $paramsDescarga = array_merge(self::PARAMS_COMUNES, [
             'p_date_start_min'                     => $fechaMin,
             'p_date_start_max'                     => $fechaMax,
@@ -138,7 +141,7 @@ class ImportarEventosDiaAnterior extends Command
                 ]
             );
         } catch (\Exception $e) {
-            $this->error('Error descargando Excel: ' . $e->getMessage());
+            $this->error('[' . now()->format('Y-m-d H:i:s') . '] Error descargando Excel: ' . $e->getMessage());
             Log::error('cecoco:importar-dia-anterior - error descarga', ['error' => $e->getMessage()]);
             return self::FAILURE;
         }
@@ -146,7 +149,7 @@ class ImportarEventosDiaAnterior extends Command
         $contenido = (string) $response->getBody();
 
         if (strlen($contenido) < 512) {
-            $this->error('El archivo descargado parece vacío o incorrecto (' . strlen($contenido) . ' bytes).');
+            $this->error('[' . now()->format('Y-m-d H:i:s') . '] El archivo descargado parece vacío o incorrecto (' . strlen($contenido) . ' bytes).');
             Log::error('cecoco:importar-dia-anterior - archivo inválido', [
                 'bytes'    => strlen($contenido),
                 'preview'  => substr($contenido, 0, 200),
@@ -160,7 +163,7 @@ class ImportarEventosDiaAnterior extends Command
             Log::warning('cecoco:importar-dia-anterior - respuesta no parece XLS', [
                 'preview' => substr($contenido, 0, 500),
             ]);
-            $this->warn('Advertencia: la respuesta no parece un archivo XLS válido. Continuando de todas formas...');
+            $this->warn('[' . now()->format('Y-m-d H:i:s') . '] Advertencia: la respuesta no parece un archivo XLS válido. Continuando de todas formas...');
         }
 
         if ($this->option('dry-run')) {
@@ -173,7 +176,7 @@ class ImportarEventosDiaAnterior extends Command
         Storage::disk('local')->put($rutaTemporal, $contenido);
 
         $bytes = strlen($contenido);
-        $this->info("Archivo guardado ({$bytes} bytes). Encolando procesamiento...");
+        $this->info('[' . now()->format('Y-m-d H:i:s') . '] Archivo guardado (' . $bytes . ' bytes). Encolando procesamiento...');
 
         $importacion = Importacion::create([
             'nombre_archivo' => $nombreArchivo,
@@ -182,7 +185,8 @@ class ImportarEventosDiaAnterior extends Command
 
         ProcesarArchivoEventoCecoco::dispatch($rutaTemporal, $nombreArchivo, $importacion->id);
 
-        $this->info("Job despachado. Importacion ID: {$importacion->id}");
+        $this->info('[' . now()->format('Y-m-d H:i:s') . '] Job despachado. Importacion ID: ' . $importacion->id);
+        $this->line("========================================");
         Log::info('cecoco:importar-dia-anterior - job despachado', [
             'importacion_id' => $importacion->id,
             'archivo'        => $nombreArchivo,

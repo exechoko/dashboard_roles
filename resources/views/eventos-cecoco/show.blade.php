@@ -168,7 +168,7 @@
     </div>
     <div class="card-footer text-muted">
         <small>
-            <i class="bi bi-file-earmark"></i> 
+            <i class="bi bi-file-earmark"></i>
             Archivo origen: <strong>{{ $eventoCecoco->importacion ? $eventoCecoco->importacion->nombre_archivo_corto : 'N/A' }}</strong>
             @if($eventoCecoco->importacion)
                 | Importado el {{ $eventoCecoco->importacion->created_at->format('d/m/Y H:i') }}
@@ -179,7 +179,7 @@
 @endsection
 
 {{-- ===== MODAL GRABACIONES BRI (fuera del section content) ===== --}}
-@can('ver-llamadas-cecoco')
+@can('ver-grabacion-evento')
 
 @section('page_css')
 <style>

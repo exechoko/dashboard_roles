@@ -323,12 +323,7 @@ class TelegramService
 
             if ($filtros['keywords']) {
                 $kw = $filtros['keywords'];
-                $query->where(function ($q) use ($kw) {
-                    $q->where('descripcion', 'LIKE', "%{$kw}%")
-                      ->orWhere('tipo_servicio', 'LIKE', "%{$kw}%")
-                      ->orWhere('nro_expediente', 'LIKE', "%{$kw}%")
-                      ->orWhere('operador', 'LIKE', "%{$kw}%");
-                });
+                $query->where('tipo_servicio', 'LIKE', "%{$kw}%");
                 $hayFiltro = true;
             }
 

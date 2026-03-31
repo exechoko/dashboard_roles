@@ -2,6 +2,7 @@
 
 namespace App\Console;
 
+use App\Services\TelegramService;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -15,11 +16,35 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('tareas:generar')->dailyAt('01:00');
-        $schedule->command('tareas:avisar')->dailyAt('08:00');
+        $schedule->command('tareas:generar')->dailyAt('01:00')
+            ->onSuccess(function () {
+                app(TelegramService::class)->notificarScheduleCompletado('tareas:generar');
+            })
+            ->onFailure(function () {
+                app(TelegramService::class)->notificarScheduleFallido('tareas:generar', 'El comando finalizó con error.');
+            });
+
+        $schedule->command('tareas:avisar')->dailyAt('08:00')
+            ->onSuccess(function () {
+                app(TelegramService::class)->notificarScheduleCompletado('tareas:avisar');
+            })
+            ->onFailure(function () {
+                app(TelegramService::class)->notificarScheduleFallido('tareas:avisar', 'El comando finalizó con error.');
+            });
+
         $schedule->command('cecoco:importar-dia-anterior')->dailyAt('06:00')
             ->withoutOverlapping()
-            ->appendOutputTo(storage_path('logs/cecoco_importacion.log'));
+            ->appendOutputTo(storage_path('logs/cecoco_importacion.log'))
+            ->onSuccess(function () {
+                app(TelegramService::class)->notificarScheduleCompletado('cecoco:importar-dia-anterior');
+            })
+            ->onFailure(function () {
+                app(TelegramService::class)->notificarScheduleFallido('cecoco:importar-dia-anterior', 'El comando finalizó con error.');
+            });
+
+        $schedule->command('telegram:tareas-diarias')->dailyAt('07:00');
+
+        $schedule->command('telegram:polling')->everyMinute()->withoutOverlapping();
     }
 
     /**

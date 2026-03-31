@@ -12,9 +12,13 @@ use App\Observers\FlotaGeneralObserver;
 use App\Observers\HistoricoObserver;
 use App\Observers\RecursoObserver;
 use App\Observers\UserObserver;
+use App\Listeners\TelegramJobCompletadoListener;
+use App\Listeners\TelegramJobFallidoListener;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use Illuminate\Queue\Events\JobFailed;
+use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Support\Facades\Event;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -31,6 +35,12 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         Registered::class => [
             SendEmailVerificationNotification::class,
+        ],
+        JobProcessed::class => [
+            TelegramJobCompletadoListener::class,
+        ],
+        JobFailed::class => [
+            TelegramJobFallidoListener::class,
         ],
     ];
 

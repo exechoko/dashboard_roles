@@ -209,7 +209,7 @@ class TelegramService
 
     private function parsearConsultaCecoco(string $termino): array
     {
-        $resultado = ['fecha' => null, 'telefono' => null, 'direccion' => null, 'keywords' => null, 'labels' => []];
+        $resultado = ['fecha' => null, 'telefono' => null, 'direccion' => null, 'persona' => null, 'keywords' => null, 'labels' => []];
 
         // Fecha explícita dd/mm o dd/mm/yyyy (con / o -)
         if (preg_match('/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{4}))?/', $termino, $m)) {
@@ -263,6 +263,14 @@ class TelegramService
             $termino = trim(preg_replace('/\b(?:calle|avda?\.?|avenida|bv\.?|boulevard|pasaje|esquina)\s+[\w\s]+/i', '', $termino));
         }
 
+        // Persona: nombre/apellido después de indicadores explícitos
+        $patronPersona = '/\b(?:persona|apellido|sr\.?|sra\.?|señor|señora|don|doña|llamado|llamada|relacionado\s+con(?:\s+(?:la|el)\s+persona)?|relacionada\s+con(?:\s+(?:la|el)\s+persona)?)\s+([\w]+(?:\s+[\w]+)?)/iu';
+        if (preg_match($patronPersona, $termino, $m)) {
+            $resultado['persona'] = trim($m[1]);
+            $resultado['labels'][] = "persona: {$resultado['persona']}";
+            $termino = trim(preg_replace($patronPersona, '', $termino));
+        }
+
         // Keywords residuales: limpiar stopwords
         $stopwords = [
             'cecoco', 'expediente', 'evento', 'hay', 'hubo', 'ocurrio', 'ocurrió', 'relacionado',
@@ -293,7 +301,8 @@ class TelegramService
                 . "Podés preguntarme en lenguaje natural:\n"
                 . "• <code>cecoco el número 2994123456 llamó ayer</code>\n"
                 . "• <code>cecoco robo en calle belgrano el lunes</code>\n"
-                . "• <code>cecoco algo en av alvear el 15/03</code>\n"
+                . "• <code>cecoco relacionado con la persona Altamirano el 29/03</code>\n"
+                . "• <code>cecoco sr garcia hoy</code>\n"
                 . "• <code>cecoco expediente 12345</code>\n"
                 . "• <code>cecoco disturbio hoy</code>",
                 $chatId
@@ -318,6 +327,11 @@ class TelegramService
 
             if ($filtros['direccion']) {
                 $query->where('direccion', 'LIKE', "%{$filtros['direccion']}%");
+                $hayFiltro = true;
+            }
+
+            if ($filtros['persona']) {
+                $query->where('descripcion', 'LIKE', "%{$filtros['persona']}%");
                 $hayFiltro = true;
             }
 

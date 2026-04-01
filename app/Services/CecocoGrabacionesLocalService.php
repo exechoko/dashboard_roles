@@ -100,9 +100,24 @@ class CecocoGrabacionesLocalService
         usort($grabaciones, fn ($a, $b) => strcmp($a['fechaInicio'], $b['fechaInicio']));
 
         Log::info('CecocoGrabacionesLocalService: grabaciones encontradas', [
-            'telefono'    => $telefono,
-            'total'       => count($grabaciones),
+            'telefono' => $telefono,
+            'total'    => count($grabaciones),
         ]);
+
+        // Si no se encontró nada por número, buscar por ventana horaria estrecha ±5 min
+        // (el archivo puede estar nombrado con el llamante del listín en lugar del número)
+        if (empty($grabaciones)) {
+            $desdeCorto = $fechaEvento->copy()->subMinutes(5);
+            $hastaCorto = $fechaEvento->copy()->addMinutes(5);
+
+            Log::info('CecocoGrabacionesLocalService: sin resultados por teléfono, buscando por ventana ±5 min', [
+                'telefono' => $telefono,
+                'desde'    => $desdeCorto->format('Y-m-d H:i:s'),
+                'hasta'    => $hastaCorto->format('Y-m-d H:i:s'),
+            ]);
+
+            $grabaciones = $this->buscarPorVentana($desdeCorto, $hastaCorto);
+        }
 
         return [
             'grabaciones' => $grabaciones,
@@ -115,10 +130,72 @@ class CecocoGrabacionesLocalService
     }
 
     /**
-     * Parsea el nombre del archivo para extraer metadatos.
-     * Formato: {id}_0_{telefono} (RDSI)_1_{YYYYMMDD}_{HHMMSS}_xf_{dur}s.mp3
+     * Fallback: busca todos los archivos de audio dentro de la ventana horaria,
+     * sin filtrar por número. Útil cuando el archivo está nombrado con el llamante
+     * del listín telefónico en lugar del número.
      */
-    private function parsearNombreArchivo(string $filename, string $filepath, string $telefono): ?array
+    private function buscarPorVentana(Carbon $desde, Carbon $hasta): array
+    {
+        $meses  = [];
+        $cursor = $desde->copy()->startOfMonth();
+        while ($cursor->lte($hasta)) {
+            $meses[] = $cursor->copy();
+            $cursor->addMonth();
+        }
+
+        $grabaciones = [];
+
+        foreach ($meses as $mes) {
+            $year      = $mes->format('Y');
+            $yearMonth = $mes->format('Y_m');
+            $dir       = $this->baseDir . DIRECTORY_SEPARATOR . $year . DIRECTORY_SEPARATOR . $yearMonth;
+
+            if (!is_dir($dir)) {
+                continue;
+            }
+
+            $pattern  = $dir . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*.mp3';
+            $archivos = glob($pattern, GLOB_NOSORT);
+
+            if (!$archivos) {
+                continue;
+            }
+
+            foreach ($archivos as $filepath) {
+                if (!str_starts_with(realpath($filepath) ?: $filepath, realpath($this->baseDir) ?: $this->baseDir)) {
+                    continue;
+                }
+
+                $filename  = basename($filepath);
+                $grabacion = $this->parsearNombreArchivo($filename, $filepath);
+
+                if (!$grabacion) {
+                    continue;
+                }
+
+                $fechaArchivo = Carbon::parse($grabacion['fechaInicio']);
+                if ($fechaArchivo->between($desde, $hasta)) {
+                    $grabaciones[] = $grabacion;
+                }
+            }
+        }
+
+        usort($grabaciones, fn ($a, $b) => strcmp($a['fechaInicio'], $b['fechaInicio']));
+
+        Log::info('CecocoGrabacionesLocalService: grabaciones encontradas por ventana horaria', [
+            'total' => count($grabaciones),
+        ]);
+
+        return $grabaciones;
+    }
+
+    /**
+     * Parsea el nombre del archivo para extraer metadatos.
+     * Formato: {id}_0_{telefono o llamante} (RDSI)_1_{YYYYMMDD}_{HHMMSS}_xf_{dur}s.mp3
+     *
+     * @param string|null $telefono  Si es null, se extrae el llamante del propio nombre del archivo.
+     */
+    private function parsearNombreArchivo(string $filename, string $filepath, ?string $telefono = null): ?array
     {
         // Extraer fecha y hora: buscar patrón YYYYMMDD_HHMMSS en el nombre
         if (!preg_match('/_(\d{8})_(\d{6})_/', $filename, $m)) {
@@ -136,6 +213,16 @@ class CecocoGrabacionesLocalService
         if (preg_match('/_(\d+)s\.mp3$/i', $filename, $dm)) {
             $seg = (int) $dm[1];
             $duracion = sprintf('%02d:%02d', intdiv($seg, 60), $seg % 60);
+        }
+
+        // Si no se pasó teléfono, extraer el llamante del nombre del archivo
+        // Formato esperado: {id}_0_{llamante}[ (RDSI)]_1_{fecha}
+        if ($telefono === null) {
+            if (preg_match('/_0_(.+?)(?:\s*\([^)]*\))?_1_\d{8}_/i', $filename, $cm)) {
+                $telefono = trim($cm[1]);
+            } else {
+                $telefono = '';
+            }
         }
 
         // Extraer nombre del operador desde el directorio padre

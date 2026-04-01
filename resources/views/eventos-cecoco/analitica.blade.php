@@ -125,7 +125,7 @@
 
     {{-- Tarjetas resumen --}}
     <div class="row g-3 mb-4" id="tarjetas-resumen">
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md">
             <div class="stat-card">
                 <div class="stat-icon text-primary"><i class="bi bi-calendar3"></i></div>
                 <div>
@@ -134,7 +134,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md">
             <div class="stat-card">
                 <div class="stat-icon text-danger"><i class="bi bi-clock-fill"></i></div>
                 <div>
@@ -143,7 +143,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md">
             <div class="stat-card">
                 <div class="stat-icon text-warning"><i class="bi bi-calendar-day-fill"></i></div>
                 <div>
@@ -152,7 +152,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md">
             <div class="stat-card">
                 <div class="stat-icon text-success"><i class="bi bi-geo-alt-fill"></i></div>
                 <div>
@@ -161,7 +161,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md">
             <div class="stat-card">
                 <div class="stat-icon text-info"><i class="bi bi-telephone-fill"></i></div>
                 <div>

@@ -219,7 +219,7 @@ class CecocoGrabacionesLocalService
         // Formato esperado: {id}_0_{llamante}[ (RDSI)]_1_{fecha}
         if ($telefono === null) {
             if (preg_match('/_0_(.+?)(?:\s*\([^)]*\))?_1_\d{8}_/i', $filename, $cm)) {
-                $telefono = trim($cm[1]);
+                $telefono = trim($cm[1], " \t\n\r\0\x0B_");
             } else {
                 $telefono = '';
             }

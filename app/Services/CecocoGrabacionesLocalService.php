@@ -107,10 +107,10 @@ class CecocoGrabacionesLocalService
         // Si no se encontró nada por número, buscar por ventana horaria ±2 min
         // usando patrones por minuto para evitar listar todo el mes
         if (empty($grabaciones)) {
-            $desdeCorto = $fechaEvento->copy()->subMinutes(2);
-            $hastaCorto = $fechaEvento->copy()->addMinutes(2);
+            $desdeCorto = $fechaEvento->copy()->subMinutes(1);
+            $hastaCorto = $fechaEvento->copy()->addMinutes(1);
 
-            Log::info('CecocoGrabacionesLocalService: sin resultados por teléfono, buscando por ventana ±2 min', [
+            Log::info('CecocoGrabacionesLocalService: sin resultados por teléfono, buscando por ventana ±1 min', [
                 'telefono' => $telefono,
                 'desde'    => $desdeCorto->format('Y-m-d H:i:s'),
                 'hasta'    => $hastaCorto->format('Y-m-d H:i:s'),

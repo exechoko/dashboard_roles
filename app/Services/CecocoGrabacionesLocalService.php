@@ -161,6 +161,11 @@ class CecocoGrabacionesLocalService
 
                     $filename = basename($filepath);
 
+                    // Solo archivos de líneas RDSI (descartar grabaciones internas u otros protocolos)
+                    if (!str_contains($filename, '(RDSI)')) {
+                        continue;
+                    }
+
                     // Evitar duplicados si el mismo archivo coincide con varios minutos
                     if (isset($vistos[$filename])) {
                         continue;

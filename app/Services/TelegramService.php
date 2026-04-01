@@ -175,6 +175,13 @@ class TelegramService
             'chat_title' => $message['chat']['title'] ?? null,
         ]);
 
+        // Si hay un formulario CECOCO esperando un valor, procesarlo antes que cualquier otra cosa
+        $state = Cache::get($this->cecocoStateKey($chatId));
+        if ($state && $state['esperando'] !== null) {
+            $this->procesarInputFormulario($chatId, $message['text'] ?? '', $state);
+            return;
+        }
+
         if ($texto === '/start' || $texto === '/ayuda' || $texto === '/help') {
             $this->responderAyuda($chatId, $nombre);
             return;
@@ -192,7 +199,11 @@ class TelegramService
 
         if ($this->contieneAlguno($texto, ['cecoco', 'expediente', 'buscar evento', 'evento'])) {
             $termino = $this->extraerTerminoBusqueda($texto, ['cecoco', 'buscar evento', 'expediente', 'evento']);
-            $this->responderEventoCecoco($chatId, $termino);
+            if (empty($termino)) {
+                $this->iniciarFormularioCecoco($chatId);
+            } else {
+                $this->responderEventoCecoco($chatId, $termino);
+            }
             return;
         }
 
@@ -218,6 +229,294 @@ class TelegramService
         }
         return trim($texto);
     }
+
+    // =========================================================
+    // FORMULARIO CECOCO (inline keyboard)
+    // =========================================================
+
+    private function cecocoStateKey(string $chatId): string
+    {
+        return 'telegram_cecoco_form_' . $chatId;
+    }
+
+    private function valoresVacios(): array
+    {
+        return ['expediente' => null, 'telefono' => null, 'fecha' => null,
+                'direccion' => null, 'tipo_kw' => null, 'desc_kw' => null];
+    }
+
+    private function textoFormulario(array $valores): string
+    {
+        $campos = [
+            'expediente' => ['📋', 'Expediente'],
+            'telefono'   => ['📞', 'Teléfono'],
+            'fecha'      => ['📅', 'Fecha'],
+            'direccion'  => ['📍', 'Dirección'],
+            'tipo_kw'    => ['🏷', 'Tipo'],
+            'desc_kw'    => ['📝', 'Descripción'],
+        ];
+
+        $texto = "🔍 <b>Buscar en CECOCO</b>\n\n";
+        foreach ($campos as $key => [$icon, $label]) {
+            $v = $valores[$key];
+            if ($v instanceof Carbon) $v = $v->format('d/m/Y');
+            $display = $v !== null ? "<b>{$v}</b>" : "<i>—</i>";
+            $texto .= "{$icon} {$label}: {$display}\n";
+        }
+
+        $hayAlgo = array_filter($valores, fn($v) => $v !== null);
+        $texto .= empty($hayAlgo)
+            ? "\n<i>Tocá un campo para completarlo.</i>"
+            : "\n<i>Tocá Buscar o seguí completando campos.</i>";
+
+        return $texto;
+    }
+
+    private function tecladoFormulario(array $valores): array
+    {
+        $campos = [
+            ['cb' => 'exp', 'icon' => '📋', 'label' => 'Expediente', 'key' => 'expediente'],
+            ['cb' => 'tel', 'icon' => '📞', 'label' => 'Teléfono',   'key' => 'telefono'],
+            ['cb' => 'fec', 'icon' => '📅', 'label' => 'Fecha',      'key' => 'fecha'],
+            ['cb' => 'dir', 'icon' => '📍', 'label' => 'Dirección',  'key' => 'direccion'],
+            ['cb' => 'tip', 'icon' => '🏷', 'label' => 'Tipo',       'key' => 'tipo_kw'],
+            ['cb' => 'des', 'icon' => '📝', 'label' => 'Descripción','key' => 'desc_kw'],
+        ];
+
+        $filas = [];
+        $fila  = [];
+        foreach ($campos as $c) {
+            $v = $valores[$c['key']];
+            if ($v instanceof Carbon) $v = $v->format('d/m/Y');
+            $label  = $v !== null ? "{$c['icon']} {$c['label']} ✅" : "{$c['icon']} {$c['label']}";
+            $fila[] = ['text' => $label, 'callback_data' => 'cc:set:' . $c['cb']];
+            if (count($fila) === 2) { $filas[] = $fila; $fila = []; }
+        }
+        if (!empty($fila)) $filas[] = $fila;
+
+        $hayAlgo = array_filter($valores, fn($v) => $v !== null);
+        if (!empty($hayAlgo)) {
+            $filas[] = [['text' => '🔍 Buscar', 'callback_data' => 'cc:buscar']];
+            $filas[] = [['text' => '🗑 Limpiar todo', 'callback_data' => 'cc:clear']];
+        } else {
+            $filas[] = [['text' => '❌ Cancelar', 'callback_data' => 'cc:clear']];
+        }
+
+        return $filas;
+    }
+
+    private function iniciarFormularioCecoco(string $chatId): void
+    {
+        $valores = $this->valoresVacios();
+        $msgId   = $this->enviarFormulario($chatId, $valores);
+        Cache::put($this->cecocoStateKey($chatId), [
+            'esperando'  => null,
+            'message_id' => $msgId,
+            'valores'    => $valores,
+        ], now()->addMinutes(30));
+    }
+
+    private function enviarFormulario(string $chatId, array $valores): ?int
+    {
+        try {
+            $resp = $this->client->post(self::API_BASE . $this->botToken . '/sendMessage', [
+                'json' => [
+                    'chat_id'      => $chatId,
+                    'text'         => $this->textoFormulario($valores),
+                    'parse_mode'   => 'HTML',
+                    'reply_markup' => ['inline_keyboard' => $this->tecladoFormulario($valores)],
+                ],
+            ]);
+            $body = json_decode((string) $resp->getBody(), true);
+            return $body['result']['message_id'] ?? null;
+        } catch (\Exception $e) {
+            Log::channel('telegram')->error('Telegram: error enviando formulario', ['error' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    private function editarFormulario(string $chatId, int $messageId, array $valores): void
+    {
+        try {
+            $this->client->post(self::API_BASE . $this->botToken . '/editMessageText', [
+                'json' => [
+                    'chat_id'      => $chatId,
+                    'message_id'   => $messageId,
+                    'text'         => $this->textoFormulario($valores),
+                    'parse_mode'   => 'HTML',
+                    'reply_markup' => ['inline_keyboard' => $this->tecladoFormulario($valores)],
+                ],
+            ]);
+        } catch (\Exception $e) {
+            // Ignorar "message is not modified"
+        }
+    }
+
+    private function answerCallback(string $callbackQueryId, string $texto = ''): void
+    {
+        try {
+            $this->client->post(self::API_BASE . $this->botToken . '/answerCallbackQuery', [
+                'json' => ['callback_query_id' => $callbackQueryId, 'text' => $texto],
+            ]);
+        } catch (\Exception $e) {}
+    }
+
+    public function procesarCallbackQuery(array $callbackQuery): void
+    {
+        $callbackId = $callbackQuery['id'] ?? '';
+        $chatId     = (string) ($callbackQuery['message']['chat']['id'] ?? '');
+        $messageId  = (int) ($callbackQuery['message']['message_id'] ?? 0);
+        $data       = $callbackQuery['data'] ?? '';
+
+        if (empty($chatId) || empty($data)) return;
+
+        $stateKey = $this->cecocoStateKey($chatId);
+        $state    = Cache::get($stateKey, [
+            'esperando'  => null,
+            'message_id' => $messageId,
+            'valores'    => $this->valoresVacios(),
+        ]);
+        $state['message_id'] = $messageId;
+
+        if ($data === 'cc:buscar') {
+            $this->answerCallback($callbackId);
+            Cache::forget($stateKey);
+            $this->ejecutarBusquedaFormulario($chatId, $state['valores']);
+            return;
+        }
+
+        if ($data === 'cc:clear') {
+            Cache::forget($stateKey);
+            $this->answerCallback($callbackId, 'Formulario limpiado');
+            $this->editarFormulario($chatId, $messageId, $this->valoresVacios());
+            return;
+        }
+
+        if (str_starts_with($data, 'cc:set:')) {
+            $cb      = substr($data, 7);
+            $campoKey = match($cb) {
+                'exp' => 'expediente', 'tel' => 'telefono', 'fec' => 'fecha',
+                'dir' => 'direccion',  'tip' => 'tipo_kw',  'des' => 'desc_kw',
+                default => null,
+            };
+            if (!$campoKey) return;
+
+            $state['esperando'] = $campoKey;
+            Cache::put($stateKey, $state, now()->addMinutes(30));
+
+            $prompt = match($campoKey) {
+                'expediente' => "📋 <b>Expediente/Nro evento</b>\nEscribí el número (o <code>-</code> para borrar):",
+                'telefono'   => "📞 <b>Teléfono</b>\nEscribí el número (o <code>-</code> para borrar):",
+                'fecha'      => "📅 <b>Fecha</b>\nEscribí la fecha (ej: <code>hoy</code>, <code>ayer</code>, <code>lunes</code>, <code>29/03</code> — o <code>-</code> para borrar):",
+                'direccion'  => "📍 <b>Dirección</b>\nEscribí la calle o dirección (o <code>-</code> para borrar):",
+                'tipo_kw'    => "🏷 <b>Tipo/Tipificación</b>\nEscribí el tipo de evento (ej: <code>robo</code>, <code>disturbio</code> — o <code>-</code> para borrar):",
+                'desc_kw'    => "📝 <b>Descripción</b>\nEscribí texto a buscar en la descripción (o <code>-</code> para borrar):",
+            };
+
+            $this->answerCallback($callbackId);
+            $this->enviarMensaje($prompt, $chatId);
+            return;
+        }
+    }
+
+    private function procesarInputFormulario(string $chatId, string $input, array $state): void
+    {
+        $campo    = $state['esperando'];
+        $inputOrig = trim($input);
+
+        if ($inputOrig === '-' || $inputOrig === '') {
+            $state['valores'][$campo] = null;
+        } else {
+            $state['valores'][$campo] = match($campo) {
+                'fecha'    => $this->parsearFecha(mb_strtolower($inputOrig)),
+                'telefono' => preg_replace('/[^0-9]/', '', $inputOrig) ?: null,
+                default    => $inputOrig,
+            };
+        }
+
+        $state['esperando'] = null;
+        Cache::put($this->cecocoStateKey($chatId), $state, now()->addMinutes(30));
+
+        if ($state['message_id']) {
+            $this->editarFormulario($chatId, $state['message_id'], $state['valores']);
+        }
+    }
+
+    private function ejecutarBusquedaFormulario(string $chatId, array $valores): void
+    {
+        try {
+            $query     = EventoCecoco::query()->orderBy('fecha_hora', 'desc');
+            $hayFiltro = false;
+
+            if ($valores['expediente']) {
+                $query->where('nro_expediente', 'LIKE', "%{$valores['expediente']}%");
+                $hayFiltro = true;
+            }
+            if ($valores['fecha']) {
+                $query->whereDate('fecha_hora', $valores['fecha']->toDateString());
+                $hayFiltro = true;
+            }
+            if ($valores['telefono']) {
+                $query->where('telefono', 'LIKE', "%{$valores['telefono']}%");
+                $hayFiltro = true;
+            }
+            if ($valores['direccion']) {
+                $query->where('direccion', 'LIKE', "%{$valores['direccion']}%");
+                $hayFiltro = true;
+            }
+            if ($valores['tipo_kw']) {
+                $query->where('tipo_servicio', 'LIKE', "%{$valores['tipo_kw']}%");
+                $hayFiltro = true;
+            }
+            if ($valores['desc_kw']) {
+                $query->where('descripcion', 'LIKE', "%{$valores['desc_kw']}%");
+                $hayFiltro = true;
+            }
+
+            if (!$hayFiltro) {
+                $this->enviarMensaje('⚠️ No hay campos de búsqueda completados.', $chatId);
+                return;
+            }
+
+            $total   = (clone $query)->count();
+            $eventos = $query->limit(5)->get();
+
+            if ($total === 0) {
+                $this->enviarMensaje('🔍 No se encontraron eventos con los filtros indicados.', $chatId);
+                return;
+            }
+
+            $mensaje  = "🚨 <b>Eventos CECOCO</b> — {$total} resultado(s)\n";
+            $mensaje .= "━━━━━━━━━━━━━━━━━━\n";
+
+            foreach ($eventos as $evento) {
+                $fecha = $evento->fecha_hora ? $evento->fecha_hora->format('d/m/Y') : '—';
+                $hora  = $evento->fecha_hora ? $evento->fecha_hora->format('H:i') : '—';
+                $mensaje .= "\n📋 Expediente: <b>{$evento->nro_expediente}</b>\n";
+                $mensaje .= "📅 {$fecha}  🕐 {$hora}\n";
+                $mensaje .= "📞 <code>" . ($evento->telefono ?: '—') . "</code>\n";
+                $mensaje .= "📍 " . ($evento->direccion ?: '—') . "\n";
+                $mensaje .= "🏷 " . ($evento->tipo_servicio ?: '—') . "\n";
+                if ($evento->descripcion) {
+                    $mensaje .= "📝 " . mb_substr($evento->descripcion, 0, 100) . "\n";
+                }
+                $mensaje .= "━━━━━━━━━━━━━━━━━━\n";
+            }
+
+            if ($total > 5) {
+                $mensaje .= "\n💡 Mostrando 5 de {$total}. Afinà los filtros para ver menos resultados.";
+            }
+
+            $this->enviarMensaje($mensaje, $chatId);
+        } catch (\Exception $e) {
+            Log::channel('telegram')->error('Telegram: error en búsqueda formulario', ['error' => $e->getMessage()]);
+            $this->enviarMensaje('❌ Error al buscar: ' . $e->getMessage(), $chatId);
+        }
+    }
+
+    // =========================================================
+    // FIN FORMULARIO CECOCO
+    // =========================================================
 
     /**
      * Parsea el formato estructurado con comas:

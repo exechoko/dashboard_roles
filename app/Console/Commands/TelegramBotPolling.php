@@ -35,6 +35,9 @@ class TelegramBotPolling extends Command
             if (isset($update['message'])) {
                 $telegram->procesarMensaje($update['message']);
                 $procesados++;
+            } elseif (isset($update['callback_query'])) {
+                $telegram->procesarCallbackQuery($update['callback_query']);
+                $procesados++;
             }
 
             Cache::put(self::CACHE_KEY_OFFSET, $updateId + 1, now()->addDays(7));

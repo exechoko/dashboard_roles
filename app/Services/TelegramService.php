@@ -219,169 +219,111 @@ class TelegramService
         return trim($texto);
     }
 
-    private function parsearConsultaCecoco(string $termino): array
+    /**
+     * Parsea el formato estructurado con comas:
+     * cecoco nro_evento, telefono, fecha, tipo, descripcion
+     * Devuelve null si el termino no tiene el formato esperado (sin comas).
+     */
+    private function parsearConsultaCecoco(string $termino): ?array
     {
+        if (!str_contains($termino, ',')) {
+            return null;
+        }
+
+        // Dividir en exactamente 6 campos (el 6º absorbe posibles comas extras en la descripción)
+        $partes = array_pad(array_map('trim', explode(',', $termino, 6)), 6, '');
+
+        [$expediente, $telefono, $fechaStr, $direccion, $tipo, $descripcion] = $partes;
+
         $resultado = [
-            'fecha'       => null,
-            'expediente'  => null,
-            'telefono'    => null,
-            'direccion'   => null,
-            'persona'     => null,
-            'tipo_kw'     => null,
-            'desc_kw'     => null,
-            'keywords'    => null,
-            'labels'      => [],
+            'expediente' => $expediente  !== '' ? $expediente  : null,
+            'telefono'   => $telefono    !== '' ? preg_replace('/[^0-9]/', '', $telefono) ?: null : null,
+            'fecha'      => null,
+            'direccion'  => $direccion   !== '' ? $direccion   : null,
+            'tipo_kw'    => $tipo        !== '' ? $tipo        : null,
+            'desc_kw'    => $descripcion !== '' ? $descripcion : null,
+            'labels'     => [],
         ];
 
-        // Número de expediente/evento: precedido por keyword explícita
-        if (preg_match('/\b(?:expediente|evento|nro\.?|n[uú]mero|#)\s*(\d{4,10})\b/i', $termino, $m)) {
-            $resultado['expediente'] = $m[1];
-            $resultado['labels'][] = "expediente: {$m[1]}";
-            $termino = trim(preg_replace('/\b(?:expediente|evento|nro\.?|n[uú]mero|#)\s*\d{4,10}\b/i', '', $termino));
+        // Parsear fecha en lenguaje natural
+        if ($fechaStr !== '') {
+            $resultado['fecha'] = $this->parsearFecha($fechaStr);
         }
 
-        // Teléfono explícito: precedido por "tel", "telefono", "llamo", "número"
-        if (!$resultado['expediente'] && preg_match('/\b(?:tel(?:[eé]fono)?|cel(?:ular)?|llam[oó])\s*:?\s*(\d{6,})\b/i', $termino, $m)) {
-            $resultado['telefono'] = $m[1];
-            $resultado['labels'][] = "tel: {$m[1]}";
-            $termino = trim(preg_replace('/\b(?:tel(?:[eé]fono)?|cel(?:ular)?|llam[oó])\s*:?\s*\d{6,}\b/i', '', $termino));
-        }
-
-        // Tipificación explícita: precedida por "tipo", "tipificacion", "tipificación"
-        if (preg_match('/\b(?:tipo|tipificaci[oó]n)\s*:?\s*(.+?)(?:\s+(?:hoy|ayer|el\s+\w+|\d{1,2}[\/\-])|$)/i', $termino, $m)) {
-            $resultado['tipo_kw'] = trim($m[1]);
-            $resultado['labels'][] = "tipo: {$resultado['tipo_kw']}";
-            $termino = trim(preg_replace('/\b(?:tipo|tipificaci[oó]n)\s*:?\s*.+?(?=\s+(?:hoy|ayer|el\s+\w+|\d{1,2}[\/\-])|$)/i', '', $termino));
-        }
-
-        // Descripción explícita: precedida por "desc", "descripcion"
-        if (preg_match('/\b(?:desc(?:ripci[oó]n)?)\s*:?\s*(.+?)(?:\s+(?:hoy|ayer|el\s+\w+|\d{1,2}[\/\-])|$)/i', $termino, $m)) {
-            $resultado['desc_kw'] = trim($m[1]);
-            $resultado['labels'][] = "desc: {$resultado['desc_kw']}";
-            $termino = trim(preg_replace('/\b(?:desc(?:ripci[oó]n)?)\s*:?\s*.+?(?=\s+(?:hoy|ayer|el\s+\w+|\d{1,2}[\/\-])|$)/i', '', $termino));
-        }
-
-        // Fecha explícita dd/mm o dd/mm/yyyy
-        if (preg_match('/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{4}))?/', $termino, $m)) {
-            $anio = !empty($m[3]) ? (int) $m[3] : now()->year;
-            $resultado['fecha'] = Carbon::createFromDate($anio, (int) $m[2], (int) $m[1]);
-            $resultado['labels'][] = $resultado['fecha']->format('d/m/Y');
-            $termino = trim(preg_replace('/\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{4})?/', '', $termino));
-        } elseif (preg_match('/\bayer\b/', $termino)) {
-            $resultado['fecha'] = Carbon::yesterday();
-            $resultado['labels'][] = 'ayer';
-            $termino = trim(str_replace('ayer', '', $termino));
-        } elseif (preg_match('/\bhoy\b/', $termino)) {
-            $resultado['fecha'] = Carbon::today();
-            $resultado['labels'][] = 'hoy';
-            $termino = trim(str_replace('hoy', '', $termino));
-        } elseif (preg_match('/\b(ante\s?ayer|antier)\b/i', $termino)) {
-            $resultado['fecha'] = Carbon::today()->subDays(2);
-            $resultado['labels'][] = 'antier';
-            $termino = trim(preg_replace('/\b(ante\s?ayer|antier)\b/i', '', $termino));
-        } else {
-            $diasSemana = [
-                'lunes' => 1, 'martes' => 2, 'miercoles' => 3, 'miércoles' => 3,
-                'jueves' => 4, 'viernes' => 5, 'sabado' => 6, 'sábado' => 6, 'domingo' => 7,
-            ];
-            foreach ($diasSemana as $nombre => $dow) {
-                if (mb_strpos($termino, $nombre) !== false) {
-                    $hoy = Carbon::today();
-                    $diasAtras = ($hoy->dayOfWeekIso - $dow + 7) % 7;
-                    if ($diasAtras === 0) $diasAtras = 7;
-                    $resultado['fecha'] = $hoy->copy()->subDays($diasAtras);
-                    $resultado['labels'][] = "el {$nombre}";
-                    $termino = trim(str_replace($nombre, '', $termino));
-                    break;
-                }
+        // Construir labels de lo que se va a buscar
+        $nombres = ['expediente', 'teléfono', 'fecha', 'dirección', 'tipo', 'descripción'];
+        $valores = [
+            $resultado['expediente'],
+            $resultado['telefono'],
+            $resultado['fecha'] ? $resultado['fecha']->format('d/m/Y') : null,
+            $resultado['direccion'],
+            $resultado['tipo_kw'],
+            $resultado['desc_kw'],
+        ];
+        foreach ($valores as $i => $v) {
+            if ($v !== null) {
+                $resultado['labels'][] = "{$nombres[$i]}: {$v}";
             }
-        }
-
-        // Teléfono natural: 9+ dígitos standalone (no fue extraído como expediente)
-        if (!$resultado['telefono'] && !$resultado['expediente'] && preg_match('/\b(\d{9,})\b/', $termino, $m)) {
-            $resultado['telefono'] = $m[1];
-            $resultado['labels'][] = "tel: {$m[1]}";
-            $termino = trim(str_replace($m[0], '', $termino));
-        }
-
-        // Expediente natural: 4-8 dígitos standalone (sin keyword, si no se encontró teléfono)
-        if (!$resultado['expediente'] && !$resultado['telefono'] && preg_match('/\b(\d{4,8})\b/', $termino, $m)) {
-            $resultado['expediente'] = $m[1];
-            $resultado['labels'][] = "expediente: {$m[1]}";
-            $termino = trim(str_replace($m[0], '', $termino));
-        }
-
-        // Dirección: texto después de "calle", "av", etc.
-        if (preg_match('/\b(?:calle|avda?\.?|avenida|bv\.?|boulevard|pasaje|esquina)\s+([\w\s]+?)(?=\s+(?:y|con|entre|el|la|ayer|hoy|lunes|martes|miercoles|jueves|viernes|sabado|domingo|numero|nro|\d)|$)/i', $termino, $m)) {
-            $resultado['direccion'] = trim($m[1]);
-            $resultado['labels'][] = "dir: {$resultado['direccion']}";
-            $termino = trim(preg_replace('/\b(?:calle|avda?\.?|avenida|bv\.?|boulevard|pasaje|esquina)\s+[\w\s]+/i', '', $termino));
-        }
-
-        // Persona: después de indicadores explícitos
-        $patronPersona = '/\b(?:persona|apellido|sr\.?|sra\.?|señor|señora|don|doña|llamado|llamada|relacionado\s+con(?:\s+(?:la|el)\s+persona)?|relacionada\s+con(?:\s+(?:la|el)\s+persona)?)\s+([\w]+(?:\s+[\w]+)?)/iu';
-        if (preg_match($patronPersona, $termino, $m)) {
-            $resultado['persona'] = trim($m[1]);
-            $resultado['labels'][] = "persona: {$resultado['persona']}";
-            $termino = trim(preg_replace($patronPersona, '', $termino));
-        }
-
-        // Keywords residuales (busca en tipo_servicio y descripción)
-        $stopwords = [
-            'cecoco', 'expediente', 'evento', 'hay', 'hubo', 'ocurrio', 'ocurrió', 'relacionado',
-            'algun', 'algún', 'alguna', 'una', 'uno', 'este', 'esta', 'ese', 'esa',
-            'el', 'la', 'los', 'las', 'un', 'del', 'numero', 'número', 'nro', 'n°',
-            'llamo', 'llamó', 'con', 'para', 'que', 'de', 'en', 'por', 'al', 'a',
-            'se', 'si', 'lo', 'le', 'les', 'algo', 'podes', 'podés', 'buscar',
-            'encontrar', 'pasado', 'pasada', 'ultimo', 'último', 'dia', 'día',
-            'noche', 'madrugada', 'tarde', 'mañana', 'fue', 'fui', 'ver', 'saber',
-            'tipo', 'tipificacion', 'tipificación', 'desc', 'descripcion', 'descripción',
-            'tel', 'telefono', 'teléfono', 'celular',
-        ];
-        $palabras = preg_split('/\s+/', trim($termino));
-        $palabras = array_values(array_filter($palabras, function ($p) use ($stopwords) {
-            return !in_array(mb_strtolower($p), $stopwords) && mb_strlen(trim($p)) > 2;
-        }));
-        if (!empty($palabras)) {
-            $resultado['keywords'] = implode(' ', $palabras);
-            $resultado['labels'][] = "tema: {$resultado['keywords']}";
         }
 
         return $resultado;
     }
 
+    private function parsearFecha(string $texto): ?Carbon
+    {
+        $texto = mb_strtolower(trim($texto));
+
+        if (preg_match('/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{4}))?/', $texto, $m)) {
+            $anio = !empty($m[3]) ? (int) $m[3] : now()->year;
+            try { return Carbon::createFromDate($anio, (int) $m[2], (int) $m[1]); } catch (\Exception $e) {}
+        }
+        if (str_contains($texto, 'anteayer') || str_contains($texto, 'antier')) return Carbon::today()->subDays(2);
+        if (str_contains($texto, 'ayer'))  return Carbon::yesterday();
+        if (str_contains($texto, 'hoy'))   return Carbon::today();
+
+        $diasSemana = [
+            'lunes' => 1, 'martes' => 2, 'miercoles' => 3, 'miércoles' => 3,
+            'jueves' => 4, 'viernes' => 5, 'sabado' => 6, 'sábado' => 6, 'domingo' => 7,
+        ];
+        foreach ($diasSemana as $nombre => $dow) {
+            if (str_contains($texto, $nombre)) {
+                $hoy = Carbon::today();
+                $diasAtras = ($hoy->dayOfWeekIso - $dow + 7) % 7;
+                if ($diasAtras === 0) $diasAtras = 7;
+                return $hoy->subDays($diasAtras);
+            }
+        }
+
+        return null;
+    }
+
     private function responderEventoCecoco(string $chatId, string $termino): void
     {
+        $guia = "🚨 <b>Buscar en CECOCO</b>\n\n"
+            . "Enviá los campos separados por comas:\n"
+            . "<code>cecoco nro_evento, telefono, fecha, direccion, tipo, descripcion</code>\n\n"
+            . "Dejá vacío lo que no necesités:\n"
+            . "• <code>cecoco 3843583, , , , ,</code>\n"
+            . "• <code>cecoco , 3435258158, , , ,</code>\n"
+            . "• <code>cecoco , , hoy, , robo,</code>\n"
+            . "• <code>cecoco , , ayer, belgrano, ,</code>\n"
+            . "• <code>cecoco , , ayer, , , persona herida</code>\n"
+            . "• <code>cecoco , , lunes, , robo, herida</code>";
+
         if (empty($termino)) {
-            $this->enviarMensaje(
-                "🚨 <b>Buscar evento CECOCO</b>\n\n"
-                . "<b>Por expediente/evento:</b>\n"
-                . "• <code>cecoco 3843583</code>\n"
-                . "• <code>cecoco expediente 3843583</code>\n\n"
-                . "<b>Por teléfono:</b>\n"
-                . "• <code>cecoco tel 3435258158</code>\n"
-                . "• <code>cecoco 3435258158</code>\n\n"
-                . "<b>Por dirección:</b>\n"
-                . "• <code>cecoco calle belgrano hoy</code>\n"
-                . "• <code>cecoco av mitre ayer</code>\n\n"
-                . "<b>Por tipificación:</b>\n"
-                . "• <code>cecoco tipo robo</code>\n"
-                . "• <code>cecoco tipo disturbio hoy</code>\n\n"
-                . "<b>Por descripción:</b>\n"
-                . "• <code>cecoco desc persona herida</code>\n"
-                . "• <code>cecoco desc incendio ayer</code>\n\n"
-                . "<b>Lenguaje natural:</b>\n"
-                . "• <code>cecoco robo calle belgrano el lunes</code>\n"
-                . "• <code>cecoco sr garcia 29/03</code>\n"
-                . "• <code>cecoco tel 2994123456 llamó ayer</code>",
-                $chatId
-            );
+            $this->enviarMensaje($guia, $chatId);
+            return;
+        }
+
+        $filtros = $this->parsearConsultaCecoco($termino);
+
+        if ($filtros === null) {
+            $this->enviarMensaje("⚠️ Formato incorrecto.\n\n" . $guia, $chatId);
             return;
         }
 
         try {
-            $filtros = $this->parsearConsultaCecoco($termino);
-            $query   = EventoCecoco::query()->orderBy('fecha_hora', 'desc');
+            $query     = EventoCecoco::query()->orderBy('fecha_hora', 'desc');
             $hayFiltro = false;
 
             if ($filtros['expediente']) {
@@ -404,11 +346,6 @@ class TelegramService
                 $hayFiltro = true;
             }
 
-            if ($filtros['persona']) {
-                $query->where('descripcion', 'LIKE', "%{$filtros['persona']}%");
-                $hayFiltro = true;
-            }
-
             if ($filtros['tipo_kw']) {
                 $query->where('tipo_servicio', 'LIKE', "%{$filtros['tipo_kw']}%");
                 $hayFiltro = true;
@@ -419,18 +356,9 @@ class TelegramService
                 $hayFiltro = true;
             }
 
-            if ($filtros['keywords']) {
-                $kw = $filtros['keywords'];
-                $query->where(function ($q) use ($kw) {
-                    $q->where('tipo_servicio', 'LIKE', "%{$kw}%")
-                      ->orWhere('descripcion', 'LIKE', "%{$kw}%");
-                });
-                $hayFiltro = true;
-            }
-
-            // Si no se extrajo ningún filtro estructurado, usar el scope genérico
             if (!$hayFiltro) {
-                $query->buscar($termino);
+                $this->enviarMensaje("⚠️ No ingresaste ningún campo de búsqueda.\n\n" . $guia, $chatId);
+                return;
             }
 
             $total = (clone $query)->count();
@@ -501,12 +429,11 @@ class TelegramService
             . "📊 <b>novedades</b> / <b>resumen</b>\n"
             . "   → Equipos, bodycams y entregas\n\n"
             . "🚨 <b>cecoco</b> — Buscar eventos:\n"
-            . "   <b>Expediente:</b> <code>cecoco 3843583</code>\n"
-            . "   <b>Teléfono:</b> <code>cecoco tel 3435258158</code>\n"
-            . "   <b>Dirección:</b> <code>cecoco calle belgrano hoy</code>\n"
-            . "   <b>Tipificación:</b> <code>cecoco tipo robo ayer</code>\n"
-            . "   <b>Descripción:</b> <code>cecoco desc persona herida</code>\n"
-            . "   <b>Libre:</b> <code>cecoco robo belgrano el lunes</code>\n\n"
+            . "   Formato: <code>cecoco nro, tel, fecha, dir, tipo, desc</code>\n"
+            . "   • <code>cecoco 3843583, , , , ,</code>\n"
+            . "   • <code>cecoco , 3435258158, , , ,</code>\n"
+            . "   • <code>cecoco , , hoy, belgrano, robo,</code>\n"
+            . "   Enviá <code>cecoco</code> solo para ver todos los ejemplos\n\n"
             . "❓ <b>/ayuda</b> → Este mensaje\n"
             . "   <code>cecoco</code> sin texto → Ver todos los formatos";
 

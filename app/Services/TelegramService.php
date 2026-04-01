@@ -61,8 +61,9 @@ class TelegramService
 
             return true;
         } catch (\Exception $e) {
+            $mensajeError = preg_replace('/bot[\w\-:]+\//', 'bot[REDACTED]/', $e->getMessage());
             Log::error('Telegram: error al enviar mensaje', [
-                'error' => $e->getMessage(),
+                'error' => $mensajeError,
             ]);
             return false;
         }
@@ -148,7 +149,10 @@ class TelegramService
 
             return $body['result'] ?? [];
         } catch (\Exception $e) {
-            Log::error('Telegram: error en getUpdates', ['error' => $e->getMessage()]);
+            $mensajeError = preg_replace('/bot[\w\-:]+\//', 'bot[REDACTED]/', $e->getMessage());
+            // Los timeouts de red son esperables; se loguean como warning para no saturar el log
+            $nivel = str_contains($e->getMessage(), 'cURL error 28') ? 'warning' : 'error';
+            Log::$nivel('Telegram: error en getUpdates', ['error' => $mensajeError]);
             return [];
         }
     }

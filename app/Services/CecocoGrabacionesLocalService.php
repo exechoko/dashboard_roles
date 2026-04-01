@@ -104,13 +104,13 @@ class CecocoGrabacionesLocalService
             'total'    => count($grabaciones),
         ]);
 
-        // Si no se encontró nada por número, buscar por ventana horaria estrecha ±5 min
-        // (el archivo puede estar nombrado con el llamante del listín en lugar del número)
+        // Si no se encontró nada por número, buscar por ventana horaria ±2 min
+        // usando patrones por minuto para evitar listar todo el mes
         if (empty($grabaciones)) {
-            $desdeCorto = $fechaEvento->copy()->subMinutes(5);
-            $hastaCorto = $fechaEvento->copy()->addMinutes(5);
+            $desdeCorto = $fechaEvento->copy()->subMinutes(2);
+            $hastaCorto = $fechaEvento->copy()->addMinutes(2);
 
-            Log::info('CecocoGrabacionesLocalService: sin resultados por teléfono, buscando por ventana ±5 min', [
+            Log::info('CecocoGrabacionesLocalService: sin resultados por teléfono, buscando por ventana ±2 min', [
                 'telefono' => $telefono,
                 'desde'    => $desdeCorto->format('Y-m-d H:i:s'),
                 'hasta'    => $hastaCorto->format('Y-m-d H:i:s'),
@@ -130,54 +130,56 @@ class CecocoGrabacionesLocalService
     }
 
     /**
-     * Fallback: busca todos los archivos de audio dentro de la ventana horaria,
-     * sin filtrar por número. Útil cuando el archivo está nombrado con el llamante
-     * del listín telefónico en lugar del número.
+     * Fallback: busca archivos por ventana horaria usando patrones por minuto
+     * (evita listar todo el directorio del mes).
+     * Formato del timestamp en el nombre: _YYYYMMDD_HHMM??_
      */
     private function buscarPorVentana(Carbon $desde, Carbon $hasta): array
     {
-        $meses  = [];
-        $cursor = $desde->copy()->startOfMonth();
-        while ($cursor->lte($hasta)) {
-            $meses[] = $cursor->copy();
-            $cursor->addMonth();
-        }
-
         $grabaciones = [];
+        $vistos      = [];
+        $realBase    = realpath($this->baseDir) ?: $this->baseDir;
 
-        foreach ($meses as $mes) {
-            $year      = $mes->format('Y');
-            $yearMonth = $mes->format('Y_m');
+        $cursor = $desde->copy()->startOfMinute();
+
+        while ($cursor->lte($hasta)) {
+            $year      = $cursor->format('Y');
+            $yearMonth = $cursor->format('Y_m');
             $dir       = $this->baseDir . DIRECTORY_SEPARATOR . $year . DIRECTORY_SEPARATOR . $yearMonth;
 
-            if (!is_dir($dir)) {
-                continue;
+            if (is_dir($dir)) {
+                // Patrón específico: solo archivos cuyo nombre contiene _YYYYMMDD_HHMM
+                $prefijo  = $cursor->format('Ymd') . '_' . $cursor->format('Hi');
+                $pattern  = $dir . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*_' . $prefijo . '*';
+                $archivos = glob($pattern, GLOB_NOSORT) ?: [];
+
+                foreach ($archivos as $filepath) {
+                    $real = realpath($filepath) ?: $filepath;
+                    if (!str_starts_with($real, $realBase)) {
+                        continue;
+                    }
+
+                    $filename = basename($filepath);
+
+                    // Evitar duplicados si el mismo archivo coincide con varios minutos
+                    if (isset($vistos[$filename])) {
+                        continue;
+                    }
+                    $vistos[$filename] = true;
+
+                    $grabacion = $this->parsearNombreArchivo($filename, $filepath);
+                    if (!$grabacion) {
+                        continue;
+                    }
+
+                    $fechaArchivo = Carbon::parse($grabacion['fechaInicio']);
+                    if ($fechaArchivo->between($desde, $hasta)) {
+                        $grabaciones[] = $grabacion;
+                    }
+                }
             }
 
-            $pattern  = $dir . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*.mp3';
-            $archivos = glob($pattern, GLOB_NOSORT);
-
-            if (!$archivos) {
-                continue;
-            }
-
-            foreach ($archivos as $filepath) {
-                if (!str_starts_with(realpath($filepath) ?: $filepath, realpath($this->baseDir) ?: $this->baseDir)) {
-                    continue;
-                }
-
-                $filename  = basename($filepath);
-                $grabacion = $this->parsearNombreArchivo($filename, $filepath);
-
-                if (!$grabacion) {
-                    continue;
-                }
-
-                $fechaArchivo = Carbon::parse($grabacion['fechaInicio']);
-                if ($fechaArchivo->between($desde, $hasta)) {
-                    $grabaciones[] = $grabacion;
-                }
-            }
+            $cursor->addMinute();
         }
 
         usort($grabaciones, fn ($a, $b) => strcmp($a['fechaInicio'], $b['fechaInicio']));

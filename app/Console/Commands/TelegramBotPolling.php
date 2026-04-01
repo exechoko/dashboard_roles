@@ -13,38 +13,37 @@ class TelegramBotPolling extends Command
     protected $description = 'Consulta mensajes nuevos del bot de Telegram y responde automáticamente.';
 
     private const CACHE_KEY_OFFSET = 'telegram_bot_update_offset';
+    private const MAX_RUN_SECONDS  = 55; // el scheduler relanza el comando cada 60 s
+    private const POLL_INTERVAL    = 2;  // segundos entre consultas si no hay mensajes
 
     public function handle(TelegramService $telegram): int
     {
-        $offset = Cache::get(self::CACHE_KEY_OFFSET);
-        $updates = $telegram->getUpdates($offset);
+        $inicio = time();
 
-        if (empty($updates)) {
-            return 0;
-        }
+        while (time() - $inicio < self::MAX_RUN_SECONDS) {
+            $offset  = Cache::get(self::CACHE_KEY_OFFSET);
+            $updates = $telegram->getUpdates($offset);
 
-        $procesados = 0;
-
-        foreach ($updates as $update) {
-            $updateId = $update['update_id'] ?? null;
-
-            if ($updateId === null) {
+            if (empty($updates)) {
+                sleep(self::POLL_INTERVAL);
                 continue;
             }
 
-            if (isset($update['message'])) {
-                $telegram->procesarMensaje($update['message']);
-                $procesados++;
-            } elseif (isset($update['callback_query'])) {
-                $telegram->procesarCallbackQuery($update['callback_query']);
-                $procesados++;
+            foreach ($updates as $update) {
+                $updateId = $update['update_id'] ?? null;
+
+                if ($updateId === null) {
+                    continue;
+                }
+
+                if (isset($update['message'])) {
+                    $telegram->procesarMensaje($update['message']);
+                } elseif (isset($update['callback_query'])) {
+                    $telegram->procesarCallbackQuery($update['callback_query']);
+                }
+
+                Cache::put(self::CACHE_KEY_OFFSET, $updateId + 1, now()->addDays(7));
             }
-
-            Cache::put(self::CACHE_KEY_OFFSET, $updateId + 1, now()->addDays(7));
-        }
-
-        if ($procesados > 0) {
-            $this->info("Mensajes procesados: {$procesados}");
         }
 
         return 0;

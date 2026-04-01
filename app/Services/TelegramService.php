@@ -190,8 +190,8 @@ class TelegramService
             return;
         }
 
-        if ($this->contieneAlguno($texto, ['cecoco', 'expediente', 'buscar evento'])) {
-            $termino = $this->extraerTerminoBusqueda($texto, ['cecoco', 'expediente', 'buscar evento']);
+        if ($this->contieneAlguno($texto, ['cecoco', 'expediente', 'buscar evento', 'evento'])) {
+            $termino = $this->extraerTerminoBusqueda($texto, ['cecoco', 'buscar evento', 'expediente', 'evento']);
             $this->responderEventoCecoco($chatId, $termino);
             return;
         }
@@ -201,7 +201,7 @@ class TelegramService
             . "Probá con:\n"
             . "📋 <b>tareas</b> - Ver tareas pendientes\n"
             . "📊 <b>novedades</b> - Resumen del dashboard\n"
-            . "🚨 <b>cecoco 1234</b> - Buscar evento por nro, teléfono o dirección\n"
+            . "🚨 <b>cecoco 3843583</b> - Buscar evento CECOCO\n"
             . "❓ <b>/ayuda</b> - Ver todos los comandos",
             $chatId
         );
@@ -221,9 +221,47 @@ class TelegramService
 
     private function parsearConsultaCecoco(string $termino): array
     {
-        $resultado = ['fecha' => null, 'telefono' => null, 'direccion' => null, 'persona' => null, 'keywords' => null, 'labels' => []];
+        $resultado = [
+            'fecha'       => null,
+            'expediente'  => null,
+            'telefono'    => null,
+            'direccion'   => null,
+            'persona'     => null,
+            'tipo_kw'     => null,
+            'desc_kw'     => null,
+            'keywords'    => null,
+            'labels'      => [],
+        ];
 
-        // Fecha explícita dd/mm o dd/mm/yyyy (con / o -)
+        // Número de expediente/evento: precedido por keyword explícita
+        if (preg_match('/\b(?:expediente|evento|nro\.?|n[uú]mero|#)\s*(\d{4,10})\b/i', $termino, $m)) {
+            $resultado['expediente'] = $m[1];
+            $resultado['labels'][] = "expediente: {$m[1]}";
+            $termino = trim(preg_replace('/\b(?:expediente|evento|nro\.?|n[uú]mero|#)\s*\d{4,10}\b/i', '', $termino));
+        }
+
+        // Teléfono explícito: precedido por "tel", "telefono", "llamo", "número"
+        if (!$resultado['expediente'] && preg_match('/\b(?:tel(?:[eé]fono)?|cel(?:ular)?|llam[oó])\s*:?\s*(\d{6,})\b/i', $termino, $m)) {
+            $resultado['telefono'] = $m[1];
+            $resultado['labels'][] = "tel: {$m[1]}";
+            $termino = trim(preg_replace('/\b(?:tel(?:[eé]fono)?|cel(?:ular)?|llam[oó])\s*:?\s*\d{6,}\b/i', '', $termino));
+        }
+
+        // Tipificación explícita: precedida por "tipo", "tipificacion", "tipificación"
+        if (preg_match('/\b(?:tipo|tipificaci[oó]n)\s*:?\s*(.+?)(?:\s+(?:hoy|ayer|el\s+\w+|\d{1,2}[\/\-])|$)/i', $termino, $m)) {
+            $resultado['tipo_kw'] = trim($m[1]);
+            $resultado['labels'][] = "tipo: {$resultado['tipo_kw']}";
+            $termino = trim(preg_replace('/\b(?:tipo|tipificaci[oó]n)\s*:?\s*.+?(?=\s+(?:hoy|ayer|el\s+\w+|\d{1,2}[\/\-])|$)/i', '', $termino));
+        }
+
+        // Descripción explícita: precedida por "desc", "descripcion"
+        if (preg_match('/\b(?:desc(?:ripci[oó]n)?)\s*:?\s*(.+?)(?:\s+(?:hoy|ayer|el\s+\w+|\d{1,2}[\/\-])|$)/i', $termino, $m)) {
+            $resultado['desc_kw'] = trim($m[1]);
+            $resultado['labels'][] = "desc: {$resultado['desc_kw']}";
+            $termino = trim(preg_replace('/\b(?:desc(?:ripci[oó]n)?)\s*:?\s*.+?(?=\s+(?:hoy|ayer|el\s+\w+|\d{1,2}[\/\-])|$)/i', '', $termino));
+        }
+
+        // Fecha explícita dd/mm o dd/mm/yyyy
         if (preg_match('/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{4}))?/', $termino, $m)) {
             $anio = !empty($m[3]) ? (int) $m[3] : now()->year;
             $resultado['fecha'] = Carbon::createFromDate($anio, (int) $m[2], (int) $m[1]);
@@ -250,9 +288,7 @@ class TelegramService
                 if (mb_strpos($termino, $nombre) !== false) {
                     $hoy = Carbon::today();
                     $diasAtras = ($hoy->dayOfWeekIso - $dow + 7) % 7;
-                    if ($diasAtras === 0) {
-                        $diasAtras = 7;
-                    }
+                    if ($diasAtras === 0) $diasAtras = 7;
                     $resultado['fecha'] = $hoy->copy()->subDays($diasAtras);
                     $resultado['labels'][] = "el {$nombre}";
                     $termino = trim(str_replace($nombre, '', $termino));
@@ -261,21 +297,28 @@ class TelegramService
             }
         }
 
-        // Teléfono: secuencia de 7+ dígitos (fuera de un patrón de fecha ya extraído)
-        if (preg_match('/\b(\d{7,})\b/', $termino, $m)) {
+        // Teléfono natural: 9+ dígitos standalone (no fue extraído como expediente)
+        if (!$resultado['telefono'] && !$resultado['expediente'] && preg_match('/\b(\d{9,})\b/', $termino, $m)) {
             $resultado['telefono'] = $m[1];
             $resultado['labels'][] = "tel: {$m[1]}";
             $termino = trim(str_replace($m[0], '', $termino));
         }
 
-        // Dirección: texto después de "calle", "av", "avenida", "bv", "boulevard", "pasaje", "esquina"
+        // Expediente natural: 4-8 dígitos standalone (sin keyword, si no se encontró teléfono)
+        if (!$resultado['expediente'] && !$resultado['telefono'] && preg_match('/\b(\d{4,8})\b/', $termino, $m)) {
+            $resultado['expediente'] = $m[1];
+            $resultado['labels'][] = "expediente: {$m[1]}";
+            $termino = trim(str_replace($m[0], '', $termino));
+        }
+
+        // Dirección: texto después de "calle", "av", etc.
         if (preg_match('/\b(?:calle|avda?\.?|avenida|bv\.?|boulevard|pasaje|esquina)\s+([\w\s]+?)(?=\s+(?:y|con|entre|el|la|ayer|hoy|lunes|martes|miercoles|jueves|viernes|sabado|domingo|numero|nro|\d)|$)/i', $termino, $m)) {
             $resultado['direccion'] = trim($m[1]);
             $resultado['labels'][] = "dir: {$resultado['direccion']}";
             $termino = trim(preg_replace('/\b(?:calle|avda?\.?|avenida|bv\.?|boulevard|pasaje|esquina)\s+[\w\s]+/i', '', $termino));
         }
 
-        // Persona: nombre/apellido después de indicadores explícitos
+        // Persona: después de indicadores explícitos
         $patronPersona = '/\b(?:persona|apellido|sr\.?|sra\.?|señor|señora|don|doña|llamado|llamada|relacionado\s+con(?:\s+(?:la|el)\s+persona)?|relacionada\s+con(?:\s+(?:la|el)\s+persona)?)\s+([\w]+(?:\s+[\w]+)?)/iu';
         if (preg_match($patronPersona, $termino, $m)) {
             $resultado['persona'] = trim($m[1]);
@@ -283,7 +326,7 @@ class TelegramService
             $termino = trim(preg_replace($patronPersona, '', $termino));
         }
 
-        // Keywords residuales: limpiar stopwords
+        // Keywords residuales (busca en tipo_servicio y descripción)
         $stopwords = [
             'cecoco', 'expediente', 'evento', 'hay', 'hubo', 'ocurrio', 'ocurrió', 'relacionado',
             'algun', 'algún', 'alguna', 'una', 'uno', 'este', 'esta', 'ese', 'esa',
@@ -292,6 +335,8 @@ class TelegramService
             'se', 'si', 'lo', 'le', 'les', 'algo', 'podes', 'podés', 'buscar',
             'encontrar', 'pasado', 'pasada', 'ultimo', 'último', 'dia', 'día',
             'noche', 'madrugada', 'tarde', 'mañana', 'fue', 'fui', 'ver', 'saber',
+            'tipo', 'tipificacion', 'tipificación', 'desc', 'descripcion', 'descripción',
+            'tel', 'telefono', 'teléfono', 'celular',
         ];
         $palabras = preg_split('/\s+/', trim($termino));
         $palabras = array_values(array_filter($palabras, function ($p) use ($stopwords) {
@@ -310,13 +355,25 @@ class TelegramService
         if (empty($termino)) {
             $this->enviarMensaje(
                 "🚨 <b>Buscar evento CECOCO</b>\n\n"
-                . "Podés preguntarme en lenguaje natural:\n"
-                . "• <code>cecoco el número 2994123456 llamó ayer</code>\n"
-                . "• <code>cecoco robo en calle belgrano el lunes</code>\n"
-                . "• <code>cecoco relacionado con la persona Altamirano el 29/03</code>\n"
-                . "• <code>cecoco sr garcia hoy</code>\n"
-                . "• <code>cecoco expediente 12345</code>\n"
-                . "• <code>cecoco disturbio hoy</code>",
+                . "<b>Por expediente/evento:</b>\n"
+                . "• <code>cecoco 3843583</code>\n"
+                . "• <code>cecoco expediente 3843583</code>\n\n"
+                . "<b>Por teléfono:</b>\n"
+                . "• <code>cecoco tel 3435258158</code>\n"
+                . "• <code>cecoco 3435258158</code>\n\n"
+                . "<b>Por dirección:</b>\n"
+                . "• <code>cecoco calle belgrano hoy</code>\n"
+                . "• <code>cecoco av mitre ayer</code>\n\n"
+                . "<b>Por tipificación:</b>\n"
+                . "• <code>cecoco tipo robo</code>\n"
+                . "• <code>cecoco tipo disturbio hoy</code>\n\n"
+                . "<b>Por descripción:</b>\n"
+                . "• <code>cecoco desc persona herida</code>\n"
+                . "• <code>cecoco desc incendio ayer</code>\n\n"
+                . "<b>Lenguaje natural:</b>\n"
+                . "• <code>cecoco robo calle belgrano el lunes</code>\n"
+                . "• <code>cecoco sr garcia 29/03</code>\n"
+                . "• <code>cecoco tel 2994123456 llamó ayer</code>",
                 $chatId
             );
             return;
@@ -326,6 +383,11 @@ class TelegramService
             $filtros = $this->parsearConsultaCecoco($termino);
             $query   = EventoCecoco::query()->orderBy('fecha_hora', 'desc');
             $hayFiltro = false;
+
+            if ($filtros['expediente']) {
+                $query->where('nro_expediente', 'LIKE', "%{$filtros['expediente']}%");
+                $hayFiltro = true;
+            }
 
             if ($filtros['fecha']) {
                 $query->whereDate('fecha_hora', $filtros['fecha']->toDateString());
@@ -347,9 +409,22 @@ class TelegramService
                 $hayFiltro = true;
             }
 
+            if ($filtros['tipo_kw']) {
+                $query->where('tipo_servicio', 'LIKE', "%{$filtros['tipo_kw']}%");
+                $hayFiltro = true;
+            }
+
+            if ($filtros['desc_kw']) {
+                $query->where('descripcion', 'LIKE', "%{$filtros['desc_kw']}%");
+                $hayFiltro = true;
+            }
+
             if ($filtros['keywords']) {
                 $kw = $filtros['keywords'];
-                $query->where('tipo_servicio', 'LIKE', "%{$kw}%");
+                $query->where(function ($q) use ($kw) {
+                    $q->where('tipo_servicio', 'LIKE', "%{$kw}%")
+                      ->orWhere('descripcion', 'LIKE', "%{$kw}%");
+                });
                 $hayFiltro = true;
             }
 
@@ -420,20 +495,20 @@ class TelegramService
     private function responderAyuda(string $chatId, string $nombre): void
     {
         $mensaje = "👋 ¡Hola <b>{$nombre}</b>!\n\n"
-            . "Soy el bot del <b>Dashboard de Gestión</b>.\n"
-            . "Podés preguntarme lo siguiente:\n\n"
+            . "Soy el bot del <b>Dashboard de Gestión</b>.\n\n"
             . "📋 <b>tareas</b> / <b>pendientes</b>\n"
             . "   → Tareas de hoy y mañana\n\n"
             . "📊 <b>novedades</b> / <b>resumen</b>\n"
             . "   → Equipos, bodycams y entregas\n\n"
-            . "🚨 <b>cecoco</b> [consulta libre]\n"
-            . "   → Buscar evento en lenguaje natural:\n"
-            . "   • <code>cecoco el número 2994123456 llamó ayer</code>\n"
-            . "   • <code>cecoco robo en calle belgrano el lunes</code>\n"
-            . "   • <code>cecoco disturbio hoy</code>\n"
-            . "   • <code>cecoco expediente 12345</code>\n\n"
-            . "❓ <b>/ayuda</b>\n"
-            . "   → Este mensaje de ayuda";
+            . "🚨 <b>cecoco</b> — Buscar eventos:\n"
+            . "   <b>Expediente:</b> <code>cecoco 3843583</code>\n"
+            . "   <b>Teléfono:</b> <code>cecoco tel 3435258158</code>\n"
+            . "   <b>Dirección:</b> <code>cecoco calle belgrano hoy</code>\n"
+            . "   <b>Tipificación:</b> <code>cecoco tipo robo ayer</code>\n"
+            . "   <b>Descripción:</b> <code>cecoco desc persona herida</code>\n"
+            . "   <b>Libre:</b> <code>cecoco robo belgrano el lunes</code>\n\n"
+            . "❓ <b>/ayuda</b> → Este mensaje\n"
+            . "   <code>cecoco</code> sin texto → Ver todos los formatos";
 
         $this->enviarMensaje($mensaje, $chatId);
     }

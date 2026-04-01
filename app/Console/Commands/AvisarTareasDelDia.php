@@ -6,6 +6,7 @@ use App\Mail\TareasDelDiaMail;
 use App\Models\TareaItem;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class AvisarTareasDelDia extends Command
@@ -16,12 +17,16 @@ class AvisarTareasDelDia extends Command
 
     public function handle()
     {
+        Log::channel('daily')->info('[tareas:avisar] Inicio del comando.');
+
         try {
             $fecha = $this->option('fecha')
                 ? Carbon::createFromFormat('Y-m-d', $this->option('fecha'))->startOfDay()
                 : Carbon::today();
         } catch (\Exception $e) {
-            $this->error('Fecha inválida. Use formato Y-m-d. Ejemplo: --fecha=2025-12-18');
+            $msg = 'Fecha inválida. Use formato Y-m-d. Ejemplo: --fecha=2025-12-18';
+            $this->error($msg);
+            Log::channel('daily')->error('[tareas:avisar] ' . $msg, ['exception' => $e->getMessage()]);
             return 1;
         }
 
@@ -35,7 +40,9 @@ class AvisarTareasDelDia extends Command
             ->all();
 
         if (count($emails) === 0) {
-            $this->error('No hay destinatarios configurados. Defina TAREAS_AVISO_EMAILS en el .env (separados por coma).');
+            $msg = 'No hay destinatarios configurados. Defina TAREAS_AVISO_EMAILS en el .env (separados por coma).';
+            $this->error($msg);
+            Log::channel('daily')->error('[tareas:avisar] ' . $msg);
             return 1;
         }
 
@@ -47,7 +54,9 @@ class AvisarTareasDelDia extends Command
             ->get();
 
         if ($items->count() === 0) {
-            $this->info('No hay tareas pendientes/en proceso para ' . $fecha->toDateString() . '. No se envía email.');
+            $msg = 'No hay tareas pendientes/en proceso para ' . $fecha->toDateString() . '. No se envía email.';
+            $this->info($msg);
+            Log::channel('daily')->info('[tareas:avisar] ' . $msg);
             return 0;
         }
 
@@ -61,14 +70,22 @@ class AvisarTareasDelDia extends Command
             } catch (\Exception $e) {
                 $fallidos[] = $email;
                 $this->error('Error enviando a ' . $email . ': ' . $e->getMessage());
+                Log::channel('daily')->error('[tareas:avisar] Error enviando a ' . $email, [
+                    'exception'  => $e->getMessage(),
+                    'trace'      => $e->getTraceAsString(),
+                ]);
             }
         }
 
         if (count($enviados) > 0) {
-            $this->info('Email enviado a: ' . implode(', ', $enviados));
+            $msg = 'Email enviado a: ' . implode(', ', $enviados);
+            $this->info($msg);
+            Log::channel('daily')->info('[tareas:avisar] ' . $msg, ['tareas_count' => $items->count()]);
         }
         if (count($fallidos) > 0) {
-            $this->error('No se pudo enviar a: ' . implode(', ', $fallidos));
+            $msg = 'No se pudo enviar a: ' . implode(', ', $fallidos);
+            $this->error($msg);
+            Log::channel('daily')->error('[tareas:avisar] ' . $msg);
         }
 
         $this->info('Tareas incluidas: ' . $items->count());

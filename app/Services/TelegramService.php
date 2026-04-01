@@ -479,7 +479,7 @@ class TelegramService
             }
 
             $total   = (clone $query)->count();
-            $eventos = $query->limit(5)->get();
+            $eventos = $query->limit(10)->get();
 
             if ($total === 0) {
                 $this->enviarMensaje('🔍 No se encontraron eventos con los filtros indicados.', $chatId);
@@ -498,13 +498,13 @@ class TelegramService
                 $mensaje .= "📍 " . ($evento->direccion ?: '—') . "\n";
                 $mensaje .= "🏷 " . ($evento->tipo_servicio ?: '—') . "\n";
                 if ($evento->descripcion) {
-                    $mensaje .= "📝 " . mb_substr($evento->descripcion, 0, 100) . "\n";
+                    $mensaje .= "📝 " . mb_substr($evento->descripcion, 0, 300) . "\n";
                 }
                 $mensaje .= "━━━━━━━━━━━━━━━━━━\n";
             }
 
-            if ($total > 5) {
-                $mensaje .= "\n💡 Mostrando 5 de {$total}. Afinà los filtros para ver menos resultados.";
+            if ($total > 10) {
+                $mensaje .= "\n💡 Mostrando 10 de {$total}. Afinà los filtros para ver menos resultados.";
             }
 
             $this->enviarMensaje($mensaje, $chatId);
@@ -671,7 +671,7 @@ class TelegramService
                 return;
             }
 
-            $eventos = $query->limit(5)->get();
+            $eventos = $query->limit(10)->get();
 
             $resumen = !empty($filtros['labels']) ? implode(' | ', $filtros['labels']) : htmlspecialchars($termino);
             $mensaje  = "🚨 <b>Eventos CECOCO</b>\n";
@@ -684,7 +684,7 @@ class TelegramService
                 $hora  = $evento->fecha_hora ? $evento->fecha_hora->format('H:i') : '—';
                 $tel   = $evento->telefono ?: '—';
                 $dir   = $evento->direccion ?: '—';
-                $desc  = $evento->descripcion ? mb_substr($evento->descripcion, 0, 120) : '—';
+                $desc  = $evento->descripcion ? mb_substr($evento->descripcion, 0, 300) : '—';
                 $tipo  = $evento->tipo_servicio ?: '—';
 
                 $mensaje .= "\n📋 Expediente: <b>{$evento->nro_expediente}</b>\n";
@@ -698,8 +698,8 @@ class TelegramService
                 $mensaje .= "━━━━━━━━━━━━━━━━━━\n";
             }
 
-            if ($total > 5) {
-                $mensaje .= "\n💡 Hay " . ($total - 5) . " resultado(s) más. Agregá más detalles para acotar.";
+            if ($total > 10) {
+                $mensaje .= "\n💡 Hay " . ($total - 10) . " resultado(s) más. Agregá más detalles para acotar.";
             }
 
             $this->enviarMensaje($mensaje, $chatId);

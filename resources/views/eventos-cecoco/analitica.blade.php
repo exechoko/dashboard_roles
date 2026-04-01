@@ -161,6 +161,25 @@
                 </div>
             </div>
         </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon text-info"><i class="bi bi-telephone-fill"></i></div>
+                <div>
+                    <div class="stat-value" id="stat-promedio-diario">-</div>
+                    <div class="stat-label">Llamadas/día promedio</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Tendencia diaria --}}
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="chart-card">
+                <h6><i class="bi bi-telephone me-1"></i>Llamadas al 911 por día</h6>
+                <canvas id="chart-fecha" height="100"></canvas>
+            </div>
+        </div>
     </div>
 
     {{-- Gráficos --}}
@@ -236,7 +255,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ---- Estado ----
     let ultimosDatos = null;
-    let chartHora = null, chartDia = null, chartTipos = null, chartCalles = null;
+    let chartHora = null, chartDia = null, chartTipos = null, chartCalles = null, chartFecha = null;
 
     // Inicializar filtros
     document.getElementById('filtro-desde').value = haceDias(7);
@@ -271,6 +290,45 @@ document.addEventListener('DOMContentLoaded', function () {
             borderColor:     isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
             borderWidth: 1, padding: 10, boxPadding: 4, cornerRadius: 8
         };
+
+        // Tendencia diaria (llamadas por fecha)
+        if (chartFecha) chartFecha.destroy();
+        if (datos.por_fecha && Object.keys(datos.por_fecha).length > 0) {
+            const fechaLabels = Object.keys(datos.por_fecha);
+            const fechaVals   = Object.values(datos.por_fecha);
+            const gradientColor = isDark ? 'rgba(99,179,237,0.85)' : 'rgba(13,110,253,0.8)';
+            const fillColor    = isDark ? 'rgba(99,179,237,0.15)' : 'rgba(13,110,253,0.1)';
+            chartFecha = new Chart(document.getElementById('chart-fecha'), {
+                type: 'line',
+                data: {
+                    labels: fechaLabels,
+                    datasets: [{
+                        label: 'Llamadas',
+                        data: fechaVals,
+                        borderColor: gradientColor,
+                        backgroundColor: fillColor,
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: fechaLabels.length > 60 ? 0 : 3,
+                        pointHoverRadius: 5,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { ...tooltipStyle,
+                            callbacks: { title: items => items[0].label, label: item => ` ${item.raw} llamadas` }
+                        }
+                    },
+                    scales: {
+                        x: { grid: { color: gridColor, borderDash: [5,5] }, ticks: { color: textColor, maxTicksLimit: 12, maxRotation: 30 } },
+                        y: { beginAtZero: true, grid: { color: gridColor, borderDash: [5,5] }, ticks: { color: textColor, precision: 0 } }
+                    }
+                }
+            });
+        }
 
         // Gráfico por hora
         const horaLabels = Object.keys(datos.por_hora).map(h => String(h).padStart(2,'0') + 'h');
@@ -420,11 +478,13 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(datos => {
                 ultimosDatos = datos;
 
-                document.getElementById('stat-total').textContent    = datos.total.toLocaleString('es-AR');
-                document.getElementById('stat-hora-pico').textContent = datos.hora_pico;
-                document.getElementById('stat-dia-pico').textContent  = datos.dia_pico;
-                document.getElementById('stat-calle-top').textContent =
+                document.getElementById('stat-total').textContent          = datos.total.toLocaleString('es-AR');
+                document.getElementById('stat-hora-pico').textContent       = datos.hora_pico;
+                document.getElementById('stat-dia-pico').textContent        = datos.dia_pico;
+                document.getElementById('stat-calle-top').textContent       =
                     datos.top_calles && datos.top_calles.length > 0 ? datos.top_calles[0].calle : '-';
+                document.getElementById('stat-promedio-diario').textContent =
+                    datos.promedio_diario != null ? datos.promedio_diario.toLocaleString('es-AR') : '-';
 
                 renderCharts(datos);
                 generarRecomendaciones(datos);

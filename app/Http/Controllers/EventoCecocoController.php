@@ -711,6 +711,22 @@ class EventoCecocoController extends Controller
         // Total
         $total = (clone $base)->count();
 
+        // Llamadas por día calendario (tendencia)
+        $porFechaRaw = (clone $base)
+            ->select(DB::raw('DATE(fecha_hora) as fecha'), DB::raw('COUNT(*) as total'))
+            ->groupBy('fecha')
+            ->orderBy('fecha')
+            ->get();
+
+        $porFecha = [];
+        foreach ($porFechaRaw as $row) {
+            $porFecha[$row->fecha] = (int) $row->total;
+        }
+
+        // Promedio diario
+        $diasPeriodo   = max(1, \Carbon\Carbon::parse($desde)->diffInDays(\Carbon\Carbon::parse($hasta)) + 1);
+        $promedioDiario = round($total / $diasPeriodo, 1);
+
         // Por hora del día (0-23)
         $porHoraRaw = (clone $base)
             ->select(DB::raw('HOUR(fecha_hora) as hora'), DB::raw('COUNT(*) as total'))
@@ -773,15 +789,17 @@ class EventoCecocoController extends Controller
         $diaPicoNombre = $diasNombres[$diaPico] ?? '-';
 
         return response()->json([
-            'total'          => $total,
-            'desde'          => $desde,
-            'hasta'          => $hasta,
-            'por_hora'       => $porHora,
-            'por_dia'        => $porDia,
-            'top_tipos'      => $topTipos,
-            'top_calles'     => $topCalles,
-            'hora_pico'      => $horaPicoLabel,
-            'dia_pico'       => $diaPicoNombre,
+            'total'           => $total,
+            'desde'           => $desde,
+            'hasta'           => $hasta,
+            'por_hora'        => $porHora,
+            'por_dia'         => $porDia,
+            'top_tipos'       => $topTipos,
+            'top_calles'      => $topCalles,
+            'hora_pico'       => $horaPicoLabel,
+            'dia_pico'        => $diaPicoNombre,
+            'por_fecha'       => $porFecha,
+            'promedio_diario' => $promedioDiario,
         ]);
     }
 }

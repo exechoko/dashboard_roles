@@ -254,14 +254,7 @@
 </div>
 
 <script>
-var _grabacionesTimer   = null;
-var _grabacionesIntentos = 0;
-var _grabacionesMaxIntentos = 40; // 40 × 3 s = 2 min máximo
-
 function abrirGrabaciones() {
-    if (_grabacionesTimer) { clearTimeout(_grabacionesTimer); _grabacionesTimer = null; }
-    _grabacionesIntentos = 0;
-
     document.getElementById('grabaciones-loading').style.display = 'block';
     document.getElementById('grabaciones-empty').style.display   = 'none';
     document.getElementById('grabaciones-error').style.display   = 'none';
@@ -270,30 +263,12 @@ function abrirGrabaciones() {
     document.getElementById('grabaciones-lista').innerHTML       = '';
 
     $('#modalGrabaciones').modal('show');
-    _consultarGrabaciones();
-}
 
-function _consultarGrabaciones() {
     fetch('{{ route("api.cecoco.grabaciones", $eventoCecoco) }}', {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
-    .then(function(r) {
-        if (r.status === 202) {
-            _grabacionesIntentos++;
-            if (_grabacionesIntentos >= _grabacionesMaxIntentos) {
-                document.getElementById('grabaciones-loading').style.display = 'none';
-                document.getElementById('grabaciones-error').style.display   = 'block';
-                document.getElementById('grabaciones-error').textContent     = 'La búsqueda tardó demasiado. Intentá de nuevo más tarde.';
-                return null;
-            }
-            _grabacionesTimer = setTimeout(_consultarGrabaciones, 3000);
-            return null;
-        }
-        return r.json();
-    })
+    .then(function(r) { return r.json(); })
     .then(function(data) {
-        if (data === null) return; // sigue en polling
-
         document.getElementById('grabaciones-loading').style.display = 'none';
 
         if (!data.success) {
@@ -303,8 +278,8 @@ function _consultarGrabaciones() {
         }
 
         if (data.ventana) {
-            document.getElementById('ventana-desde').textContent         = data.ventana.desde;
-            document.getElementById('ventana-hasta').textContent         = data.ventana.hasta;
+            document.getElementById('ventana-desde').textContent        = data.ventana.desde;
+            document.getElementById('ventana-hasta').textContent        = data.ventana.hasta;
             document.getElementById('grabaciones-ventana').style.display = 'block';
         }
 
@@ -365,7 +340,6 @@ function _consultarGrabaciones() {
 }
 
 $('#modalGrabaciones').on('hide.bs.modal', function() {
-    if (_grabacionesTimer) { clearTimeout(_grabacionesTimer); _grabacionesTimer = null; }
     document.querySelectorAll('#grabaciones-lista audio').forEach(function(audio) {
         audio.pause();
         audio.currentTime = 0;

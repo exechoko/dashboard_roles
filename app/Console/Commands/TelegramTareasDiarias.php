@@ -91,14 +91,26 @@ class TelegramTareasDiarias extends Command
             }
         }
 
-        $enviado = $telegram->enviarMensaje($mensaje);
+        $chatIds = collect(explode(',', (string) config('services.telegram.tareas_chat_ids')))
+            ->map(fn($id) => trim($id))
+            ->filter()
+            ->whenEmpty(fn($c) => $c->push(null)) // usa el chat_id por defecto si no hay lista
+            ->values();
 
-        if ($enviado) {
+        $fallidos = 0;
+        foreach ($chatIds as $chatId) {
+            $enviado = $telegram->enviarMensaje($mensaje, $chatId ?: null);
+            if (!$enviado) {
+                $fallidos++;
+                $this->error('No se pudo enviar a: ' . ($chatId ?: 'chat_id por defecto'));
+            }
+        }
+
+        if ($fallidos === 0) {
             $this->info("Resumen enviado por Telegram. Hoy: {$tareasHoy->count()}, Mañana: {$tareasManana->count()}");
             return 0;
         }
 
-        $this->error('No se pudo enviar el mensaje por Telegram.');
-        return 1;
+        return $fallidos < $chatIds->count() ? 0 : 1;
     }
 }

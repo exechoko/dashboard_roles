@@ -29,14 +29,14 @@ class TelegramService
     public function enviarMensaje(string $mensaje, ?string $chatId = null): bool
     {
         if (empty($this->botToken)) {
-            Log::warning('Telegram: TELEGRAM_BOT_TOKEN no configurado.');
+            Log::channel('telegram')->warning('Telegram: TELEGRAM_BOT_TOKEN no configurado.');
             return false;
         }
 
         $destino = $chatId ?? $this->chatId;
 
         if (empty($destino)) {
-            Log::warning('Telegram: TELEGRAM_CHAT_ID no configurado.');
+            Log::channel('telegram')->warning('Telegram: TELEGRAM_CHAT_ID no configurado.');
             return false;
         }
 
@@ -55,14 +55,14 @@ class TelegramService
             $body = json_decode((string) $response->getBody(), true);
 
             if (!($body['ok'] ?? false)) {
-                Log::error('Telegram: respuesta no OK', ['body' => $body]);
+                Log::channel('telegram')->error('Telegram: respuesta no OK', ['body' => $body]);
                 return false;
             }
 
             return true;
         } catch (\Exception $e) {
             $mensajeError = preg_replace('/bot[\w\-:]+\//', 'bot[REDACTED]/', $e->getMessage());
-            Log::error('Telegram: error al enviar mensaje', [
+            Log::channel('telegram')->error('Telegram: error al enviar mensaje', [
                 'error' => $mensajeError,
             ]);
             return false;
@@ -152,7 +152,7 @@ class TelegramService
             $mensajeError = preg_replace('/bot[\w\-:]+\//', 'bot[REDACTED]/', $e->getMessage());
             // Los timeouts de red son esperables; se loguean como warning para no saturar el log
             $nivel = str_contains($e->getMessage(), 'cURL error 28') ? 'warning' : 'error';
-            Log::$nivel('Telegram: error en getUpdates', ['error' => $mensajeError]);
+            Log::channel('telegram')->$nivel('Telegram: error en getUpdates', ['error' => $mensajeError]);
             return [];
         }
     }
@@ -166,6 +166,14 @@ class TelegramService
         if (empty($chatId) || empty($texto)) {
             return;
         }
+
+        Log::channel('telegram')->info('Telegram: chat_id detectado', [
+            'chat_id'    => $chatId,
+            'from'       => $nombre,
+            'username'   => $message['from']['username'] ?? null,
+            'chat_type'  => $message['chat']['type'] ?? null,
+            'chat_title' => $message['chat']['title'] ?? null,
+        ]);
 
         if ($texto === '/start' || $texto === '/ayuda' || $texto === '/help') {
             $this->responderAyuda($chatId, $nombre);
@@ -394,7 +402,7 @@ class TelegramService
 
             $this->enviarMensaje($mensaje, $chatId);
         } catch (\Exception $e) {
-            Log::error('Telegram: error buscando eventos CECOCO', ['error' => $e->getMessage()]);
+            Log::channel('telegram')->error('Telegram: error buscando eventos CECOCO', ['error' => $e->getMessage()]);
             $this->enviarMensaje('❌ Error al buscar eventos CECOCO: ' . $e->getMessage(), $chatId);
         }
     }
@@ -495,7 +503,7 @@ class TelegramService
 
             $this->enviarMensaje($mensaje, $chatId);
         } catch (\Exception $e) {
-            Log::error('Telegram: error respondiendo tareas', ['error' => $e->getMessage()]);
+            Log::channel('telegram')->error('Telegram: error respondiendo tareas', ['error' => $e->getMessage()]);
             $this->enviarMensaje('❌ Error al consultar las tareas: ' . $e->getMessage(), $chatId);
         }
     }
@@ -585,7 +593,7 @@ class TelegramService
 
             $this->enviarMensaje($mensaje, $chatId);
         } catch (\Exception $e) {
-            Log::error('Telegram: error respondiendo novedades', ['error' => $e->getMessage()]);
+            Log::channel('telegram')->error('Telegram: error respondiendo novedades', ['error' => $e->getMessage()]);
             $this->enviarMensaje('❌ Error al consultar novedades: ' . $e->getMessage(), $chatId);
         }
     }

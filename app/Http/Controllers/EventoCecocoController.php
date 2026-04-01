@@ -6,8 +6,6 @@ use App\Models\EventoCecoco;
 use App\Models\Importacion;
 use App\Services\EventoCecocoParser;
 use App\Services\CecocoExpedienteService;
-use App\Services\CecocoGrabacionesService;
-use App\Services\CecocoGrabacionesLocalService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -505,7 +503,9 @@ class EventoCecocoController extends Controller
     }
 
     /**
-     * Busca grabaciones para el evento: primero en disco local, luego en CECOCO web.
+     * Busca grabaciones para el evento de forma asíncrona.
+     * Primera llamada: despacha el job y responde 202 processing.
+     * Llamadas siguientes: devuelve el resultado cacheado o sigue en 202.
      */
     public function grabaciones(EventoCecoco $eventoCecoco): JsonResponse
     {
@@ -519,49 +519,25 @@ class EventoCecocoController extends Controller
             ]);
         }
 
-        try {
-            // 1. Buscar en disco local (rápido)
-            $localService = new CecocoGrabacionesLocalService();
-            $resultado    = $localService->buscarGrabaciones(
-                $eventoCecoco->telefono,
-                $eventoCecoco->fecha_hora
-            );
+        $cacheKey = 'cecoco_grabaciones_' . $eventoCecoco->id;
 
-            // Completar la URL de stream local para cada grabación
-            foreach ($resultado['grabaciones'] as &$g) {
-                $g['url'] = route('api.cecoco.grabacion.stream.local', [
-                    'path' => base64_encode($g['path']),
-                ]);
-                unset($g['path']); // no exponer la ruta física al cliente
-            }
-            unset($g);
+        // Si ya hay resultado (o error) en cache, devolverlo
+        if (Cache::has($cacheKey)) {
+            $cached = Cache::get($cacheKey);
 
-            // 2. Si no se encontró nada localmente, intentar vía CECOCO web
-            if (empty($resultado['grabaciones']) && config('cecoco.url')) {
-                $cecocoService = new CecocoGrabacionesService();
-                $resultado     = $cecocoService->buscarGrabaciones(
-                    $eventoCecoco->telefono,
-                    $eventoCecoco->fecha_hora
-                );
+            if ($cached === 'processing') {
+                return response()->json(['status' => 'processing'], 202);
             }
 
-            return response()->json([
-                'success'     => true,
-                'grabaciones' => $resultado['grabaciones'],
-                'total'       => count($resultado['grabaciones']),
-                'ventana'     => $resultado['ventana'],
-                'fuente'      => $resultado['fuente'] ?? 'cecoco',
-            ]);
-        } catch (\Exception $e) {
-            Log::error('grabaciones evento cecoco', [
-                'evento_id' => $eventoCecoco->id,
-                'error'     => $e->getMessage(),
-            ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al buscar grabaciones: ' . $e->getMessage(),
-            ], 500);
+            return response()->json($cached);
         }
+
+        // Primera vez: marcar como en proceso y despachar el job
+        Cache::put($cacheKey, 'processing', now()->addMinutes(5));
+
+        \App\Jobs\BuscarGrabacionesCecoco::dispatch($eventoCecoco->id, $cacheKey);
+
+        return response()->json(['status' => 'processing'], 202);
     }
 
     /**

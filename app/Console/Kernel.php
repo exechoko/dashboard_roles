@@ -42,6 +42,15 @@ class Kernel extends ConsoleKernel
                 app(TelegramService::class)->notificarScheduleFallido('cecoco:importar-dia-anterior', 'El comando finalizó con error.');
             });
 
+        // Geocodifica en lotes las direcciones del día anterior para el mapa de calor.
+        // Se ejecuta 30 min después del import para que el job de procesamiento ya haya terminado.
+        $schedule->command('cecoco:geocodificar-dia-anterior')->dailyAt('06:30')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/cecoco_geocodificacion.log'))
+            ->onFailure(function () {
+                app(TelegramService::class)->notificarScheduleFallido('cecoco:geocodificar-dia-anterior', 'El comando finalizó con error.');
+            });
+
         $schedule->command('telegram:tareas-diarias')->dailyAt('07:00')
             ->onFailure(function () {
                 app(TelegramService::class)->notificarScheduleFallido('telegram:tareas-diarias', 'El comando finalizó con error.');

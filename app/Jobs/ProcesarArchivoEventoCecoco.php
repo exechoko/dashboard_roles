@@ -2,8 +2,12 @@
 
 namespace App\Jobs;
 
+use App\Jobs\GeocodificarLoteEventosCecoco;
+use App\Models\EventoCecoco;
+use App\Models\GeocodificacionDirecta;
 use App\Models\Importacion;
 use App\Services\EventoCecocoParser;
+use App\Services\GeocodificacionService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -121,6 +125,11 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
                 'registros_importados' => $resultado['importados'],
             ]);
 
+            // Disparar pre-geocodificación de los eventos recién importados
+            if ($resultado['importados'] > 0) {
+                $this->despacharGeocodificacion($importacion);
+            }
+
         } catch (\Exception $e) {
             if (isset($importacion)) {
                 $importacion->update([
@@ -151,6 +160,83 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
         $method = $reflection->getMethod('persistir');
         $method->setAccessible(true);
         return $method->invoke($parser, $filas, $importacion);
+    }
+
+    /**
+     * Encola en lotes la geocodificación de las direcciones de los eventos
+     * recién importados para pre-calentar el caché del mapa de calor.
+     * Lote: 20 dir. | Pausa: 500 ms entre llamadas | Delay: 30 s entre lotes.
+     */
+    private function despacharGeocodificacion(Importacion $importacion): void
+    {
+        try {
+            $geocoder = app(GeocodificacionService::class);
+
+            // Obtener direcciones únicas de la importación, resolviendo las que no
+            // tienen numeración con la lógica de extracción desde la descripción.
+            $grupos = EventoCecoco::where('importacion_id', $importacion->id)
+                ->whereNotNull('direccion')
+                ->where('direccion', '!=', '')
+                ->where('direccion', '!=', '-')
+                ->selectRaw('direccion, MIN(descripcion) as descripcion_muestra')
+                ->groupBy('direccion')
+                ->get();
+
+            if ($grupos->isEmpty()) {
+                return;
+            }
+
+            $direccionesResueltas = [];
+            foreach ($grupos as $grupo) {
+                $dir = trim($grupo->direccion);
+                if (!$geocoder->tieneNumeracion($dir) && !empty($grupo->descripcion_muestra)) {
+                    $extraida = $geocoder->extraerDireccionDeDescripcion($grupo->descripcion_muestra);
+                    if ($extraida) {
+                        $dir = $extraida;
+                    }
+                }
+                $direccionesResueltas[] = $dir;
+            }
+
+            $direccionesResueltas = array_values(array_unique($direccionesResueltas));
+
+            // Filtrar las ya cacheadas
+            $yaCacheadas = GeocodificacionDirecta::whereIn('direccion_original', $direccionesResueltas)
+                ->pluck('direccion_original')
+                ->all();
+
+            $pendientes = array_values(array_diff($direccionesResueltas, $yaCacheadas));
+
+            if (empty($pendientes)) {
+                Log::info("ProcesarArchivoEventoCecoco: todas las direcciones ya geocodificadas", [
+                    'importacion_id' => $importacion->id,
+                ]);
+                return;
+            }
+
+            $tamanoLote    = 50;
+            $delaySegundos = 20;
+            $pausaMs       = 300;
+            $contexto      = "importacion_{$importacion->id}";
+
+            $lotes = array_chunk($pendientes, $tamanoLote);
+            foreach ($lotes as $i => $lote) {
+                GeocodificarLoteEventosCecoco::dispatch($lote, $pausaMs, $contexto)
+                    ->delay(now()->addSeconds($i * $delaySegundos));
+            }
+
+            Log::info("ProcesarArchivoEventoCecoco: geocodificación encolada", [
+                'importacion_id' => $importacion->id,
+                'pendientes'     => count($pendientes),
+                'lotes'          => count($lotes),
+            ]);
+        } catch (\Exception $e) {
+            // No propagar: la geocodificación es un proceso de optimización, no crítico
+            Log::warning("ProcesarArchivoEventoCecoco: no se pudo encolar geocodificación", [
+                'importacion_id' => $importacion->id,
+                'error'          => $e->getMessage(),
+            ]);
+        }
     }
 
     public function failed(\Throwable $exception)

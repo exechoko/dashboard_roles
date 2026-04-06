@@ -16,7 +16,7 @@ set "C_DIM=%ESC%[2m"
 set "C_MAGENTA=%ESC%[95m"
 set "C_BLUE=%ESC%[94m"
 
-set PROJECT_PATH=C:\Apache24\htdocs\dashboard_roles
+set PROJECT_PATH=C:\Apache24\htdocs\equipamiento
 set PHP_PATH=C:\php\php.exe
 set LOG_PATH=%PROJECT_PATH%\storage\logs
 
@@ -72,7 +72,7 @@ echo %C_DIM%  ──────────────────────
 echo.
 
 if "%OPCION%"=="1" (
-    echo %C_CYAN%  >> Ejecutando:%C_RESET% %C_BOLD%tareas:generar%C_RESET%
+    echo %C_CYAN%  ^>^> Ejecutando:%C_RESET% %C_BOLD%tareas:generar%C_RESET%
     echo.
     "%PHP_PATH%" artisan tareas:generar
     set "EXITCODE=!errorlevel!"
@@ -80,7 +80,7 @@ if "%OPCION%"=="1" (
 )
 
 if "%OPCION%"=="2" (
-    echo %C_CYAN%  >> Ejecutando:%C_RESET% %C_BOLD%tareas:avisar%C_RESET%
+    echo %C_CYAN%  ^>^> Ejecutando:%C_RESET% %C_BOLD%tareas:avisar%C_RESET%
     echo.
     "%PHP_PATH%" artisan tareas:avisar
     set "EXITCODE=!errorlevel!"
@@ -88,7 +88,7 @@ if "%OPCION%"=="2" (
 )
 
 if "%OPCION%"=="3" (
-    echo %C_CYAN%  >> Ejecutando:%C_RESET% %C_BOLD%cecoco:importar-dia-anterior%C_RESET%
+    echo %C_CYAN%  ^>^> Ejecutando:%C_RESET% %C_BOLD%cecoco:importar-dia-anterior%C_RESET%
     echo %C_DIM%     Log: %LOG_PATH%\cecoco_importacion.log%C_RESET%
     echo.
     "%PHP_PATH%" artisan cecoco:importar-dia-anterior
@@ -97,7 +97,7 @@ if "%OPCION%"=="3" (
 )
 
 if "%OPCION%"=="4" (
-    echo %C_CYAN%  >> Ejecutando:%C_RESET% %C_BOLD%cecoco:geocodificar-dia-anterior%C_RESET%
+    echo %C_CYAN%  ^>^> Ejecutando:%C_RESET% %C_BOLD%cecoco:geocodificar-dia-anterior%C_RESET%
     echo %C_DIM%     Log: %LOG_PATH%\cecoco_geocodificacion.log%C_RESET%
     echo.
     "%PHP_PATH%" artisan cecoco:geocodificar-dia-anterior
@@ -106,7 +106,7 @@ if "%OPCION%"=="4" (
 )
 
 if "%OPCION%"=="5" (
-    echo %C_CYAN%  >> Ejecutando:%C_RESET% %C_BOLD%telegram:tareas-diarias%C_RESET%
+    echo %C_CYAN%  ^>^> Ejecutando:%C_RESET% %C_BOLD%telegram:tareas-diarias%C_RESET%
     echo.
     "%PHP_PATH%" artisan telegram:tareas-diarias
     set "EXITCODE=!errorlevel!"
@@ -114,7 +114,7 @@ if "%OPCION%"=="5" (
 )
 
 if "%OPCION%"=="6" (
-    echo %C_MAGENTA%  >> Ejecutando:%C_RESET% %C_BOLD%telegram:polling%C_RESET%
+    echo %C_MAGENTA%  ^>^> Ejecutando:%C_RESET% %C_BOLD%telegram:polling%C_RESET%
     echo %C_YELLOW%     Presiona Ctrl+C para detener.%C_RESET%
     echo.
     "%PHP_PATH%" artisan telegram:polling
@@ -123,7 +123,7 @@ if "%OPCION%"=="6" (
 )
 
 if "%OPCION%"=="7" (
-    echo %C_MAGENTA%  >> Iniciando:%C_RESET% %C_BOLD%queue:worker%C_RESET%
+    echo %C_MAGENTA%  ^>^> Iniciando:%C_RESET% %C_BOLD%queue:worker%C_RESET%
     echo %C_YELLOW%     Presiona Ctrl+C para detener.%C_RESET%
     echo.
     :queue_loop
@@ -139,7 +139,7 @@ if "%OPCION%"=="7" (
 )
 
 if "%OPCION%"=="8" (
-    echo %C_BLUE%  >> Ejecutando:%C_RESET% %C_BOLD%schedule:run%C_RESET%
+    echo %C_BLUE%  ^>^> Ejecutando:%C_RESET% %C_BOLD%schedule:run%C_RESET%
     echo.
     "%PHP_PATH%" artisan schedule:run --verbose
     set "EXITCODE=!errorlevel!"

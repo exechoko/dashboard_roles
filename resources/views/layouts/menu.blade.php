@@ -303,6 +303,23 @@
     </li>
 @endcan
 
+@can('ver-menu-ia')
+    <li class="dropdown {{ request()->is('rag*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-brain"></i><span>IA</span>
+        </a>
+        <ul class="dropdown-menu">
+            @can('ver-rag')
+                <li class="{{ request()->is('rag*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('rag.index') }}">
+                        <i class="fas fa-database"></i><span>Base de Conocimiento</span>
+                    </a>
+                </li>
+            @endcan
+        </ul>
+    </li>
+@endcan
+
 @can('ver-menu-plano-edificio')
     <li class="{{ request()->is('plano-edificio*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('plano-edificio.index') }}">

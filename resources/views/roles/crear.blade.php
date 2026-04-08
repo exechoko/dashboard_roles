@@ -60,6 +60,7 @@
                                                         'menu-documentacion',
                                                         'menu-transcripcion',
                                                         'menu-transcripcion-aws',
+                                                        'menu-ia',
                                                         'menu-gestor-claves',
                                                         'menu-patrimonio',
                                                         'menu-plano-edificio'
@@ -116,6 +117,9 @@
                                                     ],
                                                     'Plano Edificio' => [
                                                         'plano-edificio'
+                                                    ],
+                                                    'IA' => [
+                                                        'rag'
                                                     ],
                                                     'Operaciones' => [
                                                         'buscar-moviles-parados',

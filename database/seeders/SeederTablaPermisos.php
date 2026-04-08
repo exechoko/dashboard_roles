@@ -99,6 +99,8 @@ class SeederTablaPermisos extends Seeder
             'ver-menu-documentacion',
             'ver-menu-transcripcion',
             'ver-menu-transcripcion-aws',
+            'ver-menu-ia',
+            'ver-rag',
             'ver-menu-entregas',
             'ver-menu-bodycams',
             'ver-menu-gestor-claves',

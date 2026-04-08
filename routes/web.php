@@ -29,6 +29,7 @@ use App\Http\Controllers\CamaraFisicaController;
 use App\Http\Controllers\SitioController;
 use App\Http\Controllers\CecocoController;
 use App\Http\Controllers\TranscripcionController;
+use App\Http\Controllers\RAGController;
 use App\Http\Controllers\PlanoEdificioController;
 use App\Http\Controllers\PersonalController;
 
@@ -158,6 +159,15 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::get('/transcribir', [TranscripcionController::class, 'index'])->name('transcribe.index');
     Route::post('/transcribir', [TranscripcionController::class, 'transcribe'])->name('transcribe.audio');
+
+    // RAG — Servidor IA local
+    Route::prefix('rag')->name('rag.')->group(function () {
+        Route::get('/',          [RAGController::class, 'index'])->name('index');
+        Route::get('/estado',    [RAGController::class, 'estado'])->name('estado');
+        Route::post('/cargar',   [RAGController::class, 'cargar'])->name('cargar');
+        Route::post('/preguntar',[RAGController::class, 'preguntar'])->name('preguntar');
+        Route::post('/reindexar',[RAGController::class, 'reindexar'])->name('reindexar');
+    });
 
     Route::get('/transcription', [AudioTranscriptionController::class, 'index'])->name('transcription.index');
     Route::post('/generate-upload-url', [AudioTranscriptionController::class, 'generateUploadUrl']);

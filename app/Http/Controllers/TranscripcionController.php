@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
 
 class TranscripcionController extends Controller
@@ -16,39 +14,35 @@ class TranscripcionController extends Controller
 
     public function transcribe(Request $request)
     {
-        //set_time_limit(3600);
-
         $request->validate([
-            'audio' => 'required|file|mimes:mp3,wav,m4a,ogg|max:10240' // 10MB max
+            'audio' => 'required|file|mimes:mp3,wav,m4a,ogg|max:51200', // 50MB
         ]);
 
-        try {
-            $audio = $request->file('audio');
+        $audio = $request->file('audio');
+        $url   = config('services.ia.whisper_url') . '/inference';
 
-            // Enviar el archivo al microservicio Whisper
+        try {
             $response = Http::timeout(300)
-                ->attach(
-                'file',
-                fopen($audio->getRealPath(), 'r'),
-                $audio->getClientOriginalName()
-            )->post('http://localhost:8010/transcribe'); // Asumiendo que el contenedor expone el puerto 8010
+                ->attach('file', fopen($audio->getRealPath(), 'r'), $audio->getClientOriginalName())
+                ->post($url, ['language' => 'es']);
 
             if ($response->successful()) {
                 return response()->json([
-                    'success' => true,
-                    'text' => $response->json('text')
+                    'success'  => true,
+                    'text'     => $response->json('text'),
+                    'duracion' => $response->json('duration'),
                 ]);
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error en el microservicio: ' . $response->body()
-                ], 500);
             }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error en Whisper (' . $response->status() . '): ' . $response->body(),
+            ], 500);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al enviar el audio: ' . $e->getMessage()
+                'message' => 'No se pudo conectar al servidor IA: ' . $e->getMessage(),
             ], 500);
         }
     }

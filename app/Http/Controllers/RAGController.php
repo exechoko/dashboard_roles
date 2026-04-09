@@ -177,6 +177,19 @@ class RAGController extends Controller
         }
     }
 
+    public function reintentarCarga(int $jobId): JsonResponse
+    {
+        $job = RagCargaJob::findOrFail($jobId);
+
+        if ($job->status !== 'failed') {
+            return response()->json(['success' => false, 'message' => 'El job no está en estado fallido.'], 422);
+        }
+
+        $job->update(['status' => 'pending', 'error_message' => null]);
+
+        return response()->json(['success' => true]);
+    }
+
     public function reindexar(Request $request): JsonResponse
     {
         $coleccion = $request->input('coleccion');

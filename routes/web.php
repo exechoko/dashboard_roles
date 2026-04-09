@@ -172,6 +172,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/carga-estado/{jobId}',          [RAGController::class, 'estadoCarga'])->name('carga.estado');
         Route::post('/preguntar',                    [RAGController::class, 'preguntar'])->name('preguntar');
         Route::post('/reindexar',                    [RAGController::class, 'reindexar'])->name('reindexar');
+        Route::post('/jobs/{jobId}/reintentar',      [RAGController::class, 'reintentarCarga'])->name('jobs.reintentar');
     });
 
     Route::get('/transcription', [AudioTranscriptionController::class, 'index'])->name('transcription.index');

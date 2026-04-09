@@ -599,7 +599,12 @@ $(document).ready(function () {
                 } else if (estado.status === 'failed') {
                     clearInterval(timer);
                     setBadge(idx, 'danger',
-                        `<i class="fas fa-times mr-1"></i>${escapeHtml(estado.error || 'Error')}`);
+                        `<i class="fas fa-times mr-1"></i>${escapeHtml(estado.error || 'Error')}
+                         <button class="btn btn-xs btn-warning ml-1 btn-reintentar-job"
+                             data-job-id="${jobId}" data-idx="${idx}" data-archivo="${escapeHtml(nombreArchivo)}"
+                             style="font-size:.7rem;padding:1px 6px;line-height:1.4;">
+                             <i class="fas fa-redo-alt mr-1"></i>Reintentar
+                         </button>`);
                 }
                 // pending/processing → seguir esperando
             });
@@ -698,6 +703,29 @@ $(document).ready(function () {
         historial.insertAdjacentHTML('beforeend', html);
         historial.scrollTop = historial.scrollHeight;
     }
+
+    // ── Reintentar job fallido ───────────────────────────────────────────────
+    $(document).on('click', '.btn-reintentar-job', function () {
+        const btn       = $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+        const jobId     = $(this).data('job-id');
+        const idx       = $(this).data('idx');
+        const archivo   = $(this).data('archivo');
+
+        $.post(`/rag/jobs/${jobId}/reintentar`, { _token: csrf })
+            .done(function (data) {
+                if (data.success) {
+                    setBadge(idx, 'warning', '<i class="fas fa-circle-notch fa-spin mr-1"></i>Reintentando...');
+                    iniciarPolling(idx, jobId, archivo);
+                } else {
+                    toastr.error(data.message || 'No se pudo reintentar.');
+                    btn.prop('disabled', false).html('<i class="fas fa-redo-alt mr-1"></i>Reintentar');
+                }
+            })
+            .fail(function () {
+                toastr.error('Error al conectar con el servidor.');
+                btn.prop('disabled', false).html('<i class="fas fa-redo-alt mr-1"></i>Reintentar');
+            });
+    });
 
     function escapeHtml(text) {
         if (!text) return '';

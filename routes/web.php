@@ -159,6 +159,7 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::get('/transcribir', [TranscripcionController::class, 'index'])->name('transcribe.index');
     Route::post('/transcribir', [TranscripcionController::class, 'transcribe'])->name('transcribe.audio');
+    Route::get('/transcribir/estado/{jobId}', [TranscripcionController::class, 'estado'])->name('transcribe.estado');
 
     // RAG — Servidor IA local
     Route::prefix('rag')->name('rag.')->group(function () {

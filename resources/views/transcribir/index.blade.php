@@ -253,24 +253,17 @@
                     return;
                 }
 
+                transcribeBtn.disabled = true;
                 progressContainer.classList.remove('d-none');
-                progressBar.style.width = '0%';
-                progressPercent.textContent = '0%';
-                statusMessage.textContent = "Enviando archivo para transcripción...";
+                progressBar.style.width = '10%';
+                progressPercent.textContent = '10%';
+                statusMessage.textContent = "Subiendo archivo...";
+                statusMessage.classList.remove('text-danger');
 
                 let formData = new FormData();
                 formData.append('audio', selectedFile);
 
-                // Progreso falso visual
-                let progress = 0;
-                const interval = setInterval(() => {
-                    progress += 5;
-                    if (progress <= 95) {
-                        progressBar.style.width = `${progress}%`;
-                        progressPercent.textContent = `${progress}%`;
-                    }
-                }, 500);
-
+                // Paso 1: Subir el archivo y obtener el job_id
                 fetch('/transcribir', {
                     method: 'POST',
                     headers: {
@@ -278,26 +271,70 @@
                     },
                     body: formData
                 })
-                    .then(response => response.json())
-                    .then(data => {
-                        clearInterval(interval);
-                        progressBar.style.width = '100%';
-                        progressPercent.textContent = '100%';
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success || !data.job_id) {
+                        throw new Error(data.message || 'Error al iniciar la transcripción.');
+                    }
 
-                        if (data.success) {
-                            transcriptionResult.value = data.text;
-                            statusMessage.textContent = "Transcripción completada.";
-                            copyBtn.disabled = false;
-                        } else {
-                            transcriptionResult.value = '';
-                            statusMessage.textContent = "Error en la transcripción: " + (data.message || 'Error desconocido');
+                    progressBar.style.width = '30%';
+                    progressPercent.textContent = '30%';
+                    statusMessage.textContent = "Procesando transcripción en el servidor...";
+
+                    // Paso 2: Hacer polling del estado
+                    let pollProgress = 30;
+                    const pollInterval = setInterval(() => {
+                        // Avanzar la barra de forma visual mientras se espera
+                        if (pollProgress < 90) {
+                            pollProgress += 2;
+                            progressBar.style.width = `${pollProgress}%`;
+                            progressPercent.textContent = `${pollProgress}%`;
                         }
-                    })
-                    .catch(error => {
-                        clearInterval(interval);
-                        transcriptionResult.value = '';
-                        statusMessage.textContent = "Error al conectar con el servidor.";
-                    });
+
+                        fetch(`/transcribir/estado/${data.job_id}`, {
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Accept': 'application/json',
+                            }
+                        })
+                        .then(r => r.json())
+                        .then(estado => {
+                            if (estado.status === 'completed') {
+                                clearInterval(pollInterval);
+                                progressBar.style.width = '100%';
+                                progressPercent.textContent = '100%';
+                                transcriptionResult.value = estado.text || '';
+                                statusMessage.textContent = "Transcripción completada.";
+                                statusMessage.classList.remove('text-danger');
+                                statusMessage.classList.add('text-success');
+                                copyBtn.disabled = false;
+                                transcribeBtn.disabled = false;
+                            } else if (estado.status === 'failed') {
+                                clearInterval(pollInterval);
+                                progressBar.style.width = '100%';
+                                progressBar.classList.add('bg-danger');
+                                progressPercent.textContent = '100%';
+                                transcriptionResult.value = '';
+                                statusMessage.textContent = "Error: " + (estado.error || 'Error desconocido');
+                                statusMessage.classList.remove('text-success');
+                                statusMessage.classList.add('text-danger');
+                                transcribeBtn.disabled = false;
+                            }
+                            // Si status === 'pending' o 'processing', seguir esperando
+                        })
+                        .catch(() => {
+                            // Error de red al consultar estado — seguir intentando
+                        });
+
+                    }, 3000); // Consultar cada 3 segundos
+                })
+                .catch(error => {
+                    progressBar.style.width = '0%';
+                    progressPercent.textContent = '0%';
+                    statusMessage.textContent = "Error: " + error.message;
+                    statusMessage.classList.add('text-danger');
+                    transcribeBtn.disabled = false;
+                });
             });
 
 

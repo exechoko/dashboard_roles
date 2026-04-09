@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\RagChatMensaje;
 use App\Models\RagConsultaJob;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
@@ -42,10 +43,17 @@ class ProcesarRagConsultas extends Command
                 $elapsed = round(microtime(true) - $inicio, 2);
 
                 if ($response->successful()) {
-                    $job->update([
-                        'status'    => 'completed',
-                        'respuesta' => $response->json('respuesta', ''),
-                    ]);
+                    $respuesta = $response->json('respuesta', '');
+                    $job->update(['status' => 'completed', 'respuesta' => $respuesta]);
+
+                    if ($job->user_id) {
+                        RagChatMensaje::create([
+                            'user_id'   => $job->user_id,
+                            'coleccion' => $job->coleccion,
+                            'role'      => 'assistant',
+                            'contenido' => $respuesta,
+                        ]);
+                    }
                     $log->info("RAG consulta #{$job->id} completada.", ['tiempo_s' => $elapsed]);
                 } else {
                     $err = 'Error RAG (' . $response->status() . '): ' . substr($response->body(), 0, 300);

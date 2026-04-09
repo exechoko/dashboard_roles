@@ -306,6 +306,7 @@ $(document).ready(function () {
         $('#carga-resultado').addClass('d-none');
         $('#resumen-box').addClass('d-none');
         resetChat();
+        cargarHistorial(coleccionActiva);
     });
 
     // ── Nueva temática ───────────────────────────────────────────────────────
@@ -632,6 +633,16 @@ $(document).ready(function () {
                 <i class="fas fa-comments fa-2x mb-2"></i>
                 <p style="font-size:.9rem;">Hacé una pregunta sobre los documentos de <strong>${escapeHtml(nombreActivo)}</strong>.</p>
             </div>`);
+    }
+
+    function cargarHistorial(coleccion) {
+        $.get('{{ route("rag.historial") }}', { coleccion }, function (data) {
+            const mensajes = data.mensajes || [];
+            if (!mensajes.length) return;
+
+            $('#chat-inicio').remove();
+            mensajes.forEach(m => agregarMensaje(m.role === 'user' ? 'user' : 'assistant', m.contenido));
+        });
     }
 
     $('#pregunta-input').on('keydown', function (e) {

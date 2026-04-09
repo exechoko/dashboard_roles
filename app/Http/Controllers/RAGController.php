@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\RagCargaJob;
+use App\Models\RagChatMensaje;
 use App\Models\RagConsultaJob;
 use App\Models\RagTematica;
 use App\Services\IAService;
@@ -160,6 +161,18 @@ class RAGController extends Controller
         ]);
     }
 
+    public function historialChat(Request $request): JsonResponse
+    {
+        $request->validate(['coleccion' => 'required|string|max:100']);
+
+        $mensajes = RagChatMensaje::where('user_id', auth()->id())
+            ->where('coleccion', $request->input('coleccion'))
+            ->orderBy('id')
+            ->get(['role', 'contenido', 'created_at']);
+
+        return response()->json(['mensajes' => $mensajes]);
+    }
+
     public function preguntar(Request $request): JsonResponse
     {
         $request->validate([
@@ -167,9 +180,21 @@ class RAGController extends Controller
             'coleccion' => 'required|string|max:100',
         ]);
 
+        $userId    = auth()->id();
+        $pregunta  = $request->input('pregunta');
+        $coleccion = $request->input('coleccion');
+
+        RagChatMensaje::create([
+            'user_id'   => $userId,
+            'coleccion' => $coleccion,
+            'role'      => 'user',
+            'contenido' => $pregunta,
+        ]);
+
         $job = RagConsultaJob::create([
-            'pregunta'  => $request->input('pregunta'),
-            'coleccion' => $request->input('coleccion'),
+            'user_id'   => $userId,
+            'pregunta'  => $pregunta,
+            'coleccion' => $coleccion,
             'status'    => 'pending',
         ]);
 

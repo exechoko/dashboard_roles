@@ -278,6 +278,7 @@
     </li>
 @endcan
 
+<!--
 @can('ver-menu-transcripcion')
     <li
         class="dropdown {{ request()->is('transcribir*') ? 'active' : '' }} {{ request()->is('transcription*') ? 'active' : '' }}">
@@ -302,6 +303,7 @@
         </ul>
     </li>
 @endcan
+-->
 
 @can('ver-menu-ia')
     <li class="dropdown {{ request()->is('rag*') ? 'active' : '' }}">
@@ -313,6 +315,20 @@
                 <li class="{{ request()->is('rag*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('rag.index') }}">
                         <i class="fas fa-database"></i><span>Base de Conocimiento</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-menu-transcripcion')
+                <li class="{{ request()->is('transcribir*') ? 'active' : '' }}">
+                    <a class="nav-link" href="/transcribir">
+                        <i class="fas fa-microphone-alt"></i><span>Transcribir audio</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-menu-transcripcion-aws')
+                <li class="{{ request()->is('transcription*') ? 'active' : '' }}">
+                    <a class="nav-link" href="/transcription">
+                        <i class="fab fa-aws"></i><span>Transcribir audio AWS</span>
                     </a>
                 </li>
             @endcan

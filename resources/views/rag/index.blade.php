@@ -1,6 +1,58 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    /* ── Chat dark-mode aware ─────────────────────────────────────────── */
+    .chat-historial-bg {
+        background: rgba(0,0,0,.04);
+    }
+    body.dark .chat-historial-bg {
+        background: rgba(255,255,255,.05);
+    }
+    .chat-bubble-ia {
+        background: #fff;
+        color: inherit;
+        border: 1px solid rgba(0,0,0,.125);
+    }
+    body.dark .chat-bubble-ia {
+        background: #3a3f51;
+        border-color: rgba(255,255,255,.1);
+        color: #e0e0e0;
+    }
+    .chat-bubble-loading {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,.125);
+        color: #6c757d;
+    }
+    body.dark .chat-bubble-loading {
+        background: #3a3f51;
+        border-color: rgba(255,255,255,.1);
+        color: #adb5bd;
+    }
+    .chat-bubble-error {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,.125);
+        color: #dc3545;
+    }
+    body.dark .chat-bubble-error {
+        background: #3a3f51;
+        border-color: rgba(255,255,255,.1);
+        color: #f77;
+    }
+    .resumen-box-bg {
+        background: rgba(0,0,0,.05);
+    }
+    body.dark .resumen-box-bg {
+        background: rgba(255,255,255,.08);
+        color: #e0e0e0;
+    }
+    .tematica-form-bg {
+        background: rgba(0,0,0,.03);
+    }
+    body.dark .tematica-form-bg {
+        background: rgba(255,255,255,.06);
+    }
+</style>
 <section class="section">
     <div class="section-header">
         <h3 class="page__heading">Base de Conocimiento — Servidor IA</h3>
@@ -37,7 +89,7 @@
                     </div>
                     <div class="card-body p-0">
                         {{-- Formulario nueva temática (oculto por defecto) --}}
-                        <div id="form-nueva-tematica" class="p-3 border-bottom d-none bg-light">
+                        <div id="form-nueva-tematica" class="p-3 border-bottom d-none tematica-form-bg">
                             <div class="form-group mb-2">
                                 <input type="text" id="nueva-nombre" class="form-control form-control-sm"
                                     placeholder="Nombre (ej: Manual de Usuario)" maxlength="80">
@@ -168,7 +220,7 @@
                         </div>
 
                         <div id="chat-panel" class="d-none flex-column h-100">
-                            <div id="chat-historial" class="flex-grow-1 mb-3 p-3 bg-light rounded"
+                            <div id="chat-historial" class="flex-grow-1 mb-3 p-3 chat-historial-bg rounded"
                                 style="min-height: 340px; max-height: 440px; overflow-y: auto;"></div>
 
                             <div class="input-group">
@@ -534,7 +586,7 @@ $(document).ready(function () {
                                     onclick="$(this).next().toggleClass('d-none')">
                                     <i class="fas fa-eye mr-1"></i>Ver resumen
                                 </a>
-                                <div class="d-none mt-1 p-2 bg-light rounded"
+                                <div class="d-none mt-1 p-2 resumen-box-bg rounded"
                                     style="white-space:pre-wrap;max-height:120px;overflow-y:auto;">
                                     ${escapeHtml(estado.resumen)}
                                 </div>
@@ -628,16 +680,16 @@ $(document).ready(function () {
                     ${escapeHtml(texto)}</div></div>`;
         } else if (tipo === 'assistant') {
             html = `<div class="d-flex justify-content-start mb-2" ${idAttr}>
-                <div class="p-2 px-3 rounded bg-white border" style="max-width:90%;white-space:pre-wrap;font-size:.9rem;">
+                <div class="p-2 px-3 rounded chat-bubble-ia" style="max-width:90%;white-space:pre-wrap;font-size:.9rem;">
                     <small class="text-muted d-block mb-1"><i class="fas fa-brain mr-1"></i>${escapeHtml(nombreActivo)}</small>
                     ${escapeHtml(texto)}</div></div>`;
         } else if (tipo === 'loading') {
             html = `<div class="d-flex justify-content-start mb-2" ${idAttr}>
-                <div class="p-2 px-3 rounded bg-white border text-muted">
+                <div class="p-2 px-3 rounded chat-bubble-loading">
                     <i class="fas fa-circle-notch fa-spin mr-1"></i>Consultando...</div></div>`;
         } else if (tipo === 'error') {
             html = `<div class="d-flex justify-content-start mb-2" ${idAttr}>
-                <div class="p-2 px-3 rounded bg-white border text-danger" style="max-width:90%;">
+                <div class="p-2 px-3 rounded chat-bubble-error" style="max-width:90%;">
                     <i class="fas fa-exclamation-circle mr-1"></i>${escapeHtml(texto)}</div></div>`;
         }
         historial.insertAdjacentHTML('beforeend', html);

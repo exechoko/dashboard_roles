@@ -163,7 +163,7 @@
                                 style="border: 2px dashed #6777ef !important; cursor: pointer; min-height: 100px;">
                                 <i class="fas fa-file-upload fa-2x mb-1 text-primary"></i>
                                 <p class="mb-0" style="font-size: 0.9rem;">Arrastrá archivos aquí o hacé click</p>
-                                <small class="text-muted">TXT, PDF, CSV, MD — hasta 5 archivos — máx. 20MB c/u</small>
+                                <small class="text-muted">TXT, PDF, CSV, MD — hasta 5 archivos — máx. 50MB c/u</small>
                                 <input type="file" id="doc-file" accept=".txt,.pdf,.csv,.md" multiple hidden>
                             </div>
 
@@ -408,7 +408,7 @@ $(document).ready(function () {
     const dropDoc = document.getElementById('drop-doc');
     const docFile = document.getElementById('doc-file');
     const MAX_ARCHIVOS = 5;
-    const MAX_SIZE     = 20 * 1024 * 1024;
+    const MAX_SIZE     = 50 * 1024 * 1024;
     const EXTS_OK      = ['txt', 'pdf', 'csv', 'md'];
     let archivosSeleccionados = []; // array de File
 

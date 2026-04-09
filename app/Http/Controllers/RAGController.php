@@ -89,7 +89,7 @@ class RAGController extends Controller
     {
         $request->validate([
             'documentos'   => 'required|array|min:1|max:5',
-            'documentos.*' => 'file|mimes:txt,pdf,csv,md|max:20480',
+            'documentos.*' => 'file|mimes:txt,pdf,csv,md|max:51200',
             'coleccion'    => 'required|string|max:100',
             'resumir'      => 'boolean',
         ]);

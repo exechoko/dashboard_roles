@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php C:/Apache24/htdocs/dashboard_roles/artisan migrate:status)",
+      "Bash(php:*)"
+    ]
+  }
+}

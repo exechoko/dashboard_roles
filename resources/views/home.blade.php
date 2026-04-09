@@ -769,6 +769,35 @@
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {{-- Card estado servicios IA --}}
+                                        <div class="row mb-4">
+                                            <div class="col-12">
+                                                <div class="card shadow-sm">
+                                                    <div class="card-header d-flex align-items-center justify-content-between py-2" style="background: linear-gradient(135deg,#1e1b4b,#312e81); color:#fff;">
+                                                        <span><i class="fas fa-robot mr-2"></i><strong>Estado Servicios IA</strong></span>
+                                                        <small id="ia-ultima-actualizacion" class="text-white-50"></small>
+                                                    </div>
+                                                    <div class="card-body py-3">
+                                                        <div class="d-flex flex-wrap gap-3" id="ia-servicios-container" style="gap:1rem;">
+                                                            <div class="d-flex align-items-center mr-4">
+                                                                <span id="ia-dot-ollama" class="mr-2" style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
+                                                                <span><strong>Ollama</strong> <span id="ia-label-ollama" class="badge badge-secondary">Verificando...</span></span>
+                                                            </div>
+                                                            <div class="d-flex align-items-center mr-4">
+                                                                <span id="ia-dot-rag" class="mr-2" style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
+                                                                <span><strong>RAG (ChromaDB)</strong> <span id="ia-label-rag" class="badge badge-secondary">Verificando...</span></span>
+                                                            </div>
+                                                            <div class="d-flex align-items-center mr-4">
+                                                                <span id="ia-dot-whisper" class="mr-2" style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
+                                                                <span><strong>Whisper</strong> <span id="ia-label-whisper" class="badge badge-secondary">Verificando...</span></span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div class="row mb-4">
                                             <div class="col-12">
                                                 <div class="card shadow-sm">
@@ -3182,5 +3211,50 @@
                 attributeFilter: ['data-theme']
             });
         });
+
+        // ── Monitor servicios IA ────────────────────────────────────────────
+        (function iaMonitor() {
+            var estadoUrl = '{{ route("rag.estado") }}';
+
+            function actualizarServicio(nombre, activo) {
+                var dot   = document.getElementById('ia-dot-' + nombre);
+                var label = document.getElementById('ia-label-' + nombre);
+                if (!dot || !label) return;
+                if (activo) {
+                    dot.style.background   = '#22c55e';
+                    label.className        = 'badge badge-success';
+                    label.textContent      = 'Online';
+                } else {
+                    dot.style.background   = '#ef4444';
+                    label.className        = 'badge badge-danger';
+                    label.textContent      = 'Offline';
+                }
+            }
+
+            function verificar() {
+                fetch(estadoUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        actualizarServicio('ollama',  data.ollama);
+                        actualizarServicio('rag',     data.rag);
+                        actualizarServicio('whisper', data.whisper);
+                        var ahora = new Date();
+                        var hora  = ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                        var el    = document.getElementById('ia-ultima-actualizacion');
+                        if (el) el.textContent = 'Actualizado: ' + hora;
+                    })
+                    .catch(function() {
+                        ['ollama','rag','whisper'].forEach(function(s) {
+                            var dot = document.getElementById('ia-dot-' + s);
+                            var lbl = document.getElementById('ia-label-' + s);
+                            if (dot) dot.style.background = '#f59e0b';
+                            if (lbl) { lbl.className = 'badge badge-warning'; lbl.textContent = 'Error'; }
+                        });
+                    });
+            }
+
+            verificar();
+            setInterval(verificar, 60000);
+        })();
     </script>
 @endsection

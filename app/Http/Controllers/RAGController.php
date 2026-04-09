@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\RagCargaJob;
+use App\Models\RagConsultaJob;
 use App\Models\RagTematica;
 use App\Services\IAService;
 use Illuminate\Http\JsonResponse;
@@ -166,15 +167,25 @@ class RAGController extends Controller
             'coleccion' => 'required|string|max:100',
         ]);
 
-        try {
-            $respuesta = $this->ia->consultarRAG(
-                $request->input('pregunta'),
-                $request->input('coleccion'),
-            );
-            return response()->json(['success' => true, 'respuesta' => $respuesta]);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
+        $job = RagConsultaJob::create([
+            'pregunta'  => $request->input('pregunta'),
+            'coleccion' => $request->input('coleccion'),
+            'status'    => 'pending',
+        ]);
+
+        return response()->json(['success' => true, 'async' => true, 'job_id' => $job->id]);
+    }
+
+    public function estadoConsulta(int $jobId): JsonResponse
+    {
+        $job = RagConsultaJob::findOrFail($jobId);
+
+        return response()->json([
+            'job_id'    => $job->id,
+            'status'    => $job->status,
+            'respuesta' => $job->respuesta,
+            'error'     => $job->error_message,
+        ]);
     }
 
     public function reintentarCarga(int $jobId): JsonResponse

@@ -654,28 +654,67 @@ $(document).ready(function () {
             url: '{{ route("rag.preguntar") }}',
             method: 'POST',
             data: { pregunta, coleccion: coleccionActiva, _token: csrf },
-            timeout: 95000, // 95s — por debajo del límite de 100s de Cloudflare
+            timeout: 10000,
             success: function (data) {
-                $(`#${loadingId}`).remove();
-                agregarMensaje(data.success ? 'assistant' : 'error',
-                    data.success ? data.respuesta : (data.message || 'Error al consultar el RAG.'));
-            },
-            error: function (xhr, status) {
-                $(`#${loadingId}`).remove();
-                let msg = 'Error al conectar con el servidor IA.';
-                if (status === 'timeout') {
-                    msg = 'El servidor IA tardó demasiado en responder. Intentá con una pregunta más corta.';
-                } else if (xhr.responseJSON?.message) {
-                    msg = xhr.responseJSON.message;
+                if (!data.success) {
+                    $(`#${loadingId}`).remove();
+                    agregarMensaje('error', data.message || 'Error al consultar el RAG.');
+                    $('#pregunta-input').prop('disabled', false).focus();
+                    $('#btn-preguntar').prop('disabled', false);
+                    return;
                 }
-                agregarMensaje('error', msg);
+                // Async: hacer polling hasta que el job complete
+                iniciarPollingConsulta(loadingId, data.job_id);
             },
-            complete: function () {
+            error: function (xhr) {
+                $(`#${loadingId}`).remove();
+                const msg = xhr.responseJSON?.message || 'Error al conectar con el servidor IA.';
+                agregarMensaje('error', msg);
                 $('#pregunta-input').prop('disabled', false).focus();
                 $('#btn-preguntar').prop('disabled', false);
             }
         });
     });
+
+    function iniciarPollingConsulta(loadingId, jobId) {
+        let intentos = 0;
+        const MAX_POLL = 400; // ~20 min a 3s por intento
+
+        const timer = setInterval(function () {
+            intentos++;
+            if (intentos > MAX_POLL) {
+                clearInterval(timer);
+                $(`#${loadingId}`).remove();
+                agregarMensaje('error', 'El servidor IA tardó demasiado en responder.');
+                $('#pregunta-input').prop('disabled', false).focus();
+                $('#btn-preguntar').prop('disabled', false);
+                return;
+            }
+
+            $.get(`/rag/consulta-estado/${jobId}`, function (data) {
+                if (data.status === 'completed') {
+                    clearInterval(timer);
+                    $(`#${loadingId}`).remove();
+                    agregarMensaje('assistant', data.respuesta || '(sin respuesta)');
+                    $('#pregunta-input').prop('disabled', false).focus();
+                    $('#btn-preguntar').prop('disabled', false);
+                } else if (data.status === 'failed') {
+                    clearInterval(timer);
+                    $(`#${loadingId}`).remove();
+                    agregarMensaje('error', data.error || 'El servidor IA no pudo responder.');
+                    $('#pregunta-input').prop('disabled', false).focus();
+                    $('#btn-preguntar').prop('disabled', false);
+                }
+                // pending/processing → seguir esperando
+            }).fail(function () {
+                clearInterval(timer);
+                $(`#${loadingId}`).remove();
+                agregarMensaje('error', 'Error al verificar el estado de la consulta.');
+                $('#pregunta-input').prop('disabled', false).focus();
+                $('#btn-preguntar').prop('disabled', false);
+            });
+        }, 3000);
+    }
 
     function agregarMensaje(tipo, texto, id = null) {
         const historial = document.getElementById('chat-historial');

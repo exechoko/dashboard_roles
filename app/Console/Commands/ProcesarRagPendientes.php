@@ -15,7 +15,7 @@ class ProcesarRagPendientes extends Command
 
     public function handle()
     {
-        $log        = Log::channel('transcripciones'); // reutilizamos el canal IA
+        $log        = Log::channel('rag');
         $pendientes = RagCargaJob::where('status', 'pending')->orderBy('id')->get();
 
         if ($pendientes->isEmpty()) {

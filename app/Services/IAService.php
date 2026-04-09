@@ -105,17 +105,30 @@ class IAService
      */
     public function consultarRAG(string $pregunta, string $coleccion = 'general'): string
     {
-        $response = Http::timeout(60)
-            ->post($this->ragUrl . '/preguntar', [
-                'pregunta'  => $pregunta,
-                'coleccion' => $coleccion,
-            ]);
+        $log = Log::channel('rag');
+        $log->info('RAG consulta iniciada.', ['coleccion' => $coleccion, 'pregunta' => substr($pregunta, 0, 100)]);
 
-        if ($response->failed()) {
-            throw new \RuntimeException('Error al consultar RAG (' . $response->status() . ')');
+        try {
+            $inicio   = microtime(true);
+            $response = Http::timeout(90)   // 90s < 100s límite de Cloudflare
+                ->post($this->ragUrl . '/preguntar', [
+                    'pregunta'  => $pregunta,
+                    'coleccion' => $coleccion,
+                ]);
+            $elapsed = round(microtime(true) - $inicio, 2);
+
+            if ($response->failed()) {
+                $log->error('RAG consulta fallida.', ['status' => $response->status(), 'body' => substr($response->body(), 0, 300)]);
+                throw new \RuntimeException('Error al consultar RAG (' . $response->status() . '): ' . $response->body());
+            }
+
+            $log->info('RAG consulta completada.', ['tiempo_s' => $elapsed, 'coleccion' => $coleccion]);
+            return $response->json('respuesta', '');
+
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            $log->error('RAG consulta: timeout o conexión fallida.', ['mensaje' => $e->getMessage()]);
+            throw new \RuntimeException('El servidor IA tardó demasiado en responder. Intentá de nuevo o usá una pregunta más corta.');
         }
-
-        return $response->json('respuesta', '');
     }
 
     /**

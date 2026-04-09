@@ -66,7 +66,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('rag:procesar-pendientes')
             ->everyMinute()
             ->withoutOverlapping()
-            ->appendOutputTo(storage_path('logs/transcripciones.log'));
+            ->appendOutputTo(storage_path('logs/rag.log'));
     }
 
     /**

@@ -127,6 +127,13 @@ return [
             'level'  => 'debug',
             'days'   => 30,
         ],
+
+        'rag' => [
+            'driver' => 'daily',
+            'path'   => storage_path('logs/rag.log'),
+            'level'  => 'debug',
+            'days'   => 30,
+        ],
     ],
 
 ];

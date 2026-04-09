@@ -595,15 +595,21 @@ $(document).ready(function () {
             url: '{{ route("rag.preguntar") }}',
             method: 'POST',
             data: { pregunta, coleccion: coleccionActiva, _token: csrf },
-            timeout: 70000,
+            timeout: 95000, // 95s — por debajo del límite de 100s de Cloudflare
             success: function (data) {
                 $(`#${loadingId}`).remove();
                 agregarMensaje(data.success ? 'assistant' : 'error',
                     data.success ? data.respuesta : (data.message || 'Error al consultar el RAG.'));
             },
-            error: function () {
+            error: function (xhr, status) {
                 $(`#${loadingId}`).remove();
-                agregarMensaje('error', 'No se pudo conectar con el servidor IA.');
+                let msg = 'Error al conectar con el servidor IA.';
+                if (status === 'timeout') {
+                    msg = 'El servidor IA tardó demasiado en responder. Intentá con una pregunta más corta.';
+                } else if (xhr.responseJSON?.message) {
+                    msg = xhr.responseJSON.message;
+                }
+                agregarMensaje('error', msg);
             },
             complete: function () {
                 $('#pregunta-input').prop('disabled', false).focus();

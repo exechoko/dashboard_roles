@@ -57,6 +57,11 @@ class Kernel extends ConsoleKernel
             });
 
         $schedule->command('telegram:polling')->everyMinute()->withoutOverlapping();
+
+        $schedule->command('transcribir:pendientes')
+            ->everyMinute()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/transcripciones.log'));
     }
 
     /**

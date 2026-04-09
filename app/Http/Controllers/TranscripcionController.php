@@ -39,9 +39,7 @@ class TranscripcionController extends Controller
             'ip'             => $request->ip(),
         ]);
 
-        // Lanzar el proceso en background (sin bloquear la respuesta HTTP)
-        $this->lanzarEnBackground($job->id);
-
+        // El scheduler procesa los jobs pendientes cada minuto (transcribir:pendientes)
         // Responder inmediatamente con el job_id para que el frontend haga polling
         return response()->json([
             'success' => true,
@@ -63,18 +61,4 @@ class TranscripcionController extends Controller
         ]);
     }
 
-    private function lanzarEnBackground(int $jobId): void
-    {
-        $php     = PHP_BINARY;
-        $artisan = base_path('artisan');
-
-        if (PHP_OS_FAMILY === 'Windows') {
-            // 'start' es built-in de cmd.exe — requiere cmd /c para ejecutarse
-            $cmd = "cmd /c start /B \"\" \"{$php}\" \"{$artisan}\" transcribir:proceso {$jobId}";
-            popen($cmd, 'r');
-        } else {
-            $cmd = "\"{$php}\" \"{$artisan}\" transcribir:proceso {$jobId} > /dev/null 2>&1 &";
-            exec($cmd);
-        }
-    }
 }

@@ -120,6 +120,13 @@ return [
             'level'  => 'debug',
             'days'   => 30,
         ],
+
+        'transcripciones' => [
+            'driver' => 'daily',
+            'path'   => storage_path('logs/transcripciones.log'),
+            'level'  => 'debug',
+            'days'   => 30,
+        ],
     ],
 
 ];

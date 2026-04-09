@@ -281,12 +281,26 @@
                     progressPercent.textContent = '30%';
                     statusMessage.textContent = "Procesando transcripción en el servidor...";
 
-                    // Paso 2: Hacer polling del estado
+                    // Paso 2: Hacer polling del estado (máx 10 minutos)
                     let pollProgress = 30;
+                    let pollAttempts = 0;
+                    const MAX_POLL_ATTEMPTS = 200; // 200 × 3s = 10 minutos
+
                     const pollInterval = setInterval(() => {
+                        pollAttempts++;
+
+                        // Timeout: si después de 10 min no terminó, abortar
+                        if (pollAttempts > MAX_POLL_ATTEMPTS) {
+                            clearInterval(pollInterval);
+                            statusMessage.textContent = "Tiempo de espera agotado. La transcripción puede continuar en el servidor; recargá la página más tarde.";
+                            statusMessage.classList.add('text-danger');
+                            transcribeBtn.disabled = false;
+                            return;
+                        }
+
                         // Avanzar la barra de forma visual mientras se espera
                         if (pollProgress < 90) {
-                            pollProgress += 2;
+                            pollProgress += 1;
                             progressBar.style.width = `${pollProgress}%`;
                             progressPercent.textContent = `${pollProgress}%`;
                         }

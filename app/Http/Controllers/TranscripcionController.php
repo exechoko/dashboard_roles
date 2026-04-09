@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\TranscripcionJob;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TranscripcionController extends Controller
 {
@@ -18,13 +19,24 @@ class TranscripcionController extends Controller
             'audio' => 'required|file|mimes:mp3,wav,m4a,ogg|max:51200',
         ]);
 
+        $log  = Log::channel('transcripciones');
+        $file = $request->file('audio');
+
         // Guardar el audio en disco (storage/app/transcripciones_temp/)
-        $path = $request->file('audio')->store('transcripciones_temp');
+        $path = $file->store('transcripciones_temp');
 
         // Crear registro del job
         $job = TranscripcionJob::create([
             'audio_path' => $path,
             'status'     => 'pending',
+        ]);
+
+        $log->info('Solicitud de transcripción recibida.', [
+            'job_id'         => $job->id,
+            'archivo'        => $file->getClientOriginalName(),
+            'mime'           => $file->getClientMimeType(),
+            'tamano_bytes'   => $file->getSize(),
+            'ip'             => $request->ip(),
         ]);
 
         // Lanzar el proceso en background (sin bloquear la respuesta HTTP)
@@ -57,7 +69,8 @@ class TranscripcionController extends Controller
         $artisan = base_path('artisan');
 
         if (PHP_OS_FAMILY === 'Windows') {
-            $cmd = "start /B \"\" \"{$php}\" \"{$artisan}\" transcribir:proceso {$jobId}";
+            // 'start' es built-in de cmd.exe — requiere cmd /c para ejecutarse
+            $cmd = "cmd /c start /B \"\" \"{$php}\" \"{$artisan}\" transcribir:proceso {$jobId}";
             popen($cmd, 'r');
         } else {
             $cmd = "\"{$php}\" \"{$artisan}\" transcribir:proceso {$jobId} > /dev/null 2>&1 &";

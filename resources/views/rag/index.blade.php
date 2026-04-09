@@ -11,130 +11,194 @@
         <div class="row mb-3">
             <div class="col-12">
                 <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">Estado del servidor IA</h4>
+                    <div class="card-body py-2 d-flex align-items-center justify-content-between">
+                        <div id="estado-servicios">
+                            <span class="badge badge-secondary px-3 py-2">Verificando servicios...</span>
+                        </div>
                         <button id="btn-refresh-estado" class="btn btn-sm btn-outline-secondary">
                             <i class="fas fa-sync-alt"></i> Actualizar
                         </button>
-                    </div>
-                    <div class="card-body py-2">
-                        <div class="d-flex gap-3" id="estado-servicios">
-                            <span class="badge badge-secondary px-3 py-2">Cargando...</span>
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="row">
-            {{-- Panel izquierdo: carga de documentos --}}
-            <div class="col-lg-5">
+
+            {{-- Columna izquierda: Temáticas --}}
+            <div class="col-lg-3">
                 <div class="card">
-                    <div class="card-header">
-                        <h4>Cargar documento</h4>
-                    </div>
-                    <div class="card-body">
-                        <div id="drop-doc" class="p-4 border rounded text-center mb-3"
-                            style="border: 2px dashed #6777ef !important; cursor: pointer;">
-                            <i class="fas fa-file-upload fa-2x mb-2 text-primary"></i>
-                            <p class="mb-1">Arrastrá el archivo aquí</p>
-                            <small class="text-muted">TXT, PDF, CSV, MD — máx. 20MB</small>
-                            <input type="file" id="doc-file" accept=".txt,.pdf,.csv,.md" hidden>
-                        </div>
-
-                        <div id="doc-preview" class="alert alert-info py-2 d-none">
-                            <i class="fas fa-file mr-1"></i>
-                            <span id="doc-nombre"></span>
-                        </div>
-
-                        <div class="form-group mb-3">
-                            <div class="custom-control custom-switch">
-                                <input type="checkbox" class="custom-control-input" id="chk-resumir" checked>
-                                <label class="custom-control-label" for="chk-resumir">
-                                    Generar resumen con IA (Ollama)
-                                </label>
-                            </div>
-                        </div>
-
-                        <button id="btn-cargar" class="btn btn-primary btn-block" disabled
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h4 class="mb-0">Temáticas</h4>
+                        <button class="btn btn-sm btn-primary" id="btn-nueva-tematica"
                             style="background: linear-gradient(45deg,#6777ef,#35199a); border: none;">
-                            <i class="fas fa-upload mr-2"></i>Cargar al RAG
-                        </button>
-
-                        {{-- Progreso --}}
-                        <div id="carga-progress" class="mt-3 d-none">
-                            <div class="progress">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated"
-                                    style="width: 100%; background-color: #6777ef;"></div>
-                            </div>
-                            <small class="text-muted d-block text-center mt-1" id="carga-status">Procesando...</small>
-                        </div>
-
-                        {{-- Resultado de carga --}}
-                        <div id="carga-resultado" class="mt-3 d-none">
-                            <div class="alert alert-success py-2 mb-2" id="carga-ok" style="display:none!important"></div>
-                            <div class="alert alert-danger py-2 mb-2" id="carga-error" style="display:none!important"></div>
-                            <div id="resumen-box" class="d-none">
-                                <h6 class="mt-3">Resumen generado por IA:</h6>
-                                <div id="resumen-texto" class="p-3 bg-light rounded"
-                                    style="white-space: pre-wrap; font-size: 0.9rem; max-height: 300px; overflow-y: auto;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Re-indexar --}}
-                <div class="card mt-2">
-                    <div class="card-body py-2 d-flex align-items-center justify-content-between">
-                        <small class="text-muted">Re-indexar todos los documentos del servidor</small>
-                        <button id="btn-reindexar" class="btn btn-sm btn-outline-warning ml-2">
-                            <i class="fas fa-database mr-1"></i>Re-indexar
+                            <i class="fas fa-plus"></i>
                         </button>
                     </div>
-                </div>
-            </div>
-
-            {{-- Panel derecho: consulta --}}
-            <div class="col-lg-7">
-                <div class="card h-100">
-                    <div class="card-header">
-                        <h4>Consultar base de conocimiento</h4>
-                    </div>
-                    <div class="card-body d-flex flex-column">
-                        {{-- Historial de chat --}}
-                        <div id="chat-historial" class="flex-grow-1 mb-3 p-3 bg-light rounded"
-                            style="min-height: 350px; max-height: 500px; overflow-y: auto;">
-                            <div class="text-center text-muted mt-5">
-                                <i class="fas fa-comments fa-3x mb-3"></i>
-                                <p>Hacé una pregunta sobre los documentos cargados en el RAG.</p>
+                    <div class="card-body p-0">
+                        {{-- Formulario nueva temática (oculto por defecto) --}}
+                        <div id="form-nueva-tematica" class="p-3 border-bottom d-none bg-light">
+                            <div class="form-group mb-2">
+                                <input type="text" id="nueva-nombre" class="form-control form-control-sm"
+                                    placeholder="Nombre (ej: Manual de Usuario)" maxlength="80">
                             </div>
-                        </div>
-
-                        {{-- Input --}}
-                        <div class="input-group">
-                            <input type="text" id="pregunta-input" class="form-control"
-                                placeholder="Ej: ¿Qué dice el reglamento sobre licencias?"
-                                maxlength="500">
-                            <div class="input-group-append">
-                                <button id="btn-preguntar" class="btn btn-primary"
-                                    style="background: linear-gradient(45deg,#6777ef,#35199a); border: none;">
-                                    <i class="fas fa-paper-plane"></i>
+                            <div class="form-group mb-2">
+                                <input type="text" id="nueva-descripcion" class="form-control form-control-sm"
+                                    placeholder="Descripción (opcional)" maxlength="255">
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button id="btn-guardar-tematica" class="btn btn-sm btn-success flex-fill">
+                                    <i class="fas fa-check mr-1"></i>Crear
+                                </button>
+                                <button id="btn-cancelar-tematica" class="btn btn-sm btn-secondary">
+                                    <i class="fas fa-times"></i>
                                 </button>
                             </div>
                         </div>
-                        <small class="text-muted mt-1">Enter para enviar</small>
+
+                        {{-- Lista de temáticas --}}
+                        <div id="lista-tematicas">
+                            @forelse($tematicas as $t)
+                            <div class="tematica-item border-bottom px-3 py-2 d-flex align-items-center justify-content-between"
+                                data-coleccion="{{ $t->coleccion }}"
+                                data-nombre="{{ $t->nombre }}"
+                                style="cursor: pointer;">
+                                <div>
+                                    <div class="font-weight-bold" style="font-size: 0.9rem;">{{ $t->nombre }}</div>
+                                    @if($t->descripcion)
+                                        <small class="text-muted">{{ $t->descripcion }}</small>
+                                    @endif
+                                    <small class="d-block text-muted docs-count" style="font-size: 0.75rem;">
+                                        <i class="fas fa-file-alt mr-1"></i><span>—</span> chunks
+                                    </small>
+                                </div>
+                                <button class="btn btn-sm btn-link text-danger p-0 btn-eliminar-tematica"
+                                    data-coleccion="{{ $t->coleccion }}" title="Eliminar temática"
+                                    onclick="event.stopPropagation()">
+                                    <i class="fas fa-trash-alt fa-sm"></i>
+                                </button>
+                            </div>
+                            @empty
+                            <div class="text-center text-muted py-4" id="no-tematicas-msg">
+                                <i class="fas fa-folder-open fa-2x mb-2"></i>
+                                <p class="mb-0" style="font-size: 0.85rem;">No hay temáticas.<br>Creá la primera.</p>
+                            </div>
+                            @endforelse
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+
+            {{-- Columna central: Cargar documento --}}
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            Cargar documento
+                            <span id="tematica-activa-badge" class="badge badge-primary ml-2 d-none" style="font-size: 0.75rem;"></span>
+                        </h4>
+                    </div>
+                    <div class="card-body">
+
+                        <div id="seleccionar-tematica-msg" class="text-center text-muted py-4">
+                            <i class="fas fa-hand-point-left fa-2x mb-2"></i>
+                            <p>Seleccioná una temática para cargar documentos.</p>
+                        </div>
+
+                        <div id="panel-carga" class="d-none">
+                            {{-- Drop zone --}}
+                            <div id="drop-doc" class="p-3 border rounded text-center mb-2"
+                                style="border: 2px dashed #6777ef !important; cursor: pointer; min-height: 100px;">
+                                <i class="fas fa-file-upload fa-2x mb-1 text-primary"></i>
+                                <p class="mb-0" style="font-size: 0.9rem;">Arrastrá archivos aquí o hacé click</p>
+                                <small class="text-muted">TXT, PDF, CSV, MD — hasta 5 archivos — máx. 20MB c/u</small>
+                                <input type="file" id="doc-file" accept=".txt,.pdf,.csv,.md" multiple hidden>
+                            </div>
+
+                            {{-- Lista de archivos seleccionados --}}
+                            <div id="archivos-seleccionados" class="mb-2 d-none">
+                                <div id="archivos-lista" class="border rounded" style="max-height: 160px; overflow-y: auto;"></div>
+                                <small class="text-muted"><span id="archivos-count">0</span>/5 archivos seleccionados</small>
+                            </div>
+
+                            <div class="form-group mb-2">
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" class="custom-control-input" id="chk-resumir" checked>
+                                    <label class="custom-control-label" for="chk-resumir">
+                                        Generar resumen con IA (Ollama)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button id="btn-cargar" class="btn btn-primary btn-block" disabled
+                                style="background: linear-gradient(45deg,#6777ef,#35199a); border: none;">
+                                <i class="fas fa-upload mr-2"></i>Cargar al RAG
+                            </button>
+
+                            {{-- Estado por archivo --}}
+                            <div id="archivos-estado" class="mt-3 d-none">
+                                <h6 style="font-size: 0.85rem;" class="text-muted mb-1">Estado de carga:</h6>
+                                <div id="archivos-estado-lista"></div>
+                            </div>
+
+                            <div class="mt-2 d-flex justify-content-end">
+                                <button id="btn-reindexar" class="btn btn-sm btn-outline-warning">
+                                    <i class="fas fa-database mr-1"></i>Re-indexar temática
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Columna derecha: Chat --}}
+            <div class="col-lg-5">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h4 class="mb-0">
+                            Consultar
+                            <span id="chat-tematica-badge" class="badge badge-primary ml-2 d-none" style="font-size: 0.75rem;"></span>
+                        </h4>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+
+                        <div id="chat-placeholder" class="text-center text-muted flex-grow-1 d-flex flex-column align-items-center justify-content-center">
+                            <i class="fas fa-comments fa-3x mb-3"></i>
+                            <p>Seleccioná una temática para comenzar a consultar.</p>
+                        </div>
+
+                        <div id="chat-panel" class="d-none flex-column h-100">
+                            <div id="chat-historial" class="flex-grow-1 mb-3 p-3 bg-light rounded"
+                                style="min-height: 340px; max-height: 440px; overflow-y: auto;"></div>
+
+                            <div class="input-group">
+                                <input type="text" id="pregunta-input" class="form-control"
+                                    placeholder="Ej: ¿Qué dice el reglamento sobre licencias?"
+                                    maxlength="500">
+                                <div class="input-group-append">
+                                    <button id="btn-preguntar" class="btn btn-primary"
+                                        style="background: linear-gradient(45deg,#6777ef,#35199a); border: none;">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="text-muted mt-1">Enter para enviar</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>{{-- /row --}}
     </div>
 </section>
 
 <script>
 $(document).ready(function () {
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    let coleccionActiva = null;
+    let nombreActivo    = null;
 
-    // ── Estado de servicios ──────────────────────────────────────────────
+    // ── Estado de servicios ──────────────────────────────────────────────────
     function cargarEstado() {
         $.get('{{ route("rag.estado") }}', function (data) {
             const servicios = [
@@ -152,67 +216,250 @@ $(document).ready(function () {
             $('#estado-servicios').html(html);
         });
     }
-
     cargarEstado();
     $('#btn-refresh-estado').on('click', cargarEstado);
 
-    // ── Carga de documentos ──────────────────────────────────────────────
-    const dropDoc  = document.getElementById('drop-doc');
-    const docFile  = document.getElementById('doc-file');
-    let archivoSeleccionado = null;
+    // ── Cargar contadores de chunks por temática ─────────────────────────────
+    function cargarContadores() {
+        $.get('{{ route("rag.colecciones") }}', function (data) {
+            (data.tematicas || []).forEach(t => {
+                $(`.tematica-item[data-coleccion="${t.coleccion}"] .docs-count span`)
+                    .text(t.documentos);
+            });
+        });
+    }
+    cargarContadores();
+
+    // ── Seleccionar temática ─────────────────────────────────────────────────
+    $(document).on('click', '.tematica-item', function () {
+        $('.tematica-item').removeClass('bg-primary-light').css('background', '');
+        $(this).css('background', '#eef0fd');
+
+        coleccionActiva = $(this).data('coleccion');
+        nombreActivo    = $(this).data('nombre');
+
+        // Badges
+        $('#tematica-activa-badge, #chat-tematica-badge')
+            .text(nombreActivo).removeClass('d-none');
+
+        // Paneles
+        $('#seleccionar-tematica-msg').addClass('d-none');
+        $('#panel-carga').removeClass('d-none');
+        $('#chat-placeholder').addClass('d-none');
+        $('#chat-panel').removeClass('d-none').addClass('d-flex');
+
+        // Limpiar resultado anterior
+        $('#carga-resultado').addClass('d-none');
+        $('#resumen-box').addClass('d-none');
+        resetChat();
+    });
+
+    // ── Nueva temática ───────────────────────────────────────────────────────
+    $('#btn-nueva-tematica').on('click', function () {
+        $('#form-nueva-tematica').toggleClass('d-none');
+        $('#nueva-nombre').focus();
+    });
+
+    $('#btn-cancelar-tematica').on('click', function () {
+        $('#form-nueva-tematica').addClass('d-none');
+        $('#nueva-nombre, #nueva-descripcion').val('');
+    });
+
+    $('#btn-guardar-tematica').on('click', function () {
+        const nombre = $('#nueva-nombre').val().trim();
+        if (!nombre) { toastr.warning('Ingresá un nombre para la temática.'); return; }
+
+        $(this).prop('disabled', true);
+        $.ajax({
+            url: '{{ route("rag.tematicas.crear") }}',
+            method: 'POST',
+            data: {
+                _token: csrf,
+                nombre: nombre,
+                descripcion: $('#nueva-descripcion').val().trim(),
+            },
+            success: function (data) {
+                if (data.success) {
+                    const t = data.tematica;
+                    const html = `
+                        <div class="tematica-item border-bottom px-3 py-2 d-flex align-items-center justify-content-between"
+                            data-coleccion="${t.coleccion}" data-nombre="${t.nombre}" style="cursor: pointer;">
+                            <div>
+                                <div class="font-weight-bold" style="font-size:.9rem;">${escapeHtml(t.nombre)}</div>
+                                ${t.descripcion ? `<small class="text-muted">${escapeHtml(t.descripcion)}</small>` : ''}
+                                <small class="d-block text-muted docs-count" style="font-size:.75rem;">
+                                    <i class="fas fa-file-alt mr-1"></i><span>0</span> chunks
+                                </small>
+                            </div>
+                            <button class="btn btn-sm btn-link text-danger p-0 btn-eliminar-tematica"
+                                data-coleccion="${t.coleccion}" title="Eliminar temática"
+                                onclick="event.stopPropagation()">
+                                <i class="fas fa-trash-alt fa-sm"></i>
+                            </button>
+                        </div>`;
+                    $('#no-tematicas-msg').remove();
+                    $('#lista-tematicas').append(html);
+                    $('#form-nueva-tematica').addClass('d-none');
+                    $('#nueva-nombre, #nueva-descripcion').val('');
+                    toastr.success(`Temática "${t.nombre}" creada.`);
+                } else {
+                    toastr.error(data.message || 'Error al crear la temática.');
+                }
+            },
+            error: function (xhr) {
+                toastr.error(xhr.responseJSON?.message || 'Error al crear la temática.');
+            },
+            complete: function () {
+                $('#btn-guardar-tematica').prop('disabled', false);
+            }
+        });
+    });
+
+    // ── Eliminar temática ────────────────────────────────────────────────────
+    $(document).on('click', '.btn-eliminar-tematica', function () {
+        const col   = $(this).data('coleccion');
+        const $item = $(this).closest('.tematica-item');
+        const nombre = $item.data('nombre');
+
+        if (!confirm(`¿Eliminar la temática "${nombre}"?\n\nLos documentos en el servidor IA NO se borran.`)) return;
+
+        $.ajax({
+            url: `/rag/tematicas/${col}`,
+            method: 'DELETE',
+            data: { _token: csrf },
+            success: function (data) {
+                if (data.success) {
+                    $item.remove();
+                    if (coleccionActiva === col) {
+                        coleccionActiva = null;
+                        $('#panel-carga').addClass('d-none');
+                        $('#seleccionar-tematica-msg').removeClass('d-none');
+                        $('#chat-panel').addClass('d-none').removeClass('d-flex');
+                        $('#chat-placeholder').removeClass('d-none');
+                        $('#tematica-activa-badge, #chat-tematica-badge').addClass('d-none');
+                    }
+                    if ($('#lista-tematicas .tematica-item').length === 0) {
+                        $('#lista-tematicas').html(`
+                            <div class="text-center text-muted py-4" id="no-tematicas-msg">
+                                <i class="fas fa-folder-open fa-2x mb-2"></i>
+                                <p class="mb-0" style="font-size:.85rem;">No hay temáticas.<br>Creá la primera.</p>
+                            </div>`);
+                    }
+                    toastr.success(`Temática "${nombre}" eliminada.`);
+                }
+            },
+            error: function () { toastr.error('No se pudo eliminar la temática.'); }
+        });
+    });
+
+    // ── Carga de documentos (hasta 5 archivos) ───────────────────────────────
+    const dropDoc = document.getElementById('drop-doc');
+    const docFile = document.getElementById('doc-file');
+    const MAX_ARCHIVOS = 5;
+    const MAX_SIZE     = 20 * 1024 * 1024;
+    const EXTS_OK      = ['txt', 'pdf', 'csv', 'md'];
+    let archivosSeleccionados = []; // array de File
 
     dropDoc.addEventListener('click', () => docFile.click());
-
     dropDoc.addEventListener('dragover', e => { e.preventDefault(); dropDoc.classList.add('bg-light'); });
     dropDoc.addEventListener('dragleave', () => dropDoc.classList.remove('bg-light'));
     dropDoc.addEventListener('drop', e => {
         e.preventDefault();
         dropDoc.classList.remove('bg-light');
-        if (e.dataTransfer.files.length) seleccionarArchivo(e.dataTransfer.files[0]);
+        agregarArchivos(Array.from(e.dataTransfer.files));
     });
-
     docFile.addEventListener('change', function () {
-        if (this.files.length) seleccionarArchivo(this.files[0]);
+        agregarArchivos(Array.from(this.files));
+        this.value = ''; // reset para poder volver a seleccionar los mismos
     });
 
-    function seleccionarArchivo(file) {
-        const formatos = ['text/plain', 'application/pdf', 'text/csv', 'text/markdown'];
-        const ext = file.name.split('.').pop().toLowerCase();
-        const extOk = ['txt', 'pdf', 'csv', 'md'].includes(ext);
+    function agregarArchivos(nuevos) {
+        let rechazados = [];
+        nuevos.forEach(file => {
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (!EXTS_OK.includes(ext)) {
+                rechazados.push(`${file.name}: formato no soportado`);
+                return;
+            }
+            if (file.size > MAX_SIZE) {
+                rechazados.push(`${file.name}: supera 20MB`);
+                return;
+            }
+            if (archivosSeleccionados.length >= MAX_ARCHIVOS) {
+                rechazados.push(`${file.name}: límite de ${MAX_ARCHIVOS} archivos alcanzado`);
+                return;
+            }
+            // Evitar duplicados por nombre
+            if (!archivosSeleccionados.find(f => f.name === file.name)) {
+                archivosSeleccionados.push(file);
+            }
+        });
 
-        if (!extOk) {
-            mostrarCargaError('Formato no soportado. Usá TXT, PDF, CSV o MD.');
-            return;
+        if (rechazados.length) {
+            toastr.warning(rechazados.join('<br>'), 'Archivos omitidos', { escapeHtml: false });
         }
-        if (file.size > 20 * 1024 * 1024) {
-            mostrarCargaError('El archivo supera los 20MB.');
-            return;
-        }
-
-        archivoSeleccionado = file;
-        $('#doc-nombre').text(file.name);
-        $('#doc-preview').removeClass('d-none');
-        $('#btn-cargar').prop('disabled', false);
-        $('#carga-resultado').addClass('d-none');
-        $('#resumen-box').addClass('d-none');
+        renderizarListaArchivos();
     }
 
+    function renderizarListaArchivos() {
+        const lista = $('#archivos-lista');
+        lista.empty();
+
+        archivosSeleccionados.forEach((file, idx) => {
+            const kb = (file.size / 1024).toFixed(1);
+            lista.append(`
+                <div class="d-flex align-items-center justify-content-between px-2 py-1
+                    ${idx < archivosSeleccionados.length - 1 ? 'border-bottom' : ''}"
+                    style="font-size:.85rem;">
+                    <span><i class="fas fa-file-alt text-primary mr-1"></i>${escapeHtml(file.name)}
+                        <small class="text-muted ml-1">${kb} KB</small>
+                    </span>
+                    <button class="btn btn-sm btn-link text-danger p-0 btn-quitar-archivo"
+                        data-idx="${idx}" style="font-size:.8rem;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>`);
+        });
+
+        const hay = archivosSeleccionados.length > 0;
+        $('#archivos-seleccionados').toggleClass('d-none', !hay);
+        $('#archivos-count').text(archivosSeleccionados.length);
+        $('#btn-cargar').prop('disabled', !hay);
+        $('#archivos-estado').addClass('d-none');
+    }
+
+    $(document).on('click', '.btn-quitar-archivo', function () {
+        const idx = parseInt($(this).data('idx'));
+        archivosSeleccionados.splice(idx, 1);
+        renderizarListaArchivos();
+    });
+
     $('#btn-cargar').on('click', function () {
-        if (!archivoSeleccionado) return;
+        if (!archivosSeleccionados.length || !coleccionActiva) return;
 
         const formData = new FormData();
-        formData.append('documento', archivoSeleccionado);
+        archivosSeleccionados.forEach(f => formData.append('documentos[]', f));
+        formData.append('coleccion', coleccionActiva);
         formData.append('resumir', $('#chk-resumir').is(':checked') ? '1' : '0');
-        formData.append('_token', csrfToken);
+        formData.append('_token', csrf);
 
-        $('#carga-progress').removeClass('d-none');
-        $('#carga-status').text('Enviando archivo...');
         $('#btn-cargar').prop('disabled', true);
-        $('#carga-resultado').addClass('d-none');
 
-        if ($('#chk-resumir').is(':checked')) {
-            setTimeout(() => $('#carga-status').text('Generando resumen con Ollama... (puede tardar)'), 3000);
-        }
+        // Renderizar filas de estado vacías para cada archivo
+        const $estadoLista = $('#archivos-estado-lista').empty();
+        archivosSeleccionados.forEach((f, idx) => {
+            $estadoLista.append(`
+                <div class="d-flex align-items-center justify-content-between px-2 py-1 border-bottom archivo-estado-row"
+                    id="estado-row-${idx}" style="font-size:.85rem;">
+                    <span class="text-truncate mr-2" style="max-width:60%;">
+                        <i class="fas fa-file-alt text-primary mr-1"></i>${escapeHtml(f.name)}
+                    </span>
+                    <span id="estado-badge-${idx}">
+                        <span class="badge badge-secondary">Enviando...</span>
+                    </span>
+                </div>`);
+        });
+        $('#archivos-estado').removeClass('d-none');
 
         $.ajax({
             url: '{{ route("rag.cargar") }}',
@@ -220,94 +467,142 @@ $(document).ready(function () {
             data: formData,
             processData: false,
             contentType: false,
-            timeout: 200000,
+            timeout: 30000,
             success: function (data) {
-                $('#carga-progress').addClass('d-none');
-                $('#carga-resultado').removeClass('d-none');
-
-                if (data.success) {
-                    $('#carga-ok')
-                        .html(`<i class="fas fa-check-circle mr-1"></i>
-                            <strong>${data.archivo}</strong> indexado correctamente.
-                            <span class="ml-2 badge badge-info">${data.documentos_total} docs en RAG</span>`)
-                        .show();
-                    $('#carga-error').hide();
-
-                    if (data.resumen) {
-                        $('#resumen-texto').text(data.resumen);
-                        $('#resumen-box').removeClass('d-none');
-                    }
-                } else {
-                    mostrarCargaError(data.message || 'Error desconocido');
+                if (!data.success) {
+                    archivosSeleccionados.forEach((f, idx) =>
+                        setBadge(idx, 'danger', 'Error: ' + escapeHtml(data.message || 'Desconocido'))
+                    );
+                    $('#btn-cargar').prop('disabled', false);
+                    return;
                 }
 
-                archivoSeleccionado = null;
-                docFile.value = '';
-                $('#doc-preview').addClass('d-none');
-                cargarEstado();
+                const archivos = data.archivos || [];
+                archivos.forEach((item, idx) => {
+                    if (!item.async) {
+                        // Sin resumen: ya terminó
+                        if (item.status === 'completed') {
+                            setBadge(idx, 'success', `<i class="fas fa-check mr-1"></i>Indexado (${item.documentos_total ?? '—'} chunks)`);
+                        } else {
+                            setBadge(idx, 'danger', escapeHtml(item.error || 'Error'));
+                        }
+                    } else {
+                        // Con resumen: polling
+                        setBadge(idx, 'warning', '<i class="fas fa-circle-notch fa-spin mr-1"></i>Procesando...');
+                        iniciarPolling(idx, item.job_id, item.archivo);
+                    }
+                });
+
+                archivosSeleccionados = [];
+                renderizarListaArchivos();
+                $('#archivos-estado').removeClass('d-none');
+                $('#btn-cargar').prop('disabled', true);
             },
             error: function (xhr) {
-                $('#carga-progress').addClass('d-none');
                 const msg = xhr.responseJSON?.message || 'Error al conectar con el servidor.';
-                mostrarCargaError(msg);
+                archivosSeleccionados.forEach((f, idx) => setBadge(idx, 'danger', escapeHtml(msg)));
                 $('#btn-cargar').prop('disabled', false);
             }
         });
     });
 
-    function mostrarCargaError(msg) {
-        $('#carga-resultado').removeClass('d-none');
-        $('#carga-error').html('<i class="fas fa-exclamation-circle mr-1"></i>' + msg).show();
-        $('#carga-ok').hide();
+    function setBadge(idx, tipo, html) {
+        $(`#estado-badge-${idx}`).html(`<span class="badge badge-${tipo}">${html}</span>`);
     }
 
-    // ── Re-indexar ───────────────────────────────────────────────────────
-    $('#btn-reindexar').on('click', function () {
-        if (!confirm('¿Re-indexar todos los documentos del servidor?')) return;
-        const btn = $(this).prop('disabled', true).text('Indexando...');
+    function iniciarPolling(idx, jobId, nombreArchivo) {
+        let intentos = 0;
+        const MAX_POLL = 200; // 10 min
 
-        $.post('{{ route("rag.reindexar") }}', { _token: csrfToken }, function (data) {
+        const timer = setInterval(function () {
+            intentos++;
+            if (intentos > MAX_POLL) {
+                clearInterval(timer);
+                setBadge(idx, 'warning', 'Timeout — sigue procesando en el servidor');
+                return;
+            }
+
+            $.get(`/rag/carga-estado/${jobId}`, function (estado) {
+                if (estado.status === 'completed') {
+                    clearInterval(timer);
+                    setBadge(idx, 'success',
+                        `<i class="fas fa-check mr-1"></i>Indexado (${estado.documentos_total ?? '—'} chunks)`);
+                    if (estado.resumen) {
+                        $(`#estado-row-${idx}`).after(`
+                            <div class="px-2 pb-2" style="font-size:.8rem;">
+                                <a class="text-primary" style="cursor:pointer;"
+                                    onclick="$(this).next().toggleClass('d-none')">
+                                    <i class="fas fa-eye mr-1"></i>Ver resumen
+                                </a>
+                                <div class="d-none mt-1 p-2 bg-light rounded"
+                                    style="white-space:pre-wrap;max-height:120px;overflow-y:auto;">
+                                    ${escapeHtml(estado.resumen)}
+                                </div>
+                            </div>`);
+                    }
+                    cargarContadores();
+                } else if (estado.status === 'failed') {
+                    clearInterval(timer);
+                    setBadge(idx, 'danger',
+                        `<i class="fas fa-times mr-1"></i>${escapeHtml(estado.error || 'Error')}`);
+                }
+                // pending/processing → seguir esperando
+            });
+        }, 3000);
+    }
+
+    $('#btn-reindexar').on('click', function () {
+        if (!coleccionActiva) return;
+        if (!confirm(`¿Re-indexar todos los documentos de "${nombreActivo}" desde el servidor?`)) return;
+        const btn = $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Indexando...');
+        $.post('{{ route("rag.reindexar") }}', { _token: csrf, coleccion: coleccionActiva }, function (data) {
             if (data.success) {
-                toastr.success(`Re-indexado: ${data.documentos} documentos`);
-                cargarEstado();
+                toastr.success(`Re-indexado: ${data.documentos} archivo(s)`);
+                cargarContadores();
             } else {
                 toastr.error(data.message || 'Error al re-indexar');
             }
         }).fail(() => toastr.error('No se pudo conectar al servidor IA'))
-          .always(() => btn.prop('disabled', false).html('<i class="fas fa-database mr-1"></i>Re-indexar'));
+          .always(() => btn.prop('disabled', false).html('<i class="fas fa-database mr-1"></i>Re-indexar temática'));
     });
 
-    // ── Chat / Consulta ──────────────────────────────────────────────────
+    // ── Chat ─────────────────────────────────────────────────────────────────
+    function resetChat() {
+        $('#chat-historial').html(`
+            <div class="text-center text-muted mt-4" id="chat-inicio">
+                <i class="fas fa-comments fa-2x mb-2"></i>
+                <p style="font-size:.9rem;">Hacé una pregunta sobre los documentos de <strong>${escapeHtml(nombreActivo)}</strong>.</p>
+            </div>`);
+    }
+
     $('#pregunta-input').on('keydown', function (e) {
         if (e.key === 'Enter') $('#btn-preguntar').trigger('click');
     });
 
     $('#btn-preguntar').on('click', function () {
         const pregunta = $('#pregunta-input').val().trim();
-        if (!pregunta) return;
+        if (!pregunta || !coleccionActiva) return;
 
+        $('#chat-inicio').remove();
         agregarMensaje('user', pregunta);
         $('#pregunta-input').val('').prop('disabled', true);
-        $('#btn-preguntar').prop('disabled', true);
+        $(this).prop('disabled', true);
 
         const loadingId = 'loading-' + Date.now();
-        agregarMensaje('loading', '...', loadingId);
+        agregarMensaje('loading', '', loadingId);
 
         $.ajax({
             url: '{{ route("rag.preguntar") }}',
             method: 'POST',
-            data: { pregunta, _token: csrfToken },
+            data: { pregunta, coleccion: coleccionActiva, _token: csrf },
             timeout: 70000,
             success: function (data) {
-                $('#' + loadingId).remove();
-                if (data.success) {
-                    agregarMensaje('assistant', data.respuesta);
-                } else {
-                    agregarMensaje('error', data.message || 'Error al consultar el RAG.');
-                }
+                $(`#${loadingId}`).remove();
+                agregarMensaje(data.success ? 'assistant' : 'error',
+                    data.success ? data.respuesta : (data.message || 'Error al consultar el RAG.'));
             },
             error: function () {
-                $('#' + loadingId).remove();
+                $(`#${loadingId}`).remove();
                 agregarMensaje('error', 'No se pudo conectar con el servidor IA.');
             },
             complete: function () {
@@ -318,51 +613,36 @@ $(document).ready(function () {
     });
 
     function agregarMensaje(tipo, texto, id = null) {
-        const historial = $('#chat-historial');
-
-        // Limpiar placeholder inicial
-        historial.find('.text-center').remove();
-
-        let html = '';
+        const historial = document.getElementById('chat-historial');
         const idAttr = id ? `id="${id}"` : '';
-
+        let html = '';
         if (tipo === 'user') {
             html = `<div class="d-flex justify-content-end mb-2" ${idAttr}>
-                <div class="p-2 px-3 rounded text-white" style="max-width:75%; background:#6777ef; white-space:pre-wrap;">
-                    ${escapeHtml(texto)}
-                </div>
-            </div>`;
+                <div class="p-2 px-3 rounded text-white" style="max-width:75%;background:#6777ef;white-space:pre-wrap;">
+                    ${escapeHtml(texto)}</div></div>`;
         } else if (tipo === 'assistant') {
             html = `<div class="d-flex justify-content-start mb-2" ${idAttr}>
-                <div class="p-2 px-3 rounded bg-white border" style="max-width:85%; white-space:pre-wrap; font-size:0.9rem;">
-                    <small class="text-muted d-block mb-1"><i class="fas fa-brain mr-1"></i>Servidor IA</small>
-                    ${escapeHtml(texto)}
-                </div>
-            </div>`;
+                <div class="p-2 px-3 rounded bg-white border" style="max-width:90%;white-space:pre-wrap;font-size:.9rem;">
+                    <small class="text-muted d-block mb-1"><i class="fas fa-brain mr-1"></i>${escapeHtml(nombreActivo)}</small>
+                    ${escapeHtml(texto)}</div></div>`;
         } else if (tipo === 'loading') {
             html = `<div class="d-flex justify-content-start mb-2" ${idAttr}>
                 <div class="p-2 px-3 rounded bg-white border text-muted">
-                    <i class="fas fa-circle-notch fa-spin mr-1"></i>Consultando...
-                </div>
-            </div>`;
+                    <i class="fas fa-circle-notch fa-spin mr-1"></i>Consultando...</div></div>`;
         } else if (tipo === 'error') {
             html = `<div class="d-flex justify-content-start mb-2" ${idAttr}>
-                <div class="p-2 px-3 rounded bg-white border text-danger" style="max-width:85%;">
-                    <i class="fas fa-exclamation-circle mr-1"></i>${escapeHtml(texto)}
-                </div>
-            </div>`;
+                <div class="p-2 px-3 rounded bg-white border text-danger" style="max-width:90%;">
+                    <i class="fas fa-exclamation-circle mr-1"></i>${escapeHtml(texto)}</div></div>`;
         }
-
-        historial.append(html);
-        historial.scrollTop(historial[0].scrollHeight);
+        historial.insertAdjacentHTML('beforeend', html);
+        historial.scrollTop = historial.scrollHeight;
     }
 
     function escapeHtml(text) {
-        return text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+        if (!text) return '';
+        return String(text)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 });
 </script>

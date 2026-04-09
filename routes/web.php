@@ -163,11 +163,15 @@ Route::group(['middleware' => ['auth']], function () {
 
     // RAG — Servidor IA local
     Route::prefix('rag')->name('rag.')->group(function () {
-        Route::get('/',          [RAGController::class, 'index'])->name('index');
-        Route::get('/estado',    [RAGController::class, 'estado'])->name('estado');
-        Route::post('/cargar',   [RAGController::class, 'cargar'])->name('cargar');
-        Route::post('/preguntar',[RAGController::class, 'preguntar'])->name('preguntar');
-        Route::post('/reindexar',[RAGController::class, 'reindexar'])->name('reindexar');
+        Route::get('/',                              [RAGController::class, 'index'])->name('index');
+        Route::get('/estado',                        [RAGController::class, 'estado'])->name('estado');
+        Route::get('/colecciones',                   [RAGController::class, 'colecciones'])->name('colecciones');
+        Route::post('/tematicas',                    [RAGController::class, 'crearTematica'])->name('tematicas.crear');
+        Route::delete('/tematicas/{coleccion}',      [RAGController::class, 'eliminarTematica'])->name('tematicas.eliminar');
+        Route::post('/cargar',                       [RAGController::class, 'cargar'])->name('cargar');
+        Route::get('/carga-estado/{jobId}',          [RAGController::class, 'estadoCarga'])->name('carga.estado');
+        Route::post('/preguntar',                    [RAGController::class, 'preguntar'])->name('preguntar');
+        Route::post('/reindexar',                    [RAGController::class, 'reindexar'])->name('reindexar');
     });
 
     Route::get('/transcription', [AudioTranscriptionController::class, 'index'])->name('transcription.index');

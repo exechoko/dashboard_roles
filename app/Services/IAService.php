@@ -66,16 +66,20 @@ class IAService
     // ─── RAG ────────────────────────────────────────────────────────────────
 
     /**
-     * Sube un archivo al RAG: lo indexa en ChromaDB y genera un resumen con Ollama.
+     * Sube un archivo al RAG: lo indexa en ChromaDB bajo la colección indicada
+     * y genera un resumen con Ollama.
      *
-     * @return array{archivo: string, resumen: string|null, documentos_total: int}
+     * @return array{archivo: string, coleccion: string, resumen: string|null, documentos_total: int, caracteres: int}
      * @throws \RuntimeException
      */
-    public function cargarDocumento(UploadedFile $archivo, bool $resumir = true): array
+    public function cargarDocumento(UploadedFile $archivo, bool $resumir = true, string $coleccion = 'general'): array
     {
         $response = Http::timeout(180)
             ->attach('file', fopen($archivo->getRealPath(), 'r'), $archivo->getClientOriginalName())
-            ->post($this->ragUrl . '/cargar', ['resumir' => $resumir ? 'true' : 'false']);
+            ->post($this->ragUrl . '/cargar', [
+                'resumir'   => $resumir ? 'true' : 'false',
+                'coleccion' => $coleccion,
+            ]);
 
         if ($response->failed()) {
             Log::error('IAService::cargarDocumento — RAG error', [
@@ -87,6 +91,7 @@ class IAService
 
         return [
             'archivo'          => $response->json('archivo', $archivo->getClientOriginalName()),
+            'coleccion'        => $response->json('coleccion', $coleccion),
             'resumen'          => $response->json('resumen'),
             'documentos_total' => $response->json('documentos_total', 0),
             'caracteres'       => $response->json('caracteres', 0),
@@ -94,14 +99,17 @@ class IAService
     }
 
     /**
-     * Hace una pregunta al RAG y obtiene una respuesta basada en los documentos indexados.
+     * Hace una pregunta al RAG sobre una colección específica.
      *
      * @throws \RuntimeException
      */
-    public function consultarRAG(string $pregunta): string
+    public function consultarRAG(string $pregunta, string $coleccion = 'general'): string
     {
         $response = Http::timeout(60)
-            ->post($this->ragUrl . '/preguntar', ['pregunta' => $pregunta]);
+            ->post($this->ragUrl . '/preguntar', [
+                'pregunta'  => $pregunta,
+                'coleccion' => $coleccion,
+            ]);
 
         if ($response->failed()) {
             throw new \RuntimeException('Error al consultar RAG (' . $response->status() . ')');
@@ -111,17 +119,33 @@ class IAService
     }
 
     /**
-     * Re-indexa todos los documentos de DOCS_DIR en ChromaDB.
+     * Re-indexa documentos desde disco. Si se pasa coleccion, solo esa; si no, todas.
      */
-    public function reindexarRAG(): int
+    public function reindexarRAG(?string $coleccion = null): int
     {
-        $response = Http::timeout(120)->post($this->ragUrl . '/indexar');
+        $body     = $coleccion ? ['coleccion' => $coleccion] : [];
+        $response = Http::timeout(120)->post($this->ragUrl . '/indexar', $body);
 
         if ($response->failed()) {
             throw new \RuntimeException('Error al re-indexar RAG (' . $response->status() . ')');
         }
 
         return $response->json('documentos', 0);
+    }
+
+    /**
+     * Lista las colecciones disponibles en ChromaDB con cantidad de chunks.
+     *
+     * @return array<array{nombre: string, documentos: int}>
+     */
+    public function listarColecciones(): array
+    {
+        try {
+            $response = Http::timeout(10)->get($this->ragUrl . '/colecciones');
+            return $response->successful() ? ($response->json('colecciones') ?? []) : [];
+        } catch (\Exception) {
+            return [];
+        }
     }
 
     /**

@@ -128,8 +128,7 @@
                                     </small>
                                 </div>
                                 <button class="btn btn-sm btn-link text-danger p-0 btn-eliminar-tematica"
-                                    data-coleccion="{{ $t->coleccion }}" title="Eliminar temática"
-                                    onclick="event.stopPropagation()">
+                                    data-coleccion="{{ $t->coleccion }}" title="Eliminar temática">
                                     <i class="fas fa-trash-alt fa-sm"></i>
                                 </button>
                             </div>
@@ -347,8 +346,7 @@ $(document).ready(function () {
                                 </small>
                             </div>
                             <button class="btn btn-sm btn-link text-danger p-0 btn-eliminar-tematica"
-                                data-coleccion="${t.coleccion}" title="Eliminar temática"
-                                onclick="event.stopPropagation()">
+                                data-coleccion="${t.coleccion}" title="Eliminar temática">
                                 <i class="fas fa-trash-alt fa-sm"></i>
                             </button>
                         </div>`;
@@ -371,7 +369,8 @@ $(document).ready(function () {
     });
 
     // ── Eliminar temática ────────────────────────────────────────────────────
-    $(document).on('click', '.btn-eliminar-tematica', function () {
+    $(document).on('click', '.btn-eliminar-tematica', function (e) {
+        e.stopPropagation();
         const col   = $(this).data('coleccion');
         const $item = $(this).closest('.tematica-item');
         const nombre = $item.data('nombre');

@@ -175,15 +175,6 @@
                                 <small class="text-muted"><span id="archivos-count">0</span>/5 archivos seleccionados</small>
                             </div>
 
-                            <div class="form-group mb-2">
-                                <div class="custom-control custom-switch">
-                                    <input type="checkbox" class="custom-control-input" id="chk-resumir" checked>
-                                    <label class="custom-control-label" for="chk-resumir">
-                                        Generar resumen con IA (Ollama)
-                                    </label>
-                                </div>
-                            </div>
-
                             <button id="btn-cargar" class="btn btn-primary btn-block" disabled
                                 style="background: linear-gradient(45deg,#6777ef,#35199a); border: none;">
                                 <i class="fas fa-upload mr-2"></i>Cargar al RAG
@@ -495,7 +486,7 @@ $(document).ready(function () {
         const formData = new FormData();
         archivosSeleccionados.forEach(f => formData.append('documentos[]', f));
         formData.append('coleccion', coleccionActiva);
-        formData.append('resumir', $('#chk-resumir').is(':checked') ? '1' : '0');
+        formData.append('resumir', '0');
         formData.append('_token', csrf);
 
         $('#btn-cargar').prop('disabled', true);

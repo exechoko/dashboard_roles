@@ -45,7 +45,7 @@ class ProcesarTranscripcionesPendientes extends Command
 
             try {
                 $inicio   = microtime(true);
-                $response = Http::timeout(300)
+                $response = Http::timeout(900)
                     ->attach('file', fopen($audioPath, 'r'), basename($audioPath))
                     ->post($url, ['language' => 'es']);
                 $elapsed  = round(microtime(true) - $inicio, 2);

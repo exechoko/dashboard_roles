@@ -31,7 +31,7 @@ class IAService
      */
     public function transcribirAudio(UploadedFile $archivo, string $idioma = 'es'): array
     {
-        $response = Http::timeout(300)
+        $response = Http::timeout(900)
             ->attach('file', fopen($archivo->getRealPath(), 'r'), $archivo->getClientOriginalName())
             ->post($this->whisperUrl . '/inference', ['language' => $idioma]);
 

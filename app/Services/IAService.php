@@ -12,13 +12,15 @@ class IAService
     private string $ragUrl;
     private string $ollamaUrl;
     private string $ollamaModel;
+    private string $callAnalysisUrl;
 
     public function __construct()
     {
-        $this->whisperUrl  = rtrim(config('services.ia.whisper_url'), '/');
-        $this->ragUrl      = rtrim(config('services.ia.rag_url'), '/');
-        $this->ollamaUrl   = rtrim(config('services.ia.ollama_url'), '/');
-        $this->ollamaModel = config('services.ia.ollama_model', 'llama3.2:3b');
+        $this->whisperUrl      = rtrim(config('services.ia.whisper_url'), '/');
+        $this->ragUrl          = rtrim(config('services.ia.rag_url'), '/');
+        $this->ollamaUrl       = rtrim(config('services.ia.ollama_url'), '/');
+        $this->ollamaModel     = config('services.ia.ollama_model', 'llama3.2:3b');
+        $this->callAnalysisUrl = rtrim(config('services.ia.call_analysis_url'), '/');
     }
 
     // ─── Whisper ────────────────────────────────────────────────────────────
@@ -215,9 +217,52 @@ class IAService
     public function estadoServicios(): array
     {
         return [
-            'whisper' => $this->whisperDisponible(),
-            'rag'     => $this->ragDisponible(),
-            'ollama'  => $this->ollamaDisponible(),
+            'whisper'      => $this->whisperDisponible(),
+            'rag'          => $this->ragDisponible(),
+            'ollama'       => $this->ollamaDisponible(),
+            'callanalysis' => $this->callAnalysisDisponible(),
         ];
+    }
+
+    // ─── Call Analysis ──────────────────────────────────────────────────────
+
+    /**
+     * Envía un audio al servidor de análisis de llamadas 911.
+     * Retorna el JSON completo de la respuesta (transcripción, resumen, datos extraídos).
+     *
+     * @throws \RuntimeException
+     */
+    public function analizarLlamada(string $audioPath, string $nombreArchivo): array
+    {
+        $response = Http::timeout(700)
+            ->attach('file', fopen($audioPath, 'r'), $nombreArchivo)
+            ->post($this->callAnalysisUrl . '/analyze');
+
+        if ($response->status() === 422) {
+            throw new \RuntimeException('El audio no pudo transcribirse (archivo dañado o sin voz).');
+        }
+
+        if ($response->failed()) {
+            Log::error('IAService::analizarLlamada — CallAnalysis error', [
+                'status' => $response->status(),
+                'body'   => substr($response->body(), 0, 300),
+            ]);
+            throw new \RuntimeException('Error en CallAnalysis (' . $response->status() . '): ' . $response->body());
+        }
+
+        return $response->json();
+    }
+
+    /**
+     * Verifica que el servidor CallAnalysis esté disponible.
+     */
+    public function callAnalysisDisponible(): bool
+    {
+        try {
+            $response = Http::timeout(5)->get($this->callAnalysisUrl . '/health');
+            return $response->successful() && $response->json('status') === 'ok';
+        } catch (\Exception) {
+            return false;
+        }
     }
 }

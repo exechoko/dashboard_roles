@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\CallAnalysisJob;
+use App\Services\IAService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class CallAnalysisController extends Controller
 {
+    public function __construct(private IAService $ia) {}
+
     public function submit(Request $request)
     {
         $request->validate([
@@ -61,14 +63,11 @@ class CallAnalysisController extends Controller
 
     public function health()
     {
-        try {
-            $response = Http::timeout(5)->get('http://193.169.1.246:8082/health');
-            if ($response->successful()) {
-                return response()->json($response->json());
-            }
-            return response()->json(['status' => 'error'], 503);
-        } catch (\Exception $e) {
-            return response()->json(['status' => 'unreachable'], 503);
-        }
+        $disponible = $this->ia->callAnalysisDisponible();
+
+        return response()->json(
+            ['status' => $disponible ? 'ok' : 'unreachable'],
+            $disponible ? 200 : 503
+        );
     }
 }

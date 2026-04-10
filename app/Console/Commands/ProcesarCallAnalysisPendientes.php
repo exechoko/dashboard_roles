@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\CallAnalysisJob;
+use App\Services\IAService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -13,7 +13,7 @@ class ProcesarCallAnalysisPendientes extends Command
     protected $signature   = 'callanalysis:pendientes';
     protected $description = 'Procesa los análisis de llamadas 911 pendientes';
 
-    public function handle()
+    public function handle(IAService $ia)
     {
         $log = Log::channel('transcripciones');
 
@@ -27,8 +27,8 @@ class ProcesarCallAnalysisPendientes extends Command
 
         foreach ($pendientes as $job) {
             $log->info("[CallAnalysis] Job #{$job->id} iniciado.", [
-                'modo'     => $job->mode,
-                'archivo'  => $job->original_name,
+                'modo'    => $job->mode,
+                'archivo' => $job->original_name,
             ]);
 
             $job->update(['status' => 'processing']);
@@ -45,45 +45,16 @@ class ProcesarCallAnalysisPendientes extends Command
             }
 
             try {
-                $inicio = microtime(true);
+                $inicio  = microtime(true);
+                $nombre  = $job->original_name ?? basename($audioPath);
 
                 if ($job->mode === 'transcribe') {
-                    // Solo transcripción — usa el Whisper local (puerto 8080)
-                    $url      = config('services.ia.whisper_url') . '/inference';
-                    $response = Http::timeout(900)
-                        ->attach('file', fopen($audioPath, 'r'), basename($audioPath))
-                        ->post($url, ['language' => 'es']);
-
-                    if ($response->successful()) {
-                        $result = [
-                            'mode'    => 'transcribe',
-                            'text'    => $response->json('text'),
-                            'duracion'=> $response->json('duration'),
-                        ];
-                        $job->update([
-                            'status'      => 'completed',
-                            'result_json' => json_encode($result),
-                        ]);
-                    } else {
-                        throw new \RuntimeException('Whisper error (' . $response->status() . '): ' . substr($response->body(), 0, 300));
-                    }
+                    $data   = $ia->transcribirAudio(new \Illuminate\Http\UploadedFile($audioPath, $nombre, null, null, true), 'es');
+                    $result = ['mode' => 'transcribe', 'text' => $data['text'], 'duracion' => $data['duration']];
+                    $job->update(['status' => 'completed', 'result_json' => json_encode($result)]);
                 } else {
-                    // Análisis completo — usa el servidor CallAnalysis (puerto 8082)
-                    $url      = 'http://193.169.1.246:8082/analyze';
-                    $response = Http::timeout(700)
-                        ->attach('file', fopen($audioPath, 'r'), $job->original_name ?? basename($audioPath))
-                        ->post($url);
-
-                    if ($response->successful()) {
-                        $job->update([
-                            'status'      => 'completed',
-                            'result_json' => $response->body(),
-                        ]);
-                    } elseif ($response->status() === 422) {
-                        throw new \RuntimeException('El audio no pudo transcribirse (archivo dañado o silencio).');
-                    } else {
-                        throw new \RuntimeException('CallAnalysis error (' . $response->status() . '): ' . substr($response->body(), 0, 300));
-                    }
+                    $result = $ia->analizarLlamada($audioPath, $nombre);
+                    $job->update(['status' => 'completed', 'result_json' => json_encode($result)]);
                 }
 
                 $elapsed = round(microtime(true) - $inicio, 2);
@@ -91,9 +62,7 @@ class ProcesarCallAnalysisPendientes extends Command
                 Storage::disk('local')->delete($job->audio_path);
 
             } catch (\Exception $e) {
-                $log->error("[CallAnalysis] Job #{$job->id} excepción.", [
-                    'mensaje' => $e->getMessage(),
-                ]);
+                $log->error("[CallAnalysis] Job #{$job->id} excepción.", ['mensaje' => $e->getMessage()]);
                 $job->update([
                     'status'        => 'failed',
                     'error_message' => $e->getMessage(),

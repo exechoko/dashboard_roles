@@ -792,6 +792,10 @@
                                                                 <span id="ia-dot-whisper" class="mr-2" style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
                                                                 <span><strong>Whisper</strong> <span id="ia-label-whisper" class="badge badge-secondary">Verificando...</span></span>
                                                             </div>
+                                                            <div class="d-flex align-items-center mr-4">
+                                                                <span id="ia-dot-callanalysis" class="mr-2" style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
+                                                                <span><strong>Análisis 911</strong> <span id="ia-label-callanalysis" class="badge badge-secondary">Verificando...</span></span>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -3214,7 +3218,8 @@
 
         // ── Monitor servicios IA ────────────────────────────────────────────
         (function iaMonitor() {
-            var estadoUrl = '{{ route("rag.estado") }}';
+            var estadoUrl      = '{{ route("rag.estado") }}';
+            var callHealthUrl  = '{{ route("callanalysis.health") }}';
 
             function actualizarServicio(nombre, activo) {
                 var dot   = document.getElementById('ia-dot-' + nombre);
@@ -3229,6 +3234,18 @@
                     label.className        = 'badge badge-danger';
                     label.textContent      = 'Offline';
                 }
+            }
+
+            function verificarCallAnalysis() {
+                fetch(callHealthUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
+                    .then(function(data) {
+                        var ok = data && data.status === 'ok';
+                        actualizarServicio('callanalysis', ok);
+                    })
+                    .catch(function() {
+                        actualizarServicio('callanalysis', false);
+                    });
             }
 
             function verificar() {
@@ -3251,6 +3268,8 @@
                             if (lbl) { lbl.className = 'badge badge-warning'; lbl.textContent = 'Error'; }
                         });
                     });
+
+                verificarCallAnalysis();
             }
 
             verificar();

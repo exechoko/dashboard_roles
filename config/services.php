@@ -37,10 +37,11 @@ return [
     ],
 
     'ia' => [
-        'whisper_url' => env('WHISPER_URL', 'http://193.169.1.246:8080'),
-        'rag_url'     => env('RAG_URL',     'http://193.169.1.246:8081'),
-        'ollama_url'  => env('OLLAMA_URL',  'http://193.169.1.246:11434'),
-        'ollama_model' => env('OLLAMA_MODEL', 'llama3.2:3b'),
+        'whisper_url'       => env('WHISPER_URL',       'http://193.169.1.246:8080'),
+        'rag_url'           => env('RAG_URL',           'http://193.169.1.246:8081'),
+        'ollama_url'        => env('OLLAMA_URL',        'http://193.169.1.246:11434'),
+        'ollama_model'      => env('OLLAMA_MODEL',      'llama3.2:3b'),
+        'call_analysis_url' => env('CALL_ANALYSIS_URL', 'http://193.169.1.246:8082'),
     ],
 
 ];

@@ -161,6 +161,13 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/transcribir', [TranscripcionController::class, 'transcribe'])->name('transcribe.audio');
     Route::get('/transcribir/estado/{jobId}', [TranscripcionController::class, 'estado'])->name('transcribe.estado');
 
+    // CallAnalysis — Análisis de llamadas 911 (puerto 8082)
+    Route::prefix('call-analysis')->name('callanalysis.')->group(function () {
+        Route::post('/submit',         [App\Http\Controllers\CallAnalysisController::class, 'submit'])->name('submit');
+        Route::get('/estado/{jobId}',  [App\Http\Controllers\CallAnalysisController::class, 'estado'])->name('estado');
+        Route::get('/health',          [App\Http\Controllers\CallAnalysisController::class, 'health'])->name('health');
+    });
+
     // RAG — Servidor IA local
     Route::prefix('rag')->name('rag.')->group(function () {
         Route::get('/',                              [RAGController::class, 'index'])->name('index');

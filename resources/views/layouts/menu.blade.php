@@ -187,9 +187,16 @@
                 </li>
             @endcan
             @can('ver-mapa-gis-cecoco')
-                <li class="{{ request()->is('cecoco/mapa-gis*') ? 'active' : '' }}">
+                <li class="{{ request()->is('cecoco/mapa-gis') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('cecoco.mapa-gis') }}">
                         <i class="fas fa-satellite-dish"></i><span>Mapa GIS CeCoCo</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-mapa-gis-historico-cecoco')
+                <li class="{{ request()->is('cecoco/mapa-gis-historico*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('cecoco.mapa-gis-historico') }}">
+                        <i class="fas fa-history"></i><span>GIS Histórico CeCoCo</span>
                     </a>
                 </li>
             @endcan

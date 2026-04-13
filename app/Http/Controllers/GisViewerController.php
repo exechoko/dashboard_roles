@@ -20,6 +20,7 @@ class GisViewerController extends Controller
     private const SESSION_EXTRA_KEY = 'gis_extra_cookies';
     private const LOGIN_PATH = '/gisviewer/main/cecoco/?language=es_ES';
     private const MAP_PATH = '/gisviewer/main/cecoco/';
+    private const HISTORICAL_PATH = '/gisviewer/main/cecoco/historical';
     private const PROXY_BASE = '/cecoco/gis-proxy';
     private const SPRING_CHECK_PATH = '/gisviewer/j_security_check';
 
@@ -64,6 +65,33 @@ class GisViewerController extends Controller
 
         } catch (\Exception $e) {
             Log::error('GisViewer index error: ' . $e->getMessage());
+            return view('cecoco.mapas.mapa_gis_error', ['mensaje' => $e->getMessage()]);
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Vista histórica: carga el módulo histórico del GIS Viewer.
+    // -----------------------------------------------------------------------
+    public function indexHistorico(Request $request)
+    {
+        $layerName = $request->query('layerName', 'SCCMap:entrerios');
+
+        try {
+            [$jsid, $extraCookies, $gisHtml] = $this->autenticarYCapturar(
+                self::HISTORICAL_PATH . '?layerName=' . rawurlencode($layerName)
+            );
+            session([
+                self::SESSION_KEY => $jsid,
+                self::SESSION_EXTRA_KEY => $extraCookies,
+            ]);
+
+            $gisHtml = $this->procesarHtml($gisHtml);
+
+            return response($gisHtml, 200)
+                ->header('Content-Type', 'text/html; charset=UTF-8');
+
+        } catch (\Exception $e) {
+            Log::error('GisViewer indexHistorico error: ' . $e->getMessage());
             return view('cecoco.mapas.mapa_gis_error', ['mensaje' => $e->getMessage()]);
         }
     }
@@ -149,10 +177,12 @@ class GisViewerController extends Controller
     // Paso 4: POST /gisviewer/j_security_check     → login Spring Security
     //              → redirige al mapa real
     //
+    // $targetPath: ruta a capturar tras autenticar (por defecto MAP_PATH)
     // Retorna: [jsid, extraCookies[], htmlDelMapa]
     // -----------------------------------------------------------------------
-    private function autenticarYCapturar(): array
+    private function autenticarYCapturar(string $targetPath = null): array
     {
+        $targetPath = $targetPath ?? self::MAP_PATH;
         $cookieJar = new CookieJar();
         $client = $this->makeClient($cookieJar);
         $loginUrl = $this->gisBaseUrl . self::LOGIN_PATH;
@@ -212,6 +242,17 @@ class GisViewerController extends Controller
         Log::info('GisViewer: autenticado correctamente.', [
             'extra_cookies' => array_keys($extraCookies),
         ]);
+
+        // Si se solicitó un path distinto al mapa principal, hacer GET adicional
+        if ($targetPath !== self::MAP_PATH) {
+            $targetUrl = $this->gisBaseUrl . (str_starts_with($targetPath, '/') ? $targetPath : '/' . $targetPath);
+            Log::info('GisViewer: cargando path específico', ['url' => $targetUrl]);
+            $targetResponse = $client->get($targetUrl, [
+                'headers' => array_merge($this->baseHeaders(), ['Referer' => $this->gisBaseUrl . self::MAP_PATH]),
+                'allow_redirects' => true,
+            ]);
+            $responseHtml = (string) $targetResponse->getBody();
+        }
 
         return [$jsid, $extraCookies, $responseHtml];
     }

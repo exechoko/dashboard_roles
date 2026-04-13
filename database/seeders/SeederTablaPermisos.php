@@ -120,6 +120,7 @@ class SeederTablaPermisos extends Seeder
             'ver-analizador-eventos-cecoco',
             'ver-analitica-eventos-cecoco',
             'ver-mapa-gis-cecoco',
+            'ver-mapa-gis-historico-cecoco',
             'importar-eventos',
             'ver-grabacion-evento',
 

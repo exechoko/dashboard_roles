@@ -98,6 +98,7 @@
                                                         'ver-analizador-eventos-cecoco',
                                                         'ver-analitica-eventos-cecoco',
                                                         'mapa-gis-cecoco',
+                                                        'mapa-gis-historico-cecoco',
                                                         'importar-eventos',
                                                         'ver-grabacion-evento',
                                                     ],

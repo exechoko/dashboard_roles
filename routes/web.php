@@ -382,6 +382,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/importar', [App\Http\Controllers\EventoCecocoController::class, 'importar'])->name('importar.post');
         Route::get('/exportar/txt', [App\Http\Controllers\EventoCecocoController::class, 'exportarTxt'])->name('exportar.txt');
         Route::get('/mapa-gis', [App\Http\Controllers\GisViewerController::class, 'index'])->name('mapa-gis');
+        Route::get('/mapa-gis-historico', [App\Http\Controllers\GisViewerController::class, 'indexHistorico'])->name('mapa-gis-historico');
+        Route::get('/historical', [App\Http\Controllers\GisViewerController::class, 'indexHistorico'])->name('mapa-gis-historico-alias');
         Route::get('/mapa-calor', [App\Http\Controllers\EventoCecocoController::class, 'mapaCalor'])->name('mapa-calor');
         Route::get('/mapa-calor/datos', [App\Http\Controllers\EventoCecocoController::class, 'mapaCalorDatos'])->name('mapa-calor.datos');
         Route::get('/analitica', [App\Http\Controllers\EventoCecocoController::class, 'analitica'])->name('analitica');

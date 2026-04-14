@@ -175,6 +175,19 @@
                                 <small class="text-muted"><span id="archivos-count">0</span>/5 archivos seleccionados</small>
                             </div>
 
+                            <div class="d-flex align-items-center justify-content-between mb-2 px-1">
+                                <label class="mb-0 d-flex align-items-center" style="cursor:pointer; font-size:.85rem; gap:.5rem;">
+                                    <span class="text-muted">Generar resumen con IA</span>
+                                    <div class="custom-control custom-switch ml-1 mb-0">
+                                        <input type="checkbox" class="custom-control-input" id="toggle-resumir" checked>
+                                        <label class="custom-control-label" for="toggle-resumir"></label>
+                                    </div>
+                                </label>
+                                <small id="resumir-hint" class="text-muted" style="font-size:.75rem;">
+                                    <i class="fas fa-info-circle mr-1"></i>Procesamiento async
+                                </small>
+                            </div>
+
                             <button id="btn-cargar" class="btn btn-primary btn-block" disabled
                                 style="background: linear-gradient(45deg,#6777ef,#35199a); border: none;">
                                 <i class="fas fa-upload mr-2"></i>Cargar al RAG
@@ -242,6 +255,14 @@ $(document).ready(function () {
     const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     let coleccionActiva = null;
     let nombreActivo    = null;
+
+    // ── Toggle resumen ───────────────────────────────────────────────────────
+    $('#toggle-resumir').on('change', function () {
+        const activo = $(this).is(':checked');
+        $('#resumir-hint').html(activo
+            ? '<i class="fas fa-info-circle mr-1"></i>Procesamiento async'
+            : '<i class="fas fa-bolt mr-1"></i>Procesamiento inmediato');
+    });
 
     // ── Estado de servicios ──────────────────────────────────────────────────
     function cargarEstado() {
@@ -486,7 +507,8 @@ $(document).ready(function () {
         const formData = new FormData();
         archivosSeleccionados.forEach(f => formData.append('documentos[]', f));
         formData.append('coleccion', coleccionActiva);
-        formData.append('resumir', '0');
+        const resumir = $('#toggle-resumir').is(':checked') ? '1' : '0';
+        formData.append('resumir', resumir);
         formData.append('_token', csrf);
 
         $('#btn-cargar').prop('disabled', true);

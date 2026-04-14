@@ -877,14 +877,20 @@
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> ff09f52 (ahora si se pudo hacer andar de manera ortodoxa el permiso de editar y borrar)
+=======
+>>>>>>> cd667bc3554820a0ec7d9971d09de2fbe1c82b62
                                             @php
                                                 $puedeEditar = auth()->user()->can('editar-personal');
                                                 $puedeBorrar = auth()->user()->can('borrar-personal');
                                             @endphp
                                             // NOLI ME TANGERE , ASÍ FUNCIONA BIEN, NO TOCAR
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> cd667bc3554820a0ec7d9971d09de2fbe1c82b62
                                             
                                             @push('scripts')
                                                 //acá tambien, no habia otra manera de hacerlo andar XD
@@ -892,6 +898,7 @@
                                                     const puedeEditar = {{ $puedeEditar ? 'true' : 'false' }};
                                                     const puedeBorrar = {{ $puedeBorrar ? 'true' : 'false' }};
                                                 </script>
+<<<<<<< HEAD
 =======
                                             
                                             
@@ -909,6 +916,8 @@
                                                     const puedeBorrar = {{ $puedeBorrar ? 'true' : 'false' }};
                                                 </script>
 >>>>>>> ff09f52 (ahora si se pudo hacer andar de manera ortodoxa el permiso de editar y borrar)
+=======
+>>>>>>> cd667bc3554820a0ec7d9971d09de2fbe1c82b62
 
                                                 <script>
                                                         let editandoId = null;

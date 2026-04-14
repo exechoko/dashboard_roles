@@ -182,6 +182,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/jobs/{jobId}/reintentar',      [RAGController::class, 'reintentarCarga'])->name('jobs.reintentar');
         Route::get('/consulta-estado/{jobId}',       [RAGController::class, 'estadoConsulta'])->name('consulta.estado');
         Route::get('/historial',                     [RAGController::class, 'historialChat'])->name('historial');
+        Route::get('/documentos',                    [RAGController::class, 'historialDocumentos'])->name('documentos');
     });
 
     Route::get('/transcription', [AudioTranscriptionController::class, 'index'])->name('transcription.index');

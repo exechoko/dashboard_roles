@@ -161,6 +161,18 @@ class RAGController extends Controller
         ]);
     }
 
+    public function historialDocumentos(Request $request): JsonResponse
+    {
+        $request->validate(['coleccion' => 'required|string|max:100']);
+
+        $docs = RagCargaJob::where('coleccion', $request->input('coleccion'))
+            ->whereIn('status', ['completed', 'failed'])
+            ->orderByDesc('created_at')
+            ->get(['id', 'archivo_nombre', 'status', 'resumir', 'resumen', 'documentos_total', 'error_message', 'created_at']);
+
+        return response()->json(['documentos' => $docs]);
+    }
+
     public function historialChat(Request $request): JsonResponse
     {
         $request->validate(['coleccion' => 'required|string|max:100']);

@@ -199,6 +199,15 @@
                                 <div id="archivos-estado-lista"></div>
                             </div>
 
+                            {{-- Historial de documentos cargados --}}
+                            <div id="historial-docs" class="mt-3 d-none">
+                                <h6 style="font-size:.85rem;" class="text-muted mb-1">
+                                    <i class="fas fa-history mr-1"></i>Documentos cargados
+                                </h6>
+                                <div id="historial-docs-lista" class="border rounded"
+                                    style="max-height:220px; overflow-y:auto;"></div>
+                            </div>
+
                             <div class="mt-2 d-flex justify-content-end">
                                 <button id="btn-reindexar" class="btn btn-sm btn-outline-warning">
                                     <i class="fas fa-database mr-1"></i>Re-indexar temática
@@ -317,8 +326,10 @@ $(document).ready(function () {
         // Limpiar resultado anterior
         $('#carga-resultado').addClass('d-none');
         $('#resumen-box').addClass('d-none');
+        $('#archivos-estado').addClass('d-none');
         resetChat();
         cargarHistorial(coleccionActiva);
+        cargarHistorialDocumentos(coleccionActiva);
     });
 
     // ── Nueva temática ───────────────────────────────────────────────────────
@@ -565,6 +576,9 @@ $(document).ready(function () {
                 renderizarListaArchivos();
                 $('#archivos-estado').removeClass('d-none');
                 $('#btn-cargar').prop('disabled', true);
+                // Actualizar historial para archivos sync que terminaron ya
+                const haySync = archivos.some(a => !a.async && a.status === 'completed');
+                if (haySync) cargarHistorialDocumentos(coleccionActiva);
             },
             error: function (xhr) {
                 const msg = xhr.responseJSON?.message || 'Error al conectar con el servidor.';
@@ -609,6 +623,7 @@ $(document).ready(function () {
                             </div>`);
                     }
                     cargarContadores();
+                    cargarHistorialDocumentos(coleccionActiva);
                 } else if (estado.status === 'failed') {
                     clearInterval(timer);
                     setBadge(idx, 'danger',
@@ -622,6 +637,62 @@ $(document).ready(function () {
                 // pending/processing → seguir esperando
             });
         }, 3000);
+    }
+
+    // ── Historial de documentos cargados ────────────────────────────────────
+    function cargarHistorialDocumentos(coleccion) {
+        const $lista = $('#historial-docs-lista').html(
+            '<div class="text-center text-muted py-2" style="font-size:.8rem;"><i class="fas fa-circle-notch fa-spin mr-1"></i>Cargando...</div>'
+        );
+        $('#historial-docs').removeClass('d-none');
+
+        $.get('{{ route("rag.documentos") }}', { coleccion }, function (data) {
+            const docs = data.documentos || [];
+            if (!docs.length) {
+                $lista.html('<div class="text-center text-muted py-2" style="font-size:.8rem;">Sin documentos cargados aún.</div>');
+                return;
+            }
+
+            let html = '';
+            docs.forEach((doc, idx) => {
+                const fecha  = doc.created_at ? doc.created_at.substring(0, 10) : '';
+                const chunks = doc.documentos_total != null ? `${doc.documentos_total} chunks` : '—';
+                const esOk   = doc.status === 'completed';
+                const icono  = esOk ? 'fa-check-circle text-success' : 'fa-times-circle text-danger';
+                const borde  = idx < docs.length - 1 ? 'border-bottom' : '';
+
+                html += `<div class="${borde} px-2 py-1" style="font-size:.82rem;">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <span class="text-truncate mr-2" style="max-width:60%;" title="${escapeHtml(doc.archivo_nombre)}">
+                            <i class="fas ${icono} mr-1"></i>${escapeHtml(doc.archivo_nombre)}
+                        </span>
+                        <span class="text-muted" style="white-space:nowrap;">${chunks} &middot; ${fecha}</span>
+                    </div>`;
+
+                if (esOk && doc.resumen) {
+                    html += `<div style="margin-top:2px;">
+                        <a class="text-primary" style="cursor:pointer;font-size:.78rem;"
+                            onclick="$(this).next().toggleClass('d-none')">
+                            <i class="fas fa-eye mr-1"></i>Ver resumen
+                        </a>
+                        <div class="d-none mt-1 p-2 resumen-box-bg rounded"
+                            style="white-space:pre-wrap;max-height:120px;overflow-y:auto;font-size:.78rem;">
+                            ${escapeHtml(doc.resumen)}
+                        </div>
+                    </div>`;
+                } else if (!esOk && doc.error_message) {
+                    html += `<div class="text-danger mt-1" style="font-size:.78rem;">
+                        <i class="fas fa-exclamation-circle mr-1"></i>${escapeHtml(doc.error_message)}
+                    </div>`;
+                }
+
+                html += `</div>`;
+            });
+
+            $lista.html(html);
+        }).fail(function () {
+            $lista.html('<div class="text-center text-danger py-2" style="font-size:.8rem;">No se pudo cargar el historial.</div>');
+        });
     }
 
     $('#btn-reindexar').on('click', function () {
@@ -640,6 +711,7 @@ $(document).ready(function () {
                         (data.errores ? ` — ${data.errores} error(es)` : '');
                     toastr.success(msg);
                     cargarContadores();
+                    cargarHistorialDocumentos(coleccionActiva);
                 } else {
                     toastr.error(data.message || 'Error al re-indexar');
                 }

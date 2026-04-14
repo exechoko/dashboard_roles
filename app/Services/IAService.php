@@ -136,16 +136,19 @@ class IAService
     /**
      * Re-indexa documentos desde disco. Si se pasa coleccion, solo esa; si no, todas.
      */
-    public function reindexarRAG(?string $coleccion = null): int
+    public function reindexarRAG(?string $coleccion = null): array
     {
         $body     = $coleccion ? ['coleccion' => $coleccion] : [];
-        $response = Http::timeout(120)->post($this->ragUrl . '/indexar', $body);
+        $response = Http::timeout(120)->asForm()->post($this->ragUrl . '/indexar', $body);
 
         if ($response->failed()) {
             throw new \RuntimeException('Error al re-indexar RAG (' . $response->status() . ')');
         }
 
-        return $response->json('documentos', 0);
+        return [
+            $response->json('documentos', 0),
+            $response->json('errores', 0),
+        ];
     }
 
     /**

@@ -628,15 +628,29 @@ $(document).ready(function () {
         if (!coleccionActiva) return;
         if (!confirm(`¿Re-indexar todos los documentos de "${nombreActivo}" desde el servidor?`)) return;
         const btn = $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Indexando...');
-        $.post('{{ route("rag.reindexar") }}', { _token: csrf, coleccion: coleccionActiva }, function (data) {
-            if (data.success) {
-                toastr.success(`Re-indexado: ${data.documentos} archivo(s)`);
-                cargarContadores();
+        $.ajax({
+            url: '{{ route("rag.reindexar") }}',
+            method: 'POST',
+            data: { _token: csrf, coleccion: coleccionActiva },
+            dataType: 'json',
+            timeout: 30000,
+            success: function (data) {
+                if (data.success) {
+                    const msg = `Re-indexado: ${data.documentos} documento(s)` +
+                        (data.errores ? ` — ${data.errores} error(es)` : '');
+                    toastr.success(msg);
+                    cargarContadores();
+                } else {
+                    toastr.error(data.message || 'Error al re-indexar');
+                }
+            },
+        }).fail(function (xhr) {
+            if (xhr.statusText === 'timeout') {
+                toastr.warning('El servidor tardó demasiado. Verificá el estado del servicio RAG.');
             } else {
-                toastr.error(data.message || 'Error al re-indexar');
+                toastr.error(xhr.responseJSON?.message || 'No se pudo conectar al servidor IA');
             }
-        }).fail(() => toastr.error('No se pudo conectar al servidor IA'))
-          .always(() => btn.prop('disabled', false).html('<i class="fas fa-database mr-1"></i>Re-indexar temática'));
+        }).always(() => btn.prop('disabled', false).html('<i class="fas fa-database mr-1"></i>Re-indexar temática'));
     });
 
     // ── Chat ─────────────────────────────────────────────────────────────────

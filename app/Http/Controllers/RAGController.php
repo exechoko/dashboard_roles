@@ -230,8 +230,8 @@ class RAGController extends Controller
     {
         $coleccion = $request->input('coleccion');
         try {
-            $total = $this->ia->reindexarRAG($coleccion ?: null);
-            return response()->json(['success' => true, 'documentos' => $total]);
+            [$total, $errores] = $this->ia->reindexarRAG($coleccion ?: null);
+            return response()->json(['success' => true, 'documentos' => $total, 'errores' => $errores]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }

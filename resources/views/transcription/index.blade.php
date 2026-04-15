@@ -191,15 +191,18 @@
                                             ? JSON.parse(item.transcription)
                                             : item.transcription;
                                         if (tObj && tObj.dialogos) {
-                                            transcripcionHTML = `<div style="display:flex;flex-direction:column;gap:6px;">` +
+                                            transcripcionHTML = `<div class="chat-container" style="display:flex;flex-direction:column;gap:8px;padding:10px;">` +
                                                 tObj.dialogos.map(d => {
                                                     const isOp = d.rol === 'OPERADOR_911';
-                                                    const bg = isOp ? '#e6e6e6' : '#97cdff';
-                                                    const align = isOp ? 'flex-start' : 'flex-end';
+                                                    const bg = isOp ? '#d4edda' : '#cce5ff';
+                                                    const borderColor = isOp ? '#28a745' : '#007bff';
                                                     const label = isOp ? 'Operador 911' : 'Denunciante';
-                                                    return `<div style="display:flex;flex-direction:column;align-items:${align};max-width:85%;${isOp ? '' : 'align-self:flex-end;'}">
-                                                        <small style="font-weight:bold;margin-bottom:2px;">${label}</small>
-                                                        <div style="background:${bg};padding:6px 10px;border-radius:10px;">
+                                                    const alignSelf = isOp ? 'flex-start' : 'flex-end';
+                                                    const textAlign = isOp ? 'left' : 'right';
+                                                    const borderRadius = isOp ? '14px 14px 14px 4px' : '14px 14px 4px 14px';
+                                                    return `<div style="display:flex;flex-direction:column;align-items:${alignSelf};max-width:80%;align-self:${alignSelf};">
+                                                        <small style="font-weight:bold;margin-bottom:3px;color:${borderColor};">${label}</small>
+                                                        <div style="background:${bg};padding:8px 12px;border-radius:${borderRadius};border-left:${isOp ? '3px solid '+borderColor : 'none'};border-right:${isOp ? 'none' : '3px solid '+borderColor};text-align:${textAlign};">
                                                             ${d.texto}
                                                             <br><small style="color:#6c757d;font-size:0.7em;">[${d.timestamp}]</small>
                                                         </div>
@@ -901,10 +904,12 @@
 
         <style>
             :root {
-                --operador-color: #d0e8d0;
-                --operador-header: #2d6a2d;
-                --denunciante-color: #cce0ff;
-                --denunciante-header: #1a4a8a;
+                --operador-color: #d4edda;
+                --operador-header: #28a745;
+                --operador-border: #28a745;
+                --denunciante-color: #cce5ff;
+                --denunciante-header: #007bff;
+                --denunciante-border: #007bff;
                 --timestamp-color: #6c757d;
             }
 
@@ -1024,16 +1029,18 @@
                 line-height: 1.4;
             }
 
-            /* Burbuja operador */
+            /* Burbuja operador - izquierda */
             .align-left .bubble {
                 background: var(--operador-color);
                 border-bottom-left-radius: 4px;
+                border-left: 3px solid var(--operador-border);
             }
 
-            /* Burbuja denunciante */
+            /* Burbuja denunciante - derecha */
             .align-right .bubble {
                 background: var(--denunciante-color);
                 border-bottom-right-radius: 4px;
+                border-right: 3px solid var(--denunciante-border);
             }
 
             /* Speaker más compacto */

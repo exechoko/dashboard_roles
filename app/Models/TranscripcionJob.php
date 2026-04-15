@@ -10,8 +10,11 @@ class TranscripcionJob extends Model
 
     protected $fillable = [
         'audio_path',
+        'original_filename',
+        'telefono',
         'status',
         'result_text',
+        'result_json',
         'error_message',
         'duration_seconds',
     ];

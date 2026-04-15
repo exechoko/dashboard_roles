@@ -117,7 +117,7 @@
                             <div class="card-header">
                                 <h4 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Resultados estructurados</h4>
                             </div>
-                            <div id="structuredResults" class="mt-2" style="height: 300px; overflow-y: auto;">
+                            <div id="structuredResults" class="mt-2" style="max-height: 600px; overflow-y: auto;">
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle me-2"></i>
                                     Los resultados estructurados se mostrarán aquí después de la
@@ -183,17 +183,48 @@
                             $('#historial-container').html('');
 
                             $.each(historial, function (index, item) {
-                                // Convertir datos_extraidos a array de strings
-                                const datosArray = [];
-
-                                if (item.datos_extraidos) {
-                                    Object.values(item.datos_extraidos).forEach(categoria => {
-                                        if (Array.isArray(categoria)) {
-                                            categoria.forEach(valor => {
-                                                if (valor) datosArray.push(valor);
-                                            });
+                                // Construir HTML de transcripción como chat
+                                let transcripcionHTML = '<p class="text-muted">No disponible</p>';
+                                if (item.transcription) {
+                                    try {
+                                        const tObj = typeof item.transcription === 'string'
+                                            ? JSON.parse(item.transcription)
+                                            : item.transcription;
+                                        if (tObj && tObj.dialogos) {
+                                            transcripcionHTML = `<div style="display:flex;flex-direction:column;gap:6px;">` +
+                                                tObj.dialogos.map(d => {
+                                                    const isOp = d.rol === 'OPERADOR_911';
+                                                    const bg = isOp ? '#e6e6e6' : '#97cdff';
+                                                    const align = isOp ? 'flex-start' : 'flex-end';
+                                                    const label = isOp ? 'Operador 911' : 'Denunciante';
+                                                    return `<div style="display:flex;flex-direction:column;align-items:${align};max-width:85%;${isOp ? '' : 'align-self:flex-end;'}">
+                                                        <small style="font-weight:bold;margin-bottom:2px;">${label}</small>
+                                                        <div style="background:${bg};padding:6px 10px;border-radius:10px;">
+                                                            ${d.texto}
+                                                            <br><small style="color:#6c757d;font-size:0.7em;">[${d.timestamp}]</small>
+                                                        </div>
+                                                    </div>`;
+                                                }).join('') +
+                                                `</div>`;
                                         }
-                                    });
+                                    } catch(e) {
+                                        transcripcionHTML = `<pre style="font-size:0.8em;">${String(item.transcription)}</pre>`;
+                                    }
+                                }
+
+                                // Convertir datos_extraidos a lista organizada
+                                const datosArray = [];
+                                if (item.datos_extraidos) {
+                                    const de = item.datos_extraidos;
+                                    if (de.denunciante_nombre) datosArray.push('Denunciante: ' + de.denunciante_nombre);
+                                    if (de.denunciante_telefono) datosArray.push('Tel. Denunciante: ' + de.denunciante_telefono);
+                                    if (de.denunciante_documento) datosArray.push('Doc. Denunciante: ' + de.denunciante_documento);
+                                    (de.nombres_mencionados || de.nombres || []).forEach(v => { if (v) datosArray.push('Nombre: ' + v); });
+                                    (de.direcciones || []).forEach(v => { if (v) datosArray.push('Dirección: ' + v); });
+                                    (de.telefonos || []).forEach(v => { if (v) datosArray.push('Tel: ' + v); });
+                                    (de.documentos || []).forEach(v => { if (v) datosArray.push('Doc: ' + v); });
+                                    (de.vehiculos || []).forEach(v => { if (v) datosArray.push('Vehículo: ' + v); });
+                                    (de.otros || []).forEach(v => { if (v) datosArray.push(v); });
                                 }
 
                                 // Formatear fechas
@@ -230,9 +261,12 @@
                                                             </button>
                                                         </div>
                                                         <div class="modal-body">
+                                                            ${item.resumen ? `<div class="alert alert-info mb-3"><strong>Resumen:</strong> ${item.resumen}</div>` : ''}
+                                                            ${item.tipo_emergencia ? `<p class="mb-3"><span class="badge bg-warning text-dark me-2">Tipo de emergencia</span>${item.tipo_emergencia}</p>` : ''}
+
                                                             <h6>Transcripción:</h6>
-                                                            <div class="border p-2 mb-3" style="max-height: 200px; overflow-y: auto;">
-                                                                ${item.transcription || 'No disponible'}
+                                                            <div class="border p-2 mb-3" style="max-height: 280px; overflow-y: auto;">
+                                                                ${transcripcionHTML}
                                                             </div>
 
                                                             <h6>Datos extraídos:</h6>
@@ -497,28 +531,35 @@
                     // Verificar si tenemos una transcripción estructurada
                     if (data.transcription) {
                         try {
-                            const transcriptionObj = JSON.parse(data.transcription);
+                            // Manejar tanto string como objeto
+                            const transcriptionObj = typeof data.transcription === 'string'
+                                ? JSON.parse(data.transcription)
+                                : data.transcription;
 
-                            // Construir HTML con formato de chat
-                            transcriptionText = transcriptionObj.dialogos.map(dialogo => {
-                                const alignClass = dialogo.rol === 'AGENTE_911'
-                                    ? 'align-left'
-                                    : 'align-right';
+                            if (transcriptionObj && transcriptionObj.dialogos) {
+                                // Construir HTML con formato de chat
+                                transcriptionText = transcriptionObj.dialogos.map(dialogo => {
+                                    const isOperador = dialogo.rol === 'OPERADOR_911';
+                                    const alignClass = isOperador ? 'align-left' : 'align-right';
+                                    const rolLabel = isOperador ? 'Operador 911' : 'Denunciante';
 
-                                return `<div class="message ${alignClass}">
-                                                                                                                        <div class="speaker">${dialogo.rol}:</div>
-                                                                                                                        <div class="bubble">
-                                                                                                                            <span class="timestamp">[${dialogo.timestamp}]</span>
-                                                                                                                            ${dialogo.texto}
-                                                                                                                        </div>
-                                                                                                                    </div>`;
-                            }).join('');
+                                    return `<div class="message ${alignClass}">
+                                        <div class="speaker">${rolLabel}</div>
+                                        <div class="bubble">
+                                            ${dialogo.texto}
+                                            <span class="timestamp">[${dialogo.timestamp}]</span>
+                                        </div>
+                                    </div>`;
+                                }).join('');
 
-                            document.getElementById('transcriptionResult').innerHTML = transcriptionText;
+                                document.getElementById('transcriptionResult').innerHTML = transcriptionText;
+                            } else {
+                                document.getElementById('transcriptionResult').textContent = JSON.stringify(transcriptionObj, null, 2);
+                            }
 
                         } catch (e) {
-                            console.error('Error parsing JSON:', e);
-                            // Manejo de error (mantener formato original)
+                            console.error('Error parsing transcription:', e);
+                            document.getElementById('transcriptionResult').textContent = String(data.transcription);
                         }
                     } else {
                         transcriptionText = data.transcripcion || data.texto_completo || "No se pudo obtener la transcripción";
@@ -546,65 +587,133 @@
                                                                                                                                 `;
                     }
 
+                    // Mostrar tipo de emergencia si está disponible
+                    if (data.tipo_emergencia) {
+                        structuredHTML += `
+                            <div class="card mb-3">
+                                <div class="card-header bg-warning text-dark">
+                                    <i class="fas fa-exclamation-circle me-2"></i> Tipo de Emergencia
+                                </div>
+                                <div class="card-body">
+                                    <p class="lead mb-0">${data.tipo_emergencia}</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+
                     // Luego mostrar datos extraídos si están disponibles
                     if (data.datos_extraidos) {
                         const de = data.datos_extraidos;
 
+                        // Datos del denunciante
+                        const hasDenunciante = de.denunciante_nombre || de.denunciante_telefono || de.denunciante_documento;
+                        const denuncianteHTML = hasDenunciante ? `
+                            <div class="col-md-6 mb-3">
+                                <h6><i class="fas fa-user-circle me-2 text-primary"></i> Datos del Denunciante</h6>
+                                <ul class="list-group">
+                                    ${de.denunciante_nombre ? `<li class="list-group-item"><strong>Nombre:</strong> ${de.denunciante_nombre}</li>` : ''}
+                                    ${de.denunciante_telefono ? `<li class="list-group-item"><strong>Teléfono:</strong> ${de.denunciante_telefono}</li>` : ''}
+                                    ${de.denunciante_documento ? `<li class="list-group-item"><strong>Documento:</strong> ${de.denunciante_documento}</li>` : ''}
+                                </ul>
+                            </div>
+                        ` : '';
+
+                        const nombresMencionados = de.nombres_mencionados || de.nombres || [];
+                        const nombresHTML = nombresMencionados.length > 0 ? `
+                            <div class="col-md-6 mb-3">
+                                <h6><i class="fas fa-users me-2 text-success"></i> Nombres Mencionados</h6>
+                                <ul class="list-group">
+                                    ${nombresMencionados.map(name => `<li class="list-group-item">${name}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : '';
+
+                        const direccionesHTML = de.direcciones && de.direcciones.length > 0 ? `
+                            <div class="col-md-6 mb-3">
+                                <h6><i class="fas fa-map-marker-alt me-2 text-danger"></i> Direcciones</h6>
+                                <ul class="list-group">
+                                    ${de.direcciones.map(addr => `<li class="list-group-item">${addr}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : '';
+
+                        const telefonosHTML = de.telefonos && de.telefonos.length > 0 ? `
+                            <div class="col-md-6 mb-3">
+                                <h6><i class="fas fa-phone me-2 text-info"></i> Teléfonos</h6>
+                                <ul class="list-group">
+                                    ${de.telefonos.map(phone => `<li class="list-group-item">${phone}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : '';
+
+                        const documentosHTML = de.documentos && de.documentos.length > 0 ? `
+                            <div class="col-md-6 mb-3">
+                                <h6><i class="fas fa-id-card me-2 text-secondary"></i> Documentos</h6>
+                                <ul class="list-group">
+                                    ${de.documentos.map(doc => `<li class="list-group-item">${doc}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : '';
+
+                        const vehiculosHTML = de.vehiculos && de.vehiculos.length > 0 ? `
+                            <div class="col-md-6 mb-3">
+                                <h6><i class="fas fa-car me-2 text-dark"></i> Vehículos</h6>
+                                <ul class="list-group">
+                                    ${de.vehiculos.map(v => `<li class="list-group-item">${v}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : '';
+
+                        const otrosHTML = de.otros && de.otros.length > 0 ? `
+                            <div class="col-12 mb-3">
+                                <h6><i class="fas fa-tags me-2 text-warning"></i> Otros datos relevantes</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    ${de.otros.map(other => `<span class="badge bg-light text-dark border py-2 px-3">${other}</span>`).join('')}
+                                </div>
+                            </div>
+                        ` : '';
+
+                        if (denuncianteHTML || nombresHTML || direccionesHTML || telefonosHTML || documentosHTML || vehiculosHTML || otrosHTML) {
+                            structuredHTML += `
+                                <div class="card mb-3">
+                                    <div class="card-header bg-primary text-white">
+                                        <i class="fas fa-info-circle me-2"></i> Datos Extraídos
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            ${denuncianteHTML}
+                                            ${nombresHTML}
+                                            ${direccionesHTML}
+                                            ${telefonosHTML}
+                                            ${documentosHTML}
+                                            ${vehiculosHTML}
+                                            ${otrosHTML}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    // Mostrar línea de tiempo de eventos si está disponible
+                    if (data.eventos && data.eventos.length > 0) {
                         structuredHTML += `
-                                                                                                                                    <div class="card">
-                                                                                                                                        <div class="card-header bg-primary text-white">
-                                                                                                                                            <i class="fas fa-info-circle me-2"></i> Datos Extraídos
-                                                                                                                                        </div>
-                                                                                                                                        <div class="card-body">
-                                                                                                                                            <div class="row">
-                                                                                                                                                ${de.nombres && de.nombres.length > 0 ? `
-                                                                                                                                                    <div class="col-md-6">
-                                                                                                                                                        <h6><i class="fas fa-user me-2"></i> Nombres</h6>
-                                                                                                                                                        <ul class="list-group">
-                                                                                                                                                            ${de.nombres.map(name => `<li class="list-group-item">${name}</li>`).join('')}
-                                                                                                                                                        </ul>
-                                                                                                                                                    </div>
-                                                                                                                                                ` : ''}
-
-                                                                                                                                                ${de.direcciones && de.direcciones.length > 0 ? `
-                                                                                                                                                    <div class="col-md-6">
-                                                                                                                                                        <h6><i class="fas fa-map-marker-alt me-2"></i> Direcciones</h6>
-                                                                                                                                                        <ul class="list-group">
-                                                                                                                                                            ${de.direcciones.map(addr => `<li class="list-group-item">${addr}</li>`).join('')}
-                                                                                                                                                        </ul>
-                                                                                                                                                    </div>
-                                                                                                                                                ` : ''}
-
-                                                                                                                                                ${de.telefonos && de.telefonos.length > 0 ? `
-                                                                                                                                                    <div class="col-md-6 mt-3">
-                                                                                                                                                        <h6><i class="fas fa-phone me-2"></i> Teléfonos</h6>
-                                                                                                                                                        <ul class="list-group">
-                                                                                                                                                            ${de.telefonos.map(phone => `<li class="list-group-item">${phone}</li>`).join('')}
-                                                                                                                                                        </ul>
-                                                                                                                                                    </div>
-                                                                                                                                                ` : ''}
-
-                                                                                                                                                ${de.documentos && de.documentos.length > 0 ? `
-                                                                                                                                                    <div class="col-md-6 mt-3">
-                                                                                                                                                        <h6><i class="fas fa-id-card me-2"></i> Documentos</h6>
-                                                                                                                                                        <ul class="list-group">
-                                                                                                                                                            ${de.documentos.map(doc => `<li class="list-group-item">${doc}</li>`).join('')}
-                                                                                                                                                        </ul>
-                                                                                                                                                    </div>
-                                                                                                                                                ` : ''}
-                                                                                                                                            </div>
-
-                                                                                                                                            ${de.otros && de.otros.length > 0 ? `
-                                                                                                                                                <div class="mt-3">
-                                                                                                                                                    <h6><i class="fas fa-tags me-2"></i> Otros datos relevantes</h6>
-                                                                                                                                                    <ul class="list-group">
-                                                                                                                                                        ${de.otros.map(other => `<li class="list-group-item">${other}</li>`).join('')}
-                                                                                                                                                    </ul>
-                                                                                                                                                </div>
-                                                                                                                                            ` : ''}
-                                                                                                                                        </div>
-                                                                                                                                    </div>
-                                                                                                                                `;
+                            <div class="card mb-3">
+                                <div class="card-header bg-secondary text-white">
+                                    <i class="fas fa-stream me-2"></i> Línea de Tiempo
+                                </div>
+                                <div class="card-body p-0">
+                                    <ul class="list-group list-group-flush">
+                                        ${data.eventos.map(ev => `
+                                            <li class="list-group-item d-flex align-items-start gap-3">
+                                                <span class="badge bg-secondary text-white mt-1" style="min-width:52px;font-size:0.8em;">${ev.timestamp}</span>
+                                                <span>${ev.evento}</span>
+                                            </li>
+                                        `).join('')}
+                                    </ul>
+                                </div>
+                            </div>
+                        `;
                     }
 
                     // Si no hay datos estructurados ni resumen
@@ -792,8 +901,10 @@
 
         <style>
             :root {
-                --agente-color: #e6e6e6;
-                --denunciante-color: #97cdff;
+                --operador-color: #d0e8d0;
+                --operador-header: #2d6a2d;
+                --denunciante-color: #cce0ff;
+                --denunciante-header: #1a4a8a;
                 --timestamp-color: #6c757d;
             }
 
@@ -913,9 +1024,9 @@
                 line-height: 1.4;
             }
 
-            /* Burbuja agente */
+            /* Burbuja operador */
             .align-left .bubble {
-                background: var(--agente-color);
+                background: var(--operador-color);
                 border-bottom-left-radius: 4px;
             }
 
@@ -928,8 +1039,20 @@
             /* Speaker más compacto */
             .speaker {
                 font-weight: bold;
-                font-size: 0.85em;
+                font-size: 0.8em;
                 margin-bottom: 3px;
+                padding: 1px 6px;
+                border-radius: 4px;
+            }
+
+            .align-left .speaker {
+                color: var(--operador-header);
+                background: rgba(45,106,45,0.1);
+            }
+
+            .align-right .speaker {
+                color: var(--denunciante-header);
+                background: rgba(26,74,138,0.1);
             }
 
             /* Timestamp debajo de la burbuja */

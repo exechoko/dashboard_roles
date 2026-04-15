@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\AudioTranscripcion;
 use App\Models\TranscripcionJob;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
@@ -51,17 +52,30 @@ class ProcesarTranscripcionesPendientes extends Command
                 $elapsed  = round(microtime(true) - $inicio, 2);
 
                 if ($response->successful()) {
-                    $duracion = $response->json('duration');
+                    $duracion   = $response->json('duration');
+                    $resultText = $response->json('text');
+                    $resultJson = json_encode($response->json());
+
                     $job->update([
                         'status'           => 'completed',
-                        'result_text'      => $response->json('text'),
+                        'result_text'      => $resultText,
+                        'result_json'      => $resultJson,
                         'duration_seconds' => $duracion,
                     ]);
+
+                    // Guardar en audio_transcripciones para historial persistente
+                    AudioTranscripcion::create([
+                        'nombre_archivo'     => $job->original_filename ?? basename($job->audio_path),
+                        'telefono'           => $job->telefono,
+                        'transcripcion_json' => $resultJson,
+                    ]);
+
                     Storage::disk('local')->delete($job->audio_path);
-                    $log->info("Job #{$job->id} completado.", [
+                    $log->info("Job #{$job->id} completado y guardado en historial.", [
                         'tiempo_whisper_s' => $elapsed,
                         'duracion_audio_s' => $duracion,
-                        'chars_resultado'  => strlen($response->json('text') ?? ''),
+                        'chars_resultado'  => strlen($resultText ?? ''),
+                        'nombre_archivo'   => $job->original_filename,
                     ]);
                 } else {
                     $errorMsg = 'Error en Whisper (' . $response->status() . '): ' . $response->body();

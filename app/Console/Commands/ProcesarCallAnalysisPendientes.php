@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\AudioTranscripcion;
 use App\Models\CallAnalysisJob;
 use App\Services\IAService;
 use Illuminate\Console\Command;
@@ -59,6 +60,17 @@ class ProcesarCallAnalysisPendientes extends Command
 
                 $elapsed = round(microtime(true) - $inicio, 2);
                 $log->info("[CallAnalysis] Job #{$job->id} completado en {$elapsed}s.");
+
+                // Guardar en audio_transcripciones para historial persistente
+                AudioTranscripcion::create([
+                    'nombre_archivo'     => $nombre,
+                    'telefono'           => null,
+                    'tipo_emergencia'    => $result['tipo_emergencia'] ?? null,
+                    'resumen'            => $result['resumen'] ?? null,
+                    'transcripcion_json' => json_encode($result),
+                ]);
+                $log->info("[CallAnalysis] Job #{$job->id} guardado en historial.");
+
                 Storage::disk('local')->delete($job->audio_path);
 
             } catch (\Exception $e) {

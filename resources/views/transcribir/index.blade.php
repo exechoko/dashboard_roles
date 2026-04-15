@@ -144,15 +144,13 @@
         </ul>
 
         <div class="tab-content" id="transcribir-tabs-content">
-        {{-- ══════════════════════════════════════════════════════════════════════ --}}
-        {{-- TAB: TRANSCRIBIR --}}
-        {{-- ══════════════════════════════════════════════════════════════════════ --}}
-        <div class="tab-pane fade show active" id="panel-transcribir" role="tabpanel">
-
-        
-        <div class="row">
-            {{-- ── COLUMNA UPLOAD ── --}}
-            <div class="col-md-5">
+            {{-- ══════════════════════════════════════════════════════════════════════ --}}
+            {{-- TAB: TRANSCRIBIR --}}
+            {{-- ══════════════════════════════════════════════════════════════════════ --}}
+            <div class="tab-pane fade show active" id="panel-transcribir" role="tabpanel" aria-labelledby="tab-transcribir">
+                <div class="row">
+                    {{-- ── COLUMNA UPLOAD ── --}}
+                    <div class="col-md-5">
                 <div class="card">
                     <div class="card-header">
                         <h4><i class="fas fa-upload mr-2"></i>Subir Archivo de Audio</h4>
@@ -251,50 +249,44 @@
                             <div id="datos-container"></div>
                         </div>
                     </div>
-                </div>
+                </div>{{-- fin result-analyze --}}
+                    </div>{{-- fin col-md-7 --}}
+                </div>{{-- fin row --}}
+            </div>{{-- fin panel-transcribir --}}
 
-            </div>
-        </div>
-
-        </div>
-        </div>
-
-        {{-- ══════════════════════════════════════════════════════════════════════ --}}
-        {{-- TAB: HISTORIAL --}}
-        {{-- ══════════════════════════════════════════════════════════════════════ --}}
-        <div class="tab-pane fade" id="panel-historial" role="tabpanel">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-history mr-2"></i>Historial de Transcripciones</h4>
-                </div>
-                <div class="card-body">
-                    <div class="row align-items-end">
-                        <div class="col-md-5 mb-2 mb-md-0">
-                            <label for="buscar-nombre">Nombre del archivo</label>
-                            <input type="text" id="buscar-nombre" class="form-control" placeholder="Ej: llamada_001.mp3">
-                        </div>
-                        <div class="col-md-4 mb-2 mb-md-0">
-                            <label for="buscar-telefono">Teléfono</label>
-                            <input type="text" id="buscar-telefono" class="form-control" placeholder="Ej: 999123456">
-                        </div>
-                        <div class="col-md-3">
-                            <button id="btn-buscar-historial" class="btn btn-primary btn-block">
-                                <i class="fas fa-search mr-1"></i>Buscar
-                            </button>
+            {{-- ══════════════════════════════════════════════════════════════════════ --}}
+            {{-- TAB: HISTORIAL --}}
+            {{-- ══════════════════════════════════════════════════════════════════════ --}}
+            <div class="tab-pane fade" id="panel-historial" role="tabpanel" aria-labelledby="tab-historial">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0"><i class="fas fa-history mr-2"></i>Historial de Transcripciones</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-end">
+                            <div class="col-md-5 mb-2 mb-md-0">
+                                <label for="buscar-nombre">Nombre del archivo</label>
+                                <input type="text" id="buscar-nombre" class="form-control" placeholder="Ej: llamada_001.mp3">
+                            </div>
+                            <div class="col-md-4 mb-2 mb-md-0">
+                                <label for="buscar-telefono">Teléfono</label>
+                                <input type="text" id="buscar-telefono" class="form-control" placeholder="Ej: 999123456">
+                            </div>
+                            <div class="col-md-3">
+                                <button id="btn-buscar-historial" class="btn btn-primary btn-block">
+                                    <i class="fas fa-search mr-1"></i>Buscar
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            {{-- Resultados del historial --}}
-            <div id="historial-results" class="mt-3">
-                <p class="text-muted text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando últimas transcripciones...</p>
-            </div>
-        </div>
-        {{-- FIN TAB HISTORIAL --}}
-
+                {{-- Resultados del historial --}}
+                <div id="historial-results" class="mt-3">
+                    <p class="text-muted text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando últimas transcripciones...</p>
+                </div>
+            </div>{{-- fin panel-historial --}}
         </div>{{-- fin tab-content --}}
-    </div>
+    </div>{{-- fin section-body --}}
 </section>
 
 {{-- Modal para ver detalle de transcripción --}}

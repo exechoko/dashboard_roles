@@ -767,10 +767,20 @@ $(document).ready(function () {
             const transcripcionDiv = document.getElementById('modal-transcripcion');
             const json = data.transcripcion_json;
 
-            if (json && json.dialogos && json.dialogos.length) {
+            // Buscar diálogos en diferentes ubicaciones posibles del JSON
+            let dialogos = null;
+            if (json) {
+                if (json.transcription && json.transcription.dialogos && json.transcription.dialogos.length) {
+                    dialogos = json.transcription.dialogos;
+                } else if (json.dialogos && json.dialogos.length) {
+                    dialogos = json.dialogos;
+                }
+            }
+
+            if (dialogos && dialogos.length) {
                 // Formato chat
                 let chatHtml = '<div id="dialogo-container">';
-                json.dialogos.forEach(d => {
+                dialogos.forEach(d => {
                     const isOperador = d.rol === 'OPERADOR_911' || d.rol === 'AGENTE_911';
                     const alignClass = isOperador ? 'align-left' : 'align-right';
                     const rolLabel = isOperador ? 'Operador 911' : 'Denunciante';

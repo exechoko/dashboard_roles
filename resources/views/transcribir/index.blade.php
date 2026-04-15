@@ -4,20 +4,28 @@
 <style>
     /* ── Variables de color para burbujas de chat ── */
     :root {
-        --agente-color:      #e6e6e6;
-        --denunciante-color: #97cdff;
-        --timestamp-color:   #6c757d;
-        --drop-bg:           #f8f9fa;
-        --drop-hover-bg:     #e9f0ff;
-        --mode-card-text:    inherit;
+        --operador-color:      #d4edda;
+        --operador-header:     #28a745;
+        --operador-border:     #28a745;
+        --denunciante-color:   #cce5ff;
+        --denunciante-header:  #007bff;
+        --denunciante-border:  #007bff;
+        --timestamp-color:     #6c757d;
+        --drop-bg:             #f8f9fa;
+        --drop-hover-bg:       #e9f0ff;
+        --mode-card-text:      inherit;
     }
     [data-theme="dark"] {
-        --agente-color:      #2d3748;
-        --denunciante-color: #1a3a52;
-        --timestamp-color:   #9ca3af;
-        --drop-bg:           var(--bg-tertiary);
-        --drop-hover-bg:     #1e293b;
-        --mode-card-text:    var(--text-primary);
+        --operador-color:      #1e4620;
+        --operador-header:     #5cb85c;
+        --operador-border:     #5cb85c;
+        --denunciante-color:   #1a3a52;
+        --denunciante-header:  #5bc0de;
+        --denunciante-border:  #5bc0de;
+        --timestamp-color:     #9ca3af;
+        --drop-bg:             var(--bg-tertiary);
+        --drop-hover-bg:       #1e293b;
+        --mode-card-text:      var(--text-primary);
     }
 
     /* ── Selector de modo ── */
@@ -82,8 +90,20 @@
         word-wrap: break-word;
         line-height: 1.4;
     }
-    .align-left  .bubble { background: var(--agente-color);      border-bottom-left-radius:  4px; }
-    .align-right .bubble { background: var(--denunciante-color); border-bottom-right-radius: 4px; }
+    /* Burbuja operador - izquierda */
+    .align-left .bubble {
+        background: var(--operador-color);
+        border-bottom-left-radius: 4px;
+        border-left: 3px solid var(--operador-border);
+    }
+    /* Burbuja denunciante - derecha */
+    .align-right .bubble {
+        background: var(--denunciante-color);
+        border-bottom-right-radius: 4px;
+        border-right: 3px solid var(--denunciante-border);
+    }
+    .align-left .speaker { color: var(--operador-header); }
+    .align-right .speaker { color: var(--denunciante-header); }
     .speaker {
         font-weight: bold;
         font-size: 0.85em;
@@ -109,24 +129,27 @@
     </div>
     <div class="section-body">
 
-        {{-- ── SELECTOR DE MODO ── --}}
-        <div class="row mb-3">
-            <div class="col-md-4 col-sm-6 mb-2">
-                <div class="mode-card card text-center p-3 active" id="mode-transcribe" onclick="setMode('transcribe')">
-                    <div class="mode-icon text-primary"><i class="fas fa-microphone-alt"></i></div>
-                    <h6 class="mb-1">Solo Transcribir</h6>
-                    <small class="text-muted">Convierte el audio a texto<br>(Whisper local)</small>
-                </div>
-            </div>
-            <div class="col-md-4 col-sm-6 mb-2">
-                <div class="mode-card card text-center p-3" id="mode-analyze" onclick="setMode('analyze')">
-                    <div class="mode-icon text-success"><i class="fas fa-headset"></i></div>
-                    <h6 class="mb-1">Análisis Completo 911</h6>
-                    <small class="text-muted">Transcripción + diarización + extracción de datos<br>(Servidor 8082)</small>
-                </div>
-            </div>
-        </div>
+        {{-- ── TABS PRINCIPAL ── --}}
+        <ul class="nav nav-pills mb-3" id="transcribir-tabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="tab-transcribir" data-toggle="tab" href="#panel-transcribir" role="tab">
+                    <i class="fas fa-microphone-alt mr-1"></i>Transcribir
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="tab-historial" data-toggle="tab" href="#panel-historial" role="tab">
+                    <i class="fas fa-history mr-1"></i>Historial
+                </a>
+            </li>
+        </ul>
 
+        <div class="tab-content" id="transcribir-tabs-content">
+        {{-- ══════════════════════════════════════════════════════════════════════ --}}
+        {{-- TAB: TRANSCRIBIR --}}
+        {{-- ══════════════════════════════════════════════════════════════════════ --}}
+        <div class="tab-pane fade show active" id="panel-transcribir" role="tabpanel">
+
+        
         <div class="row">
             {{-- ── COLUMNA UPLOAD ── --}}
             <div class="col-md-5">
@@ -180,7 +203,7 @@
                         <div class="mt-4">
                             <button id="action-btn" class="btn btn-success btn-block" disabled
                                 style="background:linear-gradient(45deg,#6777ef,#35199a); border:none;">
-                                <i class="fas fa-microphone-alt mr-2"></i><span id="action-btn-label">Transcribir audio</span>
+                                <i class="fas fa-headset mr-2"></i><span id="action-btn-label">Analizar llamada</span>
                             </button>
                         </div>
 
@@ -191,25 +214,8 @@
             {{-- ── COLUMNA RESULTADOS ── --}}
             <div class="col-md-7">
 
-                {{-- Resultado transcripción simple --}}
-                <div id="result-transcribe" class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0"><i class="fas fa-align-left mr-2"></i>Transcripción</h4>
-                        <button id="export-transcribe-btn" class="btn btn-sm btn-outline-secondary" disabled>
-                            <i class="fas fa-download mr-1"></i>Exportar TXT
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <textarea id="transcription-result" class="form-control" rows="14"
-                            placeholder="El texto transcrito aparecerá aquí..."></textarea>
-                        <button id="copy-btn" class="btn btn-outline-primary btn-block mt-3" disabled>
-                            <i class="fas fa-copy mr-2"></i>Copiar texto
-                        </button>
-                    </div>
-                </div>
-
-                {{-- Resultado análisis completo (oculto por defecto) --}}
-                <div id="result-analyze" class="d-none">
+                {{-- Resultado análisis completo --}}
+                <div id="result-analyze">
 
                     {{-- Diálogo --}}
                     <div class="card mb-3">
@@ -250,8 +256,81 @@
             </div>
         </div>
 
+        </div>
+        </div>
+
+        {{-- ══════════════════════════════════════════════════════════════════════ --}}
+        {{-- TAB: HISTORIAL --}}
+        {{-- ══════════════════════════════════════════════════════════════════════ --}}
+        <div class="tab-pane fade" id="panel-historial" role="tabpanel">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-search mr-2"></i>Buscar Transcripciones</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="form-group">
+                                <label for="buscar-nombre">Nombre del archivo</label>
+                                <input type="text" id="buscar-nombre" class="form-control" placeholder="Ej: llamada_001.mp3">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="buscar-telefono">Teléfono</label>
+                                <input type="text" id="buscar-telefono" class="form-control" placeholder="Ej: 999123456">
+                            </div>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button id="btn-buscar-historial" class="btn btn-primary btn-block">
+                                <i class="fas fa-search mr-1"></i>Buscar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Resultados del historial --}}
+            <div id="historial-results" class="mt-3">
+                <p class="text-muted text-center py-4">Ingresa criterios de búsqueda o haz clic en Buscar para ver todas las transcripciones.</p>
+            </div>
+        </div>
+        {{-- FIN TAB HISTORIAL --}}
+
+        </div>{{-- fin tab-content --}}
     </div>
 </section>
+
+{{-- Modal para ver detalle de transcripción --}}
+<div class="modal fade" id="modal-detalle-transcripcion" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-file-audio mr-2"></i><span id="modal-titulo"></span></h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Teléfono:</strong> <span id="modal-telefono">-</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Fecha:</strong> <span id="modal-fecha">-</span>
+                    </div>
+                </div>
+                <div id="modal-resumen" class="alert alert-info mb-3" style="display:none;">
+                    <strong>Resumen:</strong> <span id="modal-resumen-text"></span>
+                </div>
+                <h6><i class="fas fa-comments mr-1"></i>Transcripción</h6>
+                <div id="modal-transcripcion" class="border rounded p-3" style="max-height:350px; overflow-y:auto;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 $(document).ready(function () {
@@ -268,32 +347,12 @@ $(document).ready(function () {
     const statusMsg       = document.getElementById('status-message');
     const actionBtn       = document.getElementById('action-btn');
     const actionBtnLabel  = document.getElementById('action-btn-label');
-    const copyBtn         = document.getElementById('copy-btn');
-    const transcriptionTA = document.getElementById('transcription-result');
-    const exportTranscBtn = document.getElementById('export-transcribe-btn');
     const exportAnalyzeBtn= document.getElementById('export-analyze-btn');
 
     let selectedFile = null;
-    let currentMode  = 'transcribe';
+    let currentMode  = 'analyze'; // Siempre análisis completo
     let pollInterval = null;
     let lastResult   = null;  // para exportar
-
-    // ── Modo ──────────────────────────────────────────────────────────────
-    window.setMode = function(mode) {
-        currentMode = mode;
-        document.getElementById('mode-transcribe').classList.toggle('active', mode === 'transcribe');
-        document.getElementById('mode-analyze').classList.toggle('active', mode === 'analyze');
-
-        if (mode === 'transcribe') {
-            actionBtnLabel.textContent = 'Transcribir audio';
-            document.getElementById('result-transcribe').classList.remove('d-none');
-            document.getElementById('result-analyze').classList.add('d-none');
-        } else {
-            actionBtnLabel.textContent = 'Analizar llamada';
-            document.getElementById('result-transcribe').classList.add('d-none');
-            document.getElementById('result-analyze').classList.remove('d-none');
-        }
-    };
 
     // ── Validación de archivo ─────────────────────────────────────────────
     function validateFile(file) {
@@ -446,18 +505,11 @@ $(document).ready(function () {
         const result = estado.result;
         if (!result) return;
 
-        if (estado.mode === 'transcribe') {
-            // Solo texto
-            transcriptionTA.value = result.text || '';
-            copyBtn.disabled       = false;
-            exportTranscBtn.disabled = false;
-        } else {
-            // Análisis completo
-            renderDialogos(result);
-            renderResumen(result);
-            renderDatos(result);
-            exportAnalyzeBtn.disabled = false;
-        }
+        // Análisis completo
+        renderDialogos(result);
+        renderResumen(result);
+        renderDatos(result);
+        exportAnalyzeBtn.disabled = false;
     }
 
     function renderDialogos(result) {
@@ -471,10 +523,12 @@ $(document).ready(function () {
         }
 
         const html = dialogos.map(d => {
-            const isAgente  = d.rol === 'AGENTE_911';
-            const alignClass = isAgente ? 'align-left' : 'align-right';
+            // Operador a la izquierda, denunciante a la derecha
+            const isOperador = d.rol === 'OPERADOR_911' || d.rol === 'AGENTE_911';
+            const alignClass = isOperador ? 'align-left' : 'align-right';
+            const rolLabel   = isOperador ? 'Operador 911' : 'Denunciante';
             return `<div class="message ${alignClass}">
-                        <div class="speaker">${escapeHtml(d.rol)}</div>
+                        <div class="speaker">${escapeHtml(rolLabel)}</div>
                         <div class="bubble">
                             ${escapeHtml(d.texto)}
                             <span class="timestamp">[${escapeHtml(d.timestamp || '')}]</span>
@@ -523,22 +577,6 @@ $(document).ready(function () {
         cont.innerHTML = html;
         card.style.display = '';
     }
-
-    // ── Copiar ────────────────────────────────────────────────────────────
-    copyBtn.addEventListener('click', () => {
-        transcriptionTA.select();
-        document.execCommand('copy');
-        copyBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Copiado';
-        setTimeout(() => copyBtn.innerHTML = '<i class="fas fa-copy mr-2"></i>Copiar texto', 2000);
-    });
-
-    // ── Exportar TXT (transcripción simple) ───────────────────────────────
-    exportTranscBtn.addEventListener('click', () => {
-        const text = transcriptionTA.value;
-        if (!text) return;
-        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-        downloadBlob(blob, 'transcripcion_' + timestamp() + '.txt');
-    });
 
     // ── Exportar TXT (análisis completo) ──────────────────────────────────
     exportAnalyzeBtn.addEventListener('click', () => {
@@ -601,6 +639,145 @@ $(document).ready(function () {
         a.download = filename;
         a.click();
         URL.revokeObjectURL(a.href);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // HISTORIAL - Búsqueda y visualización
+    // ══════════════════════════════════════════════════════════════════════════
+    const btnBuscar = document.getElementById('btn-buscar-historial');
+    const inputNombre = document.getElementById('buscar-nombre');
+    const inputTelefono = document.getElementById('buscar-telefono');
+    const historialResults = document.getElementById('historial-results');
+
+    btnBuscar.addEventListener('click', buscarHistorial);
+    inputNombre.addEventListener('keypress', e => { if (e.key === 'Enter') buscarHistorial(); });
+    inputTelefono.addEventListener('keypress', e => { if (e.key === 'Enter') buscarHistorial(); });
+
+    function buscarHistorial() {
+        const nombre = inputNombre.value.trim();
+        const telefono = inputTelefono.value.trim();
+
+        historialResults.innerHTML = '<p class="text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Buscando...</p>';
+
+        const params = new URLSearchParams();
+        if (nombre) params.append('nombre_archivo', nombre);
+        if (telefono) params.append('telefono', telefono);
+
+        fetch('{{ route("transcribe.historial") }}?' + params.toString(), {
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            const items = data.data || data || [];
+            if (!items.length) {
+                historialResults.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle mr-2"></i>No se encontraron transcripciones.</div>';
+                return;
+            }
+            renderHistorial(items);
+        })
+        .catch(err => {
+            historialResults.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle mr-2"></i>Error al buscar: ' + err.message + '</div>';
+        });
+    }
+
+    function renderHistorial(items) {
+        let html = '<div class="row">';
+        items.forEach((item, idx) => {
+            const fecha = item.created_at ? new Date(item.created_at).toLocaleString('es-AR') : '-';
+            html += `
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h6 class="card-title text-truncate" title="${escapeHtml(item.nombre_archivo || '')}">
+                                <i class="fas fa-file-audio text-primary mr-1"></i>${escapeHtml(item.nombre_archivo || 'Sin nombre')}
+                            </h6>
+                            <p class="card-text small mb-1">
+                                <i class="fas fa-phone text-muted mr-1"></i>${escapeHtml(item.telefono || '-')}
+                            </p>
+                            <p class="card-text small text-muted">
+                                <i class="fas fa-calendar mr-1"></i>${fecha}
+                            </p>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <button class="btn btn-sm btn-outline-primary btn-block btn-ver-detalle" data-id="${item.id}">
+                                <i class="fas fa-eye mr-1"></i>Ver detalle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        historialResults.innerHTML = html;
+
+        // Bind eventos
+        document.querySelectorAll('.btn-ver-detalle').forEach(btn => {
+            btn.addEventListener('click', function() {
+                verDetalleTranscripcion(this.dataset.id);
+            });
+        });
+    }
+
+    function verDetalleTranscripcion(id) {
+        fetch('{{ url("transcribir/ver") }}/' + id, {
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('modal-titulo').textContent = data.nombre_archivo || 'Transcripción';
+            document.getElementById('modal-telefono').textContent = data.telefono || '-';
+            document.getElementById('modal-fecha').textContent = data.created_at ? new Date(data.created_at).toLocaleString('es-AR') : '-';
+
+            // Resumen
+            const resumenDiv = document.getElementById('modal-resumen');
+            if (data.resumen) {
+                document.getElementById('modal-resumen-text').textContent = data.resumen;
+                resumenDiv.style.display = '';
+            } else {
+                resumenDiv.style.display = 'none';
+            }
+
+            // Transcripción como chat
+            const transcripcionDiv = document.getElementById('modal-transcripcion');
+            const json = data.transcripcion_json;
+
+            if (json && json.dialogos && json.dialogos.length) {
+                // Formato chat
+                let chatHtml = '<div id="dialogo-container">';
+                json.dialogos.forEach(d => {
+                    const isOperador = d.rol === 'OPERADOR_911' || d.rol === 'AGENTE_911';
+                    const alignClass = isOperador ? 'align-left' : 'align-right';
+                    const rolLabel = isOperador ? 'Operador 911' : 'Denunciante';
+                    chatHtml += `<div class="message ${alignClass}">
+                        <div class="speaker">${escapeHtml(rolLabel)}</div>
+                        <div class="bubble">
+                            ${escapeHtml(d.texto)}
+                            <span class="timestamp">[${escapeHtml(d.timestamp || '')}]</span>
+                        </div>
+                    </div>`;
+                });
+                chatHtml += '</div>';
+                transcripcionDiv.innerHTML = chatHtml;
+            } else if (json && json.text) {
+                // Solo texto
+                transcripcionDiv.innerHTML = '<pre style="white-space:pre-wrap;">' + escapeHtml(json.text) + '</pre>';
+            } else if (typeof json === 'string') {
+                transcripcionDiv.innerHTML = '<pre style="white-space:pre-wrap;">' + escapeHtml(json) + '</pre>';
+            } else {
+                transcripcionDiv.innerHTML = '<p class="text-muted">Sin transcripción disponible.</p>';
+            }
+
+            $('#modal-detalle-transcripcion').modal('show');
+        })
+        .catch(err => {
+            alert('Error al cargar detalle: ' + err.message);
+        });
     }
 });
 </script>

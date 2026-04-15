@@ -164,6 +164,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/transcribir/buscar-nombre', [TranscripcionController::class, 'buscarPorNombre'])->name('transcribe.buscarNombre');
     Route::get('/transcribir/buscar-telefono', [TranscripcionController::class, 'buscarPorTelefono'])->name('transcribe.buscarTelefono');
     Route::get('/transcribir/ver/{id}', [TranscripcionController::class, 'show'])->name('transcribe.show');
+    Route::put('/transcribir/actualizar/{id}', [TranscripcionController::class, 'update'])->name('transcribe.update');
 
     // CallAnalysis — Análisis de llamadas 911 (puerto 8082)
     Route::prefix('call-analysis')->name('callanalysis.')->group(function () {

@@ -61,15 +61,20 @@ class ProcesarCallAnalysisPendientes extends Command
                 $elapsed = round(microtime(true) - $inicio, 2);
                 $log->info("[CallAnalysis] Job #{$job->id} completado en {$elapsed}s.");
 
-                // Guardar en audio_transcripciones para historial persistente
-                AudioTranscripcion::create([
-                    'nombre_archivo'     => $nombre,
-                    'telefono'           => null,
-                    'tipo_emergencia'    => $result['tipo_emergencia'] ?? null,
-                    'resumen'            => $result['resumen'] ?? null,
-                    'transcripcion_json' => json_encode($result),
-                ]);
-                $log->info("[CallAnalysis] Job #{$job->id} guardado en historial.");
+                // Guardar en audio_transcripciones solo si no existe (una vez por nombre de archivo)
+                $existe = AudioTranscripcion::where('nombre_archivo', $nombre)->exists();
+                if (!$existe) {
+                    AudioTranscripcion::create([
+                        'nombre_archivo'     => $nombre,
+                        'telefono'           => null,
+                        'tipo_emergencia'    => $result['tipo_emergencia'] ?? null,
+                        'resumen'            => $result['resumen'] ?? null,
+                        'transcripcion_json' => json_encode($result),
+                    ]);
+                    $log->info("[CallAnalysis] Job #{$job->id} guardado en historial.");
+                } else {
+                    $log->info("[CallAnalysis] Job #{$job->id} ya existe en historial, no se sobrescribe.");
+                }
 
                 Storage::disk('local')->delete($job->audio_path);
 

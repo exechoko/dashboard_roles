@@ -156,4 +156,38 @@ class TranscripcionController extends Controller
             'created_at'         => $transcripcion->created_at,
         ]);
     }
+
+    /**
+     * Actualizar la transcripción (diálogos editados).
+     */
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'transcripcion_json' => 'required|array',
+        ]);
+
+        $transcripcion = AudioTranscripcion::findOrFail($id);
+
+        // Actualizar el JSON completo
+        $transcripcion->transcripcion_json = json_encode($request->transcripcion_json);
+
+        // Actualizar resumen y tipo_emergencia si vienen en el JSON
+        if (isset($request->transcripcion_json['resumen'])) {
+            $transcripcion->resumen = $request->transcripcion_json['resumen'];
+        }
+        if (isset($request->transcripcion_json['tipo_emergencia'])) {
+            $transcripcion->tipo_emergencia = $request->transcripcion_json['tipo_emergencia'];
+        }
+
+        $transcripcion->save();
+
+        Log::channel('transcripciones')->info("Transcripción #{$id} actualizada.", [
+            'nombre_archivo' => $transcripcion->nombre_archivo,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Transcripción actualizada correctamente.',
+        ]);
+    }
 }

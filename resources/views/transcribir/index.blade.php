@@ -121,6 +121,39 @@
     [data-theme="dark"] .bubble {
         color: var(--text-primary);
     }
+
+    /* ── Modo edición de globos ── */
+    .message.editing .bubble {
+        border: 2px dashed #6777ef !important;
+    }
+    .bubble-actions {
+        display: none;
+        gap: 4px;
+        margin-top: 4px;
+    }
+    .editing-mode .bubble-actions {
+        display: flex;
+    }
+    .bubble-actions .btn {
+        padding: 2px 6px;
+        font-size: 0.7rem;
+    }
+    .bubble-textarea {
+        width: 100%;
+        min-height: 60px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 6px;
+        font-size: 0.9rem;
+        resize: vertical;
+    }
+    .message.deleted {
+        opacity: 0.4;
+        text-decoration: line-through;
+    }
+    .message.deleted .bubble {
+        background: #f8d7da !important;
+    }
 </style>
 
 <section class="section">
@@ -289,7 +322,7 @@
     </div>{{-- fin section-body --}}
 </section>
 
-{{-- Modal para ver detalle de transcripción --}}
+{{-- Modal para ver/editar detalle de transcripción --}}
 <div class="modal fade" id="modal-detalle-transcripcion" tabindex="-1" role="dialog">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
@@ -309,11 +342,21 @@
                 <div id="modal-resumen" class="alert alert-info mb-3" style="display:none;">
                     <strong>Resumen:</strong> <span id="modal-resumen-text"></span>
                 </div>
-                <h6><i class="fas fa-comments mr-1"></i>Transcripción</h6>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0"><i class="fas fa-comments mr-1"></i>Transcripción</h6>
+                    <div>
+                        <button type="button" id="btn-toggle-edit" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-edit mr-1"></i>Editar
+                        </button>
+                    </div>
+                </div>
                 <div id="modal-transcripcion" class="border rounded p-3" style="max-height:350px; overflow-y:auto;">
                 </div>
             </div>
             <div class="modal-footer">
+                <button type="button" id="btn-guardar-transcripcion" class="btn btn-success d-none">
+                    <i class="fas fa-save mr-1"></i>Guardar cambios
+                </button>
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
             </div>
         </div>
@@ -741,6 +784,12 @@ $(document).ready(function () {
         });
     }
 
+    // Variables para edición de transcripción
+    let currentTranscripcionId = null;
+    let currentTranscripcionJson = null;
+    let isEditingMode = false;
+    let editedDialogos = [];
+
     function verDetalleTranscripcion(id) {
         fetch('{{ url("transcribir/ver") }}/' + id, {
             headers: {
@@ -750,6 +799,10 @@ $(document).ready(function () {
         })
         .then(r => r.json())
         .then(data => {
+            currentTranscripcionId = data.id;
+            currentTranscripcionJson = data.transcripcion_json;
+            isEditingMode = false;
+
             document.getElementById('modal-titulo').textContent = data.nombre_archivo || 'Transcripción';
             document.getElementById('modal-telefono').textContent = data.telefono || '-';
             document.getElementById('modal-fecha').textContent = data.created_at ? new Date(data.created_at).toLocaleString('es-AR') : '-';
@@ -763,52 +816,184 @@ $(document).ready(function () {
                 resumenDiv.style.display = 'none';
             }
 
-            // Transcripción como chat
-            const transcripcionDiv = document.getElementById('modal-transcripcion');
-            const json = data.transcripcion_json;
+            // Reset botones
+            document.getElementById('btn-toggle-edit').innerHTML = '<i class="fas fa-edit mr-1"></i>Editar';
+            document.getElementById('btn-toggle-edit').classList.remove('btn-warning');
+            document.getElementById('btn-toggle-edit').classList.add('btn-outline-primary');
+            document.getElementById('btn-guardar-transcripcion').classList.add('d-none');
 
-            // Buscar diálogos en diferentes ubicaciones posibles del JSON
-            let dialogos = null;
-            if (json) {
-                if (json.transcription && json.transcription.dialogos && json.transcription.dialogos.length) {
-                    dialogos = json.transcription.dialogos;
-                } else if (json.dialogos && json.dialogos.length) {
-                    dialogos = json.dialogos;
-                }
-            }
-
-            if (dialogos && dialogos.length) {
-                // Formato chat
-                let chatHtml = '<div id="dialogo-container">';
-                dialogos.forEach(d => {
-                    const isOperador = d.rol === 'OPERADOR_911' || d.rol === 'AGENTE_911';
-                    const alignClass = isOperador ? 'align-left' : 'align-right';
-                    const rolLabel = isOperador ? 'Operador 911' : 'Denunciante';
-                    chatHtml += `<div class="message ${alignClass}">
-                        <div class="speaker">${escapeHtml(rolLabel)}</div>
-                        <div class="bubble">
-                            ${escapeHtml(d.texto)}
-                            <span class="timestamp">[${escapeHtml(d.timestamp || '')}]</span>
-                        </div>
-                    </div>`;
-                });
-                chatHtml += '</div>';
-                transcripcionDiv.innerHTML = chatHtml;
-            } else if (json && json.text) {
-                // Solo texto
-                transcripcionDiv.innerHTML = '<pre style="white-space:pre-wrap;">' + escapeHtml(json.text) + '</pre>';
-            } else if (typeof json === 'string') {
-                transcripcionDiv.innerHTML = '<pre style="white-space:pre-wrap;">' + escapeHtml(json) + '</pre>';
-            } else {
-                transcripcionDiv.innerHTML = '<p class="text-muted">Sin transcripción disponible.</p>';
-            }
-
+            renderTranscripcionModal(data.transcripcion_json);
             $('#modal-detalle-transcripcion').modal('show');
         })
         .catch(err => {
             alert('Error al cargar detalle: ' + err.message);
         });
     }
+
+    function renderTranscripcionModal(json) {
+        const transcripcionDiv = document.getElementById('modal-transcripcion');
+
+        // Buscar diálogos en diferentes ubicaciones posibles del JSON
+        let dialogos = null;
+        if (json) {
+            if (json.transcription && json.transcription.dialogos && json.transcription.dialogos.length) {
+                dialogos = json.transcription.dialogos;
+            } else if (json.dialogos && json.dialogos.length) {
+                dialogos = json.dialogos;
+            }
+        }
+
+        // Guardar copia para edición
+        editedDialogos = dialogos ? JSON.parse(JSON.stringify(dialogos)) : [];
+
+        if (dialogos && dialogos.length) {
+            let chatHtml = `<div id="dialogo-container" class="${isEditingMode ? 'editing-mode' : ''}">`;
+            dialogos.forEach((d, idx) => {
+                const isOperador = d.rol === 'OPERADOR_911' || d.rol === 'AGENTE_911';
+                const alignClass = isOperador ? 'align-left' : 'align-right';
+                const rolLabel = isOperador ? 'Operador 911' : 'Denunciante';
+                const deletedClass = d._deleted ? 'deleted' : '';
+
+                if (isEditingMode && !d._deleted) {
+                    chatHtml += `<div class="message ${alignClass} ${deletedClass}" data-idx="${idx}">
+                        <div class="speaker">${escapeHtml(rolLabel)}</div>
+                        <div class="bubble">
+                            <textarea class="bubble-textarea" data-idx="${idx}">${escapeHtml(d.texto)}</textarea>
+                            <span class="timestamp">[${escapeHtml(d.timestamp || '')}]</span>
+                        </div>
+                        <div class="bubble-actions">
+                            <button type="button" class="btn btn-danger btn-sm btn-delete-bubble" data-idx="${idx}">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>`;
+                } else if (!d._deleted) {
+                    chatHtml += `<div class="message ${alignClass}" data-idx="${idx}">
+                        <div class="speaker">${escapeHtml(rolLabel)}</div>
+                        <div class="bubble">
+                            ${escapeHtml(d.texto)}
+                            <span class="timestamp">[${escapeHtml(d.timestamp || '')}]</span>
+                        </div>
+                        <div class="bubble-actions">
+                            <button type="button" class="btn btn-danger btn-sm btn-delete-bubble" data-idx="${idx}">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>`;
+                }
+            });
+            chatHtml += '</div>';
+            transcripcionDiv.innerHTML = chatHtml;
+
+            // Bind eventos de eliminar
+            if (isEditingMode) {
+                document.querySelectorAll('.btn-delete-bubble').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const idx = parseInt(this.dataset.idx);
+                        eliminarDialogo(idx);
+                    });
+                });
+            }
+        } else if (json && json.text) {
+            transcripcionDiv.innerHTML = '<pre style="white-space:pre-wrap;">' + escapeHtml(json.text) + '</pre>';
+        } else if (typeof json === 'string') {
+            transcripcionDiv.innerHTML = '<pre style="white-space:pre-wrap;">' + escapeHtml(json) + '</pre>';
+        } else {
+            transcripcionDiv.innerHTML = '<p class="text-muted">Sin transcripción disponible.</p>';
+        }
+    }
+
+    function eliminarDialogo(idx) {
+        if (confirm('¿Eliminar este diálogo?')) {
+            editedDialogos[idx]._deleted = true;
+            renderTranscripcionModal(buildEditedJson());
+        }
+    }
+
+    function buildEditedJson() {
+        // Actualizar textos desde textareas
+        document.querySelectorAll('.bubble-textarea').forEach(ta => {
+            const idx = parseInt(ta.dataset.idx);
+            if (editedDialogos[idx]) {
+                editedDialogos[idx].texto = ta.value;
+            }
+        });
+
+        // Construir JSON actualizado
+        const newJson = JSON.parse(JSON.stringify(currentTranscripcionJson));
+        const filteredDialogos = editedDialogos.filter(d => !d._deleted).map(d => {
+            const { _deleted, ...rest } = d;
+            return rest;
+        });
+
+        if (newJson.transcription && newJson.transcription.dialogos) {
+            newJson.transcription.dialogos = filteredDialogos;
+        } else if (newJson.dialogos) {
+            newJson.dialogos = filteredDialogos;
+        }
+
+        return newJson;
+    }
+
+    // Toggle modo edición
+    document.getElementById('btn-toggle-edit').addEventListener('click', function() {
+        isEditingMode = !isEditingMode;
+        if (isEditingMode) {
+            this.innerHTML = '<i class="fas fa-times mr-1"></i>Cancelar';
+            this.classList.remove('btn-outline-primary');
+            this.classList.add('btn-warning');
+            document.getElementById('btn-guardar-transcripcion').classList.remove('d-none');
+        } else {
+            this.innerHTML = '<i class="fas fa-edit mr-1"></i>Editar';
+            this.classList.remove('btn-warning');
+            this.classList.add('btn-outline-primary');
+            document.getElementById('btn-guardar-transcripcion').classList.add('d-none');
+            // Resetear a original
+            editedDialogos = [];
+        }
+        renderTranscripcionModal(isEditingMode ? currentTranscripcionJson : currentTranscripcionJson);
+    });
+
+    // Guardar cambios
+    document.getElementById('btn-guardar-transcripcion').addEventListener('click', function() {
+        const newJson = buildEditedJson();
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Guardando...';
+
+        fetch('{{ url("transcribir/actualizar") }}/' + currentTranscripcionId, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ transcripcion_json: newJson })
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save mr-1"></i>Guardar cambios';
+
+            if (data.success) {
+                alert('Transcripción actualizada correctamente.');
+                currentTranscripcionJson = newJson;
+                isEditingMode = false;
+                document.getElementById('btn-toggle-edit').innerHTML = '<i class="fas fa-edit mr-1"></i>Editar';
+                document.getElementById('btn-toggle-edit').classList.remove('btn-warning');
+                document.getElementById('btn-toggle-edit').classList.add('btn-outline-primary');
+                btn.classList.add('d-none');
+                renderTranscripcionModal(newJson);
+            } else {
+                alert('Error: ' + (data.message || 'No se pudo guardar'));
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save mr-1"></i>Guardar cambios';
+            alert('Error al guardar: ' + err.message);
+        });
+    })
 });
 </script>
 @endsection

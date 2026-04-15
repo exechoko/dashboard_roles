@@ -265,23 +265,19 @@
         <div class="tab-pane fade" id="panel-historial" role="tabpanel">
             <div class="card">
                 <div class="card-header">
-                    <h4 class="mb-0"><i class="fas fa-search mr-2"></i>Buscar Transcripciones</h4>
+                    <h4 class="mb-0"><i class="fas fa-history mr-2"></i>Historial de Transcripciones</h4>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-5">
-                            <div class="form-group">
-                                <label for="buscar-nombre">Nombre del archivo</label>
-                                <input type="text" id="buscar-nombre" class="form-control" placeholder="Ej: llamada_001.mp3">
-                            </div>
+                    <div class="row align-items-end">
+                        <div class="col-md-5 mb-2 mb-md-0">
+                            <label for="buscar-nombre">Nombre del archivo</label>
+                            <input type="text" id="buscar-nombre" class="form-control" placeholder="Ej: llamada_001.mp3">
                         </div>
-                        <div class="col-md-4">
-                            <div class="form-group">
-                                <label for="buscar-telefono">Teléfono</label>
-                                <input type="text" id="buscar-telefono" class="form-control" placeholder="Ej: 999123456">
-                            </div>
+                        <div class="col-md-4 mb-2 mb-md-0">
+                            <label for="buscar-telefono">Teléfono</label>
+                            <input type="text" id="buscar-telefono" class="form-control" placeholder="Ej: 999123456">
                         </div>
-                        <div class="col-md-3 d-flex align-items-end">
+                        <div class="col-md-3">
                             <button id="btn-buscar-historial" class="btn btn-primary btn-block">
                                 <i class="fas fa-search mr-1"></i>Buscar
                             </button>
@@ -292,7 +288,7 @@
 
             {{-- Resultados del historial --}}
             <div id="historial-results" class="mt-3">
-                <p class="text-muted text-center py-4">Ingresa criterios de búsqueda o haz clic en Buscar para ver todas las transcripciones.</p>
+                <p class="text-muted text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando últimas transcripciones...</p>
             </div>
         </div>
         {{-- FIN TAB HISTORIAL --}}
@@ -648,10 +644,42 @@ $(document).ready(function () {
     const inputNombre = document.getElementById('buscar-nombre');
     const inputTelefono = document.getElementById('buscar-telefono');
     const historialResults = document.getElementById('historial-results');
+    let historialCargado = false;
 
     btnBuscar.addEventListener('click', buscarHistorial);
     inputNombre.addEventListener('keypress', e => { if (e.key === 'Enter') buscarHistorial(); });
     inputTelefono.addEventListener('keypress', e => { if (e.key === 'Enter') buscarHistorial(); });
+
+    // Cargar últimas 5 transcripciones al abrir el tab de historial
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+        if (e.target.id === 'tab-historial' && !historialCargado) {
+            cargarUltimasTranscripciones();
+            historialCargado = true;
+        }
+    });
+
+    function cargarUltimasTranscripciones() {
+        historialResults.innerHTML = '<p class="text-center py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Cargando últimas transcripciones...</p>';
+
+        fetch('{{ route("transcribe.historial") }}', {
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            const items = (data.data || data || []).slice(0, 5);
+            if (!items.length) {
+                historialResults.innerHTML = '<div class="alert alert-info"><i class="fas fa-info-circle mr-2"></i>No hay transcripciones guardadas aún.</div>';
+                return;
+            }
+            renderHistorial(items);
+        })
+        .catch(err => {
+            historialResults.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle mr-2"></i>Error al cargar: ' + err.message + '</div>';
+        });
+    }
 
     function buscarHistorial() {
         const nombre = inputNombre.value.trim();

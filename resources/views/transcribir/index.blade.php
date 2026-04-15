@@ -154,6 +154,24 @@
     .message.deleted .bubble {
         background: #f8d7da !important;
     }
+    .rol-select {
+        font-size: 0.8rem;
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid #ced4da;
+        margin-bottom: 4px;
+    }
+    .add-bubble-container {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        padding: 12px;
+        border-top: 1px dashed #dee2e6;
+    }
+    .add-bubble-container .btn {
+        flex: 1;
+        max-width: 200px;
+    }
 </style>
 
 <section class="section">
@@ -587,11 +605,7 @@ $(document).ready(function () {
         container.innerHTML = '';
 
         const dialogos = result?.transcription?.dialogos || [];
-        if (!dialogos.length) {
-            container.innerHTML = '<p class="text-muted text-center py-3">Sin diálogos disponibles.</p>';
-            return;
-        }
-
+        
         // Guardar copia para edición
         if (editMode && mainChatEditedDialogos.length === 0) {
             mainChatEditedDialogos = JSON.parse(JSON.stringify(dialogos));
@@ -599,16 +613,21 @@ $(document).ready(function () {
 
         const sourceDialogos = editMode ? mainChatEditedDialogos : dialogos;
 
-        const html = sourceDialogos.map((d, idx) => {
-            if (d._deleted) return '';
+        let html = '';
+        sourceDialogos.forEach((d, idx) => {
+            if (d._deleted) return;
 
             const isOperador = d.rol === 'OPERADOR_911' || d.rol === 'AGENTE_911';
             const alignClass = isOperador ? 'align-left' : 'align-right';
             const rolLabel   = isOperador ? 'Operador 911' : 'Denunciante';
+            const rolValue   = isOperador ? 'OPERADOR_911' : 'DENUNCIANTE';
 
             if (editMode) {
-                return `<div class="message ${alignClass}" data-idx="${idx}">
-                            <div class="speaker">${escapeHtml(rolLabel)}</div>
+                html += `<div class="message ${alignClass}" data-idx="${idx}">
+                            <select class="rol-select main-chat-rol" data-idx="${idx}">
+                                <option value="OPERADOR_911" ${rolValue === 'OPERADOR_911' ? 'selected' : ''}>Operador 911</option>
+                                <option value="DENUNCIANTE" ${rolValue === 'DENUNCIANTE' ? 'selected' : ''}>Denunciante</option>
+                            </select>
                             <div class="bubble">
                                 <textarea class="bubble-textarea main-chat-textarea" data-idx="${idx}">${escapeHtml(d.texto)}</textarea>
                                 <span class="timestamp">[${escapeHtml(d.timestamp || '')}]</span>
@@ -620,7 +639,7 @@ $(document).ready(function () {
                             </div>
                         </div>`;
             } else {
-                return `<div class="message ${alignClass}">
+                html += `<div class="message ${alignClass}">
                             <div class="speaker">${escapeHtml(rolLabel)}</div>
                             <div class="bubble">
                                 ${escapeHtml(d.texto)}
@@ -628,12 +647,29 @@ $(document).ready(function () {
                             </div>
                         </div>`;
             }
-        }).join('');
+        });
+
+        // Botones para agregar nuevos globos (solo en modo edición)
+        if (editMode) {
+            html += `<div class="add-bubble-container">
+                        <button type="button" class="btn btn-sm btn-outline-success" id="btn-add-operador-main">
+                            <i class="fas fa-plus mr-1"></i>Agregar Operador 911
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-denunciante-main">
+                            <i class="fas fa-plus mr-1"></i>Agregar Denunciante
+                        </button>
+                    </div>`;
+        }
+
+        if (!sourceDialogos.length || sourceDialogos.every(d => d._deleted)) {
+            html = '<p class="text-muted text-center py-3">Sin diálogos disponibles.</p>' + (editMode ? html : '');
+        }
 
         container.innerHTML = html;
 
-        // Bind eventos de eliminar en modo edición
+        // Bind eventos en modo edición
         if (editMode) {
+            // Eliminar globo
             document.querySelectorAll('.btn-delete-main-bubble').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const idx = parseInt(this.dataset.idx);
@@ -643,7 +679,60 @@ $(document).ready(function () {
                     }
                 });
             });
+
+            // Cambiar rol
+            document.querySelectorAll('.main-chat-rol').forEach(sel => {
+                sel.addEventListener('change', function() {
+                    const idx = parseInt(this.dataset.idx);
+                    mainChatEditedDialogos[idx].rol = this.value;
+                    // Re-renderizar para actualizar alineación
+                    syncMainChatTextareas();
+                    renderDialogos(mainChatResult, true);
+                });
+            });
+
+            // Agregar operador
+            const btnAddOp = document.getElementById('btn-add-operador-main');
+            if (btnAddOp) {
+                btnAddOp.addEventListener('click', function() {
+                    syncMainChatTextareas();
+                    mainChatEditedDialogos.push({
+                        rol: 'OPERADOR_911',
+                        texto: '',
+                        timestamp: '',
+                        start: 0,
+                        end: 0
+                    });
+                    renderDialogos(mainChatResult, true);
+                });
+            }
+
+            // Agregar denunciante
+            const btnAddDen = document.getElementById('btn-add-denunciante-main');
+            if (btnAddDen) {
+                btnAddDen.addEventListener('click', function() {
+                    syncMainChatTextareas();
+                    mainChatEditedDialogos.push({
+                        rol: 'DENUNCIANTE',
+                        texto: '',
+                        timestamp: '',
+                        start: 0,
+                        end: 0
+                    });
+                    renderDialogos(mainChatResult, true);
+                });
+            }
         }
+    }
+
+    // Sincronizar textos de textareas antes de re-renderizar
+    function syncMainChatTextareas() {
+        document.querySelectorAll('.main-chat-textarea').forEach(ta => {
+            const idx = parseInt(ta.dataset.idx);
+            if (mainChatEditedDialogos[idx]) {
+                mainChatEditedDialogos[idx].texto = ta.value;
+            }
+        });
     }
 
     // Toggle edición chat principal
@@ -1007,81 +1096,150 @@ $(document).ready(function () {
             }
         }
 
-        // Guardar copia para edición
-        editedDialogos = dialogos ? JSON.parse(JSON.stringify(dialogos)) : [];
+        // Guardar copia para edición (solo si no hay ya una copia)
+        if (editedDialogos.length === 0) {
+            editedDialogos = dialogos ? JSON.parse(JSON.stringify(dialogos)) : [];
+        }
 
-        if (dialogos && dialogos.length) {
-            let chatHtml = `<div id="dialogo-container" class="${isEditingMode ? 'editing-mode' : ''}">`;
-            dialogos.forEach((d, idx) => {
+        const sourceDialogos = isEditingMode ? editedDialogos : (dialogos || []);
+
+        let chatHtml = '';
+        if (sourceDialogos.length && !sourceDialogos.every(d => d._deleted)) {
+            chatHtml = `<div id="modal-dialogo-container" class="${isEditingMode ? 'editing-mode' : ''}">`;
+            sourceDialogos.forEach((d, idx) => {
+                if (d._deleted) return;
+
                 const isOperador = d.rol === 'OPERADOR_911' || d.rol === 'AGENTE_911';
                 const alignClass = isOperador ? 'align-left' : 'align-right';
                 const rolLabel = isOperador ? 'Operador 911' : 'Denunciante';
-                const deletedClass = d._deleted ? 'deleted' : '';
+                const rolValue = isOperador ? 'OPERADOR_911' : 'DENUNCIANTE';
 
-                if (isEditingMode && !d._deleted) {
-                    chatHtml += `<div class="message ${alignClass} ${deletedClass}" data-idx="${idx}">
-                        <div class="speaker">${escapeHtml(rolLabel)}</div>
+                if (isEditingMode) {
+                    chatHtml += `<div class="message ${alignClass}" data-idx="${idx}">
+                        <select class="rol-select modal-rol-select" data-idx="${idx}">
+                            <option value="OPERADOR_911" ${rolValue === 'OPERADOR_911' ? 'selected' : ''}>Operador 911</option>
+                            <option value="DENUNCIANTE" ${rolValue === 'DENUNCIANTE' ? 'selected' : ''}>Denunciante</option>
+                        </select>
                         <div class="bubble">
-                            <textarea class="bubble-textarea" data-idx="${idx}">${escapeHtml(d.texto)}</textarea>
+                            <textarea class="bubble-textarea modal-textarea" data-idx="${idx}">${escapeHtml(d.texto)}</textarea>
                             <span class="timestamp">[${escapeHtml(d.timestamp || '')}]</span>
                         </div>
-                        <div class="bubble-actions">
+                        <div class="bubble-actions" style="display:flex;">
                             <button type="button" class="btn btn-danger btn-sm btn-delete-bubble" data-idx="${idx}">
                                 <i class="fas fa-trash"></i> Eliminar
                             </button>
                         </div>
                     </div>`;
-                } else if (!d._deleted) {
+                } else {
                     chatHtml += `<div class="message ${alignClass}" data-idx="${idx}">
                         <div class="speaker">${escapeHtml(rolLabel)}</div>
                         <div class="bubble">
                             ${escapeHtml(d.texto)}
                             <span class="timestamp">[${escapeHtml(d.timestamp || '')}]</span>
                         </div>
-                        <div class="bubble-actions">
-                            <button type="button" class="btn btn-danger btn-sm btn-delete-bubble" data-idx="${idx}">
-                                <i class="fas fa-trash"></i> Eliminar
-                            </button>
-                        </div>
                     </div>`;
                 }
             });
-            chatHtml += '</div>';
-            transcripcionDiv.innerHTML = chatHtml;
 
-            // Bind eventos de eliminar
+            // Botones para agregar nuevos globos (solo en modo edición)
             if (isEditingMode) {
-                document.querySelectorAll('.btn-delete-bubble').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const idx = parseInt(this.dataset.idx);
-                        eliminarDialogo(idx);
+                chatHtml += `<div class="add-bubble-container">
+                    <button type="button" class="btn btn-sm btn-outline-success" id="btn-add-operador-modal">
+                        <i class="fas fa-plus mr-1"></i>Agregar Operador 911
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-denunciante-modal">
+                        <i class="fas fa-plus mr-1"></i>Agregar Denunciante
+                    </button>
+                </div>`;
+            }
+
+            chatHtml += '</div>';
+        } else {
+            chatHtml = '<p class="text-muted text-center py-3">Sin diálogos disponibles.</p>';
+            if (isEditingMode) {
+                chatHtml += `<div class="add-bubble-container">
+                    <button type="button" class="btn btn-sm btn-outline-success" id="btn-add-operador-modal">
+                        <i class="fas fa-plus mr-1"></i>Agregar Operador 911
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="btn-add-denunciante-modal">
+                        <i class="fas fa-plus mr-1"></i>Agregar Denunciante
+                    </button>
+                </div>`;
+            }
+        }
+
+        transcripcionDiv.innerHTML = chatHtml;
+
+        // Bind eventos en modo edición
+        if (isEditingMode) {
+            // Eliminar globo
+            document.querySelectorAll('.btn-delete-bubble').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const idx = parseInt(this.dataset.idx);
+                    if (confirm('¿Eliminar este diálogo?')) {
+                        editedDialogos[idx]._deleted = true;
+                        renderTranscripcionModal(currentTranscripcionJson);
+                    }
+                });
+            });
+
+            // Cambiar rol
+            document.querySelectorAll('.modal-rol-select').forEach(sel => {
+                sel.addEventListener('change', function() {
+                    const idx = parseInt(this.dataset.idx);
+                    editedDialogos[idx].rol = this.value;
+                    syncModalTextareas();
+                    renderTranscripcionModal(currentTranscripcionJson);
+                });
+            });
+
+            // Agregar operador
+            const btnAddOpModal = document.getElementById('btn-add-operador-modal');
+            if (btnAddOpModal) {
+                btnAddOpModal.addEventListener('click', function() {
+                    syncModalTextareas();
+                    editedDialogos.push({
+                        rol: 'OPERADOR_911',
+                        texto: '',
+                        timestamp: '',
+                        start: 0,
+                        end: 0
                     });
+                    renderTranscripcionModal(currentTranscripcionJson);
                 });
             }
-        } else if (json && json.text) {
-            transcripcionDiv.innerHTML = '<pre style="white-space:pre-wrap;">' + escapeHtml(json.text) + '</pre>';
-        } else if (typeof json === 'string') {
-            transcripcionDiv.innerHTML = '<pre style="white-space:pre-wrap;">' + escapeHtml(json) + '</pre>';
-        } else {
-            transcripcionDiv.innerHTML = '<p class="text-muted">Sin transcripción disponible.</p>';
+
+            // Agregar denunciante
+            const btnAddDenModal = document.getElementById('btn-add-denunciante-modal');
+            if (btnAddDenModal) {
+                btnAddDenModal.addEventListener('click', function() {
+                    syncModalTextareas();
+                    editedDialogos.push({
+                        rol: 'DENUNCIANTE',
+                        texto: '',
+                        timestamp: '',
+                        start: 0,
+                        end: 0
+                    });
+                    renderTranscripcionModal(currentTranscripcionJson);
+                });
+            }
         }
     }
 
-    function eliminarDialogo(idx) {
-        if (confirm('¿Eliminar este diálogo?')) {
-            editedDialogos[idx]._deleted = true;
-            renderTranscripcionModal(buildEditedJson());
-        }
-    }
-
-    function buildEditedJson() {
-        // Actualizar textos desde textareas
-        document.querySelectorAll('.bubble-textarea').forEach(ta => {
+    // Sincronizar textos de textareas del modal antes de re-renderizar
+    function syncModalTextareas() {
+        document.querySelectorAll('.modal-textarea').forEach(ta => {
             const idx = parseInt(ta.dataset.idx);
             if (editedDialogos[idx]) {
                 editedDialogos[idx].texto = ta.value;
             }
         });
+    }
+
+    function buildEditedJson() {
+        // Actualizar textos desde textareas
+        syncModalTextareas();
 
         // Construir JSON actualizado
         const newJson = JSON.parse(JSON.stringify(currentTranscripcionJson));

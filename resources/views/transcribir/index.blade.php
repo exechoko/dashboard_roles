@@ -252,9 +252,17 @@
                     <div class="card mb-3">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h4 class="mb-0"><i class="fas fa-comments mr-2"></i>Transcripción con Hablantes</h4>
-                            <button id="export-analyze-btn" class="btn btn-sm btn-outline-secondary" disabled>
-                                <i class="fas fa-download mr-1"></i>Exportar TXT
-                            </button>
+                            <div>
+                                <button id="btn-edit-main-chat" class="btn btn-sm btn-outline-primary d-none">
+                                    <i class="fas fa-edit mr-1"></i>Editar
+                                </button>
+                                <button id="btn-save-main-chat" class="btn btn-sm btn-success d-none">
+                                    <i class="fas fa-save mr-1"></i>Guardar
+                                </button>
+                                <button id="export-analyze-btn" class="btn btn-sm btn-outline-secondary" disabled>
+                                    <i class="fas fa-download mr-1"></i>Exportar TXT
+                                </button>
+                            </div>
                         </div>
                         <div class="card-body p-0">
                             <div id="dialogo-container" style="max-height:340px; overflow-y:auto;">
@@ -531,19 +539,50 @@ $(document).ready(function () {
         }, 5000);
     }
 
+    // ── Variables para edición del chat principal ─────────────────────────
+    let mainChatResult = null;
+    let mainChatEditMode = false;
+    let mainChatEditedDialogos = [];
+    let mainChatTranscripcionId = null;
+
+    const btnEditMainChat = document.getElementById('btn-edit-main-chat');
+    const btnSaveMainChat = document.getElementById('btn-save-main-chat');
+
     // ── Render resultados ─────────────────────────────────────────────────
     function renderResult(estado) {
         const result = estado.result;
         if (!result) return;
+
+        mainChatResult = result;
+        mainChatEditMode = false;
+        mainChatEditedDialogos = [];
 
         // Análisis completo
         renderDialogos(result);
         renderResumen(result);
         renderDatos(result);
         exportAnalyzeBtn.disabled = false;
+
+        // Mostrar botón editar
+        btnEditMainChat.classList.remove('d-none');
+        btnSaveMainChat.classList.add('d-none');
+
+        // Buscar si ya existe en la base de datos por nombre de archivo
+        if (result.nombre_archivo) {
+            fetch('{{ url("transcribir/buscar-nombre") }}?nombre_archivo=' + encodeURIComponent(result.nombre_archivo), {
+                headers: { 'Accept': 'application/json' }
+            })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data && data.id) {
+                    mainChatTranscripcionId = data.id;
+                }
+            })
+            .catch(() => {});
+        }
     }
 
-    function renderDialogos(result) {
+    function renderDialogos(result, editMode = false) {
         const container = document.getElementById('dialogo-container');
         container.innerHTML = '';
 
@@ -553,22 +592,147 @@ $(document).ready(function () {
             return;
         }
 
-        const html = dialogos.map(d => {
-            // Operador a la izquierda, denunciante a la derecha
+        // Guardar copia para edición
+        if (editMode && mainChatEditedDialogos.length === 0) {
+            mainChatEditedDialogos = JSON.parse(JSON.stringify(dialogos));
+        }
+
+        const sourceDialogos = editMode ? mainChatEditedDialogos : dialogos;
+
+        const html = sourceDialogos.map((d, idx) => {
+            if (d._deleted) return '';
+
             const isOperador = d.rol === 'OPERADOR_911' || d.rol === 'AGENTE_911';
             const alignClass = isOperador ? 'align-left' : 'align-right';
             const rolLabel   = isOperador ? 'Operador 911' : 'Denunciante';
-            return `<div class="message ${alignClass}">
-                        <div class="speaker">${escapeHtml(rolLabel)}</div>
-                        <div class="bubble">
-                            ${escapeHtml(d.texto)}
-                            <span class="timestamp">[${escapeHtml(d.timestamp || '')}]</span>
-                        </div>
-                    </div>`;
+
+            if (editMode) {
+                return `<div class="message ${alignClass}" data-idx="${idx}">
+                            <div class="speaker">${escapeHtml(rolLabel)}</div>
+                            <div class="bubble">
+                                <textarea class="bubble-textarea main-chat-textarea" data-idx="${idx}">${escapeHtml(d.texto)}</textarea>
+                                <span class="timestamp">[${escapeHtml(d.timestamp || '')}]</span>
+                            </div>
+                            <div class="bubble-actions" style="display:flex;">
+                                <button type="button" class="btn btn-danger btn-sm btn-delete-main-bubble" data-idx="${idx}">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </button>
+                            </div>
+                        </div>`;
+            } else {
+                return `<div class="message ${alignClass}">
+                            <div class="speaker">${escapeHtml(rolLabel)}</div>
+                            <div class="bubble">
+                                ${escapeHtml(d.texto)}
+                                <span class="timestamp">[${escapeHtml(d.timestamp || '')}]</span>
+                            </div>
+                        </div>`;
+            }
         }).join('');
 
         container.innerHTML = html;
+
+        // Bind eventos de eliminar en modo edición
+        if (editMode) {
+            document.querySelectorAll('.btn-delete-main-bubble').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const idx = parseInt(this.dataset.idx);
+                    if (confirm('¿Eliminar este diálogo?')) {
+                        mainChatEditedDialogos[idx]._deleted = true;
+                        renderDialogos(mainChatResult, true);
+                    }
+                });
+            });
+        }
     }
+
+    // Toggle edición chat principal
+    btnEditMainChat.addEventListener('click', function() {
+        mainChatEditMode = !mainChatEditMode;
+        if (mainChatEditMode) {
+            this.innerHTML = '<i class="fas fa-times mr-1"></i>Cancelar';
+            this.classList.remove('btn-outline-primary');
+            this.classList.add('btn-warning');
+            btnSaveMainChat.classList.remove('d-none');
+            mainChatEditedDialogos = JSON.parse(JSON.stringify(mainChatResult?.transcription?.dialogos || []));
+        } else {
+            this.innerHTML = '<i class="fas fa-edit mr-1"></i>Editar';
+            this.classList.remove('btn-warning');
+            this.classList.add('btn-outline-primary');
+            btnSaveMainChat.classList.add('d-none');
+            mainChatEditedDialogos = [];
+        }
+        renderDialogos(mainChatResult, mainChatEditMode);
+    });
+
+    // Guardar cambios chat principal
+    btnSaveMainChat.addEventListener('click', function() {
+        // Actualizar textos desde textareas
+        document.querySelectorAll('.main-chat-textarea').forEach(ta => {
+            const idx = parseInt(ta.dataset.idx);
+            if (mainChatEditedDialogos[idx]) {
+                mainChatEditedDialogos[idx].texto = ta.value;
+            }
+        });
+
+        // Filtrar eliminados
+        const filteredDialogos = mainChatEditedDialogos.filter(d => !d._deleted).map(d => {
+            const { _deleted, ...rest } = d;
+            return rest;
+        });
+
+        // Actualizar el resultado local
+        if (mainChatResult.transcription) {
+            mainChatResult.transcription.dialogos = filteredDialogos;
+        }
+
+        // Si tenemos ID, guardar en la base de datos
+        if (mainChatTranscripcionId) {
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Guardando...';
+
+            fetch('{{ url("transcribir/actualizar") }}/' + mainChatTranscripcionId, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ transcripcion_json: mainChatResult })
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save mr-1"></i>Guardar';
+
+                if (data.success) {
+                    alert('Transcripción guardada correctamente.');
+                } else {
+                    alert('Error: ' + (data.message || 'No se pudo guardar'));
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save mr-1"></i>Guardar';
+                alert('Error al guardar: ' + err.message);
+            });
+        } else {
+            alert('Cambios aplicados localmente. La transcripción se guardará en el historial automáticamente.');
+        }
+
+        // Salir de modo edición
+        mainChatEditMode = false;
+        btnEditMainChat.innerHTML = '<i class="fas fa-edit mr-1"></i>Editar';
+        btnEditMainChat.classList.remove('btn-warning');
+        btnEditMainChat.classList.add('btn-outline-primary');
+        btnSaveMainChat.classList.add('d-none');
+        mainChatEditedDialogos = [];
+        renderDialogos(mainChatResult, false);
+
+        // Actualizar lastResult para exportación
+        lastResult = { result: mainChatResult };
+    });
 
     function renderResumen(result) {
         const card = document.getElementById('resumen-card');

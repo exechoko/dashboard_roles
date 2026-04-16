@@ -694,11 +694,29 @@
 
                                         {{-- Mini mapa de calor --}}
                                         <div class="card shadow-sm mb-3" style="border-radius:10px;overflow:hidden">
-                                            <div class="card-header py-2 d-flex align-items-center justify-content-between" style="background:transparent">
-                                                <span class="fw-semibold" style="font-size:.9rem">
-                                                    <i class="fas fa-fire text-danger mr-1"></i>Mapa de calor — incidencias semana anterior
-                                                </span>
-                                                <span class="text-muted" style="font-size:.78rem" id="cecoco-mapa-estado">Cargando...</span>
+                                            <div class="card-header py-2" style="background:transparent">
+                                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                                    <span class="fw-semibold" style="font-size:.9rem">
+                                                        <i class="fas fa-fire text-danger mr-1"></i>Mapa de calor — incidencias semana anterior
+                                                    </span>
+                                                    <span class="text-muted" style="font-size:.78rem" id="cecoco-mapa-estado">Cargando...</span>
+                                                </div>
+                                                <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+                                                    <div style="min-width:220px;flex:1">
+                                                        <select id="cecoco-mapa-tipo" style="width:100%">
+                                                            <option value="">Todas las tipificaciones</option>
+                                                            <option value="Robo">Robo</option>
+                                                            <option value="Hurto">Hurto</option>
+                                                            <option value="Accidente">Accidente con lesionados</option>
+                                                            <option value="Homicidio">Homicidio</option>
+                                                            <option value="Abuso">Abuso de armas de fuego</option>
+                                                            <option value="Dispositivo Dual">Dispositivo Dual</option>
+                                                        </select>
+                                                    </div>
+                                                    <button id="cecoco-mapa-filtrar" class="btn btn-primary btn-sm px-3" style="white-space:nowrap">
+                                                        <i class="fas fa-search mr-1"></i>Aplicar
+                                                    </button>
+                                                </div>
                                             </div>
                                             <div class="card-body p-0" style="position:relative">
                                                 <div id="cecoco-mini-mapa" style="height:320px;width:100%"></div>
@@ -3372,13 +3390,78 @@
             var mapaIniciado = false;
             var miniMapa = null;
             var heatLayer = null;
+            var baseUrl = '{{ route("api.dashboard.cecoco-mapa") }}';
+
+            // Inicializar Select2 del filtro de tipo
+            $(function() {
+                $('#cecoco-mapa-tipo').select2({
+                    placeholder: 'Todas las tipificaciones',
+                    allowClear: true,
+                    width: '100%',
+                    dropdownParent: $('#cecoco3')
+                });
+            });
+
+            function mostrarLoading(visible) {
+                var el = document.getElementById('cecoco-mapa-loading');
+                if (el) el.style.display = visible ? 'flex' : 'none';
+            }
+
+            function cargarPuntos(tipo) {
+                mostrarLoading(true);
+                var estado = document.getElementById('cecoco-mapa-estado');
+                if (estado) estado.textContent = 'Cargando...';
+
+                var url = baseUrl;
+                if (tipo) url += '?tipo=' + encodeURIComponent(tipo);
+
+                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function(r) { return r.json(); })
+                    .then(function(puntos) {
+                        mostrarLoading(false);
+
+                        // Limpiar capa anterior
+                        if (heatLayer) { miniMapa.removeLayer(heatLayer); heatLayer = null; }
+
+                        if (!puntos || puntos.length === 0) {
+                            if (estado) estado.textContent = tipo
+                                ? 'Sin datos geocodificados para "' + tipo + '"'
+                                : 'Sin datos geocodificados disponibles';
+                            return;
+                        }
+
+                        if (estado) estado.textContent = puntos.length + ' sector' + (puntos.length !== 1 ? 'es' : '') + ' con incidencias';
+
+                        var heatData = puntos.map(function(p) {
+                            return [parseFloat(p.latitud), parseFloat(p.longitud), Math.min(p.peso / 5, 1)];
+                        });
+
+                        heatLayer = L.heatLayer(heatData, {
+                            radius: 22,
+                            blur: 18,
+                            maxZoom: 17,
+                            gradient: { 0.2: '#3b82f6', 0.5: '#f59e0b', 0.8: '#ef4444', 1.0: '#7f1d1d' }
+                        }).addTo(miniMapa);
+
+                        var bounds = L.latLngBounds(puntos.map(function(p) {
+                            return [parseFloat(p.latitud), parseFloat(p.longitud)];
+                        }));
+                        if (bounds.isValid()) miniMapa.fitBounds(bounds, { padding: [30, 30] });
+                    })
+                    .catch(function(err) {
+                        mostrarLoading(false);
+                        var estado = document.getElementById('cecoco-mapa-estado');
+                        if (estado) estado.textContent = 'Error al cargar el mapa';
+                        console.error('cecoco-mapa:', err);
+                    });
+            }
 
             function iniciarMapa() {
                 if (mapaIniciado) return;
                 mapaIniciado = true;
 
                 miniMapa = L.map('cecoco-mini-mapa', {
-                    center: [-31.7333, -60.5333], // Paraná, Entre Ríos
+                    center: [-31.7333, -60.5333],
                     zoom: 13,
                     zoomControl: true,
                     scrollWheelZoom: false
@@ -3389,53 +3472,19 @@
                     maxZoom: 18
                 }).addTo(miniMapa);
 
-                // Cargar puntos
-                fetch('{{ route("api.dashboard.cecoco-mapa") }}', {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
-                .then(function(r) { return r.json(); })
-                .then(function(puntos) {
-                    var loading = document.getElementById('cecoco-mapa-loading');
-                    var estado  = document.getElementById('cecoco-mapa-estado');
-                    if (loading) loading.style.display = 'none';
-
-                    if (!puntos || puntos.length === 0) {
-                        if (estado) estado.textContent = 'Sin datos geocodificados disponibles';
-                        return;
-                    }
-
-                    if (estado) estado.textContent = puntos.length + ' sectores con incidencias';
-
-                    var heatData = puntos.map(function(p) {
-                        return [parseFloat(p.latitud), parseFloat(p.longitud), Math.min(p.peso / 5, 1)];
-                    });
-
-                    heatLayer = L.heatLayer(heatData, {
-                        radius: 22,
-                        blur: 18,
-                        maxZoom: 17,
-                        gradient: { 0.2: '#3b82f6', 0.5: '#f59e0b', 0.8: '#ef4444', 1.0: '#7f1d1d' }
-                    }).addTo(miniMapa);
-
-                    // Ajustar zoom a los puntos
-                    var bounds = L.latLngBounds(puntos.map(function(p) {
-                        return [parseFloat(p.latitud), parseFloat(p.longitud)];
-                    }));
-                    if (bounds.isValid()) miniMapa.fitBounds(bounds, { padding: [30, 30] });
-                })
-                .catch(function(err) {
-                    var loading = document.getElementById('cecoco-mapa-loading');
-                    var estado  = document.getElementById('cecoco-mapa-estado');
-                    if (loading) loading.style.display = 'none';
-                    if (estado) estado.textContent = 'Error al cargar el mapa';
-                    console.error('cecoco-mapa:', err);
-                });
+                cargarPuntos('');
             }
 
-            // Iniciar cuando se muestra el tab
+            // Botón Aplicar
+            $(document).on('click', '#cecoco-mapa-filtrar', function() {
+                if (!mapaIniciado) return;
+                var tipo = $('#cecoco-mapa-tipo').val() || '';
+                cargarPuntos(tipo);
+            });
+
+            // Iniciar al mostrar el tab
             $('#cecoco-tab3').on('shown.bs.tab', function() {
                 iniciarMapa();
-                // Leaflet necesita invalidar el tamaño al mostrarse
                 if (miniMapa) setTimeout(function() { miniMapa.invalidateSize(); }, 100);
             });
         })();

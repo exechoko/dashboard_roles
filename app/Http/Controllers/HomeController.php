@@ -387,14 +387,15 @@ class HomeController extends Controller
      * Datos para el mini mapa de calor del tab Cecoco en el dashboard.
      * Devuelve puntos geocodificados de la semana anterior (sin llamadas falsas / no responde).
      */
-    public function cecocoMapaDatos(): JsonResponse
+    public function cecocoMapaDatos(Request $request): JsonResponse
     {
         $inicio = Carbon::now()->startOfWeek(Carbon::MONDAY)->subWeek()->startOfDay();
         $fin    = $inicio->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay();
 
         $excluidos = "no responde|llamada falsa|llamadas falsas|no atiende|llamada erronea|llamada err";
+        $tipo      = $request->input('tipo');
 
-        $puntos = DB::table('evento_cecoco as e')
+        $query = DB::table('evento_cecoco as e')
             ->join('geocodificacion_directa as g', function ($join) {
                 $join->on(
                     DB::raw("UPPER(TRIM(SUBSTRING_INDEX(e.direccion, ' AL ', 1)))"),
@@ -405,7 +406,17 @@ class HomeController extends Controller
             ->whereBetween('e.fecha_hora', [$inicio, $fin])
             ->whereRaw("LOWER(COALESCE(e.tipo_servicio, '')) NOT REGEXP ?", [$excluidos])
             ->whereNotNull('g.latitud')
-            ->whereNotNull('g.longitud')
+            ->whereNotNull('g.longitud');
+
+        if ($tipo) {
+            if ($tipo === 'Dispositivo Dual') {
+                $query->whereRaw("e.tipo_servicio REGEXP '^[Dd]\\.?[[:space:]]*[Dd]\\.?$'");
+            } else {
+                $query->whereRaw("LOWER(e.tipo_servicio) LIKE ?", ['%' . strtolower($tipo) . '%']);
+            }
+        }
+
+        $puntos = $query
             ->select(DB::raw('g.latitud, g.longitud, COUNT(*) as peso'))
             ->groupBy('g.latitud', 'g.longitud')
             ->get();

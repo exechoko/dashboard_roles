@@ -136,6 +136,11 @@
                                 <a class="nav-link" id="camaras-tab3" data-toggle="tab" href="#camaras3" role="tab"
                                     aria-controls="contact" aria-selected="false">Cámaras</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="cecoco-tab3" data-toggle="tab" href="#cecoco3" role="tab"
+                                    aria-controls="cecoco" aria-selected="false">Cecoco
+                                </a>
+                            </li>
                         </ul>
                     @endcan()
                     <div class="card">
@@ -621,6 +626,92 @@
                                         </div>
 
                                     </div>
+                                    <!-- TAB Cecoco -->
+                                    <div class="tab-pane fade" id="cecoco3" role="tabpanel" aria-labelledby="cecoco-tab3">
+
+                                        <div class="d-flex align-items-center justify-content-between mb-3 mt-2 flex-wrap gap-2">
+                                            <h5 class="mb-0 fw-semibold"><i class="fas fa-phone-alt text-primary mr-2"></i>Centro de Coordinación de Comunicaciones</h5>
+                                            <span class="badge badge-light text-muted" style="font-size:.78rem">
+                                                <i class="fas fa-calendar-week mr-1"></i>{{ $cecoco_periodo_label }}
+                                            </span>
+                                        </div>
+
+                                        {{-- KPI Cards --}}
+                                        <div class="row g-3 mb-3">
+                                            <div class="col-6 col-md-4 col-xl-2">
+                                                <div class="card border-0 shadow-sm h-100" style="border-radius:10px">
+                                                    <div class="card-body text-center py-3">
+                                                        <div style="font-size:1.9rem;font-weight:700;color:#3b82f6">{{ number_format($cecoco_total_semana) }}</div>
+                                                        <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.04em">Llamadas totales</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 col-md-4 col-xl-2">
+                                                <div class="card border-0 shadow-sm h-100" style="border-radius:10px">
+                                                    <div class="card-body text-center py-3">
+                                                        <div style="font-size:1.9rem;font-weight:700;color:#f59e0b">{{ number_format($cecoco_hechos) }}</div>
+                                                        <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.04em">Hechos de relevancia</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 col-md-4 col-xl-2">
+                                                <div class="card border-0 shadow-sm h-100" style="border-radius:10px">
+                                                    <div class="card-body text-center py-3">
+                                                        <div style="font-size:1.9rem;font-weight:700;color:#ef4444">{{ number_format($cecoco_accidentes) }}</div>
+                                                        <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.04em">Acc. con lesionados</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 col-md-4 col-xl-2">
+                                                <div class="card border-0 shadow-sm h-100" style="border-radius:10px">
+                                                    <div class="card-body text-center py-3">
+                                                        <div style="font-size:1.9rem;font-weight:700;color:#dc2626">{{ number_format($cecoco_robos) }}</div>
+                                                        <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.04em">Robos</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 col-md-4 col-xl-2">
+                                                <div class="card border-0 shadow-sm h-100" style="border-radius:10px">
+                                                    <div class="card-body text-center py-3">
+                                                        <div style="font-size:1.9rem;font-weight:700;color:#f97316">{{ number_format($cecoco_hurtos) }}</div>
+                                                        <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.04em">Hurtos</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6 col-md-4 col-xl-2">
+                                                <div class="card border-0 shadow-sm h-100" style="border-radius:10px;background:linear-gradient(135deg,#1e293b,#334155)">
+                                                    <div class="card-body text-center py-3">
+                                                        <div style="font-size:1.4rem;font-weight:700;color:#f87171">{{ number_format($cecoco_abuso_armas) }}</div>
+                                                        <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8">Ab. Armas de fuego</div>
+                                                        <div class="mt-1 pt-1 border-top border-secondary">
+                                                            <span style="font-size:1.1rem;font-weight:700;color:#c084fc">{{ number_format($cecoco_homicidios) }}</span>
+                                                            <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8">Homicidios</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- Mini mapa de calor --}}
+                                        <div class="card shadow-sm mb-3" style="border-radius:10px;overflow:hidden">
+                                            <div class="card-header py-2 d-flex align-items-center justify-content-between" style="background:transparent">
+                                                <span class="fw-semibold" style="font-size:.9rem">
+                                                    <i class="fas fa-fire text-danger mr-1"></i>Mapa de calor — incidencias semana anterior
+                                                </span>
+                                                <span class="text-muted" style="font-size:.78rem" id="cecoco-mapa-estado">Cargando...</span>
+                                            </div>
+                                            <div class="card-body p-0" style="position:relative">
+                                                <div id="cecoco-mini-mapa" style="height:320px;width:100%"></div>
+                                                <div id="cecoco-mapa-loading" style="position:absolute;inset:0;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;z-index:500">
+                                                    <div class="text-center">
+                                                        <div class="spinner-border text-primary" role="status"></div>
+                                                        <div class="mt-2 small text-muted">Cargando puntos geocodificados...</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
                                     <!-- TAB Novedades -->
                                     <div class="tab-pane fade show active" id="novedades3" role="tabpanel"
                                         aria-labelledby="novedades-tab3">
@@ -810,7 +901,7 @@
                                                         <h4 class="mb-4">Informe de Personal - Sección Técnica</h4>
 
                                                         <div class="row">
-                                                            
+
                                                             {{-- 🔵 IZQUIERDA --}}
                                                             <div class="col-md-6">
 
@@ -923,7 +1014,7 @@
                                                             const div = document.getElementById("funcionarios-list");
                                                             div.innerHTML = "";
 
-                                                            
+
 
                                                             data.forEach(p => {
 
@@ -960,7 +1051,7 @@
                                                                 // agregar contenedor al bloque principal
                                                                 container.appendChild(btnContainer);
 
-                                                                
+
 
                                                                 horarios.forEach(h => {
 
@@ -988,7 +1079,7 @@
 
                                                                 div.appendChild(container);
                                                             });
-                                                        };  
+                                                        };
 
                                                         //EDITAR
                                                         window.editarFuncionario = function (p) {
@@ -3274,6 +3365,79 @@
 
             verificar();
             setInterval(verificar, 60000);
+        })();
+
+        // ── Mini mapa de calor Cecoco ───────────────────────────────────────
+        (function cecocoMapa() {
+            var mapaIniciado = false;
+            var miniMapa = null;
+            var heatLayer = null;
+
+            function iniciarMapa() {
+                if (mapaIniciado) return;
+                mapaIniciado = true;
+
+                miniMapa = L.map('cecoco-mini-mapa', {
+                    center: [-31.7333, -60.5333], // Paraná, Entre Ríos
+                    zoom: 13,
+                    zoomControl: true,
+                    scrollWheelZoom: false
+                });
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap',
+                    maxZoom: 18
+                }).addTo(miniMapa);
+
+                // Cargar puntos
+                fetch('{{ route("api.dashboard.cecoco-mapa") }}', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(puntos) {
+                    var loading = document.getElementById('cecoco-mapa-loading');
+                    var estado  = document.getElementById('cecoco-mapa-estado');
+                    if (loading) loading.style.display = 'none';
+
+                    if (!puntos || puntos.length === 0) {
+                        if (estado) estado.textContent = 'Sin datos geocodificados disponibles';
+                        return;
+                    }
+
+                    if (estado) estado.textContent = puntos.length + ' sectores con incidencias';
+
+                    var heatData = puntos.map(function(p) {
+                        return [parseFloat(p.latitud), parseFloat(p.longitud), Math.min(p.peso / 5, 1)];
+                    });
+
+                    heatLayer = L.heatLayer(heatData, {
+                        radius: 22,
+                        blur: 18,
+                        maxZoom: 17,
+                        gradient: { 0.2: '#3b82f6', 0.5: '#f59e0b', 0.8: '#ef4444', 1.0: '#7f1d1d' }
+                    }).addTo(miniMapa);
+
+                    // Ajustar zoom a los puntos
+                    var bounds = L.latLngBounds(puntos.map(function(p) {
+                        return [parseFloat(p.latitud), parseFloat(p.longitud)];
+                    }));
+                    if (bounds.isValid()) miniMapa.fitBounds(bounds, { padding: [30, 30] });
+                })
+                .catch(function(err) {
+                    var loading = document.getElementById('cecoco-mapa-loading');
+                    var estado  = document.getElementById('cecoco-mapa-estado');
+                    if (loading) loading.style.display = 'none';
+                    if (estado) estado.textContent = 'Error al cargar el mapa';
+                    console.error('cecoco-mapa:', err);
+                });
+            }
+
+            // Iniciar cuando se muestra el tab
+            $('#cecoco-tab3').on('shown.bs.tab', function() {
+                iniciarMapa();
+                // Leaflet necesita invalidar el tamaño al mostrarse
+                if (miniMapa) setTimeout(function() { miniMapa.invalidateSize(); }, 100);
+            });
         })();
     </script>
 @endsection

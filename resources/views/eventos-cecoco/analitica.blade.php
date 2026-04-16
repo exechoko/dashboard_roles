@@ -96,7 +96,7 @@
             </div>
             <div class="col-12 col-md-3">
                 <label class="form-label fw-semibold mb-1" style="font-size:.82rem">TIPIFICACIÓN (opcional)</label>
-                <select id="filtro-tipo" class="form-select form-select-sm">
+                <select id="filtro-tipo" class="form-select form-select-sm select2-tipificacion" style="width:100%">
                     <option value="">Todas las tipificaciones</option>
                     @foreach($tipos as $tipo)
                         @if($tipo)
@@ -213,12 +213,14 @@
         </div>
     </div>
 
-    {{-- Recomendaciones --}}
-    <div class="card mb-4" id="seccion-recomendaciones">
-        <div class="card-header fw-semibold">
-            <i class="bi bi-shield-exclamation me-2 text-danger"></i>Recomendaciones de patrullaje
+    {{-- Mayores incidencias en Paraná --}}
+    <div class="card mb-4" id="seccion-incidencias">
+        <div class="card-header fw-semibold d-flex align-items-center gap-2">
+            <i class="bi bi-geo-alt-fill text-danger"></i>
+            Sectores con mayor concentración de incidencias — Paraná
         </div>
-        <div class="card-body" id="lista-recomendaciones">
+        <div class="card-body p-0">
+            <div id="tabla-incidencias-container" class="px-3 py-2"></div>
         </div>
     </div>
 
@@ -228,6 +230,16 @@
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
+$(function () {
+    // Select2 para tipificación
+    $('#filtro-tipo').select2({
+        placeholder: 'Todas las tipificaciones',
+        allowClear: true,
+        width: '100%',
+        dropdownAutoWidth: true
+    });
+});
+
 document.addEventListener('DOMContentLoaded', function () {
 
     // ---- Detección de tema (igual que home) ----
@@ -416,47 +428,38 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ---- Recomendaciones ----
-    function generarRecomendaciones(datos) {
-        const { por_hora, por_dia, top_calles, top_tipos, total } = datos;
-        const recs = [];
+    // ---- Sectores con mayor incidencia en Paraná ----
+    function mostrarIncidencias(datos) {
+        const { top_calles, total } = datos;
+        const el = document.getElementById('tabla-incidencias-container');
 
-        const horaVals = Object.values(por_hora);
-        const maxHora  = Math.max(...horaVals);
-        const horasPico = Object.keys(por_hora).filter(h => por_hora[h] >= maxHora * 0.8);
-        if (horasPico.length > 0) {
-            const franjas = horasPico.map(h => `${String(h).padStart(2,'0')}:00`).join(', ');
-            const pct = total > 0 ? Math.round(horasPico.reduce((a, h) => a + por_hora[h], 0) / total * 100) : 0;
-            recs.push({ tipo: 'danger', icono: 'bi-clock-fill',
-                texto: `<strong>Reforzar patrullaje en la franja ${franjas}.</strong> Concentra el ${pct}% de los eventos del período.` });
+        if (!top_calles || top_calles.length === 0) {
+            el.innerHTML = '<p class="text-muted py-2 mb-0">Sin datos suficientes para el período seleccionado.</p>';
+            return;
         }
 
-        const diaVals = Object.values(por_dia);
-        const maxDia  = Math.max(...diaVals);
-        const diasPico = Object.keys(por_dia).filter(d => por_dia[d] >= maxDia * 0.85);
-        if (diasPico.length > 0 && maxDia > 0) {
-            recs.push({ tipo: 'warning', icono: 'bi-calendar-day',
-                texto: `<strong>Mayor concentración los días ${diasPico.join(', ')}.</strong> Considerar guardia reforzada esos días.` });
-        }
+        const maxVal = top_calles[0].total;
+        const rows = top_calles.slice(0, 10).map((c, i) => {
+            const pct = total > 0 ? Math.round(c.total / total * 100) : 0;
+            const barPct = maxVal > 0 ? Math.round(c.total / maxVal * 100) : 0;
+            const badge = i === 0 ? 'bg-danger' : i === 1 ? 'bg-warning text-dark' : i === 2 ? 'bg-orange' : 'bg-secondary';
+            return `
+            <div class="d-flex align-items-center py-2 border-bottom gap-3">
+                <span class="badge ${badge} rounded-pill" style="min-width:24px;font-size:.75rem">${i + 1}</span>
+                <div class="flex-grow-1" style="min-width:0">
+                    <div class="fw-semibold text-truncate" style="font-size:.9rem">${c.calle || '(sin dirección)'}</div>
+                    <div class="progress mt-1" style="height:5px;border-radius:3px">
+                        <div class="progress-bar bg-danger" style="width:${barPct}%"></div>
+                    </div>
+                </div>
+                <div class="text-end" style="min-width:80px">
+                    <span class="fw-bold">${c.total.toLocaleString('es-AR')}</span>
+                    <span class="text-muted ms-1" style="font-size:.8rem">(${pct}%)</span>
+                </div>
+            </div>`;
+        }).join('');
 
-        if (top_calles && top_calles.length >= 3) {
-            const calles = top_calles.slice(0, 3).map(c => `<em>${c.calle}</em> (${c.total})`).join(', ');
-            recs.push({ tipo: 'danger', icono: 'bi-geo-alt-fill',
-                texto: `<strong>Sectores con mayor densidad:</strong> ${calles}. Priorizar patrullas en estas zonas.` });
-        }
-
-        if (top_tipos && top_tipos.length > 0) {
-            const top = top_tipos[0];
-            const pct = total > 0 ? Math.round(top.total / total * 100) : 0;
-            recs.push({ tipo: 'warning', icono: 'bi-tag-fill',
-                texto: `<strong>Tipificación más frecuente: "${top.tipo}"</strong> — ${top.total} eventos (${pct}% del total).` });
-        }
-
-        const el = document.getElementById('lista-recomendaciones');
-        el.innerHTML = recs.length === 0
-            ? '<p class="text-muted mb-0">Sin datos suficientes.</p>'
-            : recs.map(r => `<div class="alerta-refuerzo ${r.tipo === 'warning' ? 'warning' : ''} mb-2">
-                <i class="bi ${r.icono} me-2"></i>${r.texto}</div>`).join('');
+        el.innerHTML = rows;
     }
 
     // ---- Carga de datos ----
@@ -487,7 +490,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     datos.promedio_diario != null ? datos.promedio_diario.toLocaleString('es-AR') : '-';
 
                 renderCharts(datos);
-                generarRecomendaciones(datos);
+                mostrarIncidencias(datos);
 
                 document.getElementById('loading-analitica').style.display = 'none';
                 document.getElementById('contenido-analitica').style.display = 'block';

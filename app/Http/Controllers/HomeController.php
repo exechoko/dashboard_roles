@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sitio;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 use App\Models\Camara;
 use App\Models\Equipo;
 use App\Models\Estado;
+use App\Models\EventoCecoco;
 use App\Models\FlotaGeneral;
 use App\Models\Destino;
 use App\Models\Recurso;
@@ -298,6 +300,45 @@ class HomeController extends Controller
             ->take(10)
             ->values();
 
+        // ── Cecoco: estadísticas de la semana anterior (lunes→domingo) ──────────
+        $cecocoInicioSemana = Carbon::now()->startOfWeek(Carbon::MONDAY)->subWeek()->startOfDay();
+        $cecocoFinSemana    = $cecocoInicioSemana->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+
+        // Tipificaciones a excluir del dashboard
+        $cecocoExcluidos = "no responde|llamada falsa|llamadas falsas|no atiende|llamada erronea|llamada err";
+
+        $cecocoBase = EventoCecoco::whereBetween('fecha_hora', [$cecocoInicioSemana, $cecocoFinSemana])
+            ->whereRaw("LOWER(COALESCE(tipo_servicio, '')) NOT REGEXP ?", [$cecocoExcluidos]);
+
+        $cecoco_total_semana   = (clone $cecocoBase)->count();
+
+        $cecoco_accidentes     = (clone $cecocoBase)
+            ->whereRaw("LOWER(tipo_servicio) REGEXP 'accidente.*(lesion|herido|lesionad)'")
+            ->count();
+
+        $cecoco_robos          = (clone $cecocoBase)
+            ->whereRaw("LOWER(tipo_servicio) LIKE '%robo%'")
+            ->count();
+
+        $cecoco_hurtos         = (clone $cecocoBase)
+            ->whereRaw("LOWER(tipo_servicio) LIKE '%hurto%'")
+            ->count();
+
+        $cecoco_abuso_armas    = (clone $cecocoBase)
+            ->whereRaw("LOWER(tipo_servicio) REGEXP 'abuso.*(arma|fuego)|arma de fuego'")
+            ->count();
+
+        $cecoco_homicidios     = (clone $cecocoBase)
+            ->whereRaw("LOWER(tipo_servicio) LIKE '%homicidio%'")
+            ->count();
+
+        $cecoco_hechos         = $cecoco_accidentes + $cecoco_robos + $cecoco_hurtos
+                                 + $cecoco_abuso_armas + $cecoco_homicidios;
+
+        $cecoco_periodo_label  = $cecocoInicioSemana->locale('es')->isoFormat('D [de] MMMM')
+                                 . ' al '
+                                 . $cecocoFinSemana->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
+
         return view('home', compact(
             'cant_usuarios',
             'cant_roles',
@@ -330,7 +371,45 @@ class HomeController extends Controller
             'entregas_bodycams_activas',
             'camaras_por_tipo',
             'equipos_por_departamental',
-            'equipos_por_division'
+            'equipos_por_division',
+            'cecoco_total_semana',
+            'cecoco_hechos',
+            'cecoco_accidentes',
+            'cecoco_robos',
+            'cecoco_hurtos',
+            'cecoco_abuso_armas',
+            'cecoco_homicidios',
+            'cecoco_periodo_label'
         ));
+    }
+
+    /**
+     * Datos para el mini mapa de calor del tab Cecoco en el dashboard.
+     * Devuelve puntos geocodificados de la semana anterior (sin llamadas falsas / no responde).
+     */
+    public function cecocoMapaDatos(): JsonResponse
+    {
+        $inicio = Carbon::now()->startOfWeek(Carbon::MONDAY)->subWeek()->startOfDay();
+        $fin    = $inicio->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+
+        $excluidos = "no responde|llamada falsa|llamadas falsas|no atiende|llamada erronea|llamada err";
+
+        $puntos = DB::table('evento_cecoco as e')
+            ->join('geocodificacion_directa as g', function ($join) {
+                $join->on(
+                    DB::raw("UPPER(TRIM(SUBSTRING_INDEX(e.direccion, ' AL ', 1)))"),
+                    '=',
+                    'g.direccion_original'
+                );
+            })
+            ->whereBetween('e.fecha_hora', [$inicio, $fin])
+            ->whereRaw("LOWER(COALESCE(e.tipo_servicio, '')) NOT REGEXP ?", [$excluidos])
+            ->whereNotNull('g.latitud')
+            ->whereNotNull('g.longitud')
+            ->select(DB::raw('g.latitud, g.longitud, COUNT(*) as peso'))
+            ->groupBy('g.latitud', 'g.longitud')
+            ->get();
+
+        return response()->json($puntos);
     }
 }

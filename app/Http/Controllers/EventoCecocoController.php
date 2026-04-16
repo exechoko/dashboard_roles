@@ -681,11 +681,27 @@ class EventoCecocoController extends Controller
         }
     }
 
+    /**
+     * Normaliza variantes de "D.D." / "dd" / "D.d" a "Dispositivo Dual".
+     */
+    private static function normalizarTipo(?string $tipo): string
+    {
+        if (!$tipo) return '(sin tipo)';
+        // Coincide con: "D.D.", "dd", "D.d", "D.D", "d.d." etc.
+        if (preg_match('/^[Dd]\.?\s*[Dd]\.?$/u', trim($tipo))) {
+            return 'Dispositivo Dual';
+        }
+        return trim($tipo);
+    }
+
     public function analitica(Request $request)
     {
         $tipos = Cache::rememberForever('cecoco_tipos', function () {
             return EventoCecoco::distinct()->orderBy('tipo_servicio')->pluck('tipo_servicio');
         });
+
+        // Normalizar y deduplicar para el filtro
+        $tipos = $tipos->filter()->map(fn($t) => self::normalizarTipo($t))->unique()->sort()->values();
 
         return view('eventos-cecoco.analitica', compact('tipos'));
     }
@@ -705,7 +721,12 @@ class EventoCecocoController extends Controller
         $base = EventoCecoco::whereBetween('fecha_hora', [$desde, $hasta]);
 
         if ($tipo) {
-            $base->where('tipo_servicio', 'like', '%' . $tipo . '%');
+            if ($tipo === 'Dispositivo Dual') {
+                // Busca todas las variantes: D.D., dd, D.d, D.D, d.d. etc.
+                $base->whereRaw("tipo_servicio REGEXP '^[Dd]\\.?[[:space:]]*[Dd]\\.?$'");
+            } else {
+                $base->where('tipo_servicio', 'like', '%' . $tipo . '%');
+            }
         }
 
         // Total
@@ -756,15 +777,18 @@ class EventoCecocoController extends Controller
             $porDia[$diasNombres[$idx]] = $porDiaRaw->has($mysqlDia) ? (int) $porDiaRaw[$mysqlDia]->total : 0;
         }
 
-        // Top tipificaciones
+        // Top tipificaciones (con normalización de D.D. → Dispositivo Dual)
         $topTipos = (clone $base)
             ->select('tipo_servicio', DB::raw('COUNT(*) as total'))
             ->whereNotNull('tipo_servicio')
             ->groupBy('tipo_servicio')
             ->orderByDesc('total')
-            ->limit(15)
             ->get()
-            ->map(fn($r) => ['tipo' => $r->tipo_servicio, 'total' => (int) $r->total]);
+            ->groupBy(fn($r) => self::normalizarTipo($r->tipo_servicio))
+            ->map(fn($group, $tipo) => ['tipo' => $tipo, 'total' => (int) $group->sum('total')])
+            ->sortByDesc('total')
+            ->values()
+            ->take(15);
 
         // Top calles (primer segmento de la dirección)
         $topCalles = (clone $base)

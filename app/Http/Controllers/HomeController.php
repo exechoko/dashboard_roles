@@ -232,7 +232,8 @@ class HomeController extends Controller
             ->with('tipoCamara')
             ->get()
             ->groupBy(function($camara) {
-                return $camara->tipoCamara->tipo ?? 'Sin tipo';
+                $tipo = $camara->tipoCamara->tipo ?? 'Sin tipo';
+                return stripos($tipo, 'LPR') !== false ? 'LPR' : $tipo;
             })
             ->map(fn($group, $tipo) => [
                 'tipo' => $tipo,

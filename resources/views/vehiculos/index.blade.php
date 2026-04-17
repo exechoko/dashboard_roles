@@ -3,90 +3,131 @@
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h3 class="page__heading">Equipamientos - Vehiculos</h3>
+            <h3 class="page__heading">Equipamientos - Vehículos</h3>
         </div>
         <div class="section-body">
             <div class="row">
                 <div class="col-lg-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                @can('crear-vehiculo')
-                                    <a class="btn btn-success" href="{{ route('vehiculos.create') }}">Nuevo</a>
-                                @endcan
-                                <label class="alert alert-dark mb-0" style="float: right;">Registros:
-                                    {{ $vehiculos->total() }}</label>
+                    <div class="card shadow-sm border-0">
+
+                        <div class="card-header-modern">
+                            <div class="card-header-left">
+                                <div class="header-icon"><i class="fas fa-truck"></i></div>
+                                <div>
+                                    <h5 class="header-title">Vehículos</h5>
+                                    <small class="text-muted">
+                                        <span class="badge-total">{{ $vehiculos->total() }}</span> registros
+                                        @if($texto) &mdash; buscando <strong>"{{ $texto }}"</strong> @endif
+                                    </small>
+                                </div>
                             </div>
+                            @can('crear-vehiculo')
+                                <a class="btn btn-nuevo" href="{{ route('vehiculos.create') }}">
+                                    <i class="fas fa-plus mr-1"></i> Nuevo
+                                </a>
+                            @endcan
+                        </div>
 
-
-
-                            <form action="{{ route('vehiculos.index') }}" method="get" onsubmit="return showLoad()">
-                                <div class="input-group mt-4">
-                                    <input type="text" name="texto" class="form-control" placeholder="Ingrese Marca, Modelo o Dominio que desea buscar" value="{{ $texto }}">
-                                    <div class="input-group-append">
-                                        <button type="submit" class="btn btn-info">Buscar</button>
-                                    </div>
+                        <div class="card-body pt-3">
+                            <form action="{{ route('vehiculos.index') }}" method="get" onsubmit="return showLoad()" class="mb-4">
+                                <div class="search-wrapper">
+                                    <div class="search-icon-left"><i class="fas fa-search"></i></div>
+                                    <input type="text" name="texto" class="search-input"
+                                        placeholder="Buscar por marca, modelo o dominio..." value="{{ $texto }}" autocomplete="off">
+                                    @if($texto)
+                                        <a href="{{ route('vehiculos.index') }}" class="search-clear"><i class="fas fa-times"></i></a>
+                                    @endif
+                                    <button type="submit" class="btn-search"><i class="fas fa-search mr-1"></i> Buscar</button>
                                 </div>
                             </form>
 
+                            @foreach ($vehiculos as $vehiculo)
+                                @include('vehiculos.modal.detalle')
+                                @include('vehiculos.modal.borrar')
+                            @endforeach
+
                             <div class="table-responsive">
-                                <table id="dataTable" class="table table-striped mt-2">
-                                    <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
-                                        <th style="display: none;">ID</th>
-                                        <th class="col-1" style="color:#fff;">Marca</th>
-                                        <th class="col-2" style="color:#fff;">Modelo</th>
-                                        <th class="col-3" style="color:#fff;">Dominio</th>
-                                        <th class="col-3" style="color:#fff;">Observaciones</th>
-                                        <th class="col-4" style="color:#fff;">Acciones</th>
+                                <table class="table table-modern">
+                                    <thead>
+                                        <tr>
+                                            <th>Tipo</th>
+                                            <th>Marca</th>
+                                            <th>Modelo</th>
+                                            <th>Dominio</th>
+                                            <th>Observaciones</th>
+                                            <th class="text-center" style="width:120px;">Acciones</th>
+                                        </tr>
                                     </thead>
                                     <tbody>
-                                        @if (count($vehiculos) <= 0)
+                                        @php
+                                            $iconosVeh = ['Auto'=>'fas fa-car','Camioneta'=>'fas fa-truck-pickup','Camión'=>'fas fa-truck','Moto'=>'fas fa-motorcycle','Helicoptero'=>'fas fa-helicopter'];
+                                            $clsVeh    = ['Auto'=>'recurso-auto','Camioneta'=>'recurso-camioneta','Camión'=>'recurso-camion','Moto'=>'recurso-moto','Helicoptero'=>'recurso-helicoptero'];
+                                        @endphp
+                                        @forelse ($vehiculos as $vehiculo)
+                                            @php
+                                                $iconoV = $iconosVeh[$vehiculo->tipo_vehiculo ?? ''] ?? 'fas fa-car';
+                                                $claseV = $clsVeh[$vehiculo->tipo_vehiculo ?? '']   ?? 'recurso-sin-vehiculo';
+                                            @endphp
                                             <tr>
-                                                <td colspan="8">No se encontraron resultados</td>
-                                            </tr>
-                                        @else
-                                        @foreach ($vehiculos as $vehiculo)
-                                            @include('vehiculos.modal.detalle')
-                                            @include('vehiculos.modal.borrar')
-                                            {{-- @include('equipos.modal.editar') --}}
-                                            <tr>
-                                                <td style="display: none;">{{ $vehiculo->id }}</td>
-                                                <td>{{ $vehiculo->marca }}</td>
-                                                <td>{{ $vehiculo->modelo }}</td>
-                                                <td>{{ $vehiculo->dominio }}</td>
-                                                <td>{{ $vehiculo->observaciones }}</td>
                                                 <td>
-                                                    <form action="{{ route('vehiculos.destroy', $vehiculo->id) }}"
-                                                        method="POST">
-
-                                                        {{--<a class="btn btn-success" href="#" data-toggle="modal"
-                                                            data-target="#ModalEditar{{ $equipo->id }}">Editar</a>--}}
-
-                                                        <a class="btn btn-warning" href="#" data-toggle="modal"
-                                                            data-target="#ModalDetalle{{ $vehiculo->id }}"><i class="fas fa-eye"></i></a>
-
-                                                        @can('editar-vehiculo')
-                                                            <a class="btn btn-info"
-                                                                href="{{ route('vehiculos.edit', $vehiculo->id) }}"><i class="fas fa-edit"></i></a>
-                                                        @endcan
-
-                                                        @can('borrar-vehiculo')
-                                                            <a class="btn btn-danger" href="#" data-toggle="modal"
-                                                                data-target="#ModalDelete{{ $vehiculo->id }}"><i
-                                                                class="far fa-trash-alt"></i></a>
-                                                        @endcan
-                                                    </form>
+                                                    <span class="badge-recurso {{ $claseV }}">
+                                                        <i class="{{ $iconoV }} mr-1"></i>{{ $vehiculo->tipo_vehiculo ?? '—' }}
+                                                    </span>
+                                                </td>
+                                                <td><span class="font-weight-500">{{ $vehiculo->marca }}</span></td>
+                                                <td><small class="text-muted">{{ $vehiculo->modelo }}</small></td>
+                                                <td>
+                                                    <span class="tei-badge">
+                                                        <i class="fas fa-id-card mr-1"></i>{{ $vehiculo->dominio }}
+                                                    </span>
+                                                </td>
+                                                <td class="obs-cell">
+                                                    @if($vehiculo->observaciones)
+                                                        <span class="obs-text" data-toggle="tooltip" data-placement="left"
+                                                              data-container="body" title="{{ $vehiculo->observaciones }}">
+                                                            {{ Str::limit($vehiculo->observaciones, 35, '…') }}
+                                                        </span>
+                                                    @else
+                                                        <span class="text-muted">—</span>
+                                                    @endif
+                                                </td>
+                                                <td class="text-center action-td">
+                                                    <a class="action-btn btn-view" data-toggle="modal"
+                                                        data-target="#ModalDetalle{{ $vehiculo->id }}">
+                                                        <i class="far fa-eye"></i>
+                                                    </a>
+                                                    @can('editar-vehiculo')
+                                                        <a class="action-btn btn-edit" href="{{ route('vehiculos.edit', $vehiculo->id) }}">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                    @endcan
+                                                    @can('borrar-vehiculo')
+                                                        <a class="action-btn btn-del" data-toggle="modal"
+                                                            data-target="#ModalDelete{{ $vehiculo->id }}">
+                                                            <i class="far fa-trash-alt"></i>
+                                                        </a>
+                                                    @endcan
                                                 </td>
                                             </tr>
-                                        @endforeach
-                                        @endif
+                                        @empty
+                                            <tr>
+                                                <td colspan="6" class="text-center py-5">
+                                                    <i class="fas fa-search fa-2x text-muted mb-2 d-block"></i>
+                                                    <span class="text-muted">No se encontraron resultados</span>
+                                                </td>
+                                            </tr>
+                                        @endforelse
                                     </tbody>
                                 </table>
                             </div>
 
-                            <!-- Ubicamos la paginacion a la derecha -->
-                            <div class="pagination justify-content-end">
-                                {!! $vehiculos->links() !!}
+                            <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap">
+                                <small class="text-muted">
+                                    Mostrando {{ $vehiculos->firstItem() ?? 0 }}–{{ $vehiculos->lastItem() ?? 0 }} de {{ $vehiculos->total() }}
+                                </small>
+                                <div class="pagination justify-content-end mb-0">
+                                    {!! $vehiculos->appends(['texto' => $texto])->links() !!}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -94,20 +135,12 @@
             </div>
         </div>
     </section>
-    <script>
-        $(document).ready(function() {
-            $('#dataTable').DataTable({
-                /*"columnDefs": [
-                    { "width": "10%", "targets": 0 }, // aquí puedes cambiar los valores de ancho y los objetivos de las columnas
-                    { "width": "10%", "targets": 1 },
-                    { "width": "10%", "targets": 2 },
-                    { "width": "10%", "targets": 2 }
-                ],*/
-                "paging": false,
-                "searching": false,
-                "info": false,
-                "order": [[0, "asc"]] // aquí puedes especificar las columnas y el tipo de ordenamiento
-            });
-        });
-    </script>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    $('[data-toggle="tooltip"]').tooltip({ trigger: 'hover', delay: { show: 300, hide: 100 } });
+});
+</script>
+@endpush

@@ -442,4 +442,28 @@
             font-size: 0.75rem !important;
         }
     }
+
+    /* ─── Shared table/card components (dark overrides) ─── */
+    [data-theme="dark"] .action-btn.btn-view {
+        background: rgba(255, 193, 7, 0.15) !important;
+        color: #ffc107 !important; border-color: #ffc107 !important;
+    }
+    [data-theme="dark"] .action-btn.btn-edit {
+        background: rgba(40, 180, 99, 0.15) !important;
+        color: #2ecc71 !important; border-color: #2ecc71 !important;
+    }
+    [data-theme="dark"] .action-btn.btn-del {
+        background: rgba(231, 76, 60, 0.15) !important;
+        color: #e74c3c !important; border-color: #e74c3c !important;
+    }
+    [data-theme="dark"] .search-input::placeholder {
+        color: var(--text-secondary) !important; opacity: 1;
+    }
+    [data-theme="dark"] .tei-badge { background: #4a5568 !important; }
+    [data-theme="dark"] .tei-badge:hover { background: #2d3748 !important; }
+    [data-theme="dark"] .table-modern tbody tr:hover { background: var(--bg-secondary) !important; }
+    [data-theme="dark"] .table-modern tbody td { color: var(--text-primary) !important; }
+    [data-theme="dark"] .recurso-veh-detalle { color: var(--text-primary) !important; }
+    [data-theme="dark"] .dep-nombre { color: var(--text-primary) !important; }
+    [data-theme="dark"] .header-title { color: var(--text-primary) !important; }
 </style>

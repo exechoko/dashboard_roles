@@ -187,170 +187,107 @@
                                 @empty
                                 @endforelse
 
-                                <!-- ✅✅ MOBILE → CARDS -->
-                                <div class="mobile-cards">
-                                    @forelse ($flota as $f)
-                                        <div class="flota-card">
-                                            <div class="flota-card-header">
-                                                <div class="flota-card-tei">
-                                                    <a href="{{ route('verHistorico', $f->id) }}" target="_blank">
-                                                        TEI: {{ $f->equipo->tei }}
-                                                    </a>
-                                                </div>
-                                                <img width="50" class="img-thumbnail"
-                                                    src="{{ asset($f->equipo->tipo_terminal->imagen) }}">
-                                            </div>
-
-                                            <div class="flota-card-body">
-                                                <div class="flota-card-item">
-                                                    <span class="flota-card-label">Tipo/Modelo:</span>
-                                                    <span class="flota-card-value">
-                                                        {{ $f->equipo->tipo_terminal->tipo_uso->uso }}/{{ $f->equipo->tipo_terminal->modelo }}
-                                                    </span>
-                                                </div>
-
-                                                <div class="flota-card-item">
-                                                    <span class="flota-card-label">Fecha:</span>
-                                                    <span class="flota-card-value">{{ $f->fecha_ultimo_mov ?? '-' }}</span>
-                                                </div>
-
-                                                <div class="flota-card-item">
-                                                    <span class="flota-card-label">Último mov.:</span>
-                                                    <span class="flota-card-value">{{ $f->ultimo_movimiento ?? '-' }}</span>
-                                                </div>
-
-                                                <div class="flota-card-item">
-                                                    <span class="flota-card-label">Recurso:</span>
-                                                    <span class="flota-card-value">{{ $f->recurso->nombre ?? '-' }}</span>
-                                                </div>
-
-                                                <div class="flota-card-item">
-                                                    <span class="flota-card-label">Dependencia:</span>
-                                                    <span class="flota-card-value">
-                                                        @php
-                                                            $destino = $f->destino instanceof \Illuminate\Database\Eloquent\Collection
-                                                                ? $f->destino->first()
-                                                                : $f->destino;
-                                                        @endphp
-                                                        {{ $destino->nombre ?? '-' }}<br>
-                                                        <small>{{ $destino->dependeDe() ?? '-' }}</small>
-                                                    </span>
-                                                </div>
-
-                                                <div class="flota-card-item">
-                                                    <span class="flota-card-label">Observaciones:</span>
-                                                    <span class="flota-card-value">
-                                                        {{ Str::limit($f->observaciones_ultimo_mov, 50, '...') }}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <div class="flota-card-actions">
-                                                <a class="btn btn-warning btn-sm" data-toggle="modal"
-                                                    data-target="#ModalDetalle{{ $f->id }}">
-                                                    <i class="far fa-eye"></i> Ver
-                                                </a>
-
-                                                @can('editar-flota')
-                                                    <a class="btn btn-success btn-sm" href="{{ route('flota.edit', $f->id) }}">
-                                                        <i class="fas fa-plus"></i> Editar
-                                                    </a>
-                                                @endcan
-
-                                                @can('borrar-flota')
-                                                    <a class="btn btn-danger btn-sm" data-toggle="modal"
-                                                        data-target="#ModalDelete{{ $f->id }}">
-                                                        <i class="far fa-trash-alt"></i>
-                                                    </a>
-                                                @endcan
-                                            </div>
-                                        </div>
-
-                                    @empty
-                                        <div class="alert alert-info text-center">
-                                            <i class="fas fa-exclamation-circle fa-2x mb-3" style="color: #6777ef;"></i>
-                                            <h5>No se encontraron resultados</h5>
-                                            <p class="text-muted">Intenta ajustar tus filtros de búsqueda</p>
-                                        </div>
-                                    @endforelse
-                                </div>
-
-                                <!-- ✅✅ DESKTOP → TABLA -->
-                                <div class="desktop-table table-responsive">
-                                    <table id="dataTable" class="table table-hover mt-2 display">
-                                        <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
-                                            <th style="display: none;">ID</th>
-                                            <th style="color:#fff;">TEI</th>
-                                            <th style="color:#fff;">Tipo/Modelo</th>
-                                            <th style="color:#fff;">Fecha</th>
-                                            <th style="color:#fff;">Último mov.</th>
-                                            <th style="color:#fff;">Recurso asignado</th>
-                                            <th style="color:#fff;">Dependencia</th>
-                                            <th style="color:#fff;">Obs.</th>
-                                            <th style="color: #fff; width: 130px;">Acciones</th>
+                                        <!-- TABLA RESULTADOS -->
+                                <div class="table-responsive">
+                                    <table class="table table-modern">
+                                        <thead>
+                                            <tr>
+                                                <th>TEI</th>
+                                                <th>Tipo / Modelo</th>
+                                                <th>Fecha últ. mov.</th>
+                                                <th>Movimiento</th>
+                                                <th style="min-width:170px;"><i class="fas fa-car mr-1"></i>Recurso</th>
+                                                <th>Dependencia</th>
+                                                <th>Obs.</th>
+                                                <th class="text-center" style="width:120px;">Acciones</th>
+                                            </tr>
                                         </thead>
                                         <tbody>
-                                            @if (count($flota) <= 0)
+                                            @forelse ($flota as $f)
+                                                @php
+                                                    $iconosV = ['Auto'=>'fas fa-car','Camioneta'=>'fas fa-truck-pickup','Camión'=>'fas fa-truck','Moto'=>'fas fa-motorcycle','Helicoptero'=>'fas fa-helicopter'];
+                                                    $clsV    = ['Auto'=>'recurso-auto','Camioneta'=>'recurso-camioneta','Camión'=>'recurso-camion','Moto'=>'recurso-moto','Helicoptero'=>'recurso-helicoptero'];
+                                                    $vehBA   = $f->recurso->vehiculo ?? null;
+                                                    $iconoBA = $iconosV[$vehBA->tipo_vehiculo ?? ''] ?? 'fas fa-home';
+                                                    $claseBA = $clsV[$vehBA->tipo_vehiculo ?? '']   ?? 'recurso-sin-vehiculo';
+                                                    $destinoBA = $f->destino instanceof \Illuminate\Database\Eloquent\Collection ? $f->destino->first() : $f->destino;
+                                                @endphp
                                                 <tr>
-                                                    <td colspan="9" class="text-center py-4">
-                                                        <i class="fas fa-exclamation-circle fa-2x mb-3" style="color: #6777ef;"></i>
-                                                        <h5>No se encontraron resultados</h5>
-                                                        <p class="text-muted">Intenta ajustar tus filtros de búsqueda</p>
+                                                    <td>
+                                                        <a class="tei-badge" href="{{ route('verHistorico', $f->id) }}" target="_blank">
+                                                            {{ $f->equipo->tei }}
+                                                        </a>
+                                                    </td>
+                                                    <td>
+                                                        <div class="modelo-cell">
+                                                            <img width="46" class="modelo-img" src="{{ asset($f->equipo->tipo_terminal->imagen) }}" alt="">
+                                                            <span class="modelo-text">
+                                                                {{ $f->equipo->tipo_terminal->tipo_uso->uso }}<br>
+                                                                <small>{{ $f->equipo->tipo_terminal->modelo }}</small>
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-nowrap"><small>{{ $f->fecha_ultimo_mov ?? '—' }}</small></td>
+                                                    <td>
+                                                        <span class="badge" style="background-color:{{ $f->color_ultimo_movimiento }};color:#fff;border-radius:20px;padding:.25em .75em;font-size:.8rem;font-weight:500;">
+                                                            {{ $f->ultimo_movimiento ?? '—' }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        @if($f->recurso)
+                                                            <div class="recurso-cell">
+                                                                <span class="badge-recurso {{ $claseBA }}">
+                                                                    <i class="{{ $iconoBA }} mr-1"></i>{{ $f->recurso->nombre }}
+                                                                </span>
+                                                                @if($vehBA)
+                                                                    <div class="recurso-veh-info">
+                                                                        <span class="recurso-veh-detalle">{{ $vehBA->marca }} {{ $vehBA->modelo }}</span>
+                                                                        <span class="recurso-veh-dominio"><i class="fas fa-id-card mr-1"></i>{{ $vehBA->dominio }}</span>
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                        @else
+                                                            <span class="text-muted">—</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="dep-cell">
+                                                        <span class="dep-nombre">{{ $destinoBA->nombre ?? '—' }}</span>
+                                                        <span class="dep-padre">{{ $destinoBA->dependeDe() ?? '' }}</span>
+                                                    </td>
+                                                    <td class="obs-cell">
+                                                        @if($f->observaciones_ultimo_mov)
+                                                            <span class="obs-text" data-toggle="tooltip" data-placement="left" data-container="body"
+                                                                  title="{{ $f->observaciones_ultimo_mov }}">
+                                                                {{ Str::limit($f->observaciones_ultimo_mov, 35, '…') }}
+                                                            </span>
+                                                        @else
+                                                            <span class="text-muted">—</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-center action-td">
+                                                        <a class="action-btn btn-view" data-toggle="modal" data-target="#ModalDetalle{{ $f->id }}">
+                                                            <i class="far fa-eye"></i>
+                                                        </a>
+                                                        @can('editar-flota')
+                                                            <a class="action-btn btn-edit" href="{{ route('flota.edit', $f->id) }}">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                        @endcan
+                                                        @can('borrar-flota')
+                                                            <a class="action-btn btn-del" data-toggle="modal" data-target="#ModalDelete{{ $f->id }}">
+                                                                <i class="far fa-trash-alt"></i>
+                                                            </a>
+                                                        @endcan
                                                     </td>
                                                 </tr>
-                                            @else
-                                                @foreach ($flota as $f)
-                                                    <tr>
-                                                        <td style="display: none;">{{ $f->id }}</td>
-                                                        <td>
-                                                            <a class="btn btn-dark" href="{{ route('verHistorico', $f->id) }}"
-                                                            target="_blank">{{ $f->equipo->tei }}</a>
-                                                        </td>
-                                                        <td>
-                                                            <div class="d-flex flex-column align-items-center">
-                                                                <img alt="" width="60px" src="{{ asset($f->equipo->tipo_terminal->imagen) }}" class="img-fluid img-thumbnail">
-                                                                <span style="font-size: 12px;">
-                                                                    {{ $f->equipo->tipo_terminal->tipo_uso->uso . '/' . $f->equipo->tipo_terminal->modelo }}
-                                                                </span>
-                                                            </div>
-                                                        </td>
-                                                        <td>{{ $f->fecha_ultimo_mov ?? '-' }}</td>
-                                                        <td>{{ $f->ultimo_movimiento ?? '-' }}</td>
-                                                        <td>{{ $f->recurso->nombre ?? '-' }}</td>
-                                                        <td>
-                                                            @php
-                                                                $destino = $f->destino instanceof \Illuminate\Database\Eloquent\Collection
-                                                                    ? $f->destino->first()
-                                                                    : $f->destino;
-                                                            @endphp
-                                                            {{ $destino->nombre ?? '-' }}<br>
-                                                            {{ $destino->dependeDe() ?? '-' }}
-                                                        </td>
-                                                        <td class="obs-cell">
-                                                            <span class="obs-text" data-tooltip="{{ $f->observaciones_ultimo_mov }}">
-                                                                {{ Str::limit($f->observaciones_ultimo_mov, 40, '...') }}
-                                                            </span>
-                                                        </td>
-                                                        <td class="action-buttons">
-                                                            <div class="d-flex justify-content-center">
-                                                                <a class="btn btn-warning btn-sm mx-1" href="#" data-toggle="modal" data-target="#ModalDetalle{{ $f->id }}">
-                                                                    <i class="far fa-eye"></i>
-                                                                </a>
-                                                                @can('editar-flota')
-                                                                    <a class="btn btn-success btn-sm mx-1" href="{{ route('flota.edit', $f->id) }}">
-                                                                        <i class="fas fa-plus"></i>
-                                                                    </a>
-                                                                @endcan
-                                                                @can('borrar-flota')
-                                                                    <a class="btn btn-danger btn-sm mx-1" href="#" data-toggle="modal" data-target="#ModalDelete{{ $f->id }}">
-                                                                        <i class="far fa-trash-alt"></i>
-                                                                    </a>
-                                                                @endcan
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                @endforeach
-                                            @endif
+                                            @empty
+                                                <tr>
+                                                    <td colspan="8" class="text-center py-5">
+                                                        <i class="fas fa-search fa-2x text-muted mb-2 d-block"></i>
+                                                        <span class="text-muted">No se encontraron resultados</span>
+                                                    </td>
+                                                </tr>
+                                            @endforelse
                                         </tbody>
                                     </table>
                                 </div>
@@ -444,6 +381,8 @@
                 $('.card-body').addClass('p-2');
                 $('.form-group').addClass('mb-3');
             }
+
+            $('[data-toggle="tooltip"]').tooltip({ trigger: 'hover', delay: { show: 300, hide: 100 } });
         });
     </script>
 @endsection

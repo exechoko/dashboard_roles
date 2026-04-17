@@ -42,21 +42,23 @@ class FlotaGeneralController extends Controller
         $texto = trim($request->get('texto')); //trim quita espacios vacios
 
         //Busqueda por ISSI, TEI, Movil o Destino
-        $flota = FlotaGeneral::whereHas('equipo', function ($query) use ($texto) {
-            $query->where('issi', 'like', '%' . $texto . '%')
-                ->orWhere('tei', 'like', '%' . $texto . '%');
-        })->orWhereHas('recurso', function ($query1) use ($texto) {
-            $query1->where('nombre', 'like', '%' . $texto . '%');
-        })->orWhereHas('destino', function ($query2) use ($texto) {
-            $query2->where('nombre', 'like', '%' . $texto . '%');
-        })->orderBy('updated_at', 'desc')->paginate(50); //->get();//->orWhere('observaciones', 'LIKE', '%' . $texto . '%')->orderBy('id', 'asc')->get();
+        $flota = FlotaGeneral::with(['recurso.vehiculo'])
+            ->whereHas('equipo', function ($query) use ($texto) {
+                $query->where('issi', 'like', '%' . $texto . '%')
+                    ->orWhere('tei', 'like', '%' . $texto . '%');
+            })->orWhereHas('recurso', function ($query1) use ($texto) {
+                $query1->where('nombre', 'like', '%' . $texto . '%');
+            })->orWhereHas('destino', function ($query2) use ($texto) {
+                $query2->where('nombre', 'like', '%' . $texto . '%');
+            })->orderBy('updated_at', 'desc')->paginate(50); //->get();//->orWhere('observaciones', 'LIKE', '%' . $texto . '%')->orderBy('id', 'asc')->get();
 
         // Itera sobre cada flota para obtener su último movimiento
         foreach ($flota as $f) {
-            //dd('aca');
-            $f->ultimo_movimiento = $f->ultimoMovimiento()->tipoMovimiento->nombre;
-            $f->fecha_ultimo_mov = Carbon::parse($f->ultimoMovimiento()->fecha_asignacion)->format('d/m/Y H:i');
-            $f->observaciones_ultimo_mov = $f->ultimoMovimiento()->observaciones;
+            $ultimoMov = $f->ultimoMovimiento();
+            $f->ultimo_movimiento       = $ultimoMov->tipoMovimiento->nombre;
+            $f->color_ultimo_movimiento = $ultimoMov->tipoMovimiento->color ?? '#6777ef';
+            $f->fecha_ultimo_mov        = Carbon::parse($ultimoMov->fecha_asignacion)->format('d/m/Y H:i');
+            $f->observaciones_ultimo_mov = $ultimoMov->observaciones;
         }
 
         return view('flota.index', compact('flota', 'texto'));
@@ -253,8 +255,9 @@ class FlotaGeneralController extends Controller
         // Procesar cada registro para obtener último movimiento
         foreach ($resultados as $f) {
             $ultimoMovimiento = $f->ultimoMovimiento();
-            $f->ultimo_movimiento = $ultimoMovimiento ? $ultimoMovimiento->tipoMovimiento->nombre : '-';
-            $f->fecha_ultimo_mov = $ultimoMovimiento ? Carbon::parse($ultimoMovimiento->fecha_asignacion)->format('d/m/Y H:i') : '-';
+            $f->ultimo_movimiento        = $ultimoMovimiento ? $ultimoMovimiento->tipoMovimiento->nombre : '-';
+            $f->color_ultimo_movimiento  = $ultimoMovimiento ? ($ultimoMovimiento->tipoMovimiento->color ?? '#6777ef') : '#6777ef';
+            $f->fecha_ultimo_mov         = $ultimoMovimiento ? Carbon::parse($ultimoMovimiento->fecha_asignacion)->format('d/m/Y H:i') : '-';
             $f->observaciones_ultimo_mov = $ultimoMovimiento ? $ultimoMovimiento->observaciones : '-';
         }
 

@@ -103,6 +103,13 @@ class EventoCecocoController extends Controller
             });
 
             $eventos = $query->orderBy('fecha_hora', 'desc')->simplePaginate(50)->withQueryString();
+
+            $eventos->getCollection()->transform(function ($e) {
+                if (preg_match('/^(d\.?d\.?|dd)(?=\s|$)/i', trim($e->direccion))) {
+                    $e->direccion = preg_replace('/^(d\.?d\.?|dd)(?=\s|$)/i', 'Dispositivo Dual', trim($e->direccion));
+                }
+                return $e;
+            });
         }
 
         $anios = Cache::rememberForever('cecoco_anios', function () {
@@ -795,7 +802,13 @@ class EventoCecocoController extends Controller
         // Top calles (primer segmento de la dirección)
         $topCalles = (clone $base)
             ->select(
-                DB::raw("TRIM(SUBSTRING_INDEX(UPPER(direccion), ' AL ', 1)) as calle"),
+                DB::raw("
+                    CASE 
+                        WHEN UPPER(TRIM(SUBSTRING_INDEX(direccion, ' AL ', 1))) REGEXP '^(D[.]?D[.]?|DD)([[:space:]]|$)' 
+                        THEN 'DISPOSITIVO DUAL'
+                        ELSE UPPER(TRIM(SUBSTRING_INDEX(direccion, ' AL ', 1)))
+                    END as calle
+                "),
                 DB::raw('COUNT(*) as total')
             )
             ->whereNotNull('direccion')

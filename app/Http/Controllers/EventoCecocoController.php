@@ -513,8 +513,8 @@ class EventoCecocoController extends Controller
 
         if (empty($eventoCecoco->telefono)) {
             return response()->json([
-                'success'     => false,
-                'message'     => 'El evento no tiene número de teléfono registrado. No es posible buscar grabaciones.',
+                'success' => false,
+                'message' => 'El evento no tiene número de teléfono registrado. No es posible buscar grabaciones.',
                 'grabaciones' => [],
             ]);
         }
@@ -522,7 +522,7 @@ class EventoCecocoController extends Controller
         try {
             // 1. Buscar en disco local (rápido)
             $localService = new CecocoGrabacionesLocalService();
-            $resultado    = $localService->buscarGrabaciones(
+            $resultado = $localService->buscarGrabaciones(
                 $eventoCecoco->telefono,
                 $eventoCecoco->fecha_hora
             );
@@ -539,23 +539,23 @@ class EventoCecocoController extends Controller
             // 2. Si no se encontró nada localmente, intentar vía CECOCO web
             if (empty($resultado['grabaciones']) && config('cecoco.url')) {
                 $cecocoService = new CecocoGrabacionesService();
-                $resultado     = $cecocoService->buscarGrabaciones(
+                $resultado = $cecocoService->buscarGrabaciones(
                     $eventoCecoco->telefono,
                     $eventoCecoco->fecha_hora
                 );
             }
 
             return response()->json([
-                'success'     => true,
+                'success' => true,
                 'grabaciones' => $resultado['grabaciones'],
-                'total'       => count($resultado['grabaciones']),
-                'ventana'     => $resultado['ventana'],
-                'fuente'      => $resultado['fuente'] ?? 'cecoco',
+                'total' => count($resultado['grabaciones']),
+                'ventana' => $resultado['ventana'],
+                'fuente' => $resultado['fuente'] ?? 'cecoco',
             ]);
         } catch (\Exception $e) {
             Log::error('grabaciones evento cecoco', [
                 'evento_id' => $eventoCecoco->id,
-                'error'     => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
             return response()->json([
                 'success' => false,
@@ -589,19 +589,19 @@ class EventoCecocoController extends Controller
         }
 
         $nombre = basename($filepath);
-        $ext    = strtolower(pathinfo($nombre, PATHINFO_EXTENSION));
-        $mime   = match ($ext) {
-            'wav'  => 'audio/wav',
-            'mp3'  => 'audio/mpeg',
-            'ogg'  => 'audio/ogg',
-            'aac'  => 'audio/aac',
+        $ext = strtolower(pathinfo($nombre, PATHINFO_EXTENSION));
+        $mime = match ($ext) {
+            'wav' => 'audio/wav',
+            'mp3' => 'audio/mpeg',
+            'ogg' => 'audio/ogg',
+            'aac' => 'audio/aac',
             default => 'application/octet-stream',
         };
 
         $disposition = $request->boolean('download') ? 'attachment' : 'inline';
 
         return response()->file($filepath, [
-            'Content-Type'        => $mime,
+            'Content-Type' => $mime,
             'Content-Disposition' => $disposition . '; filename="' . rawurlencode($nombre) . '"',
         ]);
     }
@@ -618,28 +618,29 @@ class EventoCecocoController extends Controller
         // Extraer nombre del archivo desde el query param "nombreFichero"
         parse_str(parse_url($url, PHP_URL_QUERY) ?? '', $qParams);
         $nombre = $qParams['nombreFichero'] ?? basename(parse_url($url, PHP_URL_PATH));
-        if (empty($nombre)) $nombre = 'grabacion.wav';
+        if (empty($nombre))
+            $nombre = 'grabacion.wav';
 
         // Sanitizar: solo permitir URLs del servidor CECOCO
         $cecocoHost = parse_url(config('cecoco.url'), PHP_URL_HOST);
-        $urlHost    = parse_url($url, PHP_URL_HOST);
+        $urlHost = parse_url($url, PHP_URL_HOST);
         if ($urlHost !== $cecocoHost) {
             return response()->json(['success' => false, 'message' => 'URL no permitida.'], 403);
         }
 
         try {
-            $servicio  = new CecocoGrabacionesService();
-            $response  = $servicio->descargarAudio($url);
+            $servicio = new CecocoGrabacionesService();
+            $response = $servicio->descargarAudio($url);
 
-            $statusCode  = $response->getStatusCode();
+            $statusCode = $response->getStatusCode();
             $contentType = $response->getHeaderLine('Content-Type');
-            $bodySize    = $response->getBody()->getSize();
+            $bodySize = $response->getBody()->getSize();
 
             Log::debug('streamGrabacion: respuesta CECOCO', [
-                'url'          => $url,
-                'status'       => $statusCode,
+                'url' => $url,
+                'status' => $statusCode,
                 'content_type' => $contentType,
-                'body_size'    => $bodySize,
+                'body_size' => $bodySize,
             ]);
 
             if ($statusCode !== 200) {
@@ -651,21 +652,21 @@ class EventoCecocoController extends Controller
                 return response()->json(['success' => false, 'message' => 'El archivo de audio no está disponible en el servidor CECOCO.'], 404);
             }
 
-            $ext  = strtolower(pathinfo($nombre, PATHINFO_EXTENSION));
+            $ext = strtolower(pathinfo($nombre, PATHINFO_EXTENSION));
             $mime = match ($ext) {
-                'wav'  => 'audio/wav',
-                'mp3'  => 'audio/mpeg',
-                'ogg'  => 'audio/ogg',
-                'aac'  => 'audio/aac',
+                'wav' => 'audio/wav',
+                'mp3' => 'audio/mpeg',
+                'ogg' => 'audio/ogg',
+                'aac' => 'audio/aac',
                 default => 'application/octet-stream',
             };
 
             $disposition = $request->boolean('download') ? 'attachment' : 'inline';
 
             $headers = [
-                'Content-Type'        => $mime,
+                'Content-Type' => $mime,
                 'Content-Disposition' => $disposition . '; filename="' . rawurlencode($nombre) . '"',
-                'Accept-Ranges'       => 'bytes',
+                'Accept-Ranges' => 'bytes',
             ];
 
             // Pasar Content-Length para que el navegador muestre la duración del audio
@@ -686,7 +687,8 @@ class EventoCecocoController extends Controller
      */
     private static function normalizarTipo(?string $tipo): string
     {
-        if (!$tipo) return '(sin tipo)';
+        if (!$tipo)
+            return '(sin tipo)';
         // Coincide con: "D.D.", "dd", "D.d", "D.D", "d.d." etc.
         if (preg_match('/^[Dd]\.?\s*[Dd]\.?$/u', trim($tipo))) {
             return 'Dispositivo Dual';
@@ -745,7 +747,7 @@ class EventoCecocoController extends Controller
         }
 
         // Promedio diario
-        $diasPeriodo   = max(1, \Carbon\Carbon::parse($desde)->diffInDays(\Carbon\Carbon::parse($hasta)) + 1);
+        $diasPeriodo = max(1, \Carbon\Carbon::parse($desde)->diffInDays(\Carbon\Carbon::parse($hasta)) + 1);
         $promedioDiario = round($total / $diasPeriodo, 1);
 
         // Por hora del día (0-23)
@@ -812,18 +814,49 @@ class EventoCecocoController extends Controller
         $diaPico = array_search(max(array_values($porDia)), array_values($porDia));
         $diaPicoNombre = $diasNombres[$diaPico] ?? '-';
 
+        // ── Comparativa Hechos de Relevancia (Mes Anterior) ──
+        $desdeAnterior = \Carbon\Carbon::parse($desde)->subMonth()->format('Y-m-d H:i:s');
+        $hastaAnterior = \Carbon\Carbon::parse($hasta)->subMonth()->format('Y-m-d H:i:s');
+        $baseAnterior = EventoCecoco::whereBetween('fecha_hora', [$desdeAnterior, $hastaAnterior]);
+
+        if ($tipo) {
+            if ($tipo === 'Dispositivo Dual') {
+                $baseAnterior->whereRaw("tipo_servicio REGEXP '^[Dd]\\.?[[:space:]]*[Dd]\\.?$'");
+            } else {
+                $baseAnterior->where('tipo_servicio', 'like', '%' . $tipo . '%');
+            }
+        }
+
+        $condicionesRel = [
+            'Accidentes' => "LOWER(tipo_servicio) REGEXP 'accidente.*(lesion|herido|lesionad)'",
+            'Robos' => "LOWER(tipo_servicio) LIKE '%robo%'",
+            'Hurtos' => "LOWER(tipo_servicio) LIKE '%hurto%'",
+            'Abuso Armas' => "LOWER(tipo_servicio) REGEXP 'abuso.*(arma|fuego)|arma de fuego'",
+            'Homicidios' => "LOWER(tipo_servicio) LIKE '%homicidio%'"
+        ];
+
+        $comparativaActual = [];
+        $comparativaAnterior = [];
+
+        foreach ($condicionesRel as $label => $condition) {
+            $comparativaActual[] = (clone $base)->whereRaw($condition)->count();
+            $comparativaAnterior[] = (clone $baseAnterior)->whereRaw($condition)->count();
+        }
+
         return response()->json([
-            'total'           => $total,
-            'desde'           => $desde,
-            'hasta'           => $hasta,
-            'por_hora'        => $porHora,
-            'por_dia'         => $porDia,
-            'top_tipos'       => $topTipos,
-            'top_calles'      => $topCalles,
-            'hora_pico'       => $horaPicoLabel,
-            'dia_pico'        => $diaPicoNombre,
-            'por_fecha'       => $porFecha,
+            'total' => $total,
+            'desde' => $desde,
+            'hasta' => $hasta,
+            'por_hora' => $porHora,
+            'por_dia' => $porDia,
+            'top_tipos' => $topTipos,
+            'top_calles' => $topCalles,
+            'hora_pico' => $horaPicoLabel,
+            'dia_pico' => $diaPicoNombre,
+            'por_fecha' => $porFecha,
             'promedio_diario' => $promedioDiario,
+            'comparativa_actual' => $comparativaActual,
+            'comparativa_anterior' => $comparativaAnterior,
         ]);
     }
 }

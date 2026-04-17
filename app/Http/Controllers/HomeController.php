@@ -233,7 +233,7 @@ class HomeController extends Controller
         $camaras_por_tipo = Camara::whereHas('sitio', fn($q) => $q->where('activo', true))
             ->with('tipoCamara')
             ->get()
-            ->groupBy(function($camara) {
+            ->groupBy(function ($camara) {
                 $tipo = $camara->tipoCamara->tipo ?? 'Sin tipo';
                 return stripos($tipo, 'LPR') !== false ? 'LPR' : $tipo;
             })
@@ -246,7 +246,7 @@ class HomeController extends Controller
         // Equipos por departamental (top 10) - contando todas las dependencias hijas
         $departamentales = Destino::where('tipo', 'departamental')->get();
         $equipos_por_departamental = collect();
-        
+
         foreach ($departamentales as $dept) {
             $destinosHijos = $dept->getDestinosHijosRecursivo();
             $total = Historico::whereIn('destino_id', $destinosHijos)
@@ -257,15 +257,15 @@ class HomeController extends Controller
                     $estados['Perdido']
                 ]))
                 ->count();
-            
+
             if ($total > 0) {
-                $equipos_por_departamental->push((object)[
+                $equipos_por_departamental->push((object) [
                     'nombre' => $dept->nombre,
                     'total' => $total
                 ]);
             }
         }
-        
+
         $equipos_por_departamental = $equipos_por_departamental
             ->sortByDesc('total')
             ->take(10)
@@ -274,7 +274,7 @@ class HomeController extends Controller
         // Equipos por división (top 10) - contando todas las dependencias hijas
         $divisiones = Destino::where('tipo', 'division')->with('padre')->get();
         $equipos_por_division = collect();
-        
+
         foreach ($divisiones as $div) {
             $destinosHijos = $div->getDestinosHijosRecursivo();
             $total = Historico::whereIn('destino_id', $destinosHijos)
@@ -285,24 +285,24 @@ class HomeController extends Controller
                     $estados['Perdido']
                 ]))
                 ->count();
-            
+
             if ($total > 0) {
-                $equipos_por_division->push((object)[
+                $equipos_por_division->push((object) [
                     'nombre' => $div->nombre,
                     'dependencia' => $div->padre->nombre ?? null,
                     'total' => $total
                 ]);
             }
         }
-        
+
         $equipos_por_division = $equipos_por_division
             ->sortByDesc('total')
             ->take(10)
             ->values();
 
-        // ── Cecoco: estadísticas de la semana anterior (lunes→domingo) ──────────
-        $cecocoInicioSemana = Carbon::now()->startOfWeek(Carbon::MONDAY)->subWeek()->startOfDay();
-        $cecocoFinSemana    = $cecocoInicioSemana->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+        // ── Cecoco: estadísticas de la semana anterior (ayer menos 6 días hasta ayer, para sumar 7 días) ──────────
+        $cecocoFinSemana = Carbon::yesterday()->endOfDay();
+        $cecocoInicioSemana = Carbon::yesterday()->subDays(6)->startOfDay();
 
         // Tipificaciones a excluir del dashboard
         $cecocoExcluidos = "no responde|llamada falsa|llamadas falsas|no atiende|llamada erronea|llamada err";
@@ -310,34 +310,50 @@ class HomeController extends Controller
         $cecocoBase = EventoCecoco::whereBetween('fecha_hora', [$cecocoInicioSemana, $cecocoFinSemana])
             ->whereRaw("LOWER(COALESCE(tipo_servicio, '')) NOT REGEXP ?", [$cecocoExcluidos]);
 
-        $cecoco_total_semana   = (clone $cecocoBase)->count();
+        $cecoco_total_semana = (clone $cecocoBase)->count();
 
-        $cecoco_accidentes     = (clone $cecocoBase)
+        $cecoco_accidentes = (clone $cecocoBase)
             ->whereRaw("LOWER(tipo_servicio) REGEXP 'accidente.*(lesion|herido|lesionad)'")
             ->count();
 
-        $cecoco_robos          = (clone $cecocoBase)
+        $cecoco_robos = (clone $cecocoBase)
             ->whereRaw("LOWER(tipo_servicio) LIKE '%robo%'")
             ->count();
 
-        $cecoco_hurtos         = (clone $cecocoBase)
+        $cecoco_hurtos = (clone $cecocoBase)
             ->whereRaw("LOWER(tipo_servicio) LIKE '%hurto%'")
             ->count();
 
-        $cecoco_abuso_armas    = (clone $cecocoBase)
+        $cecoco_abuso_armas = (clone $cecocoBase)
             ->whereRaw("LOWER(tipo_servicio) REGEXP 'abuso.*(arma|fuego)|arma de fuego'")
             ->count();
 
-        $cecoco_homicidios     = (clone $cecocoBase)
+        $cecoco_homicidios = (clone $cecocoBase)
             ->whereRaw("LOWER(tipo_servicio) LIKE '%homicidio%'")
             ->count();
 
-        $cecoco_hechos         = $cecoco_accidentes + $cecoco_robos + $cecoco_hurtos
-                                 + $cecoco_abuso_armas + $cecoco_homicidios;
+        $cecoco_hechos = $cecoco_accidentes + $cecoco_robos + $cecoco_hurtos
+            + $cecoco_abuso_armas + $cecoco_homicidios;
 
-        $cecoco_periodo_label  = $cecocoInicioSemana->locale('es')->isoFormat('D [de] MMMM')
-                                 . ' al '
-                                 . $cecocoFinSemana->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
+        $cecoco_periodo_label = $cecocoInicioSemana->locale('es')->isoFormat('D [de] MMMM')
+            . ' al '
+            . $cecocoFinSemana->locale('es')->isoFormat('D [de] MMMM [de] YYYY');
+
+        // ── Datos de la misma semana pero del MES ANTERIOR ──────────
+        $cecocoInicioSemanaMesAnterior = $cecocoInicioSemana->copy()->subMonth();
+        $cecocoFinSemanaMesAnterior = $cecocoFinSemana->copy()->subMonth();
+
+        $cecocoBaseAnterior = EventoCecoco::whereBetween('fecha_hora', [$cecocoInicioSemanaMesAnterior, $cecocoFinSemanaMesAnterior])
+            ->whereRaw("LOWER(COALESCE(tipo_servicio, '')) NOT REGEXP ?", [$cecocoExcluidos]);
+
+        $cecoco_accidentes_ant = (clone $cecocoBaseAnterior)->whereRaw("LOWER(tipo_servicio) REGEXP 'accidente.*(lesion|herido|lesionad)'")->count();
+        $cecoco_robos_ant = (clone $cecocoBaseAnterior)->whereRaw("LOWER(tipo_servicio) LIKE '%robo%'")->count();
+        $cecoco_hurtos_ant = (clone $cecocoBaseAnterior)->whereRaw("LOWER(tipo_servicio) LIKE '%hurto%'")->count();
+        $cecoco_abuso_armas_ant = (clone $cecocoBaseAnterior)->whereRaw("LOWER(tipo_servicio) REGEXP 'abuso.*(arma|fuego)|arma de fuego'")->count();
+        $cecoco_homicidios_ant = (clone $cecocoBaseAnterior)->whereRaw("LOWER(tipo_servicio) LIKE '%homicidio%'")->count();
+
+        $cecoco_hechos_ant = $cecoco_accidentes_ant + $cecoco_robos_ant + $cecoco_hurtos_ant + $cecoco_abuso_armas_ant + $cecoco_homicidios_ant;
+
 
         return view('home', compact(
             'cant_usuarios',
@@ -379,7 +395,13 @@ class HomeController extends Controller
             'cecoco_hurtos',
             'cecoco_abuso_armas',
             'cecoco_homicidios',
-            'cecoco_periodo_label'
+            'cecoco_periodo_label',
+            'cecoco_hechos_ant',
+            'cecoco_accidentes_ant',
+            'cecoco_robos_ant',
+            'cecoco_hurtos_ant',
+            'cecoco_abuso_armas_ant',
+            'cecoco_homicidios_ant'
         ));
     }
 
@@ -389,11 +411,11 @@ class HomeController extends Controller
      */
     public function cecocoMapaDatos(Request $request): JsonResponse
     {
-        $inicio = Carbon::now()->startOfWeek(Carbon::MONDAY)->subWeek()->startOfDay();
-        $fin    = $inicio->copy()->endOfWeek(Carbon::SUNDAY)->endOfDay();
+        $inicio = Carbon::yesterday()->subDays(6)->startOfDay();
+        $fin = Carbon::yesterday()->endOfDay();
 
         $excluidos = "no responde|llamada falsa|llamadas falsas|no atiende|llamada erronea|llamada err";
-        $tipo      = $request->input('tipo');
+        $tipo = $request->input('tipo');
 
         $query = DB::table('evento_cecoco as e')
             ->join('geocodificacion_directa as g', function ($join) {
@@ -411,6 +433,16 @@ class HomeController extends Controller
         if ($tipo) {
             if ($tipo === 'Dispositivo Dual') {
                 $query->whereRaw("e.tipo_servicio REGEXP '^[Dd]\\.?[[:space:]]*[Dd]\\.?$'");
+            } elseif ($tipo === 'Accidente') {
+                $query->whereRaw("LOWER(e.tipo_servicio) REGEXP 'accidente.*(lesion|herido|lesionad)'");
+            } elseif ($tipo === 'Robo') {
+                $query->whereRaw("LOWER(e.tipo_servicio) LIKE '%robo%'");
+            } elseif ($tipo === 'Hurto') {
+                $query->whereRaw("LOWER(e.tipo_servicio) LIKE '%hurto%'");
+            } elseif ($tipo === 'Homicidio') {
+                $query->whereRaw("LOWER(e.tipo_servicio) LIKE '%homicidio%'");
+            } elseif ($tipo === 'Abuso') {
+                $query->whereRaw("LOWER(e.tipo_servicio) REGEXP 'abuso.*(arma|fuego)|arma de fuego'");
             } else {
                 $query->whereRaw("LOWER(e.tipo_servicio) LIKE ?", ['%' . strtolower($tipo) . '%']);
             }

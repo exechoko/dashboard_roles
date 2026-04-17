@@ -559,7 +559,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -573,7 +573,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -587,7 +587,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -601,7 +601,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -629,63 +629,90 @@
                                     <!-- TAB Cecoco -->
                                     <div class="tab-pane fade" id="cecoco3" role="tabpanel" aria-labelledby="cecoco-tab3">
 
-                                        <div class="d-flex align-items-center justify-content-between mb-3 mt-2 flex-wrap gap-2">
-                                            <h5 class="mb-0 fw-semibold"><i class="fas fa-phone-alt text-primary mr-2"></i>Centro de Coordinación de Comunicaciones</h5>
+                                        <div
+                                            class="d-flex align-items-center justify-content-between mb-3 mt-2 flex-wrap gap-2">
+                                            <h5 class="mb-0 fw-semibold"><i
+                                                    class="fas fa-phone-alt text-primary mr-2"></i>Centro de Coordinación de
+                                                Comunicaciones</h5>
                                             <span class="badge badge-light text-muted" style="font-size:.78rem">
                                                 <i class="fas fa-calendar-week mr-1"></i>{{ $cecoco_periodo_label }}
                                             </span>
                                         </div>
 
-                                        {{-- KPI Cards --}}
-                                        <div class="row g-3 mb-3">
-                                            <div class="col-6 col-md-4 col-xl-2">
-                                                <div class="card border-0 shadow-sm h-100" style="border-radius:10px">
-                                                    <div class="card-body text-center py-3">
-                                                        <div style="font-size:1.9rem;font-weight:700;color:#3b82f6">{{ number_format($cecoco_total_semana) }}</div>
-                                                        <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.04em">Llamadas totales</div>
+                                        {{-- KPI Cards estilo AdminLTE --}}
+                                        <div class="row">
+                                            <div class="col-md-6 col-xl-2">
+                                                <div class="card-item bg-c-blue order-card">
+                                                    <div class="card-block" style="padding: 1.25rem;">
+                                                        <h6 class="m-b-20" style="font-size: 0.85rem">Llamadas totales</h6>
+                                                        <h2 class="text-right"><i class="fas fa-phone-alt f-left"></i><span
+                                                                style="font-size: 1.4rem">{{ number_format($cecoco_total_semana) }}</span>
+                                                        </h2>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-6 col-md-4 col-xl-2">
-                                                <div class="card border-0 shadow-sm h-100" style="border-radius:10px">
-                                                    <div class="card-body text-center py-3">
-                                                        <div style="font-size:1.9rem;font-weight:700;color:#f59e0b">{{ number_format($cecoco_hechos) }}</div>
-                                                        <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.04em">Hechos de relevancia</div>
+                                            <div class="col-md-6 col-xl-2">
+                                                <div class="card-item bg-c-yellow order-card">
+                                                    <div class="card-block" style="padding: 1.25rem;">
+                                                        <h6 class="m-b-20" style="font-size: 0.85rem">Hechos de relevancia</h6>
+                                                        <h2 class="text-right"><i
+                                                                class="fas fa-exclamation-triangle f-left"></i><span
+                                                                style="font-size: 1.4rem">{{ number_format($cecoco_hechos) }}</span>
+                                                        </h2>
+                                                        @if($cecoco_hechos_ant > 0)
+                                                            @php $var = round((($cecoco_hechos - $cecoco_hechos_ant) / $cecoco_hechos_ant) * 100); @endphp
+                                                            <p class="m-b-0 text-right"><span
+                                                                    style="color: rgb(255, 255, 255); font-size: 0.75rem">{!! $var > 0 ? '<i class="fas fa-arrow-up"></i>' : '<i class="fas fa-arrow-down"></i>' !!}
+                                                                    {{ abs($var) }}% vs mes anterior</span></p>
+                                                        @endif
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-6 col-md-4 col-xl-2">
-                                                <div class="card border-0 shadow-sm h-100" style="border-radius:10px">
-                                                    <div class="card-body text-center py-3">
-                                                        <div style="font-size:1.9rem;font-weight:700;color:#ef4444">{{ number_format($cecoco_accidentes) }}</div>
-                                                        <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.04em">Acc. con lesionados</div>
+                                            <div class="col-md-6 col-xl-2">
+                                                <div class="card-item bg-c-red order-card">
+                                                    <div class="card-block" style="padding: 1.25rem;">
+                                                        <h6 class="m-b-20" style="font-size: 0.80rem">Acc. con lesionados</h6>
+                                                        <h2 class="text-right"><i class="fas fa-car-crash f-left"></i><span
+                                                                style="font-size: 1.4rem">{{ number_format($cecoco_accidentes) }}</span>
+                                                        </h2>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-6 col-md-4 col-xl-2">
-                                                <div class="card border-0 shadow-sm h-100" style="border-radius:10px">
-                                                    <div class="card-body text-center py-3">
-                                                        <div style="font-size:1.9rem;font-weight:700;color:#dc2626">{{ number_format($cecoco_robos) }}</div>
-                                                        <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.04em">Robos</div>
+                                            <div class="col-md-6 col-xl-2">
+                                                <div class="card-item order-card" style="background:#e83e8c; color:white;">
+                                                    <div class="card-block" style="padding: 1.25rem;">
+                                                        <h6 class="m-b-20" style="font-size: 0.85rem">Robos</h6>
+                                                        <h2 class="text-right"><i class="fas fa-mask f-left"></i><span
+                                                                style="font-size: 1.4rem">{{ number_format($cecoco_robos) }}</span>
+                                                        </h2>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-6 col-md-4 col-xl-2">
-                                                <div class="card border-0 shadow-sm h-100" style="border-radius:10px">
-                                                    <div class="card-body text-center py-3">
-                                                        <div style="font-size:1.9rem;font-weight:700;color:#f97316">{{ number_format($cecoco_hurtos) }}</div>
-                                                        <div class="text-muted" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.04em">Hurtos</div>
+                                            <div class="col-md-6 col-xl-2">
+                                                <div class="card-item bg-orange order-card" style="color:white;">
+                                                    <div class="card-block" style="padding: 1.25rem;">
+                                                        <h6 class="m-b-20" style="font-size: 0.85rem">Hurtos</h6>
+                                                        <h2 class="text-right"><i class="fas fa-running f-left"></i><span
+                                                                style="font-size: 1.4rem">{{ number_format($cecoco_hurtos) }}</span>
+                                                        </h2>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="col-6 col-md-4 col-xl-2">
-                                                <div class="card border-0 shadow-sm h-100" style="border-radius:10px;background:linear-gradient(135deg,#1e293b,#334155)">
-                                                    <div class="card-body text-center py-3">
-                                                        <div style="font-size:1.4rem;font-weight:700;color:#f87171">{{ number_format($cecoco_abuso_armas) }}</div>
-                                                        <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8">Ab. Armas de fuego</div>
-                                                        <div class="mt-1 pt-1 border-top border-secondary">
-                                                            <span style="font-size:1.1rem;font-weight:700;color:#c084fc">{{ number_format($cecoco_homicidios) }}</span>
-                                                            <div style="font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;color:#94a3b8">Homicidios</div>
+                                            <div class="col-md-6 col-xl-2">
+                                                <div class="card-item bg-c-violet order-card">
+                                                    <div class="card-block" style="padding: 0.8rem 1.25rem;">
+                                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                                            <h6 class="mb-0" style="font-size: 0.70rem">Abuso Armas</h6>
+                                                            <h2 class="mb-0"><span
+                                                                    style="font-size: 1.2rem">{{ number_format($cecoco_abuso_armas) }}</span>
+                                                            </h2>
+                                                        </div>
+                                                        <div class="d-flex justify-content-between align-items-center pt-1"
+                                                            style="border-top: 1px solid rgba(255,255,255,0.2)">
+                                                            <h6 class="mb-0" style="font-size: 0.70rem">Homicidios</h6>
+                                                            <h2 class="mb-0"><span
+                                                                    style="font-size: 1.2rem">{{ number_format($cecoco_homicidios) }}</span>
+                                                            </h2>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -695,36 +722,60 @@
                                         {{-- Mini mapa de calor --}}
                                         <div class="card shadow-sm mb-3" style="border-radius:10px;overflow:hidden">
                                             <div class="card-header py-2" style="background:transparent">
-                                                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                                    <span class="fw-semibold" style="font-size:.9rem">
-                                                        <i class="fas fa-fire text-danger mr-1"></i>Mapa de calor — incidencias semana anterior
+                                                <div
+                                                    class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-2">
+                                                    <span class="fw-semibold mb-1 mb-md-0"
+                                                        style="font-size:.9rem; display:block;">
+                                                        <i class="fas fa-fire text-danger mr-1"></i>Mapa incidencias — sem.
+                                                        actual
                                                     </span>
-                                                    <span class="text-muted" style="font-size:.78rem" id="cecoco-mapa-estado">Cargando...</span>
+                                                    <span class="text-muted" style="font-size:.78rem; display:block;"
+                                                        id="cecoco-mapa-estado">Cargando...</span>
                                                 </div>
-                                                <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
-                                                    <div style="min-width:220px;flex:1">
+                                                <div class="d-flex flex-column flex-sm-row align-items-sm-center">
+                                                    <div class="flex-grow-1 mr-sm-2 mb-2 mb-sm-0" style="min-width:200px;">
                                                         <select id="cecoco-mapa-tipo" style="width:100%">
                                                             <option value="">Todas las tipificaciones</option>
-                                                            <option value="Robo">Robo</option>
-                                                            <option value="Hurto">Hurto</option>
-                                                            <option value="Accidente">Accidente con lesionados</option>
-                                                            <option value="Homicidio">Homicidio</option>
+                                                            <option value="Robo">Robos</option>
+                                                            <option value="Hurto">Hurtos</option>
+                                                            <option value="Accidente">Accidentes con lesionados</option>
+                                                            <option value="Homicidio">Homicidios</option>
                                                             <option value="Abuso">Abuso de armas de fuego</option>
                                                             <option value="Dispositivo Dual">Dispositivo Dual</option>
                                                         </select>
                                                     </div>
-                                                    <button id="cecoco-mapa-filtrar" class="btn btn-primary btn-sm px-3" style="white-space:nowrap">
+                                                    <button id="cecoco-mapa-filtrar" class="btn btn-primary btn-sm px-3"
+                                                        style="white-space:nowrap; width:auto;">
                                                         <i class="fas fa-search mr-1"></i>Aplicar
                                                     </button>
                                                 </div>
                                             </div>
                                             <div class="card-body p-0" style="position:relative">
                                                 <div id="cecoco-mini-mapa" style="height:320px;width:100%"></div>
-                                                <div id="cecoco-mapa-loading" style="position:absolute;inset:0;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;z-index:500">
+                                                <div id="cecoco-mapa-loading"
+                                                    style="position:absolute;inset:0;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;z-index:500">
                                                     <div class="text-center">
                                                         <div class="spinner-border text-primary" role="status"></div>
-                                                        <div class="mt-2 small text-muted">Cargando puntos geocodificados...</div>
+                                                        <div class="mt-2 small text-muted">Cargando puntos geocodificados...
+                                                        </div>
                                                     </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- Gráfico Comparativo --}}
+                                        <div class="card shadow-sm mb-3 chart-card" style="border-radius:10px">
+                                            <div class="card-header py-2"
+                                                style="background:transparent; border-bottom:1px solid rgba(0,0,0,0.05)">
+                                                <h6 class="mb-0 fw-semibold"
+                                                    style="font-size:0.9rem;text-transform:uppercase;letter-spacing:0.04em;color:#475569">
+                                                    <i class="fas fa-chart-bar text-primary mr-2"></i>Comparativa de Hechos de
+                                                    Relevancia (Actual vs Mes Anterior)
+                                                </h6>
+                                            </div>
+                                            <div class="card-body py-3">
+                                                <div style="height: 250px;">
+                                                    <canvas id="cecocoComparativoChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
@@ -883,27 +934,39 @@
                                         <div class="row mb-4">
                                             <div class="col-12">
                                                 <div class="card shadow-sm">
-                                                    <div class="card-header d-flex align-items-center justify-content-between py-2" style="background: linear-gradient(135deg,#1e1b4b,#312e81); color:#fff;">
-                                                        <span><i class="fas fa-robot mr-2"></i><strong>Estado Servicios IA</strong></span>
+                                                    <div class="card-header d-flex align-items-center justify-content-between py-2"
+                                                        style="background: linear-gradient(135deg,#1e1b4b,#312e81); color:#fff;">
+                                                        <span><i class="fas fa-robot mr-2"></i><strong>Estado Servicios
+                                                                IA</strong></span>
                                                         <small id="ia-ultima-actualizacion" class="text-white-50"></small>
                                                     </div>
                                                     <div class="card-body py-3">
-                                                        <div class="d-flex flex-wrap gap-3" id="ia-servicios-container" style="gap:1rem;">
+                                                        <div class="d-flex flex-wrap gap-3" id="ia-servicios-container"
+                                                            style="gap:1rem;">
                                                             <div class="d-flex align-items-center mr-4">
-                                                                <span id="ia-dot-ollama" class="mr-2" style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
-                                                                <span><strong>Ollama</strong> <span id="ia-label-ollama" class="badge badge-secondary">Verificando...</span></span>
+                                                                <span id="ia-dot-ollama" class="mr-2"
+                                                                    style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
+                                                                <span><strong>Ollama</strong> <span id="ia-label-ollama"
+                                                                        class="badge badge-secondary">Verificando...</span></span>
                                                             </div>
                                                             <div class="d-flex align-items-center mr-4">
-                                                                <span id="ia-dot-rag" class="mr-2" style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
-                                                                <span><strong>RAG (ChromaDB)</strong> <span id="ia-label-rag" class="badge badge-secondary">Verificando...</span></span>
+                                                                <span id="ia-dot-rag" class="mr-2"
+                                                                    style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
+                                                                <span><strong>RAG (ChromaDB)</strong> <span id="ia-label-rag"
+                                                                        class="badge badge-secondary">Verificando...</span></span>
                                                             </div>
                                                             <div class="d-flex align-items-center mr-4">
-                                                                <span id="ia-dot-whisper" class="mr-2" style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
-                                                                <span><strong>Whisper</strong> <span id="ia-label-whisper" class="badge badge-secondary">Verificando...</span></span>
+                                                                <span id="ia-dot-whisper" class="mr-2"
+                                                                    style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
+                                                                <span><strong>Whisper</strong> <span id="ia-label-whisper"
+                                                                        class="badge badge-secondary">Verificando...</span></span>
                                                             </div>
                                                             <div class="d-flex align-items-center mr-4">
-                                                                <span id="ia-dot-callanalysis" class="mr-2" style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
-                                                                <span><strong>Análisis 911</strong> <span id="ia-label-callanalysis" class="badge badge-secondary">Verificando...</span></span>
+                                                                <span id="ia-dot-callanalysis" class="mr-2"
+                                                                    style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
+                                                                <span><strong>Análisis 911</strong> <span
+                                                                        id="ia-label-callanalysis"
+                                                                        class="badge badge-secondary">Verificando...</span></span>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -925,7 +988,8 @@
 
                                                                 <h5>Funcionarios</h5>
 
-                                                                <button class="btn btn-sm btn-primary mb-3" data-toggle="modal" data-target="#modalPersonal">
+                                                                <button class="btn btn-sm btn-primary mb-3" data-toggle="modal"
+                                                                    data-target="#modalPersonal">
                                                                     + Agregar Funcionario
                                                                 </button>
 
@@ -942,13 +1006,16 @@
 
                                                                 <h5>Mensaje Generado</h5>
 
-                                                                <textarea id="mensaje" class="form-control mb-3" style="height: 50vh; resize: vertical; overflow:auto;"></textarea>
+                                                                <textarea id="mensaje" class="form-control mb-3"
+                                                                    style="height: 50vh; resize: vertical; overflow:auto;"></textarea>
 
-                                                                <button id="whatsapp-web-btn" class="btn btn-success me-2" style="display:none;" onclick="enviarWhatsAppWeb()">
+                                                                <button id="whatsapp-web-btn" class="btn btn-success me-2"
+                                                                    style="display:none;" onclick="enviarWhatsAppWeb()">
                                                                     WhatsApp Web
                                                                 </button>
 
-                                                                <button id="whatsapp-desktop-btn" class="btn btn-secondary" style="display:none;" onclick="enviarWhatsAppDesktop()">
+                                                                <button id="whatsapp-desktop-btn" class="btn btn-secondary"
+                                                                    style="display:none;" onclick="enviarWhatsAppDesktop()">
                                                                     WhatsApp Desktop
                                                                 </button>
 
@@ -961,11 +1028,8 @@
                                             </div>
                                         </div>
 
-                                            {{-- 🪟 MODAL --}}
-                                        <div id="modalPersonal"
-                                            class="modal fade"
-                                            data-backdrop="false"
-                                            role="dialog">
+                                        {{-- 🪟 MODAL --}}
+                                        <div id="modalPersonal" class="modal fade" data-backdrop="false" role="dialog">
 
                                             <div class="modal-dialog modal-md" role="document">
                                                 <div class="modal-content">
@@ -1003,239 +1067,240 @@
 
                                                     <div class="modal-footer">
                                                         <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                                                        <button class="btn btn-primary" onclick="guardarFuncionario()">Guardar</button>
+                                                        <button class="btn btn-primary"
+                                                            onclick="guardarFuncionario()">Guardar</button>
                                                     </div>
 
                                                 </div>
                                             </div>
                                         </div>
-                                            @push('scripts')
-                                                <script>
-                                                        let editandoId = null;
-                                                        const horarios = [
-                                                            { nombre: "Personal turno de 12 horas (07:30 hs. a 19:30 hs.)", tipo: "12h" },
-                                                            { nombre: "Personal turno mañana (07:30 hs. a 13:00 hs.)", tipo: "manana" },
-                                                            { nombre: "Personal turno (07:30 hs. a 13:00 hs. y 17:30 hs. a 21:00 hs.)", tipo: "manana" },
-                                                            { nombre: "Personal turno tarde (17:30 hs. a 21:00 hs.)", tipo: "tarde" },
-                                                            { nombre: "Personal turno tarde (16:30 hs. a 21:00 hs.)", tipo: "tarde" },
-                                                            { nombre: "Personal turno (08:00 hs. a 12:00 hs.)", tipo: "manana" },
-                                                            { nombre: "Personal turno (08:00 hs. a 12:00 hs. y 18:00 hs. a 20:00 hs.)", tipo: "mixto" },
-                                                            { nombre: "Personal turno (09:00 hs. a 11:00 hs.)", tipo: "manana" }
-                                                        ];
+                                        @push('scripts')
+                                            <script>
+                                                let editandoId = null;
+                                                const horarios = [
+                                                    { nombre: "Personal turno de 12 horas (07:30 hs. a 19:30 hs.)", tipo: "12h" },
+                                                    { nombre: "Personal turno mañana (07:30 hs. a 13:00 hs.)", tipo: "manana" },
+                                                    { nombre: "Personal turno (07:30 hs. a 13:00 hs. y 17:30 hs. a 21:00 hs.)", tipo: "manana" },
+                                                    { nombre: "Personal turno tarde (17:30 hs. a 21:00 hs.)", tipo: "tarde" },
+                                                    { nombre: "Personal turno tarde (16:30 hs. a 21:00 hs.)", tipo: "tarde" },
+                                                    { nombre: "Personal turno (08:00 hs. a 12:00 hs.)", tipo: "manana" },
+                                                    { nombre: "Personal turno (08:00 hs. a 12:00 hs. y 18:00 hs. a 20:00 hs.)", tipo: "mixto" },
+                                                    { nombre: "Personal turno (09:00 hs. a 11:00 hs.)", tipo: "manana" }
+                                                ];
 
-                                                        // 🔵 CARGAR FUNCIONARIOS
-                                                        window.cargarFuncionarios = async function () {
+                                                // 🔵 CARGAR FUNCIONARIOS
+                                                window.cargarFuncionarios = async function () {
 
-                                                            const res = await fetch('/personal');
-                                                            const data = await res.json();
+                                                    const res = await fetch('/personal');
+                                                    const data = await res.json();
 
-                                                            const div = document.getElementById("funcionarios-list");
-                                                            div.innerHTML = "";
-
-
-
-                                                            data.forEach(p => {
-
-                                                                const f = `${p.jerarquia} ${p.apellido}, ${p.nombre}, L.P. Nº ${p.lp}`;
-
-                                                                const container = document.createElement("div");
-                                                                container.className = "funcionario-box mb-3";
-
-                                                                // 🔹 NOMBRE (arriba)
-                                                                const title = document.createElement("div");
-                                                                title.innerHTML = `<strong>${f}</strong>`;
-                                                                container.appendChild(title);
-
-                                                                // 🔹 CONTENEDOR DE BOTONES (debajo del nombre)
-                                                                const btnContainer = document.createElement("div");
-                                                                btnContainer.className = "d-flex gap-2 mb-2";
-
-                                                                // EDITAR
-                                                                const btnEdit = document.createElement("button");
-                                                                btnEdit.className = "btn btn-sm btn-warning mr-2";
-                                                                btnEdit.textContent = "Editar";
-                                                                btnEdit.onclick = () => editarFuncionario(p);
-
-                                                                // ELIMINAR
-                                                                const btnDelete = document.createElement("button");
-                                                                btnDelete.className = "btn btn-sm btn-danger";
-                                                                btnDelete.textContent = "Eliminar";
-                                                                btnDelete.onclick = () => eliminarFuncionario(p.id);
-
-                                                                // agregar botones al contenedor
-                                                                btnContainer.appendChild(btnEdit);
-                                                                btnContainer.appendChild(btnDelete);
-
-                                                                // agregar contenedor al bloque principal
-                                                                container.appendChild(btnContainer);
+                                                    const div = document.getElementById("funcionarios-list");
+                                                    div.innerHTML = "";
 
 
 
-                                                                horarios.forEach(h => {
+                                                    data.forEach(p => {
 
-                                                                    let clase = "";
+                                                        const f = `${p.jerarquia} ${p.apellido}, ${p.nombre}, L.P. Nº ${p.lp}`;
 
-                                                                    if (h.tipo === "manana") clase = "turno-manana";
-                                                                    else if (h.tipo === "tarde") clase = "turno-tarde";
-                                                                    else if (h.tipo === "mixto") clase = "turno-mixto";
-                                                                    else if (h.tipo === "12h") clase = "turno-12h";
+                                                        const container = document.createElement("div");
+                                                        container.className = "funcionario-box mb-3";
 
-                                                                    const item = document.createElement("div");
-                                                                    item.className = `turno-box ${clase}`;
+                                                        // 🔹 NOMBRE (arriba)
+                                                        const title = document.createElement("div");
+                                                        title.innerHTML = `<strong>${f}</strong>`;
+                                                        container.appendChild(title);
 
-                                                                    item.innerHTML = `
-                                                                        <label class="mb-0">
-                                                                            <input type="checkbox" class="asignacion"
-                                                                            data-funcionario="${f}" value="${h.nombre}">
-                                                                            ${h.nombre}
-                                                                        </label>
-                                                                        <span class="contador" id="count-${h.nombre.replace(/\s/g,'')}">0</span>
-                                                                    `;
+                                                        // 🔹 CONTENEDOR DE BOTONES (debajo del nombre)
+                                                        const btnContainer = document.createElement("div");
+                                                        btnContainer.className = "d-flex gap-2 mb-2";
 
-                                                                    container.appendChild(item);
-                                                                });
+                                                        // EDITAR
+                                                        const btnEdit = document.createElement("button");
+                                                        btnEdit.className = "btn btn-sm btn-warning mr-2";
+                                                        btnEdit.textContent = "Editar";
+                                                        btnEdit.onclick = () => editarFuncionario(p);
 
-                                                                div.appendChild(container);
-                                                            });
-                                                        };
+                                                        // ELIMINAR
+                                                        const btnDelete = document.createElement("button");
+                                                        btnDelete.className = "btn btn-sm btn-danger";
+                                                        btnDelete.textContent = "Eliminar";
+                                                        btnDelete.onclick = () => eliminarFuncionario(p.id);
 
-                                                        //EDITAR
-                                                        window.editarFuncionario = function (p) {
+                                                        // agregar botones al contenedor
+                                                        btnContainer.appendChild(btnEdit);
+                                                        btnContainer.appendChild(btnDelete);
 
-                                                            editandoId = p.id;
+                                                        // agregar contenedor al bloque principal
+                                                        container.appendChild(btnContainer);
 
-                                                            document.getElementById("nombre").value = p.nombre;
-                                                            document.getElementById("apellido").value = p.apellido;
-                                                            document.getElementById("lp").value = p.lp;
-                                                            document.getElementById("jerarquia").value = p.jerarquia;
 
-                                                            $('#modalPersonal').modal('show');
-                                                        };
 
-                                                        // 🔵 GUARDAR
-                                                        window.guardarFuncionario = async function () {
+                                                        horarios.forEach(h => {
 
-                                                            const data = {
-                                                                nombre: document.getElementById("nombre").value,
-                                                                apellido: document.getElementById("apellido").value,
-                                                                lp: document.getElementById("lp").value,
-                                                                jerarquia: document.getElementById("jerarquia").value
-                                                            };
+                                                            let clase = "";
 
-                                                            let url = '/personal';
-                                                            let method = 'POST';
+                                                            if (h.tipo === "manana") clase = "turno-manana";
+                                                            else if (h.tipo === "tarde") clase = "turno-tarde";
+                                                            else if (h.tipo === "mixto") clase = "turno-mixto";
+                                                            else if (h.tipo === "12h") clase = "turno-12h";
 
-                                                            // ✏️ SI ESTÁ EDITANDO
-                                                            if (editandoId !== null) {
-                                                                url = `/personal/${editandoId}`;
-                                                                method = 'PUT';
-                                                            }
+                                                            const item = document.createElement("div");
+                                                            item.className = `turno-box ${clase}`;
 
-                                                            const res = await fetch(url, {
-                                                                method: method,
-                                                                headers: {
-                                                                    'Content-Type': 'application/json',
-                                                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                                                                },
-                                                                body: JSON.stringify(data)
-                                                            });
+                                                            item.innerHTML = `
+                                                                                                                        <label class="mb-0">
+                                                                                                                            <input type="checkbox" class="asignacion"
+                                                                                                                            data-funcionario="${f}" value="${h.nombre}">
+                                                                                                                            ${h.nombre}
+                                                                                                                        </label>
+                                                                                                                        <span class="contador" id="count-${h.nombre.replace(/\s/g, '')}">0</span>
+                                                                                                                    `;
 
-                                                            if (res.ok) {
+                                                            container.appendChild(item);
+                                                        });
 
-                                                                cargarFuncionarios();
+                                                        div.appendChild(container);
+                                                    });
+                                                };
 
-                                                                $('#modalPersonal').modal('hide');
+                                                //EDITAR
+                                                window.editarFuncionario = function (p) {
 
-                                                                // limpiar
-                                                                document.getElementById("nombre").value = "";
-                                                                document.getElementById("apellido").value = "";
-                                                                document.getElementById("lp").value = "";
-                                                                document.getElementById("jerarquia").value = "";
+                                                    editandoId = p.id;
 
-                                                                editandoId = null;
+                                                    document.getElementById("nombre").value = p.nombre;
+                                                    document.getElementById("apellido").value = p.apellido;
+                                                    document.getElementById("lp").value = p.lp;
+                                                    document.getElementById("jerarquia").value = p.jerarquia;
 
-                                                            } else {
-                                                                alert("Error al guardar");
-                                                            }
-                                                        };
+                                                    $('#modalPersonal').modal('show');
+                                                };
 
-                                                        // 🔴 ELIMINAR
-                                                        window.eliminarFuncionario = async function (id) {
+                                                // 🔵 GUARDAR
+                                                window.guardarFuncionario = async function () {
 
-                                                            if (!confirm("¿Eliminar funcionario?")) return;
+                                                    const data = {
+                                                        nombre: document.getElementById("nombre").value,
+                                                        apellido: document.getElementById("apellido").value,
+                                                        lp: document.getElementById("lp").value,
+                                                        jerarquia: document.getElementById("jerarquia").value
+                                                    };
 
-                                                            const res = await fetch(`/personal/${id}`, {
-                                                                method: 'DELETE',
-                                                                headers: {
-                                                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                                                                }
-                                                            });
+                                                    let url = '/personal';
+                                                    let method = 'POST';
 
-                                                            if (res.ok) {
-                                                                cargarFuncionarios();
-                                                            } else {
-                                                                alert("Error al eliminar");
-                                                            }
-                                                        };
+                                                    // ✏️ SI ESTÁ EDITANDO
+                                                    if (editandoId !== null) {
+                                                        url = `/personal/${editandoId}`;
+                                                        method = 'PUT';
+                                                    }
 
-                                                        // 🧠 MENSAJE
-                                                        window.generarMensaje = function () {
+                                                    const res = await fetch(url, {
+                                                        method: method,
+                                                        headers: {
+                                                            'Content-Type': 'application/json',
+                                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                                        },
+                                                        body: JSON.stringify(data)
+                                                    });
 
-                                                            const checked = document.querySelectorAll(".asignacion:checked");
+                                                    if (res.ok) {
 
-                                                            if (checked.length === 0) {
-                                                                alert("Seleccionar al menos uno");
-                                                                return;
-                                                            }
+                                                        cargarFuncionarios();
 
-                                                            // 🧠 FUNCIONARIOS ÚNICOS
-                                                            const funcionarios = [...new Set([...checked].map(c => c.dataset.funcionario))];
+                                                        $('#modalPersonal').modal('hide');
 
-                                                            // 🧠 CONTAR HORARIOS
-                                                            const horarioCount = {};
+                                                        // limpiar
+                                                        document.getElementById("nombre").value = "";
+                                                        document.getElementById("apellido").value = "";
+                                                        document.getElementById("lp").value = "";
+                                                        document.getElementById("jerarquia").value = "";
 
-                                                            checked.forEach(c => {
-                                                                const h = c.value;
-                                                                if (!horarioCount[h]) horarioCount[h] = 0;
-                                                                horarioCount[h]++;
-                                                            });
+                                                        editandoId = null;
 
-                                                            let msg = `Buenos días:\nFuerza efectiva del Personal de la Sección Técnica ${new Date().toLocaleDateString('es-AR')}:\n\n`;
+                                                    } else {
+                                                        alert("Error al guardar");
+                                                    }
+                                                };
 
-                                                            // 👮 FUNCIONARIOS
-                                                            msg += "Funcionarios:\n";
-                                                            funcionarios.forEach(f => msg += `• ${f}\n`);
+                                                // 🔴 ELIMINAR
+                                                window.eliminarFuncionario = async function (id) {
 
-                                                            // ⏰ HORARIOS
-                                                            msg += "\nHorarios:\n";
-                                                            for (const [h, count] of Object.entries(horarioCount)) {
-                                                                msg += `${h}: ${count}\n`;
-                                                            }
+                                                    if (!confirm("¿Eliminar funcionario?")) return;
 
-                                                            document.getElementById("mensaje").value = msg;
+                                                    const res = await fetch(`/personal/${id}`, {
+                                                        method: 'DELETE',
+                                                        headers: {
+                                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                                        }
+                                                    });
 
-                                                            document.getElementById("whatsapp-web-btn").style.display = "inline-block";
-                                                            document.getElementById("whatsapp-desktop-btn").style.display = "inline-block";
-                                                        };
+                                                    if (res.ok) {
+                                                        cargarFuncionarios();
+                                                    } else {
+                                                        alert("Error al eliminar");
+                                                    }
+                                                };
 
-                                                        // 📲 WHATSAPP
-                                                        window.enviarWhatsAppWeb = function () {
-                                                            const txt = encodeURIComponent(document.getElementById("mensaje").value);
-                                                            window.open(`https://wa.me/5493434601937?text=${txt}`);
-                                                        };
+                                                // 🧠 MENSAJE
+                                                window.generarMensaje = function () {
 
-                                                        window.enviarWhatsAppDesktop = function () {
-                                                            const txt = encodeURIComponent(document.getElementById("mensaje").value);
-                                                            window.open(`whatsapp://send?phone=5493434601937&text=${txt}`);
-                                                        };
+                                                    const checked = document.querySelectorAll(".asignacion:checked");
 
-                                                        // INIT
-                                                        document.addEventListener("DOMContentLoaded", cargarFuncionarios);
+                                                    if (checked.length === 0) {
+                                                        alert("Seleccionar al menos uno");
+                                                        return;
+                                                    }
 
-                                                </script>
-                                            @endpush
-                                        </div>
+                                                    // 🧠 FUNCIONARIOS ÚNICOS
+                                                    const funcionarios = [...new Set([...checked].map(c => c.dataset.funcionario))];
+
+                                                    // 🧠 CONTAR HORARIOS
+                                                    const horarioCount = {};
+
+                                                    checked.forEach(c => {
+                                                        const h = c.value;
+                                                        if (!horarioCount[h]) horarioCount[h] = 0;
+                                                        horarioCount[h]++;
+                                                    });
+
+                                                    let msg = `Buenos días:\nFuerza efectiva del Personal de la Sección Técnica ${new Date().toLocaleDateString('es-AR')}:\n\n`;
+
+                                                    // 👮 FUNCIONARIOS
+                                                    msg += "Funcionarios:\n";
+                                                    funcionarios.forEach(f => msg += `• ${f}\n`);
+
+                                                    // ⏰ HORARIOS
+                                                    msg += "\nHorarios:\n";
+                                                    for (const [h, count] of Object.entries(horarioCount)) {
+                                                        msg += `${h}: ${count}\n`;
+                                                    }
+
+                                                    document.getElementById("mensaje").value = msg;
+
+                                                    document.getElementById("whatsapp-web-btn").style.display = "inline-block";
+                                                    document.getElementById("whatsapp-desktop-btn").style.display = "inline-block";
+                                                };
+
+                                                // 📲 WHATSAPP
+                                                window.enviarWhatsAppWeb = function () {
+                                                    const txt = encodeURIComponent(document.getElementById("mensaje").value);
+                                                    window.open(`https://wa.me/5493434601937?text=${txt}`);
+                                                };
+
+                                                window.enviarWhatsAppDesktop = function () {
+                                                    const txt = encodeURIComponent(document.getElementById("mensaje").value);
+                                                    window.open(`whatsapp://send?phone=5493434601937&text=${txt}`);
+                                                };
+
+                                                // INIT
+                                                document.addEventListener("DOMContentLoaded", cargarFuncionarios);
+
+                                            </script>
+                                        @endpush
                                     </div>
+                                </div>
                             @endcan
 
                             @can('ver-menu-dashboard')
@@ -1284,8 +1349,8 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--ul id="equiposFuncionalesList" class="mt-3">
-                                                                        </ul>
-                                                                        <hr-->
+                                                                                        </ul>
+                                                                                        <hr-->
                         <h5>Equipos para móviles</h5>
                         <ul id="cantidadTotalEquiposMoviles" class="mt-3">
                             <!-- Lista de equipos -->
@@ -1499,9 +1564,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                                                                                        <button id="btn-buscar-moviles" href="consultarMoviles"
-                                                                                                                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                                                                                    </div-->
+                                                                                                                                                                                                                                                                                                                                                        <button id="btn-buscar-moviles" href="consultarMoviles"
+                                                                                                                                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                                                                                                    </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-moviles" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -1686,9 +1751,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                                                                                        <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                                                                                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                                                                                    </div-->
+                                                                                                                                                                                                                                                                                                                                                        <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                                                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                                                                                                    </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-motos" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -1715,9 +1780,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                                                                                        <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                                                                                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                                                                                    </div-->
+                                                                                                                                                                                                                                                                                                                                                        <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                                                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                                                                                                    </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-camaras" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -3065,10 +3130,10 @@
                             labels: ['Funcionales', 'Sin Funcionar', 'Baja', 'En Revisión', 'Temporales'],
                             datasets: [{
                                 data: [
-                                    {{ $cant_equipos_funcionales ?? 0 }},
-                                    {{ $cant_equipos_sin_funcionar ?? 0 }},
-                                    {{ $cant_equipos_baja ?? 0 }},
-                                    {{ $cant_equipos_en_revision ?? 0 }},
+                                                    {{ $cant_equipos_funcionales ?? 0 }},
+                                                    {{ $cant_equipos_sin_funcionar ?? 0 }},
+                                                    {{ $cant_equipos_baja ?? 0 }},
+                                                    {{ $cant_equipos_en_revision ?? 0 }},
                                     {{ $cant_equipos_temporales ?? 0 }}
                                 ],
                                 backgroundColor: ['#8b5cf6', '#ef4444', '#3b82f6', '#6366f1', '#10b981'],
@@ -3108,8 +3173,8 @@
                             datasets: [{
                                 label: 'Cantidad de Equipos',
                                 data: [
-                                    {{ $cant_equipos_provisto_por_pg ?? 0 }},
-                                    {{ $cant_equipos_provisto_por_telecom ?? 0 }},
+                                                    {{ $cant_equipos_provisto_por_pg ?? 0 }},
+                                                    {{ $cant_equipos_provisto_por_telecom ?? 0 }},
                                     {{ $cant_equipos_provisto_por_per ?? 0 }}
                                 ],
                                 backgroundColor: ['#f59e0b', '#3b82f6', '#64748b'],
@@ -3311,8 +3376,8 @@
             createCharts();
 
             // Observar cambios de tema y re-renderizar gráficos
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
+            const observer = new MutationObserver(function (mutations) {
+                mutations.forEach(function (mutation) {
                     if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
                         createCharts();
                     }
@@ -3327,50 +3392,50 @@
 
         // ── Monitor servicios IA ────────────────────────────────────────────
         (function iaMonitor() {
-            var estadoUrl      = '{{ route("rag.estado") }}';
-            var callHealthUrl  = '{{ route("callanalysis.health") }}';
+            var estadoUrl = '{{ route("rag.estado") }}';
+            var callHealthUrl = '{{ route("callanalysis.health") }}';
 
             function actualizarServicio(nombre, activo) {
-                var dot   = document.getElementById('ia-dot-' + nombre);
+                var dot = document.getElementById('ia-dot-' + nombre);
                 var label = document.getElementById('ia-label-' + nombre);
                 if (!dot || !label) return;
                 if (activo) {
-                    dot.style.background   = '#22c55e';
-                    label.className        = 'badge badge-success';
-                    label.textContent      = 'Online';
+                    dot.style.background = '#22c55e';
+                    label.className = 'badge badge-success';
+                    label.textContent = 'Online';
                 } else {
-                    dot.style.background   = '#ef4444';
-                    label.className        = 'badge badge-danger';
-                    label.textContent      = 'Offline';
+                    dot.style.background = '#ef4444';
+                    label.className = 'badge badge-danger';
+                    label.textContent = 'Offline';
                 }
             }
 
             function verificarCallAnalysis() {
                 fetch(callHealthUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                    .then(function(r) { return r.ok ? r.json() : Promise.reject(); })
-                    .then(function(data) {
+                    .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+                    .then(function (data) {
                         var ok = data && data.status === 'ok';
                         actualizarServicio('callanalysis', ok);
                     })
-                    .catch(function() {
+                    .catch(function () {
                         actualizarServicio('callanalysis', false);
                     });
             }
 
             function verificar() {
                 fetch(estadoUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
-                        actualizarServicio('ollama',  data.ollama);
-                        actualizarServicio('rag',     data.rag);
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        actualizarServicio('ollama', data.ollama);
+                        actualizarServicio('rag', data.rag);
                         actualizarServicio('whisper', data.whisper);
                         var ahora = new Date();
-                        var hora  = ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                        var el    = document.getElementById('ia-ultima-actualizacion');
+                        var hora = ahora.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                        var el = document.getElementById('ia-ultima-actualizacion');
                         if (el) el.textContent = 'Actualizado: ' + hora;
                     })
-                    .catch(function() {
-                        ['ollama','rag','whisper'].forEach(function(s) {
+                    .catch(function () {
+                        ['ollama', 'rag', 'whisper'].forEach(function (s) {
                             var dot = document.getElementById('ia-dot-' + s);
                             var lbl = document.getElementById('ia-label-' + s);
                             if (dot) dot.style.background = '#f59e0b';
@@ -3393,7 +3458,7 @@
             var baseUrl = '{{ route("api.dashboard.cecoco-mapa") }}';
 
             // Inicializar Select2 del filtro de tipo
-            $(function() {
+            $(function () {
                 $('#cecoco-mapa-tipo').select2({
                     placeholder: 'Todas las tipificaciones',
                     allowClear: true,
@@ -3416,8 +3481,8 @@
                 if (tipo) url += '?tipo=' + encodeURIComponent(tipo);
 
                 fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                    .then(function(r) { return r.json(); })
-                    .then(function(puntos) {
+                    .then(function (r) { return r.json(); })
+                    .then(function (puntos) {
                         mostrarLoading(false);
 
                         // Limpiar capa anterior
@@ -3432,7 +3497,7 @@
 
                         if (estado) estado.textContent = puntos.length + ' sector' + (puntos.length !== 1 ? 'es' : '') + ' con incidencias';
 
-                        var heatData = puntos.map(function(p) {
+                        var heatData = puntos.map(function (p) {
                             return [parseFloat(p.latitud), parseFloat(p.longitud), Math.min(p.peso / 5, 1)];
                         });
 
@@ -3443,12 +3508,12 @@
                             gradient: { 0.2: '#3b82f6', 0.5: '#f59e0b', 0.8: '#ef4444', 1.0: '#7f1d1d' }
                         }).addTo(miniMapa);
 
-                        var bounds = L.latLngBounds(puntos.map(function(p) {
+                        var bounds = L.latLngBounds(puntos.map(function (p) {
                             return [parseFloat(p.latitud), parseFloat(p.longitud)];
                         }));
                         if (bounds.isValid()) miniMapa.fitBounds(bounds, { padding: [30, 30] });
                     })
-                    .catch(function(err) {
+                    .catch(function (err) {
                         mostrarLoading(false);
                         var estado = document.getElementById('cecoco-mapa-estado');
                         if (estado) estado.textContent = 'Error al cargar el mapa';
@@ -3476,16 +3541,87 @@
             }
 
             // Botón Aplicar
-            $(document).on('click', '#cecoco-mapa-filtrar', function() {
+            $(document).on('click', '#cecoco-mapa-filtrar', function () {
                 if (!mapaIniciado) return;
                 var tipo = $('#cecoco-mapa-tipo').val() || '';
                 cargarPuntos(tipo);
             });
 
             // Iniciar al mostrar el tab
-            $('#cecoco-tab3').on('shown.bs.tab', function() {
+            $('#cecoco-tab3').on('shown.bs.tab', function () {
                 iniciarMapa();
-                if (miniMapa) setTimeout(function() { miniMapa.invalidateSize(); }, 100);
+                if (miniMapa) setTimeout(function () { miniMapa.invalidateSize(); }, 100);
+            });
+        })();
+        // ── Gráfico Comparativo Cecoco ───────────────────────────────────────
+        (function cecocoChart() {
+            var chartIniciado = false;
+            var chartComp = null;
+
+            function iniciarChart() {
+                if (chartIniciado) return;
+                chartIniciado = true;
+
+                var ctx = document.getElementById('cecocoComparativoChart');
+                if (!ctx) return;
+
+                var datosActual = [
+                                {{ $cecoco_accidentes ?? 0 }},
+                                {{ $cecoco_robos ?? 0 }},
+                                {{ $cecoco_hurtos ?? 0 }},
+                                {{ $cecoco_abuso_armas ?? 0 }},
+                    {{ $cecoco_homicidios ?? 0 }}
+                ];
+
+                var datosAnterior = [
+                                {{ $cecoco_accidentes_ant ?? 0 }},
+                                {{ $cecoco_robos_ant ?? 0 }},
+                                {{ $cecoco_hurtos_ant ?? 0 }},
+                                {{ $cecoco_abuso_armas_ant ?? 0 }},
+                    {{ $cecoco_homicidios_ant ?? 0 }}
+                ];
+
+                var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                var textColor = isDark ? '#e2e8f0' : '#475569';
+                var gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+
+                chartComp = new Chart(ctx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Accidentes', 'Robos', 'Hurtos', 'Abuso Armas', 'Homicidios'],
+                        datasets: [
+                            {
+                                label: 'Semana Consultada',
+                                data: datosActual,
+                                backgroundColor: isDark ? 'rgba(99,179,237,0.85)' : '#3b82f6',
+                                borderRadius: 4,
+                                borderWidth: 0
+                            },
+                            {
+                                label: 'Misma Semana, Mes Ant.',
+                                data: datosAnterior,
+                                backgroundColor: isDark ? 'rgba(148,163,184,0.6)' : '#94a3b8',
+                                borderRadius: 4,
+                                borderWidth: 0
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: gridColor, borderDash: [5, 5] }, ticks: { color: textColor, precision: 0 } },
+                            x: { grid: { display: false }, ticks: { color: textColor } }
+                        }
+                    }
+                });
+            }
+
+            $('#cecoco-tab3').on('shown.bs.tab', function () {
+                iniciarChart();
             });
         })();
     </script>

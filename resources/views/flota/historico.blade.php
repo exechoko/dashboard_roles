@@ -13,7 +13,11 @@
                         <!-- CARD HEADER -->
                         <div class="card-header-modern">
                             <div class="card-header-left">
-                                <div class="header-icon"><i class="fas fa-history"></i></div>
+                                @if ($desdeEquipo)
+                                    <img src="{{ asset($flota->tipo_terminal->imagen) }}" class="hist-equipo-img">
+                                @else
+                                    <img src="{{ asset($flota->equipo->tipo_terminal->imagen) }}" class="hist-equipo-img">
+                                @endif
                                 <div>
                                     @if ($desdeEquipo)
                                         <h5 class="header-title">
@@ -40,20 +44,11 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="d-flex align-items-center" style="gap:.75rem;">
-                                @if ($desdeEquipo == false)
-                                    <a href="{{ route('flota.historico.imprimir', $flota->id) }}" target="_blank" class="btn btn-nuevo">
-                                        <i class="fas fa-print mr-1"></i> Imprimir
-                                    </a>
-                                @endif
-                                @if ($desdeEquipo)
-                                    <img src="{{ asset($flota->tipo_terminal->imagen) }}"
-                                        style="width:110px; border-radius:10px; border:2px solid var(--border-color); object-fit:contain;">
-                                @else
-                                    <img src="{{ asset($flota->equipo->tipo_terminal->imagen) }}"
-                                        style="width:110px; border-radius:10px; border:2px solid var(--border-color); object-fit:contain;">
-                                @endif
-                            </div>
+                            @if ($desdeEquipo == false)
+                                <a href="{{ route('flota.historico.imprimir', $flota->id) }}" target="_blank" class="btn btn-nuevo">
+                                    <i class="fas fa-print mr-1"></i> Imprimir
+                                </a>
+                            @endif
                         </div>
 
                         <div class="card-body pt-3">

@@ -469,6 +469,17 @@
     .estado-revision { background: #17a2b8; }
     .estado-neutro   { background: #6c757d; }
 
+    /* Imagen equipo en header de histórico */
+    .hist-equipo-img {
+        width: 80px; height: 80px;
+        object-fit: contain;
+        border-radius: 10px;
+        border: 2px solid var(--border-color);
+        background: var(--bg-secondary);
+        padding: 4px;
+        flex-shrink: 0;
+    }
+
     /* ISSI sub-TEI */
     .issi-sub {
         font-size: .72rem; color: var(--text-secondary);

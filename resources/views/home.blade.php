@@ -559,7 +559,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -573,7 +573,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -587,7 +587,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -601,7 +601,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -1149,13 +1149,13 @@
                                                             item.className = `turno-box ${clase}`;
 
                                                             item.innerHTML = `
-                                                                                                                                    <label class="mb-0">
-                                                                                                                                        <input type="checkbox" class="asignacion"
-                                                                                                                                        data-funcionario="${f}" value="${h.nombre}">
-                                                                                                                                        ${h.nombre}
-                                                                                                                                    </label>
-                                                                                                                                    <span class="contador" id="count-${h.nombre.replace(/\s/g, '')}">0</span>
-                                                                                                                                `;
+                                                                                                                                                            <label class="mb-0">
+                                                                                                                                                                <input type="checkbox" class="asignacion"
+                                                                                                                                                                data-funcionario="${f}" value="${h.nombre}">
+                                                                                                                                                                ${h.nombre}
+                                                                                                                                                            </label>
+                                                                                                                                                            <span class="contador" id="count-${h.nombre.replace(/\s/g, '')}">0</span>
+                                                                                                                                                        `;
 
                                                             container.appendChild(item);
                                                         });
@@ -1349,8 +1349,8 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--ul id="equiposFuncionalesList" class="mt-3">
-                                                                                            </ul>
-                                                                                            <hr-->
+                                                                                                    </ul>
+                                                                                                    <hr-->
                         <h5>Equipos para móviles</h5>
                         <ul id="cantidadTotalEquiposMoviles" class="mt-3">
                             <!-- Lista de equipos -->
@@ -1564,9 +1564,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                                                                                                            <button id="btn-buscar-moviles" href="consultarMoviles"
-                                                                                                                                                                                                                                                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                                                                                                        </div-->
+                                                                                                                                                                                                                                                                                                                                                                    <button id="btn-buscar-moviles" href="consultarMoviles"
+                                                                                                                                                                                                                                                                                                                                                                        class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                                                                                                                </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-moviles" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -1751,9 +1751,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                                                                                                            <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                                                                                                                                                                                                                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                                                                                                        </div-->
+                                                                                                                                                                                                                                                                                                                                                                    <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                                                                                                                                                                                                                                                                                        class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                                                                                                                </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-motos" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -1780,9 +1780,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                                                                                                            <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                                                                                                                                                                                                                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                                                                                                        </div-->
+                                                                                                                                                                                                                                                                                                                                                                    <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                                                                                                                                                                                                                                                                                        class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                                                                                                                </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-camaras" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -3147,10 +3147,10 @@
                             labels: ['Funcionales', 'Sin Funcionar', 'Baja', 'En Revisión', 'Temporales'],
                             datasets: [{
                                 data: [
-                                                        {{ $cant_equipos_funcionales ?? 0 }},
-                                                        {{ $cant_equipos_sin_funcionar ?? 0 }},
-                                                        {{ $cant_equipos_baja ?? 0 }},
-                                                        {{ $cant_equipos_en_revision ?? 0 }},
+                                                                {{ $cant_equipos_funcionales ?? 0 }},
+                                                                {{ $cant_equipos_sin_funcionar ?? 0 }},
+                                                                {{ $cant_equipos_baja ?? 0 }},
+                                                                {{ $cant_equipos_en_revision ?? 0 }},
                                     {{ $cant_equipos_temporales ?? 0 }}
                                 ],
                                 backgroundColor: isDark ? ['#a855f7', '#f43f5e', '#38bdf8', '#818cf8', '#34d399'] : ['#8b5cf6', '#ef4444', '#3b82f6', '#6366f1', '#10b981'],
@@ -3191,8 +3191,8 @@
                             datasets: [{
                                 label: 'Cantidad de Equipos',
                                 data: [
-                                                        {{ $cant_equipos_provisto_por_pg ?? 0 }},
-                                                        {{ $cant_equipos_provisto_por_telecom ?? 0 }},
+                                                                {{ $cant_equipos_provisto_por_pg ?? 0 }},
+                                                                {{ $cant_equipos_provisto_por_telecom ?? 0 }},
                                     {{ $cant_equipos_provisto_por_per ?? 0 }}
                                 ],
                                 backgroundColor: function (context) {
@@ -3545,149 +3545,155 @@
                             return;
                         }
 
-                        if (estado) estado.textContent = puntos.length + ' sector' + (puntos.length !== 1 ? 'es' : '') + ' con incidencias';
+                        var totalIncidencias = puntos.reduce(function (acc, p) { return acc + parseInt(p.peso); }, 0);
+                        var descTipo = tipo ? ' (' + tipo + ')' : '';
+                            if (estado) estado.textContent = totalIncidencias + ' eventos en ' + puntos.length + ' sectores' + descTipo;
 
-                        var heatData = puntos.map(function (p) {
-                            return [parseFloat(p.latitud), parseFloat(p.longitud), Math.min(p.peso / 5, 1)];
+                            var maxPeso = Math.max.apply(null, puntos.map(function (p) { return parseFloat(p.peso); }));
+                            if (maxPeso < 1) maxPeso = 1;
+
+                            var heatData = puntos.map(function (p) {
+                                return [parseFloat(p.latitud), parseFloat(p.longitud), parseFloat(p.peso)];
+                            });
+
+                            heatLayer = L.heatLayer(heatData, {
+                                radius: 35,
+                                blur: 25,
+                                maxZoom: 15,
+                                max: maxPeso,
+                                gradient: { 0.1: 'blue', 0.3: 'lime', 0.6: 'yellow', 1.0: 'red' }
+                            }).addTo(miniMapa);
+
+                            var bounds = L.latLngBounds(puntos.map(function (p) {
+                                return [parseFloat(p.latitud), parseFloat(p.longitud)];
+                            }));
+                            if (bounds.isValid()) miniMapa.fitBounds(bounds, { padding: [30, 30] });
+                        })
+                        .catch(function (err) {
+                            mostrarLoading(false);
+                            var estado = document.getElementById('cecoco-mapa-estado');
+                            if (estado) estado.textContent = 'Error al cargar el mapa';
+                            console.error('cecoco-mapa:', err);
                         });
+                }
 
-                        heatLayer = L.heatLayer(heatData, {
-                            radius: 22,
-                            blur: 18,
-                            maxZoom: 17,
-                            gradient: { 0.2: '#3b82f6', 0.5: '#f59e0b', 0.8: '#ef4444', 1.0: '#7f1d1d' }
-                        }).addTo(miniMapa);
+                function iniciarMapa() {
+                    if (mapaIniciado) return;
+                    mapaIniciado = true;
 
-                        var bounds = L.latLngBounds(puntos.map(function (p) {
-                            return [parseFloat(p.latitud), parseFloat(p.longitud)];
-                        }));
-                        if (bounds.isValid()) miniMapa.fitBounds(bounds, { padding: [30, 30] });
-                    })
-                    .catch(function (err) {
-                        mostrarLoading(false);
-                        var estado = document.getElementById('cecoco-mapa-estado');
-                        if (estado) estado.textContent = 'Error al cargar el mapa';
-                        console.error('cecoco-mapa:', err);
+                    miniMapa = L.map('cecoco-mini-mapa', {
+                        center: [-31.7333, -60.5333],
+                        zoom: 13,
+                        zoomControl: true,
+                        scrollWheelZoom: false
                     });
-            }
 
-            function iniciarMapa() {
-                if (mapaIniciado) return;
-                mapaIniciado = true;
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap',
+                        maxZoom: 18
+                    }).addTo(miniMapa);
 
-                miniMapa = L.map('cecoco-mini-mapa', {
-                    center: [-31.7333, -60.5333],
-                    zoom: 13,
-                    zoomControl: true,
-                    scrollWheelZoom: false
+                    cargarPuntos('');
+                }
+
+                // Botón Aplicar
+                $(document).on('click', '#cecoco-mapa-filtrar', function () {
+                    if (!mapaIniciado) return;
+                    var tipo = $('#cecoco-mapa-tipo').val() || '';
+                    cargarPuntos(tipo);
                 });
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap',
-                    maxZoom: 18
-                }).addTo(miniMapa);
+                // Iniciar al mostrar el tab
+                $('#cecoco-tab3').on('shown.bs.tab', function () {
+                    iniciarMapa();
+                    if (miniMapa) setTimeout(function () { miniMapa.invalidateSize(); }, 100);
+                });
+            })();
+            // ── Gráfico Comparativo Cecoco ───────────────────────────────────────
+            (function cecocoChart() {
+                var chartIniciado = false;
+                var chartComp = null;
 
-                cargarPuntos('');
-            }
+                function iniciarChart() {
+                    if (chartIniciado) return;
+                    chartIniciado = true;
 
-            // Botón Aplicar
-            $(document).on('click', '#cecoco-mapa-filtrar', function () {
-                if (!mapaIniciado) return;
-                var tipo = $('#cecoco-mapa-tipo').val() || '';
-                cargarPuntos(tipo);
-            });
+                    var ctx = document.getElementById('cecocoComparativoChart');
+                    if (!ctx) return;
 
-            // Iniciar al mostrar el tab
-            $('#cecoco-tab3').on('shown.bs.tab', function () {
-                iniciarMapa();
-                if (miniMapa) setTimeout(function () { miniMapa.invalidateSize(); }, 100);
-            });
-        })();
-        // ── Gráfico Comparativo Cecoco ───────────────────────────────────────
-        (function cecocoChart() {
-            var chartIniciado = false;
-            var chartComp = null;
+                    var datosActual = [
+                                            {{ $cecoco_accidentes ?? 0 }},
+                                            {{ $cecoco_robos ?? 0 }},
+                                            {{ $cecoco_hurtos ?? 0 }},
+                                            {{ $cecoco_abuso_armas ?? 0 }},
+                        {{ $cecoco_homicidios ?? 0 }}
+                    ];
 
-            function iniciarChart() {
-                if (chartIniciado) return;
-                chartIniciado = true;
+                    var datosAnterior = [
+                                            {{ $cecoco_accidentes_ant ?? 0 }},
+                                            {{ $cecoco_robos_ant ?? 0 }},
+                                            {{ $cecoco_hurtos_ant ?? 0 }},
+                                            {{ $cecoco_abuso_armas_ant ?? 0 }},
+                        {{ $cecoco_homicidios_ant ?? 0 }}
+                    ];
 
-                var ctx = document.getElementById('cecocoComparativoChart');
-                if (!ctx) return;
+                    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                    var textColor = isDark ? '#e2e8f0' : '#475569';
+                    var gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
 
-                var datosActual = [
-                                    {{ $cecoco_accidentes ?? 0 }},
-                                    {{ $cecoco_robos ?? 0 }},
-                                    {{ $cecoco_hurtos ?? 0 }},
-                                    {{ $cecoco_abuso_armas ?? 0 }},
-                    {{ $cecoco_homicidios ?? 0 }}
-                ];
-
-                var datosAnterior = [
-                                    {{ $cecoco_accidentes_ant ?? 0 }},
-                                    {{ $cecoco_robos_ant ?? 0 }},
-                                    {{ $cecoco_hurtos_ant ?? 0 }},
-                                    {{ $cecoco_abuso_armas_ant ?? 0 }},
-                    {{ $cecoco_homicidios_ant ?? 0 }}
-                ];
-
-                var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-                var textColor = isDark ? '#e2e8f0' : '#475569';
-                var gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
-
-                chartComp = new Chart(ctx.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: ['Accidentes', 'Robos', 'Hurtos', 'Abuso Armas', 'Homicidios'],
-                        datasets: [
-                            {
-                                label: 'Semana Consultada',
-                                data: datosActual,
-                                backgroundColor: function (context) {
-                                    const area = context.chart.chartArea;
-                                    if (!area) return null;
-                                    const grad = context.chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
-                                    grad.addColorStop(0, isDark ? 'rgba(244,63,94,0.3)' : '#3b82f6');
-                                    grad.addColorStop(1, isDark ? '#f43f5e' : '#3b82f6');
-                                    return grad;
+                    chartComp = new Chart(ctx.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: ['Accidentes', 'Robos', 'Hurtos', 'Abuso Armas', 'Homicidios'],
+                            datasets: [
+                                {
+                                    label: 'Semana Consultada',
+                                    data: datosActual,
+                                    backgroundColor: function (context) {
+                                        const area = context.chart.chartArea;
+                                        if (!area) return null;
+                                        const grad = context.chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
+                                        grad.addColorStop(0, isDark ? 'rgba(244,63,94,0.3)' : '#3b82f6');
+                                        grad.addColorStop(1, isDark ? '#f43f5e' : '#3b82f6');
+                                        return grad;
+                                    },
+                                    borderRadius: 4,
+                                    borderWidth: 0
                                 },
-                                borderRadius: 4,
-                                borderWidth: 0
-                            },
-                            {
-                                label: 'Misma Semana, Mes Ant.',
-                                data: datosAnterior,
-                                backgroundColor: function (context) {
-                                    const area = context.chart.chartArea;
-                                    if (!area) return null;
-                                    const grad = context.chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
-                                    grad.addColorStop(0, isDark ? 'rgba(251,146,60,0.2)' : '#94a3b8');
-                                    grad.addColorStop(1, isDark ? '#fb923c' : '#94a3b8');
-                                    return grad;
-                                },
-                                borderRadius: 4,
-                                borderWidth: 0
-                            }
-                        ]
-                    },
-                    options: {
-                        neonGlow: isDark ? { color: 'rgba(244,63,94,0.4)', blur: 15 } : false,
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } }
+                                {
+                                    label: 'Misma Semana, Mes Ant.',
+                                    data: datosAnterior,
+                                    backgroundColor: function (context) {
+                                        const area = context.chart.chartArea;
+                                        if (!area) return null;
+                                        const grad = context.chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
+                                        grad.addColorStop(0, isDark ? 'rgba(251,146,60,0.2)' : '#94a3b8');
+                                        grad.addColorStop(1, isDark ? '#fb923c' : '#94a3b8');
+                                        return grad;
+                                    },
+                                    borderRadius: 4,
+                                    borderWidth: 0
+                                }
+                            ]
                         },
-                        scales: {
-                            y: { beginAtZero: true, grid: { color: gridColor, borderDash: [5, 5] }, ticks: { color: textColor, precision: 0 } },
-                            x: { grid: { display: false }, ticks: { color: textColor } }
+                        options: {
+                            neonGlow: isDark ? { color: 'rgba(244,63,94,0.4)', blur: 15 } : false,
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: true, position: 'top', labels: { color: textColor, font: { size: 11 } } }
+                            },
+                            scales: {
+                                y: { beginAtZero: true, grid: { color: gridColor, borderDash: [5, 5] }, ticks: { color: textColor, precision: 0 } },
+                                x: { grid: { display: false }, ticks: { color: textColor } }
+                            }
                         }
-                    }
-                });
-            }
+                    });
+                }
 
-            $('#cecoco-tab3').on('shown.bs.tab', function () {
-                iniciarChart();
-            });
-        })();
-    </script>
+                $('#cecoco-tab3').on('shown.bs.tab', function () {
+                    iniciarChart();
+                });
+            })();
+        </script>
 @endsection

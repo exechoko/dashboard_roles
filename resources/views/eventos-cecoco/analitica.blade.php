@@ -133,7 +133,7 @@
                     <label class="form-label fw-semibold mb-1" style="font-size:.82rem">HASTA</label>
                     <input type="date" id="filtro-hasta" class="form-control form-control-sm">
                 </div>
-                <div class="col-12 col-md-3">
+                <div class="col-12 col-lg-3 col-xl-2">
                     <label class="form-label fw-semibold mb-1" style="font-size:.82rem">TIPIFICACIÓN (opcional)</label>
                     <select id="filtro-tipo" class="form-select form-select-sm select2-tipificacion" style="width:100%">
                         <option value="">Todas las tipificaciones</option>
@@ -144,9 +144,18 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-12 col-md-auto">
-                    <button id="btn-analizar" class="btn btn-primary btn-sm px-4">
-                        <i class="bi bi-search me-1"></i>Analizar
+                <div class="col-12 col-lg-2 col-xl-2">
+                    <label class="form-label fw-semibold mb-1" style="font-size:.82rem">COMPARAR CON</label>
+                    <select id="filtro-comparar" class="form-select form-select-sm" style="width:100%">
+                        <option value="mes" selected>Mes anterior</option>
+                        <option value="semana">Semana anterior</option>
+                        <option value="anio">Año anterior</option>
+                    </select>
+                </div>
+                <div class="col-12 col-lg-auto col-xl-auto">
+                    <button id="btn-analizar" class="btn btn-primary btn-sm px-4"
+                        style="background: linear-gradient(135deg, #ec4899, #8b5cf6); border:none; box-shadow: 0 0 10px rgba(236, 72, 153, 0.5);">
+                        <i class="bi bi-stars me-1"></i>Analizar
                     </button>
                 </div>
             </div>
@@ -280,6 +289,26 @@
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script>
+        // --- Neon Glow Plugin para Chart.js ---
+        Chart.register({
+            id: 'neonGlow',
+            beforeDatasetsDraw: function (chart) {
+                if (chart.config.options.neonGlow) {
+                    let ctx = chart.ctx;
+                    ctx.save();
+                    ctx.shadowColor = chart.config.options.neonGlow.color || 'rgba(236,72,153, 0.8)';
+                    ctx.shadowBlur = chart.config.options.neonGlow.blur || 18;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                }
+            },
+            afterDatasetsDraw: function (chart) {
+                if (chart.config.options.neonGlow) {
+                    chart.ctx.restore();
+                }
+            }
+        });
+
         $(function () {
             // Select2 para tipificación
             $('#filtro-tipo').select2({
@@ -287,6 +316,12 @@
                 allowClear: true,
                 width: '100%',
                 dropdownAutoWidth: true
+            });
+
+            // Select2 para filtro comparar
+            $('#filtro-comparar').select2({
+                width: '100%',
+                minimumResultsForSearch: Infinity
             });
         });
 
@@ -358,8 +393,7 @@
                 if (datos.por_fecha && Object.keys(datos.por_fecha).length > 0) {
                     const fechaLabels = Object.keys(datos.por_fecha);
                     const fechaVals = Object.values(datos.por_fecha);
-                    const gradientColor = isDark ? 'rgba(99,179,237,0.85)' : 'rgba(13,110,253,0.8)';
-                    const fillColor = isDark ? 'rgba(99,179,237,0.15)' : 'rgba(13,110,253,0.1)';
+                    const gradientStroke = isDark ? '#a855f7' : 'rgba(13,110,253,0.8)';
                     chartFecha = new Chart(document.getElementById('chart-fecha'), {
                         type: 'line',
                         data: {
@@ -367,17 +401,25 @@
                             datasets: [{
                                 label: 'Llamadas',
                                 data: fechaVals,
-                                borderColor: gradientColor,
-                                backgroundColor: fillColor,
+                                borderColor: gradientStroke,
+                                backgroundColor: function (context) {
+                                    const chartArea = context.chart.chartArea;
+                                    if (!chartArea) return null;
+                                    const gradient = context.chart.ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                    gradient.addColorStop(0, isDark ? 'rgba(168,85,247,0.05)' : 'rgba(13,110,253,0.05)');
+                                    gradient.addColorStop(1, isDark ? 'rgba(168,85,247,0.5)' : 'rgba(13,110,253,0.2)');
+                                    return gradient;
+                                },
                                 fill: true,
                                 tension: 0.35,
                                 pointRadius: fechaLabels.length > 60 ? 0 : 3,
-                                pointHoverRadius: 5,
-                                borderWidth: 2
+                                pointHoverRadius: 6,
+                                borderWidth: isDark ? 3 : 2
                             }]
                         },
                         options: {
                             responsive: true,
+                            neonGlow: isDark ? { color: 'rgba(168,85,247,0.8)', blur: 15 } : false,
                             plugins: {
                                 legend: { display: false },
                                 tooltip: {
@@ -404,21 +446,36 @@
                                 {
                                     label: 'Período Seleccionado',
                                     data: datos.comparativa_actual,
-                                    backgroundColor: isDark ? 'rgba(99,179,237,0.85)' : '#3b82f6',
-                                    borderRadius: 4,
+                                    backgroundColor: function (context) {
+                                        const chartArea = context.chart.chartArea;
+                                        if (!chartArea) return null;
+                                        const gradient = context.chart.ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                        gradient.addColorStop(0, isDark ? 'rgba(236,72,153,0.3)' : '#3b82f6');
+                                        gradient.addColorStop(1, isDark ? '#ec4899' : '#3b82f6');
+                                        return gradient;
+                                    },
+                                    borderRadius: 6,
                                     borderWidth: 0
                                 },
                                 {
-                                    label: 'Mismo Período, Mes Ant.',
+                                    label: 'Mismo Período Ant.',
                                     data: datos.comparativa_anterior,
-                                    backgroundColor: isDark ? 'rgba(148,163,184,0.6)' : '#94a3b8',
-                                    borderRadius: 4,
+                                    backgroundColor: function (context) {
+                                        const chartArea = context.chart.chartArea;
+                                        if (!chartArea) return null;
+                                        const gradient = context.chart.ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                        gradient.addColorStop(0, isDark ? 'rgba(56,189,248,0.2)' : '#94a3b8');
+                                        gradient.addColorStop(1, isDark ? '#38bdf8' : '#94a3b8');
+                                        return gradient;
+                                    },
+                                    borderRadius: 6,
                                     borderWidth: 0
                                 }
                             ]
                         },
                         options: {
                             responsive: true,
+                            neonGlow: isDark ? { color: 'rgba(236,72,153,0.5)', blur: 15 } : false,
                             plugins: {
                                 legend: { display: true, position: 'top', labels: { color: textColor } },
                                 tooltip: tooltipStyle
@@ -437,10 +494,13 @@
                 const maxHora = Math.max(...horaVals);
                 const horaColors = horaVals.map(v => {
                     const r = maxHora > 0 ? v / maxHora : 0;
+                    if (isDark) {
+                        return r >= 0.8 ? '#f43f5e' : r >= 0.5 ? '#f97316' : r >= 0.25 ? '#eab308' : '#38bdf8';
+                    }
                     if (r >= 0.8) return 'rgba(220,53,69,0.85)';
                     if (r >= 0.5) return 'rgba(253,126,20,0.75)';
                     if (r >= 0.25) return 'rgba(255,193,7,0.8)';
-                    return isDark ? 'rgba(99,179,237,0.6)' : 'rgba(13,110,253,0.5)';
+                    return 'rgba(13,110,253,0.5)';
                 });
                 if (chartHora) chartHora.destroy();
                 chartHora = new Chart(document.getElementById('chart-hora'), {
@@ -448,6 +508,7 @@
                     data: { labels: horaLabels, datasets: [{ label: 'Eventos', data: horaVals, backgroundColor: horaColors, borderRadius: 4 }] },
                     options: {
                         responsive: true,
+                        neonGlow: isDark ? { color: 'rgba(244,63,94,0.4)', blur: 10 } : false,
                         plugins: { legend: { display: false }, tooltip: tooltipStyle },
                         scales: {
                             x: { grid: { color: gridColor, borderDash: [5, 5] }, ticks: { color: textColor, font: { size: 10 } } },
@@ -464,12 +525,20 @@
                         labels: Object.keys(datos.por_dia),
                         datasets: [{
                             label: 'Eventos', data: Object.values(datos.por_dia),
-                            backgroundColor: isDark ? 'rgba(99,179,237,0.7)' : 'rgba(13,110,253,0.65)',
+                            backgroundColor: function (context) {
+                                const chartArea = context.chart.chartArea;
+                                if (!chartArea) return null;
+                                const gradient = context.chart.ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                gradient.addColorStop(0, isDark ? 'rgba(56,189,248,0.2)' : 'rgba(13,110,253,0.3)');
+                                gradient.addColorStop(1, isDark ? '#38bdf8' : 'rgba(13,110,253,0.65)');
+                                return gradient;
+                            },
                             borderRadius: 6, borderWidth: 0
                         }]
                     },
                     options: {
                         responsive: true,
+                        neonGlow: isDark ? { color: 'rgba(56,189,248,0.6)', blur: 15 } : false,
                         plugins: { legend: { display: false }, tooltip: tooltipStyle },
                         scales: {
                             x: { grid: { color: gridColor, borderDash: [5, 5] }, ticks: { color: textColor } },
@@ -486,12 +555,20 @@
                         labels: datos.top_tipos.map(t => t.tipo || '(sin tipo)'),
                         datasets: [{
                             label: 'Eventos', data: datos.top_tipos.map(t => t.total),
-                            backgroundColor: isDark ? 'rgba(99,179,237,0.75)' : 'rgba(13,110,253,0.7)',
+                            backgroundColor: function (context) {
+                                const chartArea = context.chart.chartArea;
+                                if (!chartArea) return null;
+                                const gradient = context.chart.ctx.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+                                gradient.addColorStop(0, isDark ? 'rgba(168,85,247,0.3)' : 'rgba(13,110,253,0.3)');
+                                gradient.addColorStop(1, isDark ? '#a855f7' : 'rgba(13,110,253,0.7)');
+                                return gradient;
+                            },
                             borderRadius: 4, borderWidth: 0
                         }]
                     },
                     options: {
                         indexAxis: 'y', responsive: true,
+                        neonGlow: isDark ? { color: 'rgba(168,85,247,0.5)', blur: 15 } : false,
                         plugins: { legend: { display: false }, tooltip: tooltipStyle },
                         scales: {
                             x: { beginAtZero: true, grid: { color: gridColor, borderDash: [5, 5] }, ticks: { color: textColor, precision: 0 } },
@@ -508,12 +585,20 @@
                         labels: datos.top_calles.map(c => c.calle || '(sin dirección)'),
                         datasets: [{
                             label: 'Eventos', data: datos.top_calles.map(c => c.total),
-                            backgroundColor: isDark ? 'rgba(252,129,129,0.75)' : 'rgba(220,53,69,0.65)',
+                            backgroundColor: function (context) {
+                                const chartArea = context.chart.chartArea;
+                                if (!chartArea) return null;
+                                const gradient = context.chart.ctx.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+                                gradient.addColorStop(0, isDark ? 'rgba(236,72,153,0.3)' : 'rgba(220,53,69,0.3)');
+                                gradient.addColorStop(1, isDark ? '#ec4899' : 'rgba(220,53,69,0.65)');
+                                return gradient;
+                            },
                             borderRadius: 4, borderWidth: 0
                         }]
                     },
                     options: {
                         indexAxis: 'y', responsive: true,
+                        neonGlow: isDark ? { color: 'rgba(236,72,153,0.5)', blur: 15 } : false,
                         plugins: { legend: { display: false }, tooltip: tooltipStyle },
                         scales: {
                             x: { beginAtZero: true, grid: { color: gridColor, borderDash: [5, 5] }, ticks: { color: textColor, precision: 0 } },
@@ -539,19 +624,19 @@
                     const barPct = maxVal > 0 ? Math.round(c.total / maxVal * 100) : 0;
                     const badge = i === 0 ? 'bg-danger' : i === 1 ? 'bg-warning text-dark' : i === 2 ? 'bg-orange' : 'bg-secondary';
                     return `
-                    <div class="d-flex align-items-center py-2 border-bottom gap-3">
-                        <span class="badge ${badge} rounded-pill" style="min-width:24px;font-size:.75rem">${i + 1}</span>
-                        <div class="flex-grow-1" style="min-width:0">
-                            <div class="fw-semibold text-truncate" style="font-size:.9rem">${c.calle || '(sin dirección)'}</div>
-                            <div class="progress mt-1" style="height:5px;border-radius:3px">
-                                <div class="progress-bar bg-danger" style="width:${barPct}%"></div>
-                            </div>
-                        </div>
-                        <div class="text-end" style="min-width:80px">
-                            <span class="fw-bold">${c.total.toLocaleString('es-AR')}</span>
-                            <span class="text-muted ms-1" style="font-size:.8rem">(${pct}%)</span>
-                        </div>
-                    </div>`;
+                            <div class="d-flex align-items-center py-2 border-bottom gap-3">
+                                <span class="badge ${badge} rounded-pill" style="min-width:24px;font-size:.75rem">${i + 1}</span>
+                                <div class="flex-grow-1" style="min-width:0">
+                                    <div class="fw-semibold text-truncate" style="font-size:.9rem">${c.calle || '(sin dirección)'}</div>
+                                    <div class="progress mt-1" style="height:5px;border-radius:3px">
+                                        <div class="progress-bar bg-danger" style="width:${barPct}%"></div>
+                                    </div>
+                                </div>
+                                <div class="text-end" style="min-width:80px">
+                                    <span class="fw-bold">${c.total.toLocaleString('es-AR')}</span>
+                                    <span class="text-muted ms-1" style="font-size:.8rem">(${pct}%)</span>
+                                </div>
+                            </div>`;
                 }).join('');
 
                 el.innerHTML = rows;
@@ -562,13 +647,14 @@
                 const desde = document.getElementById('filtro-desde').value;
                 const hasta = document.getElementById('filtro-hasta').value;
                 const tipo = document.getElementById('filtro-tipo').value;
+                const compararCon = document.getElementById('filtro-comparar').value;
 
                 if (!desde || !hasta) { alert('Seleccioná un período de fechas.'); return; }
 
                 document.getElementById('loading-analitica').style.display = 'block';
                 document.getElementById('contenido-analitica').style.display = 'none';
 
-                const params = new URLSearchParams({ desde, hasta });
+                const params = new URLSearchParams({ desde, hasta, comparar_con: compararCon });
                 if (tipo) params.append('tipo', tipo);
 
                 fetch(`{{ route('api.cecoco.analitica.datos') }}?${params}`)

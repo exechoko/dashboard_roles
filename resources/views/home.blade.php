@@ -559,7 +559,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -573,7 +573,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -587,7 +587,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -601,7 +601,7 @@
                                                         </h2>
                                                         @can('ver-camara')
                                                             <!--p class="m-b-0 text-right"><a href="#" data-toggle="modal"
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     data-target="#modal-camaras{{-- $vehiculo->id --}}"id="btn-buscar-camaras" style="color: rgb(253, 253, 253)">Ver más</a></p-->
                                                         @endcan
                                                     </div>
                                                 </div>
@@ -1149,13 +1149,13 @@
                                                             item.className = `turno-box ${clase}`;
 
                                                             item.innerHTML = `
-                                                                                                                        <label class="mb-0">
-                                                                                                                            <input type="checkbox" class="asignacion"
-                                                                                                                            data-funcionario="${f}" value="${h.nombre}">
-                                                                                                                            ${h.nombre}
-                                                                                                                        </label>
-                                                                                                                        <span class="contador" id="count-${h.nombre.replace(/\s/g, '')}">0</span>
-                                                                                                                    `;
+                                                                                                                                    <label class="mb-0">
+                                                                                                                                        <input type="checkbox" class="asignacion"
+                                                                                                                                        data-funcionario="${f}" value="${h.nombre}">
+                                                                                                                                        ${h.nombre}
+                                                                                                                                    </label>
+                                                                                                                                    <span class="contador" id="count-${h.nombre.replace(/\s/g, '')}">0</span>
+                                                                                                                                `;
 
                                                             container.appendChild(item);
                                                         });
@@ -1349,8 +1349,8 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--ul id="equiposFuncionalesList" class="mt-3">
-                                                                                        </ul>
-                                                                                        <hr-->
+                                                                                            </ul>
+                                                                                            <hr-->
                         <h5>Equipos para móviles</h5>
                         <ul id="cantidadTotalEquiposMoviles" class="mt-3">
                             <!-- Lista de equipos -->
@@ -1564,9 +1564,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                                                                                                        <button id="btn-buscar-moviles" href="consultarMoviles"
-                                                                                                                                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                                                                                                    </div-->
+                                                                                                                                                                                                                                                                                                                                                            <button id="btn-buscar-moviles" href="consultarMoviles"
+                                                                                                                                                                                                                                                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                                                                                                        </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-moviles" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -1751,9 +1751,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                                                                                                        <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                                                                                                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                                                                                                    </div-->
+                                                                                                                                                                                                                                                                                                                                                            <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                                                                                                                                                                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                                                                                                        </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-motos" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -1780,9 +1780,9 @@
                     </div>
                     <div class="modal-body" style="min-height: 500px">
                         <!--div class="col-lg-2">
-                                                                                                                                                                                                                                                                                                                                                        <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
-                                                                                                                                                                                                                                                                                                                                                            class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
-                                                                                                                                                                                                                                                                                                                                                    </div-->
+                                                                                                                                                                                                                                                                                                                                                            <button id="btn-buscar-motopatrullas" href="consultarMotoPatrullas"
+                                                                                                                                                                                                                                                                                                                                                                class="btn gray btn-outline-warning btn-buscar" style="margin-top:5px">Buscar</button>
+                                                                                                                                                                                                                                                                                                                                                        </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-camaras" class="table table-condensed table-bordered table-stripped"></table>
                         </div>
@@ -3078,6 +3078,23 @@
 
         // Inicialización de Gráficos con Chart.js
         document.addEventListener('DOMContentLoaded', function () {
+            Chart.register({
+                id: 'neonGlow',
+                beforeDatasetsDraw: function (chart) {
+                    if (chart.config.options.neonGlow) {
+                        let ctx = chart.ctx;
+                        ctx.save();
+                        ctx.shadowColor = chart.config.options.neonGlow.color || 'rgba(56,189,248, 0.8)';
+                        ctx.shadowBlur = chart.config.options.neonGlow.blur || 18;
+                        ctx.shadowOffsetX = 0;
+                        ctx.shadowOffsetY = 0;
+                    }
+                },
+                afterDatasetsDraw: function (chart) {
+                    if (chart.config.options.neonGlow) chart.ctx.restore();
+                }
+            });
+
             // Detectar tema actual
             function detectTheme() {
                 const html = document.documentElement;
@@ -3130,19 +3147,20 @@
                             labels: ['Funcionales', 'Sin Funcionar', 'Baja', 'En Revisión', 'Temporales'],
                             datasets: [{
                                 data: [
-                                                    {{ $cant_equipos_funcionales ?? 0 }},
-                                                    {{ $cant_equipos_sin_funcionar ?? 0 }},
-                                                    {{ $cant_equipos_baja ?? 0 }},
-                                                    {{ $cant_equipos_en_revision ?? 0 }},
+                                                        {{ $cant_equipos_funcionales ?? 0 }},
+                                                        {{ $cant_equipos_sin_funcionar ?? 0 }},
+                                                        {{ $cant_equipos_baja ?? 0 }},
+                                                        {{ $cant_equipos_en_revision ?? 0 }},
                                     {{ $cant_equipos_temporales ?? 0 }}
                                 ],
-                                backgroundColor: ['#8b5cf6', '#ef4444', '#3b82f6', '#6366f1', '#10b981'],
-                                borderWidth: 2,
-                                borderColor: isDark ? '#1e293b' : '#ffffff',
+                                backgroundColor: isDark ? ['#a855f7', '#f43f5e', '#38bdf8', '#818cf8', '#34d399'] : ['#8b5cf6', '#ef4444', '#3b82f6', '#6366f1', '#10b981'],
+                                borderWidth: isDark ? 0 : 2,
+                                borderColor: isDark ? 'transparent' : '#ffffff',
                                 hoverOffset: 6
                             }]
                         },
                         options: {
+                            neonGlow: isDark ? { color: 'rgba(255,255,255,0.1)', blur: 12 } : false,
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: {
@@ -3173,17 +3191,25 @@
                             datasets: [{
                                 label: 'Cantidad de Equipos',
                                 data: [
-                                                    {{ $cant_equipos_provisto_por_pg ?? 0 }},
-                                                    {{ $cant_equipos_provisto_por_telecom ?? 0 }},
+                                                        {{ $cant_equipos_provisto_por_pg ?? 0 }},
+                                                        {{ $cant_equipos_provisto_por_telecom ?? 0 }},
                                     {{ $cant_equipos_provisto_por_per ?? 0 }}
                                 ],
-                                backgroundColor: ['#f59e0b', '#3b82f6', '#64748b'],
+                                backgroundColor: function (context) {
+                                    const area = context.chart.chartArea;
+                                    if (!area) return null;
+                                    const grad = context.chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
+                                    grad.addColorStop(0, isDark ? 'rgba(56,189,248,0.3)' : '#f59e0b');
+                                    grad.addColorStop(1, isDark ? '#38bdf8' : '#3b82f6');
+                                    return grad;
+                                },
                                 borderRadius: 6,
                                 borderWidth: 0,
                                 barThickness: 40
                             }]
                         },
                         options: {
+                            neonGlow: isDark ? { color: 'rgba(56,189,248,0.5)', blur: 15 } : false,
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: {
@@ -3225,12 +3251,20 @@
                             datasets: [{
                                 label: 'Equipos',
                                 data: deptValues,
-                                backgroundColor: barColors.slice(0, deptValues.length),
+                                backgroundColor: function (context) {
+                                    const area = context.chart.chartArea;
+                                    if (!area) return null;
+                                    const grad = context.chart.ctx.createLinearGradient(area.left, 0, area.right, 0);
+                                    grad.addColorStop(0, isDark ? 'rgba(236,72,153,0.3)' : '#a78bfa');
+                                    grad.addColorStop(1, isDark ? '#ec4899' : '#7c3aed');
+                                    return grad;
+                                },
                                 borderRadius: 4,
                                 borderWidth: 0
                             }]
                         },
                         options: {
+                            neonGlow: isDark ? { color: 'rgba(236,72,153,0.5)', blur: 15 } : false,
                             indexAxis: 'y',
                             responsive: true,
                             maintainAspectRatio: false,
@@ -3273,12 +3307,20 @@
                             datasets: [{
                                 label: 'Cantidad',
                                 data: camValues,
-                                backgroundColor: camColors.slice(0, camValues.length),
+                                backgroundColor: function (context) {
+                                    const area = context.chart.chartArea;
+                                    if (!area) return null;
+                                    const grad = context.chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
+                                    grad.addColorStop(0, isDark ? 'rgba(168,85,247,0.3)' : '#8b5cf6');
+                                    grad.addColorStop(1, isDark ? '#a855f7' : '#6366f1');
+                                    return grad;
+                                },
                                 borderRadius: 6,
                                 borderWidth: 0
                             }]
                         },
                         options: {
+                            neonGlow: isDark ? { color: 'rgba(168,85,247,0.5)', blur: 15 } : false,
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: {
@@ -3340,12 +3382,20 @@
                             datasets: [{
                                 label: 'Equipos',
                                 data: divValues,
-                                backgroundColor: divColors.slice(0, divValues.length),
+                                backgroundColor: function (context) {
+                                    const area = context.chart.chartArea;
+                                    if (!area) return null;
+                                    const grad = context.chart.ctx.createLinearGradient(area.left, 0, area.right, 0);
+                                    grad.addColorStop(0, isDark ? 'rgba(56,189,248,0.3)' : '#0ea5e9');
+                                    grad.addColorStop(1, isDark ? '#38bdf8' : '#2563eb');
+                                    return grad;
+                                },
                                 borderRadius: 4,
                                 borderWidth: 0
                             }]
                         },
                         options: {
+                            neonGlow: isDark ? { color: 'rgba(56,189,248,0.5)', blur: 15 } : false,
                             indexAxis: 'y',
                             responsive: true,
                             maintainAspectRatio: false,
@@ -3566,18 +3616,18 @@
                 if (!ctx) return;
 
                 var datosActual = [
-                                {{ $cecoco_accidentes ?? 0 }},
-                                {{ $cecoco_robos ?? 0 }},
-                                {{ $cecoco_hurtos ?? 0 }},
-                                {{ $cecoco_abuso_armas ?? 0 }},
+                                    {{ $cecoco_accidentes ?? 0 }},
+                                    {{ $cecoco_robos ?? 0 }},
+                                    {{ $cecoco_hurtos ?? 0 }},
+                                    {{ $cecoco_abuso_armas ?? 0 }},
                     {{ $cecoco_homicidios ?? 0 }}
                 ];
 
                 var datosAnterior = [
-                                {{ $cecoco_accidentes_ant ?? 0 }},
-                                {{ $cecoco_robos_ant ?? 0 }},
-                                {{ $cecoco_hurtos_ant ?? 0 }},
-                                {{ $cecoco_abuso_armas_ant ?? 0 }},
+                                    {{ $cecoco_accidentes_ant ?? 0 }},
+                                    {{ $cecoco_robos_ant ?? 0 }},
+                                    {{ $cecoco_hurtos_ant ?? 0 }},
+                                    {{ $cecoco_abuso_armas_ant ?? 0 }},
                     {{ $cecoco_homicidios_ant ?? 0 }}
                 ];
 
@@ -3593,20 +3643,35 @@
                             {
                                 label: 'Semana Consultada',
                                 data: datosActual,
-                                backgroundColor: isDark ? 'rgba(99,179,237,0.85)' : '#3b82f6',
+                                backgroundColor: function (context) {
+                                    const area = context.chart.chartArea;
+                                    if (!area) return null;
+                                    const grad = context.chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
+                                    grad.addColorStop(0, isDark ? 'rgba(244,63,94,0.3)' : '#3b82f6');
+                                    grad.addColorStop(1, isDark ? '#f43f5e' : '#3b82f6');
+                                    return grad;
+                                },
                                 borderRadius: 4,
                                 borderWidth: 0
                             },
                             {
                                 label: 'Misma Semana, Mes Ant.',
                                 data: datosAnterior,
-                                backgroundColor: isDark ? 'rgba(148,163,184,0.6)' : '#94a3b8',
+                                backgroundColor: function (context) {
+                                    const area = context.chart.chartArea;
+                                    if (!area) return null;
+                                    const grad = context.chart.ctx.createLinearGradient(0, area.bottom, 0, area.top);
+                                    grad.addColorStop(0, isDark ? 'rgba(251,146,60,0.2)' : '#94a3b8');
+                                    grad.addColorStop(1, isDark ? '#fb923c' : '#94a3b8');
+                                    return grad;
+                                },
                                 borderRadius: 4,
                                 borderWidth: 0
                             }
                         ]
                     },
                     options: {
+                        neonGlow: isDark ? { color: 'rgba(244,63,94,0.4)', blur: 15 } : false,
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {

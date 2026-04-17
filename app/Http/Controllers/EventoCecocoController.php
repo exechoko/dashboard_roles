@@ -814,9 +814,25 @@ class EventoCecocoController extends Controller
         $diaPico = array_search(max(array_values($porDia)), array_values($porDia));
         $diaPicoNombre = $diasNombres[$diaPico] ?? '-';
 
-        // ── Comparativa Hechos de Relevancia (Mes Anterior) ──
-        $desdeAnterior = \Carbon\Carbon::parse($desde)->subMonth()->format('Y-m-d H:i:s');
-        $hastaAnterior = \Carbon\Carbon::parse($hasta)->subMonth()->format('Y-m-d H:i:s');
+        // ── Comparativa Hechos de Relevancia (Período dinámico) ──
+        $compararCon = request('comparar_con', 'mes'); // 'semana', 'mes', 'anio'
+
+        $desdeAnteriorObj = \Carbon\Carbon::parse($desde);
+        $hastaAnteriorObj = \Carbon\Carbon::parse($hasta);
+
+        if ($compararCon === 'semana') {
+            $desdeAnteriorObj->subWeek();
+            $hastaAnteriorObj->subWeek();
+        } elseif ($compararCon === 'anio') {
+            $desdeAnteriorObj->subYear();
+            $hastaAnteriorObj->subYear();
+        } else {
+            $desdeAnteriorObj->subMonth();
+            $hastaAnteriorObj->subMonth();
+        }
+
+        $desdeAnterior = $desdeAnteriorObj->format('Y-m-d H:i:s');
+        $hastaAnterior = $hastaAnteriorObj->format('Y-m-d H:i:s');
         $baseAnterior = EventoCecoco::whereBetween('fecha_hora', [$desdeAnterior, $hastaAnterior]);
 
         if ($tipo) {

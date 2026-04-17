@@ -71,7 +71,7 @@
                 <div class="row g-3 align-items-end">
                     <div class="col-md-3">
                         <label for="tipo_servicio" class="form-label fw-bold">Tipo de Servicio</label>
-                        <select id="tipo_servicio" class="form-select">
+                        <select id="tipo_servicio" class="form-select select2" style="width: 100%;">
                             <option value="">— Todos —</option>
                             @foreach($tipos as $tipo)
                                 <option value="{{ $tipo }}">{{ $tipo }}</option>
@@ -121,6 +121,14 @@
 
 @section('scripts')
     <script>
+        $(function () {
+            $('#tipo_servicio').select2({
+                placeholder: '— Todos —',
+                allowClear: true,
+                width: '100%'
+            });
+        });
+
         // Inicializar mapa centrado en Paraná
         var map = L.map('map-calor-eventos').setView([-31.7413, -60.5115], 13);
         var heatLayer = null;

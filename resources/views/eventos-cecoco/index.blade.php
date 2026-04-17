@@ -43,7 +43,7 @@
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Tipo Servicio</label>
-                                <select name="tipo" class="form-select">
+                                <select name="tipo" class="form-select select2">
                                     <option value="">Todos</option>
                                     @foreach($tipos as $tipo)
                                         @if($tipo)
@@ -56,7 +56,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Operador</label>
-                                <select name="operador" class="form-select">
+                                <select name="operador" class="form-select select2">
                                     <option value="">Todos</option>
                                     @foreach($operadores as $operador)
                                         @if($operador)
@@ -249,4 +249,15 @@
         @endif
     </div>
 </div>
+@endsection
+
+@section('js')
+<script>
+    $(document).ready(function() {
+        $('.select2').select2({
+            width: '100%',
+            allowClear: true
+        });
+    });
+</script>
 @endsection

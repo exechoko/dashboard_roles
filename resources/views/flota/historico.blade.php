@@ -18,30 +18,34 @@
                                 @else
                                     <img src="{{ asset($flota->equipo->tipo_terminal->imagen) }}" class="hist-equipo-img">
                                 @endif
-                                <div>
-                                    @if ($desdeEquipo)
-                                        <h5 class="header-title">
-                                            <span class="tei-badge mr-2">{{ $flota->tei }}</span>
-                                            @if (!is_null($flota->issi))
-                                                <small class="text-muted">ISSI: {{ $flota->issi }}</small>
-                                            @endif
-                                        </h5>
-                                        <small class="text-muted">
-                                            {{ $flota->tipo_terminal->marca }} {{ $flota->tipo_terminal->modelo }}
-                                            &mdash; Estado: <strong>{{ $flota->estado->nombre }}</strong>
-                                        </small>
-                                    @else
-                                        <h5 class="header-title">
-                                            <span class="tei-badge mr-2">{{ $flota->equipo->tei }}</span>
-                                            @if (!is_null($flota->equipo->issi))
-                                                <small class="text-muted">ISSI: {{ $flota->equipo->issi }}</small>
-                                            @endif
-                                        </h5>
-                                        <small class="text-muted">
-                                            {{ $flota->equipo->tipo_terminal->marca }} {{ $flota->equipo->tipo_terminal->modelo }}
-                                            &mdash; Estado: <strong>{{ $flota->equipo->estado->nombre }}</strong>
-                                        </small>
-                                    @endif
+                                @php
+                                    $eClasesH = ['Nuevo'=>'estado-nuevo','Usado'=>'estado-usado','Reparado'=>'estado-reparado','No funciona'=>'estado-malo','Baja'=>'estado-malo','Perdido'=>'estado-malo','Recambio'=>'estado-neutro','Temporal'=>'estado-neutro','En revision'=>'estado-revision'];
+                                    if ($desdeEquipo) {
+                                        $hTei    = $flota->tei;
+                                        $hIssi   = $flota->issi;
+                                        $hMarca  = $flota->tipo_terminal->marca;
+                                        $hModelo = $flota->tipo_terminal->modelo;
+                                        $hEstado = $flota->estado->nombre;
+                                    } else {
+                                        $hTei    = $flota->equipo->tei;
+                                        $hIssi   = $flota->equipo->issi;
+                                        $hMarca  = $flota->equipo->tipo_terminal->marca;
+                                        $hModelo = $flota->equipo->tipo_terminal->modelo;
+                                        $hEstado = $flota->equipo->estado->nombre;
+                                    }
+                                    $eClaseH = $eClasesH[$hEstado] ?? 'estado-neutro';
+                                @endphp
+                                <div class="hist-info">
+                                    <div class="hist-info-row1">
+                                        <span class="tei-badge">{{ $hTei }}</span>
+                                        <span class="estado-badge {{ $eClaseH }}">{{ $hEstado }}</span>
+                                    </div>
+                                    <div class="hist-info-row2">
+                                        <span>{{ $hMarca }} {{ $hModelo }}</span>
+                                        @if($hIssi)
+                                            <span class="hist-issi">· ISSI: {{ $hIssi }}</span>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                             @if ($desdeEquipo == false)

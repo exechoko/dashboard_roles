@@ -480,6 +480,12 @@
         flex-shrink: 0;
     }
 
+    /* Historico header info */
+    .hist-info { display: flex; flex-direction: column; gap: .3rem; }
+    .hist-info-row1 { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+    .hist-info-row2 { font-size: .82rem; color: var(--text-secondary); display: flex; align-items: center; gap: .3rem; flex-wrap: wrap; }
+    .hist-issi { color: var(--text-secondary); }
+
     /* ISSI sub-TEI */
     .issi-sub {
         font-size: .72rem; color: var(--text-secondary);

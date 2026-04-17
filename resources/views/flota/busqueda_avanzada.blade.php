@@ -217,6 +217,9 @@
                                                         <a class="tei-badge" href="{{ route('verHistorico', $f->id) }}" target="_blank">
                                                             {{ $f->equipo->tei }}
                                                         </a>
+                                                        @if($f->equipo->issi)
+                                                            <div class="issi-sub">ISSI: {{ $f->equipo->issi }}</div>
+                                                        @endif
                                                     </td>
                                                     <td>
                                                         <div class="modelo-cell">

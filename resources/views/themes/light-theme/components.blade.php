@@ -462,4 +462,16 @@
         padding: .2em .65em; font-size: .78rem; font-weight: 600; color: #fff;
         background: #6c757d;
     }
+    .estado-nuevo    { background: #28a745; }
+    .estado-usado    { background: #6dbf67; }
+    .estado-reparado { background: #007bff; }
+    .estado-malo     { background: #dc3545; }
+    .estado-revision { background: #17a2b8; }
+    .estado-neutro   { background: #6c757d; }
+
+    /* ISSI sub-TEI */
+    .issi-sub {
+        font-size: .72rem; color: var(--text-secondary);
+        margin-top: .25rem; letter-spacing: .01em;
+    }
 </style>

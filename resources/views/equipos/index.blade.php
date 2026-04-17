@@ -78,7 +78,21 @@
                                                 </td>
                                                 <td><small class="text-muted">{{ $equipo->issi ?? '—' }}</small></td>
                                                 <td>
-                                                    <span class="estado-badge">{{ $equipo->estado->nombre }}</span>
+                                                    @php
+                                                        $estadoClases = [
+                                                            'Nuevo'       => 'estado-nuevo',
+                                                            'Usado'       => 'estado-usado',
+                                                            'Reparado'    => 'estado-reparado',
+                                                            'No funciona' => 'estado-malo',
+                                                            'Baja'        => 'estado-malo',
+                                                            'Perdido'     => 'estado-malo',
+                                                            'Recambio'    => 'estado-neutro',
+                                                            'Temporal'    => 'estado-neutro',
+                                                            'En revision' => 'estado-revision',
+                                                        ];
+                                                        $eClase = $estadoClases[$equipo->estado->nombre] ?? 'estado-neutro';
+                                                    @endphp
+                                                    <span class="estado-badge {{ $eClase }}">{{ $equipo->estado->nombre }}</span>
                                                 </td>
                                                 <td class="obs-cell">
                                                     @if($equipo->observaciones)

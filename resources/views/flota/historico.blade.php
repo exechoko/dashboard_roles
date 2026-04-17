@@ -40,7 +40,7 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="d-flex align-items-center gap-2">
+                            <div class="d-flex align-items-center" style="gap:.75rem;">
                                 @if ($desdeEquipo == false)
                                     <a href="{{ route('flota.historico.imprimir', $flota->id) }}" target="_blank" class="btn btn-nuevo">
                                         <i class="fas fa-print mr-1"></i> Imprimir
@@ -48,10 +48,10 @@
                                 @endif
                                 @if ($desdeEquipo)
                                     <img src="{{ asset($flota->tipo_terminal->imagen) }}"
-                                        style="width:55px; border-radius:8px; border:1px solid var(--border-color);">
+                                        style="width:110px; border-radius:10px; border:2px solid var(--border-color); object-fit:contain;">
                                 @else
                                     <img src="{{ asset($flota->equipo->tipo_terminal->imagen) }}"
-                                        style="width:55px; border-radius:8px; border:1px solid var(--border-color);">
+                                        style="width:110px; border-radius:10px; border:2px solid var(--border-color); object-fit:contain;">
                                 @endif
                             </div>
                         </div>

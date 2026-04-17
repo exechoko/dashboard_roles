@@ -28,7 +28,8 @@ class User extends Authenticatable
         'email',
         'password',
         'photo',
-        'theme'
+        'theme',
+        'acceso_externo'
     ];
 
     /**

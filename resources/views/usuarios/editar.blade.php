@@ -88,6 +88,29 @@
                                 </div>
                                 <div class="col-xs-12 col-sm-12 col-md-12">
                                     <div class="form-group">
+                                        <div class="card border-warning mb-0">
+                                            <div class="card-body py-2 px-3 d-flex align-items-center justify-content-between">
+                                                <div>
+                                                    <span class="font-weight-600">
+                                                        <i class="fas fa-globe text-warning mr-1"></i>
+                                                        Permitir acceso desde red externa
+                                                    </span>
+                                                    <small class="d-block text-muted">
+                                                        Habilita el acceso al sistema desde <strong>car911.stper.com.ar</strong>
+                                                    </small>
+                                                </div>
+                                                <div class="custom-control custom-switch ml-3">
+                                                    <input type="checkbox" class="custom-control-input" id="acceso_externo"
+                                                        name="acceso_externo" value="1"
+                                                        {{ $user->acceso_externo ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="acceso_externo"></label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="form-group">
                                         <button type="submit" class="btn btn-primary">
                                             <i class="fas fa-save"></i> Actualizar Usuario
                                         </button>

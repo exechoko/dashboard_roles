@@ -68,6 +68,7 @@ class UsuarioController extends Controller
 
         $input = $request->all();
         $input['password'] = Hash::make($input['password']);
+        $input['acceso_externo'] = $request->boolean('acceso_externo');
 
         $user = User::create($input);
         $user->assignRole($request->input('roles'));
@@ -127,6 +128,7 @@ class UsuarioController extends Controller
         } else {
             $input = Arr::except($input, array('password'));
         }
+        $input['acceso_externo'] = $request->boolean('acceso_externo');
 
         $user = User::find($id);
         $user->update($input);

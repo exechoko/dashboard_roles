@@ -308,7 +308,7 @@ class EventoCecocoParser
             'operador' => $get('operador') ?: null,
             'descripcion' => $get('descripcion') ?: null,
             'direccion' => $get('direccion') ?: null,
-            'telefono' => $get('telefono') ?: null,
+            'telefono' => $get('telefono') ? substr($get('telefono'), 0, 30) : null,
             'fecha_cierre' => $this->parsearFecha($get('fecha_cierre')),
             'tipo_servicio' => $get('tipo_servicio') ?: null,
             'periodo' => $periodoFinal,

@@ -227,16 +227,36 @@
     function guardar(id) {
         let form = document.getElementById(`form-historico-${id}`);
         let formData = new FormData(form);
+        // Quitar entradas vacías de file inputs para no interferir en el servidor
+        for (let [key, val] of [...formData.entries()]) {
+            if (val instanceof File && val.size === 0 && val.name === '') {
+                formData.delete(key);
+            }
+        }
         if (window.nuevasImagenes[id]?.length)
             window.nuevasImagenes[id].forEach(o => formData.append('nuevas_imagenes[]', o.file));
-        if (window.imagenesActualesMap[id])
+        if (window.imagenesActualesMap[id] !== undefined)
             formData.append('imagenes_actuales', JSON.stringify(window.imagenesActualesMap[id]));
         $.ajax({
             url: form.action, type: 'POST', data: formData,
             processData: false, contentType: false,
-            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-            success: () => { alert('Registro actualizado.'); location.reload(); },
-            error: (xhr) => alert('Error: ' + (xhr.responseText || ''))
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: (resp) => {
+                if (resp && resp.error) {
+                    alert('Error al guardar: ' + resp.error);
+                } else {
+                    alert('Registro actualizado.');
+                    location.reload();
+                }
+            },
+            error: (xhr) => {
+                let msg = 'Error al guardar.';
+                try { const r = JSON.parse(xhr.responseText); msg = r.error || r.message || msg; } catch(e) {}
+                alert(msg);
+            }
         });
     }
     document.addEventListener('DOMContentLoaded', function () {

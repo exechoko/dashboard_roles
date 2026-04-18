@@ -682,7 +682,6 @@ class FlotaGeneralController extends Controller
 
     public function update_historico(Request $request, $id)
     {
-        //dd($request->all());
         $desdeEquipo = false;
         try {
             DB::beginTransaction();
@@ -690,36 +689,40 @@ class FlotaGeneralController extends Controller
             $request->validate([
                 'observaciones' => 'required',
                 'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:20240',
-                //'nuevas_imagenes.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:20240'
             ]);
 
             $historico = Historico::find($id);
             $historico->observaciones = $request->observaciones;
 
-            // Array para guardar rutas de imágenes
-            $rutasImagenes = json_decode($request->input('imagenes_actuales', '[]'));
+            // Decodificar rutas existentes (true = array asociativo)
+            $rutasImagenes = json_decode($request->input('imagenes_actuales', '[]'), true) ?? [];
 
-            // Subir nuevas imágenes
+            // Subir nuevas imágenes (ignorar entradas vacías/inválidas del formulario)
             if ($request->hasFile('nuevas_imagenes')) {
                 foreach ($request->file('nuevas_imagenes') as $nuevaImagen) {
-                    $ruta = $nuevaImagen->store('', 'anexos');
-                    $rutasImagenes[] = 'anexos/' . $ruta;
+                    if ($nuevaImagen && $nuevaImagen->isValid()) {
+                        $ruta = $nuevaImagen->store('', 'anexos');
+                        $rutasImagenes[] = 'anexos/' . $ruta;
+                    }
                 }
             }
 
             // Subir archivo adjunto si existe
-            if ($request->hasFile('archivo')) {
+            if ($request->hasFile('archivo') && $request->file('archivo')->isValid()) {
                 $rutaArchivo = $request->file('archivo')->store('', 'anexos');
                 $rutasImagenes[] = 'anexos/' . $rutaArchivo;
             }
 
             // Actualizar rutas en la base de datos
-            $historico->rutas_imagenes = json_encode($rutasImagenes);
+            $historico->rutas_imagenes = json_encode(array_values($rutasImagenes));
             $historico->save();
 
             DB::commit();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollback();
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['error' => $e->getMessage()], 500);
+            }
             return back()->with('error', 'Error al guardar el histórico: ' . $e->getMessage());
         }
 

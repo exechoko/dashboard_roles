@@ -687,7 +687,7 @@ class FlotaGeneralController extends Controller
             DB::beginTransaction();
 
             $request->validate([
-                'observaciones' => 'required',
+                'observaciones' => 'nullable|string',
                 'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:20240',
             ]);
 

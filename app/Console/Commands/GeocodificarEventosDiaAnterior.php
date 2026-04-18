@@ -74,33 +74,23 @@ class GeocodificarEventosDiaAnterior extends Command
             return self::SUCCESS;
         }
 
-        // ── 2. Resolver la dirección definitiva (replica mapaCalorDatos) ──────
-        //    Para direcciones sin numeración intenta extraer de la descripción.
+        // ── 2. Filtrar las que tienen formato de dirección válido ─────────────
         $direccionesResueltas = [];
+        $omitidas = 0;
 
         foreach ($gruposDireccion as $grupo) {
             $dir = trim($grupo->direccion);
 
-            if (!$geocoder->tieneNumeracion($dir)) {
-                // Buscar una descripción que contenga dirección extractable
-                $eventoConDesc = EventoCecoco::where('direccion', $grupo->direccion)
-                    ->whereNotNull('descripcion')
-                    ->where('descripcion', '!=', '')
-                    ->whereBetween('fecha_hora', [
-                        $fecha->copy()->startOfDay(),
-                        $fecha->copy()->endOfDay(),
-                    ])
-                    ->value('descripcion');
-
-                if ($eventoConDesc) {
-                    $extraida = $geocoder->extraerDireccionDeDescripcion($eventoConDesc);
-                    if ($extraida) {
-                        $dir = $extraida;
-                    }
-                }
+            if (!$geocoder->esDireccionValida($dir)) {
+                $omitidas++;
+                continue;
             }
 
             $direccionesResueltas[] = $dir;
+        }
+
+        if ($omitidas > 0) {
+            $this->warn("Direcciones inválidas omitidas: {$omitidas} (sin número ni intersección)");
         }
 
         // Eliminar duplicados que puedan surgir de la extracción

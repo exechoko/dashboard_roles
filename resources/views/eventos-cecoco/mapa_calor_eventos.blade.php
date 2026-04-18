@@ -50,6 +50,14 @@
             background: #1e1e2d;
             color: #e4e6fc;
         }
+
+        #panel-sin-geocod .motivo-badge {
+            font-size: 0.75em;
+        }
+
+        #panel-sin-geocod tr.geocodificado td {
+            opacity: 0.55;
+        }
     </style>
 @endsection
 
@@ -115,6 +123,35 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    {{-- Panel de eventos sin geocodificar --}}
+    <div id="panel-sin-geocod" class="card mt-3" style="display:none;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-geo-alt-fill text-warning"></i>
+                Direcciones sin ubicar
+                <span class="badge bg-warning text-dark ms-2" id="badge-sin-geocod">0</span>
+            </h5>
+            <small class="text-muted">Asigná una dirección válida (con número o intersección) para que aparezcan en el mapa</small>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0" id="tabla-sin-geocod">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Dirección original</th>
+                            <th>Expediente</th>
+                            <th class="text-center" style="width:80px;">Eventos</th>
+                            <th class="text-center" style="width:120px;">Motivo</th>
+                            <th>Corrección</th>
+                            <th style="width:130px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-sin-geocod"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 @endsection
@@ -187,13 +224,15 @@
                     document.getElementById('stat-sin-geocod').textContent = data.sin_geocodificar + ' sin ubicación';
                     document.getElementById('stat-direcciones').textContent = data.total_direcciones + ' direcciones únicas';
 
+                    // Panel de sin geocodificar
+                    renderizarSinGeocodificar(data.sin_geocodificar_datos || []);
+
                     // Limpiar capa anterior
                     if (heatLayer) {
                         map.removeLayer(heatLayer);
                     }
 
                     if (!data.heat_data || data.heat_data.length === 0) {
-                        alert('No se encontraron eventos con ubicación para los filtros seleccionados.');
                         return;
                     }
 
@@ -222,5 +261,106 @@
                     alert('Error de conexión: ' + err.message);
                 });
         });
+
+        function renderizarSinGeocodificar(lista) {
+            var panel = document.getElementById('panel-sin-geocod');
+            var tbody = document.getElementById('tbody-sin-geocod');
+            var badge = document.getElementById('badge-sin-geocod');
+
+            if (!lista || lista.length === 0) {
+                panel.style.display = 'none';
+                return;
+            }
+
+            badge.textContent = lista.length;
+            tbody.innerHTML = '';
+
+            lista.forEach(function (item) {
+                var motivoLabel = item.motivo === 'invalida'
+                    ? '<span class="badge bg-danger motivo-badge">dirección inválida</span>'
+                    : '<span class="badge bg-secondary motivo-badge">no encontrada</span>';
+
+                var tr = document.createElement('tr');
+                tr.dataset.direccionOriginal = item.direccion;
+                tr.dataset.nroExpediente = item.nro_expediente || '';
+                var expLink = item.nro_expediente
+                    ? '<span class="font-monospace">' + escHtml(item.nro_expediente) + '</span>'
+                    : '<span class="text-muted">—</span>';
+                tr.innerHTML =
+                    '<td class="font-monospace">' + escHtml(item.direccion) + '</td>' +
+                    '<td>' + expLink + '</td>' +
+                    '<td class="text-center">' + item.total + '</td>' +
+                    '<td class="text-center">' + motivoLabel + '</td>' +
+                    '<td><input type="text" class="form-control form-control-sm input-correccion" placeholder="Ej: San Martín 1234 o Urquiza y Corrientes"></td>' +
+                    '<td><button class="btn btn-sm btn-primary w-100 btn-geocod-manual" onclick="geocodificarManual(this)"><i class="bi bi-geo-fill me-1"></i>Asignar</button></td>';
+                tbody.appendChild(tr);
+            });
+
+            panel.style.display = 'block';
+        }
+
+        function geocodificarManual(btn) {
+            var tr = btn.closest('tr');
+            var direccionOriginal = tr.dataset.direccionOriginal;
+            var input = tr.querySelector('.input-correccion');
+            var corregida = input.value.trim();
+
+            if (!corregida) {
+                input.classList.add('is-invalid');
+                input.focus();
+                return;
+            }
+            input.classList.remove('is-invalid');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+            fetch('{{ route("cecoco.mapa-calor.geocodificar-manual") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ direccion_original: direccionOriginal, direccion_corregida: corregida, nro_expediente: tr.dataset.nroExpediente || null })
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-geo-fill me-1"></i>Asignar';
+                    input.classList.add('is-invalid');
+                    input.title = data.error;
+                    // Show feedback under input
+                    var fb = tr.querySelector('.invalid-feedback') || document.createElement('div');
+                    fb.className = 'invalid-feedback d-block';
+                    fb.textContent = data.error;
+                    input.parentNode.appendChild(fb);
+                    return;
+                }
+
+                // Marcar fila como geocodificada
+                tr.classList.add('geocodificado', 'table-success');
+                tr.querySelector('td:last-child').innerHTML =
+                    '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Guardado</span>';
+
+                // Actualizar badge
+                var badge = document.getElementById('badge-sin-geocod');
+                var pendientes = document.querySelectorAll('#tbody-sin-geocod tr:not(.geocodificado)').length;
+                badge.textContent = pendientes;
+            })
+            .catch(function (err) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-geo-fill me-1"></i>Asignar';
+                alert('Error de conexión: ' + err.message);
+            });
+        }
+
+        function escHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
     </script>
 @endsection

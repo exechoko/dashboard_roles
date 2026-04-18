@@ -10,6 +10,11 @@ class GeocodificacionService
     private string $apiKey;
     private string $ciudadContexto;
 
+    private const PATRONES_INVALIDOS = [
+        '/^[Dd]\.?\s*[Dd]\.?$/u',
+        '/^(sin\s+datos?|s\/d|sd|n\/a|na|ninguna|g[eé]nero|domicilio|sin\s+domicilio|desconocida?|no\s+corresponde|sin\s+direcci[oó]n|particular|privado)$/iu',
+    ];
+
     public function __construct()
     {
         $this->apiKey = env('API_GOOGLE', '');
@@ -17,13 +22,37 @@ class GeocodificacionService
     }
 
     /**
+     * Determina si una dirección tiene formato válido para geocodificar.
+     * Requiere un número de altura O una intersección ("Calle A y Calle B").
+     */
+    public function esDireccionValida(string $direccion): bool
+    {
+        $dir = trim($direccion);
+        if ($dir === '' || $dir === '-') {
+            return false;
+        }
+
+        foreach (self::PATRONES_INVALIDOS as $patron) {
+            if (preg_match($patron, $dir)) {
+                return false;
+            }
+        }
+
+        $tieneNumero     = (bool) preg_match('/\d/', $dir);
+        $esInterseccion  = (bool) preg_match('/\b\w+(?:\s+\w+)*\s+y\s+\w/iu', $dir);
+
+        return $tieneNumero || $esInterseccion;
+    }
+
+    /**
      * Geocodifica una dirección de texto. Primero busca en cache,
      * si no existe, consulta Google Maps Geocoding API.
+     * Retorna null sin consultar Google si la dirección no es válida.
      */
     public function geocodificar(string $direccion): ?array
     {
         $direccion = trim($direccion);
-        if ($direccion === '' || $direccion === '-') {
+        if (!$this->esDireccionValida($direccion)) {
             return null;
         }
 

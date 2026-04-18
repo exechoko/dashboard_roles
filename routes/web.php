@@ -399,6 +399,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/historical', [App\Http\Controllers\GisViewerController::class, 'indexHistorico'])->name('mapa-gis-historico-alias');
         Route::get('/mapa-calor', [App\Http\Controllers\EventoCecocoController::class, 'mapaCalor'])->name('mapa-calor');
         Route::get('/mapa-calor/datos', [App\Http\Controllers\EventoCecocoController::class, 'mapaCalorDatos'])->name('mapa-calor.datos');
+        Route::post('/mapa-calor/geocodificar-manual', [App\Http\Controllers\EventoCecocoController::class, 'geocodificarManual'])->name('mapa-calor.geocodificar-manual');
         Route::get('/analitica', [App\Http\Controllers\EventoCecocoController::class, 'analitica'])->name('analitica');
         Route::get('/{eventoCecoco}/expediente', [App\Http\Controllers\EventoCecocoController::class, 'verExpediente'])->name('expediente');
         Route::get('/{eventoCecoco}', [App\Http\Controllers\EventoCecocoController::class, 'show'])->name('show');

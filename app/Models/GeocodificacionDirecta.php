@@ -14,5 +14,6 @@ class GeocodificacionDirecta extends Model
         'latitud',
         'longitud',
         'fuente',
+        'nro_expediente',
     ];
 }

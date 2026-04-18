@@ -448,7 +448,7 @@ class EventoCecocoController extends Controller
             $eventosQuery = clone $query;
 
             // Agrupar por dirección y contar ocurrencias
-            $eventos = $eventosQuery->selectRaw('direccion, COUNT(*) as total')
+            $eventos = $eventosQuery->selectRaw('direccion, COUNT(*) as total, MIN(nro_expediente) as nro_expediente_muestra')
                 ->whereNotNull('direccion')
                 ->where('direccion', '!=', '')
                 ->groupBy('direccion')
@@ -456,52 +456,54 @@ class EventoCecocoController extends Controller
                 ->limit(5000)
                 ->get();
 
-            $heatData = [];
-            $sinGeocod = 0;
-            $geocodificados = 0;
+            $heatData        = [];
+            $sinGeocodDatos  = [];
+            $sinGeocod       = 0;
+            $geocodificados  = 0;
 
             foreach ($eventos as $evento) {
                 $direccion = trim($evento->direccion);
 
-                // Si la dirección no tiene numeración, intentar extraer del primer
-                // evento con esa dirección que tenga descripción
-                if (!$geocoder->tieneNumeracion($direccion)) {
-                    $eventoConDesc = EventoCecoco::where('direccion', $evento->direccion)
-                        ->whereNotNull('descripcion')
-                        ->where('descripcion', '!=', '')
-                        ->whereBetween('fecha_hora', [$request->fecha_desde, $request->fecha_hasta])
-                        ->first();
-
-                    if ($eventoConDesc) {
-                        $dirExtraida = $geocoder->extraerDireccionDeDescripcion($eventoConDesc->descripcion);
-                        if ($dirExtraida) {
-                            $direccion = $dirExtraida;
-                        }
-                    }
+                if (!$geocoder->esDireccionValida($direccion)) {
+                    $sinGeocod++;
+                    $sinGeocodDatos[] = [
+                        'direccion'      => $evento->direccion,
+                        'total'          => $evento->total,
+                        'motivo'         => 'invalida',
+                        'nro_expediente' => $evento->nro_expediente_muestra,
+                    ];
+                    continue;
                 }
 
                 $coords = $geocoder->geocodificar($direccion);
 
                 if ($coords) {
                     $heatData[] = [
-                        'lat' => $coords['lat'],
-                        'lng' => $coords['lng'],
-                        'peso' => $evento->total,
+                        'lat'       => $coords['lat'],
+                        'lng'       => $coords['lng'],
+                        'peso'      => $evento->total,
                         'direccion' => $evento->direccion,
-                        'total' => $evento->total,
+                        'total'     => $evento->total,
                     ];
                     $geocodificados++;
                 } else {
                     $sinGeocod++;
+                    $sinGeocodDatos[] = [
+                        'direccion'      => $evento->direccion,
+                        'total'          => $evento->total,
+                        'motivo'         => 'no_encontrada',
+                        'nro_expediente' => $evento->nro_expediente_muestra,
+                    ];
                 }
             }
 
             return response()->json([
-                'heat_data' => $heatData,
-                'total_eventos' => $totalEventos,
-                'total_direcciones' => count($eventos),
-                'geocodificados' => $geocodificados,
-                'sin_geocodificar' => $sinGeocod,
+                'heat_data'             => $heatData,
+                'total_eventos'         => $totalEventos,
+                'total_direcciones'     => count($eventos),
+                'geocodificados'        => $geocodificados,
+                'sin_geocodificar'      => $sinGeocod,
+                'sin_geocodificar_datos'=> $sinGeocodDatos,
             ]);
 
         } catch (\Exception $e) {
@@ -509,6 +511,46 @@ class EventoCecocoController extends Controller
                 'error' => 'Error al procesar datos: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Geocodifica manualmente una dirección inválida o no encontrada.
+     * Guarda el resultado en caché usando la dirección original como clave.
+     */
+    public function geocodificarManual(Request $request): JsonResponse
+    {
+        $request->validate([
+            'direccion_original' => 'required|string|max:500',
+            'direccion_corregida' => 'required|string|max:500',
+            'nro_expediente'     => 'nullable|string|max:100',
+        ]);
+
+        $geocoder  = app(\App\Services\GeocodificacionService::class);
+        $original  = trim($request->direccion_original);
+        $corregida = trim($request->direccion_corregida);
+
+        if (!$geocoder->esDireccionValida($corregida)) {
+            return response()->json(['error' => 'La dirección ingresada no parece válida (debe tener número o ser una intersección).'], 422);
+        }
+
+        $coords = $geocoder->geocodificar($corregida);
+
+        if (!$coords) {
+            return response()->json(['error' => 'No se pudo ubicar esa dirección en Paraná. Verificá que sea correcta.'], 422);
+        }
+
+        \App\Models\GeocodificacionDirecta::updateOrCreate(
+            ['direccion_original' => $original],
+            [
+                'direccion_normalizada' => $corregida,
+                'latitud'        => $coords['lat'],
+                'longitud'       => $coords['lng'],
+                'fuente'         => 'manual',
+                'nro_expediente' => $request->nro_expediente ?: null,
+            ]
+        );
+
+        return response()->json(['lat' => $coords['lat'], 'lng' => $coords['lng']]);
     }
 
     /**

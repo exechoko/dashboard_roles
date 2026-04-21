@@ -34,7 +34,15 @@
                                         @foreach ($usuarios as $usuario)
                                             <tr>
                                                 <td style="display: none;">{{ $usuario->id }}</td>
-                                                <td>{{ $usuario->name.' '.$usuario->apellido }}</td>
+                                                <td>
+                                                    {{ $usuario->name.' '.$usuario->apellido }}
+                                                    <br>
+                                                    @if ($usuario->acceso_externo)
+                                                        <span class="badge" style="background-color: #28a745; color: white; font-size: 0.7em;">Red externa</span>
+                                                    @else
+                                                        <span class="badge" style="background-color: #fd7e14; color: white; font-size: 0.7em;">Sin acceso externo</span>
+                                                    @endif
+                                                </td>
                                                 <td>{{ $usuario->lp }}</td>
                                                 <td>
                                                     <img alt="{{ $usuario->name }}"

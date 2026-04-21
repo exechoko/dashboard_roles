@@ -1,4 +1,5 @@
 @echo off
+setlocal EnableDelayedExpansion
 REM Script para instalar el worker de Laravel Queue como servicio de Windows
 REM Requiere NSSM (Non-Sucking Service Manager)
 REM Ejecutar como Administrador
@@ -64,23 +65,27 @@ echo [OK] Proyecto Laravel encontrado
 echo.
 
 REM Verificar si el servicio ya existe
-sc query %SERVICE_NAME% >nul 2>&1
-if %errorlevel% equ 0 (
-    echo El servicio %SERVICE_NAME% ya existe.
-    echo ¿Deseas reinstalarlo? (S/N)
-    set /p REINSTALL=
-    if /i "%REINSTALL%" neq "S" (
-        echo Instalación cancelada.
+echo Verificando si el servicio ya existe...
+sc query "%SERVICE_NAME%" >nul 2>&1
+if !errorlevel! equ 0 (
+    echo.
+    echo [AVISO] El servicio %SERVICE_NAME% ya existe.
+    echo.
+    set /p "REINSTALL=¿Deseas reinstalarlo? (S para si, N para cancelar): "
+    echo.
+    if /i "!REINSTALL!" neq "S" (
+        echo Instalacion cancelada.
         pause
         exit /b 0
     )
-    echo.
     echo Deteniendo servicio existente...
-    net stop %SERVICE_NAME%
-    timeout /t 2 /nobreak >nul
+    net stop "%SERVICE_NAME%" >nul 2>&1
+    timeout /t 3 /nobreak >nul
     echo Eliminando servicio existente...
-    "%NSSM_PATH%" remove %SERVICE_NAME% confirm
-    timeout /t 2 /nobreak >nul
+    "%NSSM_PATH%" remove "%SERVICE_NAME%" confirm
+    timeout /t 3 /nobreak >nul
+    echo [OK] Servicio anterior eliminado.
+    echo.
 )
 
 echo.
@@ -92,34 +97,45 @@ REM --max-time=3600  : reinicia el proceso cada 1 hora para liberar memoria
 REM --tries=3        : reintenta jobs fallidos hasta 3 veces
 REM --timeout=600    : mata jobs que tarden más de 10 minutos
 REM --sleep=3        : espera 3 segundos entre polls cuando la cola está vacía
-"%NSSM_PATH%" install %SERVICE_NAME% "%PHP_PATH%" "artisan" "queue:work" "--sleep=3" "--tries=3" "--timeout=600" "--max-time=3600"
+"%NSSM_PATH%" install "%SERVICE_NAME%" "%PHP_PATH%" "artisan" "queue:work" "--sleep=3" "--tries=3" "--timeout=600" "--max-time=3600"
+if !errorlevel! neq 0 (
+    echo [ERROR] Fallo al instalar el servicio con NSSM. Codigo: !errorlevel!
+    pause
+    exit /b 1
+)
+echo [OK] Servicio creado.
 
 REM Configurar el directorio de trabajo
-"%NSSM_PATH%" set %SERVICE_NAME% AppDirectory "%PROJECT_PATH%"
+"%NSSM_PATH%" set "%SERVICE_NAME%" AppDirectory "%PROJECT_PATH%"
 
 REM Configurar descripción del servicio
-"%NSSM_PATH%" set %SERVICE_NAME% Description "Laravel Queue Worker para procesamiento de importaciones de eventos CECOCO"
+"%NSSM_PATH%" set "%SERVICE_NAME%" Description "Laravel Queue Worker para procesamiento de importaciones de eventos CECOCO"
 
 REM Configurar inicio automático
-"%NSSM_PATH%" set %SERVICE_NAME% Start SERVICE_AUTO_START
+"%NSSM_PATH%" set "%SERVICE_NAME%" Start SERVICE_AUTO_START
 
 REM Configurar reinicio en caso de fallo
-"%NSSM_PATH%" set %SERVICE_NAME% AppExit Default Restart
-"%NSSM_PATH%" set %SERVICE_NAME% AppRestartDelay 5000
+"%NSSM_PATH%" set "%SERVICE_NAME%" AppExit Default Restart
+"%NSSM_PATH%" set "%SERVICE_NAME%" AppRestartDelay 5000
 
 REM Configurar salida de logs
-"%NSSM_PATH%" set %SERVICE_NAME% AppStdout "%PROJECT_PATH%\storage\logs\queue-worker.log"
-"%NSSM_PATH%" set %SERVICE_NAME% AppStderr "%PROJECT_PATH%\storage\logs\queue-worker-error.log"
+"%NSSM_PATH%" set "%SERVICE_NAME%" AppStdout "%PROJECT_PATH%\storage\logs\queue-worker.log"
+"%NSSM_PATH%" set "%SERVICE_NAME%" AppStderr "%PROJECT_PATH%\storage\logs\queue-worker-error.log"
 
 REM Rotar logs
-"%NSSM_PATH%" set %SERVICE_NAME% AppStdoutCreationDisposition 4
-"%NSSM_PATH%" set %SERVICE_NAME% AppStderrCreationDisposition 4
+"%NSSM_PATH%" set "%SERVICE_NAME%" AppStdoutCreationDisposition 4
+"%NSSM_PATH%" set "%SERVICE_NAME%" AppStderrCreationDisposition 4
 
 echo.
-echo Servicio instalado exitosamente.
-echo.
 echo Iniciando servicio...
-net start %SERVICE_NAME%
+net start "%SERVICE_NAME%"
+if !errorlevel! neq 0 (
+    echo [ERROR] No se pudo iniciar el servicio. Codigo: !errorlevel!
+    echo Verificar con: sc query %SERVICE_NAME%
+    pause
+    exit /b 1
+)
+echo [OK] Servicio iniciado correctamente.
 
 echo.
 echo ========================================

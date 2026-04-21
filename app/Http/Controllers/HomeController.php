@@ -15,6 +15,7 @@ use App\Models\FlotaGeneral;
 use App\Models\Destino;
 use App\Models\Recurso;
 use App\Models\Historico;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Models\EntregaEquipo;
 use App\Models\EntregaBodycam;
@@ -493,15 +494,10 @@ class HomeController extends Controller
                 ")
                 ->get();
 
-            // Geocodificación: cuántas direcciones únicas hay y cuántas ya están cacheadas
-            $totalDirecciones = DB::table('evento_cecoco')
-                ->whereNotNull('direccion')
-                ->where('direccion', '!=', '')
-                ->where('direccion', '!=', '-')
-                ->distinct()
-                ->count('direccion');
-
-            $geocodeadas = DB::table('geocodificacion_directa')->count();
+            // Geocodificación: se lee del caché pre-calculado por el schedule (nunca bloquea el request)
+            $geoCounts     = Cache::get('dashboard_geo_counts');
+            $totalDirecciones = $geoCounts[0] ?? null;
+            $geocodeadas      = $geoCounts[1] ?? null;
 
             // Worker activo: si hay jobs siendo procesados ahora mismo, o si se reservaron hace menos de 10 min
             $workerActivo = $procesando > 0 || DB::table('jobs')
@@ -520,7 +516,7 @@ class HomeController extends Controller
             'jobs_por_tipo'      => $jobsPorTipo,
             'geo_total_dir'      => $totalDirecciones,
             'geo_cacheadas'      => $geocodeadas,
-            'geo_pendientes'     => max(0, $totalDirecciones - $geocodeadas),
+            'geo_pendientes'     => ($totalDirecciones !== null && $geocodeadas !== null) ? max(0, $totalDirecciones - $geocodeadas) : null,
         ]);
     }
 }

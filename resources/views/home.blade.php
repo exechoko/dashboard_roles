@@ -3601,10 +3601,18 @@
 
                         // Geocodificación
                         var elGeoCach = document.getElementById('workers-geo-cacheadas');
-                        if (elGeoCach) elGeoCach.textContent = d.geo_cacheadas;
+                        if (elGeoCach) elGeoCach.textContent = d.geo_cacheadas !== null ? d.geo_cacheadas : '—';
 
                         var elGeoPend = document.getElementById('workers-geo-pendientes');
-                        if (elGeoPend) { elGeoPend.textContent = d.geo_pendientes; elGeoPend.className = d.geo_pendientes > 0 ? 'badge badge-warning' : 'badge badge-success'; }
+                        if (elGeoPend) {
+                            if (d.geo_pendientes === null) {
+                                elGeoPend.textContent = 'calculando...';
+                                elGeoPend.className = 'badge badge-secondary';
+                            } else {
+                                elGeoPend.textContent = d.geo_pendientes;
+                                elGeoPend.className = d.geo_pendientes > 0 ? 'badge badge-warning' : 'badge badge-success';
+                            }
+                        }
 
                         // Desglose por tipo
                         var desgloseDiv  = document.getElementById('workers-desglose');
@@ -3637,7 +3645,7 @@
             }
 
             verificar();
-            setInterval(verificar, 30000);
+            setInterval(verificar, 60000);
         })();
 
         // ── Mini mapa de calor Cecoco ───────────────────────────────────────

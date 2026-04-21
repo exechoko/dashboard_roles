@@ -77,6 +77,19 @@ class Kernel extends ConsoleKernel
             ->everyMinute()
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/callanalysis.log'));
+
+        // Pre-calienta el caché de conteos de geocodificación para el dashboard.
+        // Se corre en background cada 5 min para que el endpoint nunca haga la query pesada en el request.
+        $schedule->call(function () {
+            $total    = \DB::table('evento_cecoco')
+                ->whereNotNull('direccion')
+                ->where('direccion', '!=', '')
+                ->where('direccion', '!=', '-')
+                ->distinct()
+                ->count('direccion');
+            $cacheadas = \DB::table('geocodificacion_directa')->count();
+            \Illuminate\Support\Facades\Cache::put('dashboard_geo_counts', [$total, $cacheadas], 360);
+        })->everyFiveMinutes()->withoutOverlapping();
     }
 
     /**

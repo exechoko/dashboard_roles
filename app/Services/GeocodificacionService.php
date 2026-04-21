@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\GeocodificacionDirecta;
+use App\Models\GeocodificacionInversa;
 use Illuminate\Support\Facades\Log;
 
 class GeocodificacionService
@@ -124,6 +125,234 @@ class GeocodificacionService
     public function tieneNumeracion(string $direccion): bool
     {
         return preg_match('/\d/', $direccion) === 1;
+    }
+
+    /**
+     * Geocodificación inversa: dadas coordenadas, retorna la dirección formateada.
+     *
+     * Usa la tabla `geocodificacion_inversa` como caché persistente. Primero
+     * busca la coordenada (redondeada a 5 decimales ≈ 1.1 m); si no existe,
+     * consulta Google Maps y guarda el resultado (incluso si es null, para
+     * evitar reintentos sobre coordenadas sin resultado).
+     *
+     * @return string|null Dirección formateada o null si no se pudo resolver.
+     */
+    public function reverseGeocode(float $lat, float $lng): ?string
+    {
+        // Rango equivalente a redondeo a 5 decimales (~1.1 m). Se usa BETWEEN
+        // en lugar de ROUND() para permitir el uso del índice compuesto
+        // idx_geocod_inv_lat_lng.
+        $eps = 0.000005;
+
+        $row = GeocodificacionInversa::whereBetween('latitud',  [$lat - $eps, $lat + $eps])
+            ->whereBetween('longitud', [$lng - $eps, $lng + $eps])
+            ->first();
+
+        if ($row) {
+            return $row->direccion;
+        }
+
+        $direccion = $this->consultarReverseGoogle($lat, $lng);
+
+        // Persistir también los null para no reintentar siempre sobre la misma coord.
+        try {
+            GeocodificacionInversa::create([
+                'latitud'   => $lat,
+                'longitud'  => $lng,
+                'direccion' => $direccion,
+            ]);
+        } catch (\Exception $e) {
+            Log::warning('No se pudo persistir geocodificacion_inversa', [
+                'error' => $e->getMessage(),
+                'lat'   => $lat,
+                'lng'   => $lng,
+            ]);
+        }
+
+        return $direccion;
+    }
+
+    /**
+     * Llama a Google Maps Geocoding para reverse-geocode (sin cache).
+     */
+    private function consultarReverseGoogle(float $lat, float $lng): ?string
+    {
+        if (empty($this->apiKey)) {
+            Log::warning('API_GOOGLE no configurada para geocodificación inversa');
+            return null;
+        }
+
+        try {
+            $url = 'https://maps.googleapis.com/maps/api/geocode/json?' . http_build_query([
+                'latlng'   => $lat . ',' . $lng,
+                'key'      => $this->apiKey,
+                'language' => 'es',
+                'region'   => 'ar',
+            ]);
+
+            $response = @file_get_contents($url);
+            if (!$response) {
+                return null;
+            }
+
+            $data = json_decode($response);
+            if ($data && ($data->status ?? '') === 'OK' && isset($data->results[0]->formatted_address)) {
+                return (string) $data->results[0]->formatted_address;
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Error en geocodificación inversa Google', [
+                'error' => $e->getMessage(),
+                'lat'   => $lat,
+                'lng'   => $lng,
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Reverse-geocodifica un lote de coordenadas.
+     *
+     * Estrategia en 3 capas:
+     *   1. Dedupe in-memory por clave "lat,lng" redondeada a 5 decimales.
+     *   2. Prefetch masivo desde tabla `geocodificacion_inversa` (cache persistente).
+     *   3. Para las que faltan, llamadas concurrentes a Google Maps (Guzzle Pool)
+     *      y se insertan de vuelta en la tabla para próximas consultas.
+     *
+     * Crítico bajo túneles Cloudflare (timeout 100s): 500 puntos secuenciales
+     * ~50s → con esta estrategia suele bajar a <5s (y a <1s cuando el cache DB
+     * ya tiene la zona cubierta).
+     *
+     * @param array<int,array{0:float,1:float}> $pares Lista [[lat, lng], ...]
+     * @return array<string,?string> Mapa "lat,lng" (5 decimales) → dirección.
+     */
+    public function reverseGeocodeBatch(array $pares, int $concurrencia = 20): array
+    {
+        $resultado  = [];
+        $pendientes = []; // [clave => [lat, lng]]
+
+        // 1) Deduplicar
+        foreach ($pares as $p) {
+            if (!isset($p[0], $p[1])) {
+                continue;
+            }
+            $lat   = (float) $p[0];
+            $lng   = (float) $p[1];
+            $clave = sprintf('%.5f,%.5f', $lat, $lng);
+            if (isset($resultado[$clave])) {
+                continue;
+            }
+            $resultado[$clave]   = null;
+            $pendientes[$clave]  = [$lat, $lng];
+        }
+
+        if (empty($pendientes)) {
+            return $resultado;
+        }
+
+        // 2) Prefetch masivo desde geocodificacion_inversa.
+        //    Una sola query con múltiples OR usando BETWEEN (aprovecha el
+        //    índice compuesto idx_geocod_inv_lat_lng). Luego match exacto en PHP.
+        $eps = 0.000005; // ≈ 1.1 m; equivalente a redondeo a 5 decimales
+        $query = GeocodificacionInversa::query()->select('latitud', 'longitud', 'direccion');
+        foreach ($pendientes as [$lat, $lng]) {
+            $query->orWhere(function ($q) use ($lat, $lng, $eps) {
+                $q->whereBetween('latitud',  [$lat - $eps, $lat + $eps])
+                  ->whereBetween('longitud', [$lng - $eps, $lng + $eps]);
+            });
+        }
+        $rows = $query->get();
+
+        foreach ($rows as $row) {
+            $claveRow = sprintf('%.5f,%.5f', (float) $row->latitud, (float) $row->longitud);
+            if (array_key_exists($claveRow, $pendientes)) {
+                $resultado[$claveRow] = $row->direccion;
+                unset($pendientes[$claveRow]);
+            }
+        }
+
+        $hitsDb = count($resultado) - count($pendientes);
+        Log::info('Reverse-geocode batch: cache DB hit', [
+            'pendientes_inicial' => count($resultado),
+            'hits_db'            => $hitsDb,
+            'a_consultar_google' => count($pendientes),
+        ]);
+
+        if (empty($pendientes)) {
+            return $resultado;
+        }
+
+        if (empty($this->apiKey)) {
+            Log::warning('API_GOOGLE no configurada para geocodificación inversa (batch)');
+            return $resultado;
+        }
+
+        // 3) Google Maps en paralelo con Guzzle Pool
+        $client = new \GuzzleHttp\Client([
+            'base_uri'        => 'https://maps.googleapis.com',
+            'timeout'         => 10,
+            'connect_timeout' => 5,
+            'http_errors'     => false,
+        ]);
+
+        $requests = function () use ($pendientes) {
+            foreach ($pendientes as $clave => [$lat, $lng]) {
+                $url = '/maps/api/geocode/json?' . http_build_query([
+                    'latlng'   => $lat . ',' . $lng,
+                    'key'      => $this->apiKey,
+                    'language' => 'es',
+                    'region'   => 'ar',
+                ]);
+                yield $clave => new \GuzzleHttp\Psr7\Request('GET', $url);
+            }
+        };
+
+        $nuevos = []; // Para bulk-insert en DB
+
+        $pool = new \GuzzleHttp\Pool($client, $requests(), [
+            'concurrency' => $concurrencia,
+            'fulfilled'   => function ($response, $clave) use (&$resultado, &$nuevos, $pendientes) {
+                $body = (string) $response->getBody();
+                $data = json_decode($body);
+                $direccion = null;
+                if ($data && ($data->status ?? '') === 'OK' && isset($data->results[0]->formatted_address)) {
+                    $direccion = (string) $data->results[0]->formatted_address;
+                }
+                [$lat, $lng] = $pendientes[$clave];
+                $resultado[$clave] = $direccion;
+                $nuevos[] = [
+                    'latitud'    => $lat,
+                    'longitud'   => $lng,
+                    'direccion'  => $direccion,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            },
+            'rejected' => function ($reason, $clave) use (&$resultado) {
+                Log::error('Reverse-geocode batch rechazado', [
+                    'clave'  => $clave,
+                    'reason' => method_exists($reason, 'getMessage') ? $reason->getMessage() : (string) $reason,
+                ]);
+                $resultado[$clave] = null;
+            },
+        ]);
+
+        $pool->promise()->wait();
+
+        // Persistir los nuevos en DB (insert masivo; Eloquent timestamps manual)
+        if (!empty($nuevos)) {
+            try {
+                GeocodificacionInversa::insert($nuevos);
+            } catch (\Exception $e) {
+                Log::warning('No se pudo bulk-insert en geocodificacion_inversa', [
+                    'error' => $e->getMessage(),
+                    'count' => count($nuevos),
+                ]);
+            }
+        }
+
+        return $resultado;
     }
 
     /**

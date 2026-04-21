@@ -217,7 +217,7 @@
             @can('ver-moviles-cecoco')
                 <li class="">
                     <a class="nav-link" href="/indexMoviles">
-                        <i class="fas fa-car"></i></i><span>Móviles</span>
+                        <i class="fas fa-car"></i><span>Móviles</span>
                     </a>
                 </li>
             @endcan
@@ -225,6 +225,13 @@
                 <li class="{{ request()->routeIs('cecoco.historico-movil') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('cecoco.historico-movil') }}">
                         <i class="fas fa-file-import"></i><span>Procesar Histórico Móvil</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-historico-movil-gis-cecoco')
+                <li class="{{ request()->routeIs('cecoco.historico-movil-gis') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('cecoco.historico-movil-gis') }}">
+                        <i class="fas fa-satellite-dish"></i><span>Histórico Móvil GIS</span>
                     </a>
                 </li>
             @endcan

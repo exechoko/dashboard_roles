@@ -124,6 +124,7 @@ class SeederTablaPermisos extends Seeder
             'importar-eventos',
             'ver-grabacion-evento',
             'ver-historico-movil-cecoco',
+            'ver-historico-movil-gis-cecoco',
 
             //ENTREGAS – Equipos
             'ver-entrega-equipos',

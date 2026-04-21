@@ -102,6 +102,7 @@
                                                         'importar-eventos',
                                                         'ver-grabacion-evento',
                                                         'ver-historico-movil-cecoco',
+                                                        'ver-historico-movil-gis-cecoco',
                                                     ],
                                                     'Entregas' => [
                                                         'entrega-equipos',

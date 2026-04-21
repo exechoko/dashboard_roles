@@ -395,6 +395,15 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/historico-movil/exportar-excel', [App\Http\Controllers\HistoricoMovilController::class, 'exportarExcel'])->name('historico-movil.exportar-excel');
         Route::get('/historico-movil/buscar', [App\Http\Controllers\HistoricoMovilController::class, 'buscarHistorial'])->name('historico-movil.buscar');
         Route::get('/historico-movil/{historial}/cargar', [App\Http\Controllers\HistoricoMovilController::class, 'cargarHistorial'])->name('historico-movil.cargar');
+
+        // Histórico Móvil GIS (consulta directa al GIS viewer, sin Excel)
+        Route::get('/historico-movil-gis', [App\Http\Controllers\HistoricoMovilGisController::class, 'index'])->name('historico-movil-gis');
+        Route::post('/historico-movil-gis/consultar', [App\Http\Controllers\HistoricoMovilGisController::class, 'consultar'])->name('historico-movil-gis.consultar');
+        Route::get('/historico-movil-gis/buscar-recurso', [App\Http\Controllers\HistoricoMovilGisController::class, 'buscarRecurso'])->name('historico-movil-gis.buscar-recurso');
+        Route::post('/historico-movil-gis/exportar-excel', [App\Http\Controllers\HistoricoMovilGisController::class, 'exportarExcel'])->name('historico-movil-gis.exportar-excel');
+        Route::get('/historico-movil-gis/buscar', [App\Http\Controllers\HistoricoMovilGisController::class, 'buscarHistorial'])->name('historico-movil-gis.buscar');
+        Route::get('/historico-movil-gis/{historial}/cargar', [App\Http\Controllers\HistoricoMovilGisController::class, 'cargarHistorial'])->name('historico-movil-gis.cargar');
+        Route::delete('/historico-movil-gis/{historial}', [App\Http\Controllers\HistoricoMovilGisController::class, 'eliminarHistorial'])->name('historico-movil-gis.eliminar');
         Route::get('/', [App\Http\Controllers\EventoCecocoController::class, 'index'])->name('index');
         Route::get('/importar/form', [App\Http\Controllers\EventoCecocoController::class, 'importarForm'])->name('importar');
         Route::post('/importar', [App\Http\Controllers\EventoCecocoController::class, 'importar'])->name('importar.post');

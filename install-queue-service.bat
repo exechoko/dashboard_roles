@@ -19,7 +19,7 @@ if %errorlevel% neq 0 (
 
 REM Configuración
 set SERVICE_NAME=LaravelQueueWorker
-set PROJECT_PATH=C:\Apache24\htdocs\dashboard_roles
+set PROJECT_PATH=C:\Apache24\htdocs\equipamiento
 set PHP_PATH=C:\php\php.exe
 set NSSM_PATH=C:\nssm\nssm.exe
 
@@ -88,7 +88,11 @@ echo Instalando servicio %SERVICE_NAME%...
 echo.
 
 REM Instalar el servicio con NSSM
-"%NSSM_PATH%" install %SERVICE_NAME% "%PHP_PATH%" "artisan" "queue:work" "--sleep=3" "--tries=3" "--timeout=600"
+REM --max-time=3600  : reinicia el proceso cada 1 hora para liberar memoria
+REM --tries=3        : reintenta jobs fallidos hasta 3 veces
+REM --timeout=600    : mata jobs que tarden más de 10 minutos
+REM --sleep=3        : espera 3 segundos entre polls cuando la cola está vacía
+"%NSSM_PATH%" install %SERVICE_NAME% "%PHP_PATH%" "artisan" "queue:work" "--sleep=3" "--tries=3" "--timeout=600" "--max-time=3600"
 
 REM Configurar el directorio de trabajo
 "%NSSM_PATH%" set %SERVICE_NAME% AppDirectory "%PROJECT_PATH%"

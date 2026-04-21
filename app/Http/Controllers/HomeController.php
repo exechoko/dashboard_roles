@@ -459,9 +459,19 @@ class HomeController extends Controller
     public function workersStatus(): JsonResponse
     {
         try {
+            // Verificar que las tablas existen antes de consultarlas
+            if (!DB::getSchemaBuilder()->hasTable('jobs')) {
+                return response()->json([
+                    'error'    => 'tabla_jobs_inexistente',
+                    'mensaje'  => 'Ejecutar: php artisan queue:table && php artisan migrate',
+                ], 200);
+            }
+
             $pendientes  = DB::table('jobs')->whereNull('reserved_at')->count();
             $procesando  = DB::table('jobs')->whereNotNull('reserved_at')->count();
-            $fallidos    = DB::table('failed_jobs')->count();
+            $fallidos    = DB::getSchemaBuilder()->hasTable('failed_jobs')
+                ? DB::table('failed_jobs')->count()
+                : 0;
 
             // Desglose por tipo de job
             $jobsPorTipo = DB::table('jobs')

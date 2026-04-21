@@ -3567,6 +3567,15 @@
                 fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                     .then(function(r) { return r.json(); })
                     .then(function(d) {
+                        // Tabla jobs no existe aún
+                        if (d.error === 'tabla_jobs_inexistente') {
+                            var dot = document.getElementById('workers-dot');
+                            var lbl = document.getElementById('workers-label');
+                            if (dot) dot.style.background = '#f59e0b';
+                            if (lbl) { lbl.className = 'badge badge-warning'; lbl.title = d.mensaje; lbl.textContent = 'Sin configurar'; }
+                            return;
+                        }
+
                         // Worker activo
                         var dot   = document.getElementById('workers-dot');
                         var label = document.getElementById('workers-label');

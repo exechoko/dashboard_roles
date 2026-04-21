@@ -1650,15 +1650,14 @@
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <div class="modal-body" style="min-height: 500px">
-                        <div class="col-lg-2">
-                            <button id="exportar-a-excel-equipos-pg" class="btn btn-success">
-                                <i class="fa fa-file-excel"></i>
+                    <div class="modal-body p-3">
+                        <div class="d-flex justify-content-end mb-2">
+                            <button id="exportar-a-excel-equipos-pg" class="btn btn-success btn-sm">
+                                <i class="fa fa-file-excel mr-1"></i> Exportar Excel
                             </button>
                         </div>
-                        <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
-                            <table id="table-equipos-pg" class="table table-condensed table-bordered table-stripped">
-                            </table>
+                        <div style="min-height:400px;">
+                            <table id="table-equipos-pg" class="table table-sm"></table>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1681,15 +1680,14 @@
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <div class="modal-body" style="min-height: 500px">
-                        <div class="col-lg-2">
-                            <button id="exportar-a-excel-equipos-stock" class="btn btn-success">
-                                <i class="fa fa-file-excel"></i>
+                    <div class="modal-body p-3">
+                        <div class="d-flex justify-content-end mb-2">
+                            <button id="exportar-a-excel-equipos-stock" class="btn btn-success btn-sm">
+                                <i class="fa fa-file-excel mr-1"></i> Exportar Excel
                             </button>
                         </div>
-                        <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
-                            <table id="table-equipos-stock" class="table table-condensed table-bordered table-stripped">
-                            </table>
+                        <div style="min-height:400px;">
+                            <table id="table-equipos-stock" class="table table-sm"></table>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1712,16 +1710,14 @@
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <div class="modal-body" style="min-height: 500px">
-                        <div class="col-lg-2">
-                            <button id="exportar-a-excel-equipos-departamental" class="btn btn-success">
-                                <i class="fa fa-file-excel"></i>
+                    <div class="modal-body p-3">
+                        <div class="d-flex justify-content-end mb-2">
+                            <button id="exportar-a-excel-equipos-departamental" class="btn btn-success btn-sm">
+                                <i class="fa fa-file-excel mr-1"></i> Exportar Excel
                             </button>
                         </div>
-                        <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
-                            <table id="table-equipos-departamental"
-                                class="table table-condensed table-bordered table-stripped">
-                            </table>
+                        <div style="min-height:400px;">
+                            <table id="table-equipos-departamental" class="table table-sm"></table>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1744,16 +1740,14 @@
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <div class="modal-body" style="min-height: 500px">
-                        <div class="col-lg-2">
-                            <button id="exportar-a-excel-equipos-division-911" class="btn btn-success">
-                                <i class="fa fa-file-excel"></i>
+                    <div class="modal-body p-3">
+                        <div class="d-flex justify-content-end mb-2">
+                            <button id="exportar-a-excel-equipos-division-911" class="btn btn-success btn-sm">
+                                <i class="fa fa-file-excel mr-1"></i> Exportar Excel
                             </button>
                         </div>
-                        <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
-                            <table id="table-equipos-division-911"
-                                class="table table-condensed table-bordered table-stripped">
-                            </table>
+                        <div style="min-height:400px;">
+                            <table id="table-equipos-division-911" class="table table-sm"></table>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1776,16 +1770,14 @@
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
-                    <div class="modal-body" style="min-height: 500px">
-                        <div class="col-lg-2">
-                            <button id="exportar-a-excel-equipos-division-bancaria" class="btn btn-success">
-                                <i class="fa fa-file-excel"></i>
+                    <div class="modal-body p-3">
+                        <div class="d-flex justify-content-end mb-2">
+                            <button id="exportar-a-excel-equipos-division-bancaria" class="btn btn-success btn-sm">
+                                <i class="fa fa-file-excel mr-1"></i> Exportar Excel
                             </button>
                         </div>
-                        <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
-                            <table id="table-equipos-division-bancaria"
-                                class="table table-condensed table-bordered table-stripped">
-                            </table>
+                        <div style="min-height:400px;">
+                            <table id="table-equipos-division-bancaria" class="table table-sm"></table>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -2266,7 +2258,7 @@
             },
                 function (data, textStatus, xhr) {
                     console.log('data', data);
-                    setTableEquiposPG('table-equipos-pg', data)
+                    setTableRecursos('table-equipos-pg', data)
                 }).fail(function (data) {
                     swal('Error', 'Ocurrio un error al guardar: ' + data.responseJSON.message, 'error');
                 })
@@ -2279,7 +2271,7 @@
             },
                 function (data, textStatus, xhr) {
                     console.log('data', data);
-                    setTableEquiposStock('table-equipos-stock', data)
+                    setTableRecursos('table-equipos-stock', data, [{title:'Recurso anterior', field:'recurso_anterior', sortable:true}])
                 }).fail(function (data) {
                     if (data.status === 404) {
                         swal('Error', 'Recurso Stock 911 no encontrado', 'error');
@@ -2296,7 +2288,7 @@
             },
                 function (data, textStatus, xhr) {
                     console.log('data', data);
-                    setTableEquiposDepartamental('table-equipos-departamental', data)
+                    setTableRecursos('table-equipos-departamental', data)
                 }).fail(function (data) {
                     if (data.status === 404) {
                         swal('Error', 'Departamental no encontrada', 'error');
@@ -2313,7 +2305,7 @@
             },
                 function (data, textStatus, xhr) {
                     console.log('data', data);
-                    setTableEquiposDivision911('table-equipos-division-911', data)
+                    setTableRecursos('table-equipos-division-911', data)
                 }).fail(function (data) {
                     if (data.status === 404) {
                         swal('Error', 'Division no encontrada', 'error');
@@ -2330,7 +2322,7 @@
             },
                 function (data, textStatus, xhr) {
                     console.log('data', data);
-                    setTableEquiposDivisionBancaria('table-equipos-division-bancaria', data)
+                    setTableRecursos('table-equipos-division-bancaria', data)
                 }).fail(function (data) {
                     if (data.status === 404) {
                         swal('Error', 'Division no encontrada', 'error');
@@ -2679,390 +2671,76 @@
             })
         }
 
-        function setTableEquiposPG(table_id, rows) {
-            var table = $('#' + table_id)
-            var columns = [];
-            table.bootstrapTable('destroy')
+        // ── Tabla unificada para todos los modales de Recursos ─────────────────
+        function setTableRecursos(tableId, rows, extraCols) {
+            var table = $('#' + tableId);
+            table.bootstrapTable('destroy');
 
-            columns.push({
-                title: 'Fecha',
-                field: 'fecha',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Marca',
-                field: 'marca',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Modelo',
-                field: 'modelo',
-                sortable: true,
-            })
-            columns.push({
-                title: 'ISSI',
-                field: 'issi',
-                sortable: true
-            })
-            columns.push({
-                title: 'TEI',
-                field: 'tei',
-                sortable: true
-            })
-            columns.push({
-                title: 'Nombre recurso',
-                field: 'nombre_recurso',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Ticket PER',
-                field: 'ticket_per',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Observaciones',
-                field: 'observaciones',
-                sortable: false,
-                cellStyle: function cellStyle(value, row, index, field) {
-                    // Limita la altura de la celda y muestra solo una línea de texto
-                    return {
-                        css: {
-                            'max-height': '30px', // Ajusta la altura máxima según tus necesidades
-                            'overflow': 'hidden',
-                            'text-overflow': 'ellipsis',
-                            'white-space': 'nowrap'
-                        }
-                    };
-                },
-            })
+            var teiFormatter = function(value) {
+                if (!value) return '<span class="text-muted">—</span>';
+                return '<span style="background:#2d3748;color:#fff;padding:2px 8px;border-radius:6px;font-size:0.78rem;font-weight:600;letter-spacing:.3px;">' + value + '</span>';
+            };
 
-            console.log('ROWS_TABLA', rows)
+            var marcaModeloFormatter = function(value, row) {
+                var marca = row.marca || '—';
+                var modelo = row.modelo || '';
+                return '<span style="font-weight:600;font-size:0.82rem;">' + marca + '</span>' +
+                       (modelo ? '<br><small class="text-muted">' + modelo + '</small>' : '');
+            };
+
+            var issiFormatter = function(value) {
+                return value ? '<small class="text-muted">' + value + '</small>' : '<span class="text-muted">—</span>';
+            };
+
+            var obsFormatter = function(value) {
+                if (!value) return '<span class="text-muted">—</span>';
+                var short = value.length > 40 ? value.substring(0, 40) + '…' : value;
+                var escaped = $('<div>').text(value).html();
+                return '<span data-toggle="tooltip" data-placement="left" data-container="body" ' +
+                       'title="' + escaped + '" style="cursor:default;font-size:0.8rem;">' + short + '</span>';
+            };
+
+            var columns = [
+                { title: 'Fecha',          field: 'fecha',         sortable: true,  width: 90 },
+                { title: 'Marca / Modelo', field: 'marca',         sortable: true,  formatter: marcaModeloFormatter },
+                { title: 'ISSI',           field: 'issi',          sortable: true,  width: 105, formatter: issiFormatter },
+                { title: 'TEI',            field: 'tei',           sortable: true,  width: 90,  formatter: teiFormatter },
+                { title: 'Recurso',        field: 'nombre_recurso',sortable: true },
+            ];
+
+            if (extraCols && extraCols.length) {
+                extraCols.forEach(function(col) { columns.push(col); });
+            }
+
+            columns.push({ title: 'Ticket',        field: 'ticket_per',    sortable: true, width: 80 });
+            columns.push({ title: 'Observaciones', field: 'observaciones', sortable: false, width: 200, formatter: obsFormatter });
+
             table.bootstrapTable({
                 striped: true,
-                fixedColumns: true,
-                fixedNumber: 1,
+                search: true,
+                searchAlign: 'left',
                 sortable: true,
+                pagination: true,
+                pageSize: 25,
+                pageList: [25, 50, 100, 'All'],
                 paginationVAlign: 'both',
                 columns: columns,
-                data: rows
+                data: rows,
+                rowStyle: function() {
+                    return { css: { 'font-size': '0.82rem', 'vertical-align': 'middle' } };
+                },
+                onPostBody: function() {
+                    table.find('[data-toggle="tooltip"]').tooltip({ trigger: 'hover', delay: { show: 250, hide: 100 } });
+                }
             });
 
             table.find('thead').css({
-                backgroundColor: 'white'
-            })
-            table.closest('.fixed-table-body').css({
-                height: '400px'
-            })
-        }
-
-        function setTableEquiposStock(table_id, rows) {
-            var table = $('#' + table_id)
-            var columns = [];
-            table.bootstrapTable('destroy')
-
-            columns.push({
-                title: 'Fecha',
-                field: 'fecha',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Marca',
-                field: 'marca',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Modelo',
-                field: 'modelo',
-                sortable: true,
-            })
-            columns.push({
-                title: 'ISSI',
-                field: 'issi',
-                sortable: true
-            })
-            columns.push({
-                title: 'TEI',
-                field: 'tei',
-                sortable: true
-            })
-            columns.push({
-                title: 'Nombre recurso',
-                field: 'nombre_recurso',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Recurso anterior',
-                field: 'recurso_anterior',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Ticket PER',
-                field: 'ticket_per',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Observaciones',
-                field: 'observaciones',
-                sortable: false,
-                cellStyle: function cellStyle(value, row, index, field) {
-                    // Limita la altura de la celda y muestra solo una línea de texto
-                    return {
-                        css: {
-                            'max-height': '30px', // Ajusta la altura máxima según tus necesidades
-                            'overflow': 'hidden',
-                            'text-overflow': 'ellipsis',
-                            'white-space': 'nowrap'
-                        }
-                    };
-                },
-            })
-
-            console.log('ROWS_TABLA', rows)
-            table.bootstrapTable({
-                striped: true,
-                fixedColumns: true,
-                fixedNumber: 1,
-                sortable: true,
-                paginationVAlign: 'both',
-                columns: columns,
-                data: rows
+                background: 'linear-gradient(45deg, #6777ef, #35199a)',
+                color: '#fff'
             });
-
-            table.find('thead').css({
-                backgroundColor: 'white'
-            })
-            table.closest('.fixed-table-body').css({
-                height: '400px'
-            })
+            table.find('thead th').css({ color: '#fff', 'font-size': '0.82rem', padding: '8px 10px' });
         }
 
-        function setTableEquiposDepartamental(table_id, rows) {
-            var table = $('#' + table_id)
-            var columns = [];
-            table.bootstrapTable('destroy')
-
-            columns.push({
-                title: 'Fecha',
-                field: 'fecha',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Marca',
-                field: 'marca',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Modelo',
-                field: 'modelo',
-                sortable: true,
-            })
-            columns.push({
-                title: 'ISSI',
-                field: 'issi',
-                sortable: true
-            })
-            columns.push({
-                title: 'TEI',
-                field: 'tei',
-                sortable: true
-            })
-            columns.push({
-                title: 'Nombre recurso',
-                field: 'nombre_recurso',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Ticket PER',
-                field: 'ticket_per',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Observaciones',
-                field: 'observaciones',
-                sortable: false,
-                cellStyle: function cellStyle(value, row, index, field) {
-                    // Limita la altura de la celda y muestra solo una línea de texto
-                    return {
-                        css: {
-                            'max-height': '30px', // Ajusta la altura máxima según tus necesidades
-                            'overflow': 'hidden',
-                            'text-overflow': 'ellipsis',
-                            'white-space': 'nowrap'
-                        }
-                    };
-                },
-            })
-
-            console.log('ROWS_TABLA', rows)
-            table.bootstrapTable({
-                striped: true,
-                fixedColumns: true,
-                fixedNumber: 1,
-                sortable: true,
-                paginationVAlign: 'both',
-                columns: columns,
-                data: rows
-            });
-
-            table.find('thead').css({
-                backgroundColor: 'white'
-            })
-            table.closest('.fixed-table-body').css({
-                height: '400px'
-            })
-        }
-
-        function setTableEquiposDivision911(table_id, rows) {
-            var table = $('#' + table_id)
-            var columns = [];
-            table.bootstrapTable('destroy')
-
-            columns.push({
-                title: 'Fecha',
-                field: 'fecha',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Marca',
-                field: 'marca',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Modelo',
-                field: 'modelo',
-                sortable: true,
-            })
-            columns.push({
-                title: 'ISSI',
-                field: 'issi',
-                sortable: true
-            })
-            columns.push({
-                title: 'TEI',
-                field: 'tei',
-                sortable: true
-            })
-            columns.push({
-                title: 'Nombre recurso',
-                field: 'nombre_recurso',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Ticket PER',
-                field: 'ticket_per',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Observaciones',
-                field: 'observaciones',
-                sortable: false,
-                cellStyle: function cellStyle(value, row, index, field) {
-                    // Limita la altura de la celda y muestra solo una línea de texto
-                    return {
-                        css: {
-                            'max-height': '30px', // Ajusta la altura máxima según tus necesidades
-                            'overflow': 'hidden',
-                            'text-overflow': 'ellipsis',
-                            'white-space': 'nowrap'
-                        }
-                    };
-                },
-            })
-
-            console.log('ROWS_TABLA', rows)
-            table.bootstrapTable({
-                striped: true,
-                fixedColumns: true,
-                fixedNumber: 1,
-                sortable: true,
-                paginationVAlign: 'both',
-                columns: columns,
-                data: rows
-            });
-
-            table.find('thead').css({
-                backgroundColor: 'white'
-            })
-            table.closest('.fixed-table-body').css({
-                height: '400px'
-            })
-        }
-
-        function setTableEquiposDivisionBancaria(table_id, rows) {
-            var table = $('#' + table_id)
-            var columns = [];
-            table.bootstrapTable('destroy')
-
-            columns.push({
-                title: 'Fecha',
-                field: 'fecha',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Marca',
-                field: 'marca',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Modelo',
-                field: 'modelo',
-                sortable: true,
-            })
-            columns.push({
-                title: 'ISSI',
-                field: 'issi',
-                sortable: true
-            })
-            columns.push({
-                title: 'TEI',
-                field: 'tei',
-                sortable: true
-            })
-            columns.push({
-                title: 'Nombre recurso',
-                field: 'nombre_recurso',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Ticket PER',
-                field: 'ticket_per',
-                sortable: true,
-            })
-            columns.push({
-                title: 'Observaciones',
-                field: 'observaciones',
-                sortable: false,
-                cellStyle: function cellStyle(value, row, index, field) {
-                    // Limita la altura de la celda y muestra solo una línea de texto
-                    return {
-                        css: {
-                            'max-height': '30px', // Ajusta la altura máxima según tus necesidades
-                            'overflow': 'hidden',
-                            'text-overflow': 'ellipsis',
-                            'white-space': 'nowrap'
-                        }
-                    };
-                },
-            })
-
-            console.log('ROWS_TABLA', rows)
-            table.bootstrapTable({
-                striped: true,
-                fixedColumns: true,
-                fixedNumber: 1,
-                sortable: true,
-                paginationVAlign: 'both',
-                columns: columns,
-                data: rows
-            });
-
-            table.find('thead').css({
-                backgroundColor: 'white'
-            })
-            table.closest('.fixed-table-body').css({
-                height: '400px'
-            })
-        }
 
         function setTableCamaras(table_id, rows) {
             var table = $('#' + table_id)

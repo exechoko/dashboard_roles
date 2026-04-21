@@ -147,6 +147,22 @@
     .btn-hist-del:hover { opacity:1; background:rgba(220,53,69,.1); }
     .hist-empty   { text-align:center; color:#adb5bd; padding:30px 16px; font-size:.88rem; }
 
+    /* ── Toggle modo Individual / Lote ── */
+    .modo-toggle { display:flex; border-radius:8px; overflow:hidden; border:1px solid rgba(255,255,255,.3); }
+    .modo-btn {
+        background: rgba(255,255,255,.12); color: rgba(255,255,255,.8);
+        border: none; padding: 6px 16px; font-size: .82rem; cursor: pointer;
+        transition: background .2s, color .2s; display:flex; align-items:center;
+    }
+    .modo-btn.activo { background: rgba(255,255,255,.28); color: #fff; font-weight: 600; }
+    .modo-btn:hover:not(.activo) { background: rgba(255,255,255,.2); }
+
+    /* ── Filas de estado en lote ── */
+    .lote-estado-espera   { color:#6c757d; font-size:.78rem; }
+    .lote-estado-proceso  { color:#6777ef; font-size:.78rem; font-weight:600; }
+    .lote-estado-ok       { color:#00a832; font-size:.78rem; font-weight:600; }
+    .lote-estado-error    { color:#dc3545; font-size:.78rem; font-weight:600; }
+
     /* ── Atajos de período ── */
     .btn-atajo {
         height: 30px; line-height: 1;
@@ -319,26 +335,145 @@
         <div class="row no-print">
             <div class="col-lg-12">
                 <div class="card upload-card">
-                    <div class="card-header" style="background:linear-gradient(135deg,#6777ef,#35199a);border-radius:16px 16px 0 0">
-                        <h4 class="card-title" style="color:#fff;margin:0">
+
+                    {{-- Header con toggle de modo --}}
+                    <div class="card-header d-flex align-items-center justify-content-between" style="background:linear-gradient(135deg,#6777ef,#35199a);border-radius:16px 16px 0 0;padding:12px 20px">
+                        <h4 class="card-title mb-0" style="color:#fff">
                             <i class="fas fa-upload mr-2"></i>Importar archivo GPS (.xls / .xlsx)
                         </h4>
+                        {{-- Toggle Individual / Lote --}}
+                        <div class="modo-toggle" role="group">
+                            <button type="button" id="btn-modo-individual" class="modo-btn activo">
+                                <i class="fas fa-file mr-1"></i>Individual
+                            </button>
+                            <button type="button" id="btn-modo-lote" class="modo-btn">
+                                <i class="fas fa-layer-group mr-1"></i>Por lotes
+                                <span class="badge badge-light ml-1" style="font-size:.65rem">hasta 10</span>
+                            </button>
+                        </div>
                     </div>
+
                     <div class="card-body">
-                        <form id="form-upload" enctype="multipart/form-data">
-                            @csrf
-                            <div class="row">
-                                <div class="col-md-7">
-                                    <div class="upload-zone" id="upload-zone">
-                                        <i class="fas fa-file-excel"></i>
-                                        <p id="upload-label">Arrastrá aquí el archivo o <strong>hacé clic</strong> para seleccionarlo</p>
-                                        <p id="upload-filename" class="text-primary font-weight-bold" style="display:none"></p>
-                                        <input type="file" id="archivo" name="archivo" accept=".xls,.xlsx" style="display:none" required>
+
+                        {{-- ═══ MODO INDIVIDUAL ═══ --}}
+                        <div id="seccion-individual">
+                            <form id="form-upload" enctype="multipart/form-data">
+                                @csrf
+                                <div class="row">
+                                    <div class="col-md-7">
+                                        <div class="upload-zone" id="upload-zone">
+                                            <i class="fas fa-file-excel"></i>
+                                            <p id="upload-label">Arrastrá aquí el archivo o <strong>hacé clic</strong> para seleccionarlo</p>
+                                            <p id="upload-filename" class="text-primary font-weight-bold" style="display:none"></p>
+                                            <input type="file" id="archivo" name="archivo" accept=".xls,.xlsx" style="display:none" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <div class="form-group mb-2">
+                                            <label class="font-weight-bold mb-1">
+                                                <i class="fas fa-tachometer-alt mr-1" style="color:#6777ef"></i>
+                                                Velocidad máxima permitida
+                                            </label>
+                                            <div class="input-group speed-input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text"><i class="fas fa-car"></i></span>
+                                                </div>
+                                                <input type="number" id="velocidad_maxima" name="velocidad_maxima"
+                                                       class="form-control" placeholder="Ej: 45" min="0" step="1" value="45">
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text">km/h</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group mb-2">
+                                            <label class="font-weight-bold mb-1">
+                                                <i class="fas fa-clock mr-1" style="color:#ffa500"></i>
+                                                Umbrales de tiempo detenido
+                                            </label>
+                                            <div class="row no-gutters">
+                                                <div class="col-6 pr-1">
+                                                    <div class="input-group input-group-sm">
+                                                        <div class="input-group-prepend">
+                                                            <span class="input-group-text" style="background:#ffa500;color:#000;border-color:#ffa500;font-size:.75rem">Naranja</span>
+                                                        </div>
+                                                        <input type="number" id="umbral_naranja" name="umbral_naranja"
+                                                               class="form-control" min="1" step="1" value="30"
+                                                               title="Minutos desde los cuales se pinta naranja">
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text" style="font-size:.75rem">min</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6 pl-1">
+                                                    <div class="input-group input-group-sm">
+                                                        <div class="input-group-prepend">
+                                                            <span class="input-group-text" style="background:#ff0000;color:#fff;border-color:#ff0000;font-size:.75rem">Rojo</span>
+                                                        </div>
+                                                        <input type="number" id="umbral_rojo" name="umbral_rojo"
+                                                               class="form-control" min="1" step="1" value="45"
+                                                               title="Minutos desde los cuales se pinta rojo">
+                                                        <div class="input-group-append">
+                                                            <span class="input-group-text" style="font-size:.75rem">min</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <small class="text-muted">Tiempo detenido a partir del cual cambia el color de alerta.</small>
+                                        </div>
+                                        <div class="alert-atencion mt-2">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                                            <strong>ATENCIÓN:</strong> Más de 45 min detenido puede indicar que el GPS fue apagado y encendido en otro punto.
+                                        </div>
+                                        <button type="submit" id="btn-procesar" class="btn btn-primary btn-block btn-lg mt-3">
+                                            <i class="fas fa-cogs mr-1"></i> Procesar Archivo
+                                        </button>
                                     </div>
                                 </div>
-                                <div class="col-md-5">
+                            </form>
+                        </div>
 
-                                    {{-- Velocidad máxima --}}
+                        {{-- ═══ MODO LOTE ═══ --}}
+                        <div id="seccion-lote" style="display:none">
+                            <div class="row">
+
+                                {{-- Columna izquierda: zona drop + lista --}}
+                                <div class="col-md-7">
+                                    {{-- Zona drop múltiple --}}
+                                    <div class="upload-zone" id="upload-zone-lote">
+                                        <i class="fas fa-layer-group" style="color:#6777ef"></i>
+                                        <p id="lote-label">Arrastrá hasta <strong>10 archivos</strong> o <strong>hacé clic</strong> para seleccionarlos</p>
+                                        <input type="file" id="archivos-lote" accept=".xls,.xlsx" multiple style="display:none">
+                                    </div>
+
+                                    {{-- Lista de archivos en cola --}}
+                                    <div id="lote-lista-wrap" style="display:none;margin-top:12px">
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
+                                            <span style="font-size:.82rem;font-weight:600">
+                                                Archivos en cola: <span id="lote-count">0</span> / 10
+                                            </span>
+                                            <button id="btn-lote-limpiar-lista" class="btn btn-sm btn-outline-danger" style="font-size:.75rem;padding:2px 10px">
+                                                <i class="fas fa-trash-alt mr-1"></i>Vaciar lista
+                                            </button>
+                                        </div>
+                                        <div style="max-height:220px;overflow-y:auto;border:1px solid #dee2e6;border-radius:8px">
+                                            <table class="table table-sm mb-0" id="lote-tabla-cola">
+                                                <thead style="background:#f8f9fa;font-size:.78rem">
+                                                    <tr>
+                                                        <th style="width:28px">#</th>
+                                                        <th>Archivo</th>
+                                                        <th style="width:70px" class="text-center">Tamaño</th>
+                                                        <th style="width:110px" class="text-center">Estado</th>
+                                                        <th style="width:32px"></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="lote-cola-body"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Columna derecha: configuración + botón --}}
+                                <div class="col-md-5">
                                     <div class="form-group mb-2">
                                         <label class="font-weight-bold mb-1">
                                             <i class="fas fa-tachometer-alt mr-1" style="color:#6777ef"></i>
@@ -348,31 +483,25 @@
                                             <div class="input-group-prepend">
                                                 <span class="input-group-text"><i class="fas fa-car"></i></span>
                                             </div>
-                                            <input type="number" id="velocidad_maxima" name="velocidad_maxima"
-                                                   class="form-control"
-                                                   placeholder="Ej: 45"
-                                                   min="0" step="1" value="45">
+                                            <input type="number" id="lote-vel" class="form-control" placeholder="Ej: 45" min="0" step="1" value="45">
                                             <div class="input-group-append">
                                                 <span class="input-group-text">km/h</span>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {{-- Umbrales de tiempo detenido --}}
                                     <div class="form-group mb-2">
                                         <label class="font-weight-bold mb-1">
                                             <i class="fas fa-clock mr-1" style="color:#ffa500"></i>
                                             Umbrales de tiempo detenido
                                         </label>
-                                        <div class="row no-gutters" style="gap:0">
+                                        <div class="row no-gutters">
                                             <div class="col-6 pr-1">
                                                 <div class="input-group input-group-sm">
                                                     <div class="input-group-prepend">
                                                         <span class="input-group-text" style="background:#ffa500;color:#000;border-color:#ffa500;font-size:.75rem">Naranja</span>
                                                     </div>
-                                                    <input type="number" id="umbral_naranja" name="umbral_naranja"
-                                                           class="form-control" min="1" step="1" value="30"
-                                                           title="Minutos desde los cuales se pinta naranja">
+                                                    <input type="number" id="lote-naranja" class="form-control" min="1" step="1" value="30">
                                                     <div class="input-group-append">
                                                         <span class="input-group-text" style="font-size:.75rem">min</span>
                                                     </div>
@@ -383,28 +512,55 @@
                                                     <div class="input-group-prepend">
                                                         <span class="input-group-text" style="background:#ff0000;color:#fff;border-color:#ff0000;font-size:.75rem">Rojo</span>
                                                     </div>
-                                                    <input type="number" id="umbral_rojo" name="umbral_rojo"
-                                                           class="form-control" min="1" step="1" value="45"
-                                                           title="Minutos desde los cuales se pinta rojo">
+                                                    <input type="number" id="lote-rojo" class="form-control" min="1" step="1" value="45">
                                                     <div class="input-group-append">
                                                         <span class="input-group-text" style="font-size:.75rem">min</span>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <small class="text-muted">Tiempo detenido a partir del cual cambia el color de alerta.</small>
+                                        <small class="text-muted">Se aplican a todos los archivos del lote.</small>
                                     </div>
 
                                     <div class="alert-atencion mt-2">
                                         <i class="fas fa-exclamation-triangle mr-1"></i>
-                                        <strong>ATENCIÓN:</strong> Más de 45 min detenido puede indicar que el GPS fue apagado y encendido en otro punto.
+                                        La misma configuración se aplica a todos los archivos del lote.
                                     </div>
-                                    <button type="submit" id="btn-procesar" class="btn btn-primary btn-block btn-lg mt-3">
-                                        <i class="fas fa-cogs mr-1"></i> Procesar Archivo
+
+                                    <button id="btn-procesar-lote" class="btn btn-primary btn-block btn-lg mt-3" disabled>
+                                        <i class="fas fa-cogs mr-1"></i> Procesar lote
+                                        <span id="lote-btn-count" class="badge badge-light ml-1">0</span>
                                     </button>
                                 </div>
                             </div>
-                        </form>
+
+                            {{-- Resultados del lote --}}
+                            <div id="lote-resultados" style="display:none;margin-top:20px">
+                                <hr>
+                                <h6 class="font-weight-bold mb-2">
+                                    <i class="fas fa-check-circle mr-1" style="color:#00c41c"></i>
+                                    Resultado del procesamiento
+                                    <span id="lote-res-ok" class="badge badge-success ml-1">0 OK</span>
+                                    <span id="lote-res-err" class="badge badge-danger ml-1" style="display:none">0 con error</span>
+                                </h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered mb-0" style="font-size:.83rem">
+                                        <thead style="background:#f0f0f0">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Archivo</th>
+                                                <th class="text-center">Recurso</th>
+                                                <th class="text-center">Posiciones</th>
+                                                <th class="text-center">Resultado</th>
+                                                <th class="text-center">Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="lote-res-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -1280,6 +1436,216 @@
 
     // Carga inicial
     cargarHistorial(1);
+
+    /* ════════════════════════════════════════
+       MODO LOTE
+    ════════════════════════════════════════ */
+    const LOTE_MAX = 10;
+    let archivosLote = []; // array de File
+
+    /* ── Toggle Individual / Por lotes ── */
+    document.getElementById('btn-modo-individual').addEventListener('click', () => setModo('individual'));
+    document.getElementById('btn-modo-lote').addEventListener('click',       () => setModo('lote'));
+
+    function setModo(modo) {
+        const esLote = modo === 'lote';
+        document.getElementById('seccion-individual').style.display = esLote ? 'none' : '';
+        document.getElementById('seccion-lote').style.display       = esLote ? ''     : 'none';
+        document.getElementById('btn-modo-individual').classList.toggle('activo', !esLote);
+        document.getElementById('btn-modo-lote').classList.toggle('activo',       esLote);
+    }
+
+    /* ── Drop zone lote ── */
+    const zoneLote   = document.getElementById('upload-zone-lote');
+    const inputLote  = document.getElementById('archivos-lote');
+
+    zoneLote.addEventListener('click', () => inputLote.click());
+    zoneLote.addEventListener('dragover',  e => { e.preventDefault(); zoneLote.classList.add('dragover'); });
+    zoneLote.addEventListener('dragleave', () => zoneLote.classList.remove('dragover'));
+    zoneLote.addEventListener('drop', e => {
+        e.preventDefault(); zoneLote.classList.remove('dragover');
+        agregarArchivosLote(Array.from(e.dataTransfer.files));
+    });
+    inputLote.addEventListener('change', () => {
+        agregarArchivosLote(Array.from(inputLote.files));
+        inputLote.value = '';
+    });
+
+    function agregarArchivosLote(nuevos) {
+        const validos = nuevos.filter(f => /\.(xls|xlsx)$/i.test(f.name));
+        const rechazados = nuevos.length - validos.length;
+
+        validos.forEach(f => {
+            if (archivosLote.length >= LOTE_MAX) return;
+            // evitar duplicados por nombre
+            if (!archivosLote.find(x => x.name === f.name)) archivosLote.push(f);
+        });
+
+        if (rechazados > 0) swal('Atención', `${rechazados} archivo(s) ignorado(s): solo se aceptan .xls y .xlsx.`, 'warning');
+        if (archivosLote.length >= LOTE_MAX) swal('Límite alcanzado', `Máximo ${LOTE_MAX} archivos por lote.`, 'info');
+
+        renderColaLote();
+    }
+
+    function renderColaLote() {
+        const n = archivosLote.length;
+        document.getElementById('lote-count').textContent    = n;
+        document.getElementById('lote-btn-count').textContent = n;
+        document.getElementById('btn-procesar-lote').disabled = n === 0;
+        document.getElementById('lote-lista-wrap').style.display = n ? '' : 'none';
+
+        const tbody = document.getElementById('lote-cola-body');
+        tbody.innerHTML = archivosLote.map((f, i) => `
+            <tr id="lote-fila-${i}">
+                <td class="text-center text-muted" style="font-size:.75rem">${i + 1}</td>
+                <td style="font-size:.8rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${f.name}">
+                    <i class="fas fa-file-excel mr-1" style="color:#1d6f42"></i>${f.name}
+                </td>
+                <td class="text-center" style="font-size:.75rem;color:#6c757d">${(f.size/1024).toFixed(0)} KB</td>
+                <td class="text-center lote-estado-espera" id="lote-estado-${i}">
+                    <i class="fas fa-clock mr-1"></i>En espera
+                </td>
+                <td class="text-center">
+                    <button onclick="quitarArchivoLote(${i})" class="btn btn-sm" style="padding:1px 6px;color:#dc3545;border:none;background:none" title="Quitar">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </td>
+            </tr>`).join('');
+    }
+
+    window.quitarArchivoLote = function(idx) {
+        archivosLote.splice(idx, 1);
+        renderColaLote();
+        document.getElementById('lote-resultados').style.display = 'none';
+    };
+
+    document.getElementById('btn-lote-limpiar-lista').addEventListener('click', () => {
+        archivosLote = [];
+        renderColaLote();
+        document.getElementById('lote-resultados').style.display = 'none';
+    });
+
+    /* ── Procesar lote (secuencial con fetch) ── */
+    document.getElementById('btn-procesar-lote').addEventListener('click', async function() {
+        if (!archivosLote.length) return;
+
+        const vel     = document.getElementById('lote-vel').value     || 45;
+        const naranja = document.getElementById('lote-naranja').value || 30;
+        const rojo    = document.getElementById('lote-rojo').value    || 45;
+        const csrf    = '{{ csrf_token() }}';
+        const url     = '{{ route("cecoco.historico-movil.procesar") }}';
+
+        this.disabled = true;
+        document.getElementById('lote-resultados').style.display = 'none';
+
+        const resultados = [];
+        let okCount = 0, errCount = 0;
+
+        for (let i = 0; i < archivosLote.length; i++) {
+            // Marcar como "procesando"
+            const celdaEstado = document.getElementById(`lote-estado-${i}`);
+            celdaEstado.className = 'text-center lote-estado-proceso';
+            celdaEstado.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Procesando...';
+
+            const fd = new FormData();
+            fd.append('archivo',          archivosLote[i]);
+            fd.append('velocidad_maxima', vel);
+            fd.append('umbral_naranja',   naranja);
+            fd.append('umbral_rojo',      rojo);
+            fd.append('_token',           csrf);
+
+            try {
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
+                    body: fd,
+                });
+                const data = await resp.json();
+
+                if (resp.ok) {
+                    okCount++;
+                    celdaEstado.className = 'text-center lote-estado-ok';
+                    celdaEstado.innerHTML = '<i class="fas fa-check-circle mr-1"></i>OK';
+                    resultados.push({ ok: true, nombre: archivosLote[i].name, data });
+                } else {
+                    throw new Error(data.message || 'Error del servidor');
+                }
+            } catch (err) {
+                errCount++;
+                celdaEstado.className = 'text-center lote-estado-error';
+                celdaEstado.innerHTML = '<i class="fas fa-times-circle mr-1"></i>Error';
+                resultados.push({ ok: false, nombre: archivosLote[i].name, error: err.message });
+            }
+        }
+
+        this.disabled = false;
+
+        // Mostrar tabla de resultados
+        renderResultadosLote(resultados, okCount, errCount);
+
+        // Refrescar historial
+        histPagina = 1;
+        cargarHistorial(1);
+    });
+
+    function renderResultadosLote(resultados, okCount, errCount) {
+        document.getElementById('lote-res-ok').textContent  = `${okCount} OK`;
+        const elErr = document.getElementById('lote-res-err');
+        elErr.textContent  = `${errCount} con error`;
+        elErr.style.display = errCount ? '' : 'none';
+
+        const tbody = document.getElementById('lote-res-body');
+        tbody.innerHTML = resultados.map((r, i) => {
+            if (r.ok) {
+                const meta = r.data.metadata || {};
+                return `<tr>
+                    <td class="text-center text-muted">${i + 1}</td>
+                    <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.nombre}">
+                        <i class="fas fa-file-excel mr-1" style="color:#1d6f42"></i>${r.nombre}
+                    </td>
+                    <td class="text-center">${meta.recurso || '—'}</td>
+                    <td class="text-center"><span class="badge badge-secondary">${r.data.registros?.length ?? 0}</span></td>
+                    <td class="text-center"><span class="text-success font-weight-bold"><i class="fas fa-check-circle mr-1"></i>Procesado</span></td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-primary px-2 py-1" onclick="cargarDesdeResultadoLote(${r.data.historial_id})" title="Ver resultado">
+                            <i class="fas fa-eye mr-1"></i>Ver
+                        </button>
+                    </td>
+                </tr>`;
+            } else {
+                return `<tr class="table-danger">
+                    <td class="text-center text-muted">${i + 1}</td>
+                    <td colspan="3" style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.nombre}">
+                        <i class="fas fa-file-excel mr-1" style="color:#dc3545"></i>${r.nombre}
+                    </td>
+                    <td class="text-center" colspan="2"><span class="text-danger"><i class="fas fa-times-circle mr-1"></i>${r.error || 'Error al procesar'}</span></td>
+                </tr>`;
+            }
+        }).join('');
+
+        document.getElementById('lote-resultados').style.display = '';
+        document.getElementById('lote-resultados').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    window.cargarDesdeResultadoLote = function(id) {
+        document.getElementById('processing-overlay').classList.add('show');
+        fetch(`/cecoco/historico-movil/${id}/cargar`, {
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+        })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(data => {
+            document.getElementById('processing-overlay').classList.remove('show');
+            resultadoData = data;
+            registros     = data.registros;
+            renderizarResultado(data);
+            setModo('individual');
+            document.getElementById('resultado-section').scrollIntoView({ behavior: 'smooth' });
+        })
+        .catch(() => {
+            document.getElementById('processing-overlay').classList.remove('show');
+            swal('Error', 'No se pudo cargar el resultado.', 'error');
+        });
+    };
 
 })();
 </script>

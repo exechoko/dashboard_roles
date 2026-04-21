@@ -974,6 +974,65 @@
                                             </div>
                                         </div>
 
+                                        {{-- Card estado workers de cola --}}
+                                        <div class="row mb-4">
+                                            <div class="col-12">
+                                                <div class="card shadow-sm">
+                                                    <div class="card-header d-flex align-items-center justify-content-between py-2"
+                                                        style="background: linear-gradient(135deg,#1a3a2a,#166534); color:#fff;">
+                                                        <span><i class="fas fa-cogs mr-2"></i><strong>Workers de Cola</strong></span>
+                                                        <small id="workers-ultima-actualizacion" class="text-white-50"></small>
+                                                    </div>
+                                                    <div class="card-body py-3">
+                                                        <div class="d-flex flex-wrap align-items-start" style="gap:1.5rem;">
+
+                                                            {{-- Estado del worker --}}
+                                                            <div class="d-flex align-items-center mr-4">
+                                                                <span id="workers-dot" class="mr-2"
+                                                                    style="width:14px;height:14px;border-radius:50%;display:inline-block;background:#aaa;"></span>
+                                                                <span><strong>Worker</strong> <span id="workers-label"
+                                                                        class="badge badge-secondary">Verificando...</span></span>
+                                                            </div>
+
+                                                            {{-- Jobs pendientes --}}
+                                                            <div class="d-flex align-items-center mr-4">
+                                                                <i class="fas fa-clock mr-2 text-warning"></i>
+                                                                <span><strong>Pendientes:</strong> <span id="workers-pendientes" class="badge badge-warning">—</span></span>
+                                                            </div>
+
+                                                            {{-- Jobs procesando --}}
+                                                            <div class="d-flex align-items-center mr-4">
+                                                                <i class="fas fa-spinner mr-2 text-info"></i>
+                                                                <span><strong>Procesando:</strong> <span id="workers-procesando" class="badge badge-info">—</span></span>
+                                                            </div>
+
+                                                            {{-- Jobs fallidos --}}
+                                                            <div class="d-flex align-items-center mr-4">
+                                                                <i class="fas fa-exclamation-triangle mr-2 text-danger"></i>
+                                                                <span><strong>Fallidos:</strong> <span id="workers-fallidos" class="badge badge-danger">—</span></span>
+                                                            </div>
+
+                                                            {{-- Separador --}}
+                                                            <div class="border-left pl-3 ml-1" style="border-color:#dee2e6!important;">
+                                                                <small class="text-muted d-block mb-1"><i class="fas fa-map-marker-alt mr-1"></i><strong>Geocodificación</strong></small>
+                                                                <div class="d-flex align-items-center" style="gap:0.75rem;">
+                                                                    <span><small>Cacheadas:</small> <span id="workers-geo-cacheadas" class="badge badge-success">—</span></span>
+                                                                    <span><small>Pendientes:</small> <span id="workers-geo-pendientes" class="badge badge-secondary">—</span></span>
+                                                                </div>
+                                                            </div>
+
+                                                        </div>
+
+                                                        {{-- Desglose por tipo --}}
+                                                        <div id="workers-desglose" class="mt-3" style="display:none;">
+                                                            <small class="text-muted">Jobs en cola por tipo:</small>
+                                                            <div id="workers-desglose-lista" class="d-flex flex-wrap mt-1" style="gap:0.5rem;"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         <div class="row mb-4">
                                             <div class="col-12">
                                                 <div class="card shadow-sm">
@@ -3498,6 +3557,78 @@
 
             verificar();
             setInterval(verificar, 60000);
+        })();
+
+        // ── Monitor workers de cola ─────────────────────────────────────────
+        (function workersMonitor() {
+            var url = '{{ route("api.dashboard.workers-status") }}';
+
+            function verificar() {
+                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function(r) { return r.json(); })
+                    .then(function(d) {
+                        // Worker activo
+                        var dot   = document.getElementById('workers-dot');
+                        var label = document.getElementById('workers-label');
+                        if (d.worker_activo) {
+                            dot.style.background = '#22c55e';
+                            label.className = 'badge badge-success';
+                            label.textContent = 'Activo';
+                        } else {
+                            dot.style.background = d.pendientes > 0 ? '#ef4444' : '#6b7280';
+                            label.className = d.pendientes > 0 ? 'badge badge-danger' : 'badge badge-secondary';
+                            label.textContent = d.pendientes > 0 ? 'Detenido' : 'Inactivo';
+                        }
+
+                        // Contadores
+                        var elPend = document.getElementById('workers-pendientes');
+                        if (elPend) { elPend.textContent = d.pendientes; elPend.className = d.pendientes > 0 ? 'badge badge-warning' : 'badge badge-secondary'; }
+
+                        var elProc = document.getElementById('workers-procesando');
+                        if (elProc) { elProc.textContent = d.procesando; elProc.className = d.procesando > 0 ? 'badge badge-info' : 'badge badge-secondary'; }
+
+                        var elFall = document.getElementById('workers-fallidos');
+                        if (elFall) { elFall.textContent = d.fallidos; elFall.className = d.fallidos > 0 ? 'badge badge-danger' : 'badge badge-secondary'; }
+
+                        // Geocodificación
+                        var elGeoCach = document.getElementById('workers-geo-cacheadas');
+                        if (elGeoCach) elGeoCach.textContent = d.geo_cacheadas;
+
+                        var elGeoPend = document.getElementById('workers-geo-pendientes');
+                        if (elGeoPend) { elGeoPend.textContent = d.geo_pendientes; elGeoPend.className = d.geo_pendientes > 0 ? 'badge badge-warning' : 'badge badge-success'; }
+
+                        // Desglose por tipo
+                        var desgloseDiv  = document.getElementById('workers-desglose');
+                        var desgloseList = document.getElementById('workers-desglose-lista');
+                        if (d.jobs_por_tipo && d.jobs_por_tipo.length > 0) {
+                            desgloseDiv.style.display = '';
+                            desgloseList.innerHTML = '';
+                            d.jobs_por_tipo.forEach(function(j) {
+                                var span = document.createElement('span');
+                                span.className = 'badge badge-light border';
+                                span.innerHTML = '<strong>' + j.tipo + ':</strong> ' + j.total +
+                                    (j.procesando > 0 ? ' <span class="text-info">(' + j.procesando + ' procesando)</span>' : '');
+                                desgloseList.appendChild(span);
+                            });
+                        } else {
+                            desgloseDiv.style.display = 'none';
+                        }
+
+                        // Timestamp
+                        var hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                        var el = document.getElementById('workers-ultima-actualizacion');
+                        if (el) el.textContent = 'Actualizado: ' + hora;
+                    })
+                    .catch(function() {
+                        var dot = document.getElementById('workers-dot');
+                        var lbl = document.getElementById('workers-label');
+                        if (dot) dot.style.background = '#f59e0b';
+                        if (lbl) { lbl.className = 'badge badge-warning'; lbl.textContent = 'Error'; }
+                    });
+            }
+
+            verificar();
+            setInterval(verificar, 30000);
         })();
 
         // ── Mini mapa de calor Cecoco ───────────────────────────────────────

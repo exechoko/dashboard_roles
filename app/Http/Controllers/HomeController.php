@@ -455,4 +455,62 @@ class HomeController extends Controller
 
         return response()->json($puntos);
     }
+
+    public function workersStatus(): JsonResponse
+    {
+        try {
+            $pendientes  = DB::table('jobs')->whereNull('reserved_at')->count();
+            $procesando  = DB::table('jobs')->whereNotNull('reserved_at')->count();
+            $fallidos    = DB::table('failed_jobs')->count();
+
+            // Desglose por tipo de job
+            $jobsPorTipo = DB::table('jobs')
+                ->selectRaw("
+                    CASE
+                        WHEN payload LIKE '%ProcesarArchivoEventoCecoco%' THEN 'Importación Excel'
+                        WHEN payload LIKE '%GeocodificarLoteEventosCecoco%' THEN 'Geocodificación'
+                        ELSE 'Otro'
+                    END AS tipo,
+                    COUNT(*) as total,
+                    SUM(CASE WHEN reserved_at IS NOT NULL THEN 1 ELSE 0 END) as procesando
+                ")
+                ->groupByRaw("
+                    CASE
+                        WHEN payload LIKE '%ProcesarArchivoEventoCecoco%' THEN 'Importación Excel'
+                        WHEN payload LIKE '%GeocodificarLoteEventosCecoco%' THEN 'Geocodificación'
+                        ELSE 'Otro'
+                    END
+                ")
+                ->get();
+
+            // Geocodificación: cuántas direcciones únicas hay y cuántas ya están cacheadas
+            $totalDirecciones = DB::table('evento_cecoco')
+                ->whereNotNull('direccion')
+                ->where('direccion', '!=', '')
+                ->where('direccion', '!=', '-')
+                ->distinct()
+                ->count('direccion');
+
+            $geocodeadas = DB::table('geocodificacion_directa')->count();
+
+            // Worker activo: si hay jobs siendo procesados ahora mismo, o si se reservaron hace menos de 10 min
+            $workerActivo = $procesando > 0 || DB::table('jobs')
+                ->where('reserved_at', '>=', now()->subMinutes(10)->timestamp)
+                ->exists();
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+
+        return response()->json([
+            'worker_activo'      => $workerActivo,
+            'pendientes'         => $pendientes,
+            'procesando'         => $procesando,
+            'fallidos'           => $fallidos,
+            'jobs_por_tipo'      => $jobsPorTipo,
+            'geo_total_dir'      => $totalDirecciones,
+            'geo_cacheadas'      => $geocodeadas,
+            'geo_pendientes'     => max(0, $totalDirecciones - $geocodeadas),
+        ]);
+    }
 }

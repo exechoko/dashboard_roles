@@ -421,6 +421,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/api/dashboard/cecoco-mapa', [App\Http\Controllers\HomeController::class, 'cecocoMapaDatos'])
         ->name('api.dashboard.cecoco-mapa');
 
+    Route::get('/api/dashboard/workers-status', [App\Http\Controllers\HomeController::class, 'workersStatus'])
+        ->name('api.dashboard.workers-status');
+
     //Optimizar sistema
     Route::get('optimizar', function () {
         Artisan::call('optimize:clear');

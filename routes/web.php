@@ -390,6 +390,11 @@ Route::group(['middleware' => ['auth']], function () {
     });
 
     Route::prefix('cecoco')->name('cecoco.')->group(function () {
+        Route::get('/historico-movil', [App\Http\Controllers\HistoricoMovilController::class, 'index'])->name('historico-movil');
+        Route::post('/historico-movil/procesar', [App\Http\Controllers\HistoricoMovilController::class, 'procesar'])->name('historico-movil.procesar');
+        Route::post('/historico-movil/exportar-excel', [App\Http\Controllers\HistoricoMovilController::class, 'exportarExcel'])->name('historico-movil.exportar-excel');
+        Route::get('/historico-movil/buscar', [App\Http\Controllers\HistoricoMovilController::class, 'buscarHistorial'])->name('historico-movil.buscar');
+        Route::get('/historico-movil/{historial}/cargar', [App\Http\Controllers\HistoricoMovilController::class, 'cargarHistorial'])->name('historico-movil.cargar');
         Route::get('/', [App\Http\Controllers\EventoCecocoController::class, 'index'])->name('index');
         Route::get('/importar/form', [App\Http\Controllers\EventoCecocoController::class, 'importarForm'])->name('importar');
         Route::post('/importar', [App\Http\Controllers\EventoCecocoController::class, 'importar'])->name('importar.post');

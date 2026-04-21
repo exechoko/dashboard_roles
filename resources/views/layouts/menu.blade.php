@@ -221,6 +221,13 @@
                     </a>
                 </li>
             @endcan
+            @can('ver-historico-movil-cecoco')
+                <li class="{{ request()->routeIs('cecoco.historico-movil') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('cecoco.historico-movil') }}">
+                        <i class="fas fa-file-import"></i><span>Procesar Histórico Móvil</span>
+                    </a>
+                </li>
+            @endcan
             @can('ver-eventos-cecoco')
                 <li class="">
                     <a class="nav-link" href="/get-eventos">

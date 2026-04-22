@@ -9,7 +9,7 @@ class PersonalController extends Controller
 {
     public function index()
     {
-        return Personal::all();
+        return view('tareas.personal-efectivo.index');
     }
 
     public function store(Request $request)

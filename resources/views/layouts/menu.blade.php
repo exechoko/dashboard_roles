@@ -170,14 +170,14 @@
                 <i class="fas fa-list"></i><span>Tareas</span>
             </a>
         </li>
-
-        {{-- PERSONAL EFECTIVO --}}
-        <li class="{{ request()->is('tareas/personal-efectivo*') ? 'active' : '' }}">
-            <a class="nav-link" href="{{ route('personal.efectivo.index') }}">
-                <i class="fas fa-users"></i><span>Personal Efectivo</span>
-            </a>
-        </li>
-
+        @can('ver-personal')
+            {{-- PERSONAL EFECTIVO --}}
+            <li class="{{ request()->is('tareas/personal-efectivo*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('personal.efectivo.index') }}">
+                    <i class="fas fa-users"></i><span>Personal Efectivo</span>
+                </a>
+            </li>
+        @endcan
     </ul>
 </li>
 @endcan

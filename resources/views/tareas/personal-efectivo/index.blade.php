@@ -21,10 +21,12 @@
 
                                     <h5>Funcionarios</h5>
 
-                                    <button class="btn btn-sm btn-primary mb-3"
-                                        data-toggle="modal" data-target="#modalPersonal">
-                                        + Agregar Funcionario
-                                    </button>
+                                        @can('crear-personal')
+                                        <button class="btn btn-sm btn-primary mb-3"
+                                            data-toggle="modal" data-target="#modalPersonal">
+                                            + Agregar Funcionario
+                                        </button>
+                                        @endcan
 
                                     <div id="funcionarios-list"></div>
 
@@ -64,50 +66,51 @@
     </div>
 
     {{-- 🪟 MODAL --}}
-    <div id="modalPersonal" class="modal fade" data-backdrop="false" role="dialog">
-        <div class="modal-dialog modal-md">
-            <div class="modal-content">
+    @can('crear-personal')
+        <div id="modalPersonal" class="modal fade" data-backdrop="false" role="dialog">
+            <div class="modal-dialog modal-md">
+                <div class="modal-content">
 
-                <div class="modal-header bg-primary">
-                    <h5 class="modal-title text-white">Nuevo Funcionario</h5>
-                    <button type="button" class="close" data-dismiss="modal">
-                        <span>&times;</span>
-                    </button>
+                    <div class="modal-header bg-primary">
+                        <h5 class="modal-title text-white">Nuevo Funcionario</h5>
+                        <button type="button" class="close" data-dismiss="modal">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body" style="min-height: 200px">
+
+                        <div class="form-group">
+                            <label>Nombre</label>
+                            <input type="text" id="nombre" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Apellido</label>
+                            <input type="text" id="apellido" class="form-control">
+                        </div>
+
+                        <div class="form-group">
+                            <label>LP</label>
+                            <input type="text" id="lp" class="form-control" maxlength="5">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Jerarquía</label>
+                            <input type="text" id="jerarquia" class="form-control">
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" onclick="guardarFuncionario()">Guardar</button>
+                    </div>
+
                 </div>
-
-                <div class="modal-body" style="min-height: 200px">
-
-                    <div class="form-group">
-                        <label>Nombre</label>
-                        <input type="text" id="nombre" class="form-control">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Apellido</label>
-                        <input type="text" id="apellido" class="form-control">
-                    </div>
-
-                    <div class="form-group">
-                        <label>LP</label>
-                        <input type="text" id="lp" class="form-control" maxlength="5">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Jerarquía</label>
-                        <input type="text" id="jerarquia" class="form-control">
-                    </div>
-
-                </div>
-
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                    <button class="btn btn-primary" onclick="guardarFuncionario()">Guardar</button>
-                </div>
-
             </div>
         </div>
-    </div>
-
+    @endcan
     @php
         $puedeEditar = auth()->user()->can('editar-personal');
         $puedeBorrar = auth()->user()->can('borrar-personal');

@@ -59,12 +59,11 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('terminales', TipoTerminalController::class);
     Route::resource('bodycams', BodycamController::class);
     
+    // 🔹 PERSONAL EFECTIVO (NUEVO)
+    Route::get('tareas/personal-efectivo', [PersonalController::class, 'index'])->name('personal.efectivo.index');
+
     // 🔹 TAREAS (CRUD)
     Route::resource('tareas', TareaController::class);
-
-    // 🔹 PERSONAL EFECTIVO (NUEVO)
-    Route::get('tareas/personal-efectivo', [PersonalController::class, 'index'])
-        ->name('personal.efectivo.index');
 
     // 🔹 ITEMS DE TAREAS
     Route::patch('tareas-items/{id}', [TareaController::class, 'updateItem'])->name('tareas.items.update');

@@ -544,8 +544,15 @@ class EventoCecocoController extends Controller
 
         $coords = $geocoder->geocodificar($corregida, $request->nro_expediente ?: null);
 
+        // Si Google no encontró la dirección, intentar con Nominatim (OpenStreetMap) como respaldo.
+        $fuente = 'google';
         if (!$coords) {
-            return response()->json(['error' => 'No se pudo ubicar esa dirección en Paraná. Verificá que sea correcta o usá el botón del mapa para fijar la ubicación manualmente.'], 422);
+            $coords = $geocoder->geocodificarNominatim($corregida);
+            $fuente = 'nominatim';
+        }
+
+        if (!$coords) {
+            return response()->json(['error' => 'No se pudo ubicar esa dirección en Paraná con Google ni con OpenStreetMap. Verificá que sea correcta o usá el botón del mapa para fijar la ubicación manualmente.'], 422);
         }
 
         \App\Models\GeocodificacionDirecta::updateOrCreate(
@@ -554,7 +561,7 @@ class EventoCecocoController extends Controller
                 'direccion_normalizada' => $corregida,
                 'latitud'        => $coords['lat'],
                 'longitud'       => $coords['lng'],
-                'fuente'         => 'manual',
+                'fuente'         => $fuente,
                 'nro_expediente' => $request->nro_expediente ?: null,
             ]
         );

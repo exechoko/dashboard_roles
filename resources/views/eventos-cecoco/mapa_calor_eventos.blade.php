@@ -432,41 +432,31 @@
         var markerUbicar = null;
         var filaUbicarActiva = null;
 
-        function abrirModalUbicar(btn) {
-            filaUbicarActiva = btn.closest('tr');
-            var dir  = filaUbicarActiva.dataset.direccionOriginal;
-            var desc = filaUbicarActiva.dataset.descripcion;
-
-            document.getElementById('modal-dir-texto').textContent  = dir;
-            document.getElementById('modal-desc-texto').textContent = desc || '(sin descripción)';
+        // Listener registrado UNA sola vez; se ejecuta cada vez que el modal termina de abrir.
+        document.getElementById('modalUbicarMapa').addEventListener('shown.bs.modal', function () {
+            if (!mapUbicar) {
+                mapUbicar = L.map('map-ubicar-modal').setView([-31.7413, -60.5115], 13);
+                L.tileLayer('https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey={{ env("API_KEY_THUNDER_FOREST_MAP") }}', {
+                    attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(mapUbicar);
+                mapUbicar.on('click', function (e) { colocarMarcador(e.latlng); });
+            } else {
+                mapUbicar.invalidateSize();
+            }
+            // Limpiar marcador de apertura anterior
+            if (markerUbicar) {
+                mapUbicar.removeLayer(markerUbicar);
+                markerUbicar = null;
+            }
             document.getElementById('modal-coords-texto').textContent = 'Sin ubicación seleccionada';
             document.getElementById('btn-confirmar-ubicacion').disabled = true;
+        });
 
-            var modal = new bootstrap.Modal(document.getElementById('modalUbicarMapa'));
-            modal.show();
-
-            document.getElementById('modalUbicarMapa').addEventListener('shown.bs.modal', function iniciarMapa() {
-                if (!mapUbicar) {
-                    mapUbicar = L.map('map-ubicar-modal').setView([-31.7413, -60.5115], 13);
-                    L.tileLayer('https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey={{ env("API_KEY_THUNDER_FOREST_MAP") }}', {
-                        attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
-                    }).addTo(mapUbicar);
-
-                    mapUbicar.on('click', function (e) {
-                        colocarMarcador(e.latlng);
-                    });
-                } else {
-                    mapUbicar.invalidateSize();
-                    if (markerUbicar) {
-                        mapUbicar.removeLayer(markerUbicar);
-                        markerUbicar = null;
-                    }
-                    document.getElementById('modal-coords-texto').textContent = 'Sin ubicación seleccionada';
-                    document.getElementById('btn-confirmar-ubicacion').disabled = true;
-                }
-                // remover listener para no acumularlo en próximas aperturas
-                document.getElementById('modalUbicarMapa').removeEventListener('shown.bs.modal', iniciarMapa);
-            }, { once: true });
+        function abrirModalUbicar(btn) {
+            filaUbicarActiva = btn.closest('tr');
+            document.getElementById('modal-dir-texto').textContent  = filaUbicarActiva.dataset.direccionOriginal;
+            document.getElementById('modal-desc-texto').textContent = filaUbicarActiva.dataset.descripcion || '(sin descripción)';
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalUbicarMapa')).show();
         }
 
         function colocarMarcador(latlng) {

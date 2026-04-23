@@ -382,6 +382,57 @@ class GeocodificacionService
     }
 
     /**
+     * Geocodifica usando Nominatim (OpenStreetMap) — sin API key, límite 1 req/s.
+     * Solo para uso manual (una dirección a la vez), nunca para batch automático.
+     * Restringe resultados al bounding box del Gran Paraná.
+     */
+    public function geocodificarNominatim(string $direccion): ?array
+    {
+        $query = $direccion . ', Paraná, Entre Ríos, Argentina';
+
+        $url = 'https://nominatim.openstreetmap.org/search?' . http_build_query([
+            'q'              => $query,
+            'format'         => 'json',
+            'limit'          => 1,
+            'countrycodes'   => 'ar',
+            'bounded'        => 1,
+            'viewbox'        => '-60.60,-31.90,-60.30,-31.60',
+        ]);
+
+        try {
+            $context = stream_context_create(['http' => [
+                'header'  => "User-Agent: DashboardRoles/1.0 (geocodificacion manual)\r\n",
+                'timeout' => 8,
+            ]]);
+            $response = @file_get_contents($url, false, $context);
+
+            if (!$response) {
+                return null;
+            }
+
+            $data = json_decode($response, true);
+            if (!is_array($data) || empty($data)) {
+                return null;
+            }
+
+            $lat = (float) $data[0]['lat'];
+            $lng = (float) $data[0]['lon'];
+
+            // Validar que caiga dentro del Gran Paraná
+            if ($lat >= -31.90 && $lat <= -31.60 && $lng >= -60.60 && $lng <= -60.30) {
+                return ['lat' => $lat, 'lng' => $lng];
+            }
+
+            Log::warning('Nominatim: resultado fuera del Gran Paraná', ['dir' => $direccion, 'lat' => $lat, 'lng' => $lng]);
+            return null;
+
+        } catch (\Exception $e) {
+            Log::error('Error en geocodificación Nominatim', ['error' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
      * Consulta la API de Google Maps Geocoding.
      * Respeta un límite diario de LIMITE_DIARIO_GOOGLE llamadas reales.
      */

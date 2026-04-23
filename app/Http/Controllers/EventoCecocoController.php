@@ -448,7 +448,7 @@ class EventoCecocoController extends Controller
             $eventosQuery = clone $query;
 
             // Agrupar por dirección y contar ocurrencias
-            $eventos = $eventosQuery->selectRaw('direccion, COUNT(*) as total, MIN(nro_expediente) as nro_expediente_muestra')
+            $eventos = $eventosQuery->selectRaw('direccion, COUNT(*) as total, MIN(nro_expediente) as nro_expediente_muestra, MIN(descripcion) as descripcion_muestra')
                 ->whereNotNull('direccion')
                 ->where('direccion', '!=', '')
                 ->groupBy('direccion')
@@ -471,6 +471,7 @@ class EventoCecocoController extends Controller
                         'total'          => $evento->total,
                         'motivo'         => 'invalida',
                         'nro_expediente' => $evento->nro_expediente_muestra,
+                        'descripcion'    => $evento->descripcion_muestra,
                     ];
                     continue;
                 }
@@ -493,6 +494,7 @@ class EventoCecocoController extends Controller
                         'total'          => $evento->total,
                         'motivo'         => 'no_encontrada',
                         'nro_expediente' => $evento->nro_expediente_muestra,
+                        'descripcion'    => $evento->descripcion_muestra,
                     ];
                 }
             }
@@ -551,6 +553,32 @@ class EventoCecocoController extends Controller
         );
 
         return response()->json(['lat' => $coords['lat'], 'lng' => $coords['lng']]);
+    }
+
+    /**
+     * Guarda coordenadas seleccionadas manualmente en el mapa para una dirección sin ubicar.
+     */
+    public function geocodificarCoordenadas(Request $request): JsonResponse
+    {
+        $request->validate([
+            'direccion_original' => 'required|string|max:500',
+            'lat'                => 'required|numeric|between:-90,90',
+            'lng'                => 'required|numeric|between:-180,180',
+            'nro_expediente'     => 'nullable|string|max:100',
+        ]);
+
+        \App\Models\GeocodificacionDirecta::updateOrCreate(
+            ['direccion_original' => trim($request->direccion_original)],
+            [
+                'direccion_normalizada' => trim($request->direccion_original),
+                'latitud'        => $request->lat,
+                'longitud'       => $request->lng,
+                'fuente'         => 'manual',
+                'nro_expediente' => $request->nro_expediente ?: null,
+            ]
+        );
+
+        return response()->json(['lat' => $request->lat, 'lng' => $request->lng]);
     }
 
     /**

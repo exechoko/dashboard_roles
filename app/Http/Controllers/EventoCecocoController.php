@@ -464,18 +464,8 @@ class EventoCecocoController extends Controller
             foreach ($eventos as $evento) {
                 $direccion = trim($evento->direccion);
 
-                if (!$geocoder->esDireccionValida($direccion)) {
-                    $sinGeocod++;
-                    $sinGeocodDatos[] = [
-                        'direccion'      => $evento->direccion,
-                        'total'          => $evento->total,
-                        'motivo'         => 'invalida',
-                        'nro_expediente' => $evento->nro_expediente_muestra,
-                        'descripcion'    => $evento->descripcion_muestra,
-                    ];
-                    continue;
-                }
-
+                // geocodificar() consulta el cache ANTES de validar formato, por lo que
+                // direcciones inválidas corregidas manualmente (vía mapa) son resueltas aquí.
                 $coords = $geocoder->geocodificar($direccion, $evento->nro_expediente_muestra ?? null);
 
                 if ($coords) {
@@ -489,10 +479,11 @@ class EventoCecocoController extends Controller
                     $geocodificados++;
                 } else {
                     $sinGeocod++;
+                    $motivo = $geocoder->esDireccionValida($direccion) ? 'no_encontrada' : 'invalida';
                     $sinGeocodDatos[] = [
                         'direccion'      => $evento->direccion,
                         'total'          => $evento->total,
-                        'motivo'         => 'no_encontrada',
+                        'motivo'         => $motivo,
                         'nro_expediente' => $evento->nro_expediente_muestra,
                         'descripcion'    => $evento->descripcion_muestra,
                     ];

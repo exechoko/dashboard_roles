@@ -57,21 +57,27 @@ class GeocodificacionService
     public function geocodificar(string $direccion, ?string $nroExpediente = null): ?array
     {
         $direccion = trim($direccion);
-        if (!$this->esDireccionValida($direccion)) {
-            return null;
-        }
 
-        // Verificar en tabla antes de llamar a Google
+        // Consultar cache ANTES de validar el formato: una dirección con formato inválido
+        // puede haber sido corregida manualmente vía mapa y tener coordenadas guardadas.
         $cache = GeocodificacionDirecta::where('direccion_original', $direccion)->first();
         if ($cache) {
-            // Rellenar nro_expediente si el registro no lo tenía
             if ($nroExpediente && !$cache->nro_expediente) {
                 $cache->update(['nro_expediente' => $nroExpediente]);
             }
             if ($cache->latitud && $cache->longitud) {
                 return ['lat' => $cache->latitud, 'lng' => $cache->longitud];
             }
-            return null; // Ya se intentó y Google no la encontró
+            // Entrada existe pero sin coordenadas: si el formato es inválido no vale la pena reintentar
+            if (!$this->esDireccionValida($direccion)) {
+                return null;
+            }
+            // Formato válido pero Google ya falló → null (se reintentará solo si se borra el registro)
+            return null;
+        }
+
+        if (!$this->esDireccionValida($direccion)) {
+            return null;
         }
 
         // Verificar límite diario ANTES de llamar a Google.
@@ -391,12 +397,11 @@ class GeocodificacionService
         $query = $direccion . ', Paraná, Entre Ríos, Argentina';
 
         $url = 'https://nominatim.openstreetmap.org/search?' . http_build_query([
-            'q'              => $query,
-            'format'         => 'json',
-            'limit'          => 1,
-            'countrycodes'   => 'ar',
-            'bounded'        => 1,
-            'viewbox'        => '-60.60,-31.90,-60.30,-31.60',
+            'q'            => $query,
+            'format'       => 'json',
+            'limit'        => 5,
+            'countrycodes' => 'ar',
+            'viewbox'      => '-60.60,-31.60,-60.30,-31.90',
         ]);
 
         try {
@@ -415,15 +420,16 @@ class GeocodificacionService
                 return null;
             }
 
-            $lat = (float) $data[0]['lat'];
-            $lng = (float) $data[0]['lon'];
-
-            // Validar que caiga dentro del Gran Paraná
-            if ($lat >= -31.90 && $lat <= -31.60 && $lng >= -60.60 && $lng <= -60.30) {
-                return ['lat' => $lat, 'lng' => $lng];
+            // Buscar el primer resultado que caiga dentro del Gran Paraná
+            foreach ($data as $item) {
+                $lat = (float) $item['lat'];
+                $lng = (float) $item['lon'];
+                if ($lat >= -31.90 && $lat <= -31.60 && $lng >= -60.60 && $lng <= -60.30) {
+                    return ['lat' => $lat, 'lng' => $lng];
+                }
             }
 
-            Log::warning('Nominatim: resultado fuera del Gran Paraná', ['dir' => $direccion, 'lat' => $lat, 'lng' => $lng]);
+            Log::warning('Nominatim: ningún resultado dentro del Gran Paraná', ['dir' => $direccion, 'resultados' => count($data)]);
             return null;
 
         } catch (\Exception $e) {

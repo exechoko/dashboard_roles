@@ -40,15 +40,23 @@ class GeocodificarLoteEventosCecoco implements ShouldQueue
         $fallidas       = 0;
         $omitidas       = 0; // ya estaban en caché (el service las maneja internamente)
 
-        foreach ($this->direcciones as $direccion) {
-            $direccion = trim((string) $direccion);
+        foreach ($this->direcciones as $item) {
+            // Cada item puede ser un string o ['direccion' => ..., 'nro_expediente' => ...]
+            if (is_array($item)) {
+                $direccion     = trim((string) ($item['direccion'] ?? ''));
+                $nroExpediente = $item['nro_expediente'] ?? null;
+            } else {
+                $direccion     = trim((string) $item);
+                $nroExpediente = null;
+            }
+
             if ($direccion === '' || $direccion === '-') {
                 $omitidas++;
                 continue;
             }
 
             try {
-                $resultado = $geocoder->geocodificar($direccion);
+                $resultado = $geocoder->geocodificar($direccion, $nroExpediente ?: null);
                 if ($resultado) {
                     $geocodificadas++;
                 } else {
@@ -57,9 +65,10 @@ class GeocodificarLoteEventosCecoco implements ShouldQueue
             } catch (\Exception $e) {
                 $fallidas++;
                 Log::warning('GeocodificarLoteEventosCecoco: error en dirección', [
-                    'direccion' => $direccion,
-                    'contexto'  => $this->contexto,
-                    'error'     => $e->getMessage(),
+                    'direccion'      => $direccion,
+                    'nro_expediente' => $nroExpediente ?? null,
+                    'contexto'       => $this->contexto,
+                    'error'          => $e->getMessage(),
                 ]);
             }
 

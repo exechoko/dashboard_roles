@@ -178,7 +178,7 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
                 ->whereNotNull('direccion')
                 ->where('direccion', '!=', '')
                 ->where('direccion', '!=', '-')
-                ->selectRaw('direccion, MIN(descripcion) as descripcion_muestra')
+                ->selectRaw('direccion, MIN(descripcion) as descripcion_muestra, MIN(nro_expediente) as nro_expediente_muestra')
                 ->groupBy('direccion')
                 ->get();
 
@@ -186,7 +186,9 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
                 return;
             }
 
+            // Cada ítem: ['direccion' => ..., 'nro_expediente' => ...]
             $direccionesResueltas = [];
+            $vistas               = [];
             foreach ($grupos as $grupo) {
                 $dir = trim($grupo->direccion);
                 if (!$geocoder->tieneNumeracion($dir) && !empty($grupo->descripcion_muestra)) {
@@ -195,17 +197,25 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
                         $dir = $extraida;
                     }
                 }
-                $direccionesResueltas[] = $dir;
+                if (!isset($vistas[$dir])) {
+                    $vistas[$dir] = true;
+                    $direccionesResueltas[] = [
+                        'direccion'      => $dir,
+                        'nro_expediente' => $grupo->nro_expediente_muestra ?? null,
+                    ];
+                }
             }
 
-            $direccionesResueltas = array_values(array_unique($direccionesResueltas));
-
             // Filtrar las ya cacheadas
-            $yaCacheadas = GeocodificacionDirecta::whereIn('direccion_original', $direccionesResueltas)
+            $soloDirecciones = array_column($direccionesResueltas, 'direccion');
+            $yaCacheadas     = GeocodificacionDirecta::whereIn('direccion_original', $soloDirecciones)
                 ->pluck('direccion_original')
                 ->all();
 
-            $pendientes = array_values(array_diff($direccionesResueltas, $yaCacheadas));
+            $pendientes = array_values(array_filter(
+                $direccionesResueltas,
+                fn($item) => !in_array($item['direccion'], $yaCacheadas, true)
+            ));
 
             if (empty($pendientes)) {
                 Log::info("ProcesarArchivoEventoCecoco: todas las direcciones ya geocodificadas", [

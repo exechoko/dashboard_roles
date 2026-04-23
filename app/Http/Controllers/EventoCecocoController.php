@@ -475,7 +475,7 @@ class EventoCecocoController extends Controller
                     continue;
                 }
 
-                $coords = $geocoder->geocodificar($direccion);
+                $coords = $geocoder->geocodificar($direccion, $evento->nro_expediente_muestra ?? null);
 
                 if ($coords) {
                     $heatData[] = [
@@ -533,7 +533,7 @@ class EventoCecocoController extends Controller
             return response()->json(['error' => 'La dirección ingresada no parece válida (debe tener número o ser una intersección).'], 422);
         }
 
-        $coords = $geocoder->geocodificar($corregida);
+        $coords = $geocoder->geocodificar($corregida, $request->nro_expediente ?: null);
 
         if (!$coords) {
             return response()->json(['error' => 'No se pudo ubicar esa dirección en Paraná. Verificá que sea correcta.'], 422);

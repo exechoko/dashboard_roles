@@ -4,12 +4,15 @@ namespace App\Services;
 
 use App\Models\GeocodificacionDirecta;
 use App\Models\GeocodificacionInversa;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class GeocodificacionService
 {
     private string $apiKey;
     private string $ciudadContexto;
+
+    private const LIMITE_DIARIO_GOOGLE = 2000;
 
     private const PATRONES_INVALIDOS = [
         '/^[Dd]\.?\s*[Dd]\.?$/u',
@@ -19,7 +22,7 @@ class GeocodificacionService
     public function __construct()
     {
         $this->apiKey = env('API_GOOGLE', '');
-        $this->ciudadContexto = ', Paraná, Entre Ríos, Argentina';
+        $this->ciudadContexto = ', Entre Ríos, Argentina';
     }
 
     /**
@@ -46,36 +49,50 @@ class GeocodificacionService
     }
 
     /**
-     * Geocodifica una dirección de texto. Primero busca en cache,
-     * si no existe, consulta Google Maps Geocoding API.
-     * Retorna null sin consultar Google si la dirección no es válida.
+     * Geocodifica una dirección de texto. Primero busca en la tabla geocodificacion_directa;
+     * solo si no existe consulta la API de Google Maps.
+     * El parámetro $nroExpediente se guarda para trazabilidad (un ejemplo de expediente
+     * que usa esta dirección). Si el registro ya existía sin expediente, se actualiza.
      */
-    public function geocodificar(string $direccion): ?array
+    public function geocodificar(string $direccion, ?string $nroExpediente = null): ?array
     {
         $direccion = trim($direccion);
         if (!$this->esDireccionValida($direccion)) {
             return null;
         }
 
-        // Buscar en cache
+        // Verificar en tabla antes de llamar a Google
         $cache = GeocodificacionDirecta::where('direccion_original', $direccion)->first();
         if ($cache) {
+            // Rellenar nro_expediente si el registro no lo tenía
+            if ($nroExpediente && !$cache->nro_expediente) {
+                $cache->update(['nro_expediente' => $nroExpediente]);
+            }
             if ($cache->latitud && $cache->longitud) {
                 return ['lat' => $cache->latitud, 'lng' => $cache->longitud];
             }
-            return null; // Ya se intentó y no se encontró
+            return null; // Ya se intentó y Google no la encontró
         }
 
-        // Consultar Google
+        // Verificar límite diario ANTES de llamar a Google.
+        // Si se alcanzó el límite NO se guarda nada en la tabla para poder reintentarlo mañana.
+        if (!$this->hayDisponibilidadDiariaGoogle()) {
+            Log::info('Geocodificación diferida por límite diario', ['direccion' => $direccion]);
+            return null;
+        }
+
+        // Consultar Google e incrementar el contador diario
         $resultado = $this->consultarGoogle($direccion . $this->ciudadContexto);
 
-        // Guardar en cache (incluso si no se encontró, para no reintentar)
+        // Guardar en tabla: incluso null de Google, para no reintentar una dirección que no existe.
+        // (Nunca llegamos aquí si el límite fue la causa del null.)
         GeocodificacionDirecta::create([
-            'direccion_original' => $direccion,
+            'direccion_original'    => $direccion,
             'direccion_normalizada' => $resultado['formatted_address'] ?? null,
-            'latitud' => $resultado['lat'] ?? null,
-            'longitud' => $resultado['lng'] ?? null,
-            'fuente' => 'google',
+            'latitud'               => $resultado['lat'] ?? null,
+            'longitud'              => $resultado['lng'] ?? null,
+            'fuente'                => 'google',
+            'nro_expediente'        => $nroExpediente,
         ]);
 
         if ($resultado && isset($resultado['lat'])) {
@@ -83,6 +100,15 @@ class GeocodificacionService
         }
 
         return null;
+    }
+
+    /**
+     * Devuelve true si aún quedan llamadas disponibles a Google para hoy.
+     */
+    public function hayDisponibilidadDiariaGoogle(): bool
+    {
+        $cacheKey = 'geocodificacion_google_daily_count:' . now()->format('Y-m-d');
+        return (int) Cache::get($cacheKey, 0) < self::LIMITE_DIARIO_GOOGLE;
     }
 
     /**
@@ -357,6 +383,7 @@ class GeocodificacionService
 
     /**
      * Consulta la API de Google Maps Geocoding.
+     * Respeta un límite diario de LIMITE_DIARIO_GOOGLE llamadas reales.
      */
     private function consultarGoogle(string $direccion): ?array
     {
@@ -364,6 +391,12 @@ class GeocodificacionService
             Log::warning('API_GOOGLE no configurada para geocodificación');
             return null;
         }
+
+        // Incrementar contador diario (el check de límite ya fue hecho en geocodificar())
+        $cacheKey = 'geocodificacion_google_daily_count:' . now()->format('Y-m-d');
+        $contadorDiario = (int) Cache::get($cacheKey, 0);
+        $ttl = now()->endOfDay()->diffInSeconds(now()) + 60;
+        Cache::put($cacheKey, $contadorDiario + 1, $ttl);
 
         try {
             $url = 'https://maps.googleapis.com/maps/api/geocode/json?' . http_build_query([

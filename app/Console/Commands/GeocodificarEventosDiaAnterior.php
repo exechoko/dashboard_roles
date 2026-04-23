@@ -62,7 +62,7 @@ class GeocodificarEventosDiaAnterior extends Command
             ->whereNotNull('direccion')
             ->where('direccion', '!=', '')
             ->where('direccion', '!=', '-')
-            ->selectRaw('direccion, MIN(descripcion) as descripcion_muestra')
+            ->selectRaw('direccion, MIN(descripcion) as descripcion_muestra, MIN(nro_expediente) as nro_expediente_muestra')
             ->groupBy('direccion')
             ->get();
 
@@ -75,8 +75,10 @@ class GeocodificarEventosDiaAnterior extends Command
         }
 
         // ── 2. Filtrar las que tienen formato de dirección válido ─────────────
+        // Cada ítem: ['direccion' => ..., 'nro_expediente' => ...]
         $direccionesResueltas = [];
-        $omitidas = 0;
+        $vistas               = [];
+        $omitidas             = 0;
 
         foreach ($gruposDireccion as $grupo) {
             $dir = trim($grupo->direccion);
@@ -86,23 +88,33 @@ class GeocodificarEventosDiaAnterior extends Command
                 continue;
             }
 
-            $direccionesResueltas[] = $dir;
+            if (isset($vistas[$dir])) {
+                continue; // deduplicar
+            }
+            $vistas[$dir] = true;
+
+            $direccionesResueltas[] = [
+                'direccion'      => $dir,
+                'nro_expediente' => $grupo->nro_expediente_muestra ?? null,
+            ];
         }
 
         if ($omitidas > 0) {
             $this->warn("Direcciones inválidas omitidas: {$omitidas} (sin número ni intersección)");
         }
 
-        // Eliminar duplicados que puedan surgir de la extracción
-        $direccionesResueltas = array_values(array_unique($direccionesResueltas));
         $this->info('Direcciones únicas resueltas: ' . count($direccionesResueltas));
 
-        // ── 3. Filtrar las que ya están en caché ──────────────────────────────
-        $yaCacheadas = GeocodificacionDirecta::whereIn('direccion_original', $direccionesResueltas)
+        // ── 3. Filtrar las que ya están en la tabla ───────────────────────────
+        $soloDirecciones = array_column($direccionesResueltas, 'direccion');
+        $yaCacheadas     = GeocodificacionDirecta::whereIn('direccion_original', $soloDirecciones)
             ->pluck('direccion_original')
             ->all();
 
-        $pendientes    = array_values(array_diff($direccionesResueltas, $yaCacheadas));
+        $pendientes = array_values(array_filter(
+            $direccionesResueltas,
+            fn($item) => !in_array($item['direccion'], $yaCacheadas, true)
+        ));
         $totalPendiente = count($pendientes);
 
         $this->info('Ya en caché: ' . count($yaCacheadas) . ' | Pendientes: ' . $totalPendiente);
@@ -147,14 +159,17 @@ class GeocodificarEventosDiaAnterior extends Command
             $num = $i + 1;
             $this->line('[' . now()->format('H:i:s') . "] Lote {$num}/{$totalLotes} (" . count($lote) . ' dir.)...');
 
-            foreach ($lote as $direccion) {
+            foreach ($lote as $item) {
+                $dir    = is_array($item) ? ($item['direccion'] ?? '') : (string) $item;
+                $nroExp = is_array($item) ? ($item['nro_expediente'] ?? null) : null;
                 try {
-                    $geocoder->geocodificar($direccion);
+                    $geocoder->geocodificar($dir, $nroExp ?: null);
                 } catch (\Exception $e) {
                     Log::warning('cecoco:geocodificar-dia-anterior síncrono: error', [
-                        'contexto'  => $contexto,
-                        'direccion' => $direccion,
-                        'error'     => $e->getMessage(),
+                        'contexto'       => $contexto,
+                        'direccion'      => $dir,
+                        'nro_expediente' => $nroExp,
+                        'error'          => $e->getMessage(),
                     ]);
                 }
                 if ($pausaMs > 0) {

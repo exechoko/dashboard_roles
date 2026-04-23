@@ -36,7 +36,9 @@ class GeocodificarHistoricoCecoco extends Command
         // ── 1. Obtener direcciones no cacheadas (nunca intentadas) ────────────
         $this->line('Consultando direcciones pendientes...');
 
-        $query = DB::table('evento_cecoco')
+        // Obtener direcciones únicas sin cachear junto con un expediente de referencia.
+        // Se usa GROUP BY en lugar de DISTINCT para poder incluir MIN(nro_expediente).
+        $rawData = DB::table('evento_cecoco')
             ->whereNotNull('direccion')
             ->where('direccion', '!=', '')
             ->where('direccion', '!=', '-')
@@ -44,18 +46,22 @@ class GeocodificarHistoricoCecoco extends Command
                 DB::raw('TRIM(direccion)'),
                 DB::table('geocodificacion_directa')->select('direccion_original')
             )
-            ->distinct()
-            ->pluck('direccion')
-            ->map(fn($d) => trim($d))
-            ->unique()
-            ->values();
+            ->selectRaw('TRIM(direccion) as direccion_limpia, MIN(nro_expediente) as nro_expediente')
+            ->groupBy(DB::raw('TRIM(direccion)'))
+            ->get();
+
+        // Convertir a colección de pares ['direccion', 'nro_expediente']
+        $query = $rawData->map(fn($row) => [
+            'direccion'      => $row->direccion_limpia,
+            'nro_expediente' => $row->nro_expediente,
+        ])->values();
 
         $totalRaw = $query->count();
         $this->info("Direcciones únicas sin cachear: {$totalRaw}");
 
         // ── 2. Filtrar inválidas ──────────────────────────────────────────────
         $this->line('Filtrando direcciones inválidas...');
-        $pendientes = $query->filter(fn($dir) => $geocoder->esDireccionValida($dir))->values();
+        $pendientes = $query->filter(fn($item) => $geocoder->esDireccionValida($item['direccion']))->values();
 
         $invalidas = $totalRaw - $pendientes->count();
         $this->warn("Inválidas descartadas (sin número ni intersección): {$invalidas}");
@@ -136,15 +142,18 @@ class GeocodificarHistoricoCecoco extends Command
             $num = $i + 1;
             $this->line('[' . now()->format('H:i:s') . "] Lote {$num}/{$totalLotes} (" . count($lote) . ' dir.)...');
 
-            foreach ($lote as $direccion) {
+            foreach ($lote as $item) {
+                $dir    = is_array($item) ? ($item['direccion'] ?? '') : (string) $item;
+                $nroExp = is_array($item) ? ($item['nro_expediente'] ?? null) : null;
                 try {
-                    $resultado = $geocoder->geocodificar($direccion);
+                    $resultado = $geocoder->geocodificar($dir, $nroExp ?: null);
                     $resultado ? $geocodeadas++ : $fallidas++;
                 } catch (\Exception $e) {
                     $fallidas++;
                     Log::warning('cecoco:geocodificar-historico síncrono: error', [
-                        'direccion' => $direccion,
-                        'error'     => $e->getMessage(),
+                        'direccion'      => $dir,
+                        'nro_expediente' => $nroExp,
+                        'error'          => $e->getMessage(),
                     ]);
                 }
                 if ($pausaMs > 0) {

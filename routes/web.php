@@ -32,6 +32,7 @@ use App\Http\Controllers\TranscripcionController;
 use App\Http\Controllers\RAGController;
 use App\Http\Controllers\PlanoEdificioController;
 use App\Http\Controllers\PersonalController;
+use App\Http\Controllers\ManualesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -445,6 +446,16 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::get('/api/dashboard/workers-status', [App\Http\Controllers\HomeController::class, 'workersStatus'])
         ->name('api.dashboard.workers-status');
+
+    // Manuales
+    Route::prefix('manuales')->group(function () {
+        Route::get('/cecoco',       [ManualesController::class, 'indexCecoco'])->name('manuales.cecoco');
+        Route::get('/instructivos', [ManualesController::class, 'indexInstructivos'])->name('manuales.instructivos');
+        Route::post('/subir',       [ManualesController::class, 'upload'])->name('manuales.upload');
+        Route::get('/ver/{id}',     [ManualesController::class, 'view'])->name('manuales.view');
+        Route::get('/descargar/{id}', [ManualesController::class, 'download'])->name('manuales.download');
+        Route::delete('/eliminar/{id}', [ManualesController::class, 'destroy'])->name('manuales.destroy');
+    });
 
     //Optimizar sistema
     Route::get('optimizar', function () {

@@ -64,7 +64,8 @@
                                                         'menu-ia',
                                                         'menu-gestor-claves',
                                                         'menu-patrimonio',
-                                                        'menu-plano-edificio'
+                                                        'menu-plano-edificio',
+                                                        'menu-manuales',
                                                     ],
                                                     'Administración' => [
                                                         'rol',
@@ -130,6 +131,11 @@
                                                     ],
                                                     'IA' => [
                                                         'rag'
+                                                    ],
+                                                    'Manuales' => [
+                                                        'manual-usuario',
+                                                        'manuales-cecoco',
+                                                        'instructivos',
                                                     ],
                                                     'Operaciones' => [
                                                         'buscar-moviles-parados',
@@ -246,7 +252,9 @@
                                                                                             'editar' => 'fas fa-edit text-warning',
                                                                                             'borrar' => 'fas fa-trash text-danger',
                                                                                             'buscar' => 'fas fa-search text-info',
-                                                                                            'reiniciar' => 'fas fa-sync-alt text-primary'
+                                                                                            'reiniciar' => 'fas fa-sync-alt text-primary',
+                                                                                            'cargar' => 'fas fa-upload text-success',
+                                                                                            'descargar' => 'fas fa-download text-primary',
                                                                                         ];
                                                                                     @endphp
 

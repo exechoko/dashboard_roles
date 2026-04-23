@@ -66,6 +66,7 @@
     <script src="{{ asset('assets/js/jquery.min.js') }}"></script>
 
     @yield('page_css')
+    @stack('styles')
     <!-- Template CSS -->
     <link rel="stylesheet" href="{{ asset('web/css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('web/css/components.css') }}">

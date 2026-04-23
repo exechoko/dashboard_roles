@@ -392,15 +392,38 @@
     </li>
 @endcan
 
-@can('ver-menu-documentacion')
-    <li class="{{ request()->is('manual_usuario*') ? 'active' : '' }}">
-        <a class="nav-link"
-            href="https://docs.google.com/document/d/1QSVj5kHVp7UL5eUn2zTJeg1Dsn_KmTCtThKPMHXrf2I/edit?usp=sharing"
-            target="_blank">
-            <i class="fas fa-book"></i><span>Manual de usuario</span>
+@canany(['ver-menu-manuales', 'ver-manual-usuario', 'ver-manuales-cecoco', 'ver-instructivos'])
+    <li class="dropdown {{ request()->is('manuales*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-book-open"></i><span>Manuales</span>
         </a>
+        <ul class="dropdown-menu">
+            @can('ver-manual-usuario')
+                <li>
+                    <a class="nav-link"
+                        href="https://docs.google.com/document/d/1QSVj5kHVp7UL5eUn2zTJeg1Dsn_KmTCtThKPMHXrf2I/edit?usp=sharing"
+                        target="_blank">
+                        <i class="fas fa-book mr-1"></i><span>Manual de Usuario</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-manuales-cecoco')
+                <li class="{{ request()->is('manuales/cecoco*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('manuales.cecoco') }}">
+                        <i class="fas fa-folder-open mr-1"></i><span>Manuales CeCoCo</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-instructivos')
+                <li class="{{ request()->is('manuales/instructivos*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('manuales.instructivos') }}">
+                        <i class="fas fa-file-alt mr-1"></i><span>Instructivos</span>
+                    </a>
+                </li>
+            @endcan
+        </ul>
     </li>
-@endcan
+@endcanany
 
 @can('ver-menu-auditoria')
     <li class="{{ request()->is('auditoria*') ? 'active' : '' }}">

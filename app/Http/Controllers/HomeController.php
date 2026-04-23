@@ -244,62 +244,70 @@ class HomeController extends Controller
             ])
             ->values();
 
-        // Equipos por departamental (top 10) - contando todas las dependencias hijas
-        $departamentales = Destino::where('tipo', 'departamental')->get();
-        $equipos_por_departamental = collect();
+        // ── Árbol jerárquico de equipos por dependencia (fuente: flota_general) ──
+        // Conteo de equipos activos por destino en una sola query agregada.
+        $estadosExcluidosArbol = [
+            $estados['No funciona'] ?? 0,
+            $estados['Baja'] ?? 0,
+            $estados['Perdido'] ?? 0,
+        ];
 
-        foreach ($departamentales as $dept) {
-            $destinosHijos = $dept->getDestinosHijosRecursivo();
-            $total = Historico::whereIn('destino_id', $destinosHijos)
-                ->whereNull('fecha_desasignacion')
-                ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', [
-                    $estados['No funciona'],
-                    $estados['Baja'],
-                    $estados['Perdido']
-                ]))
-                ->count();
+        $conteoPorDestino = FlotaGeneral::whereNull('fecha_desasignacion')
+            ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', $estadosExcluidosArbol))
+            ->select('destino_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('destino_id')
+            ->pluck('total', 'destino_id');
 
-            if ($total > 0) {
-                $equipos_por_departamental->push((object) [
-                    'nombre' => $dept->nombre,
-                    'total' => $total
-                ]);
+        // Árbol en memoria (dataset acotado).
+        $destinosTodos = Destino::select('id', 'nombre', 'parent_id', 'tipo')
+            ->orderBy('nombre')
+            ->get();
+        $destinosPorPadre = $destinosTodos->groupBy(fn($d) => $d->parent_id ?? 0);
+
+        $buildNodo = function ($destino) use (&$buildNodo, $destinosPorPadre, $conteoPorDestino) {
+            $propio = (int) ($conteoPorDestino[$destino->id] ?? 0);
+            $hijos = $destinosPorPadre->get($destino->id, collect());
+            $nodosHijos = [];
+            $totalDescendientes = 0;
+            foreach ($hijos as $h) {
+                $nodo = $buildNodo($h);
+                $totalDescendientes += $nodo['value'];
+                $nodosHijos[] = $nodo;
+            }
+            $total = $propio + $totalDescendientes;
+            return [
+                'id'        => $destino->id,
+                'name'      => $destino->nombre,
+                'value'     => $total,
+                'propio'    => $propio,
+                'tipo'      => $destino->tipo,
+                // Ocultamos ramas sin equipos para no saturar visualmente.
+                'children'  => array_values(array_filter($nodosHijos, fn($n) => $n['value'] > 0)),
+                'collapsed' => true,
+            ];
+        };
+
+        $raices = $destinosPorPadre->get(0, collect());
+        $nodosRaiz = [];
+        $totalGlobal = 0;
+        foreach ($raices as $r) {
+            $nodo = $buildNodo($r);
+            if ($nodo['value'] > 0) {
+                $totalGlobal += $nodo['value'];
+                $nodosRaiz[] = $nodo;
             }
         }
 
-        $equipos_por_departamental = $equipos_por_departamental
-            ->sortByDesc('total')
-            ->take(10)
-            ->values();
-
-        // Equipos por división (top 10) - contando todas las dependencias hijas
-        $divisiones = Destino::where('tipo', 'division')->with('padre')->get();
-        $equipos_por_division = collect();
-
-        foreach ($divisiones as $div) {
-            $destinosHijos = $div->getDestinosHijosRecursivo();
-            $total = Historico::whereIn('destino_id', $destinosHijos)
-                ->whereNull('fecha_desasignacion')
-                ->whereHas('equipo', fn($q) => $q->whereNotIn('estado_id', [
-                    $estados['No funciona'],
-                    $estados['Baja'],
-                    $estados['Perdido']
-                ]))
-                ->count();
-
-            if ($total > 0) {
-                $equipos_por_division->push((object) [
-                    'nombre' => $div->nombre,
-                    'dependencia' => $div->padre->nombre ?? null,
-                    'total' => $total
-                ]);
-            }
-        }
-
-        $equipos_por_division = $equipos_por_division
-            ->sortByDesc('total')
-            ->take(10)
-            ->values();
+        // Raíz sintética para tener un único árbol.
+        $arbol_dependencias = [
+            'id'        => null,
+            'name'      => 'Policía de Entre Ríos',
+            'value'     => $totalGlobal,
+            'propio'    => 0,
+            'tipo'      => 'raiz',
+            'children'  => $nodosRaiz,
+            'collapsed' => false,
+        ];
 
         // ── Cecoco: estadísticas de la semana anterior (ayer menos 6 días hasta ayer, para sumar 7 días) ──────────
         $cecocoFinSemana = Carbon::yesterday()->endOfDay();
@@ -387,8 +395,7 @@ class HomeController extends Controller
             'entregas_equipos_activas',
             'entregas_bodycams_activas',
             'camaras_por_tipo',
-            'equipos_por_departamental',
-            'equipos_por_division',
+            'arbol_dependencias',
             'cecoco_total_semana',
             'cecoco_hechos',
             'cecoco_accidentes',

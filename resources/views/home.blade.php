@@ -8,6 +8,7 @@
 <link href="{{ asset('/plugins/bootstrap-dialog/bootstrap-dialog.min.css') }}" rel="stylesheet">
 <link href="{{ asset('/plugins/bootstrap-toggle/bootstrap-toggle.min.css') }}" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
 
 <style>
     .card-item {
@@ -514,33 +515,33 @@
                                             </div>
                                         </div>
 
-                                        <!-- Gráficos: Equipos por Departamental + por División -->
+                                        <!-- Árbol jerárquico: Equipos por Dependencia -->
                                         <div class="row mt-4">
-                                            <div class="col-md-6 col-12 mb-4">
+                                            <div class="col-12 mb-4">
                                                 <div class="card chart-card">
-                                                    <div class="card-header pb-0">
-                                                        <h4 class="chart-title"><i
-                                                                class="fas fa-building mr-2 text-info"></i>Equipos por
-                                                            Departamental</h4>
-                                                    </div>
-                                                    <div class="card-body">
-                                                        <div style="height: 350px;">
-                                                            <canvas id="equiposDepartamentalChart"></canvas>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6 col-12 mb-4">
-                                                <div class="card chart-card">
-                                                    <div class="card-header pb-0">
-                                                        <h4 class="chart-title"><i
+                                                    <div class="card-header pb-0 d-flex justify-content-between align-items-center flex-wrap">
+                                                        <h4 class="chart-title mb-2"><i
                                                                 class="fas fa-sitemap mr-2 text-primary"></i>Equipos por
-                                                            División</h4>
+                                                            Dependencia</h4>
+                                                        <div class="d-flex align-items-center" style="gap:.5rem;">
+                                                            <small class="text-muted mr-1" id="arbol-seleccion-label"></small>
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                                id="btn-arbol-reset" style="display:none;" title="Quitar filtro">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                            @can('ver-flota')
+                                                                <a href="{{ route('flota.busquedaAvanzada.export') }}"
+                                                                    id="btn-arbol-exportar" class="btn btn-sm btn-success">
+                                                                    <i class="fas fa-file-excel mr-1"></i>Exportar Excel
+                                                                </a>
+                                                            @endcan
+                                                        </div>
                                                     </div>
                                                     <div class="card-body">
-                                                        <div style="height: 350px;">
-                                                            <canvas id="equiposDivisionChart"></canvas>
+                                                        <div class="text-muted small mb-2">
+                                                            Clic en un nodo para expandir/colapsar. Doble clic para filtrar la exportación a ese subárbol.
                                                         </div>
+                                                        <div id="equiposArbolChart" style="width:100%;height:620px;"></div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -3195,4 +3196,11 @@
                 });
             })();
         </script>
+
+        {{-- Árbol jerárquico de Equipos por Dependencia (estilo neon, adapta tema dark) --}}
+        <script>
+            window.ARBOL_DATA = @json($arbol_dependencias ?? null);
+            window.ARBOL_EXPORT_URL = @json(route('flota.busquedaAvanzada.export'));
+        </script>
+        <script src="{{ asset('js/dashboard-arbol-dependencias.js') }}?v={{ filemtime(public_path('js/dashboard-arbol-dependencias.js')) }}"></script>
 @endsection

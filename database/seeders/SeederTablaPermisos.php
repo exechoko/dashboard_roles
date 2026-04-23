@@ -107,6 +107,7 @@ class SeederTablaPermisos extends Seeder
             'ver-menu-patrimonio',
             'ver-menu-tareas',
             'ver-menu-plano-edificio',
+            'ver-menu-manuales',
 
             //CeCoCo
             'ver-llamadas-cecoco',
@@ -181,6 +182,17 @@ class SeederTablaPermisos extends Seeder
             'posicionar-plano-edificio',
             'credenciales-plano-edificio',
             'exportar-plano-edificio',
+
+            //Manuales
+            'ver-manual-usuario',
+            'ver-manuales-cecoco',
+            'cargar-manuales-cecoco',
+            'descargar-manuales-cecoco',
+            'borrar-manuales-cecoco',
+            'ver-instructivos',
+            'cargar-instructivos',
+            'descargar-instructivos',
+            'borrar-instructivos',
         ];
 
         // Crear permisos si no existen

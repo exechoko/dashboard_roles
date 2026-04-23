@@ -465,15 +465,54 @@
                 markerUbicar = L.marker(latlng, { draggable: true }).addTo(mapUbicar);
                 markerUbicar.on('dragend', function () {
                     actualizarCoordsModal(markerUbicar.getLatLng());
+                    reverseGeocodificar(markerUbicar.getLatLng());
                 });
             }
             actualizarCoordsModal(latlng);
+            reverseGeocodificar(latlng);
         }
 
         function actualizarCoordsModal(latlng) {
             document.getElementById('modal-coords-texto').textContent =
                 'Lat: ' + latlng.lat.toFixed(6) + '  |  Lng: ' + latlng.lng.toFixed(6);
             document.getElementById('btn-confirmar-ubicacion').disabled = false;
+        }
+
+        function reverseGeocodificar(latlng) {
+            var coordsEl = document.getElementById('modal-coords-texto');
+            coordsEl.textContent = 'Buscando dirección...';
+
+            var url = 'https://nominatim.openstreetmap.org/reverse?lat=' + latlng.lat +
+                      '&lon=' + latlng.lng + '&format=json&accept-language=es';
+
+            fetch(url, { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    var addr = data.address || {};
+                    var calle  = addr.road || addr.pedestrian || addr.footway || '';
+                    var numero = addr.house_number || '';
+                    var texto  = calle + (numero ? ' ' + numero : '');
+
+                    coordsEl.textContent = 'Lat: ' + latlng.lat.toFixed(6) +
+                        '  |  Lng: ' + latlng.lng.toFixed(6) +
+                        (texto ? '  —  ' + texto : '');
+
+                    // Rellenar el input de corrección de la fila activa
+                    if (filaUbicarActiva && texto) {
+                        var input = filaUbicarActiva.querySelector('.input-correccion');
+                        if (input) {
+                            input.value = texto;
+                            input.classList.remove('is-invalid');
+                            // Quitar mensaje de error previo si había
+                            var fb = filaUbicarActiva.querySelector('.invalid-feedback');
+                            if (fb) fb.remove();
+                        }
+                    }
+                })
+                .catch(function () {
+                    coordsEl.textContent = 'Lat: ' + latlng.lat.toFixed(6) +
+                        '  |  Lng: ' + latlng.lng.toFixed(6);
+                });
         }
 
         $('#btn-confirmar-ubicacion').on('click', function () {

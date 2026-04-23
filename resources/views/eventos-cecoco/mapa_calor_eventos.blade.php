@@ -165,7 +165,7 @@
                             <th class="text-center" style="width:80px;">Eventos</th>
                             <th class="text-center" style="width:120px;">Motivo</th>
                             <th>Corrección manual</th>
-                            <th style="width:190px;"></th>
+                            <th style="width:220px;"></th>
                         </tr>
                     </thead>
                     <tbody id="tbody-sin-geocod"></tbody>
@@ -354,7 +354,7 @@
                     '<td>' +
                         '<div class="acciones-geocod">' +
                             '<button class="btn btn-sm btn-primary flex-fill btn-geocod-manual" onclick="geocodificarManual(this)"><i class="bi bi-geo-fill me-1"></i>Asignar</button>' +
-                            '<button class="btn btn-sm btn-outline-secondary btn-ubicar-mapa" title="Ubicar en el mapa" onclick="abrirModalUbicar(this)"><i class="bi bi-map"></i></button>' +
+                            '<button class="btn btn-sm btn-outline-info btn-ubicar-mapa" onclick="abrirModalUbicar(this)"><i class="bi bi-pin-map-fill me-1"></i>Mapa</button>' +
                         '</div>' +
                     '</td>';
                 tbody.appendChild(tr);

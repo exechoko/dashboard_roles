@@ -535,10 +535,17 @@ class EventoCecocoController extends Controller
             return response()->json(['error' => 'La dirección ingresada no parece válida (debe tener número o ser una intersección).'], 422);
         }
 
+        // Si la dirección corregida ya fue consultada antes y quedó guardada sin coordenadas
+        // (Google no la encontró en ese momento), eliminamos ese registro para forzar un
+        // nuevo intento con Google en lugar de devolver null desde caché.
+        \App\Models\GeocodificacionDirecta::where('direccion_original', $corregida)
+            ->whereNull('latitud')
+            ->delete();
+
         $coords = $geocoder->geocodificar($corregida, $request->nro_expediente ?: null);
 
         if (!$coords) {
-            return response()->json(['error' => 'No se pudo ubicar esa dirección en Paraná. Verificá que sea correcta.'], 422);
+            return response()->json(['error' => 'No se pudo ubicar esa dirección en Paraná. Verificá que sea correcta o usá el botón del mapa para fijar la ubicación manualmente.'], 422);
         }
 
         \App\Models\GeocodificacionDirecta::updateOrCreate(

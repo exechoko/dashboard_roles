@@ -9,7 +9,11 @@ class PersonalController extends Controller
 {
     public function index()
     {
-        return Personal::all();
+        if (request()->expectsJson()) {
+            return \App\Models\Personal::all();
+        }
+
+        return view('tareas.personal-efectivo.index');
     }
 
     public function store(Request $request)

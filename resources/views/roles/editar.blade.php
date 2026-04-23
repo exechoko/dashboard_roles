@@ -115,6 +115,9 @@
                                                     'Tareas' => [
                                                         'tarea'
                                                     ],
+                                                    'Personal Efectivo' => [
+                                                        'personal'
+                                                    ],
                                                     'Claves' => [
                                                         'clave'
                                                     ],

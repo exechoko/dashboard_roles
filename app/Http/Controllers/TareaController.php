@@ -113,14 +113,14 @@ class TareaController extends Controller
         $usuarios = User::orderBy('name')->get();
         $estados = TareaItem::ESTADOS;
 
-        return view('tareas.index', compact('items', 'usuarios', 'estados', 'vista'));
+        return view('tareas.tareas.index', compact('items', 'usuarios', 'estados', 'vista'));
     }
 
     public function create()
     {
         $recurrencias = Tarea::RECURRENCIAS;
 
-        return view('tareas.create', compact('recurrencias'));
+        return view('tareas.tareas.create', compact('recurrencias'));
     }
 
     public function store(Request $request)
@@ -166,7 +166,7 @@ class TareaController extends Controller
         $tarea = Tarea::findOrFail($id);
         $recurrencias = Tarea::RECURRENCIAS;
 
-        return view('tareas.edit', compact('tarea', 'recurrencias'));
+        return view('tareas.tareas.edit', compact('tarea', 'recurrencias'));
     }
 
     public function update(Request $request, $id)

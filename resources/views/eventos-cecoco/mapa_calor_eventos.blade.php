@@ -175,22 +175,22 @@
     </div>
 
     {{-- Modal: ubicar en mapa --}}
-    <div class="modal fade" id="modalUbicarMapa" tabindex="-1" aria-labelledby="modalUbicarMapaLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal fade" id="modalUbicarMapa" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalUbicarMapaLabel">
-                        <i class="bi bi-map me-1"></i> Ubicar dirección en el mapa
+                    <h5 class="modal-title">
+                        <i class="fa fa-map-marker mr-1"></i> Ubicar dirección en el mapa
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                 </div>
                 <div class="modal-body pb-2">
                     <div class="alert alert-info py-2 mb-2" style="font-size:0.88em;">
-                        <i class="bi bi-info-circle me-1"></i>
+                        <i class="fa fa-info-circle mr-1"></i>
                         Hacé clic en el mapa para marcar la ubicación correcta del evento.
                         Podés mover el marcador arrastrándolo.
                     </div>
-                    <p class="mb-1"><strong>Dirección:</strong> <span id="modal-dir-texto" class="font-monospace"></span></p>
+                    <p class="mb-1"><strong>Dirección:</strong> <span id="modal-dir-texto" style="font-family:monospace;"></span></p>
                     <p class="mb-2"><strong>Descripción:</strong> <span id="modal-desc-texto" class="text-muted"></span></p>
                     <div id="map-ubicar-modal"></div>
                     <div class="mt-2 text-muted" id="modal-coords-texto" style="font-size:0.85em;">
@@ -198,9 +198,9 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                     <button type="button" class="btn btn-success" id="btn-confirmar-ubicacion" disabled>
-                        <i class="bi bi-check-circle me-1"></i> Confirmar ubicación
+                        <i class="fa fa-check-circle mr-1"></i> Confirmar ubicación
                     </button>
                 </div>
             </div>
@@ -353,8 +353,8 @@
                     '<td><input type="text" class="form-control form-control-sm input-correccion" placeholder="Ej: San Martín 1234 o Urquiza y Corrientes"></td>' +
                     '<td>' +
                         '<div class="acciones-geocod">' +
-                            '<button class="btn btn-sm btn-primary flex-fill btn-geocod-manual" onclick="geocodificarManual(this)"><i class="bi bi-geo-fill me-1"></i>Asignar</button>' +
-                            '<button class="btn btn-sm btn-outline-info btn-ubicar-mapa" onclick="abrirModalUbicar(this)"><i class="bi bi-pin-map-fill me-1"></i>Mapa</button>' +
+                            '<button class="btn btn-sm btn-primary flex-fill btn-geocod-manual" onclick="geocodificarManual(this)"><i class="fa fa-map-marker mr-1"></i>Asignar</button>' +
+                            '<button class="btn btn-sm btn-outline-info btn-ubicar-mapa" onclick="abrirModalUbicar(this)"><i class="fa fa-map mr-1"></i>Mapa</button>' +
                         '</div>' +
                     '</td>';
                 tbody.appendChild(tr);
@@ -391,7 +391,7 @@
             .then(function (data) {
                 if (data.error) {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-geo-fill me-1"></i>Asignar';
+                    btn.innerHTML = '<i class="fa fa-map-marker mr-1"></i>Asignar';
                     input.classList.add('is-invalid');
                     input.title = data.error;
                     // Show feedback under input
@@ -405,7 +405,7 @@
                 // Marcar fila como geocodificada
                 tr.classList.add('geocodificado', 'table-success');
                 tr.querySelector('td:last-child').innerHTML =
-                    '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Guardado</span>';
+                    '<span class="text-success font-weight-bold"><i class="fa fa-check-circle"></i> Guardado</span>';
 
                 // Actualizar badge
                 var badge = document.getElementById('badge-sin-geocod');
@@ -427,13 +427,13 @@
                 .replace(/"/g, '&quot;');
         }
 
-        // ── Modal: ubicar en mapa ────────────────────────────────────────────
+        // ── Modal: ubicar en mapa (Bootstrap 4 / jQuery) ─────────────────────
         var mapUbicar = null;
         var markerUbicar = null;
         var filaUbicarActiva = null;
 
-        // Listener registrado UNA sola vez; se ejecuta cada vez que el modal termina de abrir.
-        document.getElementById('modalUbicarMapa').addEventListener('shown.bs.modal', function () {
+        // Registrado una sola vez; corre cada vez que el modal termina de abrirse.
+        $('#modalUbicarMapa').on('shown.bs.modal', function () {
             if (!mapUbicar) {
                 mapUbicar = L.map('map-ubicar-modal').setView([-31.7413, -60.5115], 13);
                 L.tileLayer('https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey={{ env("API_KEY_THUNDER_FOREST_MAP") }}', {
@@ -443,7 +443,6 @@
             } else {
                 mapUbicar.invalidateSize();
             }
-            // Limpiar marcador de apertura anterior
             if (markerUbicar) {
                 mapUbicar.removeLayer(markerUbicar);
                 markerUbicar = null;
@@ -456,7 +455,7 @@
             filaUbicarActiva = btn.closest('tr');
             document.getElementById('modal-dir-texto').textContent  = filaUbicarActiva.dataset.direccionOriginal;
             document.getElementById('modal-desc-texto').textContent = filaUbicarActiva.dataset.descripcion || '(sin descripción)';
-            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalUbicarMapa')).show();
+            $('#modalUbicarMapa').modal('show');
         }
 
         function colocarMarcador(latlng) {
@@ -477,13 +476,12 @@
             document.getElementById('btn-confirmar-ubicacion').disabled = false;
         }
 
-        document.getElementById('btn-confirmar-ubicacion').addEventListener('click', function () {
+        $('#btn-confirmar-ubicacion').on('click', function () {
             if (!markerUbicar || !filaUbicarActiva) return;
 
             var latlng = markerUbicar.getLatLng();
-            var btnConfirmar = this;
-            btnConfirmar.disabled = true;
-            btnConfirmar.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            var $btn = $(this);
+            $btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
 
             fetch('{{ route("cecoco.mapa-calor.geocodificar-coordenadas") }}', {
                 method: 'POST',
@@ -500,22 +498,18 @@
             })
             .then(function (r) { return r.json(); })
             .then(function (data) {
-                bootstrap.Modal.getInstance(document.getElementById('modalUbicarMapa')).hide();
-                btnConfirmar.innerHTML = '<i class="bi bi-check-circle me-1"></i> Confirmar ubicación';
+                $('#modalUbicarMapa').modal('hide');
+                $btn.html('<i class="fa fa-check-circle mr-1"></i> Confirmar ubicación');
 
-                // Marcar fila como geocodificada
                 filaUbicarActiva.classList.add('geocodificado', 'table-success');
                 filaUbicarActiva.querySelector('td:last-child').innerHTML =
-                    '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Guardado</span>';
+                    '<span class="text-success font-weight-bold"><i class="fa fa-check-circle"></i> Guardado</span>';
 
-                // Actualizar badge
-                var badge = document.getElementById('badge-sin-geocod');
                 var pendientes = document.querySelectorAll('#tbody-sin-geocod tr:not(.geocodificado)').length;
-                badge.textContent = pendientes;
+                document.getElementById('badge-sin-geocod').textContent = pendientes;
             })
             .catch(function (err) {
-                btnConfirmar.disabled = false;
-                btnConfirmar.innerHTML = '<i class="bi bi-check-circle me-1"></i> Confirmar ubicación';
+                $btn.prop('disabled', false).html('<i class="fa fa-check-circle mr-1"></i> Confirmar ubicación');
                 alert('Error de conexión: ' + err.message);
             });
         });

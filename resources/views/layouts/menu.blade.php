@@ -142,6 +142,18 @@
             <i class="fas fa-boxes"></i><span>Patrimonio</span>
         </a>
         <ul class="dropdown-menu">
+            @can('ver-patrimonio-cargos')
+                <li class="{{ request()->is('patrimonio/dashboard*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('patrimonio.dashboard') }}">
+                        <i class="fas fa-chart-pie"></i><span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="{{ request()->is('patrimonio/cargos*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('patrimonio.cargos.index') }}">
+                        <i class="fas fa-file-signature"></i><span>Cargos</span>
+                    </a>
+                </li>
+            @endcan
             <li class="{{ request()->is('patrimonio/bienes*') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('patrimonio.bienes.index') }}">
                     <i class="fas fa-box"></i><span>Bienes</span>

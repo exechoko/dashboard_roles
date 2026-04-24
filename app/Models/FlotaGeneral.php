@@ -15,7 +15,16 @@ class FlotaGeneral extends Model
         'fecha_asignacion',
         'fecha_desasignacion',
         'ticket_per',
-        'observaciones'
+        'observaciones',
+        'patrimoniado',
+        'destino_patrimonial_id',
+        'cargo_id',
+        'fecha_patrimonio',
+    ];
+
+    protected $casts = [
+        'patrimoniado' => 'boolean',
+        'fecha_patrimonio' => 'date',
     ];
 
     public function equipo()
@@ -65,5 +74,81 @@ class FlotaGeneral extends Model
             ->whereDoesntHave('devoluciones.detalleDevoluciones', function ($q) {
                 $q->whereColumn('detalle_devoluciones_equipos.equipo_id', 'detalle_entregas_equipos.equipo_id');
             });
+    }
+
+    // ─── Relaciones patrimoniales ────────────────────────────
+
+    public function cargo()
+    {
+        return $this->belongsTo(PatrimonioCargo::class, 'cargo_id');
+    }
+
+    public function destinoPatrimonial()
+    {
+        return $this->belongsTo(Destino::class, 'destino_patrimonial_id');
+    }
+
+    // ─── Scopes patrimoniales ────────────────────────────────
+
+    public function scopePatrimoniados($query)
+    {
+        return $query->where('patrimoniado', true);
+    }
+
+    public function scopeSinPatrimoniar($query)
+    {
+        return $query->where('patrimoniado', false);
+    }
+
+    public function scopePendientesFirma($query)
+    {
+        return $query->where('patrimoniado', true)
+            ->whereHas('cargo', function ($q) {
+                $q->where('estado', 'pendiente');
+            });
+    }
+
+    // ─── Métodos patrimoniales ───────────────────────────────
+
+    /**
+     * Marcar el equipo como patrimoniado
+     */
+    public function patrimoniar($destinoId, $cargoId, $fecha = null)
+    {
+        $this->update([
+            'patrimoniado'          => true,
+            'destino_patrimonial_id' => $destinoId,
+            'cargo_id'              => $cargoId,
+            'fecha_patrimonio'      => $fecha ?? now()->toDateString(),
+        ]);
+    }
+
+    /**
+     * Limpiar patrimonio del equipo
+     */
+    public function despatrimoniar()
+    {
+        $this->update([
+            'patrimoniado'          => false,
+            'destino_patrimonial_id' => null,
+            'cargo_id'              => null,
+            'fecha_patrimonio'      => null,
+        ]);
+    }
+
+    /**
+     * Obtener el estado patrimonial formateado
+     */
+    public function getEstadoPatrimonialAttribute()
+    {
+        if (!$this->patrimoniado) {
+            return 'sin_patrimoniar';
+        }
+
+        if ($this->cargo && $this->cargo->estado === 'pendiente') {
+            return 'pendiente_firma';
+        }
+
+        return 'patrimoniado';
     }
 }

@@ -128,6 +128,34 @@
                                                 </span>
                                             </div>
                                             <div class="fcard-row">
+                                                <span class="fcard-label"><i class="fas fa-stamp"></i> Patrimonio</span>
+                                                <span class="fcard-value">
+                                                    @if($f->patrimoniado)
+                                                        @if($f->cargo && $f->cargo->estado === 'pendiente')
+                                                            <span class="badge badge-warning" style="border-radius:20px;padding:.2em .65em;font-size:.78rem;"><i class="fas fa-clock"></i> Pendiente firma</span>
+                                                        @else
+                                                            <span class="badge badge-success" style="border-radius:20px;padding:.2em .65em;font-size:.78rem;"><i class="fas fa-check-circle"></i> Patrimoniado</span>
+                                                        @endif
+                                                        @if($f->destinoPatrimonial)
+                                                            <br><small class="text-muted">{{ $f->destinoPatrimonial->nombre }}</small>
+                                                        @endif
+                                                    @else
+                                                        @if($f->ultimo_movimiento === 'Movimiento patrimonial')
+                                                            <div class="custom-control custom-checkbox btn-patrimoniar-rapido-container d-inline-block">
+                                                                <input type="checkbox" class="custom-control-input check-patrimoniar-rapido" id="patrimoniar_m_{{ $f->id }}" data-id="{{ $f->id }}">
+                                                                <label class="custom-control-label" for="patrimoniar_m_{{ $f->id }}" title="Generar cargo patrimonial" data-toggle="tooltip">
+                                                                    <span class="badge badge-light border" style="border-radius:20px;padding:.2em .65em;font-size:.78rem; cursor:pointer;">
+                                                                        <i class="fas fa-magic text-primary"></i> Patrimoniar
+                                                                    </span>
+                                                                </label>
+                                                            </div>
+                                                        @else
+                                                            <span class="badge badge-light" style="border-radius:20px;padding:.2em .65em;font-size:.78rem;color:#888;"><i class="fas fa-minus-circle"></i> Sin patrimoniar</span>
+                                                        @endif
+                                                    @endif
+                                                </span>
+                                            </div>
+                                            <div class="fcard-row">
                                                 <span class="fcard-label"><i class="far fa-calendar-alt"></i> Movimiento</span>
                                                 <span class="fcard-value">
                                                     <span class="badge" style="background-color: {{ $f->color_ultimo_movimiento }}; color: #fff; border-radius: 20px; padding: .2em .65em; font-size: .78rem;">
@@ -173,6 +201,7 @@
                                             <th>Tipo / Modelo</th>
                                             <th>Fecha últ. mov.</th>
                                             <th>Movimiento</th>
+                                            <th>Patrimonio</th>
                                             <th class="col-recurso">
                                                 <i class="fas fa-car mr-1"></i>Recurso
                                             </th>
@@ -233,6 +262,35 @@
                                                     </span>
                                                 </td>
 
+                                                <td>
+                                                    @if($f->patrimoniado)
+                                                        @if($f->cargo && $f->cargo->estado === 'pendiente')
+                                                            <span class="badge badge-warning" style="border-radius:20px;padding:.25em .75em;font-size:.8rem;" data-toggle="tooltip" title="{{ $f->destinoPatrimonial->nombre ?? '' }}">
+                                                                <i class="fas fa-clock"></i> Pendiente
+                                                            </span>
+                                                        @else
+                                                            <span class="badge badge-success" style="border-radius:20px;padding:.25em .75em;font-size:.8rem;" data-toggle="tooltip" title="{{ $f->destinoPatrimonial->nombre ?? '' }}">
+                                                                <i class="fas fa-check-circle"></i> Patrimoniado
+                                                            </span>
+                                                        @endif
+                                                    @else
+                                                        @if($f->ultimo_movimiento === 'Movimiento patrimonial')
+                                                            <div class="custom-control custom-checkbox btn-patrimoniar-rapido-container d-inline-block">
+                                                                <input type="checkbox" class="custom-control-input check-patrimoniar-rapido" id="patrimoniar_{{ $f->id }}" data-id="{{ $f->id }}">
+                                                                <label class="custom-control-label" for="patrimoniar_{{ $f->id }}" title="Generar cargo patrimonial" data-toggle="tooltip">
+                                                                    <span class="badge badge-light border" style="border-radius:20px;padding:.25em .75em;font-size:.8rem; cursor:pointer;">
+                                                                        <i class="fas fa-magic text-primary"></i> Patrimoniar
+                                                                    </span>
+                                                                </label>
+                                                            </div>
+                                                        @else
+                                                            <span class="badge" style="background:#eee;color:#888;border-radius:20px;padding:.25em .75em;font-size:.8rem;">
+                                                                <i class="fas fa-minus-circle"></i> —
+                                                            </span>
+                                                        @endif
+                                                    @endif
+                                                </td>
+
                                                 <td class="col-recurso">
                                                     @if($f->recurso)
                                                         <div class="recurso-cell">
@@ -290,7 +348,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="8" class="text-center py-5">
+                                                <td colspan="9" class="text-center py-5">
                                                     <i class="fas fa-search fa-2x text-muted mb-2 d-block"></i>
                                                     <span class="text-muted">No se encontraron resultados</span>
                                                 </td>
@@ -392,6 +450,53 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     $('[data-toggle="tooltip"]').tooltip({ trigger: 'hover', delay: { show: 300, hide: 100 } });
+
+    $('.check-patrimoniar-rapido').on('change', function() {
+        if ($(this).is(':checked')) {
+            let checkbox = $(this);
+            let flotaId = checkbox.data('id');
+            let container = checkbox.closest('.btn-patrimoniar-rapido-container');
+
+            Swal.fire({
+                title: '¿Generar cargo patrimonial?',
+                text: "Se generará un cargo pendiente de firma utilizando el movimiento actual.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, generar cargo',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '{{ route("flota.patrimoniar-rapido") }}',
+                        type: 'POST',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            flota_id: flotaId
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                container.replaceWith(`
+                                    <span class="badge badge-warning" style="border-radius:20px;padding:.2em .65em;font-size:.78rem;" data-toggle="tooltip" title="Generado recién">
+                                        <i class="fas fa-clock"></i> Pendiente
+                                    </span>
+                                `);
+                                toastr.success('Cargo generado correctamente.');
+                            }
+                        },
+                        error: function(xhr) {
+                            checkbox.prop('checked', false);
+                            let msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Error al generar el cargo patrimonial.';
+                            toastr.error(msg);
+                        }
+                    });
+                } else {
+                    checkbox.prop('checked', false);
+                }
+            });
+        }
+    });
 });
 </script>
 @endpush

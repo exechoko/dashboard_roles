@@ -132,7 +132,7 @@
                                 </div>
 
                                 <div class="row mt-2">
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label class="filter-label" for="fecha_rango">Rango de fechas</label>
                                             <div class="input-group">
@@ -146,14 +146,25 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label class="filter-label" for="ticket_per">Ticket PER</label>
                                             <input type="text" name="ticket_per" class="form-control"
                                                 placeholder="Ticket PER" value="{{ $ticket_per }}">
                                         </div>
                                     </div>
-                                    <div class="col-md-4">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label class="filter-label" for="estado_patrimonial">Patrimonio</label>
+                                            <select name="estado_patrimonial" class="form-control select2">
+                                                <option value="">Cualquier estado</option>
+                                                <option value="sin_patrimoniar" {{ (isset($estado_patrimonial) && $estado_patrimonial == 'sin_patrimoniar') ? 'selected' : '' }}>Sin patrimoniar</option>
+                                                <option value="patrimoniado" {{ (isset($estado_patrimonial) && $estado_patrimonial == 'patrimoniado') ? 'selected' : '' }}>Patrimoniado (Firmado/Sin firma req.)</option>
+                                                <option value="pendiente" {{ (isset($estado_patrimonial) && $estado_patrimonial == 'pendiente') ? 'selected' : '' }}>Pendiente de firma</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
                                         <div class="form-group">
                                             <label class="filter-label" for="observaciones">Observaciones</label>
                                             <input type="text" name="observaciones" class="form-control"
@@ -196,6 +207,7 @@
                                                 <th>Tipo / Modelo</th>
                                                 <th>Fecha últ. mov.</th>
                                                 <th>Movimiento</th>
+                                                <th>Patrimonio</th>
                                                 <th style="min-width:170px;"><i class="fas fa-car mr-1"></i>Recurso</th>
                                                 <th>Dependencia</th>
                                                 <th>Obs.</th>
@@ -235,6 +247,23 @@
                                                         <span class="badge" style="background-color:{{ $f->color_ultimo_movimiento }};color:#fff;border-radius:20px;padding:.25em .75em;font-size:.8rem;font-weight:500;">
                                                             {{ $f->ultimo_movimiento ?? '—' }}
                                                         </span>
+                                                    </td>
+                                                    <td>
+                                                        @if($f->patrimoniado)
+                                                            @if($f->cargo && $f->cargo->estado === 'pendiente')
+                                                                <span class="badge badge-warning" style="border-radius:20px;padding:.25em .75em;font-size:.8rem;" data-toggle="tooltip" title="{{ $f->destinoPatrimonial->nombre ?? '' }}">
+                                                                    <i class="fas fa-clock"></i> Pendiente
+                                                                </span>
+                                                            @else
+                                                                <span class="badge badge-success" style="border-radius:20px;padding:.25em .75em;font-size:.8rem;" data-toggle="tooltip" title="{{ $f->destinoPatrimonial->nombre ?? '' }}">
+                                                                    <i class="fas fa-check-circle"></i> Patrimoniado
+                                                                </span>
+                                                            @endif
+                                                        @else
+                                                            <span class="badge" style="background:#eee;color:#888;border-radius:20px;padding:.25em .75em;font-size:.8rem;">
+                                                                <i class="fas fa-minus-circle"></i> —
+                                                            </span>
+                                                        @endif
                                                     </td>
                                                     <td>
                                                         @if($f->recurso)
@@ -285,7 +314,7 @@
                                                 </tr>
                                             @empty
                                                 <tr>
-                                                    <td colspan="8" class="text-center py-5">
+                                                    <td colspan="9" class="text-center py-5">
                                                         <i class="fas fa-search fa-2x text-muted mb-2 d-block"></i>
                                                         <span class="text-muted">No se encontraron resultados</span>
                                                     </td>

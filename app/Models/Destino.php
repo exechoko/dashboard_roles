@@ -201,4 +201,63 @@ class Destino extends Model
         $destino = self::find($destinoId);
         return $destino ? $destino->getDestinosHijosRecursivo() : collect([$destinoId]);
     }
+
+    // ─── Relaciones patrimoniales ────────────────────────────
+
+    /**
+     * Cargos patrimoniales asignados a esta dependencia
+     */
+    public function cargosPatrimoniales()
+    {
+        return $this->hasMany(PatrimonioCargo::class, 'destino_id');
+    }
+
+    /**
+     * Equipos de flota patrimoniados a esta dependencia
+     */
+    public function flotaPatrimoniada()
+    {
+        return $this->hasMany(FlotaGeneral::class, 'destino_patrimonial_id');
+    }
+
+    // ─── Conteos patrimoniales ──────────────────────────────
+
+    /**
+     * Cantidad de equipos patrimoniados en esta dependencia
+     */
+    public function getEquiposPatrimoniadosCountAttribute()
+    {
+        return $this->flotaPatrimoniada()->where('patrimoniado', true)->count();
+    }
+
+    /**
+     * Cantidad de equipos pendientes de firma
+     */
+    public function getEquiposPendientesFirmaCountAttribute()
+    {
+        return $this->flotaPatrimoniada()
+            ->where('patrimoniado', true)
+            ->whereHas('cargo', function ($q) {
+                $q->where('estado', 'pendiente');
+            })->count();
+    }
+
+    /**
+     * Estadísticas patrimoniales para esta dependencia (y opcionalmente sus hijos)
+     */
+    public function getEstadisticasPatrimoniales($incluirHijos = false)
+    {
+        $destinoIds = $incluirHijos
+            ? $this->getDestinosHijosRecursivo()
+            : collect([$this->id]);
+
+        return [
+            'patrimoniados'    => FlotaGeneral::whereIn('destino_patrimonial_id', $destinoIds)->where('patrimoniado', true)->count(),
+            'pendientes_firma' => FlotaGeneral::whereIn('destino_patrimonial_id', $destinoIds)
+                ->where('patrimoniado', true)
+                ->whereHas('cargo', fn($q) => $q->where('estado', 'pendiente'))
+                ->count(),
+            'sin_patrimoniar'  => FlotaGeneral::whereIn('destino_id', $destinoIds)->where('patrimoniado', false)->count(),
+        ];
+    }
 }

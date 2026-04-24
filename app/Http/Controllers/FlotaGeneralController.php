@@ -12,6 +12,7 @@ use App\Models\Historico;
 use App\Models\TipoMovimiento;
 use App\Models\TipoTerminal;
 use App\Models\Vehiculo;
+use App\Services\PatrimonioService;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -25,8 +26,11 @@ use Str;
 
 class FlotaGeneralController extends Controller
 {
-    function __construct()
+    protected $patrimonioService;
+
+    function __construct(PatrimonioService $patrimonioService)
     {
+        $this->patrimonioService = $patrimonioService;
         $this->middleware('permission:ver-flota|crear-flota|editar-flota|borrar-flota')->only([
             'index',
             'busquedaAvanzada',
@@ -42,7 +46,7 @@ class FlotaGeneralController extends Controller
         $texto = trim($request->get('texto')); //trim quita espacios vacios
 
         //Busqueda por ISSI, TEI, Movil o Destino
-        $flota = FlotaGeneral::with(['recurso.vehiculo'])
+        $flota = FlotaGeneral::with(['recurso.vehiculo', 'cargo:id,estado', 'destinoPatrimonial:id,nombre'])
             ->whereHas('equipo', function ($query) use ($texto) {
                 $query->where('issi', 'like', '%' . $texto . '%')
                     ->orWhere('tei', 'like', '%' . $texto . '%')
@@ -97,7 +101,8 @@ class FlotaGeneralController extends Controller
             'tipo_terminal_id' => (array) $request->input('tipo_terminal_id', []),
             'fecha_rango' => $request->get('fecha_rango'),
             'ticket_per' => $request->get('ticket_per'),
-            'observaciones' => $request->get('observaciones')
+            'observaciones' => $request->get('observaciones'),
+            'estado_patrimonial' => $request->get('estado_patrimonial')
         ];
 
 
@@ -136,6 +141,7 @@ class FlotaGeneralController extends Controller
             'fecha_rango' => $request->get('fecha_rango'),
             'ticket_per' => $request->get('ticket_per'),
             'observaciones' => $request->get('observaciones'),
+            'estado_patrimonial' => $request->get('estado_patrimonial'),
         ];
 
         return Excel::download(
@@ -155,7 +161,9 @@ class FlotaGeneralController extends Controller
                 'recurso.vehiculo:id,tipo_vehiculo,dominio,marca,modelo',
                 'destino:id,nombre,parent_id',
                 'destino.padre:id,nombre',
-                'equipo.estado:id,nombre'
+                'equipo.estado:id,nombre',
+                'cargo:id,estado',
+                'destinoPatrimonial:id,nombre'
             ]);
 
         // Filtro de texto
@@ -247,6 +255,23 @@ class FlotaGeneralController extends Controller
 
         if ($parametros['observaciones']) {
             $query->where('observaciones', 'like', '%' . $parametros['observaciones'] . '%');
+        }
+
+        if (isset($parametros['estado_patrimonial']) && $parametros['estado_patrimonial'] !== null && $parametros['estado_patrimonial'] !== '') {
+            $estadoPatrimonial = $parametros['estado_patrimonial'];
+            if ($estadoPatrimonial === 'sin_patrimoniar') {
+                $query->where('patrimoniado', false);
+            } elseif ($estadoPatrimonial === 'patrimoniado') {
+                $query->where('patrimoniado', true)
+                      ->whereHas('cargo', function ($q) {
+                          $q->where('estado', '!=', 'pendiente');
+                      });
+            } elseif ($estadoPatrimonial === 'pendiente') {
+                $query->where('patrimoniado', true)
+                      ->whereHas('cargo', function ($q) {
+                          $q->where('estado', 'pendiente');
+                      });
+            }
         }
 
         // Ejecutar consulta con paginación
@@ -839,6 +864,13 @@ class FlotaGeneralController extends Controller
             $historico->observaciones = $request->observaciones;
             $historico->save();
 
+            // Procesar patrimonio según tipo de movimiento
+            $this->patrimonioService->procesarMovimiento($flota, $id_tipo_movimiento, [
+                'destino_id'       => $request->dependencia,
+                'historico_id'     => $historico->id,
+                'fecha_asignacion' => $request->fecha_asignacion,
+            ]);
+
             DB::commit();
         } catch (\Exception $e) {
             DB::rollback();
@@ -1207,6 +1239,24 @@ class FlotaGeneralController extends Controller
                 $histAnt->save();
                 $historico->save();
                 $flota->save();
+
+                // Procesar patrimonio según tipo de movimiento
+                if (!$soloModificaHistorico) {
+                    // Para reemplazos y recambios, transferir patrimonio al equipo nuevo
+                    if ($tipo_de_mov->id == $id_reemplazo || $tipo_de_mov->id == $id_recambio) {
+                        $flotaReemplazoPatrimonio = FlotaGeneral::where('equipo_id', $request->equipoReemplazo)->first();
+                        if ($flotaReemplazoPatrimonio) {
+                            $this->patrimonioService->transferirPatrimonio($flota, $flotaReemplazoPatrimonio);
+                        }
+                    } else {
+                        $this->patrimonioService->procesarMovimiento($flota, $tipo_de_mov->id, [
+                            'destino_id'       => $request->dependencia ?? $flota->destino_id,
+                            'historico_id'     => $historico->id,
+                            'fecha_asignacion' => $request->fecha_asignacion,
+                        ]);
+                    }
+                }
+
                 //Cambiar estado al equipo e issi
                 $this->cambiarEstadoAlEquipo($request->equipo, $tipo_de_mov->id, $soloModificaHistorico, $estadoFinal);
                 if ($request->nuevoIssi) {
@@ -1357,5 +1407,33 @@ class FlotaGeneralController extends Controller
             ->orderBy('nombre', 'asc')
             ->get();
         return response()->json($recursos);
+    }
+
+    public function patrimoniarRapido(Request $request)
+    {
+        $request->validate([
+            'flota_id' => 'required|exists:flota_general,id'
+        ]);
+
+        $flota = FlotaGeneral::findOrFail($request->flota_id);
+
+        if ($flota->patrimoniado) {
+            return response()->json(['success' => false, 'message' => 'El equipo ya se encuentra patrimoniado.'], 400);
+        }
+
+        $historico = Historico::with('tipoMovimiento')
+            ->where('equipo_id', $flota->equipo_id)
+            ->orderBy('fecha_asignacion', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if (!$historico || !$historico->tipoMovimiento || $historico->tipoMovimiento->nombre !== 'Movimiento patrimonial') {
+            return response()->json(['success' => false, 'message' => 'El último movimiento del equipo no es un Movimiento Patrimonial.'], 400);
+        }
+
+        $servicioPatrimonio = new \App\Services\PatrimonioService();
+        $servicioPatrimonio->crearCargo($flota, $flota->destino_id, $historico->id, $historico->fecha_asignacion);
+
+        return response()->json(['success' => true]);
     }
 }

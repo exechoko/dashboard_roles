@@ -157,6 +157,11 @@ class SeederTablaPermisos extends Seeder
             'crear-bien',
             'editar-bien',
             'baja-bien',
+            
+            //Cargos Patrimoniales
+            'ver-patrimonio-cargos',
+            'firmar-patrimonio-cargos',
+            'gestionar-patrimonio',
 
             //Tipo Bien
             'ver-tipo-bien',

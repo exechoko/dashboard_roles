@@ -121,6 +121,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/busqueda-avanzada', [App\Http\Controllers\FlotaGeneralController::class, 'busquedaAvanzada'])->name('flota.busquedaAvanzada');
     Route::get('/busqueda-avanzada/export-excel', [App\Http\Controllers\FlotaGeneralController::class, 'exportExcelBusquedaAvanzada'])->name('flota.busquedaAvanzada.export');
     Route::post('/update-historico/{id}', [App\Http\Controllers\FlotaGeneralController::class, 'update_historico'])->name('flota.update_historico');
+    Route::post('/flota/patrimoniar-rapido', [App\Http\Controllers\FlotaGeneralController::class, 'patrimoniarRapido'])->name('flota.patrimoniar-rapido');
     Route::get('get-recursos', [App\Http\Controllers\FlotaGeneralController::class, 'getRecursosJSON'])->name('getRecursosJSON');
 
     Route::post('/get-equipos-sin-funcionar-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposSinFuncionarJSON'])->name('get-equipos-sin-funcionar-json');
@@ -385,6 +386,15 @@ Route::group(['middleware' => ['auth']], function () {
         ->name('password-vault.revoke-share');
 
     Route::prefix('patrimonio')->name('patrimonio.')->group(function () {
+        // Dashboard patrimonial
+        Route::get('dashboard', [\App\Http\Controllers\PatrimonioCargoController::class, 'dashboard'])->name('dashboard');
+
+        // Cargos patrimoniales
+        Route::get('cargos', [\App\Http\Controllers\PatrimonioCargoController::class, 'index'])->name('cargos.index');
+        Route::get('cargos/{id}', [\App\Http\Controllers\PatrimonioCargoController::class, 'show'])->name('cargos.show');
+        Route::post('cargos/{id}/firmar', [\App\Http\Controllers\PatrimonioCargoController::class, 'firmar'])->name('cargos.firmar');
+        Route::post('cargos/{id}/rechazar', [\App\Http\Controllers\PatrimonioCargoController::class, 'rechazar'])->name('cargos.rechazar');
+
         // Acciones especiales para bienes
         Route::get('bienes/{id}/baja', [PatrimonioBienController::class, 'darBaja'])->name('bienes.baja');
         Route::post('bienes/{id}/baja', [PatrimonioBienController::class, 'procesarBaja'])->name('bienes.procesarBaja');

@@ -15,6 +15,7 @@ class PatrimonioCargo extends Model
         'equipo_id',
         'destino_id',
         'historico_id',
+        'firmante_destino_id',
         'firmante_nombre',
         'firmante_cargo',
         'firmante_legajo',
@@ -55,6 +56,11 @@ class PatrimonioCargo extends Model
     public function flotaGeneral()
     {
         return $this->hasOne(FlotaGeneral::class, 'cargo_id');
+    }
+
+    public function firmanteDestino()
+    {
+        return $this->belongsTo(Destino::class, 'firmante_destino_id');
     }
 
     // ─── Scopes ─────────────────────────────────────────────
@@ -109,15 +115,16 @@ class PatrimonioCargo extends Model
     /**
      * Registrar firma del cargo patrimonial
      */
-    public function firmar($nombre, $cargo = null, $legajo = null, $observaciones = null)
+    public function firmar($nombre, $cargo = null, $legajo = null, $observaciones = null, $firmanteDestinoId = null)
     {
         $this->update([
-            'firmante_nombre' => $nombre,
-            'firmante_cargo'  => $cargo,
-            'firmante_legajo' => $legajo,
-            'estado'          => 'firmado',
-            'fecha_firma'     => now(),
-            'observaciones'   => $observaciones,
+            'firmante_nombre'     => $nombre,
+            'firmante_cargo'      => $cargo,
+            'firmante_legajo'     => $legajo,
+            'firmante_destino_id' => $firmanteDestinoId,
+            'estado'              => 'firmado',
+            'fecha_firma'         => now(),
+            'observaciones'       => $observaciones,
         ]);
 
         return $this;

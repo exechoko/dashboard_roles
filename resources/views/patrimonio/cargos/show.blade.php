@@ -74,6 +74,7 @@
                     <div class="col-md-3"><strong>Cargo:</strong><br>{{ $cargo->firmante_cargo ?? '-' }}</div>
                     <div class="col-md-3"><strong>Legajo:</strong><br>{{ $cargo->firmante_legajo ?? '-' }}</div>
                     <div class="col-md-3"><strong>Fecha:</strong><br>{{ $cargo->fecha_firma->format('d/m/Y H:i') }}</div>
+                    <div class="col-md-12 mt-3"><strong>Dependencia del firmante:</strong><br>{{ $cargo->firmanteDestino->nombre ?? '-' }}</div>
                 </div></div>
             </div>
         </div></div>
@@ -88,7 +89,17 @@
                         <form method="POST" action="{{ route('patrimonio.cargos.firmar', $cargo->id) }}">@csrf
                             <div class="form-group"><label>Nombre del Firmante <span class="text-danger">*</span></label>
                                 <input type="text" name="firmante_nombre" class="form-control @error('firmante_nombre') is-invalid @enderror" value="{{ old('firmante_nombre') }}" required>
-                                @error('firmante_nombre')<div class="invalid-feedback">{{ $message }}</div>@enderror</div>
+                                @error('firmante_nombre')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror</div>
+                            <div class="form-group"><label>Dependencia del Firmante <span class="text-danger">*</span></label>
+                                <select name="firmante_destino_id" class="form-control select2 @error('firmante_destino_id') is-invalid @enderror" required>
+                                    <option value="">Seleccione dependencia...</option>
+                                    @foreach($destinos as $dest)
+                                        <option value="{{ $dest->id }}" {{ (old('firmante_destino_id') ?? $cargo->destino_id) == $dest->id ? 'selected' : '' }}>
+                                            {{ $dest->nombre }} @if($dest->padre) (Dep: {{ $dest->padre->nombre }}) @endif
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('firmante_destino_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror</div>
                             <div class="form-group"><label>Cargo / Rango</label>
                                 <input type="text" name="firmante_cargo" class="form-control" value="{{ old('firmante_cargo') }}" placeholder="Ej: Comisario..."></div>
                             <div class="form-group"><label>Legajo</label>

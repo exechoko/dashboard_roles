@@ -85,11 +85,14 @@ class PatrimonioCargoController extends Controller
             'equipo.estado',
             'destino',
             'destino.padre',
+            'firmanteDestino',
             'historico',
             'historico.tipoMovimiento',
         ])->findOrFail($id);
 
-        return view('patrimonio.cargos.show', compact('cargo'));
+        $destinos = Destino::orderBy('nombre')->get();
+
+        return view('patrimonio.cargos.show', compact('cargo', 'destinos'));
     }
 
     /**
@@ -98,10 +101,11 @@ class PatrimonioCargoController extends Controller
     public function firmar(Request $request, $id)
     {
         $request->validate([
-            'firmante_nombre' => 'required|string|max:150',
-            'firmante_cargo'  => 'nullable|string|max:150',
-            'firmante_legajo' => 'nullable|string|max:50',
-            'observaciones'   => 'nullable|string',
+            'firmante_nombre'     => 'required|string|max:150',
+            'firmante_cargo'      => 'nullable|string|max:150',
+            'firmante_legajo'     => 'nullable|string|max:50',
+            'firmante_destino_id' => 'required|exists:destino,id',
+            'observaciones'       => 'nullable|string',
         ]);
 
         $cargo = PatrimonioCargo::findOrFail($id);
@@ -114,7 +118,8 @@ class PatrimonioCargoController extends Controller
             $request->firmante_nombre,
             $request->firmante_cargo,
             $request->firmante_legajo,
-            $request->observaciones
+            $request->observaciones,
+            $request->firmante_destino_id
         );
 
         return redirect()->route('patrimonio.cargos.show', $cargo->id)

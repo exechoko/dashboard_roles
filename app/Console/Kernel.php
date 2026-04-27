@@ -89,7 +89,7 @@ class Kernel extends ConsoleKernel
                 ->count('direccion');
             $cacheadas = \DB::table('geocodificacion_directa')->count();
             \Illuminate\Support\Facades\Cache::put('dashboard_geo_counts', [$total, $cacheadas], 360);
-        })->everyFiveMinutes()->withoutOverlapping();
+        })->name('cache-dashboard-geo-counts')->everyFiveMinutes()->withoutOverlapping();
     }
 
     /**

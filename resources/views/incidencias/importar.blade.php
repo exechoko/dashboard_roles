@@ -50,8 +50,13 @@
                                     <option value="preventivos">Preventivos</option>
                                     <option value="telecom">Telecom</option>
                                     <option value="ute">U.T.E.</option>
+                                    <option value="persistentes_tabla">Persistentes (Tabla Ponderación)</option>
                                 </select>
-                                <small class="text-muted">La hoja Patagonia contiene todas las incidencias facturables del período.</small>
+                                <small class="text-muted d-block">
+                                    La hoja <strong>Patagonia</strong> contiene las incidencias facturables del período actual.<br>
+                                    <strong>Persistentes (Tabla Ponderación)</strong>: importa solo las filas sin F.Sol / F.FIN del archivo
+                                    <em>01-Tabla Ponderación.xlsm</em>. A cada incidencia se le asigna <code>minutos_fallo = período completo ({{ number_format($periodo->minutos_totales, 0, ',', '.') }})</code>.
+                                </small>
                             </div>
 
                             <div class="alert alert-info small">

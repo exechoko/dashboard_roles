@@ -37,9 +37,19 @@
             <a href="{{ route('incidencias.incidencia.create', $periodo->id) }}" class="btn btn-primary btn-sm mr-1">
                 <i class="fas fa-plus"></i> Agregar Incidencia
             </a>
-            <a href="{{ route('incidencias.periodos.importar', $periodo->id) }}" class="btn btn-info btn-sm">
+            <a href="{{ route('incidencias.periodos.importar', $periodo->id) }}" class="btn btn-info btn-sm mr-1">
                 <i class="fas fa-file-import"></i> Importar Excel
             </a>
+            @if($periodo->numero > 1)
+            <form action="{{ route('incidencias.periodos.arrastrar', $periodo->id) }}" method="POST"
+                  class="d-inline"
+                  onsubmit="return confirm('¿Traer las incidencias persistentes del período P{{ str_pad($periodo->numero - 1, 2, '0', STR_PAD_LEFT) }} que siguen sin resolverse? Se crearán nuevas incidencias en este período con minutos_fallo = {{ number_format($periodo->minutos_totales, 0, ',', '.') }} (período completo).');">
+                @csrf
+                <button type="submit" class="btn btn-warning btn-sm">
+                    <i class="fas fa-angle-double-right"></i> Arrastrar persistentes de P{{ str_pad($periodo->numero - 1, 2, '0', STR_PAD_LEFT) }}
+                </button>
+            </form>
+            @endif
             @endcan
         </div>
     </div>

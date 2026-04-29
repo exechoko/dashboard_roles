@@ -321,37 +321,22 @@ class CamaraController extends Controller
         $user = env('CAMARA_USER');
         $pass = env('CAMARA_PASS');
 
-        $urls = [
-            "http://{$ip}/cgi-bin/snapshot.cgi",
-            "http://{$ip}/cgi-bin/snapshot.cgi?channel=1",
-        ];
+        try {
+            $response = Http::withOptions([
+                'auth'            => [$user, $pass, 'digest'],
+                'timeout'         => 6,
+                'connect_timeout' => 3,
+                'verify'          => false,
+            ])->get("http://{$ip}/cgi-bin/snapshot.cgi");
 
-        // Intentar primero con Digest (Dahua por defecto) y luego Basic
-        $authModes = [
-            ['auth' => [$user, $pass, 'digest']],
-            ['auth' => [$user, $pass]],
-        ];
-
-        foreach ($urls as $url) {
-            foreach ($authModes as $authOpts) {
-                try {
-                    $response = Http::withOptions(array_merge($authOpts, [
-                        'timeout' => 6,
-                        'connect_timeout' => 3,
-                        'verify' => false,
-                    ]))->get($url);
-
-                    $contentType = $response->header('Content-Type') ?? '';
-                    if ($response->successful() && str_contains($contentType, 'image')) {
-                        return response($response->body(), 200)
-                            ->header('Content-Type', 'image/jpeg')
-                            ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
-                            ->header('Pragma', 'no-cache');
-                    }
-                } catch (\Exception $e) {
-                    // Intentar siguiente combinación
-                }
+            if ($response->successful() && str_contains($response->header('Content-Type') ?? '', 'image')) {
+                return response($response->body(), 200)
+                    ->header('Content-Type', 'image/jpeg')
+                    ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+                    ->header('Pragma', 'no-cache');
             }
+        } catch (\Exception $e) {
+            // Cámara no alcanzable
         }
 
         return response('', 503);

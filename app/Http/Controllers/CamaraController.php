@@ -22,6 +22,7 @@ class CamaraController extends Controller
         $this->middleware('permission:crear-camara', ['only' => ['create', 'store']]);
         $this->middleware('permission:editar-camara', ['only' => ['edit', 'update']]);
         $this->middleware('permission:borrar-camara', ['only' => ['destroy']]);
+        $this->middleware('permission:ver-stream-camara', ['only' => ['snapshot']]);
     }
 
     public function index(Request $request)
@@ -306,6 +307,103 @@ class CamaraController extends Controller
         $camara = Camara::find($id);
         $camara->delete();
         return redirect()->route('camaras.index');
+    }
+
+    public function snapshot($id)
+    {
+        $camara = Camara::findOrFail($id);
+        $ip = $camara->ip;
+
+        if (empty($ip)) {
+            return response('', 204);
+        }
+
+        $user = env('CAMARA_USER');
+        $pass = env('CAMARA_PASS');
+
+        $urls = [
+            "http://{$ip}/cgi-bin/snapshot.cgi",
+            "http://{$ip}/cgi-bin/snapshot.cgi?channel=1",
+        ];
+
+        // Intentar primero con Digest (Dahua por defecto) y luego Basic
+        $authModes = [
+            ['auth' => [$user, $pass, 'digest']],
+            ['auth' => [$user, $pass]],
+        ];
+
+        foreach ($urls as $url) {
+            foreach ($authModes as $authOpts) {
+                try {
+                    $response = Http::withOptions(array_merge($authOpts, [
+                        'timeout' => 6,
+                        'connect_timeout' => 3,
+                        'verify' => false,
+                    ]))->get($url);
+
+                    $contentType = $response->header('Content-Type') ?? '';
+                    if ($response->successful() && str_contains($contentType, 'image')) {
+                        return response($response->body(), 200)
+                            ->header('Content-Type', 'image/jpeg')
+                            ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+                            ->header('Pragma', 'no-cache');
+                    }
+                } catch (\Exception $e) {
+                    // Intentar siguiente combinación
+                }
+            }
+        }
+
+        return response('', 503);
+    }
+
+    public function testConexion($id)
+    {
+        $camara = Camara::findOrFail($id);
+        $ip = $camara->ip;
+        $user = env('CAMARA_USER');
+        $pass = env('CAMARA_PASS');
+        $resultado = [];
+
+        if (empty($ip)) {
+            return response()->json(['error' => 'IP vacía en base de datos']);
+        }
+
+        $urls = [
+            "http://{$ip}/cgi-bin/snapshot.cgi",
+            "http://{$ip}/cgi-bin/snapshot.cgi?channel=1",
+        ];
+        $authModes = [
+            'digest' => ['auth' => [$user, $pass, 'digest']],
+            'basic'  => ['auth' => [$user, $pass]],
+        ];
+
+        foreach ($urls as $url) {
+            foreach ($authModes as $authName => $authOpts) {
+                $key = "{$url} [{$authName}]";
+                try {
+                    $response = Http::withOptions(array_merge($authOpts, [
+                        'timeout' => 6,
+                        'connect_timeout' => 3,
+                        'verify' => false,
+                    ]))->get($url);
+                    $resultado[$key] = [
+                        'status' => $response->status(),
+                        'content_type' => $response->header('Content-Type'),
+                        'body_length' => strlen($response->body()),
+                        'ok' => $response->successful() && str_contains($response->header('Content-Type') ?? '', 'image'),
+                    ];
+                } catch (\Exception $e) {
+                    $resultado[$key] = ['error' => $e->getMessage()];
+                }
+            }
+        }
+
+        return response()->json([
+            'camara' => $camara->nombre,
+            'ip' => $ip,
+            'pruebas' => $resultado,
+        ]);
     }
 
     public function reiniciar($id)

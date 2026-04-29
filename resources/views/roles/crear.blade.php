@@ -86,6 +86,7 @@
                                                     ],
                                                     'Cámaras' => [
                                                         'camara',
+                                                        'stream-camara',
                                                         'tipo-camara',
                                                         'sitio'
                                                     ],

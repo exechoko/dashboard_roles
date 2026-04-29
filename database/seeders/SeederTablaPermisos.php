@@ -69,6 +69,7 @@ class SeederTablaPermisos extends Seeder
             'crear-camara',
             'editar-camara',
             'borrar-camara',
+            'ver-stream-camara',
 
             //tabla tipo camara
             'ver-tipo-camara',

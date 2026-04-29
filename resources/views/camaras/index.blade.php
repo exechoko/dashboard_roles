@@ -108,6 +108,14 @@
                                                             </form>
                                                         @endcan
 
+                                                        {{-- Botón de vista en vivo --}}
+                                                        @can('ver-stream-camara')
+                                                            <button class="btn btn-success" title="Ver en Vivo"
+                                                                onclick="openStream({{ $camara->id }}, '{{ addslashes($camara->nombre) }}')">
+                                                                <i class="fas fa-video"></i>
+                                                            </button>
+                                                        @endcan
+
                                                         {{-- Botón de detalles --}}
                                                         @can('ver-camara')
                                                             <a class="btn btn-warning" href="#" data-toggle="modal"
@@ -155,11 +163,75 @@
         </div>
     </section>
 
+    {{-- Modal de visualización en vivo --}}
+    @can('ver-stream-camara')
+    <div class="modal fade" id="modalStreamCamara" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title"><i class="fas fa-video mr-2"></i><span id="streamCamaraTitle">Vista en Vivo</span></h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body text-center p-2" style="background:#111;">
+                    <img id="streamImage" src="" alt="Cámara en Vivo"
+                        style="max-width:100%; max-height:500px; border-radius:4px;"
+                        onerror="this.src='/img/no_signal.png'; this.onerror=null;">
+                    <div id="streamError" class="text-white mt-2" style="display:none;">
+                        <i class="fas fa-exclamation-triangle text-warning mr-1"></i> Cámara no disponible
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <small class="text-muted"><i class="fas fa-circle text-success mr-1"></i> Actualizando cada 300ms</small>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endcan
+
     {{-- Script para abrir nueva pestaña cuando se reinicia cámara --}}
     @if(session('open_url'))
         <script>
-            // Abrir nueva pestaña con la URL de reinicio
             window.open('{{ session('open_url') }}', '_blank');
         </script>
     @endif
+
+    @can('ver-stream-camara')
+    <script>
+        var streamInterval = null;
+
+        function openStream(camaraId, cameraNombre) {
+            document.getElementById('streamCamaraTitle').textContent = cameraNombre + ' — Vista en Vivo';
+            document.getElementById('streamError').style.display = 'none';
+
+            var img = document.getElementById('streamImage');
+            img.src = '';
+
+            $('#modalStreamCamara').modal('show');
+
+            function refreshFrame() {
+                var newSrc = '/camaras/' + camaraId + '/snapshot?t=' + Date.now();
+                var testImg = new Image();
+                testImg.onload = function() {
+                    img.src = newSrc;
+                    document.getElementById('streamError').style.display = 'none';
+                };
+                testImg.onerror = function() {
+                    document.getElementById('streamError').style.display = 'block';
+                };
+                testImg.src = newSrc;
+            }
+
+            refreshFrame();
+            streamInterval = setInterval(refreshFrame, 300);
+        }
+
+        $('#modalStreamCamara').on('hidden.bs.modal', function () {
+            clearInterval(streamInterval);
+            document.getElementById('streamImage').src = '';
+        });
+    </script>
+    @endcan
 @endsection

@@ -6,6 +6,43 @@ function editCamera(camaraId) {
     @endcan
 }
 
+@can('ver-stream-camara')
+var mapaStreamInterval = null;
+
+function openCameraStream(camaraId, cameraNombre) {
+    document.getElementById('mapaStreamTitle').textContent = cameraNombre + ' — Vista en Vivo';
+    document.getElementById('mapaStreamError').style.display = 'none';
+
+    var img = document.getElementById('mapaStreamImage');
+    img.src = '';
+
+    var panel = document.getElementById('mapaStreamPanel');
+    panel.style.display = 'flex';
+
+    function refreshFrame() {
+        var newSrc = '/camaras/' + camaraId + '/snapshot?t=' + Date.now();
+        var testImg = new Image();
+        testImg.onload = function() {
+            img.src = newSrc;
+            document.getElementById('mapaStreamError').style.display = 'none';
+        };
+        testImg.onerror = function() {
+            document.getElementById('mapaStreamError').style.display = 'block';
+        };
+        testImg.src = newSrc;
+    }
+
+    refreshFrame();
+    mapaStreamInterval = setInterval(refreshFrame, 300);
+}
+
+function closeCameraStream() {
+    clearInterval(mapaStreamInterval);
+    document.getElementById('mapaStreamImage').src = '';
+    document.getElementById('mapaStreamPanel').style.display = 'none';
+}
+@endcan
+
 function openGoogleMaps(latitud, longitud) {
     // Abre Google Maps en una nueva pestaña con la ubicación especificada
     window.open(`https://www.google.com/maps?q=${latitud},${longitud}`, '_blank');
@@ -776,6 +813,9 @@ function loadCameraMarkers() {
                     <button class="btn btn-icon btn-primary" title="Editar cámara" onclick="editCamera(${numero})"><i class="fas fa-edit"></i></button>
                     <button class="btn btn-icon btn-info" title="Abrir en Google Maps" onclick="openGoogleMaps(${latitud}, ${longitud})"><i class="fas fa-globe-americas"></i></button>
                     <button class="btn btn-icon btn-warning" title="Abrir en Street View" onclick="openStreetView(${latitud}, ${longitud})"><i class="fas fa-street-view"></i></button>
+                    @can('ver-stream-camara')
+                    <button class="btn btn-icon btn-success" title="Ver en Vivo" onclick="openCameraStream(${numero}, '{{ $marcador['titulo'] }}')"><i class="fas fa-video"></i></button>
+                    @endcan
                 </div>
             </div>
         `);

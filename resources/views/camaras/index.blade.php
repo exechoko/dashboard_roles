@@ -190,13 +190,23 @@
         </div>
     </div>
 
+    <style>
+        /* En móvil los canales se apilan verticalmente */
+        @media (max-width: 575.98px) {
+            .stream-channel-col { flex: 1 1 100% !important; }
+        }
+    </style>
+
     <script>
         function openStream(camaraId, cameraNombre, canales) {
             canales = parseInt(canales) || 1;
 
+            var isMobile  = window.innerWidth < 576;
+            var sideBySide = canales >= 2 && !isMobile;
+
             // Ajustar ancho del modal
             var dialog = document.getElementById('streamModalDialog');
-            dialog.className = 'modal-dialog modal-dialog-centered ' + (canales >= 2 ? 'modal-xl' : 'modal-lg');
+            dialog.className = 'modal-dialog modal-dialog-centered ' + (sideBySide ? 'modal-xl' : 'modal-lg');
 
             document.getElementById('streamCamaraTitle').textContent =
                 cameraNombre + (canales > 1 ? ' — ' + canales + ' canales' : ' — Vista en Vivo');
@@ -206,7 +216,8 @@
 
             for (var ch = 1; ch <= canales; ch++) {
                 var col = document.createElement('div');
-                col.style.cssText = 'flex:1 1 ' + (canales >= 2 ? 'calc(50% - 2px)' : '100%') + '; min-width:0;';
+                col.className = 'stream-channel-col';
+                col.style.cssText = 'flex:1 1 ' + (sideBySide ? 'calc(50% - 2px)' : '100%') + '; min-width:0;';
 
                 if (canales > 1) {
                     var lbl = document.createElement('div');
@@ -224,13 +235,13 @@
                 wrap.appendChild(spinner);
 
                 var img = document.createElement('img');
-                img.src    = '/camaras/' + camaraId + '/stream?channel=' + ch;
-                img.alt    = 'Canal ' + ch;
+                img.src   = '/camaras/' + camaraId + '/stream?channel=' + ch;
+                img.alt   = 'Canal ' + ch;
                 img.style.cssText = 'width:100%; display:block; opacity:0; transition:opacity .2s;';
-                img.onload  = function(s) { return function() { s.style.opacity = '1'; s.previousSibling.style.display = 'none'; }; }(img);
-                img.onerror = function(s, sp) { return function() {
-                    sp.innerHTML = '<div style="text-align:center;padding:20px;"><i class="fas fa-exclamation-triangle text-warning fa-2x"></i><br><small style="color:#aaa;">Sin señal</small></div>';
-                }; }(img, spinner);
+                img.onload  = function(i, s) { return function() { i.style.opacity='1'; s.style.display='none'; }; }(img, spinner);
+                img.onerror = function(s)    { return function() {
+                    s.innerHTML = '<div style="text-align:center;padding:20px 0;"><i class="fas fa-exclamation-triangle text-warning fa-2x"></i><br><small style="color:#aaa;">Sin señal</small></div>';
+                }; }(spinner);
                 wrap.appendChild(img);
                 col.appendChild(wrap);
                 container.appendChild(col);

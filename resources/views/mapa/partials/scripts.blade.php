@@ -10,19 +10,22 @@ function editCamera(camaraId) {
 function openCameraStream(camaraId, cameraNombre, canales) {
     canales = parseInt(canales) || 1;
 
+    var isMobile   = window.innerWidth < 576;
+    var sideBySide = canales >= 2 && !isMobile;
+
     var panel = document.getElementById('mapaStreamPanel');
-    panel.style.maxWidth = canales >= 2 ? '900px' : '480px';
+    panel.style.maxWidth = sideBySide ? '860px' : '480px';
 
     document.getElementById('mapaStreamTitle').textContent =
         cameraNombre + (canales > 1 ? ' (' + canales + ' canales)' : ' — En Vivo');
 
     var container = document.getElementById('mapaStreamContainer');
     container.innerHTML = '';
-    container.style.cssText = 'display:flex; gap:4px; width:100%;';
+    container.style.cssText = 'display:flex; flex-wrap:wrap; gap:4px; width:100%;';
 
     for (var ch = 1; ch <= canales; ch++) {
         var col = document.createElement('div');
-        col.style.cssText = 'flex:1 1 ' + (canales >= 2 ? 'calc(50% - 2px)' : '100%') + '; min-width:0;';
+        col.style.cssText = 'flex:1 1 ' + (sideBySide ? 'calc(50% - 2px)' : '100%') + '; min-width:0;';
 
         if (canales > 1) {
             var lbl = document.createElement('div');
@@ -42,9 +45,9 @@ function openCameraStream(camaraId, cameraNombre, canales) {
         var img = document.createElement('img');
         img.src   = '/camaras/' + camaraId + '/stream?channel=' + ch;
         img.alt   = 'Canal ' + ch;
-        img.style.cssText = 'width:100%; display:block; max-height:280px; object-fit:contain; opacity:0; transition:opacity .2s;';
+        img.style.cssText = 'width:100%; display:block; max-height:' + (isMobile ? '45vw' : '280px') + '; object-fit:contain; opacity:0; transition:opacity .2s;';
         img.onload  = function(i, s) { return function() { i.style.opacity = '1'; s.style.display = 'none'; }; }(img, spinner);
-        img.onerror = function(s) { return function() {
+        img.onerror = function(s)    { return function() {
             s.innerHTML = '<small style="color:#ffc107;padding:10px;display:block;text-align:center;"><i class="fas fa-exclamation-triangle"></i><br>Sin señal</small>';
         }; }(spinner);
         wrap.appendChild(img);

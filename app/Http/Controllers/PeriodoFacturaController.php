@@ -215,9 +215,13 @@ class PeriodoFacturaController extends Controller
             );
             Excel::import($import, $request->file('archivo'));
 
+            $sufijo = $import->omitidosNoAplica > 0
+                ? " ({$import->omitidosNoAplica} sin aplica multa)"
+                : '';
+
             $msg = "Importación completa ({$nombreHoja}): {$import->importados} importadas "
-                 . "({$import->transitorias} transitorias, {$import->persistentes} persistentes), "
-                 . "{$import->omitidos} omitidas.";
+                 . "({$import->transitorias} transitorias, {$import->persistentes} persistentes)"
+                 . $sufijo . '.';
 
             return redirect()->route('incidencias.periodos.show', $periodo->id)
                 ->with('success', $msg);

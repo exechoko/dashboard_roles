@@ -20,10 +20,11 @@ class Incidencias911Import implements WithMultipleSheets, ToModel, WithStartRow,
     protected ?Carbon $fechaFinPeriodo;
     protected string  $nombreHojaExcel;
 
-    public int $importados   = 0;
-    public int $omitidos     = 0;
-    public int $persistentes = 0;
-    public int $transitorias = 0;
+    public int $importados        = 0;
+    public int $omitidos          = 0;
+    public int $omitidosNoAplica  = 0;
+    public int $persistentes      = 0;
+    public int $transitorias      = 0;
 
     protected int $minutosPeriodo = 0;
 
@@ -109,6 +110,15 @@ class Incidencias911Import implements WithMultipleSheets, ToModel, WithStartRow,
             return null;
         }
 
+        // Aplica al cálculo de multa (columna "Apl." = row[10])
+        $aplicaRaw = strtolower(trim((string)($row[10] ?? 'si')));
+        $aplica    = !in_array($aplicaRaw, ['no', 'false', '0', '']);
+        if (!$aplica) {
+            $this->omitidos++;
+            $this->omitidosNoAplica++;
+            return null;
+        }
+
         // Incumbencia (subsistema afectado)
         $incumbencia = trim((string)($row[16] ?? ''));
 
@@ -151,11 +161,6 @@ class Incidencias911Import implements WithMultipleSheets, ToModel, WithStartRow,
         };
 
         $estado = strtolower(trim((string)($row[12] ?? 'resuelto')));
-
-        // Aplica al cálculo de multa (columna "Apl." = row[10])
-        // El Excel usa "Si"/"No", "X"/"", TRUE/FALSE, 1/0, etc.
-        $aplicaRaw   = strtolower(trim((string)($row[10] ?? 'si')));
-        $aplica      = !in_array($aplicaRaw, ['no', 'false', '0', '']);
 
         if ($tipoIncidencia === 'persistente') {
             $this->persistentes++;

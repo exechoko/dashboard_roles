@@ -239,13 +239,13 @@
                                             @foreach($imagenes as $imagen)
                                                 <div class="col-md-4 mb-3">
                                                     <div class="card">
-                                                        <img src="{{ asset('storage/' . str_replace('anexos/', '', $imagen)) }}"
+                                                        <img src="{{ asset('storage/' . $imagen) }}"
                                                             class="card-img-top"
                                                             alt="Imagen del bien"
                                                             style="max-height: 300px; object-fit: cover; cursor: pointer;"
-                                                            onclick="openImageModal('{{ asset('storage/' . str_replace('anexos/', '', $imagen)) }}')">
+                                                            onclick="openImageModal('{{ asset('storage/' . $imagen) }}')">
                                                         <div class="card-body text-center">
-                                                            <a href="{{ asset('storage/' . str_replace('anexos/', '', $imagen)) }}"
+                                                            <a href="{{ asset('storage/' . $imagen) }}"
                                                             class="btn btn-sm btn-primary"
                                                             download>
                                                                 <i class="fas fa-download"></i> Descargar
@@ -276,7 +276,7 @@
                                                     ];
                                                     $icono = $iconos[$extension] ?? 'fa-file';
                                                 @endphp
-                                                <a href="{{ asset('storage/' . str_replace('anexos/', '', $archivo)) }}"
+                                                <a href="{{ asset('storage/' . $archivo) }}"
                                                 class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
                                                 download>
                                                     <span>

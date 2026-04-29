@@ -607,7 +607,7 @@ class PeriodoFacturaController extends Controller
             'estado'               => 'nullable|string|max:50',
             'observaciones'        => 'nullable|string',
         ]);
-        $data['aplica_calculo'] = $request->boolean('aplica_calculo', true);
+        $data['aplica_calculo'] = $request->boolean('aplica_calculo');
         return $data;
     }
 }

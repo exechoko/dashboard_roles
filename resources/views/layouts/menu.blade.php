@@ -174,29 +174,29 @@
 @endcan
 
 @can('ver-menu-tareas')
-<li class="dropdown {{ request()->is('tareas*') ? 'active' : '' }}">
-    <a class="nav-link has-dropdown" href="#">
-        <i class="fas fa-tasks"></i><span>Tareas</span>
-    </a>
+    <li class="dropdown {{ request()->is('tareas*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-tasks"></i><span>Tareas</span>
+        </a>
 
-    <ul class="dropdown-menu">
+        <ul class="dropdown-menu">
 
-        {{-- TAREAS --}}
-        <li class="{{ request()->is('tareas') ? 'active' : '' }}">
-            <a class="nav-link" href="{{ route('tareas.index') }}">
-                <i class="fas fa-list"></i><span>Tareas</span>
-            </a>
-        </li>
-        @can('ver-personal')
-            {{-- PERSONAL EFECTIVO --}}
-            <li class="{{ request()->is('tareas/personal-efectivo*') ? 'active' : '' }}">
-                <a class="nav-link" href="{{ route('personal.efectivo.index') }}">
-                    <i class="fas fa-users"></i><span>Personal Efectivo</span>
+            {{-- TAREAS --}}
+            <li class="{{ request()->is('tareas') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('tareas.index') }}">
+                    <i class="fas fa-list"></i><span>Tareas</span>
                 </a>
             </li>
-        @endcan
-    </ul>
-</li>
+            @can('ver-personal')
+                {{-- PERSONAL EFECTIVO --}}
+                <li class="{{ request()->is('tareas/personal-efectivo*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('personal.efectivo.index') }}">
+                        <i class="fas fa-users"></i><span>Personal Efectivo</span>
+                    </a>
+                </li>
+            @endcan
+        </ul>
+    </li>
 @endcan
 
 @can('ver-menu-dependencias')

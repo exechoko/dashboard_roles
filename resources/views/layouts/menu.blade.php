@@ -136,6 +136,23 @@
     </li>
 @endcan
 
+@can('ver-menu-incidencias-911')
+    <li class="dropdown {{ request()->is('incidencias*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-chart-area"></i><span>Análisis 911</span>
+        </a>
+        <ul class="dropdown-menu">
+            @can('ver-periodo-911')
+            <li class="{{ request()->is('incidencias/periodos*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('incidencias.periodos.index') }}">
+                    <i class="fas fa-calendar-alt"></i><span>Períodos</span>
+                </a>
+            </li>
+            @endcan
+        </ul>
+    </li>
+@endcan
+
 @can('ver-menu-patrimonio')
     <li class="dropdown {{ request()->is('patrimonio*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">

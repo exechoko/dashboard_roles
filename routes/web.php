@@ -460,6 +460,35 @@ Route::group(['middleware' => ['auth']], function () {
         Route::delete('/eliminar/{id}', [ManualesController::class, 'destroy'])->name('manuales.destroy');
     });
 
+    // ── Análisis de Períodos 911 ──────────────────────────────────────────────
+    Route::prefix('incidencias')->name('incidencias.')->group(function () {
+        // Períodos
+        Route::prefix('periodos')->name('periodos.')->group(function () {
+            Route::get('/',                   [App\Http\Controllers\PeriodoFacturaController::class, 'index'])->name('index');
+            Route::get('/create',             [App\Http\Controllers\PeriodoFacturaController::class, 'create'])->name('create');
+            Route::post('/',                  [App\Http\Controllers\PeriodoFacturaController::class, 'store'])->name('store');
+            Route::get('/{id}',               [App\Http\Controllers\PeriodoFacturaController::class, 'show'])->name('show');
+            Route::get('/{id}/edit',          [App\Http\Controllers\PeriodoFacturaController::class, 'edit'])->name('edit');
+            Route::put('/{id}',               [App\Http\Controllers\PeriodoFacturaController::class, 'update'])->name('update');
+            Route::delete('/{id}',            [App\Http\Controllers\PeriodoFacturaController::class, 'destroy'])->name('destroy');
+            Route::get('/{id}/importar',      [App\Http\Controllers\PeriodoFacturaController::class, 'importarForm'])->name('importar');
+            Route::post('/{id}/importar',     [App\Http\Controllers\PeriodoFacturaController::class, 'importar'])->name('importar.post');
+            Route::get('/{id}/informe',           [App\Http\Controllers\PeriodoFacturaController::class, 'generarInforme'])->name('informe');
+            Route::get('/{id}/recibo',            [App\Http\Controllers\PeriodoFacturaController::class, 'generarRecibo'])->name('recibo');
+            Route::post('/{id}/arrastrar',        [App\Http\Controllers\PeriodoFacturaController::class, 'arrastarPersistentes'])->name('arrastrar');
+        });
+        // Incidencias dentro de un período
+        Route::prefix('periodos/{periodoId}/incidencias')->name('incidencia.')->group(function () {
+            Route::get('/create',             [App\Http\Controllers\PeriodoFacturaController::class, 'incidenciaCreate'])->name('create');
+            Route::post('/',                  [App\Http\Controllers\PeriodoFacturaController::class, 'incidenciaStore'])->name('store');
+            Route::get('/{incidenciaId}/edit',[App\Http\Controllers\PeriodoFacturaController::class, 'incidenciaEdit'])->name('edit');
+            Route::put('/{incidenciaId}',     [App\Http\Controllers\PeriodoFacturaController::class, 'incidenciaUpdate'])->name('update');
+            Route::delete('/{incidenciaId}',  [App\Http\Controllers\PeriodoFacturaController::class, 'incidenciaDestroy'])->name('destroy');
+        });
+        // API
+        Route::get('/api/ponderacion',        [App\Http\Controllers\PeriodoFacturaController::class, 'apiPonderacion'])->name('api.ponderacion');
+    });
+
     //Optimizar sistema
     Route::get('optimizar', function () {
         Artisan::call('optimize:clear');

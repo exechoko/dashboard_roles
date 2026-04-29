@@ -144,26 +144,16 @@
     @can('ver-stream-camara')
     <div id="mapaStreamPanel" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
         z-index:20000; background:#111; border:2px solid #28a745; border-radius:8px; padding:8px;
-        flex-direction:column; align-items:center; min-width:320px; max-width:640px; box-shadow:0 4px 20px rgba(0,0,0,0.7);">
-        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:6px;">
-            <span id="mapaStreamTitle" style="color:#fff; font-weight:600; font-size:14px;">Vista en Vivo</span>
-            <button onclick="closeCameraStream()" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer; line-height:1;">&times;</button>
+        flex-direction:column; align-items:stretch; width:calc(100% - 40px); max-width:480px;
+        box-shadow:0 4px 20px rgba(0,0,0,0.7);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span id="mapaStreamTitle" style="color:#fff; font-weight:600; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Vista en Vivo</span>
+            <button onclick="closeCameraStream()" style="background:none; border:none; color:#aaa; font-size:20px; cursor:pointer; line-height:1; flex-shrink:0; margin-left:8px;">&times;</button>
         </div>
-        <div id="mapaStreamLoading" style="color:#fff; padding:30px 60px; text-align:center;">
-            <i class="fas fa-spinner fa-spin fa-2x"></i><br>
-            <small style="margin-top:6px; display:block;">Conectando...</small>
-        </div>
-        <img id="mapaStreamImage" src="" alt="Cámara en Vivo"
-            style="max-width:100%; max-height:360px; border-radius:4px; display:none;"
-            onload="document.getElementById('mapaStreamLoading').style.display='none'; this.style.display='block';"
-            onerror="document.getElementById('mapaStreamLoading').style.display='none';
-                     document.getElementById('mapaStreamError').style.display='block';
-                     this.style.display='none';">
-        <div id="mapaStreamError" style="display:none; color:#ffc107; padding:20px; text-align:center; font-size:13px;">
-            <i class="fas fa-exclamation-triangle fa-2x"></i><br>
-            Cámara no disponible
-        </div>
-        <small style="color:#6c757d; margin-top:4px;"><i class="fas fa-circle" style="color:#28a745;"></i> Stream en vivo (MJPEG)</small>
+        <div id="mapaStreamContainer"></div>
+        <small style="color:#555; margin-top:5px; font-size:10px; text-align:center;">
+            <i class="fas fa-circle" style="color:#28a745; font-size:7px;"></i> MJPEG en vivo
+        </small>
     </div>
     @endcan
 

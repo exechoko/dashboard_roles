@@ -353,8 +353,9 @@ class CamaraController extends Controller
 
         $user        = env('CAMARA_USER');
         $pass        = env('CAMARA_PASS');
-        $mjpegUrl    = "http://{$ip}/cgi-bin/mjpg/video.cgi?channel=1&subtype=1";
-        $snapshotUrl = "http://{$ip}/cgi-bin/snapshot.cgi";
+        $channel     = max(1, intval(request()->get('channel', 1)));
+        $mjpegUrl    = "http://{$ip}/cgi-bin/mjpg/video.cgi?channel={$channel}&subtype=1";
+        $snapshotUrl = "http://{$ip}/cgi-bin/snapshot.cgi?channel={$channel}";
 
         // Sondear el endpoint MJPEG para obtener el Content-Type real (incluye boundary)
         $mjpegContentType = null;

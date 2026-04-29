@@ -111,7 +111,7 @@
                                                         {{-- Botón de vista en vivo --}}
                                                         @can('ver-stream-camara')
                                                             <button class="btn btn-success" title="Ver en Vivo"
-                                                                onclick="openStream({{ $camara->id }}, '{{ addslashes($camara->nombre) }}')">
+                                                                onclick="openStream({{ $camara->id }}, '{{ addslashes($camara->nombre) }}', {{ $camara->tipoCamara->canales ?? 1 }})">
                                                                 <i class="fas fa-video"></i>
                                                             </button>
                                                         @endcan
@@ -166,57 +166,81 @@
     {{-- Modal de visualización en vivo --}}
     @can('ver-stream-camara')
     <div class="modal fade" id="modalStreamCamara" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
-                <div class="modal-header bg-success text-white">
-                    <h5 class="modal-title"><i class="fas fa-video mr-2"></i><span id="streamCamaraTitle">Vista en Vivo</span></h5>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
-                        <span aria-hidden="true">&times;</span>
+        <div class="modal-dialog modal-dialog-centered" id="streamModalDialog" role="document">
+            <div class="modal-content" style="background:#1a1a1a; border:1px solid #28a745;">
+                <div class="modal-header py-2" style="background:#111; border-bottom:1px solid #28a745;">
+                    <h6 class="modal-title text-white mb-0">
+                        <i class="fas fa-video text-success mr-2"></i>
+                        <span id="streamCamaraTitle">Vista en Vivo</span>
+                    </h6>
+                    <button type="button" class="close text-white" data-dismiss="modal" style="opacity:.8;">
+                        <span>&times;</span>
                     </button>
                 </div>
-                <div class="modal-body text-center p-2" style="background:#111; min-height:200px;">
-                    <div id="streamLoading" style="color:#fff; padding:40px 0;">
-                        <i class="fas fa-spinner fa-spin fa-2x"></i><br>
-                        <small class="mt-2 d-block">Conectando...</small>
-                    </div>
-                    <img id="streamImage" src="" alt="Cámara en Vivo"
-                        style="max-width:100%; max-height:500px; border-radius:4px; display:none;"
-                        onload="document.getElementById('streamLoading').style.display='none'; this.style.display='block';"
-                        onerror="document.getElementById('streamLoading').style.display='none';
-                                 document.getElementById('streamError').style.display='block';
-                                 this.style.display='none';">
-                    <div id="streamError" style="display:none; color:#ffc107; padding:20px;">
-                        <i class="fas fa-exclamation-triangle fa-2x"></i><br>
-                        <span>Cámara no disponible</span>
-                    </div>
+                <div class="modal-body p-2" style="background:#111;">
+                    <div id="streamChannelsContainer" class="d-flex flex-wrap" style="gap:4px;"></div>
                 </div>
-                <div class="modal-footer justify-content-between">
-                    <small class="text-muted"><i class="fas fa-circle text-success mr-1"></i> Stream en vivo (MJPEG)</small>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <div class="modal-footer py-1" style="background:#111; border-top:1px solid #333;">
+                    <small class="text-muted mr-auto">
+                        <i class="fas fa-circle text-success mr-1" style="font-size:8px;"></i> MJPEG en vivo
+                    </small>
+                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        function openStream(camaraId, cameraNombre) {
-            document.getElementById('streamCamaraTitle').textContent = cameraNombre + ' — Vista en Vivo';
-            document.getElementById('streamLoading').style.display = 'block';
-            document.getElementById('streamError').style.display = 'none';
+        function openStream(camaraId, cameraNombre, canales) {
+            canales = parseInt(canales) || 1;
 
-            var img = document.getElementById('streamImage');
-            img.style.display = 'none';
-            img.src = '/camaras/' + camaraId + '/stream';
+            // Ajustar ancho del modal
+            var dialog = document.getElementById('streamModalDialog');
+            dialog.className = 'modal-dialog modal-dialog-centered ' + (canales >= 2 ? 'modal-xl' : 'modal-lg');
+
+            document.getElementById('streamCamaraTitle').textContent =
+                cameraNombre + (canales > 1 ? ' — ' + canales + ' canales' : ' — Vista en Vivo');
+
+            var container = document.getElementById('streamChannelsContainer');
+            container.innerHTML = '';
+
+            for (var ch = 1; ch <= canales; ch++) {
+                var col = document.createElement('div');
+                col.style.cssText = 'flex:1 1 ' + (canales >= 2 ? 'calc(50% - 2px)' : '100%') + '; min-width:0;';
+
+                if (canales > 1) {
+                    var lbl = document.createElement('div');
+                    lbl.style.cssText = 'color:#aaa; font-size:11px; text-align:center; margin-bottom:3px;';
+                    lbl.textContent = 'Canal ' + ch;
+                    col.appendChild(lbl);
+                }
+
+                var wrap = document.createElement('div');
+                wrap.style.cssText = 'position:relative; background:#000; border-radius:4px; overflow:hidden; line-height:0;';
+
+                var spinner = document.createElement('div');
+                spinner.style.cssText = 'position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff;';
+                spinner.innerHTML = '<i class="fas fa-spinner fa-spin fa-lg"></i>';
+                wrap.appendChild(spinner);
+
+                var img = document.createElement('img');
+                img.src    = '/camaras/' + camaraId + '/stream?channel=' + ch;
+                img.alt    = 'Canal ' + ch;
+                img.style.cssText = 'width:100%; display:block; opacity:0; transition:opacity .2s;';
+                img.onload  = function(s) { return function() { s.style.opacity = '1'; s.previousSibling.style.display = 'none'; }; }(img);
+                img.onerror = function(s, sp) { return function() {
+                    sp.innerHTML = '<div style="text-align:center;padding:20px;"><i class="fas fa-exclamation-triangle text-warning fa-2x"></i><br><small style="color:#aaa;">Sin señal</small></div>';
+                }; }(img, spinner);
+                wrap.appendChild(img);
+                col.appendChild(wrap);
+                container.appendChild(col);
+            }
 
             $('#modalStreamCamara').modal('show');
         }
 
         $('#modalStreamCamara').on('hidden.bs.modal', function () {
-            var img = document.getElementById('streamImage');
-            img.src = '';
-            img.style.display = 'none';
-            document.getElementById('streamLoading').style.display = 'block';
-            document.getElementById('streamError').style.display = 'none';
+            document.getElementById('streamChannelsContainer').innerHTML = '';
         });
     </script>
     @endcan

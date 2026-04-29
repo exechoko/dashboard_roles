@@ -7,22 +7,56 @@ function editCamera(camaraId) {
 }
 
 @can('ver-stream-camara')
-function openCameraStream(camaraId, cameraNombre) {
-    document.getElementById('mapaStreamTitle').textContent = cameraNombre + ' — Vista en Vivo';
-    document.getElementById('mapaStreamError').style.display = 'none';
-    document.getElementById('mapaStreamLoading').style.display = 'block';
+function openCameraStream(camaraId, cameraNombre, canales) {
+    canales = parseInt(canales) || 1;
 
-    var img = document.getElementById('mapaStreamImage');
-    img.style.display = 'none';
-    img.src = '/camaras/' + camaraId + '/stream';
+    var panel = document.getElementById('mapaStreamPanel');
+    panel.style.maxWidth = canales >= 2 ? '900px' : '480px';
 
-    document.getElementById('mapaStreamPanel').style.display = 'flex';
+    document.getElementById('mapaStreamTitle').textContent =
+        cameraNombre + (canales > 1 ? ' (' + canales + ' canales)' : ' — En Vivo');
+
+    var container = document.getElementById('mapaStreamContainer');
+    container.innerHTML = '';
+    container.style.cssText = 'display:flex; gap:4px; width:100%;';
+
+    for (var ch = 1; ch <= canales; ch++) {
+        var col = document.createElement('div');
+        col.style.cssText = 'flex:1 1 ' + (canales >= 2 ? 'calc(50% - 2px)' : '100%') + '; min-width:0;';
+
+        if (canales > 1) {
+            var lbl = document.createElement('div');
+            lbl.style.cssText = 'color:#aaa; font-size:10px; text-align:center; margin-bottom:2px;';
+            lbl.textContent = 'Canal ' + ch;
+            col.appendChild(lbl);
+        }
+
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'position:relative; background:#000; border-radius:3px; overflow:hidden; line-height:0;';
+
+        var spinner = document.createElement('div');
+        spinner.style.cssText = 'position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff;';
+        spinner.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        wrap.appendChild(spinner);
+
+        var img = document.createElement('img');
+        img.src   = '/camaras/' + camaraId + '/stream?channel=' + ch;
+        img.alt   = 'Canal ' + ch;
+        img.style.cssText = 'width:100%; display:block; max-height:280px; object-fit:contain; opacity:0; transition:opacity .2s;';
+        img.onload  = function(i, s) { return function() { i.style.opacity = '1'; s.style.display = 'none'; }; }(img, spinner);
+        img.onerror = function(s) { return function() {
+            s.innerHTML = '<small style="color:#ffc107;padding:10px;display:block;text-align:center;"><i class="fas fa-exclamation-triangle"></i><br>Sin señal</small>';
+        }; }(spinner);
+        wrap.appendChild(img);
+        col.appendChild(wrap);
+        container.appendChild(col);
+    }
+
+    panel.style.display = 'flex';
 }
 
 function closeCameraStream() {
-    var img = document.getElementById('mapaStreamImage');
-    img.src = '';
-    img.style.display = 'none';
+    document.getElementById('mapaStreamContainer').innerHTML = '';
     document.getElementById('mapaStreamPanel').style.display = 'none';
 }
 @endcan
@@ -798,7 +832,7 @@ function loadCameraMarkers() {
                     <button class="btn btn-icon btn-info" title="Abrir en Google Maps" onclick="openGoogleMaps(${latitud}, ${longitud})"><i class="fas fa-globe-americas"></i></button>
                     <button class="btn btn-icon btn-warning" title="Abrir en Street View" onclick="openStreetView(${latitud}, ${longitud})"><i class="fas fa-street-view"></i></button>
                     @can('ver-stream-camara')
-                    <button class="btn btn-icon btn-success" title="Ver en Vivo" onclick="openCameraStream(${numero}, '{{ $marcador['titulo'] }}')"><i class="fas fa-video"></i></button>
+                    <button class="btn btn-icon btn-success" title="Ver en Vivo" onclick="openCameraStream(${numero}, '{{ $marcador['titulo'] }}', {{ $marcador['canales'] ?? 1 }})"><i class="fas fa-video"></i></button>
                     @endcan
                 </div>
             </div>

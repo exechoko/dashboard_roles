@@ -165,6 +165,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/exportarCamaras', [App\Http\Controllers\MapaController::class, 'exportarExcel'])->name('mapa.exportar');
     Route::post('/camaras/{id}/reiniciar', [CamaraController::class, 'reiniciar'])->name('camaras.reiniciar');
     Route::get('/camaras/{id}/snapshot', [CamaraController::class, 'snapshot'])->name('camaras.snapshot');
+    Route::get('/camaras/{id}/stream', [CamaraController::class, 'stream'])->name('camaras.stream');
     Route::get('/camaras/{id}/test-conexion', [CamaraController::class, 'testConexion'])->name('camaras.test-conexion');
 
     Route::get('/transcribir', [TranscripcionController::class, 'index'])->name('transcribe.index');

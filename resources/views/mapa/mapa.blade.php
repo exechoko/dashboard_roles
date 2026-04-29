@@ -149,13 +149,21 @@
             <span id="mapaStreamTitle" style="color:#fff; font-weight:600; font-size:14px;">Vista en Vivo</span>
             <button onclick="closeCameraStream()" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer; line-height:1;">&times;</button>
         </div>
-        <img id="mapaStreamImage" src="" alt="Cámara en Vivo"
-            style="max-width:100%; max-height:360px; border-radius:4px;"
-            onerror="this.src='/img/no_signal.png'; this.onerror=null;">
-        <div id="mapaStreamError" style="display:none; color:#ffc107; margin-top:6px; font-size:13px;">
-            <i class="fas fa-exclamation-triangle mr-1"></i> Cámara no disponible
+        <div id="mapaStreamLoading" style="color:#fff; padding:30px 60px; text-align:center;">
+            <i class="fas fa-spinner fa-spin fa-2x"></i><br>
+            <small style="margin-top:6px; display:block;">Conectando...</small>
         </div>
-        <small style="color:#6c757d; margin-top:4px;"><i class="fas fa-circle" style="color:#28a745;"></i> En vivo</small>
+        <img id="mapaStreamImage" src="" alt="Cámara en Vivo"
+            style="max-width:100%; max-height:360px; border-radius:4px; display:none;"
+            onload="document.getElementById('mapaStreamLoading').style.display='none'; this.style.display='block';"
+            onerror="document.getElementById('mapaStreamLoading').style.display='none';
+                     document.getElementById('mapaStreamError').style.display='block';
+                     this.style.display='none';">
+        <div id="mapaStreamError" style="display:none; color:#ffc107; padding:20px; text-align:center; font-size:13px;">
+            <i class="fas fa-exclamation-triangle fa-2x"></i><br>
+            Cámara no disponible
+        </div>
+        <small style="color:#6c757d; margin-top:4px;"><i class="fas fa-circle" style="color:#28a745;"></i> Stream en vivo (MJPEG)</small>
     </div>
     @endcan
 

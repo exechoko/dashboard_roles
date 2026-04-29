@@ -22,7 +22,7 @@ class CamaraController extends Controller
         $this->middleware('permission:crear-camara', ['only' => ['create', 'store']]);
         $this->middleware('permission:editar-camara', ['only' => ['edit', 'update']]);
         $this->middleware('permission:borrar-camara', ['only' => ['destroy']]);
-        $this->middleware('permission:ver-stream-camara', ['only' => ['snapshot']]);
+        $this->middleware('permission:ver-stream-camara', ['only' => ['snapshot', 'stream', 'testConexion']]);
     }
 
     public function index(Request $request)
@@ -340,6 +340,122 @@ class CamaraController extends Controller
         }
 
         return response('', 503);
+    }
+
+    public function stream($id)
+    {
+        $camara = Camara::findOrFail($id);
+        $ip     = $camara->ip;
+
+        if (empty($ip)) {
+            abort(503);
+        }
+
+        $user        = env('CAMARA_USER');
+        $pass        = env('CAMARA_PASS');
+        $mjpegUrl    = "http://{$ip}/cgi-bin/mjpg/video.cgi?channel=1&subtype=1";
+        $snapshotUrl = "http://{$ip}/cgi-bin/snapshot.cgi";
+
+        // Sondear el endpoint MJPEG para obtener el Content-Type real (incluye boundary)
+        $mjpegContentType = null;
+        $ch_probe = curl_init($mjpegUrl);
+        curl_setopt_array($ch_probe, [
+            CURLOPT_HTTPAUTH       => CURLAUTH_DIGEST,
+            CURLOPT_USERPWD        => "$user:$pass",
+            CURLOPT_CONNECTTIMEOUT => 2,
+            CURLOPT_TIMEOUT_MS     => 600,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HEADERFUNCTION => function ($curl, $header) use (&$mjpegContentType) {
+                $h = trim($header);
+                if (stripos($h, 'content-type:') === 0) {
+                    $ct = trim(substr($h, 13));
+                    if (str_contains($ct, 'multipart')) {
+                        $mjpegContentType = $ct;
+                    }
+                }
+                return strlen($header);
+            },
+        ]);
+        curl_exec($ch_probe);
+        curl_close($ch_probe);
+
+        if ($mjpegContentType) {
+            // Proxy del stream MJPEG nativo de la cámara (~15-25 fps)
+            return response()->stream(function () use ($mjpegUrl, $user, $pass) {
+                set_time_limit(0);
+                ini_set('output_buffering', 'off');
+                ini_set('zlib.output_compression', false);
+                while (ob_get_level() > 0) {
+                    ob_end_flush();
+                }
+                flush();
+
+                $ch = curl_init($mjpegUrl);
+                curl_setopt_array($ch, [
+                    CURLOPT_HTTPAUTH       => CURLAUTH_DIGEST,
+                    CURLOPT_USERPWD        => "$user:$pass",
+                    CURLOPT_CONNECTTIMEOUT => 5,
+                    CURLOPT_TIMEOUT        => 3600,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_BUFFERSIZE     => 512,
+                    CURLOPT_WRITEFUNCTION  => function ($curl, $data) {
+                        echo $data;
+                        flush();
+                        return connection_aborted() ? -1 : strlen($data);
+                    },
+                ]);
+                curl_exec($ch);
+                curl_close($ch);
+            }, 200, [
+                'Content-Type'      => $mjpegContentType,
+                'Cache-Control'     => 'no-store, no-cache',
+                'X-Accel-Buffering' => 'no',
+                'Connection'        => 'close',
+            ]);
+        }
+
+        // Fallback: ensamblar MJPEG a partir de snapshots sucesivos (~5-8 fps)
+        return response()->stream(function () use ($snapshotUrl, $user, $pass) {
+            set_time_limit(0);
+            ini_set('output_buffering', 'off');
+            ini_set('zlib.output_compression', false);
+            while (ob_get_level() > 0) {
+                ob_end_flush();
+            }
+            flush();
+
+            while (!connection_aborted()) {
+                $ch = curl_init($snapshotUrl);
+                curl_setopt_array($ch, [
+                    CURLOPT_HTTPAUTH       => CURLAUTH_DIGEST,
+                    CURLOPT_USERPWD        => "$user:$pass",
+                    CURLOPT_CONNECTTIMEOUT => 3,
+                    CURLOPT_TIMEOUT        => 5,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                ]);
+                $jpeg = curl_exec($ch);
+                $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                if ($code === 200 && !empty($jpeg)) {
+                    echo "--frame\r\n";
+                    echo "Content-Type: image/jpeg\r\n";
+                    echo "Content-Length: " . strlen($jpeg) . "\r\n\r\n";
+                    echo $jpeg . "\r\n";
+                    flush();
+                } else {
+                    break;
+                }
+            }
+        }, 200, [
+            'Content-Type'      => 'multipart/x-mixed-replace; boundary=frame',
+            'Cache-Control'     => 'no-store, no-cache',
+            'Pragma'            => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+            'Connection'        => 'close',
+        ]);
     }
 
     public function testConexion($id)

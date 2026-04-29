@@ -174,21 +174,51 @@
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <div class="modal-body text-center p-2" style="background:#111;">
+                <div class="modal-body text-center p-2" style="background:#111; min-height:200px;">
+                    <div id="streamLoading" style="color:#fff; padding:40px 0;">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i><br>
+                        <small class="mt-2 d-block">Conectando...</small>
+                    </div>
                     <img id="streamImage" src="" alt="Cámara en Vivo"
-                        style="max-width:100%; max-height:500px; border-radius:4px;"
-                        onerror="this.src='/img/no_signal.png'; this.onerror=null;">
-                    <div id="streamError" class="text-white mt-2" style="display:none;">
-                        <i class="fas fa-exclamation-triangle text-warning mr-1"></i> Cámara no disponible
+                        style="max-width:100%; max-height:500px; border-radius:4px; display:none;"
+                        onload="document.getElementById('streamLoading').style.display='none'; this.style.display='block';"
+                        onerror="document.getElementById('streamLoading').style.display='none';
+                                 document.getElementById('streamError').style.display='block';
+                                 this.style.display='none';">
+                    <div id="streamError" style="display:none; color:#ffc107; padding:20px;">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i><br>
+                        <span>Cámara no disponible</span>
                     </div>
                 </div>
                 <div class="modal-footer justify-content-between">
-                    <small class="text-muted"><i class="fas fa-circle text-success mr-1"></i> Actualizando cada 300ms</small>
+                    <small class="text-muted"><i class="fas fa-circle text-success mr-1"></i> Stream en vivo (MJPEG)</small>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        function openStream(camaraId, cameraNombre) {
+            document.getElementById('streamCamaraTitle').textContent = cameraNombre + ' — Vista en Vivo';
+            document.getElementById('streamLoading').style.display = 'block';
+            document.getElementById('streamError').style.display = 'none';
+
+            var img = document.getElementById('streamImage');
+            img.style.display = 'none';
+            img.src = '/camaras/' + camaraId + '/stream';
+
+            $('#modalStreamCamara').modal('show');
+        }
+
+        $('#modalStreamCamara').on('hidden.bs.modal', function () {
+            var img = document.getElementById('streamImage');
+            img.src = '';
+            img.style.display = 'none';
+            document.getElementById('streamLoading').style.display = 'block';
+            document.getElementById('streamError').style.display = 'none';
+        });
+    </script>
     @endcan
 
     {{-- Script para abrir nueva pestaña cuando se reinicia cámara --}}
@@ -197,41 +227,4 @@
             window.open('{{ session('open_url') }}', '_blank');
         </script>
     @endif
-
-    @can('ver-stream-camara')
-    <script>
-        var streamInterval = null;
-
-        function openStream(camaraId, cameraNombre) {
-            document.getElementById('streamCamaraTitle').textContent = cameraNombre + ' — Vista en Vivo';
-            document.getElementById('streamError').style.display = 'none';
-
-            var img = document.getElementById('streamImage');
-            img.src = '';
-
-            $('#modalStreamCamara').modal('show');
-
-            function refreshFrame() {
-                var newSrc = '/camaras/' + camaraId + '/snapshot?t=' + Date.now();
-                var testImg = new Image();
-                testImg.onload = function() {
-                    img.src = newSrc;
-                    document.getElementById('streamError').style.display = 'none';
-                };
-                testImg.onerror = function() {
-                    document.getElementById('streamError').style.display = 'block';
-                };
-                testImg.src = newSrc;
-            }
-
-            refreshFrame();
-            streamInterval = setInterval(refreshFrame, 300);
-        }
-
-        $('#modalStreamCamara').on('hidden.bs.modal', function () {
-            clearInterval(streamInterval);
-            document.getElementById('streamImage').src = '';
-        });
-    </script>
-    @endcan
 @endsection

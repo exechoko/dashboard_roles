@@ -7,38 +7,22 @@ function editCamera(camaraId) {
 }
 
 @can('ver-stream-camara')
-var mapaStreamInterval = null;
-
 function openCameraStream(camaraId, cameraNombre) {
     document.getElementById('mapaStreamTitle').textContent = cameraNombre + ' — Vista en Vivo';
     document.getElementById('mapaStreamError').style.display = 'none';
+    document.getElementById('mapaStreamLoading').style.display = 'block';
 
     var img = document.getElementById('mapaStreamImage');
-    img.src = '';
+    img.style.display = 'none';
+    img.src = '/camaras/' + camaraId + '/stream';
 
-    var panel = document.getElementById('mapaStreamPanel');
-    panel.style.display = 'flex';
-
-    function refreshFrame() {
-        var newSrc = '/camaras/' + camaraId + '/snapshot?t=' + Date.now();
-        var testImg = new Image();
-        testImg.onload = function() {
-            img.src = newSrc;
-            document.getElementById('mapaStreamError').style.display = 'none';
-        };
-        testImg.onerror = function() {
-            document.getElementById('mapaStreamError').style.display = 'block';
-        };
-        testImg.src = newSrc;
-    }
-
-    refreshFrame();
-    mapaStreamInterval = setInterval(refreshFrame, 300);
+    document.getElementById('mapaStreamPanel').style.display = 'flex';
 }
 
 function closeCameraStream() {
-    clearInterval(mapaStreamInterval);
-    document.getElementById('mapaStreamImage').src = '';
+    var img = document.getElementById('mapaStreamImage');
+    img.src = '';
+    img.style.display = 'none';
     document.getElementById('mapaStreamPanel').style.display = 'none';
 }
 @endcan

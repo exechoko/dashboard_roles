@@ -56,6 +56,11 @@
                                         value="{{ old('n_total_camaras', 336) }}" min="0">
                                 </div>
                                 <div class="form-group col-md-4">
+                                    <label><i class="fas fa-desktop text-info"></i> Puestos CCTV</label>
+                                    <input type="number" name="n_total_puestos_cctv" class="form-control"
+                                        value="{{ old('n_total_puestos_cctv', 0) }}" min="0">
+                                </div>
+                                <div class="form-group col-md-4">
                                     <label><i class="fas fa-desktop text-warning"></i> Puestos CeCoCo</label>
                                     <input type="number" name="n_total_puestos_cecoco" class="form-control"
                                         value="{{ old('n_total_puestos_cecoco', 0) }}" min="0">

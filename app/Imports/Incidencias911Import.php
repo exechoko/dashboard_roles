@@ -17,6 +17,7 @@ class Incidencias911Import implements WithMultipleSheets, ToModel, WithStartRow,
     protected string  $hoja;
     protected int     $nTotalTetra;
     protected int     $nTotalCamaras;
+    protected int     $nTotalPuestosCctv;
     protected ?Carbon $fechaFinPeriodo;
     protected string  $nombreHojaExcel;
 
@@ -45,7 +46,7 @@ class Incidencias911Import implements WithMultipleSheets, ToModel, WithStartRow,
     public function __construct(
         int $periodoId, int $periodoNumero,
         string $hoja = 'patagonia',
-        int $nTotalTetra = 0, int $nTotalCamaras = 0,
+        int $nTotalTetra = 0, int $nTotalCamaras = 0, int $nTotalPuestosCctv = 0,
         ?string $fechaFinPeriodo = null,
         string $nombreHojaExcel = '',
         int $minutosPeriodo = 0,
@@ -56,6 +57,7 @@ class Incidencias911Import implements WithMultipleSheets, ToModel, WithStartRow,
         $this->hoja            = $hoja;
         $this->nTotalTetra     = $nTotalTetra;
         $this->nTotalCamaras   = $nTotalCamaras;
+        $this->nTotalPuestosCctv = $nTotalPuestosCctv;
         $this->fechaFinPeriodo = $fechaFinPeriodo ? Carbon::parse($fechaFinPeriodo)->endOfDay() : null;
         $this->nombreHojaExcel = $nombreHojaExcel ?: ($this->hojaMap[$hoja] ?? 'Patagonia');
         $this->minutosPeriodo  = $minutosPeriodo;
@@ -132,10 +134,12 @@ class Incidencias911Import implements WithMultipleSheets, ToModel, WithStartRow,
         $niveles = Incidencia911::parsearSubsistema($incumbencia);
         $pond    = Incidencia911::ponderacionPara($niveles['sistema'], $niveles['modulo_n2']);
 
+        $moduloN3 = $niveles['modulo_n3'] ?? '';
+
         if ($pond['n2'] > 0) {
             $sistema  = $niveles['sistema'];
             $moduloN2 = $niveles['modulo_n2'];
-            $nTotal   = $this->nTotalParaSistema($sistema);
+            $nTotal   = $this->nTotalParaSistema($sistema, $moduloN3);
         } else {
             // Fallback a detección por palabras clave (subsistema no reconocido)
             [$sistema, $moduloN2, $nTotal] = $this->deducirSistema($incumbencia);
@@ -193,6 +197,7 @@ class Incidencias911Import implements WithMultipleSheets, ToModel, WithStartRow,
             'n_total_unidades'     => $nTotal ?: 1,
             'sistema'              => $sistema,
             'modulo_n2'            => $moduloN2,
+            'modulo_n3'            => $moduloN3,
             'subsistema_raw'       => mb_substr($incumbencia, 0, 250),
             'ponderacion_n2'       => $pond['n2'],
             'ponderacion_n1'       => $pond['n1'],
@@ -340,13 +345,20 @@ class Incidencias911Import implements WithMultipleSheets, ToModel, WithStartRow,
         return -1;
     }
 
-    /** nTotal según el sistema: TETRA y CCTV usan los contadores del período; el resto usa 1. */
-    private function nTotalParaSistema(string $sistema): int
+    /** nTotal según sistema + N3: distingue "Por cámara" vs "Por puesto" para CCTV. */
+    private function nTotalParaSistema(string $sistema, string $moduloN3 = ''): int
     {
+        $n3 = strtolower(trim($moduloN3));
+
+        if (in_array($n3, ['total', 'latente'], true)) {
+            return 1;
+        }
+
         return match ($sistema) {
-            'TETRA' => $this->nTotalTetra  ?: 0,
-            'CCTV'  => $this->nTotalCamaras ?: 0,
-            default => 1,
+            'TETRA'        => str_contains($n3, 'radio') ? 0 : ($this->nTotalTetra ?: 0),
+            'CCTV'         => str_contains($n3, 'puesto') ? ($this->nTotalPuestosCctv ?: 0) : ($this->nTotalCamaras ?: 0),
+            'Puestos CCTV' => $this->nTotalPuestosCctv ?: 0,
+            default        => 1,
         };
     }
 
@@ -359,12 +371,24 @@ class Incidencias911Import implements WithMultipleSheets, ToModel, WithStartRow,
             $modulo  = str_contains($lower, 'comunicaci') ? 'Comunicación'
                 : (str_contains($lower, 'grabaci') ? 'Módulo Grabación'
                 : (str_contains($lower, 'admin') ? 'Módulo Admin y Extracción' : 'Comunicación'));
-        } elseif (str_contains($lower, 'cctv') || str_contains($lower, 'cámara') || str_contains($lower, 'camara')) {
-            $sistema = 'CCTV';
-            $nTotal  = $this->nTotalCamaras ?: 336;
-            $modulo  = str_contains($lower, 'monitoreo') ? 'Módulo Monitoreo'
-                : (str_contains($lower, 'grabaci') ? 'Módulo Grabación'
-                : (str_contains($lower, 'admin') ? 'Módulo Admin y Extracción' : 'Cámaras'));
+        } elseif (str_contains($lower, 'cctv')) {
+            if (str_contains($lower, 'puesto')) {
+                $sistema = 'Puestos CCTV';
+                $nTotal  = $this->nTotalPuestosCctv ?: 0;
+                $modulo  = str_contains($lower, 'monitoreo') ? 'Módulo Monitoreo'
+                    : (str_contains($lower, 'grabaci') ? 'Módulo Grabación'
+                    : (str_contains($lower, 'admin') ? 'Módulo Admin y Extracción' : 'Puestos'));
+            } elseif (str_contains($lower, 'cámara') || str_contains($lower, 'camara')) {
+                $sistema = 'CCTV';
+                $nTotal  = $this->nTotalCamaras ?: 336;
+                $modulo  = str_contains($lower, 'monitoreo') ? 'Módulo Monitoreo'
+                    : (str_contains($lower, 'grabaci') ? 'Módulo Grabación'
+                    : (str_contains($lower, 'admin') ? 'Módulo Admin y Extracción' : 'Cámaras'));
+            } else {
+                $sistema = 'CCTV';
+                $nTotal  = $this->nTotalCamaras ?: 336;
+                $modulo  = 'Cámaras';
+            }
         } elseif (str_contains($lower, '911') || str_contains($lower, 'emergencia')) {
             $sistema = 'Emergencias 911';
             $nTotal  = 1;

@@ -40,6 +40,7 @@ class PeriodoFacturaController extends Controller
             'fecha_fin'            => 'required|date|after_or_equal:fecha_inicio',
             'n_total_tetra'        => 'nullable|integer|min:0',
             'n_total_camaras'      => 'nullable|integer|min:0',
+            'n_total_puestos_cctv'  => 'nullable|integer|min:0',
             'n_total_puestos_cecoco'=> 'nullable|integer|min:0',
             'factura_numero'       => 'nullable|string|max:50',
             'factura_monto'        => 'nullable|numeric|min:0',
@@ -75,16 +76,19 @@ class PeriodoFacturaController extends Controller
             if (!isset($detalleCalculo[$sis])) {
                 $detalleCalculo[$sis] = ['aplica' => [], 'excluidas' => []];
             }
-            $indisp = ($T > 0 && $inc->n_total_unidades > 0)
-                ? ($inc->n_unidades_afectadas / $inc->n_total_unidades) * ($inc->minutos_fallo / $T) * 100
+            $nTotal = $periodo->nTotalEfectivo($inc->sistema, (string) ($inc->modulo_n3 ?? ''), $inc->n_total_unidades);
+            $indisp = ($T > 0 && $nTotal > 0)
+                ? ($inc->n_unidades_afectadas / $nTotal) * ($inc->minutos_fallo / $T) * 100
                 : 0;
             $entry = [
                 'code'        => $inc->incidencia_code,
                 'tipo'        => $inc->tipo_incidencia,
                 'modulo_n2'   => $inc->modulo_n2,
+                'modulo_n3'   => $inc->modulo_n3,
                 'pond_n2'     => $inc->ponderacion_n2,
                 'n_afect'     => $inc->n_unidades_afectadas,
-                'n_total'     => $inc->n_total_unidades,
+                'n_total'     => $nTotal,
+                'n_total_orig'=> $inc->n_total_unidades !== $nTotal ? $inc->n_total_unidades : null,
                 'min_fallo'   => $inc->minutos_fallo,
                 'indisp'      => round($indisp, 5),
                 'deficiencia' => round($indisp * 2, 5),
@@ -125,6 +129,7 @@ class PeriodoFacturaController extends Controller
             'fecha_fin'            => 'required|date|after_or_equal:fecha_inicio',
             'n_total_tetra'        => 'nullable|integer|min:0',
             'n_total_camaras'      => 'nullable|integer|min:0',
+            'n_total_puestos_cctv'  => 'nullable|integer|min:0',
             'n_total_puestos_cecoco'=> 'nullable|integer|min:0',
             'factura_numero'       => 'nullable|string|max:50',
             'factura_monto'        => 'nullable|numeric|min:0',
@@ -208,7 +213,7 @@ class PeriodoFacturaController extends Controller
             $import = new Incidencias911Import(
                 $periodo->id, $periodo->numero,
                 $request->hoja,
-                $periodo->n_total_tetra, $periodo->n_total_camaras,
+                $periodo->n_total_tetra, $periodo->n_total_camaras, $periodo->n_total_puestos_cctv,
                 $periodo->fecha_fin,
                 $nombreHoja,
                 $periodo->minutos_totales

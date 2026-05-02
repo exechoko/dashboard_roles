@@ -52,6 +52,11 @@
                                         value="{{ old('n_total_camaras', $periodo->n_total_camaras) }}" min="0">
                                 </div>
                                 <div class="form-group col-md-4">
+                                    <label>Puestos CCTV</label>
+                                    <input type="number" name="n_total_puestos_cctv" class="form-control"
+                                        value="{{ old('n_total_puestos_cctv', $periodo->n_total_puestos_cctv) }}" min="0">
+                                </div>
+                                <div class="form-group col-md-4">
                                     <label>Puestos CeCoCo</label>
                                     <input type="number" name="n_total_puestos_cecoco" class="form-control"
                                         value="{{ old('n_total_puestos_cecoco', $periodo->n_total_puestos_cecoco) }}" min="0">

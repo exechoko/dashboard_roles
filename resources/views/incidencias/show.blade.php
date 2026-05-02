@@ -112,7 +112,9 @@
                     <div class="card-body p-3">
                         <table class="table table-sm table-borderless mb-0">
                             <tr><td class="text-muted">TETRA</td><td><strong>{{ $periodo->n_total_tetra }}</strong> terminales</td></tr>
-                            <tr><td class="text-muted">CCTV</td><td><strong>{{ $periodo->n_total_camaras }}</strong> cámaras</td></tr>
+                            <tr><td class="text-muted">Cámaras CCTV</td><td><strong>{{ $periodo->n_total_camaras }}</strong> cámaras</td></tr>
+                            <tr><td class="text-muted">Puestos CCTV</td><td><strong>{{ $periodo->n_total_puestos_cctv }}</strong> puestos</td></tr>
+                            <tr><td class="text-muted">Puestos CeCoCo</td><td><strong>{{ $periodo->n_total_puestos_cecoco }}</strong> puestos</td></tr>
                             <tr><td class="text-muted">Minutos</td><td>{{ number_format($periodo->minutos_totales, 0, ',', '.') }}</td></tr>
                             @if($periodo->factura_numero)
                             <tr><td class="text-muted">Factura</td><td>{{ $periodo->factura_numero }}</td></tr>
@@ -229,8 +231,20 @@
                         <tr class="{{ in_array($row, $det['excluidas']) ? 'text-muted bg-light' : '' }}">
                             <td><code>{{ $row['code'] }}</code></td>
                             <td>{{ $row['tipo'] }}</td>
-                            <td>{{ $row['modulo_n2'] }} <small class="text-muted">({{ $row['pond_n2'] }}%)</small></td>
-                            <td class="text-center">{{ $row['n_afect'] }}/{{ $row['n_total'] }}</td>
+                            <td>
+                                {{ $row['modulo_n2'] }} <small class="text-muted">({{ $row['pond_n2'] }}%)</small>
+                                @if(!empty($row['modulo_n3']))
+                                    <br><small class="text-info">{{ $row['modulo_n3'] }}</small>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                {{ $row['n_afect'] }}/{{ $row['n_total'] }}
+                                @if(!empty($row['n_total_orig']))
+                                    <br><small class="text-warning" title="El Excel tenía {{ $row['n_total_orig'] }}; se usa el total del período">
+                                        <i class="fas fa-exclamation-triangle"></i> orig: {{ $row['n_total_orig'] }}
+                                    </small>
+                                @endif
+                            </td>
                             <td class="text-center">{{ number_format($row['min_fallo'], 1) }}</td>
                             <td class="text-center">{{ number_format($row['indisp'], 5) }}%</td>
                             <td class="text-center"><strong>{{ number_format($row['deficiencia'], 5) }}%</strong></td>

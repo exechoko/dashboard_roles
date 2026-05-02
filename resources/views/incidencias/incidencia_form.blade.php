@@ -130,7 +130,7 @@
                                     <label>N° Total unidades <span class="text-danger">*</span></label>
                                     <input type="number" name="n_total_unidades" id="n_total_unidades" class="form-control @error('n_total_unidades') is-invalid @enderror"
                                         value="{{ old('n_total_unidades', $incidencia->n_total_unidades ?? 1) }}" min="1" required>
-                                    <small class="text-muted">TETRA: {{ $periodo->n_total_tetra }}, CCTV: {{ $periodo->n_total_camaras }}</small>
+                                    <small class="text-muted">TETRA: {{ $periodo->n_total_tetra }}, CCTV: {{ $periodo->n_total_camaras }}, Puestos CCTV: {{ $periodo->n_total_puestos_cctv }}</small>
                                 </div>
                             </div>
 

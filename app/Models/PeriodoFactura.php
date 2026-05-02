@@ -11,7 +11,7 @@ class PeriodoFactura extends Model
 
     protected $fillable = [
         'numero', 'fecha_inicio', 'fecha_fin', 'dias', 'minutos_totales',
-        'n_total_tetra', 'n_total_camaras', 'n_total_puestos_cecoco',
+        'n_total_tetra', 'n_total_camaras', 'n_total_puestos_cctv', 'n_total_puestos_cecoco',
         'factura_numero', 'factura_monto', 'expediente_numero', 'ru_numero',
         'observaciones',
     ];
@@ -49,6 +49,29 @@ class PeriodoFactura extends Model
      *   'motivo_multa' => string|null,
      * }
      */
+    /**
+     * Total efectivo de unidades para una incidencia.
+     * Usa modulo_n3 para distinguir "Por cámara" vs "Por puesto" dentro de CCTV,
+     * y trata "Total"/"Latente" como 1 unidad (el módulo como un todo).
+     * Si el período no tiene el total configurado, cae al valor almacenado en la incidencia.
+     */
+    public function nTotalEfectivo(string $sistema, string $moduloN3, int $storedFallback): int
+    {
+        $n3 = strtolower(trim($moduloN3));
+
+        if (in_array($n3, ['total', 'latente'], true)) {
+            return 1;
+        }
+
+        $total = match ($sistema) {
+            'TETRA'        => str_contains($n3, 'radio') ? null : $this->n_total_tetra,
+            'CCTV'         => str_contains($n3, 'puesto') ? $this->n_total_puestos_cctv : $this->n_total_camaras,
+            'Puestos CCTV' => $this->n_total_puestos_cctv,
+            default        => null,
+        };
+        return ($total > 0) ? (int) $total : $storedFallback;
+    }
+
     public function analisis(): array
     {
         $incidencias = $this->incidenciasAplica()->get();
@@ -57,10 +80,11 @@ class PeriodoFactura extends Model
         $porSistema = [];
 
         foreach ($incidencias as $inc) {
-            if ($T <= 0 || $inc->n_total_unidades <= 0) {
+            $nTotal = $this->nTotalEfectivo($inc->sistema, (string) ($inc->modulo_n3 ?? ''), $inc->n_total_unidades);
+            if ($T <= 0 || $nTotal <= 0) {
                 continue;
             }
-            $indisponibilidad = ($inc->n_unidades_afectadas / $inc->n_total_unidades)
+            $indisponibilidad = ($inc->n_unidades_afectadas / $nTotal)
                 * ($inc->minutos_fallo / $T)
                 * 100;
             // Deficiencia = Indisp × 2, ponderada por el peso N2 del sub-módulo afectado.

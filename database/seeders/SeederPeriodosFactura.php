@@ -26,6 +26,7 @@ class SeederPeriodosFactura extends Seeder
                 'minutos_totales'        => $dias * 24 * 60,
                 'n_total_tetra'          => null,
                 'n_total_camaras'        => null,
+                'n_total_puestos_cctv'  => null,
                 'n_total_puestos_cecoco' => null,
                 'factura_numero'         => null,
                 'factura_monto'          => null,

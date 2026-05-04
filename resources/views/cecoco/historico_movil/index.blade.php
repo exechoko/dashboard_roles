@@ -757,6 +757,7 @@
     let playbackIndex = 0;
     let isPlaying = false;
     let playTimer = null;
+    let markerAnimationFrame = null;
     let registros = [];
 
     /* ════════════════════════════════════════
@@ -987,9 +988,44 @@
     ════════════════════════════════════════ */
     function resetPlayback() {
         isPlaying = false;
-        if (playTimer) { clearInterval(playTimer); playTimer = null; }
+        if (playTimer) { clearTimeout(playTimer); playTimer = null; }
+        if (markerAnimationFrame) { cancelAnimationFrame(markerAnimationFrame); markerAnimationFrame = null; }
         playbackIndex = 0;
         actualizarBtnPlay();
+    }
+
+    function duracionTransicionMs() {
+        const speed = parseInt(document.getElementById('speed-slider').value, 10) || 5;
+        return Math.max(120, 1100 - ((speed - 1) * 100));
+    }
+
+    function animarMarcadorHacia(latlng, duracionMs, alTerminar) {
+        if (!carMarker) return;
+        if (markerAnimationFrame) cancelAnimationFrame(markerAnimationFrame);
+
+        const origen = carMarker.getLatLng();
+        const inicio = performance.now();
+        const destino = { lat: latlng[0], lng: latlng[1] };
+        const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+        function frame(now) {
+            const t = Math.min(1, (now - inicio) / Math.max(1, duracionMs));
+            const k = ease(t);
+            const lat = origen.lat + (destino.lat - origen.lat) * k;
+            const lng = origen.lng + (destino.lng - origen.lng) * k;
+            carMarker.setLatLng([lat, lng]);
+            recorridoMap.panTo([lat, lng], { animate: false });
+
+            if (t < 1) {
+                markerAnimationFrame = requestAnimationFrame(frame);
+            } else {
+                markerAnimationFrame = null;
+                carMarker.setLatLng([destino.lat, destino.lng]);
+                if (typeof alTerminar === 'function') alTerminar();
+            }
+        }
+
+        markerAnimationFrame = requestAnimationFrame(frame);
     }
 
     function irAPunto(idx) {
@@ -1008,8 +1044,14 @@
             .map(r => [r.lat, r.lng]);
         trailPolyline.setLatLngs(trail);
 
-        // Mover carro
-        carMarker.setLatLng([reg.lat, reg.lng]);
+        // Mover carro con transición suave
+        animarMarcadorHacia([reg.lat, reg.lng], duracionTransicionMs(), () => {
+            if (isPlaying && playbackIndex < registros.length - 1) {
+                playTimer = setTimeout(avanzar, 40);
+            } else if (isPlaying) {
+                pausar();
+            }
+        });
         carMarker.setPopupContent(popupContent(reg));
 
         // Colorear marcador según estado
@@ -1045,20 +1087,22 @@
 
     function reproducir() {
         if (isPlaying) return;
-        if (playbackIndex >= registros.length - 1) playbackIndex = 0;
+        if (playbackIndex >= registros.length - 1 && registros.length && registros[0].lat !== null) {
+            playbackIndex = 0;
+            trailPolyline.setLatLngs([]);
+            carMarker.setLatLng([registros[0].lat, registros[0].lng]);
+            actualizarProgress();
+            actualizarPlayerInfo(registros[0]);
+        }
         isPlaying = true;
         actualizarBtnPlay();
-        const intervaloMs = () => Math.max(50, 600 - (parseInt(document.getElementById('speed-slider').value) - 1) * 60);
-        playTimer = setInterval(() => { avanzar(); if (playbackIndex >= registros.length-1) pausar(); }, intervaloMs());
-        // Ajustar velocidad si el slider cambia mientras reproduce
-        document.getElementById('speed-slider').addEventListener('input', () => {
-            if (isPlaying) { clearInterval(playTimer); playTimer = setInterval(() => { avanzar(); if (playbackIndex >= registros.length-1) pausar(); }, intervaloMs()); }
-        });
+        avanzar();
     }
 
     function pausar() {
         isPlaying = false;
-        if (playTimer) { clearInterval(playTimer); playTimer = null; }
+        if (playTimer) { clearTimeout(playTimer); playTimer = null; }
+        if (markerAnimationFrame) { cancelAnimationFrame(markerAnimationFrame); markerAnimationFrame = null; }
         actualizarBtnPlay();
     }
 
@@ -1286,7 +1330,7 @@
     <script>
         const data = ${exportData};
         const registros = data.registros || [];
-        let map, routePolyline, trailPolyline, carMarker, playbackIndex = 0, isPlaying = false, playTimer = null;
+        let map, routePolyline, trailPolyline, carMarker, playbackIndex = 0, isPlaying = false, playTimer = null, markerAnimationFrame = null;
 
         function popupContent(reg) {
             if (!reg) return '';
@@ -1321,11 +1365,52 @@
             pi.querySelector('.pi-vel').style.color = reg.exceso_velocidad ? '#ff7675' : '#7ecff7';
         }
 
+        function duracionTransicionMs() {
+            const speed = parseInt(document.getElementById('speed-slider').value, 10) || 5;
+            return Math.max(120, 1100 - ((speed - 1) * 100));
+        }
+
+        function animarMarcadorHacia(latlng, duracionMs, alTerminar) {
+            if (!carMarker) return;
+            if (markerAnimationFrame) cancelAnimationFrame(markerAnimationFrame);
+
+            const origen = carMarker.getLatLng();
+            const inicio = performance.now();
+            const destino = { lat: latlng[0], lng: latlng[1] };
+            const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+            function frame(now) {
+                const t = Math.min(1, (now - inicio) / Math.max(1, duracionMs));
+                const k = ease(t);
+                const lat = origen.lat + (destino.lat - origen.lat) * k;
+                const lng = origen.lng + (destino.lng - origen.lng) * k;
+                carMarker.setLatLng([lat, lng]);
+                map.panTo([lat, lng], { animate:false });
+
+                if (t < 1) {
+                    markerAnimationFrame = requestAnimationFrame(frame);
+                } else {
+                    markerAnimationFrame = null;
+                    carMarker.setLatLng([destino.lat, destino.lng]);
+                    if (typeof alTerminar === 'function') alTerminar();
+                }
+            }
+
+            markerAnimationFrame = requestAnimationFrame(frame);
+        }
+
         function irAPunto(idx) {
             if (!carMarker || !registros[idx]) return;
             const reg = registros[idx];
             trailPolyline.setLatLngs(registros.slice(0, idx + 1).map(r => [r.lat, r.lng]));
-            carMarker.setLatLng([reg.lat, reg.lng]).setPopupContent(popupContent(reg));
+            animarMarcadorHacia([reg.lat, reg.lng], duracionTransicionMs(), () => {
+                if (isPlaying && playbackIndex < registros.length - 1) {
+                    playTimer = setTimeout(avanzar, 40);
+                } else if (isPlaying) {
+                    pausar();
+                }
+            });
+            carMarker.setPopupContent(popupContent(reg));
             const dot = carMarker.getElement()?.querySelector('.car-dot');
             if (dot) {
                 if (reg.exceso_velocidad) dot.style.background = 'radial-gradient(circle at 40% 40%,#fff 10%,#ff0000 55%,#990000 100%)';
@@ -1342,12 +1427,22 @@
         function retroceder() { if (playbackIndex > 0) irAPunto(playbackIndex - 1); }
         function reproducir() {
             if (isPlaying || !registros.length) return;
-            if (playbackIndex >= registros.length - 1) irAPunto(0);
+            if (playbackIndex >= registros.length - 1) {
+                playbackIndex = 0;
+                trailPolyline.setLatLngs([]);
+                carMarker.setLatLng([registros[0].lat, registros[0].lng]);
+                actualizarProgress();
+                actualizarPlayerInfo(registros[0]);
+            }
             isPlaying = true; actualizarBtnPlay();
-            const intervaloMs = () => Math.max(50, 600 - (parseInt(document.getElementById('speed-slider').value) - 1) * 60);
-            playTimer = setInterval(() => { avanzar(); if (playbackIndex >= registros.length - 1) pausar(); }, intervaloMs());
+            avanzar();
         }
-        function pausar() { isPlaying = false; if (playTimer) { clearInterval(playTimer); playTimer = null; } actualizarBtnPlay(); }
+        function pausar() {
+            isPlaying = false;
+            if (playTimer) { clearTimeout(playTimer); playTimer = null; }
+            if (markerAnimationFrame) { cancelAnimationFrame(markerAnimationFrame); markerAnimationFrame = null; }
+            actualizarBtnPlay();
+        }
         function detener() { pausar(); if (registros.length) { trailPolyline.setLatLngs([]); irAPunto(0); } }
 
         function init() {

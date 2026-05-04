@@ -740,6 +740,9 @@
 (function () {
     'use strict';
 
+    const leafletCssExport = @json(file_get_contents(public_path('leaflet/lib/leaflet-dist/leaflet.css')));
+    const leafletJsExport = @json(file_get_contents(public_path('leaflet/lib/leaflet-dist/leaflet.js')));
+
     /* ════════════════════════════════════════
        ESTADO GLOBAL
     ════════════════════════════════════════ */
@@ -1214,35 +1217,52 @@
 
         const html = construirHtmlRecorridoExportable(resultadoData);
         const meta = resultadoData.metadata || {};
-        const filename = `recorrido-${slugArchivo(meta.recurso || 'movil')}-${slugArchivo(meta.fecha_inicio || '')}.html`;
+        const filename = 'recorrido-' + slugArchivo(meta.recurso || 'movil') + '-' + slugArchivo(meta.fecha_inicio || '') + '.html';
         descargarArchivoHtml(filename, html);
     });
 
     function descargarArchivoHtml(filename, html) {
         const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+            window.navigator.msSaveOrOpenBlob(blob, filename);
+            return;
+        }
+        if (!window.URL || !window.URL.createObjectURL) {
+            const win = window.open('', '_blank');
+            if (win) {
+                win.document.open();
+                win.document.write(html);
+                win.document.close();
+            }
+            return;
+        }
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = filename;
         document.body.appendChild(a);
         a.click();
-        a.remove();
+        if (a.parentNode) a.parentNode.removeChild(a);
         URL.revokeObjectURL(url);
     }
 
     function slugArchivo(value) {
-        return String(value || '')
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        const text = String(value || '');
+        const normalized = text.normalize ? text.normalize('NFD') : text;
+        return normalized
+            .replace(/[\u0300-\u036f]/g, '')
             .replace(/[^a-zA-Z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '')
             .toLowerCase() || 'recorrido';
     }
 
     function construirHtmlRecorridoExportable(data) {
+        const leafletCssInline = String(leafletCssExport || '').replace(/<\/style/gi, '<\\/style');
+        const leafletJsInline = String(leafletJsExport || '').replace(/<\/script/gi, '<\\/script');
         const exportData = JSON.stringify({
             metadata: data.metadata || {},
-            velocidad_maxima: data.velocidad_maxima ?? 0,
-            registros: (data.registros || []).filter(r => r.lat !== null && r.lng !== null)
+            velocidad_maxima: data.velocidad_maxima != null ? data.velocidad_maxima : 0,
+            registros: (data.registros || []).filter(function(r) { return r.lat !== null && r.lng !== null; })
         }).replace(/</g, '\\u003c');
 
         return `<!DOCTYPE html>
@@ -1251,27 +1271,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recorrido del Móvil</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>${leafletCssInline}</style>
     <style>
         * { box-sizing: border-box; }
         body { margin:0; font-family:Arial,Helvetica,sans-serif; background:#eef0f8; color:#1f2937; }
-        .modal-shell { width:min(1200px,94vw); margin:24px auto; background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 18px 45px rgba(26,26,46,.24); }
-        .modal-header { background:linear-gradient(135deg,#1a1a2e,#16213e); border:none; padding:12px 18px; color:#fff; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+        .modal-shell { width:94%; max-width:1200px; margin:24px auto; background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 18px 45px rgba(26,26,46,.24); }
+        .modal-header { background:#1a1a2e; background:linear-gradient(135deg,#1a1a2e,#16213e); border:none; padding:12px 18px; color:#fff; display:flex; align-items:center; justify-content:space-between; gap:12px; }
         .modal-title { margin:0; font-size:1.05rem; font-weight:700; line-height:1.35; }
         .modal-title i { color:#6777ef; margin-right:8px; }
         .limit-panel { background:#f8f9ff; border-bottom:1px solid #dee2e6; padding:10px 18px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; color:#495057; font-size:.86rem; }
         .limit-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:999px; background:#fff; border:1px solid #dfe3f1; font-weight:700; }
         .limit-badge i { color:#6777ef; }
-        .player-panel { background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%); border-radius:12px 12px 0 0; padding:14px 18px; display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+        .player-panel { background:#1a1a2e; background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%); border-radius:12px 12px 0 0; padding:14px 18px; display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
         .player-btn { width:46px; height:46px; border-radius:50%; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; transition:transform .15s,box-shadow .15s; }
         .player-btn:hover { transform:scale(1.1); box-shadow:0 4px 12px rgba(0,0,0,.4); }
         .player-btn:active { transform:scale(.95); }
-        .btn-play { background:linear-gradient(135deg,#00c41c,#007a13); color:#fff; }
-        .btn-pause { background:linear-gradient(135deg,#ffa500,#cc7a00); color:#fff; }
-        .btn-step { background:linear-gradient(135deg,#6777ef,#35199a); color:#fff; }
-        .btn-stop { background:linear-gradient(135deg,#e74c3c,#922b21); color:#fff; }
-        .btn-prev { background:linear-gradient(135deg,#8e44ad,#5b2c6f); color:#fff; }
+        .btn-play { background:#00c41c; background:linear-gradient(135deg,#00c41c,#007a13); color:#fff; }
+        .btn-pause { background:#ffa500; background:linear-gradient(135deg,#ffa500,#cc7a00); color:#fff; }
+        .btn-step { background:#6777ef; background:linear-gradient(135deg,#6777ef,#35199a); color:#fff; }
+        .btn-stop { background:#e74c3c; background:linear-gradient(135deg,#e74c3c,#922b21); color:#fff; }
+        .btn-prev { background:#8e44ad; background:linear-gradient(135deg,#8e44ad,#5b2c6f); color:#fff; }
         .player-info { background:rgba(255,255,255,.08); border-radius:8px; padding:6px 12px; color:#fff; font-size:.78rem; line-height:1.5; min-width:220px; flex:1; }
         .pi-fecha { font-weight:700; font-size:.85rem; }
         .pi-vel { color:#7ecff7; font-weight:600; }
@@ -1281,11 +1303,12 @@
         .speed-slider-wrap input[type=range] { accent-color:#6777ef; width:90px; }
         .progress-wrap { display:flex; align-items:center; gap:6px; color:#b0b8d1; font-size:.78rem; width:100%; }
         .progress-bar-custom { flex:1; height:5px; background:rgba(255,255,255,.15); border-radius:4px; overflow:hidden; cursor:pointer; }
-        .progress-bar-fill { height:100%; background:linear-gradient(90deg,#6777ef,#35199a); border-radius:4px; width:0%; transition:width .15s; }
+        .progress-bar-fill { height:100%; background:#6777ef; background:linear-gradient(90deg,#6777ef,#35199a); border-radius:4px; width:0%; transition:width .15s; }
         #recorrido-map { height:62vh; min-height:480px; width:100%; }
+        .map-error { padding:18px; background:#fff3cd; color:#856404; border-top:1px solid #ffeeba; font-weight:700; }
         .modal-footer { background:#f8f9ff; border-top:1px solid #dee2e6; padding:10px 18px; color:#6c757d; font-size:.85rem; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
         .car-marker { background:transparent; border:none; }
-        .car-dot { width:18px; height:18px; border-radius:50%; background:radial-gradient(circle at 40% 40%,#fff 10%,#6777ef 55%,#35199a 100%); border:2px solid #fff; box-shadow:0 0 8px rgba(103,119,239,.8),0 0 0 3px rgba(103,119,239,.3); }
+        .car-dot { width:18px; height:18px; border-radius:50%; background:#6777ef; background:radial-gradient(circle at 40% 40%,#fff 10%,#6777ef 55%,#35199a 100%); border:2px solid #fff; box-shadow:0 0 8px rgba(103,119,239,.8),0 0 0 3px rgba(103,119,239,.3); }
         .flag-marker { width:24px; height:24px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:700; }
         .flag-start { background:#00a832; } .flag-end { background:#e74c3c; }
         .leaflet-popup-content { min-width:200px; font-size:.82rem; }
@@ -1298,10 +1321,10 @@
         </div>
         <div class="limit-panel" id="limites-procesados"></div>
         <div class="player-panel">
-            <button class="player-btn btn-stop" id="btn-stop" title="Detener y volver al inicio"><i class="fas fa-stop"></i></button>
-            <button class="player-btn btn-prev" id="btn-prev" title="Punto anterior"><i class="fas fa-step-backward"></i></button>
-            <button class="player-btn btn-play" id="btn-play" title="Reproducir"><i class="fas fa-play"></i></button>
-            <button class="player-btn btn-step" id="btn-step" title="Avanzar un punto"><i class="fas fa-step-forward"></i></button>
+            <button class="player-btn btn-stop" id="btn-stop" title="Detener y volver al inicio">&#9632;</button>
+            <button class="player-btn btn-prev" id="btn-prev" title="Punto anterior">&lt;</button>
+            <button class="player-btn btn-play" id="btn-play" title="Reproducir">&#9658;</button>
+            <button class="player-btn btn-step" id="btn-step" title="Avanzar un punto">&gt;</button>
             <div class="player-info" id="player-info">
                 <div class="pi-fecha">- Seleccioná un punto -</div>
                 <div class="pi-vel"></div>
@@ -1326,30 +1349,77 @@
             <span id="resumen"></span>
         </div>
     </div>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>
     <script>
-        const data = ${exportData};
-        const registros = data.registros || [];
-        let map, routePolyline, trailPolyline, carMarker, playbackIndex = 0, isPlaying = false, playTimer = null, markerAnimationFrame = null;
+        var leafletJsFallback = ${JSON.stringify(leafletJsInline)};
+
+        function cargarLeaflet(callback) {
+            if (window.L) { callback(); return; }
+
+            var urls = [
+                'https://cdn.jsdelivr.net/npm/leaflet@1.7.1/dist/leaflet.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js',
+                'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js'
+            ];
+            var idx = 0;
+
+            function fallo() {
+                if (leafletJsFallback) {
+                    var inlineScript = document.createElement('script');
+                    inlineScript.text = leafletJsFallback;
+                    document.head.appendChild(inlineScript);
+                    if (window.L) { callback(); return; }
+                }
+
+                var el = document.getElementById('recorrido-map');
+                if (el) {
+                    el.innerHTML = '<div class="map-error">No se pudo cargar la libreria del mapa. Verifica la conexion a internet o intenta abrir el archivo en otro navegador.</div>';
+                }
+            }
+
+            function intentar() {
+                if (window.L) { callback(); return; }
+                if (idx >= urls.length) { fallo(); return; }
+
+                var script = document.createElement('script');
+                script.src = urls[idx++];
+                script.async = true;
+                script.onload = function() { window.L ? callback() : intentar(); };
+                script.onerror = intentar;
+                document.head.appendChild(script);
+            }
+
+            intentar();
+        }
+
+        var data = ${exportData};
+        var registros = data.registros || [];
+        var map, routePolyline, trailPolyline, carMarker, playbackIndex = 0, isPlaying = false, playTimer = null, markerAnimationFrame = null;
+        var raf = window.requestAnimationFrame || function(cb) { return setTimeout(function() { cb(Date.now()); }, 16); };
+        var caf = window.cancelAnimationFrame || clearTimeout;
+        var now = window.performance && performance.now ? function() { return performance.now(); } : function() { return Date.now(); };
+
+        function valor(valorActual, defecto) {
+            return valorActual !== null && typeof valorActual !== 'undefined' ? valorActual : defecto;
+        }
 
         function popupContent(reg) {
             if (!reg) return '';
             return '<div style="font-size:.82rem;min-width:180px"><b>' + (reg.fecha || '') + '</b><br>' +
-                '<span style="color:#0070c0"><b>' + (reg.velocidad ?? '') + ' km/h</b></span>' +
+                '<span style="color:#0070c0"><b>' + valor(reg.velocidad, '') + ' km/h</b></span>' +
                 (reg.exceso_velocidad ? '<span style="color:red"> EXCESO</span>' : '') + '<br>' +
                 (reg.direccion || '') + '<br><span style="color:' + (reg.color_estado === 'detenido' ? '#0070c0' : '#00a832') + '">' + (reg.estado || '') + '</span>' +
                 (reg.tiempo_detenido ? '<br><b>Detenido: ' + reg.tiempo_detenido + '</b>' : '') + '</div>';
         }
 
         function actualizarBtnPlay() {
-            const btn = document.getElementById('btn-play');
-            btn.innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
+            var btn = document.getElementById('btn-play');
+            btn.innerHTML = isPlaying ? 'II' : '&#9658;';
             btn.className = isPlaying ? 'player-btn btn-pause' : 'player-btn btn-play';
             btn.title = isPlaying ? 'Pausar' : 'Reproducir';
         }
 
         function actualizarProgress() {
-            const total = registros.length || 1;
+            var total = registros.length || 1;
             document.getElementById('prog-current').textContent = registros.length ? playbackIndex + 1 : 0;
             document.getElementById('prog-total').textContent = registros.length;
             document.getElementById('progress-bar-fill').style.width = registros.length ? (((playbackIndex + 1) / total) * 100) + '%' : '0%';
@@ -1357,38 +1427,37 @@
 
         function actualizarPlayerInfo(reg) {
             if (!reg) return;
-            const pi = document.getElementById('player-info');
+            var pi = document.getElementById('player-info');
             pi.querySelector('.pi-fecha').textContent = reg.fecha || '';
-            pi.querySelector('.pi-vel').textContent = (reg.velocidad ?? '') + ' km/h' + (reg.exceso_velocidad ? ' EXCESO' : '');
+            pi.querySelector('.pi-vel').textContent = valor(reg.velocidad, '') + ' km/h' + (reg.exceso_velocidad ? ' EXCESO' : '');
             pi.querySelector('.pi-dir').textContent = reg.direccion || '';
             pi.querySelector('.pi-estado').textContent = (reg.estado || '') + (reg.tiempo_detenido ? ' · ' + reg.tiempo_detenido : '');
             pi.querySelector('.pi-vel').style.color = reg.exceso_velocidad ? '#ff7675' : '#7ecff7';
         }
 
         function duracionTransicionMs() {
-            const speed = parseInt(document.getElementById('speed-slider').value, 10) || 5;
+            var speed = parseInt(document.getElementById('speed-slider').value, 10) || 5;
             return Math.max(120, 1100 - ((speed - 1) * 100));
         }
 
         function animarMarcadorHacia(latlng, duracionMs, alTerminar) {
             if (!carMarker) return;
-            if (markerAnimationFrame) cancelAnimationFrame(markerAnimationFrame);
+            if (markerAnimationFrame) caf(markerAnimationFrame);
 
-            const origen = carMarker.getLatLng();
-            const inicio = performance.now();
-            const destino = { lat: latlng[0], lng: latlng[1] };
-            const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+            var origen = carMarker.getLatLng();
+            var inicio = now();
+            var destino = { lat: latlng[0], lng: latlng[1] };
 
-            function frame(now) {
-                const t = Math.min(1, (now - inicio) / Math.max(1, duracionMs));
-                const k = ease(t);
-                const lat = origen.lat + (destino.lat - origen.lat) * k;
-                const lng = origen.lng + (destino.lng - origen.lng) * k;
+            function frame(nowFrame) {
+                var t = Math.min(1, (nowFrame - inicio) / Math.max(1, duracionMs));
+                var k = t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+                var lat = origen.lat + (destino.lat - origen.lat) * k;
+                var lng = origen.lng + (destino.lng - origen.lng) * k;
                 carMarker.setLatLng([lat, lng]);
                 map.panTo([lat, lng], { animate:false });
 
                 if (t < 1) {
-                    markerAnimationFrame = requestAnimationFrame(frame);
+                    markerAnimationFrame = raf(frame);
                 } else {
                     markerAnimationFrame = null;
                     carMarker.setLatLng([destino.lat, destino.lng]);
@@ -1396,14 +1465,14 @@
                 }
             }
 
-            markerAnimationFrame = requestAnimationFrame(frame);
+            markerAnimationFrame = raf(frame);
         }
 
         function irAPunto(idx) {
             if (!carMarker || !registros[idx]) return;
-            const reg = registros[idx];
-            trailPolyline.setLatLngs(registros.slice(0, idx + 1).map(r => [r.lat, r.lng]));
-            animarMarcadorHacia([reg.lat, reg.lng], duracionTransicionMs(), () => {
+            var reg = registros[idx];
+            trailPolyline.setLatLngs(registros.slice(0, idx + 1).map(function(r) { return [r.lat, r.lng]; }));
+            animarMarcadorHacia([reg.lat, reg.lng], duracionTransicionMs(), function() {
                 if (isPlaying && playbackIndex < registros.length - 1) {
                     playTimer = setTimeout(avanzar, 40);
                 } else if (isPlaying) {
@@ -1411,7 +1480,8 @@
                 }
             });
             carMarker.setPopupContent(popupContent(reg));
-            const dot = carMarker.getElement()?.querySelector('.car-dot');
+            var markerElement = carMarker.getElement ? carMarker.getElement() : null;
+            var dot = markerElement ? markerElement.querySelector('.car-dot') : null;
             if (dot) {
                 if (reg.exceso_velocidad) dot.style.background = 'radial-gradient(circle at 40% 40%,#fff 10%,#ff0000 55%,#990000 100%)';
                 else if (reg.color_estado === 'detenido') dot.style.background = 'radial-gradient(circle at 40% 40%,#fff 10%,#0070c0 55%,#004a80 100%)';
@@ -1440,35 +1510,91 @@
         function pausar() {
             isPlaying = false;
             if (playTimer) { clearTimeout(playTimer); playTimer = null; }
-            if (markerAnimationFrame) { cancelAnimationFrame(markerAnimationFrame); markerAnimationFrame = null; }
+            if (markerAnimationFrame) { caf(markerAnimationFrame); markerAnimationFrame = null; }
             actualizarBtnPlay();
         }
         function detener() { pausar(); if (registros.length) { trailPolyline.setLatLngs([]); irAPunto(0); } }
 
+        function mostrarAvisoMapa(texto) {
+            var el = document.getElementById('recorrido-map');
+            if (!el || document.getElementById('map-warning')) return;
+
+            var aviso = document.createElement('div');
+            aviso.id = 'map-warning';
+            aviso.className = 'map-error';
+            aviso.style.position = 'absolute';
+            aviso.style.left = '0';
+            aviso.style.right = '0';
+            aviso.style.top = '0';
+            aviso.style.zIndex = '1000';
+            aviso.innerHTML = texto;
+            el.style.position = 'relative';
+            el.appendChild(aviso);
+        }
+
+        function crearCapaBase() {
+            var capas = [
+                {
+                    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    options: { attribution:'&copy; OpenStreetMap contributors', maxZoom:19, crossOrigin:false }
+                },
+                {
+                    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                    options: { attribution:'&copy; OpenStreetMap contributors &copy; CARTO', maxZoom:19, subdomains:'abcd', crossOrigin:false }
+                },
+                {
+                    url: 'https://tile.openstreetmap.de/{z}/{x}/{y}.png',
+                    options: { attribution:'&copy; OpenStreetMap contributors', maxZoom:18, crossOrigin:false }
+                }
+            ];
+            var indice = 0;
+            var errores = 0;
+            var capa = null;
+
+            function agregar() {
+                if (capa && map) map.removeLayer(capa);
+                errores = 0;
+                capa = L.tileLayer(capas[indice].url, capas[indice].options);
+                capa.on('tileerror', function() {
+                    errores++;
+                    if (errores >= 3 && indice < capas.length - 1) {
+                        indice++;
+                        agregar();
+                    } else if (errores >= 3) {
+                        mostrarAvisoMapa('No se pudieron cargar las imagenes base del mapa. El recorrido sigue disponible sobre el lienzo.');
+                    }
+                });
+                capa.addTo(map);
+            }
+
+            agregar();
+        }
+
         function init() {
-            const meta = data.metadata || {};
-            const velMax = Number(data.velocidad_maxima || 0);
+            var meta = data.metadata || {};
+            var velMax = Number(data.velocidad_maxima || 0);
             document.getElementById('titulo').innerHTML = '<i class="fas fa-route"></i>Recorrido - ' + (meta.recurso || 'Móvil') + ' (' + (meta.fecha_inicio || '') + ' → ' + (meta.fecha_fin || '') + ')';
             document.getElementById('limites-procesados').innerHTML =
                 '<span class="limit-badge"><i class="fas fa-tachometer-alt"></i> Límite de velocidad: ' + (velMax > 0 ? velMax + ' km/h' : 'sin control') + '</span>';
             document.getElementById('resumen').textContent = registros.length + ' posiciones';
-            map = L.map('recorrido-map', { zoomControl:true });
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution:'&copy; OpenStreetMap contributors', maxZoom:19 }).addTo(map);
+            map = L.map('recorrido-map', { zoomControl:true, preferCanvas:true, tap:false, zoomAnimation:false, fadeAnimation:false, markerZoomAnimation:false });
+            crearCapaBase();
             if (!registros.length) { map.setView([-31.4167,-64.1833], 12); actualizarProgress(); return; }
-            const coords = registros.map(r => [r.lat, r.lng]);
+            var coords = registros.map(function(r) { return [r.lat, r.lng]; });
             routePolyline = L.polyline(coords, { color:'#adb5bd', weight:3, opacity:.5, dashArray:'4 4' }).addTo(map);
             trailPolyline = L.polyline([], { color:'#6777ef', weight:4, opacity:.85 }).addTo(map);
             L.marker(coords[0], { icon:L.divIcon({ className:'', html:'<div class="flag-marker flag-start">I</div>', iconSize:[24,24], iconAnchor:[12,12] }) }).bindPopup('<b>Inicio</b><br>' + (registros[0].fecha || '')).addTo(map);
             L.marker(coords[coords.length - 1], { icon:L.divIcon({ className:'', html:'<div class="flag-marker flag-end">F</div>', iconSize:[24,24], iconAnchor:[12,12] }) }).bindPopup('<b>Fin</b><br>' + (registros[registros.length - 1].fecha || '')).addTo(map);
             carMarker = L.marker(coords[0], { icon:L.divIcon({ className:'car-marker', html:'<div class="car-dot"></div>', iconSize:[18,18], iconAnchor:[9,9] }), zIndexOffset:1000 }).bindPopup(popupContent(registros[0])).addTo(map);
             map.fitBounds(routePolyline.getBounds(), { padding:[30,30] });
+            setTimeout(function() { map.invalidateSize(false); }, 250);
             actualizarProgress();
             actualizarPlayerInfo(registros[0]);
         }
 
-        document.getElementById('btn-play').addEventListener('click', () => isPlaying ? pausar() : reproducir());
-        document.getElementById('btn-step').addEventListener('click', () => { pausar(); avanzar(); });
-        document.getElementById('btn-prev').addEventListener('click', () => { pausar(); retroceder(); });
+        document.getElementById('btn-play').addEventListener('click', function() { isPlaying ? pausar() : reproducir(); });
+        document.getElementById('btn-step').addEventListener('click', function() { pausar(); avanzar(); });
+        document.getElementById('btn-prev').addEventListener('click', function() { pausar(); retroceder(); });
         document.getElementById('btn-stop').addEventListener('click', detener);
         document.getElementById('speed-slider').addEventListener('input', function() {
             document.getElementById('speed-label').textContent = this.value + 'x';
@@ -1479,7 +1605,7 @@
             pausar();
             irAPunto(Math.max(0, Math.min(Math.round((e.offsetX / this.offsetWidth) * (registros.length - 1)), registros.length - 1)));
         });
-        init();
+        cargarLeaflet(init);
     <\/script>
 </body>
 </html>`;

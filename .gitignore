@@ -13,3 +13,20 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
+
+# Agents & Skills
+/.agents
+/.gemini
+/.atl
+/skills
+/.claude
+/.codebuddy
+/.devin
+/.windsurf
+/.cursor
+/.qwen
+skills-lock.json
+
+# Hyperframes
+car911-promo/.thumbnails
+car911-promo/index.html

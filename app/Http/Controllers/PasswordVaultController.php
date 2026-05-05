@@ -7,6 +7,7 @@ use App\Models\PasswordVaultShare;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class PasswordVaultController extends Controller
@@ -345,6 +346,43 @@ class PasswordVaultController extends Controller
         }
 
         return redirect()->back()->with('success', 'Contraseña compartida exitosamente.');
+    }
+
+    public function masterPasswordForm()
+    {
+        if (!Auth::user()->can('ver-clave')) {
+            abort(403, 'No tienes permiso para ver las contraseñas.');
+        }
+
+        // Si no tiene contraseña maestra configurada, redirigir al index directamente
+        if (empty(Auth::user()->master_password)) {
+            return redirect()->route('password-vault.index');
+        }
+
+        return view('password_vault.master_password');
+    }
+
+    public function verifyMasterPassword(Request $request)
+    {
+        if (!Auth::user()->can('ver-clave')) {
+            abort(403, 'No tienes permiso para ver las contraseñas.');
+        }
+
+        $request->validate([
+            'master_password' => 'required|string',
+        ]);
+
+        $user = Auth::user();
+
+        if (!Hash::check($request->master_password, $user->master_password)) {
+            return back()->withErrors(['master_password' => 'Contraseña maestra incorrecta.']);
+        }
+
+        session(['master_password_verified' => true]);
+
+        $intended = session()->pull('master_password_intended', route('password-vault.index'));
+
+        return redirect($intended)->with('success', 'Acceso al gestor de contraseñas verificado.');
     }
 
     public function revokeShare(PasswordVaultShare $share)

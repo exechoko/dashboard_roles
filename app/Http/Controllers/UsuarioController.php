@@ -119,16 +119,33 @@ class UsuarioController extends Controller
             'dni' => 'required',
             'email' => 'required|email|unique:users,email,' . $id,
             'password' => 'same:confirm-password',
+            'master_password' => 'nullable|string|min:4|same:confirm_master_password',
             'roles' => 'required'
+        ], [
+            'master_password.same' => 'Las contraseñas maestras no coinciden.',
+            'master_password.min' => 'La contraseña maestra debe tener al menos 4 caracteres.',
         ]);
 
         $input = $request->all();
+
+        // Contraseña de login
         if (!empty($input['password'])) {
             $input['password'] = Hash::make($input['password']);
         } else {
-            $input = Arr::except($input, array('password'));
+            $input = Arr::except($input, ['password']);
         }
+
+        // Contraseña maestra del gestor
+        if ($request->boolean('clear_master_password')) {
+            $input['master_password'] = null;
+        } elseif (!empty($input['master_password'])) {
+            $input['master_password'] = Hash::make($input['master_password']);
+        } else {
+            $input = Arr::except($input, ['master_password']);
+        }
+
         $input['acceso_externo'] = $request->boolean('acceso_externo');
+        $input = Arr::except($input, ['confirm_master_password', 'clear_master_password']);
 
         $user = User::find($id);
         $user->update($input);
@@ -177,6 +194,80 @@ class UsuarioController extends Controller
             'success' => true,
             'message' => 'Perfil actualizado correctamente',
             'photo_url' => $user->photo ? asset($user->photo) : asset('img/logo.png')
+        ]);
+    }
+
+    /**
+     * Update own login password (requires current password verification)
+     */
+    public function updatePassword(Request $request)
+    {
+        $this->validate($request, [
+            'current_password'    => 'required|string',
+            'new_password'        => 'required|string|min:6|same:confirm_new_password',
+            'confirm_new_password'=> 'required|string',
+        ], [
+            'new_password.min'  => 'La nueva contraseña debe tener al menos 6 caracteres.',
+            'new_password.same' => 'Las contraseñas nuevas no coinciden.',
+        ]);
+
+        $user = auth()->user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La contraseña actual es incorrecta.',
+            ], 422);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Contraseña de acceso actualizada correctamente.',
+        ]);
+    }
+
+    /**
+     * Update own master password for the password vault
+     */
+    public function updateMasterPassword(Request $request)
+    {
+        $this->validate($request, [
+            'master_password'         => 'nullable|string|min:4|same:confirm_master_password',
+            'confirm_master_password' => 'nullable|string',
+        ], [
+            'master_password.min'  => 'La contraseña maestra debe tener al menos 4 caracteres.',
+            'master_password.same' => 'Las contraseñas maestras no coinciden.',
+        ]);
+
+        $user = auth()->user();
+
+        if ($request->boolean('clear_master_password')) {
+            $user->master_password = null;
+            $user->save();
+            session()->forget('master_password_verified');
+            return response()->json([
+                'success' => true,
+                'message' => 'Contraseña maestra eliminada. El gestor de contraseñas ya no tiene protección adicional.',
+            ]);
+        }
+
+        if (empty($request->master_password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ingrese una contraseña maestra o marque la opción de eliminar.',
+            ], 422);
+        }
+
+        $user->master_password = Hash::make($request->master_password);
+        $user->save();
+        session()->forget('master_password_verified');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Contraseña maestra configurada correctamente.',
         ]);
     }
 

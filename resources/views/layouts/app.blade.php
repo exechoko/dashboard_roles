@@ -116,6 +116,7 @@
 
     @include('profile.change_password')
     @include('profile.edit_profile')
+    @include('profile.master_password_setup')
 
     <!-- THEME TOGGLE BUTTON -->
     @include('themes.toggle-button')

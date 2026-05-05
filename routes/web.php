@@ -70,6 +70,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::patch('tareas-items/{id}', [TareaController::class, 'updateItem'])->name('tareas.items.update');
 
     Route::post('/profile/update', [UsuarioController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/profile/update-password', [UsuarioController::class, 'updatePassword'])->name('profile.updatePassword');
+    Route::post('/profile/update-master-password', [UsuarioController::class, 'updateMasterPassword'])->name('profile.updateMasterPassword');
     Route::post('/profile/update-theme', [UsuarioController::class, 'updateTheme'])->name('profile.updateTheme')->middleware('auth');
 
     Route::get('dependencias/crear-general', [DependenciaController::class, 'createGeneral'])->name('dependencias.crear-general');
@@ -366,26 +368,34 @@ Route::group(['middleware' => ['auth']], function () {
         ->name('entrega-bodycams.previsualizar');
 
 
-    // Rutas del gestor de contraseñas (con permisos en el controlador, NO en las rutas)
-    Route::resource('password-vault', PasswordVaultController::class);
-    // Generar contraseña aleatoria
-    Route::get('password-vault-generate', [PasswordVaultController::class, 'generatePassword'])
-        ->name('password-vault.generate');
-    // Toggle favorito
-    Route::post('password-vault/{passwordVault}/toggle-favorite', [PasswordVaultController::class, 'toggleFavorite'])
-        ->name('password-vault.toggle-favorite');
-    // Obtener contraseña (API)
-    Route::get('password-vault/{passwordVault}/get-password', [PasswordVaultController::class, 'getPassword'])
-        ->name('password-vault.get-password');
-    // Compartir contraseña con otro usuario
-    Route::post('password-vault/{passwordVault}/share', [PasswordVaultController::class, 'share'])
-        ->name('password-vault.share');
-    // Obtener lista de usuarios con los que se compartió
-    Route::get('password-vault/{passwordVault}/shares', [PasswordVaultController::class, 'getShares'])
-        ->name('password-vault.get-shares');
-    // Revocar acceso compartido
-    Route::delete('password-shares/{share}/revoke', [PasswordVaultController::class, 'revokeShare'])
-        ->name('password-vault.revoke-share');
+    // Pantalla de verificación de contraseña maestra (sin el middleware para no crear loop)
+    Route::get('password-vault-auth', [PasswordVaultController::class, 'masterPasswordForm'])
+        ->name('password-vault.master-password');
+    Route::post('password-vault-auth', [PasswordVaultController::class, 'verifyMasterPassword'])
+        ->name('password-vault.verify-master-password');
+
+    // Rutas del gestor de contraseñas protegidas con contraseña maestra
+    Route::middleware('master.password')->group(function () {
+        Route::resource('password-vault', PasswordVaultController::class);
+        // Generar contraseña aleatoria
+        Route::get('password-vault-generate', [PasswordVaultController::class, 'generatePassword'])
+            ->name('password-vault.generate');
+        // Toggle favorito
+        Route::post('password-vault/{passwordVault}/toggle-favorite', [PasswordVaultController::class, 'toggleFavorite'])
+            ->name('password-vault.toggle-favorite');
+        // Obtener contraseña (API)
+        Route::get('password-vault/{passwordVault}/get-password', [PasswordVaultController::class, 'getPassword'])
+            ->name('password-vault.get-password');
+        // Compartir contraseña con otro usuario
+        Route::post('password-vault/{passwordVault}/share', [PasswordVaultController::class, 'share'])
+            ->name('password-vault.share');
+        // Obtener lista de usuarios con los que se compartió
+        Route::get('password-vault/{passwordVault}/shares', [PasswordVaultController::class, 'getShares'])
+            ->name('password-vault.get-shares');
+        // Revocar acceso compartido
+        Route::delete('password-shares/{share}/revoke', [PasswordVaultController::class, 'revokeShare'])
+            ->name('password-vault.revoke-share');
+    });
 
     Route::prefix('patrimonio')->name('patrimonio.')->group(function () {
         // Acciones especiales para bienes

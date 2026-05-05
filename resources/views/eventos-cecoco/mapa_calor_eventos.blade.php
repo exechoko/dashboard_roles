@@ -78,58 +78,6 @@
             gap: 4px;
         }
 
-        /* Buscador de calles */
-        .buscador-calles-control {
-            background: white;
-            border-radius: 4px;
-            box-shadow: 0 1px 5px rgba(0,0,0,.4);
-            padding: 5px;
-        }
-        [data-theme="dark"] .buscador-calles-control {
-            background: #1e1e2d;
-        }
-        [data-theme="dark"] .buscador-calles-control input {
-            background: #2b2b3d;
-            color: #e4e6fc;
-            border-color: #444;
-        }
-        .buscador-calles-lista {
-            display: none;
-            position: absolute;
-            top: 34px;
-            left: 0;
-            background: white;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            min-width: 290px;
-            list-style: none;
-            margin: 0;
-            padding: 0;
-            z-index: 9999;
-            box-shadow: 0 2px 8px rgba(0,0,0,.2);
-            max-height: 230px;
-            overflow-y: auto;
-        }
-        [data-theme="dark"] .buscador-calles-lista {
-            background: #1e1e2d;
-            border-color: #444;
-        }
-        .buscador-calles-lista li {
-            padding: 7px 12px;
-            cursor: pointer;
-            font-size: 13px;
-            border-bottom: 1px solid #eee;
-            line-height: 1.3;
-        }
-        [data-theme="dark"] .buscador-calles-lista li {
-            border-bottom-color: #333;
-        }
-        .buscador-calles-lista li:hover {
-            background: #f0f4ff;
-        }
-        [data-theme="dark"] .buscador-calles-lista li:hover {
-            background: #2b2b3d;
-        }
     </style>
 @endsection
 
@@ -597,110 +545,20 @@
                 alert('Error de conexión: ' + err.message);
             });
         });
-        // ── Buscador de calles (Nominatim) ──────────────────────────────────
-        function crearBuscadorCalles(targetMap) {
+        // ── Buscador de calles (ESRI Geosearch) ─────────────────────────────
+        function crearBuscadorCalles(targetMap, position) {
+            var searchControl = new L.esri.Controls.Geosearch({
+                position: position || 'topleft'
+            }).addTo(targetMap);
+
             var markerB = null;
-            var timer   = null;
-            var wrap    = null;
-            var input   = null;
-            var btn     = null;
-            var lista   = null;
 
-            var BuscadorControl = L.Control.extend({
-                options: { position: 'topleft' },
-                onAdd: function () {
-                    wrap = L.DomUtil.create('div', 'buscador-calles-control');
-                    wrap.innerHTML =
-                        '<div style="position:relative;">' +
-                            '<div style="display:flex;gap:4px;">' +
-                                '<input class="bc-input" type="text" placeholder="Buscar calle en Paraná…" ' +
-                                    'autocomplete="off" ' +
-                                    'style="width:220px;padding:5px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px;">' +
-                                '<button class="bc-btn" title="Buscar" ' +
-                                    'style="padding:5px 8px;background:#0d6efd;color:white;border:none;border-radius:4px;cursor:pointer;">' +
-                                    '<svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">' +
-                                        '<path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>' +
-                                    '</svg>' +
-                                '</button>' +
-                            '</div>' +
-                            '<ul class="bc-lista buscador-calles-lista"></ul>' +
-                        '</div>';
-
-                    L.DomEvent.disableClickPropagation(wrap);
-                    L.DomEvent.disableScrollPropagation(wrap);
-
-                    input = wrap.querySelector('.bc-input');
-                    btn   = wrap.querySelector('.bc-btn');
-                    lista = wrap.querySelector('.bc-lista');
-
-                    return wrap;
-                }
-            });
-
-            new BuscadorControl().addTo(targetMap);
-
-            function buscar(q) {
-                lista.style.display = 'none';
-                lista.innerHTML = '';
-                if (!q || q.length < 3) return;
-
-                var params = new URLSearchParams({
-                    q: q + ', Paraná, Entre Ríos, Argentina',
-                    format: 'json',
-                    countrycodes: 'ar',
-                    limit: 8,
-                    addressdetails: 1,
-                    'accept-language': 'es',
-                    viewbox: '-60.75,-31.45,-60.20,-32.05',
-                    bounded: 0
-                });
-
-                fetch('https://nominatim.openstreetmap.org/search?' + params, {
-                    headers: { 'Accept': 'application/json' }
-                })
-                .then(function (r) { return r.json(); })
-                .then(function (results) {
-                    lista.innerHTML = '';
-                    if (!results.length) {
-                        lista.innerHTML = '<li style="padding:8px 12px;color:#888;font-size:13px;cursor:default;">Sin resultados</li>';
-                        lista.style.display = 'block';
-                        return;
-                    }
-                    results.forEach(function (res) {
-                        var li = document.createElement('li');
-                        var addr = res.address || {};
-                        var label = [addr.road || addr.pedestrian || '', addr.house_number || '']
-                            .filter(Boolean).join(' ');
-                        if (!label) label = res.display_name.split(',').slice(0, 2).join(',');
-                        li.textContent = label;
-                        li.title = res.display_name;
-                        li.addEventListener('click', function () {
-                            lista.style.display = 'none';
-                            input.value = label;
-                            var latlng = L.latLng(parseFloat(res.lat), parseFloat(res.lon));
-                            targetMap.setView(latlng, 17);
-                            if (markerB) targetMap.removeLayer(markerB);
-                            markerB = L.marker(latlng).addTo(targetMap).bindPopup(label).openPopup();
-                            if (targetMap === mapUbicar) colocarMarcador(latlng);
-                        });
-                        lista.appendChild(li);
-                    });
-                    lista.style.display = 'block';
-                })
-                .catch(function () { lista.style.display = 'none'; });
-            }
-
-            input.addEventListener('input', function () {
-                clearTimeout(timer);
-                timer = setTimeout(function () { buscar(input.value.trim()); }, 450);
-            });
-            input.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter') { clearTimeout(timer); buscar(input.value.trim()); }
-                if (e.key === 'Escape') { lista.style.display = 'none'; }
-            });
-            btn.addEventListener('click', function () { clearTimeout(timer); buscar(input.value.trim()); });
-            document.addEventListener('click', function (e) {
-                if (wrap && !wrap.contains(e.target)) lista.style.display = 'none';
+            searchControl.on('results', function (data) {
+                if (markerB) targetMap.removeLayer(markerB);
+                if (!data.results.length) return;
+                var result = data.results[0];
+                markerB = L.marker(result.latlng).addTo(targetMap).bindPopup(result.text).openPopup();
+                if (targetMap === mapUbicar) colocarMarcador(result.latlng);
             });
         }
     </script>

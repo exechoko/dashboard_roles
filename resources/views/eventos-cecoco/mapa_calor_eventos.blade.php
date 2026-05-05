@@ -553,13 +553,23 @@
 
             var markerB = null;
 
+            function limpiarMarker() {
+                if (markerB) { targetMap.removeLayer(markerB); markerB = null; }
+            }
+
             searchControl.on('results', function (data) {
-                if (markerB) targetMap.removeLayer(markerB);
+                limpiarMarker();
                 if (!data.results.length) return;
                 var result = data.results[0];
                 markerB = L.marker(result.latlng).addTo(targetMap).bindPopup(result.text).openPopup();
                 if (targetMap === mapUbicar) colocarMarcador(result.latlng);
             });
+
+            targetMap.on('click', limpiarMarker);
+
+            if (targetMap === mapUbicar) {
+                $('#modalUbicarMapa').on('hide.bs.modal', limpiarMarker);
+            }
         }
     </script>
 @endsection

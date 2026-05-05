@@ -160,6 +160,14 @@
         color: #ffffff !important;
     }
 
+    .main-sidebar {
+        overflow-y: auto;
+    }
+
+    body.sidebar-mini .main-sidebar {
+        overflow: initial !important;
+    }
+
     .main-sidebar::-webkit-scrollbar {
         width: 6px;
     }

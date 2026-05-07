@@ -1499,11 +1499,28 @@ class FlotaGeneralController extends Controller
     {
         $tipoRecurso = $this->determinarTipoRecurso($recurso);
         $nombreDependencia = strtolower($dependencia->nombre);
+        $nombreRecurso = strtolower($recurso->nombre);
+
+        // Extraer número de "Móvil X" del nombre del recurso (prioridad máxima)
+        if (preg_match('/m[oó]vil\s*(\d+)/i', $recurso->nombre, $matches)) {
+            return str_pad($matches[1], 4, '0', STR_PAD_LEFT);
+        }
+
+        // Tipos 1-5: Móviles - usar dominio como fallback
+        if ($tipoRecurso >= 1 && $tipoRecurso <= 5) {
+            $vehiculo = $recurso->vehiculo;
+            if ($vehiculo && $vehiculo->dominio) {
+                preg_match('/(\d+)/', $vehiculo->dominio, $matches);
+                if (isset($matches[1])) {
+                    return str_pad(substr($matches[1], -4), 4, '0', STR_PAD_LEFT);
+                }
+            }
+            return str_pad($recurso->id, 4, '0', STR_PAD_LEFT);
+        }
 
         // Tipo 0: Bases Fijas - subtipo según dependencia
         if ($tipoRecurso == 0) {
             $subtipo = '0000';
-
             if (strpos($nombreDependencia, 'jefe') !== false && strpos($nombreDependencia, 'provincia') !== false) {
                 $subtipo = '0000';
             } elseif (strpos($nombreDependencia, 'sub jefe') !== false || strpos($nombreDependencia, 'subjefe') !== false) {
@@ -1523,29 +1540,13 @@ class FlotaGeneralController extends Controller
             } elseif (strpos($nombreDependencia, 'criminalística') !== false || strpos($nombreDependencia, 'criminalistica') !== false) {
                 $subtipo = '0090';
             } elseif (strpos($nombreDependencia, 'comisaría') !== false || strpos($nombreDependencia, 'comisaria') !== false) {
-                // Extraer número de comisaría si existe
                 preg_match('/(\d+)/', $nombreDependencia, $matches);
                 $numComisaria = isset($matches[1]) ? str_pad($matches[1], 2, '0', STR_PAD_LEFT) : '00';
                 $subtipo = '12' . $numComisaria;
             } else {
-                $subtipo = '1300'; // Dependencias genéricas
+                $subtipo = '1300';
             }
-
             return $subtipo;
-        }
-
-        // Tipos 1-5: Móviles - usar número de dominio o recurso
-        if ($tipoRecurso >= 1 && $tipoRecurso <= 5) {
-            $vehiculo = $recurso->vehiculo;
-            if ($vehiculo && $vehiculo->dominio) {
-                // Extraer números del dominio
-                preg_match('/(\d+)/', $vehiculo->dominio, $matches);
-                if (isset($matches[1])) {
-                    return str_pad(substr($matches[1], -4), 4, '0', STR_PAD_LEFT);
-                }
-            }
-            // Si no hay dominio, usar ID del recurso
-            return str_pad($recurso->id, 4, '0', STR_PAD_LEFT);
         }
 
         // Tipos 6-8: Funcionarios - usar asignación y enumeración

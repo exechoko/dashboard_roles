@@ -105,6 +105,77 @@
             padding: 0.75rem;
         }
     }
+
+    /* Card "Estado de procesos y Base de datos" */
+    .estado-procesos-card {
+        border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .estado-procesos-header {
+        background: linear-gradient(135deg, #1a3a2a, #166534);
+        color: #fff;
+    }
+
+    .estado-procesos-grid {
+        gap: 1.5rem;
+    }
+
+    /* Bloque que envuelve un grupo (Geocodificación, Tamaño BD, etc.) */
+    .estado-procesos-bloque {
+        padding-left: 0.75rem;
+        margin-left: 0.25rem;
+        border-left: 1px solid #dee2e6;
+    }
+
+    .estado-procesos-titulo {
+        color: #6c757d;
+    }
+
+    .restauraciones-icono {
+        font-size: 1rem;
+        line-height: 1;
+    }
+
+    /* Dark mode */
+    [data-theme="dark"] .estado-procesos-card {
+        background-color: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    [data-theme="dark"] .estado-procesos-card .card-body {
+        color: #e2e8f0;
+    }
+
+    [data-theme="dark"] .estado-procesos-bloque {
+        border-left-color: rgba(255, 255, 255, 0.15);
+    }
+
+    [data-theme="dark"] .estado-procesos-titulo {
+        color: #cbd5e1;
+    }
+
+    [data-theme="dark"] .estado-procesos-card .badge.badge-secondary {
+        background-color: #475569;
+        color: #e2e8f0;
+    }
+
+    /* Mobile: bloques apilados sin border-left a la izquierda (queda mal en una sola columna) */
+    @media (max-width: 767px) {
+        .estado-procesos-grid {
+            gap: 0.85rem;
+        }
+        .estado-procesos-bloque {
+            border-left: none;
+            border-top: 1px solid #dee2e6;
+            padding-left: 0;
+            padding-top: 0.5rem;
+            margin-left: 0;
+            width: 100%;
+        }
+        [data-theme="dark"] .estado-procesos-bloque {
+            border-top-color: rgba(255, 255, 255, 0.15);
+        }
+    }
 </style>
 
 @stop
@@ -975,17 +1046,16 @@
                                             </div>
                                         </div>
 
-                                        {{-- Card estado workers de cola --}}
+                                        {{-- Card estado de procesos y base de datos --}}
                                         <div class="row mb-4">
                                             <div class="col-12">
-                                                <div class="card shadow-sm">
-                                                    <div class="card-header d-flex align-items-center justify-content-between py-2"
-                                                        style="background: linear-gradient(135deg,#1a3a2a,#166534); color:#fff;">
-                                                        <span><i class="fas fa-cogs mr-2"></i><strong>Workers de Cola</strong></span>
+                                                <div class="card shadow-sm estado-procesos-card">
+                                                    <div class="card-header d-flex align-items-center justify-content-between py-2 estado-procesos-header">
+                                                        <span><i class="fas fa-cogs mr-2"></i><strong>Estado de procesos y Base de datos</strong></span>
                                                         <small id="workers-ultima-actualizacion" class="text-white-50"></small>
                                                     </div>
                                                     <div class="card-body py-3">
-                                                        <div class="d-flex flex-wrap align-items-start" style="gap:1.5rem;">
+                                                        <div class="d-flex flex-wrap align-items-start estado-procesos-grid">
 
                                                             {{-- Estado del worker --}}
                                                             <div class="d-flex align-items-center mr-4">
@@ -1013,12 +1083,23 @@
                                                                 <span><strong>Fallidos:</strong> <span id="workers-fallidos" class="badge badge-danger">—</span></span>
                                                             </div>
 
-                                                            {{-- Separador --}}
-                                                            <div class="border-left pl-3 ml-1" style="border-color:#dee2e6!important;">
-                                                                <small class="text-muted d-block mb-1"><i class="fas fa-map-marker-alt mr-1"></i><strong>Geocodificación</strong></small>
-                                                                <div class="d-flex align-items-center" style="gap:0.75rem;">
+                                                            {{-- Geocodificación --}}
+                                                            <div class="estado-procesos-bloque">
+                                                                <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-map-marker-alt mr-1"></i><strong>Geocodificación</strong></small>
+                                                                <div class="d-flex align-items-center flex-wrap" style="gap:0.75rem;">
                                                                     <span><small>Cacheadas:</small> <span id="workers-geo-cacheadas" class="badge badge-success">—</span></span>
                                                                     <span><small>Pendientes:</small> <span id="workers-geo-pendientes" class="badge badge-secondary">—</span></span>
+                                                                </div>
+                                                            </div>
+
+                                                            {{-- Tamaño BD restauraciones CECOCO --}}
+                                                            <div class="estado-procesos-bloque" title="Tamaño de la base de datos de restauraciones de CECOCO. Se actualiza una vez por hora.">
+                                                                <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-database mr-1"></i><strong>Tamaño BD restauraciones</strong></small>
+                                                                <div class="d-flex align-items-center flex-wrap" style="gap:0.5rem;">
+                                                                    <span id="workers-restauraciones-icono" class="restauraciones-icono" style="display:none;">
+                                                                        <i class="fas fa-exclamation-triangle text-danger" title="Supera el umbral de 4000 MB"></i>
+                                                                    </span>
+                                                                    <span id="workers-restauraciones-mb" class="badge badge-secondary">—</span>
                                                                 </div>
                                                             </div>
 
@@ -2963,6 +3044,30 @@
                             } else {
                                 elGeoPend.textContent = d.geo_pendientes;
                                 elGeoPend.className = d.geo_pendientes > 0 ? 'badge badge-warning' : 'badge badge-success';
+                            }
+                        }
+
+                        // Tamaño BD restauraciones CECOCO (cache horario)
+                        var elRest = document.getElementById('workers-restauraciones-mb');
+                        var elRestIcon = document.getElementById('workers-restauraciones-icono');
+                        if (elRest) {
+                            var mb = d.restauraciones_mb;
+                            var umbral = d.restauraciones_umbral_mb || 4000;
+                            if (mb === null || typeof mb === 'undefined') {
+                                elRest.textContent = 'sin datos';
+                                elRest.className = 'badge badge-secondary';
+                                elRest.title = 'Aún no se cacheó el valor (corre cada hora desde el schedule).';
+                                if (elRestIcon) elRestIcon.style.display = 'none';
+                            } else {
+                                var mbFmt = Number(mb).toLocaleString('es-AR', { maximumFractionDigits: 0 });
+                                elRest.textContent = mbFmt + ' MB';
+                                var supera = mb > umbral;
+                                elRest.className = supera ? 'badge badge-danger' : 'badge badge-success';
+                                if (d.restauraciones_consultado_en) {
+                                    var fecha = new Date(d.restauraciones_consultado_en);
+                                    elRest.title = 'Consultado: ' + fecha.toLocaleString('es-AR') + (supera ? ' — Supera ' + umbral + ' MB' : '');
+                                }
+                                if (elRestIcon) elRestIcon.style.display = supera ? 'inline-block' : 'none';
                             }
                         }
 

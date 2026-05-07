@@ -511,6 +511,8 @@ class HomeController extends Controller
                 ->where('reserved_at', '>=', now()->subMinutes(10)->timestamp)
                 ->exists();
 
+            // Tamaño BD restauraciones CECOCO: caché que refresca el schedule horario.
+            $tamanoRest = Cache::get(\App\Services\CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -524,6 +526,9 @@ class HomeController extends Controller
             'geo_total_dir'      => $totalDirecciones,
             'geo_cacheadas'      => $geocodeadas,
             'geo_pendientes'     => ($totalDirecciones !== null && $geocodeadas !== null) ? max(0, $totalDirecciones - $geocodeadas) : null,
+            'restauraciones_mb'            => $tamanoRest['mb'] ?? null,
+            'restauraciones_consultado_en' => $tamanoRest['consultado_en'] ?? null,
+            'restauraciones_umbral_mb'     => 4000,
         ]);
     }
 }

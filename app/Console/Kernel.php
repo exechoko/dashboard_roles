@@ -90,6 +90,19 @@ class Kernel extends ConsoleKernel
             $cacheadas = \DB::table('geocodificacion_directa')->count();
             \Illuminate\Support\Facades\Cache::put('dashboard_geo_counts', [$total, $cacheadas], 360);
         })->name('cache-dashboard-geo-counts')->everyFiveMinutes()->withoutOverlapping();
+
+        // Tamaño de la BD de restauraciones de CECOCO: se consulta una vez por hora
+        // y se cachea para que el dashboard nunca pegue al servidor remoto en cada poll.
+        $schedule->call(function () {
+            try {
+                app(\App\Services\CecocoExpedienteService::class)
+                    ->actualizarCacheTamanoBaseRestauraciones();
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('No se pudo actualizar tamaño BD restauraciones', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        })->name('cache-cecoco-tamano-restauraciones')->hourly()->withoutOverlapping();
     }
 
     /**

@@ -124,6 +124,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/busqueda-avanzada/export-excel', [App\Http\Controllers\FlotaGeneralController::class, 'exportExcelBusquedaAvanzada'])->name('flota.busquedaAvanzada.export');
     Route::post('/update-historico/{id}', [App\Http\Controllers\FlotaGeneralController::class, 'update_historico'])->name('flota.update_historico');
     Route::get('get-recursos', [App\Http\Controllers\FlotaGeneralController::class, 'getRecursosJSON'])->name('getRecursosJSON');
+    Route::post('flota/issi-sugerido', [App\Http\Controllers\FlotaGeneralController::class, 'generarIssiSugerido'])->name('flota.issi-sugerido');
 
     Route::post('/get-equipos-sin-funcionar-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposSinFuncionarJSON'])->name('get-equipos-sin-funcionar-json');
     Route::post('/get-equipos-baja-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposBajaJSON'])->name('get-equipos-baja-json');

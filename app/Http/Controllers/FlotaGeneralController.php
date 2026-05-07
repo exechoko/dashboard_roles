@@ -1358,4 +1358,263 @@ class FlotaGeneralController extends Controller
             ->get();
         return response()->json($recursos);
     }
+
+    public function generarIssiSugerido(Request $request)
+    {
+        $request->validate([
+            'dependencia_id' => 'required|integer',
+            'recurso_id' => 'required|integer',
+            'equipo_id' => 'required|integer',
+        ]);
+
+        $dependencia = Destino::with('padre')->find($request->dependencia_id);
+        $recurso = Recurso::with('vehiculo')->find($request->recurso_id);
+        $equipo = Equipo::with('tipo_terminal.tipo_uso')->find($request->equipo_id);
+
+        if (!$dependencia || !$recurso || !$equipo) {
+            return response()->json(['issi' => null]);
+        }
+
+        $tipoVehiculo = $recurso->vehiculo ? strtolower($recurso->vehiculo->tipo_vehiculo) : '';
+        $tipoRecurso = $this->determinarTipoRecurso($recurso);
+        $flota = $this->determinarFlotaPorDependencia($dependencia, $tipoRecurso, $tipoVehiculo);
+        $subIdentifier = $this->determinarSubIdentifier($dependencia, $recurso, $equipo);
+
+        $issi = sprintf('%02d%d%s', $flota, $tipoRecurso, $subIdentifier);
+
+        return response()->json(['issi' => $issi]);
+    }
+
+    private function determinarFlotaPorDependencia($dependencia, $tipoRecurso = null, $tipoVehiculo = '')
+    {
+        $nombre = strtolower($dependencia->nombre);
+        $nombrePadre = $dependencia->padre ? strtolower($dependencia->padre->nombre) : '';
+        $tipo = strtolower($dependencia->tipo);
+        $textoCompleto = $nombre . ' ' . $nombrePadre;
+
+        // Reglas específicas primero
+        if (strpos($textoCompleto, 'jefe de policía') !== false || strpos($textoCompleto, 'jefe policía') !== false) return 11;
+        if (strpos($textoCompleto, 'sub jefe') !== false || strpos($textoCompleto, 'subjefe') !== false || strpos($textoCompleto, 'director') !== false) return 12;
+        if ($tipo === 'departamental' && strpos($nombre, 'guardia') !== false) return 13;
+        if ($tipo === 'direccion' || $tipo === 'division') return 14;
+        if ($tipo === 'departamental') return 15;
+        if ($tipo === 'comisaria' && strpos($nombre, 'guardia') !== false) return 16;
+        if (strpos($textoCompleto, 'bombero') !== false) return 17;
+        
+        // Lógica 911 (agrupada y priorizada)
+        if (strpos($textoCompleto, '911') !== false) {
+            if (strpos($textoCompleto, 'técnica') !== false || strpos($textoCompleto, 'tecnica') !== false) return 29;
+            // Dentro del 911: camionetas → Flota 19, motos/autos → Flota 18
+            if (strpos($tipoVehiculo, 'camioneta') !== false) return 19;
+            return 18; // Default 911 → Patrullaje (motos, autos, etc.)
+        }
+
+        if (strpos($textoCompleto, 'coe') !== false) return 20;
+        if (strpos($textoCompleto, 'gia') !== false) return 21;
+        if ($tipo === 'comisaria') return 22;
+        if (strpos($textoCompleto, 'seguridad bancaria') !== false || strpos($textoCompleto, 'segbanc') !== false) return 23;
+        if (strpos($textoCompleto, 'minoridad') !== false) return 24;
+        if (strpos($textoCompleto, 'aérea') !== false || strpos($textoCompleto, 'aerea') !== false || strpos($textoCompleto, 'briga') !== false) return 25;
+        if (strpos($textoCompleto, 'seguridad vial') !== false || strpos($textoCompleto, 'seg. vial') !== false) return 28;
+        if (strpos($textoCompleto, 'costa') !== false || strpos($textoCompleto, 'paraná') !== false) return 30;
+
+        return 26; // Default: Uso Gral 1
+    }
+
+    private function determinarTipoRecurso($recurso)
+    {
+        $vehiculo = $recurso->vehiculo;
+
+        if (!$vehiculo) {
+            // Sin vehículo: verificar si es portátil/HT o base fija
+            $nombre = strtolower($recurso->nombre);
+            if (strpos($nombre, 'ht') !== false || strpos($nombre, 'portátil') !== false ||
+                strpos($nombre, 'portatil') !== false || strpos($nombre, 'handie') !== false ||
+                strpos($nombre, 'talkie') !== false || strpos($nombre, 'pie') !== false ||
+                strpos($nombre, 'peatonal') !== false) {
+                return 8; // Funcionario a Pie (portátil/HT)
+            }
+            if (strpos($nombre, 'fijo') !== false || strpos($nombre, 'base') !== false ||
+                strpos($nombre, 'consola') !== false || strpos($nombre, 'repetidora') !== false) {
+                return 0; // Base Fija
+            }
+            return 9; // No Especificado
+        }
+
+        $tipoVehiculo = strtolower($vehiculo->tipo_vehiculo);
+
+        // Tipo 0: Bases Fijas
+        if (strpos($tipoVehiculo, 'fijo') !== false || strpos($tipoVehiculo, 'base') !== false) {
+            return 0;
+        }
+
+        // Tipo 1: Móvil Pesado
+        if (strpos($tipoVehiculo, 'camion') !== false || strpos($tipoVehiculo, 'colectivo') !== false ||
+            strpos($tipoVehiculo, 'grua') !== false || strpos($tipoVehiculo, 'unidad móvil') !== false) {
+            return 1;
+        }
+
+        // Tipo 2: Móvil aéreo
+        if (strpos($tipoVehiculo, 'helicóptero') !== false || strpos($tipoVehiculo, 'avion') !== false ||
+            strpos($tipoVehiculo, 'uav') !== false || strpos($tipoVehiculo, 'drone') !== false) {
+            return 2;
+        }
+
+        // Tipo 3: Móvil Operativo
+        if (strpos($tipoVehiculo, 'auto') !== false || strpos($tipoVehiculo, 'camioneta') !== false ||
+            strpos($tipoVehiculo, 'ambulancia') !== false || strpos($tipoVehiculo, 'combi') !== false) {
+            return 3;
+        }
+
+        // Tipo 4: Móvil Rápido
+        if (strpos($tipoVehiculo, 'moto') !== false || strpos($tipoVehiculo, 'cuatriciclo') !== false ||
+            strpos($tipoVehiculo, 'scooter') !== false) {
+            return 4;
+        }
+
+        // Tipo 5: Móvil de Civil
+        if (strpos($tipoVehiculo, 'civil') !== false || strpos($tipoVehiculo, 'no identificado') !== false) {
+            return 5;
+        }
+
+        // Tipo 6: Funcionario a Caballo
+        if (strpos($tipoVehiculo, 'caballo') !== false || strpos($tipoVehiculo, 'equino') !== false) {
+            return 6;
+        }
+
+        // Tipo 7: Funcionario en Bicicleta
+        if (strpos($tipoVehiculo, 'bicicleta') !== false || strpos($tipoVehiculo, 'bici') !== false) {
+            return 7;
+        }
+
+        // Tipo 8: Funcionario a Pie
+        if (strpos($tipoVehiculo, 'pie') !== false || strpos($tipoVehiculo, 'peatonal') !== false) {
+            return 8;
+        }
+
+        return 9; // No Especificado
+    }
+
+    private function determinarSubIdentifier($dependencia, $recurso, $equipo)
+    {
+        $tipoRecurso = $this->determinarTipoRecurso($recurso);
+        $nombreDependencia = strtolower($dependencia->nombre);
+
+        // Tipo 0: Bases Fijas - subtipo según dependencia
+        if ($tipoRecurso == 0) {
+            $subtipo = '0000';
+
+            if (strpos($nombreDependencia, 'jefe') !== false && strpos($nombreDependencia, 'provincia') !== false) {
+                $subtipo = '0000';
+            } elseif (strpos($nombreDependencia, 'sub jefe') !== false || strpos($nombreDependencia, 'subjefe') !== false) {
+                $subtipo = '0010';
+            } elseif (strpos($nombreDependencia, 'operaciones') !== false) {
+                $subtipo = '0020';
+            } elseif (strpos($nombreDependencia, 'investigaciones') !== false) {
+                $subtipo = '0030';
+            } elseif (strpos($nombreDependencia, 'ayudantía') !== false || strpos($nombreDependencia, 'ayudantia') !== false) {
+                $subtipo = '0040';
+            } elseif (strpos($nombreDependencia, 'logística') !== false || strpos($nombreDependencia, 'logistica') !== false) {
+                $subtipo = '0050';
+            } elseif (strpos($nombreDependencia, 'planeamiento') !== false) {
+                $subtipo = '0060';
+            } elseif (strpos($nombreDependencia, 'inteligencia') !== false) {
+                $subtipo = '0070';
+            } elseif (strpos($nombreDependencia, 'criminalística') !== false || strpos($nombreDependencia, 'criminalistica') !== false) {
+                $subtipo = '0090';
+            } elseif (strpos($nombreDependencia, 'comisaría') !== false || strpos($nombreDependencia, 'comisaria') !== false) {
+                // Extraer número de comisaría si existe
+                preg_match('/(\d+)/', $nombreDependencia, $matches);
+                $numComisaria = isset($matches[1]) ? str_pad($matches[1], 2, '0', STR_PAD_LEFT) : '00';
+                $subtipo = '12' . $numComisaria;
+            } else {
+                $subtipo = '1300'; // Dependencias genéricas
+            }
+
+            return $subtipo;
+        }
+
+        // Tipos 1-5: Móviles - usar número de dominio o recurso
+        if ($tipoRecurso >= 1 && $tipoRecurso <= 5) {
+            $vehiculo = $recurso->vehiculo;
+            if ($vehiculo && $vehiculo->dominio) {
+                // Extraer números del dominio
+                preg_match('/(\d+)/', $vehiculo->dominio, $matches);
+                if (isset($matches[1])) {
+                    return str_pad(substr($matches[1], -4), 4, '0', STR_PAD_LEFT);
+                }
+            }
+            // Si no hay dominio, usar ID del recurso
+            return str_pad($recurso->id, 4, '0', STR_PAD_LEFT);
+        }
+
+        // Tipos 6-8: Funcionarios - usar asignación y enumeración
+        if ($tipoRecurso >= 6 && $tipoRecurso <= 8) {
+            $asignacion = $this->determinarAsignacion($dependencia);
+            return str_pad($asignacion, 4, '0', STR_PAD_LEFT);
+        }
+
+        // Tipo 9: No Especificado - usar área policial
+        $areaPolicial = $this->determinarAreaPolicial($dependencia);
+        return str_pad($areaPolicial, 4, '0', STR_PAD_LEFT);
+    }
+
+    private function determinarAsignacion($dependencia)
+    {
+        $nombre = strtolower($dependencia->nombre);
+        $tipo = strtolower($dependencia->tipo);
+
+        // Jefes o Subjefes
+        if (strpos($nombre, 'jefe') !== false) {
+            return 1;
+        }
+
+        // Recorridas Costanera
+        if (strpos($nombre, 'costanera') !== false) {
+            return 2;
+        }
+
+        // Puestos fijos Garitas
+        if (strpos($nombre, 'garita') !== false) {
+            return 3;
+        }
+
+        // Puestos fijos Internos
+        if (strpos($nombre, 'jefatura') !== false || strpos($nombre, 'tribunales') !== false) {
+            return 4;
+        }
+
+        // Recorrida Comunitaria (GSD)
+        if (strpos($nombre, 'gsd') !== false || strpos($nombre, 'comunitaria') !== false) {
+            return 5;
+        }
+
+        // Puesto Banco 911
+        if (strpos($nombre, 'banco') !== false) {
+            return 6;
+        }
+
+        // Indeterminado
+        return 9;
+    }
+
+    private function determinarAreaPolicial($dependencia)
+    {
+        $nombre = strtolower($dependencia->nombre);
+        $tipo = strtolower($dependencia->tipo);
+
+        // Salas 911
+        if (strpos($nombre, 'sala 911') !== false || strpos($nombre, 'sala911') !== false) {
+            return 1;
+        }
+
+        // Comisarías - usar número
+        if ($tipo === 'comisaria') {
+            preg_match('/(\d+)/', $nombre, $matches);
+            return isset($matches[1]) ? intval($matches[1]) : 0;
+        }
+
+        // Default
+        return 0;
+    }
 }

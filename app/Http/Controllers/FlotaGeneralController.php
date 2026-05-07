@@ -1448,22 +1448,26 @@ class FlotaGeneralController extends Controller
             return 0;
         }
 
-        // Tipo 1: Móvil Pesado
-        if (strpos($tipoVehiculo, 'camion') !== false || strpos($tipoVehiculo, 'colectivo') !== false ||
-            strpos($tipoVehiculo, 'grua') !== false || strpos($tipoVehiculo, 'unidad móvil') !== false) {
-            return 1;
-        }
-
         // Tipo 2: Móvil aéreo
-        if (strpos($tipoVehiculo, 'helicóptero') !== false || strpos($tipoVehiculo, 'avion') !== false ||
+        if (strpos($tipoVehiculo, 'helicóptero') !== false || strpos($tipoVehiculo, 'helicoptero') !== false ||
+            strpos($tipoVehiculo, 'avion') !== false || strpos($tipoVehiculo, 'avión') !== false ||
             strpos($tipoVehiculo, 'uav') !== false || strpos($tipoVehiculo, 'drone') !== false) {
             return 2;
         }
 
-        // Tipo 3: Móvil Operativo
+        // Tipo 3: Móvil Operativo (auto, camioneta, ambulancia, combi)
+        // Se chequea ANTES que Tipo 1 porque "camioneta" contiene "camion"
         if (strpos($tipoVehiculo, 'auto') !== false || strpos($tipoVehiculo, 'camioneta') !== false ||
             strpos($tipoVehiculo, 'ambulancia') !== false || strpos($tipoVehiculo, 'combi') !== false) {
             return 3;
+        }
+
+        // Tipo 1: Móvil Pesado (camión, colectivo, grúa, unidad móvil)
+        if (strpos($tipoVehiculo, 'camion') !== false || strpos($tipoVehiculo, 'camión') !== false ||
+            strpos($tipoVehiculo, 'colectivo') !== false ||
+            strpos($tipoVehiculo, 'grua') !== false || strpos($tipoVehiculo, 'grúa') !== false ||
+            strpos($tipoVehiculo, 'unidad móvil') !== false || strpos($tipoVehiculo, 'unidad movil') !== false) {
+            return 1;
         }
 
         // Tipo 4: Móvil Rápido
@@ -1502,7 +1506,8 @@ class FlotaGeneralController extends Controller
         $nombreRecurso = strtolower($recurso->nombre);
 
         // Extraer número de "Móvil X" del nombre del recurso (prioridad máxima)
-        if (preg_match('/m[oó]vil\s*(\d+)/i', $recurso->nombre, $matches)) {
+        // Flag /u para que [oó] matchee correctamente la "ó" UTF-8 multibyte.
+        if (preg_match('/m[oó]vil\s*(\d+)/iu', $recurso->nombre, $matches)) {
             return str_pad($matches[1], 4, '0', STR_PAD_LEFT);
         }
 

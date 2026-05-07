@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\EntregaEquipo;
 use App\Models\EntregaBodycam;
 use App\Models\TareaItem;
+use App\Services\CecocoExpedienteService;
+use App\Jobs\ConsultarTamanoRestauracionesCecoco;
 use Carbon\Carbon;
 
 class HomeController extends Controller
@@ -529,6 +531,31 @@ class HomeController extends Controller
             'restauraciones_mb'            => $tamanoRest['mb'] ?? null,
             'restauraciones_consultado_en' => $tamanoRest['consultado_en'] ?? null,
             'restauraciones_umbral_mb'     => 4000,
+        ]);
+    }
+
+    public function refreshRestauracionesCache(): JsonResponse
+    {
+        $cached = Cache::get(CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES);
+        $consultadoEnAnterior = $cached['consultado_en'] ?? null;
+
+        try {
+            ConsultarTamanoRestauracionesCecoco::dispatch();
+        } catch (\Throwable $e) {
+            \Log::error('No se pudo encolar ConsultarTamanoRestauracionesCecoco', [
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'ok' => false,
+                'error' => 'No se pudo encolar la consulta. Verificá el estado del worker.',
+            ], 503);
+        }
+
+        return response()->json([
+            'ok' => true,
+            'consultado_en_anterior' => $consultadoEnAnterior,
+            'umbral' => 4000,
+            'mensaje' => 'Consulta encolada. El valor se actualizará en breve.',
         ]);
     }
 }

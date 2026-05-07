@@ -12,6 +12,14 @@ use Illuminate\Support\Arr;
 
 class UsuarioController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:ver-usuario')->only(['index', 'show']);
+        $this->middleware('permission:crear-usuario')->only(['create', 'store']);
+        $this->middleware('permission:editar-usuario')->only(['edit', 'update']);
+        $this->middleware('permission:borrar-usuario')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -164,26 +172,29 @@ class UsuarioController extends Controller
      */
     public function updateProfile(Request $request)
     {
+        $user = auth()->user();
+
         $this->validate($request, [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $request->user_id,
+            'email' => 'required|email|unique:users,email,' . $user->id,
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // máximo 2MB
         ]);
-
-        $user = User::findOrFail($request->user_id);
 
         $input = $request->only(['name', 'email']);
 
         // Manejo de la foto
         if ($request->hasFile('photo')) {
-            // Eliminar foto anterior si existe
-            if ($user->photo && file_exists(public_path($user->photo))) {
-                unlink(public_path($user->photo));
+            // Eliminar foto anterior si existe (solo si está dentro de uploads/profiles)
+            if ($user->photo && \Illuminate\Support\Str::startsWith($user->photo, 'uploads/profiles/')) {
+                $previousPath = public_path($user->photo);
+                if (is_file($previousPath)) {
+                    @unlink($previousPath);
+                }
             }
 
-            // Guardar nueva foto
+            // Guardar nueva foto con nombre derivado del usuario autenticado
             $image = $request->file('photo');
-            $imageName = 'profile_' . $user->id . '_' . time() . '.' . $image->getClientOriginalExtension();
+            $imageName = 'profile_' . $user->id . '_' . time() . '.' . $image->extension();
             $image->move(public_path('uploads/profiles'), $imageName);
             $input['photo'] = 'uploads/profiles/' . $imageName;
         }
@@ -302,7 +313,12 @@ class UsuarioController extends Controller
      */
     public function destroy($id)
     {
-        User::find($id)->delete();
+        if ((int) $id === (int) auth()->id()) {
+            return redirect()->route('usuarios.index')
+                ->with('error', 'No podés eliminar tu propio usuario.');
+        }
+
+        User::findOrFail($id)->delete();
         return redirect()->route('usuarios.index');
     }
 }

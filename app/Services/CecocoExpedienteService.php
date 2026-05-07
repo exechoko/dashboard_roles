@@ -1244,7 +1244,30 @@ class CecocoExpedienteService
             $valor = str_replace(',', '.', $valor); // coma decimal -> punto
             return (float) $valor;
         } finally {
+            // Logout siempre (best-effort): CECOCO sólo permite UNA sesión por usuario,
+            // así que si dejamos la sesión abierta el próximo run se traba con
+            // "Usuario en sesión" hasta que el server haga timeout (≈30 min).
+            $this->logoutCecoco($cookieFile);
             @unlink($cookieFile);
+        }
+    }
+
+    /**
+     * Cierra la sesión de CECOCO usando el JSESSIONID del cookie jar.
+     * Best-effort: si falla no hace nada (la sesión va a timeoutear en el server igual).
+     */
+    private function logoutCecoco(string $cookieFile): void
+    {
+        try {
+            $this->curlRequest(
+                $this->baseUrl . '/app/login/Logout.jsp',
+                'GET',
+                ['Referer: ' . $this->baseUrl . '/app/inicio/Menu.faces'],
+                null,
+                $cookieFile
+            );
+        } catch (\Throwable $e) {
+            Log::info('Logout CECOCO falló (best-effort)', ['error' => $e->getMessage()]);
         }
     }
 

@@ -52,7 +52,9 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://localhost'),
+    'url' => (function ($url) {
+        return preg_match('/^[a-z][a-z0-9+.-]*:\/\//i', $url) ? $url : 'http://' . $url;
+    })(env('APP_URL', 'http://localhost')),
 
     'asset_url' => env('ASSET_URL', null),
 

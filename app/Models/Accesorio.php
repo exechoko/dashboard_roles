@@ -9,6 +9,10 @@ class Accesorio extends Model
 {
     protected $table = 'accesorio';
 
+    protected $casts = [
+        'fecha_estado' => 'date',
+    ];
+
     public function tipo_accesorio(){
         return $this->belongsTo(TipoAccesorios::class);
     }

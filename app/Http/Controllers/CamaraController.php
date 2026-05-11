@@ -318,8 +318,8 @@ class CamaraController extends Controller
             return response('', 204);
         }
 
-        $user = env('CAMARA_USER');
-        $pass = env('CAMARA_PASS');
+        $user = config('services.camaras.user');
+        $pass = config('services.camaras.pass');
 
         try {
             $response = Http::withOptions([
@@ -351,8 +351,8 @@ class CamaraController extends Controller
             abort(503);
         }
 
-        $user        = env('CAMARA_USER');
-        $pass        = env('CAMARA_PASS');
+        $user        = config('services.camaras.user');
+        $pass        = config('services.camaras.pass');
         $channel     = max(1, intval(request()->get('channel', 1)));
 
         // Solo snapshot: es 100% lectura y no toca la configuración de la cámara
@@ -404,8 +404,8 @@ class CamaraController extends Controller
     {
         $camara = Camara::findOrFail($id);
         $ip = $camara->ip;
-        $user = env('CAMARA_USER');
-        $pass = env('CAMARA_PASS');
+        $user = config('services.camaras.user');
+        $pass = config('services.camaras.pass');
         $resultado = [];
 
         if (empty($ip)) {
@@ -454,8 +454,8 @@ class CamaraController extends Controller
         $camara = Camara::findOrFail($id);
         $ip = $camara->ip;
 
-        $user = env('CAMARA_USER');
-        $pass = env('CAMARA_PASS');
+        $user = config('services.camaras.user');
+        $pass = config('services.camaras.pass');
 
         $url = "http://{$user}:{$pass}@{$ip}/cgi-bin/magicBox.cgi?action=reboot";
 

@@ -9,6 +9,11 @@ class ActuacionPolicial extends Model
 {
     protected $table = 'actuaciones_policiales';
 
+    protected $casts = [
+        'fecha_inicio' => 'date',
+        'fecha_fin' => 'date',
+    ];
+
     public function destino(){
         return $this->belongsTo(Destino::class);
     }

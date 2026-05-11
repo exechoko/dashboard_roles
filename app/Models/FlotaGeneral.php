@@ -18,6 +18,11 @@ class FlotaGeneral extends Model
         'observaciones'
     ];
 
+    protected $casts = [
+        'fecha_asignacion' => 'date',
+        'fecha_desasignacion' => 'date',
+    ];
+
     public function equipo()
     {
         return $this->belongsTo(Equipo::class);

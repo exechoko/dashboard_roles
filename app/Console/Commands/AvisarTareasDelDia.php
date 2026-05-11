@@ -30,7 +30,7 @@ class AvisarTareasDelDia extends Command
             return 1;
         }
 
-        $emailsRaw = $this->option('emails') ?? env('TAREAS_AVISO_EMAILS');
+        $emailsRaw = $this->option('emails') ?? config('services.tareas.aviso_emails');
         $emails = collect(explode(',', (string) $emailsRaw))
             ->map(function ($e) {
                 return trim($e);

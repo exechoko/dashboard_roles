@@ -223,7 +223,7 @@
         var map = L.map('map-calor-eventos').setView([-31.7413, -60.5115], 13);
         var heatLayer = null;
 
-        L.tileLayer('https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey={{ env("API_KEY_THUNDER_FOREST_MAP") }}', {
+        L.tileLayer('https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey={{ config("services.thunderforest.api_key") }}', {
             attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
@@ -428,7 +428,7 @@
         $('#modalUbicarMapa').on('shown.bs.modal', function () {
             if (!mapUbicar) {
                 mapUbicar = L.map('map-ubicar-modal').setView([-31.7413, -60.5115], 13);
-                L.tileLayer('https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey={{ env("API_KEY_THUNDER_FOREST_MAP") }}', {
+                L.tileLayer('https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey={{ config("services.thunderforest.api_key") }}', {
                     attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
                 }).addTo(mapUbicar);
                 mapUbicar.on('click', function (e) { colocarMarcador(e.latlng); });

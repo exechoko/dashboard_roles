@@ -27,8 +27,8 @@ class EntregaEquipo extends Model
         'usuario_creador'
     ];
 
-    protected $dates = [
-        'fecha_entrega'
+    protected $casts = [
+        'fecha_entrega' => 'date',
     ];
 
     // Relación con el detalle de entregas

@@ -9,6 +9,11 @@ class Historico extends Model
 {
     protected $table = 'historico';
 
+    protected $casts = [
+        'fecha_asignacion' => 'date',
+        'fecha_desasignacion' => 'date',
+    ];
+
     public function destino(){
         return $this->belongsTo(Destino::class);
     }

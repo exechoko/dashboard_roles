@@ -22,8 +22,8 @@ class DevolucionEquipo extends Model
         'usuario_creador'
     ];
 
-    protected $dates = [
-        'fecha_devolucion'
+    protected $casts = [
+        'fecha_devolucion' => 'date',
     ];
 
     // Relación con la entrega

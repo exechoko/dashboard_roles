@@ -22,7 +22,7 @@ use App\Http\Controllers\RecursoController;
 use App\Http\Controllers\FlotaGeneralController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CamaraController;
-use App\Http\Controllers\Mapacontroller;
+use App\Http\Controllers\MapaController;
 use App\Http\Controllers\TipoCamaraController;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\CamaraFisicaController;
@@ -87,7 +87,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('flota', FlotaGeneralController::class);
     Route::resource('camaras', CamaraController::class);
     Route::resource('camaras_fisicas', CamaraFisicaController::class);
-    Route::resource('mapa', Mapacontroller::class);
+    Route::resource('mapa', MapaController::class);
     Route::resource('tipo-camara', TipoCamaraController::class);
     Route::resource('auditoria', AuditoriaController::class);
     Route::resource('sitios', SitioController::class);

@@ -60,13 +60,13 @@ $(document).ready(function () {
     });
 
     $('#EditProfileModal').on('show.bs.modal', function () {
-        $('#pfUserId').val({{ auth()->id() }});
-        $('#pfName').val({{ json_encode(auth()->user()->name) }});
-        $('#pfEmail').val({{ json_encode(auth()->user()->email) }});
+        $('#pfUserId').val(@json(auth()->id()));
+        $('#pfName').val(@json(auth()->user()->name));
+        $('#pfEmail').val(@json(auth()->user()->email));
         @if(auth()->user()->photo)
-            $('#edit_preview_photo').attr('src', '{{ asset(auth()->user()->photo) }}');
+            $('#edit_preview_photo').attr('src', @json(asset(auth()->user()->photo)));
         @else
-            $('#edit_preview_photo').attr('src', '{{ asset('img/logo.png') }}');
+            $('#edit_preview_photo').attr('src', @json(asset('img/logo.png')));
         @endif
     });
 

@@ -66,12 +66,22 @@ function closeCameraStream() {
 
 function openGoogleMaps(latitud, longitud) {
     // Abre Google Maps en una nueva pestaña con la ubicación especificada
-    window.open(`https://www.google.com/maps?q=${latitud},${longitud}`, '_blank');
+    window.open('https://www.google.com/maps?q=' + latitud + ',' + longitud, '_blank');
 }
+
+@can('ver-stream-camara')
+function openCameraStreamFromButton(button) {
+    openCameraStream(
+        button.dataset.camaraId,
+        button.dataset.camaraTitulo,
+        button.dataset.camaraCanales
+    );
+}
+@endcan
 
 function openStreetView(latitud, longitud) {
     // Abre Google Maps en una nueva pestaña con el enlace directo a Street View
-    window.open(`https://www.google.com/maps?q=&layer=c&cbll=${latitud},${longitud}`, '_blank');
+    window.open('https://www.google.com/maps?q=&layer=c&cbll=' + latitud + ',' + longitud, '_blank');
 }
 
 function getRandomColor() {
@@ -100,6 +110,15 @@ function getColor(d) {
                         d > 20 ? '#FEB24C' :
                             d > 10 ? '#FED976' :
                                 '#FFEDA0';
+}
+
+function escapeHtml(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 // Función para convertir orientación a grados
@@ -721,7 +740,8 @@ function setupSearchControl() {
 
 function loadComisariaMarkers() {
     @foreach ($comisarias as $marcador)
-        var numero = "{{ $marcador['numero'] }}";
+        var numero = @json($marcador['numero']);
+        var tituloComisaria = @json($marcador['titulo']);
         var markerIcon = L.divIcon({
             className: 'transparent',
             labelAnchor: [0, 0],
@@ -730,10 +750,10 @@ function loadComisariaMarkers() {
             iconAnchor: [15, 15],
             html: '<div class="marker-comprador">' + numero + '</div>'
         });
-        var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
+        var marker = L.marker([@json($marcador['latitud']), @json($marcador['longitud'])], {
             icon: markerIcon
         }).addTo(capa1).addTo(capa5)
-            .bindPopup("{{ $marcador['titulo'] }}");
+            .bindPopup(escapeHtml(tituloComisaria));
     @endforeach
 }
 
@@ -768,12 +788,24 @@ function loadJurisdicciones() {
 
 function loadCameraMarkers() {
     @foreach ($camaras as $marcador)
-        var numero = "{{ $marcador['numero'] }}";
-        var latitud = "{{ $marcador['latitud'] }}";
-        var longitud = "{{ $marcador['longitud'] }}";
-        var angulo = {{ $marcador['angulo'] ?? 60 }};
-        var orientacion = "{{ $marcador['orientacion'] ?? 'norte' }}";
-        var tipo_camara = "{{ $marcador['tipo_camara'] }}";
+        var numero = @json($marcador['numero']);
+        var latitud = @json($marcador['latitud']);
+        var longitud = @json($marcador['longitud']);
+        var angulo = @json($marcador['angulo'] ?? 60);
+        var orientacion = @json($marcador['orientacion'] ?? 'norte');
+        var tipo_camara = @json($marcador['tipo_camara']);
+        var imagen = @json($marcador['imagen']);
+        var titulo = @json($marcador['titulo']);
+        var sitio = @json($marcador['sitio']);
+        var dependencia = @json($marcador['dependencia']);
+        var etapa = @json($marcador['etapa']);
+        var fechaInstalacion = @json($marcador['fecha_instalacion']);
+        var inteligencia = @json($marcador['inteligencia']);
+        var marca = @json($marcador['marca']);
+        var modelo = @json($marcador['modelo']);
+        var nroSerie = @json($marcador['nro_serie']);
+        var canales = @json($marcador['canales'] ?? 1);
+        var cartel = @json($marcador['cartel'] ? 'SI' : 'NO');
 
         // Generar el path y rotación dinámicamente
         var cameraGeometry = generateCameraPath(angulo, orientacion);
@@ -805,7 +837,7 @@ function loadCameraMarkers() {
                         style="position: absolute; top: 0; left: 0; transform: rotate(${cameraGeometry.rotation}deg); z-index: 0;">
                         ${svgShape}
                     </svg>
-                    <img src="{{ $marcador['imagen'] }}" style="width: 50px; height: 50px; position: absolute; top: 0; left: 0; z-index: 1;" />
+                    <img src="${escapeHtml(imagen)}" style="width: 50px; height: 50px; position: absolute; top: 0; left: 0; z-index: 1;" />
                 </div>
             `,
             iconSize: [50, 50],
@@ -817,25 +849,25 @@ function loadCameraMarkers() {
             icon: cameraIcon
         }).bindPopup(`
             <div>
-                <img src='{{ $marcador['imagen'] }}' alt="" style="max-width: 200px;">
-                <h5>{{ $marcador['titulo'] }}</h5>
-                Tipo: <b>{{ $marcador['tipo_camara'] }}</b><br>
-                Sitio: <b>{{ $marcador['sitio'] }}</b><br>
+                <img src="${escapeHtml(imagen)}" alt="" style="max-width: 200px;">
+                <h5>${escapeHtml(titulo)}</h5>
+                Tipo: <b>${escapeHtml(tipo_camara)}</b><br>
+                Sitio: <b>${escapeHtml(sitio)}</b><br>
                 Ángulo: <b>${angulo}°</b><br>
-                Orientación: <b>${orientacion}</b><br>
-                Señalizado: <b>{{ $marcador['cartel'] ? 'SI' : 'NO' }}</b><br>
-                Dependencia: <b>{{ $marcador['dependencia'] }}</b><br>
-                Etapa: <b>{{ $marcador['etapa'] }}</b><br>
-                Instalación: <b>{{ $marcador['fecha_instalacion'] }}</b><br>
-                Inteligencia: <b>{{ $marcador['inteligencia'] }}</b><br>
-                Marca: <b>{{ $marcador['marca'] }}</b> - Mod.: <b>{{ $marcador['modelo'] }}</b><br>
-                Nº serie: <b>{{ $marcador['nro_serie'] }}</b><br>
+                Orientación: <b>${escapeHtml(orientacion)}</b><br>
+                Señalizado: <b>${escapeHtml(cartel)}</b><br>
+                Dependencia: <b>${escapeHtml(dependencia)}</b><br>
+                Etapa: <b>${escapeHtml(etapa)}</b><br>
+                Instalación: <b>${escapeHtml(fechaInstalacion)}</b><br>
+                Inteligencia: <b>${escapeHtml(inteligencia)}</b><br>
+                Marca: <b>${escapeHtml(marca)}</b> - Mod.: <b>${escapeHtml(modelo)}</b><br>
+                Nº serie: <b>${escapeHtml(nroSerie)}</b><br>
                 <div class="btn-group" role="group">
                     <button class="btn btn-icon btn-primary" title="Editar cámara" onclick="editCamera(${numero})"><i class="fas fa-edit"></i></button>
                     <button class="btn btn-icon btn-info" title="Abrir en Google Maps" onclick="openGoogleMaps(${latitud}, ${longitud})"><i class="fas fa-globe-americas"></i></button>
                     <button class="btn btn-icon btn-warning" title="Abrir en Street View" onclick="openStreetView(${latitud}, ${longitud})"><i class="fas fa-street-view"></i></button>
                     @can('ver-stream-camara')
-                    <button class="btn btn-icon btn-success" title="Ver en Vivo" onclick="openCameraStream(${numero}, '{{ $marcador['titulo'] }}', {{ $marcador['canales'] ?? 1 }})"><i class="fas fa-video"></i></button>
+                    <button class="btn btn-icon btn-success" title="Ver en Vivo" data-camara-id="${escapeHtml(numero)}" data-camara-titulo="${escapeHtml(titulo)}" data-camara-canales="${escapeHtml(canales)}" onclick="openCameraStreamFromButton(this)"><i class="fas fa-video"></i></button>
                     @endcan
                 </div>
             </div>
@@ -894,7 +926,8 @@ observer.observe(document.documentElement, {
 
 function loadAntenasMarkers() {
     @foreach ($antenas as $marcador)
-        var numero = "{{ $marcador['numero'] }}";
+        var numero = @json($marcador['numero']);
+        var tituloAntena = @json($marcador['titulo']);
         var antenaIcon = L.icon({
             iconUrl: "/img/antena_icon.png",
             iconSize: [40, 40],
@@ -902,19 +935,22 @@ function loadAntenasMarkers() {
             popupAnchor: [0, -15]
         });
 
-        var marker = L.marker([{{ $marcador['latitud'] }}, {{ $marcador['longitud'] }}], {
+        var marker = L.marker([@json($marcador['latitud']), @json($marcador['longitud'])], {
             icon: antenaIcon
         }).addTo(capa3)
-            .bindPopup("{{ $marcador['titulo'] }}");
+            .bindPopup(escapeHtml(tituloAntena));
     @endforeach
 }
 
 function loadSitiosMarkers() {
     @foreach ($sitios as $sitio)
         @if($sitio['activo'] == 0)
-            var numeroSitio = "{{ $sitio['numero'] }}";
-            var latitudSitio = "{{ $sitio['latitud'] }}";
-            var longitudSitio = "{{ $sitio['longitud'] }}";
+            var numeroSitio = @json($sitio['numero']);
+            var latitudSitio = @json($sitio['latitud']);
+            var longitudSitio = @json($sitio['longitud']);
+            var tituloSitio = @json($sitio['titulo']);
+            var cartelSitio = @json(isset($sitio['cartel']) ? ($sitio['cartel'] ? 'SI' : 'NO') : null);
+            var observacionesSitio = @json($sitio['observaciones'] ?? null);
 
             var sitioInactivoIcon = L.divIcon({
                 className: 'transparent',
@@ -929,13 +965,13 @@ function loadSitiosMarkers() {
                 icon: sitioInactivoIcon
             }).bindPopup(`
                 <div>
-                    <h5>{{ $sitio['titulo'] }}</h5>
+                    <h5>${escapeHtml(tituloSitio)}</h5>
                     <strong>Estado:</strong> <span style="color: #dc3545;">INACTIVO</span><br>
                     @if(isset($sitio['cartel']))
-                        <strong>Cartel:</strong> <b>{{ $sitio['cartel'] ? 'SI' : 'NO' }}</b><br>
+                        <strong>Cartel:</strong> <b>${escapeHtml(cartelSitio)}</b><br>
                     @endif
                     @if (isset($sitio['observaciones']))
-                        <strong>Observaciones:</strong> {{ $sitio['observaciones'] }}<br>
+                        <strong>Observaciones:</strong> ${escapeHtml(observacionesSitio)}<br>
                     @endif
                     <div class="btn-group" role="group">
                         <button class="btn btn-icon btn-info" title="Abrir en Google Maps" onclick="openGoogleMaps(${latitudSitio}, ${longitudSitio})"><i class="fas fa-globe-americas"></i></button>

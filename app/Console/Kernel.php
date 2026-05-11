@@ -56,7 +56,10 @@ class Kernel extends ConsoleKernel
                 app(TelegramService::class)->notificarScheduleFallido('telegram:tareas-diarias', 'El comando finalizó con error.');
             });
 
-        $schedule->command('telegram:polling')->everyMinute()->withoutOverlapping();
+        $schedule->command('telegram:polling')
+            ->everyMinute()
+            ->withoutOverlapping(2)
+            ->appendOutputTo(storage_path('logs/telegram.log'));
 
         $schedule->command('transcribir:pendientes')
             ->everyMinute()

@@ -129,7 +129,7 @@ class EventoCecocoParser
         return $filas;
     }
 
-    private function persistir(array $filas, Importacion $importacion): array
+    private function persistir(array $filas, Importacion $importacion, bool $actualizarPreliminares = false): array
     {
         $periodo = null;
         $mes = null;
@@ -192,14 +192,15 @@ class EventoCecocoParser
         $yaExistentes = collect();
         foreach (array_chunk($expedientesArchivo, 1000) as $chunk) {
             $yaExistentes = $yaExistentes->merge(
-                EventoCecoco::whereIn('nro_expediente', $chunk)->pluck('nro_expediente')
+                EventoCecoco::whereIn('nro_expediente', $chunk)->get()->keyBy('nro_expediente')
             );
         }
-        $mapaExistentes = $yaExistentes->flip()->all();
+        $mapaExistentes = $yaExistentes->all();
 
         $lote = [];
         $importados = 0;
         $duplicados = 0;
+        $actualizados = 0;
         $omitidos = 0;
         $errores = [];
 
@@ -218,6 +219,11 @@ class EventoCecocoParser
             }
 
             if (isset($mapaExistentes[$dato['nro_expediente']])) {
+                if ($actualizarPreliminares && $this->actualizarSiEsPreliminar($mapaExistentes[$dato['nro_expediente']], $dato)) {
+                    $actualizados++;
+                    continue;
+                }
+
                 $duplicados++;
                 continue;
             }
@@ -242,10 +248,54 @@ class EventoCecocoParser
             'mes' => $mes,
             'total' => count($expedientesArchivo),
             'importados' => $importados,
+            'actualizados' => $actualizados,
             'duplicados' => $duplicados,
             'omitidos' => $omitidos,
             'errores' => $errores,
         ];
+    }
+
+    private function actualizarSiEsPreliminar(EventoCecoco $existente, array $dato): bool
+    {
+        if (!$this->esTipoEnCreacion($existente->tipo_servicio)) {
+            return false;
+        }
+
+        $campos = [
+            'box',
+            'operador',
+            'descripcion',
+            'direccion',
+            'telefono',
+            'fecha_cierre',
+            'tipo_servicio',
+            'periodo',
+            'mes',
+            'anio',
+        ];
+
+        foreach ($campos as $campo) {
+            if (array_key_exists($campo, $dato) && $dato[$campo] !== null && $dato[$campo] !== '') {
+                $existente->{$campo} = $dato[$campo];
+            }
+        }
+
+        $existente->importacion_id = $dato['importacion_id'];
+
+        if (!$existente->isDirty()) {
+            return false;
+        }
+
+        return $existente->save();
+    }
+
+    private function esTipoEnCreacion(?string $tipo): bool
+    {
+        $normalizado = strtolower(trim((string) $tipo));
+        $normalizado = strtr($normalizado, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u']);
+        $normalizado = preg_replace('/\s+/', ' ', $normalizado);
+
+        return $normalizado === 'en creacion';
     }
 
     private function mapearColumnas(array $cabecera): array

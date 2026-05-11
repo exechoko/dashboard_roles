@@ -8,6 +8,7 @@ use App\Services\EventoCecocoParser;
 use App\Services\CecocoExpedienteService;
 use App\Services\CecocoGrabacionesService;
 use App\Services\CecocoGrabacionesLocalService;
+use App\Jobs\DescargarEventosCecoco;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -167,14 +168,24 @@ class EventoCecocoController extends Controller
 
     public function importarForm()
     {
-        $importaciones = Importacion::orderByDesc('created_at')->simplePaginate(20);
+        $importaciones = Importacion::select([
+            'id',
+            'nombre_archivo',
+            'anio',
+            'registros_importados',
+            'registros_duplicados',
+            'registros_omitidos',
+            'tiempo_procesamiento',
+            'estado',
+            'created_at',
+        ])->orderByDesc('created_at')->simplePaginate(20);
 
         $totalArchivosImportados = Cache::remember('cecoco_total_archivos_importados', 300, function () {
             return Importacion::where('estado', 'completado')->count();
         });
 
-        $totalRegistrosEnBd = Cache::rememberForever('cecoco_total_bd', function () {
-            return EventoCecoco::count();
+        $totalRegistrosEnBd = Cache::remember('cecoco_total_bd_importar', 300, function () {
+            return (int) Importacion::where('estado', 'completado')->sum('registros_importados');
         });
 
         $aniosCounts = Cache::remember('cecoco_importaciones_por_anio', 300, function () {
@@ -231,6 +242,19 @@ class EventoCecocoController extends Controller
         $mensaje .= "Puedes ver el progreso en el historial de importaciones.";
 
         return redirect()->route('cecoco.importar')->with('success', $mensaje);
+    }
+
+    public function importarHoy()
+    {
+        $importacion = Importacion::create([
+            'nombre_archivo' => 'reporte_' . now()->format('Y_m_d') . '.xls',
+            'estado' => 'pendiente',
+        ]);
+
+        DescargarEventosCecoco::dispatch(now()->toDateString(), $importacion->id, true);
+
+        return redirect()->route('cecoco.importar')
+            ->with('success', 'Importación de eventos de hoy agregada a la cola. La descarga y el procesamiento se ejecutan en segundo plano.');
     }
 
     public function exportarTxt(Request $request)

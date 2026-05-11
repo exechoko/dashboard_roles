@@ -28,6 +28,17 @@
                 <h5 class="mb-0"><i class="bi bi-cloud-upload"></i> Importación masiva de archivos</h5>
             </div>
             <div class="card-body">
+                <div class="alert alert-warning">
+                    <h6 class="mb-2"><i class="bi bi-calendar-day"></i> Eventos de hoy</h6>
+                    <p class="mb-2">Descarga manualmente el reporte del día actual desde CECOCO y lo procesa en segundo plano para evitar timeouts del navegador.</p>
+                    <form method="POST" action="{{ route('cecoco.importar.hoy') }}" class="mb-0">
+                        @csrf
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-arrow-repeat"></i> Importar eventos de hoy
+                        </button>
+                    </form>
+                </div>
+
                 <form method="POST" action="{{ route('cecoco.importar.post') }}" enctype="multipart/form-data" id="formImportar">
                     @csrf
                     <div class="mb-3">

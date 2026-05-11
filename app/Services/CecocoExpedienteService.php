@@ -32,7 +32,9 @@ class CecocoExpedienteService
         // todavía no se creó el usuario dedicado.
         $this->cecocoUserMonitor = config('cecoco.user_monitor') ?: $this->cecocoUser;
         $this->cecocoPasswordMonitor = config('cecoco.password_monitor') ?: $this->cecocoPassword;
-        $this->gpsLoginUrl = config('cecoco.gps_login_url');
+        $gpsUrl = rtrim((string) config('cecoco.gps_url', config('cecoco.url', '')), '/');
+        $this->gpsLoginUrl = config('cecoco.gps_login_url')
+            ?: $gpsUrl . '/CECOCO_webapp/app/login/IndexLogin.faces';
         $this->gpsBaseUrl = $this->baseUrlDesdeLoginUrl($this->gpsLoginUrl);
         $this->gpsUserMonitor = config('cecoco.gps_user_monitor') ?: $this->cecocoUserMonitor;
         $this->gpsPasswordMonitor = config('cecoco.gps_password_monitor') ?: $this->cecocoPasswordMonitor;

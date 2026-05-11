@@ -722,7 +722,7 @@ class TelegramService
     private function responderAyuda(string $chatId, string $nombre): void
     {
         $mensaje = "👋 ¡Hola <b>{$nombre}</b>!\n\n"
-            . "Soy el bot del <b>Dashboard de Gestión</b>.\n\n"
+            . "Soy el bot del <b>CAR911</b>.\n\n"
             . "📋 <b>tareas</b> / <b>pendientes</b>\n"
             . "   → Tareas de hoy y mañana\n\n"
             . "📊 <b>novedades</b> / <b>resumen</b>\n"

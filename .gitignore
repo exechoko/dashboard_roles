@@ -29,6 +29,7 @@ yarn-error.log
 /.qwen
 /.opencode
 /docs
+/backup agents
 skills-lock.json
 
 # Hyperframes

@@ -14,12 +14,22 @@ class ConsultarTamanoRestauracionesCecoco implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    private bool $gps;
+
+    public function __construct(bool $gps = false)
+    {
+        $this->gps = $gps;
+    }
+
     public function handle(CecocoExpedienteService $service): void
     {
         try {
-            $service->actualizarCacheTamanoBaseRestauraciones();
+            $this->gps
+                ? $service->actualizarCacheTamanoBaseRestauracionesGps()
+                : $service->actualizarCacheTamanoBaseRestauraciones();
         } catch (\Throwable $e) {
             Log::warning('Job ConsultarTamanoRestauracionesCecoco falló', [
+                'gps' => $this->gps,
                 'error' => $e->getMessage(),
             ]);
         }

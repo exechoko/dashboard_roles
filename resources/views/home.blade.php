@@ -137,22 +137,22 @@
     }
 
     /* ── Botón refresh restauraciones: animaciones por estado ───────────── */
-    #btn-refresh-restauraciones {
+    .btn-refresh-restauraciones {
         transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease;
     }
-    #btn-refresh-restauraciones.estado-consultando {
+    .btn-refresh-restauraciones.estado-consultando {
         color: #fff;
         background-color: #3b82f6;
         border-color: #3b82f6;
         animation: refresh-halo-azul 1.4s ease-in-out infinite;
     }
-    #btn-refresh-restauraciones.estado-success {
+    .btn-refresh-restauraciones.estado-success {
         color: #fff;
         background-color: #22c55e;
         border-color: #22c55e;
         animation: refresh-flash-verde 1.5s ease-out 1;
     }
-    #btn-refresh-restauraciones.estado-error {
+    .btn-refresh-restauraciones.estado-error {
         color: #fff;
         background-color: #ef4444;
         border-color: #ef4444;
@@ -176,9 +176,9 @@
     }
     /* Respeta a usuarios con prefers-reduced-motion */
     @media (prefers-reduced-motion: reduce) {
-        #btn-refresh-restauraciones.estado-consultando,
-        #btn-refresh-restauraciones.estado-success,
-        #btn-refresh-restauraciones.estado-error {
+        .btn-refresh-restauraciones.estado-consultando,
+        .btn-refresh-restauraciones.estado-success,
+        .btn-refresh-restauraciones.estado-error {
             animation: none;
         }
     }
@@ -1147,8 +1147,22 @@
                                                                         <i class="fas fa-exclamation-triangle text-danger" title="Supera el umbral de 4000 MB"></i>
                                                                     </span>
                                                                     <span id="workers-restauraciones-mb" class="badge badge-secondary">—</span>
-                                                                    <button type="button" class="btn btn-xs btn-outline-primary" id="btn-refresh-restauraciones" title="Consultar ahora">
+                                                                    <button type="button" class="btn btn-xs btn-outline-primary btn-refresh-restauraciones" id="btn-refresh-restauraciones" title="Consultar ahora">
                                                                         <i class="fas fa-sync-alt" id="icon-refresh-restauraciones"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+
+                                                            {{-- Tamaño BD restauraciones CECOCO GPS --}}
+                                                            <div class="estado-procesos-bloque" title="Tamaño de la base de datos de restauraciones de históricos GPS. Se actualiza una vez por hora.">
+                                                                <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-database mr-1"></i><strong>Tamaño BD restauraciones GPS</strong></small>
+                                                                <div class="d-flex align-items-center flex-wrap" style="gap:0.5rem;">
+                                                                    <span id="workers-restauraciones-gps-icono" class="restauraciones-icono" style="display:none;">
+                                                                        <i class="fas fa-exclamation-triangle text-danger" title="Supera el umbral de 4000 MB"></i>
+                                                                    </span>
+                                                                    <span id="workers-restauraciones-gps-mb" class="badge badge-secondary">—</span>
+                                                                    <button type="button" class="btn btn-xs btn-outline-primary btn-refresh-restauraciones" id="btn-refresh-restauraciones-gps" title="Consultar ahora">
+                                                                        <i class="fas fa-sync-alt" id="icon-refresh-restauraciones-gps"></i>
                                                                     </button>
                                                                 </div>
                                                             </div>
@@ -3121,6 +3135,29 @@
                             }
                         }
 
+                        var elRestGps = document.getElementById('workers-restauraciones-gps-mb');
+                        var elRestGpsIcon = document.getElementById('workers-restauraciones-gps-icono');
+                        if (elRestGps) {
+                            var mbGps = d.restauraciones_gps_mb;
+                            var umbralGps = d.restauraciones_gps_umbral_mb || 4000;
+                            if (mbGps === null || typeof mbGps === 'undefined') {
+                                elRestGps.textContent = 'sin datos';
+                                elRestGps.className = 'badge badge-secondary';
+                                elRestGps.title = 'Aún no se cacheó el valor (corre cada hora desde el schedule).';
+                                if (elRestGpsIcon) elRestGpsIcon.style.display = 'none';
+                            } else {
+                                var mbGpsFmt = Number(mbGps).toLocaleString('es-AR', { maximumFractionDigits: 0 });
+                                elRestGps.textContent = mbGpsFmt + ' MB';
+                                var superaGps = mbGps > umbralGps;
+                                elRestGps.className = superaGps ? 'badge badge-danger' : 'badge badge-success';
+                                if (d.restauraciones_gps_consultado_en) {
+                                    var fechaGps = new Date(d.restauraciones_gps_consultado_en);
+                                    elRestGps.title = 'Consultado: ' + fechaGps.toLocaleString('es-AR') + (superaGps ? ' — Supera ' + umbralGps + ' MB' : '');
+                                }
+                                if (elRestGpsIcon) elRestGpsIcon.style.display = superaGps ? 'inline-block' : 'none';
+                            }
+                        }
+
                         // Desglose por tipo
                         var desgloseDiv  = document.getElementById('workers-desglose');
                         var desgloseList = document.getElementById('workers-desglose-lista');
@@ -3154,9 +3191,9 @@
             verificar();
             setInterval(verificar, 60000);
 
-            function setEstadoBotonRestauraciones(estado) {
-                var btn = document.getElementById('btn-refresh-restauraciones');
-                var icon = document.getElementById('icon-refresh-restauraciones');
+            function setEstadoBotonRestauraciones(estado, sufijo) {
+                var btn = document.getElementById('btn-refresh-restauraciones' + (sufijo || ''));
+                var icon = document.getElementById('icon-refresh-restauraciones' + (sufijo || ''));
                 if (!btn || !icon) return;
                 btn.classList.remove('estado-consultando', 'estado-success', 'estado-error');
                 icon.className = '';
@@ -3170,13 +3207,13 @@
                         btn.classList.add('estado-success');
                         icon.className = 'fas fa-check';
                         btn.disabled = false;
-                        setTimeout(function() { setEstadoBotonRestauraciones('idle'); }, 1500);
+                        setTimeout(function() { setEstadoBotonRestauraciones('idle', sufijo); }, 1500);
                         break;
                     case 'error':
                         btn.classList.add('estado-error');
                         icon.className = 'fas fa-exclamation-triangle';
                         btn.disabled = false;
-                        setTimeout(function() { setEstadoBotonRestauraciones('idle'); }, 2000);
+                        setTimeout(function() { setEstadoBotonRestauraciones('idle', sufijo); }, 2000);
                         break;
                     case 'idle':
                     default:
@@ -3184,18 +3221,18 @@
                         btn.disabled = false;
                         break;
                 }
-                icon.id = 'icon-refresh-restauraciones';
+                icon.id = 'icon-refresh-restauraciones' + (sufijo || '');
             }
 
-            function refreshRestauraciones() {
-                var btn = document.getElementById('btn-refresh-restauraciones');
-                var el = document.getElementById('workers-restauraciones-mb');
+            function refreshRestauraciones(sufijo, ruta, campoConsultadoEn) {
+                var btn = document.getElementById('btn-refresh-restauraciones' + (sufijo || ''));
+                var el = document.getElementById('workers-restauraciones' + (sufijo || '') + '-mb');
                 if (!btn || !el) return;
-                setEstadoBotonRestauraciones('consultando');
+                setEstadoBotonRestauraciones('consultando', sufijo);
                 el.textContent = '...';
                 el.className = 'badge badge-secondary';
 
-                fetch('{{ route('api.dashboard.refresh-restauraciones') }}', {
+                fetch(ruta, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -3211,14 +3248,14 @@
                         el.textContent = 'esperá';
                         el.className = 'badge badge-warning';
                         el.title = 'Demasiadas consultas seguidas. Esperá un minuto.';
-                        setEstadoBotonRestauraciones('error');
+                        setEstadoBotonRestauraciones('error', sufijo);
                         return;
                     }
                     if (!d.ok) {
                         el.textContent = 'error';
                         el.className = 'badge badge-danger';
                         el.title = d.error || 'Error desconocido';
-                        setEstadoBotonRestauraciones('error');
+                        setEstadoBotonRestauraciones('error', sufijo);
                         return;
                     }
 
@@ -3235,17 +3272,17 @@
                         fetch('{{ route("api.dashboard.workers-status") }}', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                             .then(function(r) { return r.json(); })
                             .then(function(data) {
-                                var nuevo = data.restauraciones_consultado_en;
+                                var nuevo = data[campoConsultadoEn];
                                 if (nuevo && nuevo !== baseline) {
                                     clearInterval(intervalId);
-                                    setEstadoBotonRestauraciones('success');
+                                    setEstadoBotonRestauraciones('success', sufijo);
                                     verificar();
                                 } else if (intento >= intentosMax) {
                                     clearInterval(intervalId);
                                     el.textContent = 'tarda más de lo normal';
                                     el.className = 'badge badge-warning';
                                     el.title = 'El worker puede estar detenido o la consulta está demorando. Revisá el log.';
-                                    setEstadoBotonRestauraciones('error');
+                                    setEstadoBotonRestauraciones('error', sufijo);
                                 }
                             })
                             .catch(function() { /* siguiente intento */ });
@@ -3254,13 +3291,19 @@
                 .catch(function() {
                     el.textContent = 'error';
                     el.className = 'badge badge-danger';
-                    setEstadoBotonRestauraciones('error');
+                    setEstadoBotonRestauraciones('error', sufijo);
                 });
             }
 
             // Bind del botón (la función está dentro de la IIFE, no en scope global)
             var btnRefresh = document.getElementById('btn-refresh-restauraciones');
-            if (btnRefresh) btnRefresh.addEventListener('click', refreshRestauraciones);
+            if (btnRefresh) btnRefresh.addEventListener('click', function() {
+                refreshRestauraciones('', '{{ route('api.dashboard.refresh-restauraciones') }}', 'restauraciones_consultado_en');
+            });
+            var btnRefreshGps = document.getElementById('btn-refresh-restauraciones-gps');
+            if (btnRefreshGps) btnRefreshGps.addEventListener('click', function() {
+                refreshRestauraciones('-gps', '{{ route('api.dashboard.refresh-restauraciones-gps') }}', 'restauraciones_gps_consultado_en');
+            });
         })();
 
         // ── Mini mapa de calor Cecoco ───────────────────────────────────────

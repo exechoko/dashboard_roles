@@ -465,6 +465,10 @@ Route::group(['middleware' => ['auth']], function () {
         ->middleware('throttle:3,1')
         ->name('api.dashboard.refresh-restauraciones');
 
+    Route::post('/api/dashboard/refresh-restauraciones-gps', [App\Http\Controllers\HomeController::class, 'refreshRestauracionesGpsCache'])
+        ->middleware('throttle:3,1')
+        ->name('api.dashboard.refresh-restauraciones-gps');
+
     // Manuales
     Route::prefix('manuales')->group(function () {
         Route::get('/cecoco',       [ManualesController::class, 'indexCecoco'])->name('manuales.cecoco');

@@ -103,6 +103,17 @@ class Kernel extends ConsoleKernel
                 ]);
             }
         })->name('cache-cecoco-tamano-restauraciones')->hourly()->withoutOverlapping();
+
+        $schedule->call(function () {
+            try {
+                app(\App\Services\CecocoExpedienteService::class)
+                    ->actualizarCacheTamanoBaseRestauracionesGps();
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('No se pudo actualizar tamaño BD restauraciones GPS', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        })->name('cache-cecoco-gps-tamano-restauraciones')->hourly()->withoutOverlapping();
     }
 
     /**

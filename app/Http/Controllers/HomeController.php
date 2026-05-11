@@ -515,6 +515,7 @@ class HomeController extends Controller
 
             // Tamaño BD restauraciones CECOCO: caché que refresca el schedule horario.
             $tamanoRest = Cache::get(\App\Services\CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES);
+            $tamanoRestGps = Cache::get(\App\Services\CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES_GPS);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
@@ -531,6 +532,9 @@ class HomeController extends Controller
             'restauraciones_mb'            => $tamanoRest['mb'] ?? null,
             'restauraciones_consultado_en' => $tamanoRest['consultado_en'] ?? null,
             'restauraciones_umbral_mb'     => 4000,
+            'restauraciones_gps_mb'            => $tamanoRestGps['mb'] ?? null,
+            'restauraciones_gps_consultado_en' => $tamanoRestGps['consultado_en'] ?? null,
+            'restauraciones_gps_umbral_mb'     => 4000,
         ]);
     }
 
@@ -543,6 +547,31 @@ class HomeController extends Controller
             ConsultarTamanoRestauracionesCecoco::dispatch();
         } catch (\Throwable $e) {
             \Log::error('No se pudo encolar ConsultarTamanoRestauracionesCecoco', [
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'ok' => false,
+                'error' => 'No se pudo encolar la consulta. Verificá el estado del worker.',
+            ], 503);
+        }
+
+        return response()->json([
+            'ok' => true,
+            'consultado_en_anterior' => $consultadoEnAnterior,
+            'umbral' => 4000,
+            'mensaje' => 'Consulta encolada. El valor se actualizará en breve.',
+        ]);
+    }
+
+    public function refreshRestauracionesGpsCache(): JsonResponse
+    {
+        $cached = Cache::get(CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES_GPS);
+        $consultadoEnAnterior = $cached['consultado_en'] ?? null;
+
+        try {
+            ConsultarTamanoRestauracionesCecoco::dispatch(true);
+        } catch (\Throwable $e) {
+            \Log::error('No se pudo encolar ConsultarTamanoRestauracionesCecoco GPS', [
                 'error' => $e->getMessage(),
             ]);
             return response()->json([

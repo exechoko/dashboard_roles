@@ -535,6 +535,7 @@ class HomeController extends Controller
             'restauraciones_gps_mb'            => $tamanoRestGps['mb'] ?? null,
             'restauraciones_gps_consultado_en' => $tamanoRestGps['consultado_en'] ?? null,
             'restauraciones_gps_umbral_mb'     => 4000,
+            'restauraciones_gps_restauradas'   => Cache::get(\App\Services\CecocoExpedienteService::CACHE_KEY_FICHEROS_RESTAURADOS_GPS, []),
         ]);
     }
 

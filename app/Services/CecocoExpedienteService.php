@@ -1117,6 +1117,7 @@ class CecocoExpedienteService
 
     public const CACHE_KEY_TAMANO_RESTAURACIONES = 'cecoco_tamano_bd_restauraciones';
     public const CACHE_KEY_TAMANO_RESTAURACIONES_GPS = 'cecoco_gps_tamano_bd_restauraciones';
+    public const CACHE_KEY_FICHEROS_RESTAURADOS_GPS = 'cecoco_gps_ficheros_restaurados';
 
     /**
      * Devuelve el último valor cacheado del tamaño de la BD de restauraciones de CECOCO.
@@ -1148,7 +1149,8 @@ class CecocoExpedienteService
      */
     public function actualizarCacheTamanoBaseRestauraciones(): array
     {
-        $mb = $this->fetchTamanoBaseRestauracionesEnVivo();
+        $result = $this->fetchTamanoBaseRestauracionesEnVivo();
+        $mb = $result['mb'];
         $payload = [
             'mb' => $mb,
             'consultado_en' => Carbon::now()->toIso8601String(),
@@ -1170,19 +1172,26 @@ class CecocoExpedienteService
      */
     public function actualizarCacheTamanoBaseRestauracionesGps(): array
     {
-        $mb = $this->fetchTamanoBaseRestauracionesEnVivo(
+        $result = $this->fetchTamanoBaseRestauracionesEnVivo(
             $this->gpsBaseUrl,
             $this->gpsLoginUrl,
             $this->gpsUserMonitor,
             $this->gpsPasswordMonitor,
             'CECOCO GPS'
         );
+        $mb = $result['mb'];
         $payload = [
             'mb' => $mb,
             'consultado_en' => Carbon::now()->toIso8601String(),
         ];
 
         Cache::put(self::CACHE_KEY_TAMANO_RESTAURACIONES_GPS, $payload, 60 * 90);
+
+        // Cachear ficheros restaurados GPS
+        if (!empty($result['html'])) {
+            $ficheros = $this->extraerFicherosRestauradosDesdeHtml($result['html']);
+            Cache::put(self::CACHE_KEY_FICHEROS_RESTAURADOS_GPS, $ficheros, 60 * 90);
+        }
 
         Log::info('Tamaño BD restauraciones GPS actualizado', $payload);
 
@@ -1199,7 +1208,7 @@ class CecocoExpedienteService
         ?string $usuario = null,
         ?string $password = null,
         string $contexto = 'CECOCO'
-    ): float
+    ): array
     {
         $baseUrl = $baseUrl ?: $this->baseUrl;
         $loginUrl = $loginUrl ?: $baseUrl . '/app/login/Login.faces';
@@ -1313,6 +1322,8 @@ class CecocoExpedienteService
                 $cookieFile
             );
 
+            $htmlConTabla = null;
+
             $mb = $this->extraerTamanoBaseRestauracionesDesdeHtml($respAjax['body']);
 
             if ($mb === null) {
@@ -1326,9 +1337,26 @@ class CecocoExpedienteService
                 );
 
                 $mb = $this->extraerTamanoBaseRestauracionesDesdeHtml($resp['body']);
+                $htmlConTabla = $resp['body'];
 
                 if ($mb === null && (stripos($resp['body'], 'NullPointerException') !== false || stripos($respAjax['body'], 'NullPointerException') !== false)) {
                     throw new Exception('Bean gestionRestauracionesHistoricos no inicializado tras dispatch');
+                }
+            } else {
+                $htmlConTabla = $respAjax['body'];
+            }
+
+            // Enviar búsqueda con rango desde 2011 para obtener el listado completo de ficheros
+            if ($htmlConTabla !== null) {
+                try {
+                    $searchHtml = $this->enviarBusquedaRestauraciones($htmlConTabla, $baseUrl, $cookieFile, $contexto);
+                    if ($searchHtml !== null) {
+                        $htmlConTabla = $searchHtml;
+                    }
+                } catch (\Throwable $e) {
+                    \Log::warning("{$contexto}: no se pudo enviar búsqueda de restauraciones, se usan datos sin filtrar", [
+                        'error' => $e->getMessage(),
+                    ]);
                 }
             }
 
@@ -1336,7 +1364,7 @@ class CecocoExpedienteService
                 throw new Exception('No se encontró el patrón de tamaño BD en la respuesta de GestionRestauraciones');
             }
 
-            return $mb;
+            return ['mb' => $mb, 'html' => $htmlConTabla];
         } finally {
             // Logout siempre (best-effort): CECOCO sólo permite UNA sesión por usuario,
             // así que si dejamos la sesión abierta el próximo run se traba con
@@ -1357,6 +1385,91 @@ class CecocoExpedienteService
         $valor = str_replace(',', '.', $valor);
 
         return (float) $valor;
+    }
+
+    /**
+     * Envía el formulario de búsqueda de GestionRestauraciones con rango desde 2011
+     * y devuelve el HTML resultante. Usa el ViewState extraído de la página actual.
+     */
+    private function enviarBusquedaRestauraciones(string $pageHtml, string $baseUrl, string $cookieFile, string $contexto): ?string
+    {
+        if (!preg_match('/<form[^>]*id="GeneralForm"[^>]*>.*?<input[^>]*name="javax\\.faces\\.ViewState"[^>]*value="([^"]+)"[^>]*\/?>/si', $pageHtml, $m)) {
+            \Log::warning("{$contexto}: no se encontró ViewState en GeneralForm");
+            return null;
+        }
+        $viewState = html_entity_decode($m[1]);
+
+        $body = 'GeneralForm%3AfechaInicio=' . rawurlencode('01/01/2011 00:00:00')
+            . '&GeneralForm%3AfechaFin=' . rawurlencode('31/12/2099 23:59:59')
+            . '&GeneralForm%3AtipoFicheroExtraccion=1'
+            . '&GeneralForm%3AbotonBusqueda=Buscar'
+            . '&autoScroll='
+            . '&GeneralForm_SUBMIT=1'
+            . '&GeneralForm%3A_idcl='
+            . '&GeneralForm%3A_link_hidden_='
+            . '&javax.faces.ViewState=' . rawurlencode($viewState);
+
+        $resp = $this->curlRequest(
+            $baseUrl . '/app/historicos/gestion/GestionRestauraciones.faces',
+            'POST',
+            [
+                'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language: es-419,es;q=0.9',
+                'Content-Type: application/x-www-form-urlencoded',
+                'Origin: ' . parse_url($baseUrl, PHP_URL_SCHEME) . '://' . parse_url($baseUrl, PHP_URL_HOST)
+                    . (parse_url($baseUrl, PHP_URL_PORT) ? ':' . parse_url($baseUrl, PHP_URL_PORT) : ''),
+                'Referer: ' . $baseUrl . '/app/historicos/gestion/GestionRestauraciones.faces',
+                'Upgrade-Insecure-Requests: 1',
+            ],
+            $body,
+            $cookieFile
+        );
+
+        if (stripos($resp['body'], 'LoginForm:Usuario') !== false) {
+            throw new Exception("{$contexto}: búsqueda de restauraciones redirigió al login");
+        }
+
+        return $resp['body'];
+    }
+
+    /**
+     * Extrae del HTML del listado de GestionRestauraciones los ficheros con estado "Restaurada".
+     *
+     * @return array{nombre_fichero: string, fecha_inicio: string, fecha_fin: string, localizacion: string}[]
+     */
+    private function extraerFicherosRestauradosDesdeHtml(string $html): array
+    {
+        $files = [];
+
+        $regex = '/<div\s+id="ArrayFilasTablaScroll"[^>]*>.*?<script[^>]*>.*?ficherosExtraccion\.push\(\'([^\']+)\'\).*?<\/script>(.*?)<\/div>(?:\s*<!--\s*Fila\s*-->)?/si';
+        preg_match_all($regex, $html, $matches, PREG_SET_ORDER);
+
+        foreach ($matches as $m) {
+            $filename = $m[1];
+            $innerHtml = $m[2];
+
+            preg_match_all('/<span[^>]*title=\'([^\']*)\'[^>]*>/', $innerHtml, $spans);
+            $titles = $spans[1] ?? [];
+
+            if (count($titles) >= 5) {
+                $fechaInicio   = $titles[0];
+                $fechaFin      = $titles[1];
+                $localizacion  = $titles[2];
+                $estado        = $titles[3];
+                $nombreFichero = $titles[4];
+
+                if (mb_strtolower(trim($estado)) === 'restaurada') {
+                    $files[] = [
+                        'nombre_fichero' => html_entity_decode($nombreFichero, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                        'fecha_inicio'   => html_entity_decode($fechaInicio, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                        'fecha_fin'      => html_entity_decode($fechaFin, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                        'localizacion'   => html_entity_decode($localizacion, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                    ];
+                }
+            }
+        }
+
+        return $files;
     }
 
     private function obtenerPerfilLoginCecoco(string $baseUrl, string $usuario, string $password, string $cookieFile): ?string

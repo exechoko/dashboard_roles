@@ -1150,22 +1150,25 @@
                                                                     <button type="button" class="btn btn-xs btn-outline-primary btn-refresh-restauraciones" id="btn-refresh-restauraciones" title="Consultar ahora">
                                                                         <i class="fas fa-sync-alt" id="icon-refresh-restauraciones"></i>
                                                                     </button>
-                                                                </div>
-                                                            </div>
+                                                                 </div>
+                                                             </div>
 
-                                                            {{-- Tamaño BD restauraciones CECOCO GPS --}}
-                                                            <div class="estado-procesos-bloque" title="Tamaño de la base de datos de restauraciones de históricos GPS. Se actualiza una vez por hora.">
-                                                                <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-database mr-1"></i><strong>Tamaño BD restauraciones GPS</strong></small>
-                                                                <div class="d-flex align-items-center flex-wrap" style="gap:0.5rem;">
-                                                                    <span id="workers-restauraciones-gps-icono" class="restauraciones-icono" style="display:none;">
-                                                                        <i class="fas fa-exclamation-triangle text-danger" title="Supera el umbral de 4000 MB"></i>
-                                                                    </span>
-                                                                    <span id="workers-restauraciones-gps-mb" class="badge badge-secondary">—</span>
-                                                                    <button type="button" class="btn btn-xs btn-outline-primary btn-refresh-restauraciones" id="btn-refresh-restauraciones-gps" title="Consultar ahora">
-                                                                        <i class="fas fa-sync-alt" id="icon-refresh-restauraciones-gps"></i>
-                                                                    </button>
-                                                                </div>
-                                                            </div>
+                                                             {{-- Tamaño BD restauraciones CECOCO GPS --}}
+                                                             <div class="estado-procesos-bloque" title="Tamaño de la base de datos de restauraciones de históricos GPS. Se actualiza una vez por hora.">
+                                                                 <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-database mr-1"></i><strong>Tamaño BD restauraciones GPS</strong></small>
+                                                                 <div class="d-flex align-items-center flex-wrap" style="gap:0.5rem;">
+                                                                     <span id="workers-restauraciones-gps-icono" class="restauraciones-icono" style="display:none;">
+                                                                         <i class="fas fa-exclamation-triangle text-danger" title="Supera el umbral de 4000 MB"></i>
+                                                                     </span>
+                                                                     <span id="workers-restauraciones-gps-mb" class="badge badge-secondary">—</span>
+                                                                     <button type="button" class="btn btn-xs btn-outline-primary btn-refresh-restauraciones" id="btn-refresh-restauraciones-gps" title="Consultar ahora">
+                                                                         <i class="fas fa-sync-alt" id="icon-refresh-restauraciones-gps"></i>
+                                                                     </button>
+                                                                     <button type="button" class="btn btn-xs btn-outline-info btn-ver-restauradas" id="btn-ver-restauradas-gps" title="Ver ficheros restaurados GPS">
+                                                                         <i class="fas fa-check-double"></i>
+                                                                     </button>
+                                                                 </div>
+                                                             </div>
 
                                                         </div>
 
@@ -1655,6 +1658,49 @@
                                                                                                                                                                                                                                                                                                                                                                 </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-camaras" class="table table-condensed table-bordered table-stripped"></table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" data-dismiss="modal">
+                            <i class="fa fa-times"></i>
+                            <span> Cerrar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Modal: Ficheros restaurados CECOCO --}}
+        <div id="modal-restauradas" class="modal fade" data-backdrop="false"
+            style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-info">
+                        <h4 class="modal-title text-white">Ficheros restaurados</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" style="min-height: 200px;">
+                        <p class="text-muted small" id="restauradas-modal-subtitle">
+                            <i class="fas fa-database mr-1"></i> Listado de ficheros restaurados —
+                            <span id="restauradas-modal-origen">CECOCO</span>
+                            <span id="restauradas-modal-total" class="badge badge-info ml-1">0</span>
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered table-hover">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Fichero</th>
+                                        <th>Fecha inicio</th>
+                                        <th>Fecha fin</th>
+                                        <th>Localización</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="restauradas-modal-body">
+                                    <tr><td colspan="4" class="text-center text-muted">Sin datos</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -3179,6 +3225,9 @@
                         var hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                         var el = document.getElementById('workers-ultima-actualizacion');
                         if (el) el.textContent = 'Actualizado: ' + hora;
+
+                        // Guardar ficheros restaurados GPS para el modal
+                        _restauradasGpsData = d.restauraciones_gps_restauradas || [];
                     })
                     .catch(function() {
                         var dot = document.getElementById('workers-dot');
@@ -3304,6 +3353,49 @@
             if (btnRefreshGps) btnRefreshGps.addEventListener('click', function() {
                 refreshRestauraciones('-gps', '{{ route('api.dashboard.refresh-restauraciones-gps') }}', 'restauraciones_gps_consultado_en');
             });
+
+            // ── Datos de ficheros restaurados GPS (actualizados por el polling) ──
+            var _restauradasGpsData = [];
+
+            function escHtml(str) {
+                var d = document.createElement('div');
+                d.appendChild(document.createTextNode(str || ''));
+                return d.innerHTML;
+            }
+
+            function abrirModalRestauradas() {
+                var datos = _restauradasGpsData;
+                var tbody = document.getElementById('restauradas-modal-body');
+                var totalSpan = document.getElementById('restauradas-modal-total');
+                if (!tbody || !totalSpan) return;
+
+                totalSpan.textContent = datos.length;
+
+                if (!datos || datos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No hay ficheros restaurados aún</td></tr>';
+                    $('#modal-restauradas').modal('show');
+                    return;
+                }
+
+                var html = '';
+                datos.forEach(function(f) {
+                    var name = escHtml(f.nombre_fichero) || '—';
+                    var fi   = escHtml(f.fecha_inicio) || '—';
+                    var ff   = escHtml(f.fecha_fin) || '—';
+                    var loc  = escHtml(f.localizacion) || '—';
+                    html += '<tr>' +
+                        '<td title="' + name + '">' + name + '</td>' +
+                        '<td>' + fi + '</td>' +
+                        '<td>' + ff + '</td>' +
+                        '<td>' + loc + '</td>' +
+                        '</tr>';
+                });
+                tbody.innerHTML = html;
+                $('#modal-restauradas').modal('show');
+            }
+
+            var btnVerGps = document.getElementById('btn-ver-restauradas-gps');
+            if (btnVerGps) btnVerGps.addEventListener('click', abrirModalRestauradas);
         })();
 
         // ── Mini mapa de calor Cecoco ───────────────────────────────────────

@@ -10,7 +10,11 @@ return [
     // sólo una sesión activa por usuario, así que este NO debe coincidir con CECOCO_USER.
     'user_monitor'     => env('CECOCO_USER_MONITOR', ''),
     'password_monitor' => env('CECOCO_PASSWORD_MONITOR', ''),
-    'gps_login_url' => env('CECOCO_GPS_LOGIN_URL', 'http://172.26.100.40:8080/CECOCO_webapp/app/login/IndexLogin.faces'),
+    'gps_url' => env('CECOCO_GPS_URL', env('CECOCO_URL', 'http://172.26.100.34:8080')),
+    'gps_login_url' => env(
+        'CECOCO_GPS_LOGIN_URL',
+        rtrim(env('CECOCO_GPS_URL', env('CECOCO_URL', 'http://172.26.100.34:8080')), '/') . '/CECOCO_webapp/app/login/IndexLogin.faces'
+    ),
     'gps_user_monitor'     => env('CECOCO_GPS_USER_MONITOR', ''),
     'gps_password_monitor' => env('CECOCO_GPS_PASSWORD_MONITOR', ''),
     'timeout' => env('CECOCO_TIMEOUT', 60),

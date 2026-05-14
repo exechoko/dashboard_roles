@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 
 class ManualDocumento extends Model
@@ -10,6 +11,8 @@ class ManualDocumento extends Model
 
     protected $fillable = [
         'tipo',
+        'titulo',
+        'tematica',
         'nombre_original',
         'nombre_archivo',
         'ruta_archivo',
@@ -18,7 +21,7 @@ class ManualDocumento extends Model
         'subido_por',
     ];
 
-    public function uploader()
+    public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'subido_por');
     }
@@ -26,8 +29,15 @@ class ManualDocumento extends Model
     public function getTamanoFormateadoAttribute(): string
     {
         $bytes = $this->tamano;
-        if ($bytes >= 1048576) return round($bytes / 1048576, 2) . ' MB';
-        if ($bytes >= 1024)    return round($bytes / 1024, 2) . ' KB';
+
+        if ($bytes >= 1048576) {
+            return round($bytes / 1048576, 2) . ' MB';
+        }
+
+        if ($bytes >= 1024) {
+            return round($bytes / 1024, 2) . ' KB';
+        }
+
         return $bytes . ' B';
     }
 }

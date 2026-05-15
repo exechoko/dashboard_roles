@@ -689,9 +689,9 @@
         var capa7 = L.layerGroup(); //Etapa 2
         var capa8 = L.layerGroup(); //Etapa 3
 
-        //atlas: https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey={{ env('API_KEY_THUNDER_FOREST_MAP') }}
-        //dark: https://tile.thunderforest.com/transport-dark/{z}/{x}/{y}.png?apikey={{ env('API_KEY_THUNDER_FOREST_MAP') }}
-        L.tileLayer('https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=' + '{{ env('API_KEY_THUNDER_FOREST_MAP') }}', {
+        //atlas: https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey={{ config('services.thunderforest.api_key') }}
+        //dark: https://tile.thunderforest.com/transport-dark/{z}/{x}/{y}.png?apikey={{ config('services.thunderforest.api_key') }}
+        L.tileLayer('https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=' + '{{ config('services.thunderforest.api_key') }}', {
             attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(mymap);
 

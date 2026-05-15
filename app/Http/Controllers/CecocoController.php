@@ -473,7 +473,7 @@ class CecocoController extends Controller
     // Función para obtener la dirección a partir de las coordenadas
     private function getAddressGoogle($lat, $lng)
     {
-        $apiKey = env('API_GOOGLE'); // Reemplaza con tu clave de API de Google Maps
+        $apiKey = config('services.google.api_key');
 
         // Realizar solicitud a la API de geocodificación
         $url = "https://maps.googleapis.com/maps/api/geocode/json?latlng=$lat,$lng&key=$apiKey";
@@ -490,7 +490,7 @@ class CecocoController extends Controller
     // Función para obtener la dirección a partir de las coordenadas usando cURL
     private function getAddress($lat, $lng)
     {
-        $apiKey = env('API_ROUTE_SERVICE'); // Reemplaza con tu clave de API de OpenRouteService
+        $apiKey = config('services.open_route_service.api_key');
 
         $url = "https://api.openrouteservice.org/geocode/reverse?api_key=$apiKey&point.lon=$lng&point.lat=$lat";
 
@@ -525,7 +525,7 @@ class CecocoController extends Controller
     // Función para obtener direcciones en lotes utilizando cURL
     private function getAddressesInBatch($coordinates)
     {
-        $apiKey = 'YOUR_API_ROUTE_SERVICE'; // Reemplaza con tu clave de API de OpenRouteService
+        $apiKey = config('services.open_route_service.api_key');
 
         $batchSize = 10; // Número de coordenadas por lote
         $addresses = [];
@@ -573,7 +573,7 @@ class CecocoController extends Controller
 
     private function getAddressesInBatchGoogle($coordinates)
     {
-        $apiKey = 'API_GOOGLE'; // Reemplaza con tu clave de API de Google
+        $apiKey = config('services.google.api_key');
 
         $batchSize = 100; // Número de coordenadas por lote
         $addresses = [];

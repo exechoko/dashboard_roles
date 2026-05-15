@@ -21,7 +21,7 @@ class GeocodificacionService
 
     public function __construct()
     {
-        $this->apiKey = env('API_GOOGLE', '');
+        $this->apiKey = config('services.google.api_key', '');
         $this->ciudadContexto = ', Entre Ríos, Argentina';
     }
 

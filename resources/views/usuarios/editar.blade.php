@@ -109,6 +109,80 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                {{-- Sección contraseña maestra del gestor de contraseñas --}}
+                                <div class="col-xs-12 col-sm-12 col-md-12">
+                                    <div class="form-group mb-0">
+                                        <div class="card border-primary mb-0">
+                                            <div class="card-header py-2 px-3 bg-primary text-white d-flex align-items-center">
+                                                <i class="fas fa-lock mr-2"></i>
+                                                <span class="font-weight-600">Contraseña Maestra del Gestor de Contraseñas</span>
+                                            </div>
+                                            <div class="card-body py-3 px-3">
+                                                <p class="text-muted small mb-3">
+                                                    <i class="fas fa-shield-alt mr-1 text-primary"></i>
+                                                    <strong>Reset administrativo:</strong> Puede establecer o eliminar la contraseña maestra de este usuario.
+                                                    La contraseña maestra protege el acceso al Gestor de Contraseñas y es independiente de la contraseña de login.
+                                                    Dejar en blanco para no modificarla.
+                                                </p>
+                                                <div class="row">
+                                                    <div class="col-md-5">
+                                                        <div class="form-group mb-md-0">
+                                                            <label for="master_password">
+                                                                Nueva contraseña maestra
+                                                                @if($user->master_password)
+                                                                    <span class="badge badge-success ml-1">
+                                                                        <i class="fas fa-check-circle"></i> Configurada
+                                                                    </span>
+                                                                @else
+                                                                    <span class="badge badge-secondary ml-1">
+                                                                        <i class="fas fa-times-circle"></i> No configurada
+                                                                    </span>
+                                                                @endif
+                                                            </label>
+                                                            <div class="input-group">
+                                                                <input type="password" class="form-control" id="master_password"
+                                                                    name="master_password"
+                                                                    placeholder="{{ $user->master_password ? 'Nueva contraseña maestra (opcional)' : 'Definir contraseña maestra' }}">
+                                                                <div class="input-group-append">
+                                                                    <button type="button" class="btn btn-outline-secondary toggle-mp-visibility" data-target="master_password" tabindex="-1">
+                                                                        <i class="fas fa-eye"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-5">
+                                                        <div class="form-group mb-md-0">
+                                                            <label for="confirm_master_password">Confirmar contraseña maestra</label>
+                                                            <div class="input-group">
+                                                                <input type="password" class="form-control" id="confirm_master_password"
+                                                                    name="confirm_master_password"
+                                                                    placeholder="Confirmar contraseña maestra">
+                                                                <div class="input-group-append">
+                                                                    <button type="button" class="btn btn-outline-secondary toggle-mp-visibility" data-target="confirm_master_password" tabindex="-1">
+                                                                        <i class="fas fa-eye"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    @if($user->master_password)
+                                                    <div class="col-md-2 d-flex align-items-end">
+                                                        <div class="form-group mb-md-0 w-100">
+                                                            <label class="d-block">&nbsp;</label>
+                                                            <button type="button" class="btn btn-outline-danger btn-block" id="clearMasterPasswordBtn">
+                                                                <i class="fas fa-trash-alt"></i> Eliminar
+                                                            </button>
+                                                            <input type="hidden" name="clear_master_password" id="clear_master_password" value="0">
+                                                        </div>
+                                                    </div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="col-xs-12 col-sm-12 col-md-12">
                                     <div class="form-group">
                                         <button type="submit" class="btn btn-primary">
@@ -224,28 +298,6 @@
                 }
             });
 
-            // Validación de formulario
-            $('form').on('submit', function(e) {
-                var rolesSelected = $('#roles').val();
-
-                if (!rolesSelected) {
-                    e.preventDefault();
-                    alert('Debe seleccionar un rol para el usuario.');
-                    $('#roles').focus();
-                    return false;
-                }
-
-                var password = $('input[name="password"]').val();
-                var confirmPassword = $('input[name="confirm-password"]').val();
-
-                if (password !== '' && password !== confirmPassword) {
-                    e.preventDefault();
-                    alert('Las contraseñas no coinciden.');
-                    $('input[name="confirm-password"]').focus();
-                    return false;
-                }
-            });
-
             // Validación en tiempo real de contraseñas
             $('input[name="confirm-password"]').on('keyup', function() {
                 var password = $('input[name="password"]').val();
@@ -270,6 +322,79 @@
                 if (password === '') {
                     confirmPasswordField.removeClass('is-valid is-invalid');
                 }
+            });
+
+            // Toggle visibilidad contraseña maestra
+            $('.toggle-mp-visibility').on('click', function() {
+                var targetId = $(this).data('target');
+                var input = document.getElementById(targetId);
+                var icon = $(this).find('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+
+            // Validación de contraseña maestra en tiempo real
+            $('#confirm_master_password').on('keyup', function() {
+                var mp = $('#master_password').val();
+                var cmp = $(this).val();
+                if (mp !== '' && cmp !== '') {
+                    if (mp === cmp) {
+                        $(this).removeClass('is-invalid').addClass('is-valid');
+                    } else {
+                        $(this).removeClass('is-valid').addClass('is-invalid');
+                    }
+                } else {
+                    $(this).removeClass('is-valid is-invalid');
+                }
+            });
+
+            // Botón para eliminar la contraseña maestra
+            $('#clearMasterPasswordBtn').on('click', function() {
+                if (confirm('¿Está seguro de que desea eliminar la contraseña maestra? El Gestor de Contraseñas quedará sin protección adicional.')) {
+                    $('#clear_master_password').val('1');
+                    $('#master_password').val('').prop('disabled', true);
+                    $('#confirm_master_password').val('').prop('disabled', true);
+                    $(this).addClass('disabled').text('Contraseña maestra eliminada al guardar');
+                }
+            });
+
+            // Validar contraseñas maestras al enviar
+            $('form').on('submit', function(e) {
+                var rolesSelected = $('#roles').val();
+
+                if (!rolesSelected) {
+                    e.preventDefault();
+                    alert('Debe seleccionar un rol para el usuario.');
+                    $('#roles').focus();
+                    return false;
+                }
+
+                var password = $('input[name="password"]').val();
+                var confirmPassword = $('input[name="confirm-password"]').val();
+
+                if (password !== '' && password !== confirmPassword) {
+                    e.preventDefault();
+                    alert('Las contraseñas no coinciden.');
+                    $('input[name="confirm-password"]').focus();
+                    return false;
+                }
+
+                var mp = $('#master_password').val();
+                var cmp = $('#confirm_master_password').val();
+
+                if (mp !== '' && mp !== cmp) {
+                    e.preventDefault();
+                    alert('Las contraseñas maestras no coinciden.');
+                    $('#confirm_master_password').focus();
+                    return false;
+                }
+
+                return true;
             });
         });
     </script>

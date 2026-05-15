@@ -62,42 +62,6 @@
     .last-access-container {
         min-height: 24px;
     }
-    /* Ajustar Select2 para el modal */
-    .select2-users + .select2-container {
-        min-height: 120px;
-    }
-
-    .select2-container--bootstrap .select2-selection--multiple {
-        min-height: 120px !important;
-    }
-
-    .select2-container--bootstrap .select2-selection--multiple .select2-selection__choice {
-        background-color: #6777ef !important;
-        border-color: #6777ef !important;
-        color: white !important;
-        padding: 5px 10px !important;
-        font-size: 14px !important;
-        margin: 3px !important;
-    }
-
-    .select2-container--bootstrap .select2-selection--multiple .select2-selection__choice__remove {
-        color: white !important;
-        margin-right: 5px !important;
-        font-weight: bold;
-    }
-
-    .select2-container--bootstrap .select2-selection--multiple .select2-selection__choice__remove:hover {
-        color: #ff6b6b !important;
-    }
-
-    /* Z-index para modales */
-    .select2-container--open {
-        z-index: 9999;
-    }
-
-    .select2-dropdown {
-        z-index: 10000;
-    }
 
     /* Estilo para usuarios compartidos */
     .shared-user-card {
@@ -188,6 +152,23 @@
         </div>
 
         {{-- Tarjetas de contraseñas --}}
+        @can('compartir-clave')
+            <div class="card">
+                <div class="card-body d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+                    <div class="mb-3 mb-md-0">
+                        <div class="custom-control custom-checkbox d-inline-block mr-3">
+                            <input type="checkbox" class="custom-control-input" id="selectAllOwnPasswords">
+                            <label class="custom-control-label" for="selectAllOwnPasswords">Seleccionar claves propias visibles</label>
+                        </div>
+                        <span class="badge badge-primary" id="selectedPasswordsCount">0 seleccionadas</span>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="bulkShareBtn" data-toggle="modal" data-target="#shareModal" disabled>
+                        <i class="fas fa-share-alt"></i> Compartir seleccionadas
+                    </button>
+                </div>
+            </div>
+        @endcan
+
         <div class="row password-cards-row">
             @forelse($passwords as $password)
             <div class="col-md-6 col-lg-4 password-card-col">
@@ -197,6 +178,16 @@
                             {{-- Header con icono y favorito --}}
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div class="d-flex align-items-center">
+                                    @can('compartir-clave')
+                                        @if($password->user_id === Auth::id())
+                                            <div class="mr-2">
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" class="custom-control-input password-bulk-checkbox" id="passwordBulk{{ $password->id }}" value="{{ $password->id }}">
+                                                    <label class="custom-control-label" for="passwordBulk{{ $password->id }}"></label>
+                                                </div>
+                                            </div>
+                                        @endif
+                                    @endcan
                                     <div class="mr-3">
                                         <i class="{{ $systemTypes[$password->system_type]['icon'] }} fa-2x text-primary"></i>
                                     </div>
@@ -206,6 +197,13 @@
                                         {{-- Indicador de contraseña compartida --}}
                                         @if($password->user_id !== Auth::id())
                                             <br><span class="badge badge-info badge-sm"><i class="fas fa-share-alt"></i> Compartida</span>
+                                            @if($password->canBeEditedBy(Auth::id()))
+                                                <span class="badge badge-success badge-sm"><i class="fas fa-edit"></i> Editable</span>
+                                            @else
+                                                <span class="badge badge-secondary badge-sm"><i class="fas fa-eye"></i> Solo lectura</span>
+                                            @endif
+                                        @elseif($password->shares_count > 0)
+                                            <br><span class="badge badge-primary badge-sm"><i class="fas fa-user-friends"></i> {{ $password->shares_count }} compartido(s)</span>
                                         @endif
                                     </div>
                                 </div>
@@ -269,10 +267,12 @@
                                     @endcan
 
                                     @can('editar-clave')
-                                        <a href="{{ route('password-vault.edit', $password) }}"
-                                           class="btn btn-sm btn-warning" title="Editar">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
+                                        @if($password->canBeEditedBy(Auth::id()))
+                                            <a href="{{ route('password-vault.edit', $password) }}"
+                                               class="btn btn-sm btn-warning" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        @endif
                                     @endcan
 
                                     {{-- Solo el dueño puede compartir --}}
@@ -354,12 +354,18 @@
                 @csrf
                 <div class="modal-body">
                     <input type="hidden" name="password_vault_id" id="share_password_vault_id">
+                    <input type="hidden" id="share_mode" value="single">
+
+                    <div class="alert alert-primary d-none" id="bulkShareSummary">
+                        <i class="fas fa-info-circle"></i>
+                        Vas a compartir <strong><span id="bulkShareCount">0</span> contraseña(s)</strong> con los usuarios seleccionados.
+                    </div>
 
                     <div class="form-group">
                         <label for="shared_with_users">
                             <i class="fas fa-users"></i> Seleccionar Usuarios para Compartir
                         </label>
-                        <select name="shared_with_users[]" id="shared_with_users" class="form-control select2" multiple="multiple" style="width: 100%;">
+                        <select name="shared_with_user_ids[]" id="shared_with_users" class="form-control select2" multiple="multiple" style="width: 100%;">
                             @foreach($users as $user)
                                 <option value="{{ $user->id }}" data-email="{{ $user->email }}">
                                     {{ $user->name }} ({{ $user->email }})
@@ -379,8 +385,8 @@
                         </label>
                     </div>
 
-                    <hr>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
+                    <hr class="single-share-section">
+                    <div class="d-flex justify-content-between align-items-center mb-2 single-share-section">
                         <p class="text-muted small mb-0">
                             <i class="fas fa-user-friends"></i> <strong>Usuarios con acceso actual:</strong>
                         </p>
@@ -388,7 +394,7 @@
                             <i class="fas fa-sync-alt"></i> Actualizar
                         </button>
                     </div>
-                    <div id="currentSharesList">
+                    <div id="currentSharesList" class="single-share-section">
                         <p class="text-center text-muted small">
                             <i class="fas fa-spinner fa-spin"></i> Cargando...
                         </p>
@@ -412,7 +418,7 @@
 @push('scripts')
     <script>
         $(document).ready(function () {
-            let select2UsersInstance = null;
+            let selectedPasswordIds = [];
 
             // ========== FUNCIONALIDAD DE CONTRASEÑAS ==========
 
@@ -470,7 +476,7 @@
                 const icon = button.find('i');
 
                 $.ajax({
-                    url: `/password-vault/${passwordId}/favorite`,
+                    url: `/password-vault/${passwordId}/toggle-favorite`,
                     method: 'POST',
                     data: {
                         _token: '{{ csrf_token() }}'
@@ -527,67 +533,46 @@
 
             // ========== FUNCIONALIDAD DE COMPARTIR ==========
 
-            // Inicializar Select2 cuando se abre el modal
-            $('#shareModal').on('shown.bs.modal', function () {
-                if (!select2UsersInstance) {
-                    select2UsersInstance = $('.select2-users').select2({
-                        theme: 'bootstrap',
-                        language: 'es',
-                        placeholder: 'Seleccione uno o varios usuarios...',
-                        allowClear: true,
-                        width: '100%',
-                        closeOnSelect: false,
-                        dropdownParent: $('#shareModal'), // Importante para modales
-                        templateResult: formatUserOption,
-                        templateSelection: formatUserSelection
-                    });
+            function updateBulkSelectionState() {
+                selectedPasswordIds = $('.password-bulk-checkbox:checked').map(function () {
+                    return $(this).val();
+                }).get();
 
-                    // Manejo del foco (igual que en tu proyecto)
-                    $('.select2-users').on('select2:open', function (e) {
-                        setTimeout(() => {
-                            const $dropdown = $('.select2-container--open');
-                            const searchField = $dropdown.find('.select2-search__field');
-                            if (searchField.length > 0) {
-                                searchField[0].focus();
-                            }
-                        }, 50);
-                    });
+                const total = selectedPasswordIds.length;
+                $('#selectedPasswordsCount').text(total + (total === 1 ? ' seleccionada' : ' seleccionadas'));
+                $('#bulkShareBtn').prop('disabled', total === 0);
+
+                const totalOwnVisible = $('.password-bulk-checkbox').length;
+                $('#selectAllOwnPasswords').prop('checked', totalOwnVisible > 0 && total === totalOwnVisible);
+            }
+
+            $(document).on('change', '.password-bulk-checkbox', updateBulkSelectionState);
+
+            $('#selectAllOwnPasswords').on('change', function () {
+                $('.password-bulk-checkbox').prop('checked', $(this).is(':checked'));
+                updateBulkSelectionState();
+            });
+
+            $('.select2').select2({
+                width: '100%'
+            });
+
+            // Forzar el foco en el campo de búsqueda cuando se abre el Select2
+            $(document).on('select2:open', () => {
+                let select2Field = document.querySelector('.select2-search__field');
+                if (select2Field) {
+                    select2Field.focus();
                 }
             });
 
-            // Formato personalizado para las opciones del dropdown
-            function formatUserOption(user) {
-                if (!user.id) {
-                    return user.text;
-                }
-
-                var $user = $(
-                    '<div class="d-flex align-items-center">' +
-                    '<i class="fas fa-user-circle fa-lg mr-2 text-primary"></i>' +
-                    '<div>' +
-                    '<div><strong>' + user.text.split('(')[0].trim() + '</strong></div>' +
-                    '<small class="text-muted">' + $(user.element).data('email') + '</small>' +
-                    '</div>' +
-                    '</div>'
-                );
-                return $user;
-            }
-
-            // Formato para los items seleccionados (chips)
-            function formatUserSelection(user) {
-                if (!user.id) {
-                    return user.text;
-                }
-                return user.text.split('(')[0].trim();
-            }
-
             // Destruir Select2 cuando se cierra el modal
             $('#shareModal').on('hidden.bs.modal', function () {
-                if (select2UsersInstance) {
-                    $('.select2-users').select2('destroy');
-                    select2UsersInstance = null;
-                }
                 $('#shareForm').trigger('reset');
+                $('#shared_with_users').val(null).trigger('change');
+                $('#share_mode').val('single');
+                $('#bulkShareSummary').addClass('d-none');
+                $('.single-share-section').removeClass('d-none');
+                $('#shareModalLabel').html('<i class="fas fa-share-alt"></i> Compartir Contraseña');
             });
 
             // Envío del formulario de compartir
@@ -595,6 +580,7 @@
                 e.preventDefault();
                 const form = $(this);
                 const passwordId = $('#share_password_vault_id').val();
+                const shareMode = $('#share_mode').val();
                 const selectedUsers = $('#shared_with_users').val();
                 const canEdit = $('#can_edit').is(':checked');
 
@@ -612,71 +598,62 @@
                 const originalBtnText = submitBtn.html();
                 submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Compartiendo...');
 
-                // Enviar solicitudes para cada usuario seleccionado
-                const promises = selectedUsers.map(userId => {
-                    return $.ajax({
-                        url: `/password-vault/${passwordId}/share`,
-                        method: 'POST',
-                        data: {
-                            _token: '{{ csrf_token() }}',
-                            shared_with_user_id: userId,
-                            can_edit: canEdit ? 1 : 0
-                        }
-                    });
-                });
+                const requestData = {
+                    _token: '{{ csrf_token() }}',
+                    shared_with_user_ids: selectedUsers,
+                    can_edit: canEdit ? 1 : 0
+                };
 
-                // Esperar a que todas las solicitudes terminen
-                Promise.allSettled(promises).then(results => {
-                    const successful = results.filter(r => r.status === 'fulfilled').length;
-                    const failed = results.filter(r => r.status === 'rejected').length;
-                    const alreadyShared = results.filter(r =>
-                        r.status === 'rejected' &&
-                        r.reason.status === 422
-                    ).length;
+                let shareUrl = `/password-vault/${passwordId}/share`;
 
-                    // Resetear el botón
-                    submitBtn.prop('disabled', false).html(originalBtnText);
+                if (shareMode === 'bulk') {
+                    requestData.password_vault_ids = selectedPasswordIds;
+                    shareUrl = '{{ route("password-vault.bulk-share") }}';
+                }
 
-                    // Mostrar mensajes según resultados
-                    if (successful > 0) {
+                $.ajax({
+                    url: shareUrl,
+                    method: 'POST',
+                    data: requestData,
+                    success: function (response) {
+                        const total = (response.created || 0) + (response.updated || 0);
+                        const message = shareMode === 'bulk'
+                            ? `Se actualizaron ${total} acceso(s) en ${response.passwords || selectedPasswordIds.length} contraseña(s).`
+                            : `Se actualizaron ${total} acceso(s).`;
+
                         iziToast.success({
-                            title: '¡Éxito!',
-                            message: `Contraseña compartida con ${successful} usuario(s) exitosamente.`,
+                            title: 'Accesos actualizados',
+                            message: message,
                             position: 'topRight',
                             timeout: 3000
                         });
-                    }
 
-                    if (alreadyShared > 0) {
-                        iziToast.info({
-                            title: 'Información',
-                            message: `${alreadyShared} usuario(s) ya tenían acceso a esta contraseña.`,
-                            position: 'topRight',
-                            timeout: 3000
-                        });
-                    }
+                        $('#shared_with_users').val(null).trigger('change');
 
-                    if (failed > alreadyShared) {
+                        if (shareMode === 'single') {
+                            loadCurrentShares(passwordId);
+                        }
+
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1200);
+                    },
+                    error: function (xhr) {
+                        let message = 'No se pudieron actualizar los accesos.';
+
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+
                         iziToast.error({
                             title: 'Error',
-                            message: `No se pudo compartir con ${failed - alreadyShared} usuario(s).`,
+                            message: message,
                             position: 'topRight',
                             timeout: 3000
                         });
-                    }
-
-                    // Limpiar selección y actualizar lista
-                    if (select2UsersInstance) {
-                        $('.select2-users').val(null).trigger('change');
-                    }
-                    loadCurrentShares(passwordId);
-
-                    // Si todo fue exitoso, cerrar modal y recargar
-                    if (failed === 0 || failed === alreadyShared) {
-                        setTimeout(() => {
-                            $('#shareModal').modal('hide');
-                            window.location.reload();
-                        }, 2000);
+                    },
+                    complete: function () {
+                        submitBtn.prop('disabled', false).html(originalBtnText);
                     }
                 });
             });
@@ -736,6 +713,45 @@
                 });
             });
 
+            $(document).on('change', '.share-edit-toggle', function () {
+                const checkbox = $(this);
+                const shareId = checkbox.data('share-id');
+                const canEdit = checkbox.is(':checked') ? 1 : 0;
+
+                checkbox.prop('disabled', true);
+
+                $.ajax({
+                    url: `/password-shares/${shareId}/permission`,
+                    method: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        _method: 'PATCH',
+                        can_edit: canEdit
+                    },
+                    success: function () {
+                        const passwordId = $('#share_password_vault_id').val();
+                        loadCurrentShares(passwordId);
+                        iziToast.success({
+                            title: 'Permiso actualizado',
+                            message: canEdit ? 'Ahora puede editar.' : 'Ahora queda en solo lectura.',
+                            position: 'topRight',
+                            timeout: 2000
+                        });
+                    },
+                    error: function () {
+                        checkbox.prop('checked', !canEdit);
+                        iziToast.error({
+                            title: 'Error',
+                            message: 'No se pudo cambiar el permiso de edición.',
+                            position: 'topRight'
+                        });
+                    },
+                    complete: function () {
+                        checkbox.prop('disabled', false);
+                    }
+                });
+            });
+
             // Botón para actualizar la lista de compartidos
             $('#refreshSharesList').click(function () {
                 const passwordId = $('#share_password_vault_id').val();
@@ -753,8 +769,32 @@
             // Configurar modal de compartir
             $('.share-password-btn').click(function () {
                 const passwordId = $(this).data('id');
+                $('#share_mode').val('single');
                 $('#share_password_vault_id').val(passwordId);
+                $('#bulkShareSummary').addClass('d-none');
+                $('.single-share-section').removeClass('d-none');
+                $('#shareModalLabel').html('<i class="fas fa-share-alt"></i> Compartir Contraseña');
                 loadCurrentShares(passwordId);
+            });
+
+            $('#bulkShareBtn').click(function () {
+                updateBulkSelectionState();
+
+                if (selectedPasswordIds.length === 0) {
+                    iziToast.warning({
+                        title: 'Atención',
+                        message: 'Seleccioná al menos una contraseña propia.',
+                        position: 'topRight'
+                    });
+                    return false;
+                }
+
+                $('#share_mode').val('bulk');
+                $('#share_password_vault_id').val('');
+                $('#bulkShareCount').text(selectedPasswordIds.length);
+                $('#bulkShareSummary').removeClass('d-none');
+                $('.single-share-section').addClass('d-none');
+                $('#shareModalLabel').html('<i class="fas fa-share-alt"></i> Compartir Contraseñas Seleccionadas');
             });
 
             // Función para cargar la lista de usuarios compartidos
@@ -769,9 +809,12 @@
                         if (response.shares && response.shares.length > 0) {
                             let html = '<div class="list-group list-group-flush">';
                             response.shares.forEach(function (share) {
+                                const shareName = escapeHtml(share.shared_with_name);
+                                const shareEmail = escapeHtml(share.shared_with_email);
                                 const canEditBadge = share.can_edit ?
                                     '<span class="badge badge-success ml-2"><i class="fas fa-edit"></i> Puede Editar</span>' :
                                     '<span class="badge badge-info ml-2"><i class="fas fa-eye"></i> Solo Ver</span>';
+                                const checked = share.can_edit ? 'checked' : '';
 
                                 html += `
                                 <div class="list-group-item shared-user-card px-2 py-3">
@@ -781,21 +824,27 @@
                                                 <i class="fas fa-user-circle fa-2x text-primary"></i>
                                             </div>
                                             <div>
-                                                <strong>${share.shared_with_name}</strong>
+                                                <strong>${shareName}</strong>
                                                 ${canEditBadge}
                                                 <br>
                                                 <small class="text-muted">
-                                                    <i class="fas fa-envelope"></i> ${share.shared_with_email}
+                                                    <i class="fas fa-envelope"></i> ${shareEmail}
                                                 </small>
                                             </div>
                                         </div>
-                                        <button type="button"
-                                                class="btn btn-sm btn-danger remove-share"
-                                                data-share-id="${share.id}"
-                                                data-user-name="${share.shared_with_name}"
-                                                title="Revocar acceso">
-                                            <i class="fas fa-times"></i> Revocar
-                                        </button>
+                                        <div class="text-right">
+                                            <div class="custom-control custom-switch mb-2">
+                                                <input type="checkbox" class="custom-control-input share-edit-toggle" id="shareEdit${share.id}" data-share-id="${share.id}" ${checked}>
+                                                <label class="custom-control-label small" for="shareEdit${share.id}">Puede editar</label>
+                                            </div>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-danger remove-share"
+                                                    data-share-id="${share.id}"
+                                                    data-user-name="${shareName}"
+                                                    title="Revocar acceso">
+                                                <i class="fas fa-times"></i> Revocar
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             `;
@@ -829,6 +878,10 @@
                         }
                     }
                 });
+            }
+
+            function escapeHtml(value) {
+                return $('<div>').text(value || '').html();
             }
         });
     </script>

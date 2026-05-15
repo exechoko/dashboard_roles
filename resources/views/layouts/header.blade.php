@@ -374,7 +374,15 @@
                 <a class="dropdown-item has-icon edit-profile" href="#" data-id="{{ \Auth::id() }}">
                     <i class="fa fa-user"></i>Editar Perfil</a>
                 <a class="dropdown-item has-icon" data-toggle="modal" data-target="#changePasswordModal" href="#"
-                    data-id="{{ \Auth::id() }}"><i class="fa fa-lock"> </i>Cambiar contraseña</a>
+                    data-id="{{ \Auth::id() }}"><i class="fa fa-lock"></i> Cambiar contraseña</a>
+                <a class="dropdown-item has-icon" data-toggle="modal" data-target="#MasterPasswordModal" href="#">
+                    <i class="fas fa-key"></i> Contraseña maestra
+                    @if(auth()->user()->master_password)
+                        <span class="badge badge-success badge-sm ml-1" style="font-size:9px;">ON</span>
+                    @else
+                        <span class="badge badge-secondary badge-sm ml-1" style="font-size:9px;">OFF</span>
+                    @endif
+                </a>
                 <a href="{{ url('logout') }}" class="dropdown-item has-icon text-danger"
                     onclick="event.preventDefault(); localStorage.clear();  document.getElementById('logout-form').submit();">
                     <i class="fas fa-sign-out-alt"></i> Salir

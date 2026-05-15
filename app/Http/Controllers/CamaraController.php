@@ -22,6 +22,7 @@ class CamaraController extends Controller
         $this->middleware('permission:crear-camara', ['only' => ['create', 'store']]);
         $this->middleware('permission:editar-camara', ['only' => ['edit', 'update']]);
         $this->middleware('permission:borrar-camara', ['only' => ['destroy']]);
+        $this->middleware('permission:ver-stream-camara', ['only' => ['snapshot', 'stream', 'testConexion']]);
     }
 
     public function index(Request $request)
@@ -308,13 +309,153 @@ class CamaraController extends Controller
         return redirect()->route('camaras.index');
     }
 
+    public function snapshot($id)
+    {
+        $camara = Camara::findOrFail($id);
+        $ip = $camara->ip;
+
+        if (empty($ip)) {
+            return response('', 204);
+        }
+
+        $user = config('services.camaras.user');
+        $pass = config('services.camaras.pass');
+
+        try {
+            $response = Http::withOptions([
+                'auth'            => [$user, $pass, 'digest'],
+                'timeout'         => 6,
+                'connect_timeout' => 3,
+                'verify'          => false,
+            ])->get("http://{$ip}/cgi-bin/snapshot.cgi");
+
+            if ($response->successful() && str_contains($response->header('Content-Type') ?? '', 'image')) {
+                return response($response->body(), 200)
+                    ->header('Content-Type', 'image/jpeg')
+                    ->header('Cache-Control', 'no-store, no-cache, must-revalidate')
+                    ->header('Pragma', 'no-cache');
+            }
+        } catch (\Exception $e) {
+            // Cámara no alcanzable
+        }
+
+        return response('', 503);
+    }
+
+    public function stream($id)
+    {
+        $camara = Camara::findOrFail($id);
+        $ip     = $camara->ip;
+
+        if (empty($ip)) {
+            abort(503);
+        }
+
+        $user        = config('services.camaras.user');
+        $pass        = config('services.camaras.pass');
+        $channel     = max(1, intval(request()->get('channel', 1)));
+
+        // Solo snapshot: es 100% lectura y no toca la configuración de la cámara
+        $snapshotUrl = "http://{$ip}/cgi-bin/snapshot.cgi?channel={$channel}";
+
+        return response()->stream(function () use ($snapshotUrl, $user, $pass) {
+            set_time_limit(0);
+            ini_set('output_buffering', 'off');
+            ini_set('zlib.output_compression', false);
+            while (ob_get_level() > 0) {
+                ob_end_flush();
+            }
+            flush();
+
+            while (!connection_aborted()) {
+                $ch = curl_init($snapshotUrl);
+                curl_setopt_array($ch, [
+                    CURLOPT_HTTPAUTH       => CURLAUTH_DIGEST,
+                    CURLOPT_USERPWD        => "$user:$pass",
+                    CURLOPT_CONNECTTIMEOUT => 3,
+                    CURLOPT_TIMEOUT        => 5,
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                ]);
+                $jpeg = curl_exec($ch);
+                $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                curl_close($ch);
+
+                if ($code === 200 && !empty($jpeg)) {
+                    echo "--frame\r\n";
+                    echo "Content-Type: image/jpeg\r\n";
+                    echo "Content-Length: " . strlen($jpeg) . "\r\n\r\n";
+                    echo $jpeg . "\r\n";
+                    flush();
+                } else {
+                    break;
+                }
+            }
+        }, 200, [
+            'Content-Type'      => 'multipart/x-mixed-replace; boundary=frame',
+            'Cache-Control'     => 'no-store, no-cache',
+            'Pragma'            => 'no-cache',
+            'X-Accel-Buffering' => 'no',
+            'Connection'        => 'close',
+        ]);
+    }
+
+    public function testConexion($id)
+    {
+        $camara = Camara::findOrFail($id);
+        $ip = $camara->ip;
+        $user = config('services.camaras.user');
+        $pass = config('services.camaras.pass');
+        $resultado = [];
+
+        if (empty($ip)) {
+            return response()->json(['error' => 'IP vacía en base de datos']);
+        }
+
+        $urls = [
+            "http://{$ip}/cgi-bin/snapshot.cgi",
+            "http://{$ip}/cgi-bin/snapshot.cgi?channel=1",
+        ];
+        $authModes = [
+            'digest' => ['auth' => [$user, $pass, 'digest']],
+            'basic'  => ['auth' => [$user, $pass]],
+        ];
+
+        foreach ($urls as $url) {
+            foreach ($authModes as $authName => $authOpts) {
+                $key = "{$url} [{$authName}]";
+                try {
+                    $response = Http::withOptions(array_merge($authOpts, [
+                        'timeout' => 6,
+                        'connect_timeout' => 3,
+                        'verify' => false,
+                    ]))->get($url);
+                    $resultado[$key] = [
+                        'status' => $response->status(),
+                        'content_type' => $response->header('Content-Type'),
+                        'body_length' => strlen($response->body()),
+                        'ok' => $response->successful() && str_contains($response->header('Content-Type') ?? '', 'image'),
+                    ];
+                } catch (\Exception $e) {
+                    $resultado[$key] = ['error' => $e->getMessage()];
+                }
+            }
+        }
+
+        return response()->json([
+            'camara' => $camara->nombre,
+            'ip' => $ip,
+            'pruebas' => $resultado,
+        ]);
+    }
+
     public function reiniciar($id)
     {
         $camara = Camara::findOrFail($id);
         $ip = $camara->ip;
 
-        $user = env('CAMARA_USER');
-        $pass = env('CAMARA_PASS');
+        $user = config('services.camaras.user');
+        $pass = config('services.camaras.pass');
 
         $url = "http://{$user}:{$pass}@{$ip}/cgi-bin/magicBox.cgi?action=reboot";
 

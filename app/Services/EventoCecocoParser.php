@@ -129,7 +129,7 @@ class EventoCecocoParser
         return $filas;
     }
 
-    private function persistir(array $filas, Importacion $importacion): array
+    private function persistir(array $filas, Importacion $importacion, bool $actualizarPreliminares = false): array
     {
         $periodo = null;
         $mes = null;
@@ -192,14 +192,15 @@ class EventoCecocoParser
         $yaExistentes = collect();
         foreach (array_chunk($expedientesArchivo, 1000) as $chunk) {
             $yaExistentes = $yaExistentes->merge(
-                EventoCecoco::whereIn('nro_expediente', $chunk)->pluck('nro_expediente')
+                EventoCecoco::whereIn('nro_expediente', $chunk)->get()->keyBy('nro_expediente')
             );
         }
-        $mapaExistentes = $yaExistentes->flip()->all();
+        $mapaExistentes = $yaExistentes->all();
 
         $lote = [];
         $importados = 0;
         $duplicados = 0;
+        $actualizados = 0;
         $omitidos = 0;
         $errores = [];
 
@@ -218,6 +219,11 @@ class EventoCecocoParser
             }
 
             if (isset($mapaExistentes[$dato['nro_expediente']])) {
+                if ($actualizarPreliminares && $this->actualizarSiEsPreliminar($mapaExistentes[$dato['nro_expediente']], $dato)) {
+                    $actualizados++;
+                    continue;
+                }
+
                 $duplicados++;
                 continue;
             }
@@ -225,14 +231,14 @@ class EventoCecocoParser
             $lote[] = $dato;
 
             if (count($lote) >= 500) {
-                EventoCecoco::insert($lote);
+                $this->insertarLoteConUpsert($lote);
                 $importados += count($lote);
                 $lote = [];
             }
         }
 
         if (!empty($lote)) {
-            EventoCecoco::insert($lote);
+            $this->insertarLoteConUpsert($lote);
             $importados += count($lote);
         }
 
@@ -242,10 +248,54 @@ class EventoCecocoParser
             'mes' => $mes,
             'total' => count($expedientesArchivo),
             'importados' => $importados,
+            'actualizados' => $actualizados,
             'duplicados' => $duplicados,
             'omitidos' => $omitidos,
             'errores' => $errores,
         ];
+    }
+
+    private function actualizarSiEsPreliminar(EventoCecoco $existente, array $dato): bool
+    {
+        if (!$this->esTipoEnCreacion($existente->tipo_servicio)) {
+            return false;
+        }
+
+        $campos = [
+            'box',
+            'operador',
+            'descripcion',
+            'direccion',
+            'telefono',
+            'fecha_cierre',
+            'tipo_servicio',
+            'periodo',
+            'mes',
+            'anio',
+        ];
+
+        foreach ($campos as $campo) {
+            if (array_key_exists($campo, $dato) && $dato[$campo] !== null && $dato[$campo] !== '') {
+                $existente->{$campo} = $dato[$campo];
+            }
+        }
+
+        $existente->importacion_id = $dato['importacion_id'];
+
+        if (!$existente->isDirty()) {
+            return false;
+        }
+
+        return $existente->save();
+    }
+
+    private function esTipoEnCreacion(?string $tipo): bool
+    {
+        $normalizado = strtolower(trim((string) $tipo));
+        $normalizado = strtr($normalizado, ['á' => 'a', 'é' => 'e', 'í' => 'i', 'ó' => 'o', 'ú' => 'u']);
+        $normalizado = preg_replace('/\s+/', ' ', $normalizado);
+
+        return $normalizado === 'en creacion';
     }
 
     private function mapearColumnas(array $cabecera): array
@@ -350,5 +400,42 @@ class EventoCecocoParser
         } catch (\Exception $e) {
             return null;
         }
+    }
+
+    /**
+     * Inserta un lote de eventos usando INSERT ... ON DUPLICATE KEY UPDATE.
+     * Solo actualiza los campos si el registro existente tiene tipo_servicio = 'EN CREACION'.
+     * Esto evita sobrescribir eventos ya cerrados y maneja reintentos del job.
+     */
+    private function insertarLoteConUpsert(array $lote): void
+    {
+        if (empty($lote)) {
+            return;
+        }
+
+        $campos = array_keys($lote[0]);
+        $columnas = implode(', ', array_map(fn($c) => "`{$c}`", $campos));
+
+        $placeholders = [];
+        $valores = [];
+        foreach ($lote as $fila) {
+            $placeholders[] = '(' . implode(', ', array_fill(0, count($campos), '?')) . ')';
+            foreach ($campos as $campo) {
+                $valores[] = $fila[$campo];
+            }
+        }
+
+        $camposUpdate = [];
+        foreach ($campos as $campo) {
+            if ($campo === 'nro_expediente' || $campo === 'created_at') {
+                continue;
+            }
+            $camposUpdate[] = "`{$campo}` = IF(LOWER(TRIM(`tipo_servicio`)) = 'en creacion', VALUES(`{$campo}`), `{$campo}`)";
+        }
+        $updateClause = implode(', ', $camposUpdate);
+
+        $sql = "INSERT INTO `evento_cecoco` ({$columnas}) VALUES " . implode(', ', $placeholders) . " ON DUPLICATE KEY UPDATE {$updateClause}";
+
+        \Illuminate\Support\Facades\DB::insert($sql, $valores);
     }
 }

@@ -105,6 +105,124 @@
             padding: 0.75rem;
         }
     }
+
+    /* Card "Estado de procesos y Base de datos" */
+    .estado-procesos-card {
+        border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .estado-procesos-header {
+        background: linear-gradient(135deg, #1a3a2a, #166534);
+        color: #fff;
+    }
+
+    .estado-procesos-grid {
+        gap: 1.5rem;
+    }
+
+    /* Bloque que envuelve un grupo (Geocodificación, Tamaño BD, etc.) */
+    .estado-procesos-bloque {
+        padding-left: 0.75rem;
+        margin-left: 0.25rem;
+        border-left: 1px solid #dee2e6;
+    }
+
+    .estado-procesos-titulo {
+        color: #6c757d;
+    }
+
+    .restauraciones-icono {
+        font-size: 1rem;
+        line-height: 1;
+    }
+
+    /* ── Botón refresh restauraciones: animaciones por estado ───────────── */
+    .btn-refresh-restauraciones {
+        transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease;
+    }
+    .btn-refresh-restauraciones.estado-consultando {
+        color: #fff;
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+        animation: refresh-halo-azul 1.4s ease-in-out infinite;
+    }
+    .btn-refresh-restauraciones.estado-success {
+        color: #fff;
+        background-color: #22c55e;
+        border-color: #22c55e;
+        animation: refresh-flash-verde 1.5s ease-out 1;
+    }
+    .btn-refresh-restauraciones.estado-error {
+        color: #fff;
+        background-color: #ef4444;
+        border-color: #ef4444;
+        animation: refresh-shake-rojo 0.5s cubic-bezier(.36,.07,.19,.97) 1;
+    }
+    @keyframes refresh-halo-azul {
+        0%   { box-shadow: 0 0 0 0   rgba(59,130,246,0.6); }
+        70%  { box-shadow: 0 0 0 8px rgba(59,130,246,0);   }
+        100% { box-shadow: 0 0 0 0   rgba(59,130,246,0);   }
+    }
+    @keyframes refresh-flash-verde {
+        0%   { box-shadow: 0 0 0 0   rgba(34,197,94,0.7); transform: scale(1); }
+        40%  { box-shadow: 0 0 0 12px rgba(34,197,94,0);  transform: scale(1.08); }
+        100% { box-shadow: 0 0 0 0   rgba(34,197,94,0);   transform: scale(1); }
+    }
+    @keyframes refresh-shake-rojo {
+        10%, 90% { transform: translateX(-1px); }
+        20%, 80% { transform: translateX(2px); }
+        30%, 50%, 70% { transform: translateX(-3px); }
+        40%, 60% { transform: translateX(3px); }
+    }
+    /* Respeta a usuarios con prefers-reduced-motion */
+    @media (prefers-reduced-motion: reduce) {
+        .btn-refresh-restauraciones.estado-consultando,
+        .btn-refresh-restauraciones.estado-success,
+        .btn-refresh-restauraciones.estado-error {
+            animation: none;
+        }
+    }
+
+    /* Dark mode */
+    [data-theme="dark"] .estado-procesos-card {
+        background-color: #1e293b !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    [data-theme="dark"] .estado-procesos-card .card-body {
+        color: #e2e8f0;
+    }
+
+    [data-theme="dark"] .estado-procesos-bloque {
+        border-left-color: rgba(255, 255, 255, 0.15);
+    }
+
+    [data-theme="dark"] .estado-procesos-titulo {
+        color: #cbd5e1;
+    }
+
+    [data-theme="dark"] .estado-procesos-card .badge.badge-secondary {
+        background-color: #475569;
+        color: #e2e8f0;
+    }
+
+    /* Mobile: bloques apilados sin border-left a la izquierda (queda mal en una sola columna) */
+    @media (max-width: 767px) {
+        .estado-procesos-grid {
+            gap: 0.85rem;
+        }
+        .estado-procesos-bloque {
+            border-left: none;
+            border-top: 1px solid #dee2e6;
+            padding-left: 0;
+            padding-top: 0.5rem;
+            margin-left: 0;
+            width: 100%;
+        }
+        [data-theme="dark"] .estado-procesos-bloque {
+            border-top-color: rgba(255, 255, 255, 0.15);
+        }
+    }
 </style>
 
 @stop
@@ -975,17 +1093,16 @@
                                             </div>
                                         </div>
 
-                                        {{-- Card estado workers de cola --}}
+                                        {{-- Card estado de procesos y base de datos --}}
                                         <div class="row mb-4">
                                             <div class="col-12">
-                                                <div class="card shadow-sm">
-                                                    <div class="card-header d-flex align-items-center justify-content-between py-2"
-                                                        style="background: linear-gradient(135deg,#1a3a2a,#166534); color:#fff;">
-                                                        <span><i class="fas fa-cogs mr-2"></i><strong>Workers de Cola</strong></span>
+                                                <div class="card shadow-sm estado-procesos-card">
+                                                    <div class="card-header d-flex align-items-center justify-content-between py-2 estado-procesos-header">
+                                                        <span><i class="fas fa-cogs mr-2"></i><strong>Estado de procesos y Base de datos</strong></span>
                                                         <small id="workers-ultima-actualizacion" class="text-white-50"></small>
                                                     </div>
                                                     <div class="card-body py-3">
-                                                        <div class="d-flex flex-wrap align-items-start" style="gap:1.5rem;">
+                                                        <div class="d-flex flex-wrap align-items-start estado-procesos-grid">
 
                                                             {{-- Estado del worker --}}
                                                             <div class="d-flex align-items-center mr-4">
@@ -1013,14 +1130,45 @@
                                                                 <span><strong>Fallidos:</strong> <span id="workers-fallidos" class="badge badge-danger">—</span></span>
                                                             </div>
 
-                                                            {{-- Separador --}}
-                                                            <div class="border-left pl-3 ml-1" style="border-color:#dee2e6!important;">
-                                                                <small class="text-muted d-block mb-1"><i class="fas fa-map-marker-alt mr-1"></i><strong>Geocodificación</strong></small>
-                                                                <div class="d-flex align-items-center" style="gap:0.75rem;">
+                                                            {{-- Geocodificación --}}
+                                                            <div class="estado-procesos-bloque">
+                                                                <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-map-marker-alt mr-1"></i><strong>Geocodificación</strong></small>
+                                                                <div class="d-flex align-items-center flex-wrap" style="gap:0.75rem;">
                                                                     <span><small>Cacheadas:</small> <span id="workers-geo-cacheadas" class="badge badge-success">—</span></span>
                                                                     <span><small>Pendientes:</small> <span id="workers-geo-pendientes" class="badge badge-secondary">—</span></span>
                                                                 </div>
                                                             </div>
+
+                                                            {{-- Tamaño BD restauraciones CECOCO --}}
+                                                            <div class="estado-procesos-bloque" title="Tamaño de la base de datos de restauraciones de CECOCO. Se actualiza una vez por hora.">
+                                                                <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-database mr-1"></i><strong>Tamaño BD restauraciones</strong></small>
+                                                                <div class="d-flex align-items-center flex-wrap" style="gap:0.5rem;">
+                                                                    <span id="workers-restauraciones-icono" class="restauraciones-icono" style="display:none;">
+                                                                        <i class="fas fa-exclamation-triangle text-danger" title="Supera el umbral de 4000 MB"></i>
+                                                                    </span>
+                                                                    <span id="workers-restauraciones-mb" class="badge badge-secondary">—</span>
+                                                                    <button type="button" class="btn btn-xs btn-outline-primary btn-refresh-restauraciones" id="btn-refresh-restauraciones" title="Consultar ahora">
+                                                                        <i class="fas fa-sync-alt" id="icon-refresh-restauraciones"></i>
+                                                                    </button>
+                                                                 </div>
+                                                             </div>
+
+                                                             {{-- Tamaño BD restauraciones CECOCO GPS --}}
+                                                             <div class="estado-procesos-bloque" title="Tamaño de la base de datos de restauraciones de históricos GPS. Se actualiza una vez por hora.">
+                                                                 <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-database mr-1"></i><strong>Tamaño BD restauraciones GPS</strong></small>
+                                                                 <div class="d-flex align-items-center flex-wrap" style="gap:0.5rem;">
+                                                                     <span id="workers-restauraciones-gps-icono" class="restauraciones-icono" style="display:none;">
+                                                                         <i class="fas fa-exclamation-triangle text-danger" title="Supera el umbral de 4000 MB"></i>
+                                                                     </span>
+                                                                     <span id="workers-restauraciones-gps-mb" class="badge badge-secondary">—</span>
+                                                                     <button type="button" class="btn btn-xs btn-outline-primary btn-refresh-restauraciones" id="btn-refresh-restauraciones-gps" title="Consultar ahora">
+                                                                         <i class="fas fa-sync-alt" id="icon-refresh-restauraciones-gps"></i>
+                                                                     </button>
+                                                                     <button type="button" class="btn btn-xs btn-outline-info btn-ver-restauradas" id="btn-ver-restauradas-gps" title="Ver ficheros restaurados GPS">
+                                                                         <i class="fas fa-check-double"></i>
+                                                                     </button>
+                                                                 </div>
+                                                             </div>
 
                                                         </div>
 
@@ -1510,6 +1658,49 @@
                                                                                                                                                                                                                                                                                                                                                                 </div-->
                         <div class="col-lg-12" style="margin-top:20px; padding:0; min-height: 400px;">
                             <table id="table-camaras" class="table table-condensed table-bordered table-stripped"></table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" data-dismiss="modal">
+                            <i class="fa fa-times"></i>
+                            <span> Cerrar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Modal: Ficheros restaurados CECOCO --}}
+        <div id="modal-restauradas" class="modal fade" data-backdrop="false"
+            style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-info">
+                        <h4 class="modal-title text-white">Ficheros restaurados</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" style="min-height: 200px;">
+                        <p class="text-muted small" id="restauradas-modal-subtitle">
+                            <i class="fas fa-database mr-1"></i> Listado de ficheros restaurados —
+                            <span id="restauradas-modal-origen">CECOCO</span>
+                            <span id="restauradas-modal-total" class="badge badge-info ml-1">0</span>
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered table-hover">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Fichero</th>
+                                        <th>Fecha inicio</th>
+                                        <th>Fecha fin</th>
+                                        <th>Localización</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="restauradas-modal-body">
+                                    <tr><td colspan="4" class="text-center text-muted">Sin datos</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -2966,6 +3157,53 @@
                             }
                         }
 
+                        // Tamaño BD restauraciones CECOCO (cache horario)
+                        var elRest = document.getElementById('workers-restauraciones-mb');
+                        var elRestIcon = document.getElementById('workers-restauraciones-icono');
+                        if (elRest) {
+                            var mb = d.restauraciones_mb;
+                            var umbral = d.restauraciones_umbral_mb || 4000;
+                            if (mb === null || typeof mb === 'undefined') {
+                                elRest.textContent = 'sin datos';
+                                elRest.className = 'badge badge-secondary';
+                                elRest.title = 'Aún no se cacheó el valor (corre cada hora desde el schedule).';
+                                if (elRestIcon) elRestIcon.style.display = 'none';
+                            } else {
+                                var mbFmt = Number(mb).toLocaleString('es-AR', { maximumFractionDigits: 0 });
+                                elRest.textContent = mbFmt + ' MB';
+                                var supera = mb > umbral;
+                                elRest.className = supera ? 'badge badge-danger' : 'badge badge-success';
+                                if (d.restauraciones_consultado_en) {
+                                    var fecha = new Date(d.restauraciones_consultado_en);
+                                    elRest.title = 'Consultado: ' + fecha.toLocaleString('es-AR') + (supera ? ' — Supera ' + umbral + ' MB' : '');
+                                }
+                                if (elRestIcon) elRestIcon.style.display = supera ? 'inline-block' : 'none';
+                            }
+                        }
+
+                        var elRestGps = document.getElementById('workers-restauraciones-gps-mb');
+                        var elRestGpsIcon = document.getElementById('workers-restauraciones-gps-icono');
+                        if (elRestGps) {
+                            var mbGps = d.restauraciones_gps_mb;
+                            var umbralGps = d.restauraciones_gps_umbral_mb || 4000;
+                            if (mbGps === null || typeof mbGps === 'undefined') {
+                                elRestGps.textContent = 'sin datos';
+                                elRestGps.className = 'badge badge-secondary';
+                                elRestGps.title = 'Aún no se cacheó el valor (corre cada hora desde el schedule).';
+                                if (elRestGpsIcon) elRestGpsIcon.style.display = 'none';
+                            } else {
+                                var mbGpsFmt = Number(mbGps).toLocaleString('es-AR', { maximumFractionDigits: 0 });
+                                elRestGps.textContent = mbGpsFmt + ' MB';
+                                var superaGps = mbGps > umbralGps;
+                                elRestGps.className = superaGps ? 'badge badge-danger' : 'badge badge-success';
+                                if (d.restauraciones_gps_consultado_en) {
+                                    var fechaGps = new Date(d.restauraciones_gps_consultado_en);
+                                    elRestGps.title = 'Consultado: ' + fechaGps.toLocaleString('es-AR') + (superaGps ? ' — Supera ' + umbralGps + ' MB' : '');
+                                }
+                                if (elRestGpsIcon) elRestGpsIcon.style.display = superaGps ? 'inline-block' : 'none';
+                            }
+                        }
+
                         // Desglose por tipo
                         var desgloseDiv  = document.getElementById('workers-desglose');
                         var desgloseList = document.getElementById('workers-desglose-lista');
@@ -2987,6 +3225,9 @@
                         var hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                         var el = document.getElementById('workers-ultima-actualizacion');
                         if (el) el.textContent = 'Actualizado: ' + hora;
+
+                        // Guardar ficheros restaurados GPS para el modal
+                        _restauradasGpsData = d.restauraciones_gps_restauradas || [];
                     })
                     .catch(function() {
                         var dot = document.getElementById('workers-dot');
@@ -2998,6 +3239,163 @@
 
             verificar();
             setInterval(verificar, 60000);
+
+            function setEstadoBotonRestauraciones(estado, sufijo) {
+                var btn = document.getElementById('btn-refresh-restauraciones' + (sufijo || ''));
+                var icon = document.getElementById('icon-refresh-restauraciones' + (sufijo || ''));
+                if (!btn || !icon) return;
+                btn.classList.remove('estado-consultando', 'estado-success', 'estado-error');
+                icon.className = '';
+                switch (estado) {
+                    case 'consultando':
+                        btn.classList.add('estado-consultando');
+                        icon.className = 'fas fa-hourglass-half fa-spin';
+                        btn.disabled = true;
+                        break;
+                    case 'success':
+                        btn.classList.add('estado-success');
+                        icon.className = 'fas fa-check';
+                        btn.disabled = false;
+                        setTimeout(function() { setEstadoBotonRestauraciones('idle', sufijo); }, 1500);
+                        break;
+                    case 'error':
+                        btn.classList.add('estado-error');
+                        icon.className = 'fas fa-exclamation-triangle';
+                        btn.disabled = false;
+                        setTimeout(function() { setEstadoBotonRestauraciones('idle', sufijo); }, 2000);
+                        break;
+                    case 'idle':
+                    default:
+                        icon.className = 'fas fa-sync-alt';
+                        btn.disabled = false;
+                        break;
+                }
+                icon.id = 'icon-refresh-restauraciones' + (sufijo || '');
+            }
+
+            function refreshRestauraciones(sufijo, ruta, campoConsultadoEn) {
+                var btn = document.getElementById('btn-refresh-restauraciones' + (sufijo || ''));
+                var el = document.getElementById('workers-restauraciones' + (sufijo || '') + '-mb');
+                if (!btn || !el) return;
+                setEstadoBotonRestauraciones('consultando', sufijo);
+                el.textContent = '...';
+                el.className = 'badge badge-secondary';
+
+                fetch(ruta, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                    },
+                })
+                .then(function(r) {
+                    return r.json().then(function(d) { return { status: r.status, body: d }; });
+                })
+                .then(function(res) {
+                    var d = res.body;
+                    if (res.status === 429) {
+                        el.textContent = 'esperá';
+                        el.className = 'badge badge-warning';
+                        el.title = 'Demasiadas consultas seguidas. Esperá un minuto.';
+                        setEstadoBotonRestauraciones('error', sufijo);
+                        return;
+                    }
+                    if (!d.ok) {
+                        el.textContent = 'error';
+                        el.className = 'badge badge-danger';
+                        el.title = d.error || 'Error desconocido';
+                        setEstadoBotonRestauraciones('error', sufijo);
+                        return;
+                    }
+
+                    el.textContent = 'consultando...';
+                    el.className = 'badge badge-info';
+                    el.title = d.mensaje || 'Consulta encolada';
+
+                    // Polling progresivo: hasta 60s, cada 4s, hasta que consultado_en cambie.
+                    var baseline = d.consultado_en_anterior;
+                    var intentosMax = 15;
+                    var intento = 0;
+                    var intervalId = setInterval(function() {
+                        intento++;
+                        fetch('{{ route("api.dashboard.workers-status") }}', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                            .then(function(r) { return r.json(); })
+                            .then(function(data) {
+                                var nuevo = data[campoConsultadoEn];
+                                if (nuevo && nuevo !== baseline) {
+                                    clearInterval(intervalId);
+                                    setEstadoBotonRestauraciones('success', sufijo);
+                                    verificar();
+                                } else if (intento >= intentosMax) {
+                                    clearInterval(intervalId);
+                                    el.textContent = 'tarda más de lo normal';
+                                    el.className = 'badge badge-warning';
+                                    el.title = 'El worker puede estar detenido o la consulta está demorando. Revisá el log.';
+                                    setEstadoBotonRestauraciones('error', sufijo);
+                                }
+                            })
+                            .catch(function() { /* siguiente intento */ });
+                    }, 4000);
+                })
+                .catch(function() {
+                    el.textContent = 'error';
+                    el.className = 'badge badge-danger';
+                    setEstadoBotonRestauraciones('error', sufijo);
+                });
+            }
+
+            // Bind del botón (la función está dentro de la IIFE, no en scope global)
+            var btnRefresh = document.getElementById('btn-refresh-restauraciones');
+            if (btnRefresh) btnRefresh.addEventListener('click', function() {
+                refreshRestauraciones('', '{{ route('api.dashboard.refresh-restauraciones') }}', 'restauraciones_consultado_en');
+            });
+            var btnRefreshGps = document.getElementById('btn-refresh-restauraciones-gps');
+            if (btnRefreshGps) btnRefreshGps.addEventListener('click', function() {
+                refreshRestauraciones('-gps', '{{ route('api.dashboard.refresh-restauraciones-gps') }}', 'restauraciones_gps_consultado_en');
+            });
+
+            // ── Datos de ficheros restaurados GPS (actualizados por el polling) ──
+            var _restauradasGpsData = [];
+
+            function escHtml(str) {
+                var d = document.createElement('div');
+                d.appendChild(document.createTextNode(str || ''));
+                return d.innerHTML;
+            }
+
+            function abrirModalRestauradas() {
+                var datos = _restauradasGpsData;
+                var tbody = document.getElementById('restauradas-modal-body');
+                var totalSpan = document.getElementById('restauradas-modal-total');
+                if (!tbody || !totalSpan) return;
+
+                totalSpan.textContent = datos.length;
+
+                if (!datos || datos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No hay ficheros restaurados aún</td></tr>';
+                    $('#modal-restauradas').modal('show');
+                    return;
+                }
+
+                var html = '';
+                datos.forEach(function(f) {
+                    var name = escHtml(f.nombre_fichero) || '—';
+                    var fi   = escHtml(f.fecha_inicio) || '—';
+                    var ff   = escHtml(f.fecha_fin) || '—';
+                    var loc  = escHtml(f.localizacion) || '—';
+                    html += '<tr>' +
+                        '<td title="' + name + '">' + name + '</td>' +
+                        '<td>' + fi + '</td>' +
+                        '<td>' + ff + '</td>' +
+                        '<td>' + loc + '</td>' +
+                        '</tr>';
+                });
+                tbody.innerHTML = html;
+                $('#modal-restauradas').modal('show');
+            }
+
+            var btnVerGps = document.getElementById('btn-ver-restauradas-gps');
+            if (btnVerGps) btnVerGps.addEventListener('click', abrirModalRestauradas);
         })();
 
         // ── Mini mapa de calor Cecoco ───────────────────────────────────────

@@ -21,6 +21,11 @@ class CamaraFisica extends Model
         'activo',
     ];
 
+    protected $casts = [
+        'fecha_remito' => 'date',
+        'activo' => 'boolean',
+    ];
+
     public function tipoCamara()
     {
         return $this->belongsTo(TipoCamara::class);

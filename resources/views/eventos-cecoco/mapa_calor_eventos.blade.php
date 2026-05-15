@@ -77,6 +77,7 @@
             display: flex;
             gap: 4px;
         }
+
     </style>
 @endsection
 
@@ -222,20 +223,11 @@
         var map = L.map('map-calor-eventos').setView([-31.7413, -60.5115], 13);
         var heatLayer = null;
 
-        L.tileLayer('https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey={{ env("API_KEY_THUNDER_FOREST_MAP") }}', {
+        L.tileLayer('https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey={{ config("services.thunderforest.api_key") }}', {
             attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // Geocoder search
-        var searchControl = new L.esri.Controls.Geosearch({ position: 'topleft' }).addTo(map);
-        var markerBusqueda = null;
-        searchControl.on('results', function (data) {
-            if (markerBusqueda) map.removeLayer(markerBusqueda);
-            if (data.results.length > 0) {
-                markerBusqueda = L.marker(data.results[0].latlng).addTo(map);
-                markerBusqueda.bindPopup(data.results[0].text);
-            }
-        });
+        crearBuscadorCalles(map);
 
         // Buscar
         document.getElementById('btn-buscar').addEventListener('click', function () {
@@ -436,10 +428,11 @@
         $('#modalUbicarMapa').on('shown.bs.modal', function () {
             if (!mapUbicar) {
                 mapUbicar = L.map('map-ubicar-modal').setView([-31.7413, -60.5115], 13);
-                L.tileLayer('https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey={{ env("API_KEY_THUNDER_FOREST_MAP") }}', {
+                L.tileLayer('https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey={{ config("services.thunderforest.api_key") }}', {
                     attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
                 }).addTo(mapUbicar);
                 mapUbicar.on('click', function (e) { colocarMarcador(e.latlng); });
+                crearBuscadorCalles(mapUbicar);
             } else {
                 mapUbicar.invalidateSize();
             }
@@ -552,5 +545,31 @@
                 alert('Error de conexión: ' + err.message);
             });
         });
+        // ── Buscador de calles (ESRI Geosearch) ─────────────────────────────
+        function crearBuscadorCalles(targetMap, position) {
+            var searchControl = new L.esri.Controls.Geosearch({
+                position: position || 'topleft'
+            }).addTo(targetMap);
+
+            var markerB = null;
+
+            function limpiarMarker() {
+                if (markerB) { targetMap.removeLayer(markerB); markerB = null; }
+            }
+
+            searchControl.on('results', function (data) {
+                limpiarMarker();
+                if (!data.results.length) return;
+                var result = data.results[0];
+                markerB = L.marker(result.latlng).addTo(targetMap).bindPopup(result.text).openPopup();
+                if (targetMap === mapUbicar) colocarMarcador(result.latlng);
+            });
+
+            targetMap.on('click', limpiarMarker);
+
+            if (targetMap === mapUbicar) {
+                $('#modalUbicarMapa').on('hide.bs.modal', limpiarMarker);
+            }
+        }
     </script>
 @endsection

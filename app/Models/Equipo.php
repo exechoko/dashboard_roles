@@ -32,6 +32,17 @@ class Equipo extends Model
         'observaciones',
     ];
 
+    protected $casts = [
+        'fecha_estado' => 'date',
+        'fecha_venc_garantia' => 'date',
+        'gps' => 'boolean',
+        'frente_remoto' => 'boolean',
+        'rf' => 'boolean',
+        'kit_inst' => 'boolean',
+        'operativo' => 'boolean',
+        'con_garantia' => 'boolean',
+    ];
+
     public function tipo_terminal(){
         return $this->belongsTo(TipoTerminal::class);
     }

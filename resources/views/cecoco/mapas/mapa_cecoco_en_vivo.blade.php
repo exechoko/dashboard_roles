@@ -639,10 +639,10 @@
         }).setView(new L.LatLng(-31.75899, -60.47825), zoom);
 
 
-        //atlas: https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey={{ env('API_KEY_THUNDER_FOREST_MAP') }}
-        //dark: https://tile.thunderforest.com/transport-dark/{z}/{x}/{y}.png?apikey={{ env('API_KEY_THUNDER_FOREST_MAP') }}
+        //atlas: https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey={{ config('services.thunderforest.api_key') }}
+        //dark: https://tile.thunderforest.com/transport-dark/{z}/{x}/{y}.png?apikey={{ config('services.thunderforest.api_key') }}
         L.tileLayer('https://tile.thunderforest.com/atlas/{z}/{x}/{y}.png?apikey=' +
-            '{{ env('API_KEY_THUNDER_FOREST_MAP') }}', {
+            '{{ config('services.thunderforest.api_key') }}', {
                 attribution: '&copy; <a href="https://osm.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(mymap);
         var markersGroup = L.layerGroup().addTo(mymap);

@@ -108,6 +108,14 @@
                                                             </form>
                                                         @endcan
 
+                                                        {{-- Botón de vista en vivo --}}
+                                                        @can('ver-stream-camara')
+                                                            <button class="btn btn-success" title="Ver en Vivo"
+                                                                onclick="openStream({{ $camara->id }}, '{{ addslashes($camara->nombre) }}', {{ $camara->tipoCamara->canales ?? 1 }})">
+                                                                <i class="fas fa-video"></i>
+                                                            </button>
+                                                        @endcan
+
                                                         {{-- Botón de detalles --}}
                                                         @can('ver-camara')
                                                             <a class="btn btn-warning" href="#" data-toggle="modal"
@@ -155,10 +163,102 @@
         </div>
     </section>
 
+    {{-- Modal de visualización en vivo --}}
+    @can('ver-stream-camara')
+    <div class="modal fade" id="modalStreamCamara" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" id="streamModalDialog" role="document">
+            <div class="modal-content" style="background:#1a1a1a; border:1px solid #28a745;">
+                <div class="modal-header py-2" style="background:#111; border-bottom:1px solid #28a745;">
+                    <h6 class="modal-title text-white mb-0">
+                        <i class="fas fa-video text-success mr-2"></i>
+                        <span id="streamCamaraTitle">Vista en Vivo</span>
+                    </h6>
+                    <button type="button" class="close text-white" data-dismiss="modal" style="opacity:.8;">
+                        <span>&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body p-2" style="background:#111;">
+                    <div id="streamChannelsContainer" class="d-flex flex-wrap" style="gap:4px;"></div>
+                </div>
+                <div class="modal-footer py-1" style="background:#111; border-top:1px solid #333;">
+                    <small class="text-muted mr-auto">
+                        <i class="fas fa-circle text-success mr-1" style="font-size:8px;"></i> MJPEG en vivo
+                    </small>
+                    <button type="button" class="btn btn-sm btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* En móvil los canales se apilan verticalmente */
+        @media (max-width: 575.98px) {
+            .stream-channel-col { flex: 1 1 100% !important; }
+        }
+    </style>
+
+    <script>
+        function openStream(camaraId, cameraNombre, canales) {
+            canales = parseInt(canales) || 1;
+
+            var isMobile  = window.innerWidth < 576;
+            var sideBySide = canales >= 2 && !isMobile;
+
+            // Ajustar ancho del modal
+            var dialog = document.getElementById('streamModalDialog');
+            dialog.className = 'modal-dialog modal-dialog-centered ' + (sideBySide ? 'modal-xl' : 'modal-lg');
+
+            document.getElementById('streamCamaraTitle').textContent =
+                cameraNombre + (canales > 1 ? ' — ' + canales + ' canales' : ' — Vista en Vivo');
+
+            var container = document.getElementById('streamChannelsContainer');
+            container.innerHTML = '';
+
+            for (var ch = 1; ch <= canales; ch++) {
+                var col = document.createElement('div');
+                col.className = 'stream-channel-col';
+                col.style.cssText = 'flex:1 1 ' + (sideBySide ? 'calc(50% - 2px)' : '100%') + '; min-width:0;';
+
+                if (canales > 1) {
+                    var lbl = document.createElement('div');
+                    lbl.style.cssText = 'color:#aaa; font-size:11px; text-align:center; margin-bottom:3px;';
+                    lbl.textContent = 'Canal ' + ch;
+                    col.appendChild(lbl);
+                }
+
+                var wrap = document.createElement('div');
+                wrap.style.cssText = 'position:relative; background:#000; border-radius:4px; overflow:hidden; line-height:0;';
+
+                var spinner = document.createElement('div');
+                spinner.style.cssText = 'position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff;';
+                spinner.innerHTML = '<i class="fas fa-spinner fa-spin fa-lg"></i>';
+                wrap.appendChild(spinner);
+
+                var img = document.createElement('img');
+                img.src   = '/camaras/' + camaraId + '/stream?channel=' + ch;
+                img.alt   = 'Canal ' + ch;
+                img.style.cssText = 'width:100%; display:block; opacity:0; transition:opacity .2s;';
+                img.onload  = function(i, s) { return function() { i.style.opacity='1'; s.style.display='none'; }; }(img, spinner);
+                img.onerror = function(s)    { return function() {
+                    s.innerHTML = '<div style="text-align:center;padding:20px 0;"><i class="fas fa-exclamation-triangle text-warning fa-2x"></i><br><small style="color:#aaa;">Sin señal</small></div>';
+                }; }(spinner);
+                wrap.appendChild(img);
+                col.appendChild(wrap);
+                container.appendChild(col);
+            }
+
+            $('#modalStreamCamara').modal('show');
+        }
+
+        $('#modalStreamCamara').on('hidden.bs.modal', function () {
+            document.getElementById('streamChannelsContainer').innerHTML = '';
+        });
+    </script>
+    @endcan
+
     {{-- Script para abrir nueva pestaña cuando se reinicia cámara --}}
     @if(session('open_url'))
         <script>
-            // Abrir nueva pestaña con la URL de reinicio
             window.open('{{ session('open_url') }}', '_blank');
         </script>
     @endif

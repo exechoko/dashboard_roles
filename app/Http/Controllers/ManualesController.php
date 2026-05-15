@@ -2,58 +2,68 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UploadManualDocumentoRequest;
 use App\Models\ManualDocumento;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ManualesController extends Controller
 {
-    private const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'md', 'html'];
-    private const MAX_SIZE_KB = 51200; // 50 MB
-
-    public function indexCecoco()
+    public function indexCecoco(): View
     {
         $this->authorize('ver-manuales-cecoco');
+
         $documentos = ManualDocumento::where('tipo', 'cecoco')
             ->with('uploader')
             ->orderBy('created_at', 'desc')
             ->get();
+
         return view('manuales.cecoco', compact('documentos'));
     }
 
-    public function indexInstructivos()
+    public function indexInstructivos(Request $request): View
     {
         $this->authorize('ver-instructivos');
-        $documentos = ManualDocumento::where('tipo', 'instructivo')
+
+        $busqueda = trim((string) $request->input('buscar', ''));
+        $tematica = trim((string) $request->input('tematica', ''));
+
+        $documentos = ManualDocumento::query()
+            ->where('tipo', 'instructivo')
+            ->when($busqueda !== '', function ($query) use ($busqueda): void {
+                $query->where(function ($query) use ($busqueda): void {
+                    $query->where('titulo', 'like', '%' . $busqueda . '%')
+                        ->orWhere('tematica', 'like', '%' . $busqueda . '%')
+                        ->orWhere('nombre_original', 'like', '%' . $busqueda . '%');
+                });
+            })
+            ->when($tematica !== '', function ($query) use ($tematica): void {
+                $query->where('tematica', $tematica);
+            })
             ->with('uploader')
             ->orderBy('created_at', 'desc')
             ->get();
-        return view('manuales.instructivos', compact('documentos'));
+
+        $tematicas = ManualDocumento::query()
+            ->where('tipo', 'instructivo')
+            ->whereNotNull('tematica')
+            ->where('tematica', '!=', '')
+            ->distinct()
+            ->orderBy('tematica')
+            ->pluck('tematica');
+
+        return view('manuales.instructivos', compact('documentos', 'busqueda', 'tematica', 'tematicas'));
     }
 
-    public function upload(Request $request)
+    public function upload(UploadManualDocumentoRequest $request): RedirectResponse
     {
-        $tipo = $request->input('tipo');
-        $permiso = $tipo === 'cecoco' ? 'cargar-manuales-cecoco' : 'cargar-instructivos';
-        $this->authorize($permiso);
-
-        $request->validate([
-            'tipo'       => 'required|in:cecoco,instructivo',
-            'archivos'   => 'required|array|min:1',
-            'archivos.*' => [
-                'required',
-                'file',
-                'max:' . self::MAX_SIZE_KB,
-                function ($attribute, $value, $fail) {
-                    $ext = strtolower($value->getClientOriginalExtension());
-                    if (!in_array($ext, self::ALLOWED_EXTENSIONS)) {
-                        $fail('Solo se permiten archivos: ' . implode(', ', self::ALLOWED_EXTENSIONS));
-                    }
-                },
-            ],
-        ]);
+        $validated = $request->validated();
+        $tipo = $validated['tipo'];
 
         $carpeta = 'manuales/' . $tipo;
 
@@ -65,19 +75,21 @@ class ManualesController extends Controller
 
             ManualDocumento::create([
                 'tipo'            => $tipo,
+                'titulo'          => $validated['titulo'] ?? null,
+                'tematica'        => $validated['tematica'] ?? null,
                 'nombre_original' => $nombreOrig,
                 'nombre_archivo'  => $nombreAlmac,
                 'ruta_archivo'    => $ruta,
                 'extension'       => $ext,
                 'tamano'          => $archivo->getSize(),
-                'subido_por'      => Auth::id(),
+                'subido_por'      => $request->user()?->id,
             ]);
         }
 
         return back()->with('success', 'Archivo(s) cargado(s) correctamente.');
     }
 
-    public function download($id)
+    public function download(int $id): StreamedResponse
     {
         $doc     = ManualDocumento::findOrFail($id);
         $permiso = $doc->tipo === 'cecoco' ? 'descargar-manuales-cecoco' : 'descargar-instructivos';
@@ -90,7 +102,7 @@ class ManualesController extends Controller
         return Storage::download($doc->ruta_archivo, $doc->nombre_original);
     }
 
-    public function view($id)
+    public function view(int $id): BinaryFileResponse
     {
         $doc     = ManualDocumento::findOrFail($id);
         $permiso = $doc->tipo === 'cecoco' ? 'ver-manuales-cecoco' : 'ver-instructivos';
@@ -114,7 +126,7 @@ class ManualesController extends Controller
         ]);
     }
 
-    public function destroy($id)
+    public function destroy(int $id): RedirectResponse
     {
         $doc     = ManualDocumento::findOrFail($id);
         $permiso = $doc->tipo === 'cecoco' ? 'borrar-manuales-cecoco' : 'borrar-instructivos';

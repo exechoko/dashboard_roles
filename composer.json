@@ -5,31 +5,31 @@
     "keywords": ["framework", "laravel"],
     "license": "MIT",
     "require": {
-        "php": "^7.3|^8.0",
+        "php": "^8.1",
         "doctrine/dbal": "^3.7",
-        "fruitcake/laravel-cors": "^2.0",
         "guzzlehttp/guzzle": "^7.0.1",
-        "infyomlabs/laravel-ui-stisla": "^3.1",
-        "laravel/framework": "^8.75",
-        "laravel/sanctum": "^2.11",
-        "laravel/tinker": "^2.5",
+        "laravel/framework": "^10.0",
+        "laravel/sanctum": "^3.3",
+        "laravel/tinker": "^2.8",
+        "laravel/ui": "^4.6",
         "laravelcollective/html": "^6.3",
-        "larswiegers/laravel-maps": "*",
+        "larswiegers/laravel-maps": "^0.20",
         "maatwebsite/excel": "^3.1",
         "nesbot/carbon": "^2.62",
         "phpoffice/phpspreadsheet": "^1.28",
         "phpoffice/phpword": "^0.18.3",
-        "psr/simple-cache": "1.0",
         "select2/select2": "^4.0",
-        "spatie/laravel-permission": "^5.5"
+        "spatie/laravel-permission": "^6.0"
     },
     "require-dev": {
-        "facade/ignition": "^2.5",
+        "barryvdh/laravel-debugbar": "^3.16",
         "fakerphp/faker": "^1.9.1",
+        "laravel/boost": "^1.8",
         "laravel/sail": "^1.0.1",
-        "mockery/mockery": "^1.4.4",
-        "nunomaduro/collision": "^5.10",
-        "phpunit/phpunit": "^9.5.10"
+        "mockery/mockery": "^1.6",
+        "nunomaduro/collision": "^7.0",
+        "phpunit/phpunit": "^10.1",
+        "spatie/laravel-ignition": "^2.0"
     },
     "autoload": {
         "psr-4": {

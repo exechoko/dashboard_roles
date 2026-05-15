@@ -11,7 +11,7 @@ class AudioTranscriptionController extends Controller
 
     public function __construct()
     {
-        $this->apiBaseUrl = env('TRANSCRIPTION_API_URL', 'https://gvs9j8cd3a.execute-api.us-east-1.amazonaws.com/prod');
+        $this->apiBaseUrl = config('services.ia.transcription_url');
     }
 
     /**

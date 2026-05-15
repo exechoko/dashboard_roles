@@ -64,6 +64,7 @@
                                                         'menu-ia',
                                                         'menu-gestor-claves',
                                                         'menu-patrimonio',
+                                                        'menu-incidencias-911',
                                                         'menu-plano-edificio',
                                                         'menu-manuales',
                                                     ],
@@ -90,6 +91,7 @@
                                                     ],
                                                     'Cámaras' => [
                                                         'camara',
+                                                        'stream-camara',
                                                         'tipo-camara',
                                                         'sitio'
                                                     ],
@@ -125,6 +127,11 @@
                                                     'Patrimonio' => [
                                                         'bien',
                                                         'tipo-bien'
+                                                    ],
+                                                    'Incidencias 911' => [
+                                                        'periodo-911',
+                                                        'incidencia-911',
+                                                        'generar-informe-911'
                                                     ],
                                                     'Plano Edificio' => [
                                                         'plano-edificio'

@@ -22,7 +22,7 @@ use App\Http\Controllers\RecursoController;
 use App\Http\Controllers\FlotaGeneralController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CamaraController;
-use App\Http\Controllers\Mapacontroller;
+use App\Http\Controllers\MapaController;
 use App\Http\Controllers\TipoCamaraController;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\CamaraFisicaController;
@@ -70,6 +70,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::patch('tareas-items/{id}', [TareaController::class, 'updateItem'])->name('tareas.items.update');
 
     Route::post('/profile/update', [UsuarioController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/profile/update-password', [UsuarioController::class, 'updatePassword'])->name('profile.updatePassword');
+    Route::post('/profile/update-master-password', [UsuarioController::class, 'updateMasterPassword'])->name('profile.updateMasterPassword');
     Route::post('/profile/update-theme', [UsuarioController::class, 'updateTheme'])->name('profile.updateTheme')->middleware('auth');
 
     Route::get('dependencias/crear-general', [DependenciaController::class, 'createGeneral'])->name('dependencias.crear-general');
@@ -85,7 +87,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('flota', FlotaGeneralController::class);
     Route::resource('camaras', CamaraController::class);
     Route::resource('camaras_fisicas', CamaraFisicaController::class);
-    Route::resource('mapa', Mapacontroller::class);
+    Route::resource('mapa', MapaController::class);
     Route::resource('tipo-camara', TipoCamaraController::class);
     Route::resource('auditoria', AuditoriaController::class);
     Route::resource('sitios', SitioController::class);
@@ -123,6 +125,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/update-historico/{id}', [App\Http\Controllers\FlotaGeneralController::class, 'update_historico'])->name('flota.update_historico');
     Route::post('/flota/patrimoniar-rapido', [App\Http\Controllers\FlotaGeneralController::class, 'patrimoniarRapido'])->name('flota.patrimoniar-rapido');
     Route::get('get-recursos', [App\Http\Controllers\FlotaGeneralController::class, 'getRecursosJSON'])->name('getRecursosJSON');
+    Route::post('flota/issi-sugerido', [App\Http\Controllers\FlotaGeneralController::class, 'generarIssiSugerido'])->name('flota.issi-sugerido');
 
     Route::post('/get-equipos-sin-funcionar-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposSinFuncionarJSON'])->name('get-equipos-sin-funcionar-json');
     Route::post('/get-equipos-baja-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposBajaJSON'])->name('get-equipos-baja-json');
@@ -165,6 +168,9 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::get('/exportarCamaras', [App\Http\Controllers\MapaController::class, 'exportarExcel'])->name('mapa.exportar');
     Route::post('/camaras/{id}/reiniciar', [CamaraController::class, 'reiniciar'])->name('camaras.reiniciar');
+    Route::get('/camaras/{id}/snapshot', [CamaraController::class, 'snapshot'])->name('camaras.snapshot');
+    Route::get('/camaras/{id}/stream', [CamaraController::class, 'stream'])->name('camaras.stream');
+    Route::get('/camaras/{id}/test-conexion', [CamaraController::class, 'testConexion'])->name('camaras.test-conexion');
 
     Route::get('/transcribir', [TranscripcionController::class, 'index'])->name('transcribe.index');
     Route::post('/transcribir', [TranscripcionController::class, 'transcribe'])->name('transcribe.audio');
@@ -364,26 +370,38 @@ Route::group(['middleware' => ['auth']], function () {
         ->name('entrega-bodycams.previsualizar');
 
 
-    // Rutas del gestor de contraseñas (con permisos en el controlador, NO en las rutas)
-    Route::resource('password-vault', PasswordVaultController::class);
-    // Generar contraseña aleatoria
-    Route::get('password-vault-generate', [PasswordVaultController::class, 'generatePassword'])
-        ->name('password-vault.generate');
-    // Toggle favorito
-    Route::post('password-vault/{passwordVault}/toggle-favorite', [PasswordVaultController::class, 'toggleFavorite'])
-        ->name('password-vault.toggle-favorite');
-    // Obtener contraseña (API)
-    Route::get('password-vault/{passwordVault}/get-password', [PasswordVaultController::class, 'getPassword'])
-        ->name('password-vault.get-password');
-    // Compartir contraseña con otro usuario
-    Route::post('password-vault/{passwordVault}/share', [PasswordVaultController::class, 'share'])
-        ->name('password-vault.share');
-    // Obtener lista de usuarios con los que se compartió
-    Route::get('password-vault/{passwordVault}/shares', [PasswordVaultController::class, 'getShares'])
-        ->name('password-vault.get-shares');
-    // Revocar acceso compartido
-    Route::delete('password-shares/{share}/revoke', [PasswordVaultController::class, 'revokeShare'])
-        ->name('password-vault.revoke-share');
+    // Pantalla de verificación de contraseña maestra (sin el middleware para no crear loop)
+    Route::get('password-vault-auth', [PasswordVaultController::class, 'masterPasswordForm'])
+        ->name('password-vault.master-password');
+    Route::post('password-vault-auth', [PasswordVaultController::class, 'verifyMasterPassword'])
+        ->name('password-vault.verify-master-password');
+
+    // Rutas del gestor de contraseñas protegidas con contraseña maestra
+    Route::middleware('master.password')->group(function () {
+        Route::resource('password-vault', PasswordVaultController::class);
+        // Generar contraseña aleatoria
+        Route::get('password-vault-generate', [PasswordVaultController::class, 'generatePassword'])
+            ->name('password-vault.generate');
+        Route::post('password-vault/share-bulk', [PasswordVaultController::class, 'bulkShare'])
+            ->name('password-vault.bulk-share');
+        // Toggle favorito
+        Route::post('password-vault/{passwordVault}/toggle-favorite', [PasswordVaultController::class, 'toggleFavorite'])
+            ->name('password-vault.toggle-favorite');
+        // Obtener contraseña (API)
+        Route::get('password-vault/{passwordVault}/get-password', [PasswordVaultController::class, 'getPassword'])
+            ->name('password-vault.get-password');
+        // Compartir contraseña con otro usuario
+        Route::post('password-vault/{passwordVault}/share', [PasswordVaultController::class, 'share'])
+            ->name('password-vault.share');
+        // Obtener lista de usuarios con los que se compartió
+        Route::get('password-vault/{passwordVault}/shares', [PasswordVaultController::class, 'getShares'])
+            ->name('password-vault.get-shares');
+        // Revocar acceso compartido
+        Route::delete('password-shares/{share}/revoke', [PasswordVaultController::class, 'revokeShare'])
+            ->name('password-vault.revoke-share');
+        Route::patch('password-shares/{share}/permission', [PasswordVaultController::class, 'updateSharePermission'])
+            ->name('password-vault.update-share-permission');
+    });
 
     Route::prefix('patrimonio')->name('patrimonio.')->group(function () {
         // Dashboard patrimonial
@@ -425,6 +443,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/', [App\Http\Controllers\EventoCecocoController::class, 'index'])->name('index');
         Route::get('/importar/form', [App\Http\Controllers\EventoCecocoController::class, 'importarForm'])->name('importar');
         Route::post('/importar', [App\Http\Controllers\EventoCecocoController::class, 'importar'])->name('importar.post');
+        Route::post('/importar/hoy', [App\Http\Controllers\EventoCecocoController::class, 'importarHoy'])->name('importar.hoy');
         Route::get('/exportar/txt', [App\Http\Controllers\EventoCecocoController::class, 'exportarTxt'])->name('exportar.txt');
         Route::get('/mapa-gis', [App\Http\Controllers\GisViewerController::class, 'index'])->name('mapa-gis');
         Route::get('/mapa-gis-historico', [App\Http\Controllers\GisViewerController::class, 'indexHistorico'])->name('mapa-gis-historico');
@@ -457,6 +476,14 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/api/dashboard/workers-status', [App\Http\Controllers\HomeController::class, 'workersStatus'])
         ->name('api.dashboard.workers-status');
 
+    Route::post('/api/dashboard/refresh-restauraciones', [App\Http\Controllers\HomeController::class, 'refreshRestauracionesCache'])
+        ->middleware('throttle:3,1')
+        ->name('api.dashboard.refresh-restauraciones');
+
+    Route::post('/api/dashboard/refresh-restauraciones-gps', [App\Http\Controllers\HomeController::class, 'refreshRestauracionesGpsCache'])
+        ->middleware('throttle:3,1')
+        ->name('api.dashboard.refresh-restauraciones-gps');
+
     // Manuales
     Route::prefix('manuales')->group(function () {
         Route::get('/cecoco',       [ManualesController::class, 'indexCecoco'])->name('manuales.cecoco');
@@ -465,6 +492,35 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/ver/{id}',     [ManualesController::class, 'view'])->name('manuales.view');
         Route::get('/descargar/{id}', [ManualesController::class, 'download'])->name('manuales.download');
         Route::delete('/eliminar/{id}', [ManualesController::class, 'destroy'])->name('manuales.destroy');
+    });
+
+    // ── Análisis de Períodos 911 ──────────────────────────────────────────────
+    Route::prefix('incidencias')->name('incidencias.')->group(function () {
+        // Períodos
+        Route::prefix('periodos')->name('periodos.')->group(function () {
+            Route::get('/',                   [App\Http\Controllers\PeriodoFacturaController::class, 'index'])->name('index');
+            Route::get('/create',             [App\Http\Controllers\PeriodoFacturaController::class, 'create'])->name('create');
+            Route::post('/',                  [App\Http\Controllers\PeriodoFacturaController::class, 'store'])->name('store');
+            Route::get('/{id}',               [App\Http\Controllers\PeriodoFacturaController::class, 'show'])->name('show');
+            Route::get('/{id}/edit',          [App\Http\Controllers\PeriodoFacturaController::class, 'edit'])->name('edit');
+            Route::put('/{id}',               [App\Http\Controllers\PeriodoFacturaController::class, 'update'])->name('update');
+            Route::delete('/{id}',            [App\Http\Controllers\PeriodoFacturaController::class, 'destroy'])->name('destroy');
+            Route::get('/{id}/importar',      [App\Http\Controllers\PeriodoFacturaController::class, 'importarForm'])->name('importar');
+            Route::post('/{id}/importar',     [App\Http\Controllers\PeriodoFacturaController::class, 'importar'])->name('importar.post');
+            Route::get('/{id}/informe',           [App\Http\Controllers\PeriodoFacturaController::class, 'generarInforme'])->name('informe');
+            Route::get('/{id}/recibo',            [App\Http\Controllers\PeriodoFacturaController::class, 'generarRecibo'])->name('recibo');
+            Route::post('/{id}/arrastrar',        [App\Http\Controllers\PeriodoFacturaController::class, 'arrastarPersistentes'])->name('arrastrar');
+        });
+        // Incidencias dentro de un período
+        Route::prefix('periodos/{periodoId}/incidencias')->name('incidencia.')->group(function () {
+            Route::get('/create',             [App\Http\Controllers\PeriodoFacturaController::class, 'incidenciaCreate'])->name('create');
+            Route::post('/',                  [App\Http\Controllers\PeriodoFacturaController::class, 'incidenciaStore'])->name('store');
+            Route::get('/{incidenciaId}/edit',[App\Http\Controllers\PeriodoFacturaController::class, 'incidenciaEdit'])->name('edit');
+            Route::put('/{incidenciaId}',     [App\Http\Controllers\PeriodoFacturaController::class, 'incidenciaUpdate'])->name('update');
+            Route::delete('/{incidenciaId}',  [App\Http\Controllers\PeriodoFacturaController::class, 'incidenciaDestroy'])->name('destroy');
+        });
+        // API
+        Route::get('/api/ponderacion',        [App\Http\Controllers\PeriodoFacturaController::class, 'apiPonderacion'])->name('api.ponderacion');
     });
 
     //Optimizar sistema

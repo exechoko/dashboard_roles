@@ -25,6 +25,11 @@ class Camara extends Model
         'longitud'
     ];
 
+    protected $casts = [
+        'fecha_instalacion' => 'date',
+        'fecha_desintalacion' => 'date',
+    ];
+
     public function tipoCamara()
     {
         return $this->belongsTo(TipoCamara::class);

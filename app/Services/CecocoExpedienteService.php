@@ -2,8 +2,10 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
+use Carbon\Carbon;
 use Exception;
 
 class CecocoExpedienteService
@@ -11,6 +13,12 @@ class CecocoExpedienteService
     private string $baseUrl;
     private string $cecocoUser;
     private string $cecocoPassword;
+    private string $cecocoUserMonitor;
+    private string $cecocoPasswordMonitor;
+    private string $gpsBaseUrl;
+    private string $gpsLoginUrl;
+    private string $gpsUserMonitor;
+    private string $gpsPasswordMonitor;
     private int $timeout;
     private string $tempPath;
 
@@ -19,6 +27,17 @@ class CecocoExpedienteService
         $this->baseUrl = config('cecoco.url', 'http://172.26.100.34:8080') . '/CECOCO_webapp';
         $this->cecocoUser = config('cecoco.user', '');
         $this->cecocoPassword = config('cecoco.password', '');
+        // Credenciales separadas para el monitoreo del dashboard (login JSF completo).
+        // Si no están configuradas, caemos a las generales — útil en entornos donde
+        // todavía no se creó el usuario dedicado.
+        $this->cecocoUserMonitor = config('cecoco.user_monitor') ?: $this->cecocoUser;
+        $this->cecocoPasswordMonitor = config('cecoco.password_monitor') ?: $this->cecocoPassword;
+        $gpsUrl = rtrim((string) config('cecoco.gps_url', config('cecoco.url', '')), '/');
+        $this->gpsLoginUrl = config('cecoco.gps_login_url')
+            ?: $gpsUrl . '/CECOCO_webapp/app/login/IndexLogin.faces';
+        $this->gpsBaseUrl = $this->baseUrlDesdeLoginUrl($this->gpsLoginUrl);
+        $this->gpsUserMonitor = config('cecoco.gps_user_monitor') ?: $this->cecocoUserMonitor;
+        $this->gpsPasswordMonitor = config('cecoco.gps_password_monitor') ?: $this->cecocoPasswordMonitor;
         $this->timeout = config('cecoco.timeout', 60);
         $this->tempPath = storage_path('app/temp');
 
@@ -1095,6 +1114,478 @@ class CecocoExpedienteService
                 'timeout' => $this->timeout,
                 'temp_path' => $this->tempPath,
             ]
+        ];
+    }
+
+    public const CACHE_KEY_TAMANO_RESTAURACIONES = 'cecoco_tamano_bd_restauraciones';
+    public const CACHE_KEY_TAMANO_RESTAURACIONES_GPS = 'cecoco_gps_tamano_bd_restauraciones';
+    public const CACHE_KEY_FICHEROS_RESTAURADOS_GPS = 'cecoco_gps_ficheros_restaurados';
+
+    /**
+     * Devuelve el último valor cacheado del tamaño de la BD de restauraciones de CECOCO.
+     * No realiza llamadas HTTP: depende del schedule que ejecuta actualizarCacheTamanoBaseRestauraciones().
+     *
+     * @return array{mb: float, consultado_en: string}|null
+     */
+    public function obtenerTamanoBaseRestauraciones(): ?array
+    {
+        return Cache::get(self::CACHE_KEY_TAMANO_RESTAURACIONES);
+    }
+
+    /**
+     * Devuelve el último valor cacheado del tamaño de la BD de restauraciones GPS.
+     *
+     * @return array{mb: float, consultado_en: string}|null
+     */
+    public function obtenerTamanoBaseRestauracionesGps(): ?array
+    {
+        return Cache::get(self::CACHE_KEY_TAMANO_RESTAURACIONES_GPS);
+    }
+
+    /**
+     * Consulta CECOCO en vivo, parsea el HTML de Históricos > Gestión > Restauraciones
+     * y guarda el tamaño en MB en cache. Pensado para correr desde un schedule horario.
+     *
+     * @return array{mb: float, consultado_en: string}
+     * @throws Exception si el login o el parseo falla.
+     */
+    public function actualizarCacheTamanoBaseRestauraciones(): array
+    {
+        $result = $this->fetchTamanoBaseRestauracionesEnVivo();
+        $mb = $result['mb'];
+        $payload = [
+            'mb' => $mb,
+            'consultado_en' => Carbon::now()->toIso8601String(),
+        ];
+
+        // TTL 90 minutos: el schedule corre cada hora; damos margen ante una corrida fallida.
+        Cache::put(self::CACHE_KEY_TAMANO_RESTAURACIONES, $payload, 60 * 90);
+
+        Log::info('Tamaño BD restauraciones CECOCO actualizado', $payload);
+
+        return $payload;
+    }
+
+    /**
+     * Consulta el CECOCO GPS y guarda el tamaño en MB en cache.
+     *
+     * @return array{mb: float, consultado_en: string}
+     * @throws Exception si el login o el parseo falla.
+     */
+    public function actualizarCacheTamanoBaseRestauracionesGps(): array
+    {
+        $result = $this->fetchTamanoBaseRestauracionesEnVivo(
+            $this->gpsBaseUrl,
+            $this->gpsLoginUrl,
+            $this->gpsUserMonitor,
+            $this->gpsPasswordMonitor,
+            'CECOCO GPS'
+        );
+        $mb = $result['mb'];
+        $payload = [
+            'mb' => $mb,
+            'consultado_en' => Carbon::now()->toIso8601String(),
+        ];
+
+        Cache::put(self::CACHE_KEY_TAMANO_RESTAURACIONES_GPS, $payload, 60 * 90);
+
+        // Cachear ficheros restaurados GPS
+        if (!empty($result['html'])) {
+            $ficheros = $this->extraerFicherosRestauradosDesdeHtml($result['html']);
+            Cache::put(self::CACHE_KEY_FICHEROS_RESTAURADOS_GPS, $ficheros, 60 * 90);
+        }
+
+        Log::info('Tamaño BD restauraciones GPS actualizado', $payload);
+
+        return $payload;
+    }
+
+    /**
+     * Login JSF + dispatch + lectura de la pantalla GestionRestauraciones.
+     * Usa cURL nativo porque el flujo JSF es sensible al orden y formato del body.
+     */
+    private function fetchTamanoBaseRestauracionesEnVivo(
+        ?string $baseUrl = null,
+        ?string $loginUrl = null,
+        ?string $usuario = null,
+        ?string $password = null,
+        string $contexto = 'CECOCO'
+    ): array
+    {
+        $baseUrl = $baseUrl ?: $this->baseUrl;
+        $loginUrl = $loginUrl ?: $baseUrl . '/app/login/Login.faces';
+        $usuario = $usuario ?: $this->cecocoUserMonitor;
+        $password = $password ?: $this->cecocoPasswordMonitor;
+        $cookieFile = tempnam(sys_get_temp_dir(), 'cecoco_jar_');
+        if ($cookieFile === false) {
+            throw new Exception('No se pudo crear el cookie jar temporal');
+        }
+
+        try {
+            // 1) Bootstrap de sesión.
+            $this->curlRequest($baseUrl . '/', 'GET', [], null, $cookieFile);
+
+            // 2) GET Login.faces para extraer el ViewState que MyFaces espera en el POST.
+            $loginFormUrl = $loginUrl;
+            $resp = $this->curlRequest($loginFormUrl, 'GET', [], null, $cookieFile);
+            if (!preg_match('/id="javax\.faces\.ViewState"\s+value="([^"]+)"/i', $resp['body']) && stripos($resp['body'], 'Login.faces') !== false) {
+                $loginFormUrl = $baseUrl . '/app/login/Login.faces';
+                $resp = $this->curlRequest($loginFormUrl, 'GET', ['Referer: ' . $loginUrl], null, $cookieFile);
+            }
+            if (!preg_match('/id="javax\.faces\.ViewState"\s+value="([^"]+)"/i', $resp['body'], $m)) {
+                throw new Exception('No se pudo extraer ViewState del formulario de login');
+            }
+            $viewState = html_entity_decode($m[1]);
+            $perfil = $this->obtenerPerfilLoginCecoco($baseUrl, $usuario, $password, $cookieFile) ?: 'Coordinador Despacho';
+
+            // 3) POST Login.faces con el body en el orden exacto del navegador
+            //    (autoScroll vacío, no "0,0", o JSF rebota al login).
+            //    Usa el usuario MONITOR para no chocar con la sesión del usuario operativo.
+            $body = 'LoginForm%3AidiomaSelect=es_ES'
+                . '&LoginForm%3AUsuario=' . rawurlencode($usuario)
+                . '&LoginForm%3APassword=' . rawurlencode($password)
+                . '&LoginForm%3AperfilSelect=' . rawurlencode($perfil)
+                . '&LoginForm%3AbotonLogin=Login'
+                . '&autoScroll='
+                . '&LoginForm_SUBMIT=1'
+                . '&LoginForm%3A_idcl='
+                . '&LoginForm%3A_link_hidden_='
+                . '&javax.faces.ViewState=' . rawurlencode($viewState);
+
+            $resp = $this->curlRequest(
+                $loginFormUrl,
+                'POST',
+                [
+                    'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language: es-419,es;q=0.9',
+                    'Content-Type: application/x-www-form-urlencoded',
+                    'Origin: ' . parse_url($baseUrl, PHP_URL_SCHEME) . '://' . parse_url($baseUrl, PHP_URL_HOST)
+                        . (parse_url($baseUrl, PHP_URL_PORT) ? ':' . parse_url($baseUrl, PHP_URL_PORT) : ''),
+                    'Referer: ' . $loginFormUrl,
+                    'Upgrade-Insecure-Requests: 1',
+                ],
+                $body,
+                $cookieFile
+            );
+
+            // CECOCO permite UNA sesión por usuario: si ya hay otra activa, rebota con
+            // mensaje = 'Usuario en sesión' y url = Login.faces (popup MensajeError).
+            if (stripos($resp['body'], 'Usuario en sesi') !== false) {
+                throw new Exception("{$contexto} ya tiene una sesión activa para el usuario '{$usuario}'. Verificar que ese usuario sea exclusivo del dashboard y no esté abierto en ningún navegador.");
+            }
+            if (stripos($resp['body'], 'LoginForm:Usuario') !== false) {
+                throw new Exception('Login JSF rechazado por CECOCO (volvió al formulario de login)');
+            }
+
+            // 4a) GET Menu.faces para consolidar la sesión post-login
+            //     (el dispatch falla si se hace inmediatamente después del POST de Login).
+            $this->curlRequest(
+                $baseUrl . '/app/inicio/Menu.faces',
+                'GET',
+                ['Referer: ' . $loginFormUrl],
+                null,
+                $cookieFile
+            );
+
+            // 4) Dispatch del menú: instancia el bean gestionRestauracionesHistoricos en sesión.
+            $respDispatch = $this->curlRequest(
+                $baseUrl . '/app/inicio/DispatchAdministracionMenu.faces?id=historicosGestionRestauraciones',
+                'GET',
+                ['Referer: ' . $baseUrl . '/app/inicio/Menu.faces'],
+                null,
+                $cookieFile
+            );
+
+            if ($respDispatch['status'] === 302 && preg_match('/^Location:\s*(.+)$/mi', $respDispatch['headers'], $mLocation)) {
+                $this->curlRequest(
+                    $this->resolverUrlAbsolutaConBase(trim($mLocation[1]), $baseUrl),
+                    'GET',
+                    ['Referer: ' . $baseUrl . '/app/inicio/DispatchAdministracionMenu.faces?id=historicosGestionRestauraciones'],
+                    null,
+                    $cookieFile
+                );
+            }
+
+            // 5) El dato puede venir directamente desde la monitorización AJAX que dispara la pantalla.
+            $respAjax = $this->curlRequest(
+                $baseUrl . '/app/shale/gestionRestauracionesHistoricos/doMonitorizarAjax.faces',
+                'POST',
+                [
+                    'Accept: text/javascript, text/html, application/xml, text/xml, */*',
+                    'Accept-Language: es-419,es;q=0.9',
+                    'Content-Type: application/x-www-form-urlencoded; charset=UTF-8',
+                    'Origin: ' . parse_url($baseUrl, PHP_URL_SCHEME) . '://' . parse_url($baseUrl, PHP_URL_HOST)
+                        . (parse_url($baseUrl, PHP_URL_PORT) ? ':' . parse_url($baseUrl, PHP_URL_PORT) : ''),
+                    'Referer: ' . $baseUrl . '/app/inicio/DispatchAdministracionMenu.faces?id=historicosGestionRestauraciones',
+                    'X-Prototype-Version: 1.7',
+                    'X-Requested-With: XMLHttpRequest',
+                ],
+                '',
+                $cookieFile
+            );
+
+            $htmlConTabla = null;
+
+            $mb = $this->extraerTamanoBaseRestauracionesDesdeHtml($respAjax['body']);
+
+            if ($mb === null) {
+                // Fallback para el CECOCO principal: algunas versiones lo exponen en el GET de GestionRestauraciones.
+                $resp = $this->curlRequest(
+                    $baseUrl . '/app/historicos/gestion/GestionRestauraciones.faces',
+                    'GET',
+                    ['Referer: ' . $baseUrl . '/app/inicio/DispatchAdministracionMenu.faces?id=historicosGestionRestauraciones'],
+                    null,
+                    $cookieFile
+                );
+
+                $mb = $this->extraerTamanoBaseRestauracionesDesdeHtml($resp['body']);
+                $htmlConTabla = $resp['body'];
+
+                if ($mb === null && (stripos($resp['body'], 'NullPointerException') !== false || stripos($respAjax['body'], 'NullPointerException') !== false)) {
+                    throw new Exception('Bean gestionRestauracionesHistoricos no inicializado tras dispatch');
+                }
+            } else {
+                $htmlConTabla = $respAjax['body'];
+            }
+
+            // Enviar búsqueda con rango desde 2011 para obtener el listado completo de ficheros
+            if ($htmlConTabla !== null) {
+                try {
+                    $searchHtml = $this->enviarBusquedaRestauraciones($htmlConTabla, $baseUrl, $cookieFile, $contexto);
+                    if ($searchHtml !== null) {
+                        $htmlConTabla = $searchHtml;
+                    }
+                } catch (\Throwable $e) {
+                    \Log::warning("{$contexto}: no se pudo enviar búsqueda de restauraciones, se usan datos sin filtrar", [
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            if ($mb === null) {
+                throw new Exception('No se encontró el patrón de tamaño BD en la respuesta de GestionRestauraciones');
+            }
+
+            return ['mb' => $mb, 'html' => $htmlConTabla];
+        } finally {
+            // Logout siempre (best-effort): CECOCO sólo permite UNA sesión por usuario,
+            // así que si dejamos la sesión abierta el próximo run se traba con
+            // "Usuario en sesión" hasta que el server haga timeout (≈30 min).
+            $this->logoutCecoco($cookieFile, $baseUrl);
+            @unlink($cookieFile);
+        }
+    }
+
+    private function extraerTamanoBaseRestauracionesDesdeHtml(string $html): ?float
+    {
+        if (!preg_match('/EL\s+TAMA[ÑN]O\s+DE\s+LA\s+BASE\s+DE\s+DATOS\s+DE\s+RESTAURACIONES\s+ES\s+([\d.,]+)\s*MB/iu', $html, $m)) {
+            return null;
+        }
+
+        // CECOCO usa formato europeo: punto = miles, coma = decimales (ej. "3.977 MB" = 3977 MB).
+        $valor = str_replace('.', '', $m[1]);
+        $valor = str_replace(',', '.', $valor);
+
+        return (float) $valor;
+    }
+
+    /**
+     * Envía el formulario de búsqueda de GestionRestauraciones con rango desde 2011
+     * y devuelve el HTML resultante. Usa el ViewState extraído de la página actual.
+     */
+    private function enviarBusquedaRestauraciones(string $pageHtml, string $baseUrl, string $cookieFile, string $contexto): ?string
+    {
+        if (!preg_match('/<form[^>]*id="GeneralForm"[^>]*>.*?<input[^>]*name="javax\\.faces\\.ViewState"[^>]*value="([^"]+)"[^>]*\/?>/si', $pageHtml, $m)) {
+            \Log::warning("{$contexto}: no se encontró ViewState en GeneralForm");
+            return null;
+        }
+        $viewState = html_entity_decode($m[1]);
+
+        $body = 'GeneralForm%3AfechaInicio=' . rawurlencode('01/01/2011 00:00:00')
+            . '&GeneralForm%3AfechaFin=' . rawurlencode('31/12/2099 23:59:59')
+            . '&GeneralForm%3AtipoFicheroExtraccion=1'
+            . '&GeneralForm%3AbotonBusqueda=Buscar'
+            . '&autoScroll='
+            . '&GeneralForm_SUBMIT=1'
+            . '&GeneralForm%3A_idcl='
+            . '&GeneralForm%3A_link_hidden_='
+            . '&javax.faces.ViewState=' . rawurlencode($viewState);
+
+        $resp = $this->curlRequest(
+            $baseUrl . '/app/historicos/gestion/GestionRestauraciones.faces',
+            'POST',
+            [
+                'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language: es-419,es;q=0.9',
+                'Content-Type: application/x-www-form-urlencoded',
+                'Origin: ' . parse_url($baseUrl, PHP_URL_SCHEME) . '://' . parse_url($baseUrl, PHP_URL_HOST)
+                    . (parse_url($baseUrl, PHP_URL_PORT) ? ':' . parse_url($baseUrl, PHP_URL_PORT) : ''),
+                'Referer: ' . $baseUrl . '/app/historicos/gestion/GestionRestauraciones.faces',
+                'Upgrade-Insecure-Requests: 1',
+            ],
+            $body,
+            $cookieFile
+        );
+
+        if (stripos($resp['body'], 'LoginForm:Usuario') !== false) {
+            throw new Exception("{$contexto}: búsqueda de restauraciones redirigió al login");
+        }
+
+        return $resp['body'];
+    }
+
+    /**
+     * Extrae del HTML del listado de GestionRestauraciones los ficheros con estado "Restaurada".
+     *
+     * @return array{nombre_fichero: string, fecha_inicio: string, fecha_fin: string, localizacion: string}[]
+     */
+    private function extraerFicherosRestauradosDesdeHtml(string $html): array
+    {
+        $files = [];
+
+        $regex = '/<div\s+id="ArrayFilasTablaScroll"[^>]*>.*?<script[^>]*>.*?ficherosExtraccion\.push\(\'([^\']+)\'\).*?<\/script>(.*?)<\/div>(?:\s*<!--\s*Fila\s*-->)?/si';
+        preg_match_all($regex, $html, $matches, PREG_SET_ORDER);
+
+        foreach ($matches as $m) {
+            $filename = $m[1];
+            $innerHtml = $m[2];
+
+            preg_match_all('/<span[^>]*title=\'([^\']*)\'[^>]*>/', $innerHtml, $spans);
+            $titles = $spans[1] ?? [];
+
+            if (count($titles) >= 5) {
+                $fechaInicio   = $titles[0];
+                $fechaFin      = $titles[1];
+                $localizacion  = $titles[2];
+                $estado        = $titles[3];
+                $nombreFichero = $titles[4];
+
+                if (mb_strtolower(trim($estado)) === 'restaurada') {
+                    $files[] = [
+                        'nombre_fichero' => html_entity_decode($nombreFichero, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                        'fecha_inicio'   => html_entity_decode($fechaInicio, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                        'fecha_fin'      => html_entity_decode($fechaFin, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                        'localizacion'   => html_entity_decode($localizacion, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+                    ];
+                }
+            }
+        }
+
+        return $files;
+    }
+
+    private function obtenerPerfilLoginCecoco(string $baseUrl, string $usuario, string $password, string $cookieFile): ?string
+    {
+        $resp = $this->curlRequest(
+            $baseUrl . '/ajax/perfil/AjaxServletPerfil',
+            'POST',
+            ['Content-Type: application/x-www-form-urlencoded;charset=UTF-8'],
+            'LoginForm%3AUsuario=' . rawurlencode($usuario) . '&LoginForm%3APassword=' . rawurlencode($password),
+            $cookieFile
+        );
+
+        if (!preg_match_all('/<PERFIL\s+perfil="([^"]+)"/i', $resp['body'], $m) || empty($m[1])) {
+            return null;
+        }
+
+        foreach ($m[1] as $perfil) {
+            if (strcasecmp($perfil, 'Coordinador Despacho') === 0) {
+                return $perfil;
+            }
+        }
+
+        return html_entity_decode($m[1][0], ENT_QUOTES, 'UTF-8');
+    }
+
+    private function resolverUrlAbsolutaConBase(string $src, string $baseUrl): string
+    {
+        if (preg_match('/^https?:\/\//i', $src)) {
+            return $src;
+        }
+
+        $parts = parse_url(rtrim($baseUrl, '/'));
+        $scheme = $parts['scheme'] ?? 'http';
+        $host = $parts['host'] ?? '';
+        $port = isset($parts['port']) ? ':' . $parts['port'] : '';
+
+        if (strpos($src, '/') === 0) {
+            return $scheme . '://' . $host . $port . $src;
+        }
+
+        return rtrim($baseUrl, '/') . '/' . ltrim($src, '/');
+    }
+
+    private function baseUrlDesdeLoginUrl(string $loginUrl): string
+    {
+        $pos = stripos($loginUrl, '/app/login/');
+
+        return $pos === false ? rtrim($loginUrl, '/') : substr($loginUrl, 0, $pos);
+    }
+
+    /**
+     * Cierra la sesión de CECOCO usando el JSESSIONID del cookie jar.
+     * Best-effort: si falla no hace nada (la sesión va a timeoutear en el server igual).
+     */
+    private function logoutCecoco(string $cookieFile, ?string $baseUrl = null): void
+    {
+        $baseUrl = $baseUrl ?: $this->baseUrl;
+        try {
+            $this->curlRequest(
+                $baseUrl . '/app/login/Logout.jsp',
+                'GET',
+                ['Referer: ' . $baseUrl . '/app/inicio/Menu.faces'],
+                null,
+                $cookieFile
+            );
+        } catch (\Throwable $e) {
+            Log::info('Logout CECOCO falló (best-effort)', ['error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Helper de cURL con cookie jar persistente y headers personalizados.
+     * Necesario porque Laravel\Http no respeta el orden de campos del body
+     * y MyFaces rechaza el POST de login si el orden o encoding cambian.
+     */
+    private function curlRequest(string $url, string $method, array $headers = [], ?string $body = null, ?string $cookieFile = null): array
+    {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_HEADER         => true,
+            CURLOPT_TIMEOUT        => $this->timeout,
+            CURLOPT_USERAGENT      => 'Mozilla/5.0 (Dashboard CAR911 - CECOCO Monitor)',
+        ]);
+        if ($cookieFile !== null) {
+            curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFile);
+            curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile);
+        }
+        if ($method === 'POST') {
+            curl_setopt($ch, CURLOPT_POST, true);
+            if ($body !== null) {
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+            }
+        }
+        if (!empty($headers)) {
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        }
+
+        $resp = curl_exec($ch);
+        if ($resp === false) {
+            $err = curl_error($ch);
+            curl_close($ch);
+            throw new Exception('cURL falló contra CECOCO: ' . $err);
+        }
+        $hsize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+        $code  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        return [
+            'status'  => $code,
+            'headers' => substr($resp, 0, $hsize),
+            'body'    => substr($resp, $hsize),
         ];
     }
 }

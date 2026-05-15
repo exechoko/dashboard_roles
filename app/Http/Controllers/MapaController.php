@@ -143,6 +143,7 @@ class MapaController extends Controller
             'tipo_camara.imagen as imagen',
             'tipo_camara.marca as marca',
             'tipo_camara.modelo as modelo',
+            'tipo_camara.canales as canales',
             'destino.nombre as dependencia',
             DB::raw('sitio.nombre as sitio'),
             DB::raw('sitio.cartel as cartel'),

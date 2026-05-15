@@ -184,7 +184,6 @@ class EntregasEquiposController extends Controller
                 ->with('success', 'Acta de entrega creada exitosamente');
 
         } catch (Exception $e) {
-            dd($e->getMessage());
             DB::rollback();
             return redirect()->back()
                 ->with('error', 'Error al crear el acta de entrega: ' . $e->getMessage())

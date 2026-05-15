@@ -28,12 +28,14 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
     protected $archivoPath;
     protected $nombreOriginal;
     protected $importacionId;
+    protected $actualizarPreliminares;
 
-    public function __construct(string $archivoPath, string $nombreOriginal, ?int $importacionId = null)
+    public function __construct(string $archivoPath, string $nombreOriginal, ?int $importacionId = null, bool $actualizarPreliminares = false)
     {
         $this->archivoPath = $archivoPath;
         $this->nombreOriginal = $nombreOriginal;
         $this->importacionId = $importacionId;
+        $this->actualizarPreliminares = $actualizarPreliminares;
     }
 
     public function handle(EventoCecocoParser $parser)
@@ -112,6 +114,7 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
             Cache::forget('cecoco_tipos');
             Cache::forget('cecoco_operadores');
             Cache::forget('cecoco_total_bd');
+            Cache::forget('cecoco_total_bd_importar');
             Cache::forget('cecoco_total_importaciones');
             Cache::forget('cecoco_total_archivos_importados');
             Cache::forget('cecoco_importaciones_por_anio');
@@ -159,7 +162,7 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
         $reflection = new \ReflectionClass($parser);
         $method = $reflection->getMethod('persistir');
         $method->setAccessible(true);
-        return $method->invoke($parser, $filas, $importacion);
+        return $method->invoke($parser, $filas, $importacion, $this->actualizarPreliminares);
     }
 
     /**

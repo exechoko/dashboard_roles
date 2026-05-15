@@ -29,7 +29,8 @@ class User extends Authenticatable
         'password',
         'photo',
         'theme',
-        'acceso_externo'
+        'acceso_externo',
+        'master_password',
     ];
 
     /**
@@ -39,6 +40,7 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
+        'master_password',
         'remember_token',
     ];
 

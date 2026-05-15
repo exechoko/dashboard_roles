@@ -23,6 +23,8 @@ class HistoricoMovilProcesado extends Model
     ];
 
     protected $casts = [
+        'fecha_inicio' => 'datetime',
+        'fecha_fin' => 'datetime',
         'metadata' => 'array',
     ];
 

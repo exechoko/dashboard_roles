@@ -140,6 +140,23 @@
         'cantidadSitios' => $cantidadSitios
     ])
 
+    {{-- Panel flotante de visualización en vivo --}}
+    @can('ver-stream-camara')
+    <div id="mapaStreamPanel" style="display:none; position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+        z-index:20000; background:#111; border:2px solid #28a745; border-radius:8px; padding:8px;
+        flex-direction:column; align-items:stretch; width:calc(100% - 40px); max-width:480px;
+        box-shadow:0 4px 20px rgba(0,0,0,0.7);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span id="mapaStreamTitle" style="color:#fff; font-weight:600; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Vista en Vivo</span>
+            <button onclick="closeCameraStream()" style="background:none; border:none; color:#aaa; font-size:20px; cursor:pointer; line-height:1; flex-shrink:0; margin-left:8px;">&times;</button>
+        </div>
+        <div id="mapaStreamContainer"></div>
+        <small style="color:#555; margin-top:5px; font-size:10px; text-align:center;">
+            <i class="fas fa-circle" style="color:#28a745; font-size:7px;"></i> MJPEG en vivo
+        </small>
+    </div>
+    @endcan
+
     {{-- Mapa en pantalla completa --}}
     <div id="map">
         {{-- Control personalizado de capas --}}

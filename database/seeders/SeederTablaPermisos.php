@@ -69,6 +69,7 @@ class SeederTablaPermisos extends Seeder
             'crear-camara',
             'editar-camara',
             'borrar-camara',
+            'ver-stream-camara',
 
             //tabla tipo camara
             'ver-tipo-camara',
@@ -187,6 +188,18 @@ class SeederTablaPermisos extends Seeder
             'posicionar-plano-edificio',
             'credenciales-plano-edificio',
             'exportar-plano-edificio',
+
+            // Análisis Períodos 911
+            'ver-menu-incidencias-911',
+            'ver-periodo-911',
+            'crear-periodo-911',
+            'editar-periodo-911',
+            'borrar-periodo-911',
+            'ver-incidencia-911',
+            'crear-incidencia-911',
+            'editar-incidencia-911',
+            'borrar-incidencia-911',
+            'generar-informe-911',
 
             //Manuales
             'ver-manual-usuario',

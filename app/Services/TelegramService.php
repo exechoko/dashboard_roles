@@ -722,7 +722,7 @@ class TelegramService
     private function responderAyuda(string $chatId, string $nombre): void
     {
         $mensaje = "👋 ¡Hola <b>{$nombre}</b>!\n\n"
-            . "Soy el bot del <b>Dashboard de Gestión</b>.\n\n"
+            . "Soy el bot del <b>CAR911</b>.\n\n"
             . "📋 <b>tareas</b> / <b>pendientes</b>\n"
             . "   → Tareas de hoy y mañana\n\n"
             . "📊 <b>novedades</b> / <b>resumen</b>\n"
@@ -892,10 +892,33 @@ class TelegramService
             $mensaje .= "⏳ Pendientes hoy: <b>{$tareasHoy}</b>\n";
             $mensaje .= "📌 Pendientes mañana: <b>{$tareasManana}</b>\n";
 
+            $tamanoRest = Cache::get(CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES);
+            $tamanoRestGps = Cache::get(CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES_GPS);
+            $mensaje .= "\n━━━━━━━━━━━━━━━━━━\n";
+            $mensaje .= "🗄 <b>BASES RESTAURACIONES</b>\n";
+            $mensaje .= "CECOCO: " . $this->formatearTamanoRestauraciones($tamanoRest) . "\n";
+            $mensaje .= "GPS: " . $this->formatearTamanoRestauraciones($tamanoRestGps) . "\n";
+
             $this->enviarMensaje($mensaje, $chatId);
         } catch (\Exception $e) {
             Log::channel('telegram')->error('Telegram: error respondiendo novedades', ['error' => $e->getMessage()]);
             $this->enviarMensaje('❌ Error al consultar novedades: ' . $e->getMessage(), $chatId);
         }
+    }
+
+    private function formatearTamanoRestauraciones(?array $cache): string
+    {
+        if (empty($cache) || !isset($cache['mb'])) {
+            return 'sin datos';
+        }
+
+        $mb = number_format((float) $cache['mb'], 0, ',', '.');
+        $texto = "<b>{$mb} MB</b>";
+
+        if (!empty($cache['consultado_en'])) {
+            $texto .= ' (' . Carbon::parse($cache['consultado_en'])->format('d/m H:i') . ')';
+        }
+
+        return $texto;
     }
 }

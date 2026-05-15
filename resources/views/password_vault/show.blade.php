@@ -10,9 +10,13 @@
             <a href="{{ route('password-vault.index') }}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Volver
             </a>
-            <a href="{{ route('password-vault.edit', $passwordVault) }}" class="btn btn-warning">
-                <i class="fas fa-edit"></i> Editar
-            </a>
+            @can('editar-clave')
+                @if($passwordVault->canBeEditedBy(Auth::id()))
+                    <a href="{{ route('password-vault.edit', $passwordVault) }}" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                @endif
+            @endcan
         </div>
     </div>
 
@@ -208,22 +212,26 @@
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header">
-                        <h4><i class="fas fa-cog"></i> Acciones</h4>
-                    </div>
-                    <div class="card-body">
-                        <form action="{{ route('password-vault.destroy', $passwordVault) }}"
-                              method="POST"
-                              class="delete-form">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="btn btn-danger btn-block">
-                                <i class="fas fa-trash"></i> Eliminar Contraseña
-                            </button>
-                        </form>
-                    </div>
-                </div>
+                @can('borrar-clave')
+                    @if($passwordVault->user_id === Auth::id())
+                        <div class="card">
+                            <div class="card-header">
+                                <h4><i class="fas fa-cog"></i> Acciones</h4>
+                            </div>
+                            <div class="card-body">
+                                <form action="{{ route('password-vault.destroy', $passwordVault) }}"
+                                      method="POST"
+                                      class="delete-form">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-danger btn-block">
+                                        <i class="fas fa-trash"></i> Eliminar Contraseña
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    @endif
+                @endcan
             </div>
         </div>
     </div>

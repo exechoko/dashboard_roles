@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>¿Cómo se calcula la deficiencia? — Sistema 911</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f0f4f8;
+    color: #2d3748;
+    line-height: 1.6;
+  }
+
+  /* ── Header ─────────────────────────────────────── */
+  .hero {
+    background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 100%);
+    color: white;
+    padding: 48px 24px 40px;
+    text-align: center;
+  }
+  .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 10px; }
+  .hero p  { font-size: 1.1rem; opacity: 0.85; max-width: 620px; margin: 0 auto; }
+
+  /* ── Container ───────────────────────────────────── */
+  .container {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
+
+  /* ── Pasos ───────────────────────────────────────── */
+  .step {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    margin-bottom: 28px;
+    overflow: hidden;
+  }
+
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 20px 24px;
+    border-bottom: 2px solid #ebf4ff;
+  }
+  .step-num {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem; font-weight: 800; color: white; flex-shrink: 0;
+  }
+  .step-header h2 { font-size: 1.15rem; font-weight: 700; }
+  .step-header .sub { font-size: 0.85rem; color: #718096; margin-top: 2px; }
+
+  .step-body { padding: 24px; }
+
+  /* Colores por paso */
+  .s1 .step-num  { background: #3182ce; }
+  .s1 .step-header { background: #ebf8ff; }
+  .s2 .step-num  { background: #805ad5; }
+  .s2 .step-header { background: #faf5ff; }
+  .s3 .step-num  { background: #d69e2e; }
+  .s3 .step-header { background: #fffff0; }
+  .s4 .step-num  { background: #38a169; }
+  .s4 .step-header { background: #f0fff4; }
+  .s5 .step-num  { background: #e53e3e; }
+  .s5 .step-header { background: #fff5f5; }
+
+  /* ── Fórmula ─────────────────────────────────────── */
+  .formula-box {
+    background: #1a202c;
+    color: #fff;
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 1.05rem;
+    margin: 16px 0;
+    text-align: center;
+    letter-spacing: 0.3px;
+  }
+  .formula-box .comment { color: #68d391; font-size: 0.85rem; margin-top: 6px; }
+
+  /* ── Variables ───────────────────────────────────── */
+  .vars {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .var-card {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .var-card .var-name {
+    font-weight: 700;
+    font-family: monospace;
+    color: #2b6cb0;
+    font-size: 1rem;
+  }
+  .var-card .var-desc { font-size: 0.88rem; color: #4a5568; margin-top: 3px; }
+  .var-card .var-ex   { font-size: 0.82rem; color: #718096; margin-top: 4px; font-style: italic; }
+
+  /* ── Ejemplo ─────────────────────────────────────── */
+  .example {
+    background: linear-gradient(135deg, #ebf8ff, #e9d8fd);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-top: 16px;
+  }
+  .example .ex-title {
+    font-weight: 700; font-size: 0.9rem; color: #553c9a; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .example .ex-row {
+    display: flex; align-items: baseline; gap: 8px;
+    font-size: 0.9rem; margin-bottom: 5px;
+  }
+  .example .ex-label { color: #4a5568; min-width: 160px; }
+  .example .ex-val   { font-weight: 700; color: #2d3748; font-family: monospace; }
+  .example .ex-result {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    font-size: 1rem;
+    color: #2d3748;
+    text-align: center;
+  }
+  .example .ex-result strong { color: #553c9a; font-size: 1.2rem; }
+
+  /* ── Tabla de pesos ──────────────────────────────── */
+  .weight-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    margin-top: 14px;
+  }
+  .weight-table th {
+    background: #2d3748;
+    color: white;
+    padding: 9px 14px;
+    text-align: left;
+  }
+  .weight-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .weight-table tr:last-child td { border-bottom: none; }
+  .weight-table tr:nth-child(even) td { background: #f7fafc; }
+  .weight-pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: white;
+  }
+
+  /* ── N3 table ────────────────────────────────────── */
+  .n3-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .n3-card {
+    border-radius: 8px;
+    padding: 12px 14px;
+    border: 2px solid transparent;
+  }
+  .n3-card.camara  { background: #ebf8ff; border-color: #3182ce; }
+  .n3-card.puesto  { background: #f0fff4; border-color: #38a169; }
+  .n3-card.total   { background: #fffff0; border-color: #d69e2e; }
+  .n3-card .n3-tag { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .n3-card.camara .n3-tag { color: #2b6cb0; }
+  .n3-card.puesto .n3-tag { color: #276749; }
+  .n3-card.total  .n3-tag { color: #744210; }
+  .n3-card .n3-value { font-size: 1.1rem; font-weight: 800; font-family: monospace; }
+  .n3-card .n3-desc  { font-size: 0.82rem; color: #4a5568; margin-top: 3px; }
+
+  /* ── Flow diagram ────────────────────────────────── */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 20px 0;
+  }
+  .flow-item {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+  .flow-left {
+    width: 32px; flex-shrink: 0;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .flow-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #3182ce; border: 3px solid white;
+    box-shadow: 0 0 0 2px #3182ce;
+    flex-shrink: 0; margin-top: 8px;
+  }
+  .flow-line { flex: 1; width: 2px; background: #bee3f8; margin: 2px 0; }
+  .flow-content {
+    flex: 1;
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    margin-left: 8px;
+  }
+  .flow-content strong { display: block; font-size: 0.95rem; margin-bottom: 3px; }
+  .flow-content span   { font-size: 0.87rem; color: #4a5568; }
+
+  /* ── Umbrales ────────────────────────────────────── */
+  .threshold-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-top: 14px;
+  }
+  @media (max-width: 500px) { .threshold-grid { grid-template-columns: 1fr; } }
+  .threshold-card {
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+  }
+  .threshold-card.danger { background: #fff5f5; border: 2px solid #fc8181; }
+  .threshold-card.warn   { background: #fffaf0; border: 2px solid #f6ad55; }
+  .threshold-card .t-val { font-size: 2.5rem; font-weight: 900; }
+  .threshold-card.danger .t-val { color: #e53e3e; }
+  .threshold-card.warn   .t-val { color: #dd6b20; }
+  .threshold-card .t-label { font-size: 0.88rem; color: #4a5568; margin-top: 4px; }
+  .threshold-card .t-cond  { font-size: 0.82rem; font-weight: 600; margin-top: 6px; }
+  .threshold-card.danger .t-cond { color: #c53030; }
+  .threshold-card.warn   .t-cond { color: #c05621; }
+
+  /* ── Multa box ───────────────────────────────────── */
+  .multa-box {
+    background: #fff5f5;
+    border: 2px solid #fc8181;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-top: 16px;
+    text-align: center;
+  }
+  .multa-box .m-formula {
+    font-family: monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #c53030;
+    margin-bottom: 8px;
+  }
+  .multa-box .m-desc { font-size: 0.9rem; color: #4a5568; }
+
+  /* ── Resumen visual ──────────────────────────────── */
+  .summary-card {
+    background: linear-gradient(135deg, #1a365d, #2b6cb0);
+    color: white;
+    border-radius: 12px;
+    padding: 28px 24px;
+    margin-bottom: 28px;
+  }
+  .summary-card h3 { font-size: 1.1rem; margin-bottom: 16px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem; }
+  .pipeline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  .pipe-item {
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-align: center;
+  }
+  .pipe-arrow { font-size: 1.2rem; opacity: 0.6; }
+
+  /* ── Tip callout ─────────────────────────────────── */
+  .tip {
+    background: #ebf8ff;
+    border-left: 4px solid #3182ce;
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    margin: 14px 0;
+    color: #2c5282;
+  }
+  .tip strong { display: block; margin-bottom: 3px; }
+
+  p { margin-bottom: 10px; }
+  p:last-child { margin-bottom: 0; }
+
+  /* ── P49 result highlight ────────────────────────── */
+  .result-highlight {
+    background: #f0fff4;
+    border: 2px solid #68d391;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-top: 16px;
+    text-align: center;
+  }
+  .result-highlight .rh-label { font-size: 0.85rem; color: #276749; font-weight: 600; margin-bottom: 4px; }
+  .result-highlight .rh-val   { font-size: 2rem; font-weight: 900; color: #22543d; font-family: monospace; }
+  .result-highlight .rh-note  { font-size: 0.82rem; color: #4a5568; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<!-- ══ HERO ══════════════════════════════════════════════════════════════ -->
+<div class="hero">
+  <h1>¿Cómo se calcula si hay multa?</h1>
+  <p>Explicación paso a paso del cálculo de deficiencia del sistema 911 (Anexo V del pliego)</p>
+</div>
+
+<div class="container">
+
+  <!-- ══ RESUMEN VISUAL ═══════════════════════════════════════════════════ -->
+  <div class="summary-card">
+    <h3>🔁 El proceso en una línea</h3>
+    <div class="pipeline">
+      <div class="pipe-item">Falla registrada</div>
+      <span class="pipe-arrow">→</span>
+      <div class="pipe-item">% tiempo caído</div>
+      <span class="pipe-arrow">→</span>
+      <div class="pipe-item">× 2 (deficiencia)</div>
+      <span class="pipe-arrow">→</span>
+      <div class="pipe-item">× peso del módulo</div>
+      <span class="pipe-arrow">→</span>
+      <div class="pipe-item">× peso del sistema</div>
+      <span class="pipe-arrow">→</span>
+      <div class="pipe-item">¿supera el umbral?</div>
+      <span class="pipe-arrow">→</span>
+      <div class="pipe-item">💰 Multa</div>
+    </div>
+  </div>
+
+  <!-- ══ PASO 1 ════════════════════════════════════════════════════════════ -->
+  <div class="step s1">
+    <div class="step-header">
+      <div class="step-num">1</div>
+      <div>
+        <h2>¿Qué fracción del sistema estuvo caído?</h2>
+        <div class="sub">Esto se llama <strong>Indisponibilidad</strong></div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>Para cada falla registrada calculamos qué porcentaje representa en términos de <em>equipos afectados</em> y <em>tiempo que estuvo caído</em>.</p>
+
+      <div class="formula-box">
+        Indisp (%) = (equipos caídos ÷ total de equipos) × (minutos caído ÷ minutos del mes) × 100
+        <div class="comment">// "¿qué porcentaje del parque estuvo sin funcionar ese tiempo?"</div>
+      </div>
+
+      <div class="vars">
+        <div class="var-card">
+          <div class="var-name">equipos caídos</div>
+          <div class="var-desc">Cuántas unidades afectó la falla</div>
+          <div class="var-ex">Generalmente 1 (una cámara, una radio…)</div>
+        </div>
+        <div class="var-card">
+          <div class="var-name">total de equipos</div>
+          <div class="var-desc">El parque completo del tipo afectado</div>
+          <div class="var-ex">Ver tabla debajo ↓</div>
+        </div>
+        <div class="var-card">
+          <div class="var-name">minutos caído</div>
+          <div class="var-desc">Cuánto duró la falla en minutos</div>
+          <div class="var-ex">Ej: 4 247 min ≈ 3 días</div>
+        </div>
+        <div class="var-card">
+          <div class="var-name">minutos del mes</div>
+          <div class="var-desc">Duración total del período facturado</div>
+          <div class="var-ex">28 días = 40 320 min</div>
+        </div>
+      </div>
+
+      <p><strong>¿Qué número se usa como "total de equipos"?</strong> Depende del tipo de falla:</p>
+      <div class="n3-grid">
+        <div class="n3-card camara">
+          <div class="n3-tag">📹 Por cámara</div>
+          <div class="n3-value">336 cámaras</div>
+          <div class="n3-desc">Total de cámaras del sistema CCTV</div>
+        </div>
+        <div class="n3-card puesto">
+          <div class="n3-tag">🖥️ Por puesto</div>
+          <div class="n3-value">26 puestos</div>
+          <div class="n3-desc">Total de puestos operadores CCTV</div>
+        </div>
+        <div class="n3-card camara" style="background:#eef2ff; border-color:#667eea;">
+          <div class="n3-tag" style="color:#434190;">📡 Por terminal TETRA</div>
+          <div class="n3-value">622 radios</div>
+          <div class="n3-desc">Total de terminales TETRA del sistema</div>
+        </div>
+        <div class="n3-card total">
+          <div class="n3-tag">⚠️ Total o Latente</div>
+          <div class="n3-value">1 módulo</div>
+          <div class="n3-desc">El módulo entero falla como una unidad</div>
+        </div>
+      </div>
+
+      <div class="example">
+        <div class="ex-title">🔍 Ejemplo real — Período 49, falla de cámara CCTV</div>
+        <div class="ex-row"><span class="ex-label">Equipos caídos:</span><span class="ex-val">1 cámara</span></div>
+        <div class="ex-row"><span class="ex-label">Total de cámaras:</span><span class="ex-val">336</span></div>
+        <div class="ex-row"><span class="ex-label">Minutos caído:</span><span class="ex-val">4 247 min</span></div>
+        <div class="ex-row"><span class="ex-label">Minutos del período:</span><span class="ex-val">40 320 min</span></div>
+        <div class="ex-result">
+          Indisp = (1 ÷ 336) × (4 247 ÷ 40 320) × 100 = <strong>0.03135 %</strong>
+        </div>
+      </div>
+
+      <div class="tip">
+        <strong>💡 ¿Por qué tan bajo?</strong>
+        Una sola cámara sobre 336, caída 3 días de 28 posibles, es una fracción muy pequeña del sistema total. Eso es exactamente lo que mide este número.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PASO 2 ════════════════════════════════════════════════════════════ -->
+  <div class="step s2">
+    <div class="step-header">
+      <div class="step-num">2</div>
+      <div>
+        <h2>Convertir a Deficiencia (× 2) y ponderar el módulo</h2>
+        <div class="sub">El pliego considera que si cae el 50 % del sistema = 100 % de deficiencia</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>El pliego dice que <strong>50 % de indisponibilidad equivale al 100 % de deficiencia</strong>. Por eso se multiplica por 2. Luego se multiplica por el <em>peso del módulo</em> dentro del sistema.</p>
+
+      <div class="formula-box">
+        Deficiencia (%) = Indisp × 2 × (peso del módulo N2 ÷ 100)
+        <div class="comment">// "¿cuánto de grave fue esto dentro del sistema?"</div>
+      </div>
+
+      <p><strong>Pesos de los módulos N2 dentro de CCTV:</strong></p>
+      <table class="weight-table">
+        <tr>
+          <th>Módulo (N2)</th>
+          <th>Peso en CCTV</th>
+          <th>¿Qué representa?</th>
+        </tr>
+        <tr>
+          <td>Cámaras</td>
+          <td><span class="weight-pill" style="background:#3182ce">100 %</span></td>
+          <td>Las cámaras en sí mismas</td>
+        </tr>
+        <tr>
+          <td>Módulo Monitoreo</td>
+          <td><span class="weight-pill" style="background:#805ad5">40 %</span></td>
+          <td>Software de visualización en tiempo real</td>
+        </tr>
+        <tr>
+          <td>Módulo Grabación</td>
+          <td><span class="weight-pill" style="background:#d69e2e">50 %</span></td>
+          <td>Almacenamiento y grabación de video</td>
+        </tr>
+        <tr>
+          <td>Módulo Admin</td>
+          <td><span class="weight-pill" style="background:#718096">10 %</span></td>
+          <td>Gestión y configuración del sistema</td>
+        </tr>
+        <tr>
+          <td>Total / Latente</td>
+          <td><span class="weight-pill" style="background:#e53e3e">100 %</span> / <span class="weight-pill" style="background:#e53e3e">5 %</span></td>
+          <td>Falla total del sistema / deficiencia latente</td>
+        </tr>
+      </table>
+
+      <div class="example">
+        <div class="ex-title">🔍 Ejemplo real — continuando con la cámara del Período 49</div>
+        <div class="ex-row"><span class="ex-label">Indisponibilidad:</span><span class="ex-val">0.03135 %</span></div>
+        <div class="ex-row"><span class="ex-label">× 2:</span><span class="ex-val">0.06270 %</span></div>
+        <div class="ex-row"><span class="ex-label">Peso del módulo "Cámaras":</span><span class="ex-val">100 %</span></div>
+        <div class="ex-result">
+          Deficiencia = 0.03135 % × 2 × (100 ÷ 100) = <strong>0.06270 %</strong>
+          <br><small style="color:#4a5568; margin-top:6px; display:block">👈 Este valor coincide con la columna "% Deficiencia X2 - Det." del Excel</small>
+        </div>
+      </div>
+
+      <div class="tip">
+        <strong>💡 Si hay varias fallas CCTV en el mismo período…</strong>
+        Los valores de deficiencia de todas las fallas CCTV se <strong>suman</strong> entre sí para obtener la deficiencia total del sistema CCTV.
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PASO 3 ════════════════════════════════════════════════════════════ -->
+  <div class="step s3">
+    <div class="step-header">
+      <div class="step-num">3</div>
+      <div>
+        <h2>Ponderar cada sistema dentro del sistema completo</h2>
+        <div class="sub">Cuánto "pesa" CCTV, TETRA, etc. en el total</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>Una vez sumadas todas las fallas de un sistema (ej. CCTV), se multiplica por el <em>peso de ese sistema</em> respecto al sistema total del 911.</p>
+
+      <div class="formula-box">
+        Contribución = Deficiencia N1 × (peso del sistema N1 ÷ 100)
+      </div>
+
+      <p><strong>Pesos de los sistemas N1 (definidos en el pliego):</strong></p>
+      <table class="weight-table">
+        <tr><th>Sistema (N1)</th><th>Peso</th><th>Justificación</th></tr>
+        <tr>
+          <td>📹 CCTV</td>
+          <td><span class="weight-pill" style="background:#3182ce">25 %</span></td>
+          <td>Videovigilancia urbana</td>
+        </tr>
+        <tr>
+          <td>📡 TETRA</td>
+          <td><span class="weight-pill" style="background:#805ad5">20 %</span></td>
+          <td>Radios digitales policiales</td>
+        </tr>
+        <tr>
+          <td>🚨 Emergencias 911</td>
+          <td><span class="weight-pill" style="background:#e53e3e">20 %</span></td>
+          <td>Central de atención de llamadas</td>
+        </tr>
+        <tr>
+          <td>🏗️ Infraestructura</td>
+          <td><span class="weight-pill" style="background:#d69e2e">20 %</span></td>
+          <td>Redes, energía, climatización</td>
+        </tr>
+        <tr>
+          <td>🤝 Prestación de Servicio</td>
+          <td><span class="weight-pill" style="background:#38a169">15 %</span></td>
+          <td>Soporte, capacitación, reclamos</td>
+        </tr>
+      </table>
+
+      <div class="example">
+        <div class="ex-title">🔍 Ejemplo real — Período 49</div>
+        <div class="ex-row"><span class="ex-label">Deficiencia CCTV:</span><span class="ex-val">0.06270 %</span></div>
+        <div class="ex-row"><span class="ex-label">Peso CCTV:</span><span class="ex-val">25 %</span></div>
+        <div class="ex-row"><span class="ex-label">Deficiencia TETRA:</span><span class="ex-val">0.85368 %</span></div>
+        <div class="ex-row"><span class="ex-label">Peso TETRA:</span><span class="ex-val">20 %</span></div>
+        <div class="ex-result">
+          Contrib. CCTV = 0.06270 % × 0.25 = <strong>0.01568 %</strong><br>
+          Contrib. TETRA = 0.85368 % × 0.20 = <strong>0.17074 %</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PASO 4 ════════════════════════════════════════════════════════════ -->
+  <div class="step s4">
+    <div class="step-header">
+      <div class="step-num">4</div>
+      <div>
+        <h2>Sumar todo → Deficiencia Total del Sistema</h2>
+        <div class="sub">Un único número que resume el rendimiento del mes</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>Se suman las contribuciones de <strong>todos los sistemas</strong> (aunque estén en 0 porque no tuvieron fallas ese mes).</p>
+
+      <div class="formula-box">
+        Deficiencia Total = Σ Contribuciones de cada sistema
+        <div class="comment">// suma de CCTV + TETRA + Emergencias 911 + Infraestructura + Prestación</div>
+      </div>
+
+      <div class="example">
+        <div class="ex-title">🔍 Ejemplo real — Período 49 (resultado final)</div>
+        <div class="ex-row"><span class="ex-label">CCTV:</span><span class="ex-val">0.01568 %</span></div>
+        <div class="ex-row"><span class="ex-label">TETRA:</span><span class="ex-val">0.17074 %</span></div>
+        <div class="ex-row"><span class="ex-label">Emergencias 911:</span><span class="ex-val">0.00000 %</span></div>
+        <div class="ex-row"><span class="ex-label">Infraestructura:</span><span class="ex-val">0.00000 %</span></div>
+        <div class="ex-row"><span class="ex-label">Prestación de Servicio:</span><span class="ex-val">0.00000 %</span></div>
+        <div class="result-highlight">
+          <div class="rh-label">DEFICIENCIA TOTAL DEL SISTEMA — PERÍODO 49</div>
+          <div class="rh-val">0.18641 %</div>
+          <div class="rh-note">Este número se compara contra los umbrales del pliego para decidir si hay multa</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PASO 5 ════════════════════════════════════════════════════════════ -->
+  <div class="step s5">
+    <div class="step-header">
+      <div class="step-num">5</div>
+      <div>
+        <h2>¿Aplica multa?</h2>
+        <div class="sub">Se evalúan dos condiciones según el Anexo V, apartado 8</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <p>El pliego establece dos umbrales. Si se supera <strong>cualquiera de los dos</strong>, corresponde multa:</p>
+
+      <div class="threshold-grid">
+        <div class="threshold-card danger">
+          <div class="t-val">2 %</div>
+          <div class="t-label">Deficiencia de un sistema individual (N1)</div>
+          <div class="t-cond">⛔ Si CCTV, TETRA u otro supera el 2 % por separado</div>
+        </div>
+        <div class="threshold-card warn">
+          <div class="t-val">1,5 %</div>
+          <div class="t-label">Deficiencia total ponderada del sistema completo</div>
+          <div class="t-cond">⛔ Si la suma de todos los sistemas supera el 1,5 %</div>
+        </div>
+      </div>
+
+      <div class="example" style="margin-top: 16px; background: linear-gradient(135deg, #f0fff4, #c6f6d5);">
+        <div class="ex-title" style="color: #276749;">✅ Período 49 — Sin multa</div>
+        <div class="ex-row"><span class="ex-label">Mayor N1 (TETRA):</span><span class="ex-val">0.854 % &lt; 2 %</span></div>
+        <div class="ex-row"><span class="ex-label">Total ponderado:</span><span class="ex-val">0.186 % &lt; 1,5 %</span></div>
+        <div class="ex-result" style="color: #276749;">
+          <strong>No corresponde multa</strong>
+        </div>
+      </div>
+
+      <div class="multa-box">
+        <div class="m-formula">Monto multa = (Deficiencia Total % ÷ 100) × monto de la factura</div>
+        <div class="m-desc">Si hubiese multa, se aplica sobre el valor de la factura del período en cuestión.</div>
+      </div>
+
+      <div class="tip" style="margin-top: 16px;">
+        <strong>📄 Ejemplo de multa hipotética:</strong>
+        Si la deficiencia total fuera 1.8 % y la factura es $1.000.000 →
+        Multa = (1.8 ÷ 100) × $1.000.000 = <strong>$18.000</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DIAGRAMA FLUJO COMPLETO ═══════════════════════════════════════════ -->
+  <div class="step" style="border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); overflow: hidden;">
+    <div class="step-header" style="background: #f7fafc; border-bottom: 2px solid #e2e8f0;">
+      <div class="step-num" style="background: #2d3748;">📋</div>
+      <div>
+        <h2>Resumen: el camino de cada falla</h2>
+        <div class="sub">Desde que se registra hasta que (posiblemente) genera una multa</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="flow">
+
+        <div class="flow-item">
+          <div class="flow-left"><div class="flow-dot" style="background:#e53e3e; box-shadow: 0 0 0 2px #e53e3e;"></div><div class="flow-line"></div></div>
+          <div class="flow-content">
+            <strong>Se registra una falla</strong>
+            <span>Código, sistema afectado, módulo, tipo de equipo (cámara / puesto / radio), minutos caído</span>
+          </div>
+        </div>
+
+        <div class="flow-item">
+          <div class="flow-left"><div class="flow-dot" style="background:#3182ce; box-shadow: 0 0 0 2px #3182ce;"></div><div class="flow-line"></div></div>
+          <div class="flow-content">
+            <strong>Se calcula la Indisponibilidad</strong>
+            <span>(equipos caídos ÷ total del parque) × (tiempo caído ÷ tiempo del período) × 100</span>
+          </div>
+        </div>
+
+        <div class="flow-item">
+          <div class="flow-left"><div class="flow-dot" style="background:#805ad5; box-shadow: 0 0 0 2px #805ad5;"></div><div class="flow-line"></div></div>
+          <div class="flow-content">
+            <strong>Se convierte a Deficiencia</strong>
+            <span>Indisponibilidad × 2 × peso del módulo (N2)</span>
+          </div>
+        </div>
+
+        <div class="flow-item">
+          <div class="flow-left"><div class="flow-dot" style="background:#d69e2e; box-shadow: 0 0 0 2px #d69e2e;"></div><div class="flow-line"></div></div>
+          <div class="flow-content">
+            <strong>Se agrupa por sistema (N1)</strong>
+            <span>Todas las fallas CCTV se suman → deficiencia total CCTV. Igual para TETRA, 911, etc.</span>
+          </div>
+        </div>
+
+        <div class="flow-item">
+          <div class="flow-left"><div class="flow-dot" style="background:#38a169; box-shadow: 0 0 0 2px #38a169;"></div><div class="flow-line"></div></div>
+          <div class="flow-content">
+            <strong>Se pondera cada sistema</strong>
+            <span>Deficiencia N1 × peso del sistema (CCTV=25 %, TETRA=20 %, etc.)</span>
+          </div>
+        </div>
+
+        <div class="flow-item">
+          <div class="flow-left"><div class="flow-dot" style="background:#2d3748; box-shadow: 0 0 0 2px #2d3748;"></div><div class="flow-line"></div></div>
+          <div class="flow-content">
+            <strong>Se obtiene el total</strong>
+            <span>Suma de todas las contribuciones → un único % de deficiencia del sistema completo</span>
+          </div>
+        </div>
+
+        <div class="flow-item">
+          <div class="flow-left"><div class="flow-dot" style="background:#e53e3e; box-shadow: 0 0 0 2px #e53e3e;"></div></div>
+          <div class="flow-content" style="background:#fff5f5; border-color:#fc8181;">
+            <strong>Se evalúa si hay multa</strong>
+            <span>¿Algún N1 &gt; 2 %? ¿Total &gt; 1,5 %? → Si alguna respuesta es SÍ: multa</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <p style="text-align:center; color:#a0aec0; font-size:0.8rem; margin-top: 8px;">
+    Basado en el Anexo V del Pliego de Especificaciones Técnicas — Licitación Pública Nº 067/2020 — Sistema Integral de Seguridad Pública 911
+  </p>
+
+</div>
+</body>
+</html>

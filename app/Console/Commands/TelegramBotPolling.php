@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Services\TelegramService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class TelegramBotPolling extends Command
 {
@@ -19,6 +20,7 @@ class TelegramBotPolling extends Command
     public function handle(TelegramService $telegram): int
     {
         $inicio = time();
+        Log::channel('telegram')->debug('Telegram polling iniciado');
 
         while (time() - $inicio < self::MAX_RUN_SECONDS) {
             $offset  = Cache::get(self::CACHE_KEY_OFFSET);
@@ -37,8 +39,18 @@ class TelegramBotPolling extends Command
                 }
 
                 if (isset($update['message'])) {
+                    Log::channel('telegram')->info('Telegram mensaje recibido', [
+                        'update_id' => $updateId,
+                        'chat_id' => $update['message']['chat']['id'] ?? null,
+                        'text' => $update['message']['text'] ?? null,
+                    ]);
                     $telegram->procesarMensaje($update['message']);
                 } elseif (isset($update['callback_query'])) {
+                    Log::channel('telegram')->info('Telegram callback recibido', [
+                        'update_id' => $updateId,
+                        'chat_id' => $update['callback_query']['message']['chat']['id'] ?? null,
+                        'data' => $update['callback_query']['data'] ?? null,
+                    ]);
                     $telegram->procesarCallbackQuery($update['callback_query']);
                 }
 

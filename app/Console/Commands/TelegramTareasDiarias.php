@@ -5,9 +5,11 @@ namespace App\Console\Commands;
 use App\Models\EntregaBodycam;
 use App\Models\EntregaEquipo;
 use App\Models\TareaItem;
+use App\Services\CecocoExpedienteService;
 use App\Services\TelegramService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 
 class TelegramTareasDiarias extends Command
 {
@@ -97,6 +99,12 @@ class TelegramTareasDiarias extends Command
             }
         }
 
+        $tamanoRest = Cache::get(CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES);
+        $tamanoRestGps = Cache::get(CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES_GPS);
+        $mensaje .= "\n🗄 <b>Bases de datos restauraciones:</b>\n";
+        $mensaje .= "   • CECOCO: " . $this->formatearTamanoRestauraciones($tamanoRest) . "\n";
+        $mensaje .= "   • GPS: " . $this->formatearTamanoRestauraciones($tamanoRestGps) . "\n";
+
         // ── Tareas ────────────────────────────────────────────────
         $mensaje .= "\n━━━━━━━━━━━━━━━━━━\n";
         $mensaje .= "📌 <b>TAREAS DE HOY</b> ({$tareasHoy->count()})\n";
@@ -165,5 +173,21 @@ class TelegramTareasDiarias extends Command
         }
 
         return $fallidos < $chatIds->count() ? 0 : 1;
+    }
+
+    private function formatearTamanoRestauraciones(?array $cache): string
+    {
+        if (empty($cache) || !isset($cache['mb'])) {
+            return 'sin datos';
+        }
+
+        $mb = number_format((float) $cache['mb'], 0, ',', '.');
+        $texto = "<b>{$mb} MB</b>";
+
+        if (!empty($cache['consultado_en'])) {
+            $texto .= ' (' . Carbon::parse($cache['consultado_en'])->format('d/m H:i') . ')';
+        }
+
+        return $texto;
     }
 }

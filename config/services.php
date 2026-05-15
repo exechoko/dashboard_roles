@@ -42,6 +42,28 @@ return [
         'ollama_url'        => env('OLLAMA_URL',        'http://193.169.1.246:11434'),
         'ollama_model'      => env('OLLAMA_MODEL',      'llama3.2:3b'),
         'call_analysis_url' => env('CALL_ANALYSIS_URL', 'http://193.169.1.246:8082'),
+        'transcription_url' => env('TRANSCRIPTION_API_URL', 'https://gvs9j8cd3a.execute-api.us-east-1.amazonaws.com/prod'),
+    ],
+
+    'tareas' => [
+        'aviso_emails' => env('TAREAS_AVISO_EMAILS'),
+    ],
+
+    'camaras' => [
+        'user' => env('CAMARA_USER'),
+        'pass' => env('CAMARA_PASS'),
+    ],
+
+    'google' => [
+        'api_key' => env('API_GOOGLE', ''),
+    ],
+
+    'open_route_service' => [
+        'api_key' => env('API_ROUTE_SERVICE', ''),
+    ],
+
+    'thunderforest' => [
+        'api_key' => env('API_KEY_THUNDER_FOREST_MAP', ''),
     ],
 
 ];

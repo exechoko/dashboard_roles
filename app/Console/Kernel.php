@@ -56,7 +56,10 @@ class Kernel extends ConsoleKernel
                 app(TelegramService::class)->notificarScheduleFallido('telegram:tareas-diarias', 'El comando finalizó con error.');
             });
 
-        $schedule->command('telegram:polling')->everyMinute()->withoutOverlapping();
+        $schedule->command('telegram:polling')
+            ->everyMinute()
+            ->withoutOverlapping(2)
+            ->appendOutputTo(storage_path('logs/telegram.log'));
 
         $schedule->command('transcribir:pendientes')
             ->everyMinute()
@@ -89,7 +92,31 @@ class Kernel extends ConsoleKernel
                 ->count('direccion');
             $cacheadas = \DB::table('geocodificacion_directa')->count();
             \Illuminate\Support\Facades\Cache::put('dashboard_geo_counts', [$total, $cacheadas], 360);
-        })->everyFiveMinutes()->withoutOverlapping();
+        })->name('cache-dashboard-geo-counts')->everyFiveMinutes()->withoutOverlapping();
+
+        // Tamaño de la BD de restauraciones de CECOCO: se consulta una vez por hora
+        // y se cachea para que el dashboard nunca pegue al servidor remoto en cada poll.
+        $schedule->call(function () {
+            try {
+                app(\App\Services\CecocoExpedienteService::class)
+                    ->actualizarCacheTamanoBaseRestauraciones();
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('No se pudo actualizar tamaño BD restauraciones', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        })->name('cache-cecoco-tamano-restauraciones')->hourly()->withoutOverlapping();
+
+        $schedule->call(function () {
+            try {
+                app(\App\Services\CecocoExpedienteService::class)
+                    ->actualizarCacheTamanoBaseRestauracionesGps();
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('No se pudo actualizar tamaño BD restauraciones GPS', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        })->name('cache-cecoco-gps-tamano-restauraciones')->hourly()->withoutOverlapping();
     }
 
     /**

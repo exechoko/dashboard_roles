@@ -157,7 +157,7 @@
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6" id="nuevoIssi">
                                         <div class="form-group">
-                                            <label for="">Nuevo ISSI</label>
+                                            <label for="">Nuevo ISSI <span id="issiSugeridoBadge" class="badge badge-info ml-1" style="font-size: 0.75rem; display: none;"></span> <button type="button" id="btnCopiarIssi" class="btn btn-sm btn-outline-info py-0 px-1 ml-1" style="font-size: 0.7rem; display: none;" title="Copiar ISSI sugerido"><i class="fas fa-copy"></i></button></label>
                                             <input type="text" name="nuevoIssi" class="form-control" value="">
                                         </div>
                                     </div>
@@ -277,8 +277,59 @@
                                     '">' + value.nombre + '</option>');
                             }
                         });
+                        generarIssiSugerido();
                     }
                 });
+            });
+
+            $('#recurso').on('change', function () {
+                generarIssiSugerido();
+            });
+
+            function generarIssiSugerido() {
+                var dependenciaId = $('#dependencia').val();
+                var recursoId = $('#recurso').val();
+                var equipoId = $('select[name="equipo"]').val();
+
+                if (!dependenciaId || !recursoId || !equipoId) {
+                    $('#issiSugeridoBadge').hide();
+                    $('#btnCopiarIssi').hide();
+                    return;
+                }
+
+                $.ajax({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    url: '{{ route('flota.issi-sugerido') }}',
+                    type: 'POST',
+                    data: {
+                        dependencia_id: dependenciaId,
+                        recurso_id: recursoId,
+                        equipo_id: equipoId
+                    },
+                    success: function (res) {
+                        if (res.issi) {
+                            $('#issiSugeridoBadge').text('Sugerido: ' + res.issi).show();
+                            $('#btnCopiarIssi').show();
+                            $('#issiSugeridoBadge').data('issi', res.issi);
+                        } else {
+                            $('#issiSugeridoBadge').hide();
+                            $('#btnCopiarIssi').hide();
+                        }
+                    },
+                    error: function () {
+                        $('#issiSugeridoBadge').hide();
+                        $('#btnCopiarIssi').hide();
+                    }
+                });
+            }
+
+            $('#btnCopiarIssi').on('click', function () {
+                var issiSugerido = $('#issiSugeridoBadge').data('issi');
+                if (issiSugerido) {
+                    $('input[name="nuevoIssi"]').val(issiSugerido);
+                }
             });
 
 

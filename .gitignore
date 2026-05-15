@@ -5,6 +5,8 @@
 /vendor
 .env
 .env.backup
+.env.local
+.env.local.*
 .phpunit.result.cache
 docker-compose.override.yml
 Homestead.json
@@ -13,3 +15,25 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
+
+# Agents & Skills
+/.agents
+/.gemini
+/.atl
+/skills
+/.claude
+/.codebuddy
+/.devin
+/.windsurf
+/.cursor
+/.qwen
+/.opencode
+/docs
+/backup agents
+skills-lock.json
+
+# Hyperframes
+car911-promo/.thumbnails
+car911-promo/index.html
+AGENTS.md
+scripts/capturar-vistas.mjs

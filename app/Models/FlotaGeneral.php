@@ -25,9 +25,6 @@ class FlotaGeneral extends Model
     protected $casts = [
         'patrimoniado' => 'boolean',
         'fecha_patrimonio' => 'date',
-    ];
-
-    protected $casts = [
         'fecha_asignacion' => 'date',
         'fecha_desasignacion' => 'date',
     ];

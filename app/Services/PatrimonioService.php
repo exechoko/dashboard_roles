@@ -2,9 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Equipo;
 use App\Models\FlotaGeneral;
-use App\Models\Historico;
 use App\Models\PatrimonioCargo;
 use App\Models\TipoMovimiento;
 use Illuminate\Support\Facades\Log;
@@ -61,19 +59,16 @@ class PatrimonioService
             );
         }
 
-        // Movimientos que ROMPEN el patrimonio
+        // La baja es la única salida directa del patrimonio. Desinstalación completa
+        // y extraviado conservan el cargo patrimonial de la dependencia.
         if (in_array($tipoMovimientoId, [
-            $ids['desinst_completa'],
             $ids['baja'],
-            $ids['extraviado'],
         ])) {
             $this->limpiarPatrimonio($flota);
             return null;
         }
 
-        // Movimientos transitorios → NO tocar patrimonio
-        // (provisorio, revisión, instalación completa, devolución a dependencia, reprogramación)
-        // No hacen nada patrimonial
+        // Movimientos transitorios o de seguimiento no tocan patrimonio.
 
         return null;
     }
@@ -103,7 +98,7 @@ class PatrimonioService
      * Transferir patrimonio de un equipo a otro (para reemplazos)
      * El equipo nuevo hereda el patrimonio del viejo
      */
-    public function transferirPatrimonio(FlotaGeneral $flotaVieja, FlotaGeneral $flotaNueva): ?PatrimonioCargo
+    public function transferirPatrimonio(FlotaGeneral $flotaVieja, FlotaGeneral $flotaNueva, ?int $historicoId = null, $fecha = null): ?PatrimonioCargo
     {
         if (!$flotaVieja->patrimoniado) {
             return null;
@@ -115,7 +110,7 @@ class PatrimonioService
         $this->limpiarPatrimonio($flotaVieja);
 
         // El equipo nuevo hereda el patrimonio (con cargo nuevo pendiente)
-        $cargo = $this->crearCargo($flotaNueva, $destinoPatrimonial);
+        $cargo = $this->crearCargo($flotaNueva, $destinoPatrimonial, $historicoId, $fecha);
 
         Log::info("Patrimonio transferido de equipo #{$flotaVieja->equipo_id} a #{$flotaNueva->equipo_id}");
 
@@ -152,9 +147,7 @@ class PatrimonioService
     {
         $ids = $this->getTipoMovimientoIds();
         return in_array($tipoMovimientoId, [
-            $ids['desinst_completa'],
             $ids['baja'],
-            $ids['extraviado'],
         ]);
     }
 }

@@ -988,6 +988,9 @@ class FlotaGeneralController extends Controller
         try {
             DB::beginTransaction();
             if (!is_null($flota)) {
+                $flotaTeniaPatrimonio = (bool) $flota->patrimoniado;
+                $destinoPatrimonialAnterior = $flota->destino_patrimonial_id;
+                $historicoReemplazo = null;
                 $historico = new Historico();
                 $histAnt = Historico::where('equipo_id', $request->equipo)->orderBy('fecha_asignacion', 'desc')->first();
                 if (!is_null($histAnt) && !$soloModificaHistorico) {
@@ -1242,11 +1245,22 @@ class FlotaGeneralController extends Controller
 
                 // Procesar patrimonio según tipo de movimiento
                 if (!$soloModificaHistorico) {
-                    // Para reemplazos y recambios, transferir patrimonio al equipo nuevo
                     if ($tipo_de_mov->id == $id_reemplazo || $tipo_de_mov->id == $id_recambio) {
-                        $flotaReemplazoPatrimonio = FlotaGeneral::where('equipo_id', $request->equipoReemplazo)->first();
-                        if ($flotaReemplazoPatrimonio) {
-                            $this->patrimonioService->transferirPatrimonio($flota, $flotaReemplazoPatrimonio);
+                        if ($flotaTeniaPatrimonio && $destinoPatrimonialAnterior) {
+                            $flotaEquipoRetirado = FlotaGeneral::where('equipo_id', $request->equipo)
+                                ->where('id', '<>', $flota->id)
+                                ->first();
+
+                            if ($flotaEquipoRetirado) {
+                                $this->patrimonioService->limpiarPatrimonio($flotaEquipoRetirado);
+                            }
+
+                            $this->patrimonioService->crearCargo(
+                                $flota,
+                                $destinoPatrimonialAnterior,
+                                $historicoReemplazo ? $historicoReemplazo->id : $historico->id,
+                                $request->fecha_asignacion
+                            );
                         }
                     } else {
                         $this->patrimonioService->procesarMovimiento($flota, $tipo_de_mov->id, [

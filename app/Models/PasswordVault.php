@@ -145,7 +145,10 @@ class PasswordVault extends Model
         }
 
         // Verificar permiso de edición compartida
-        $share = $this->shares()->where('shared_with_user_id', $userId)->first();
+        $share = $this->relationLoaded('shares')
+            ? $this->shares->firstWhere('shared_with_user_id', $userId)
+            : $this->shares()->where('shared_with_user_id', $userId)->first();
+
         return $share && $share->can_edit;
     }
 

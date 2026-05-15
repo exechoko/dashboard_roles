@@ -381,6 +381,8 @@ Route::group(['middleware' => ['auth']], function () {
         // Generar contraseña aleatoria
         Route::get('password-vault-generate', [PasswordVaultController::class, 'generatePassword'])
             ->name('password-vault.generate');
+        Route::post('password-vault/share-bulk', [PasswordVaultController::class, 'bulkShare'])
+            ->name('password-vault.bulk-share');
         // Toggle favorito
         Route::post('password-vault/{passwordVault}/toggle-favorite', [PasswordVaultController::class, 'toggleFavorite'])
             ->name('password-vault.toggle-favorite');
@@ -396,6 +398,8 @@ Route::group(['middleware' => ['auth']], function () {
         // Revocar acceso compartido
         Route::delete('password-shares/{share}/revoke', [PasswordVaultController::class, 'revokeShare'])
             ->name('password-vault.revoke-share');
+        Route::patch('password-shares/{share}/permission', [PasswordVaultController::class, 'updateSharePermission'])
+            ->name('password-vault.update-share-permission');
     });
 
     Route::prefix('patrimonio')->name('patrimonio.')->group(function () {

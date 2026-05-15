@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\BulkSharePasswordVaultRequest;
+use App\Http\Requests\SharePasswordVaultRequest;
 use App\Models\PasswordVault;
 use App\Models\PasswordVaultShare;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 
 class PasswordVaultController extends Controller
 {
@@ -30,7 +31,7 @@ class PasswordVaultController extends Controller
         $query = PasswordVault::where(function ($q) use ($userId, $sharedIds) {
             $q->where('user_id', $userId)
               ->orWhereIn('id', $sharedIds);
-        });
+        })->with(['owner', 'shares.sharedWith'])->withCount('shares');
 
         // Aplicar filtros de búsqueda
         if ($request->filled('search')) {
@@ -49,11 +50,6 @@ class PasswordVaultController extends Controller
         if ($request->filled('favorites') && $request->favorites == '1') {
             $query->where('favorite', true);
         }
-
-        // Eager loading de las comparticiones
-        $query->with(['shares' => function ($q) use ($userId) {
-            $q->where('shared_with_user_id', $userId);
-        }]);
 
         // Ordenar y paginar
         $passwords = $query->orderBy('favorite', 'desc')
@@ -304,7 +300,7 @@ class PasswordVaultController extends Controller
         return response()->json(['shares' => $sharesData]);
     }
 
-    public function share(Request $request, PasswordVault $passwordVault)
+    public function share(SharePasswordVaultRequest $request, PasswordVault $passwordVault)
     {
         // Verificar permiso general
         if (!Auth::user()->can('compartir-clave')) {
@@ -316,36 +312,98 @@ class PasswordVaultController extends Controller
             abort(403, 'Solo el dueño puede compartir esta contraseña.');
         }
 
-        $sharedWithId = $request->input('shared_with_user_id');
-
-        $request->validate([
-            'shared_with_user_id' => [
-                'required',
-                'exists:users,id',
-                Rule::notIn([Auth::id()]),
-                Rule::unique('password_vault_shares')->where(function ($query) use ($passwordVault, $sharedWithId) {
-                    return $query->where('password_vault_id', $passwordVault->id)
-                                 ->where('shared_with_user_id', $sharedWithId);
-                })
-            ],
-            'can_edit' => 'boolean',
-        ], [
-            'shared_with_user_id.unique' => 'Esta contraseña ya está compartida con este usuario.',
-            'shared_with_user_id.not_in' => 'No puedes compartir una contraseña contigo mismo.',
-        ]);
-
-        PasswordVaultShare::create([
-            'password_vault_id' => $passwordVault->id,
-            'shared_with_user_id' => $sharedWithId,
-            'shared_by_user_id' => Auth::id(),
-            'can_edit' => $request->boolean('can_edit'),
-        ]);
+        $validated = $request->validated();
+        $result = $this->shareVaultsWithUsers(
+            [$passwordVault->id],
+            $validated['shared_with_user_ids'],
+            $request->boolean('can_edit')
+        );
 
         if (request()->wantsJson()) {
-            return response()->json(['success' => true, 'message' => 'Contraseña compartida exitosamente.']);
+            return response()->json([
+                'success' => true,
+                'created' => $result['created'],
+                'updated' => $result['updated'],
+                'message' => 'Accesos actualizados correctamente.',
+            ]);
         }
 
-        return redirect()->back()->with('success', 'Contraseña compartida exitosamente.');
+        return redirect()->back()->with('success', 'Accesos actualizados correctamente.');
+    }
+
+    public function bulkShare(BulkSharePasswordVaultRequest $request)
+    {
+        if (!Auth::user()->can('compartir-clave')) {
+            abort(403, 'No tienes permiso para compartir contraseñas.');
+        }
+
+        $validated = $request->validated();
+        $result = $this->shareVaultsWithUsers(
+            $validated['password_vault_ids'],
+            $validated['shared_with_user_ids'],
+            $request->boolean('can_edit')
+        );
+
+        return response()->json([
+            'success' => true,
+            'created' => $result['created'],
+            'updated' => $result['updated'],
+            'passwords' => count($validated['password_vault_ids']),
+            'users' => count($validated['shared_with_user_ids']),
+            'message' => 'Contraseñas compartidas correctamente.',
+        ]);
+    }
+
+    /**
+     * @param array<int, int|string> $passwordVaultIds
+     * @param array<int, int|string> $sharedWithUserIds
+     * @return array{created: int, updated: int}
+     */
+    private function shareVaultsWithUsers(array $passwordVaultIds, array $sharedWithUserIds, bool $canEdit): array
+    {
+        $created = 0;
+        $updated = 0;
+
+        foreach ($passwordVaultIds as $passwordVaultId) {
+            foreach ($sharedWithUserIds as $sharedWithId) {
+                $share = PasswordVaultShare::updateOrCreate(
+                    [
+                        'password_vault_id' => $passwordVaultId,
+                        'shared_with_user_id' => $sharedWithId,
+                    ],
+                    [
+                        'shared_by_user_id' => Auth::id(),
+                        'can_edit' => $canEdit,
+                    ]
+                );
+
+                $share->wasRecentlyCreated ? $created++ : $updated++;
+            }
+        }
+
+        return ['created' => $created, 'updated' => $updated];
+    }
+
+    public function updateSharePermission(Request $request, PasswordVaultShare $share)
+    {
+        if (!Auth::user()->can('compartir-clave')) {
+            abort(403, 'No tienes permiso para gestionar compartidos.');
+        }
+
+        if ($share->vault->user_id !== Auth::id()) {
+            abort(403, 'Solo el dueño puede cambiar permisos de edición.');
+        }
+
+        $validated = $request->validate([
+            'can_edit' => ['required', 'boolean'],
+        ]);
+
+        $share->update(['can_edit' => (bool) $validated['can_edit']]);
+
+        return response()->json([
+            'success' => true,
+            'can_edit' => $share->can_edit,
+        ]);
     }
 
     public function masterPasswordForm()

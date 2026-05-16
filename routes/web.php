@@ -409,7 +409,11 @@ Route::group(['middleware' => ['auth']], function () {
 
         // Cargos patrimoniales
         Route::get('cargos', [\App\Http\Controllers\PatrimonioCargoController::class, 'index'])->name('cargos.index');
+        Route::get('cargos/{id}/acta', [\App\Http\Controllers\PatrimonioCargoController::class, 'acta'])->name('cargos.acta');
         Route::get('cargos/{id}', [\App\Http\Controllers\PatrimonioCargoController::class, 'show'])->name('cargos.show');
+        Route::post('cargos/{id}/agrupar-pendientes', [\App\Http\Controllers\PatrimonioCargoController::class, 'agruparPendientes'])->name('cargos.agrupar-pendientes');
+        Route::post('cargos/{id}/equipos', [\App\Http\Controllers\PatrimonioCargoController::class, 'agregarEquipo'])->name('cargos.equipos.agregar');
+        Route::delete('cargos/{id}/equipos/{flotaId}', [\App\Http\Controllers\PatrimonioCargoController::class, 'quitarEquipo'])->name('cargos.equipos.quitar');
         Route::post('cargos/{id}/firmar', [\App\Http\Controllers\PatrimonioCargoController::class, 'firmar'])->name('cargos.firmar');
         Route::post('cargos/{id}/rechazar', [\App\Http\Controllers\PatrimonioCargoController::class, 'rechazar'])->name('cargos.rechazar');
 

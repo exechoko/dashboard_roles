@@ -145,7 +145,7 @@
                                     <thead>
                                         <tr>
                                             <th>ID</th>
-                                            <th>Equipo</th>
+                                            <th>Equipos</th>
                                             <th>Dependencia</th>
                                             <th>Dependencia Padre</th>
                                             <th>Estado</th>
@@ -160,12 +160,22 @@
                                             <tr>
                                                 <td>{{ $cargo->id }}</td>
                                                 <td>
-                                                    @if($cargo->equipo)
+                                                    @if($cargo->flotas_count > 0)
+                                                        <span class="badge badge-primary mb-1">{{ $cargo->flotas_count }} equipo{{ $cargo->flotas_count === 1 ? '' : 's' }}</span>
+                                                        @foreach($cargo->flotas->take(3) as $flota)
+                                                            @if($flota->equipo)
+                                                                <div>
+                                                                    <strong>TEI:</strong> {{ $flota->equipo->tei }}
+                                                                    <small class="text-muted">ISSI: {{ $flota->equipo->issi ?? '-' }}</small>
+                                                                </div>
+                                                            @endif
+                                                        @endforeach
+                                                        @if($cargo->flotas_count > 3)
+                                                            <small class="text-muted">+ {{ $cargo->flotas_count - 3 }} más</small>
+                                                        @endif
+                                                    @elseif($cargo->equipo)
                                                         <strong>TEI:</strong> {{ $cargo->equipo->tei }}<br>
                                                         <small class="text-muted">ISSI: {{ $cargo->equipo->issi ?? '-' }}</small>
-                                                        @if($cargo->equipo->tipo_terminal)
-                                                            <br><small>{{ $cargo->equipo->tipo_terminal->marca }} {{ $cargo->equipo->tipo_terminal->modelo }}</small>
-                                                        @endif
                                                     @endif
                                                 </td>
                                                 <td>{{ $cargo->destino->nombre ?? '-' }}</td>
@@ -188,12 +198,20 @@
                                                 </td>
                                                 <td>{{ $cargo->created_at->format('d/m/Y') }}</td>
                                                 <td>
-                                                    <div class="btn-group btn-group-sm">
+                                                    <div class="btn-group btn-group-sm mb-1">
                                                         <a href="{{ route('patrimonio.cargos.show', $cargo->id) }}"
                                                             class="btn btn-info" title="Ver detalle">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
                                                     </div>
+                                                    @if($cargo->estado === 'pendiente' && ($pendientesAgrupables[$cargo->destino_id] ?? 0) > 1)
+                                                        <form method="POST" action="{{ route('patrimonio.cargos.agrupar-pendientes', $cargo->id) }}" class="d-inline js-agrupar-cargos">
+                                                            @csrf
+                                                            <button type="submit" class="btn btn-sm btn-outline-primary" title="Agrupar pendientes de esta dependencia">
+                                                                <i class="fas fa-layer-group"></i> Agrupar
+                                                            </button>
+                                                        </form>
+                                                    @endif
                                                 </td>
                                             </tr>
                                         @empty
@@ -225,6 +243,9 @@
     $(document).on('select2:open', () => {
         let field = document.querySelector('.select2-search__field');
         if (field) field.focus();
+    });
+    $('.js-agrupar-cargos').on('submit', function () {
+        return confirm('¿Agrupar todos los cargos pendientes de esta dependencia en un solo cargo?');
     });
     setTimeout(function() { $('.alert').fadeOut('slow'); }, 5000);
 </script>

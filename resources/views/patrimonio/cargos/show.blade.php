@@ -80,38 +80,97 @@
                 <div class="col-12 col-lg-6 mt-4 mt-lg-0">
                     <div class="card h-100">
                         <div class="card-header">
-                            <h4><i class="fas fa-broadcast-tower mr-2"></i>Equipo</h4>
+                            <h4><i class="fas fa-broadcast-tower mr-2"></i>Equipos incluidos</h4>
                         </div>
                         <div class="card-body">
-                            @if ($cargo->equipo)
+                            @if ($cargo->flotas->count() > 0)
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>TEI</th>
+                                                <th>ISSI</th>
+                                                <th>Tipo / Modelo</th>
+                                                <th>Estado</th>
+                                                @if($cargo->estaPendiente())
+                                                    <th class="text-center">Acción</th>
+                                                @endif
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($cargo->flotas as $flota)
+                                                @if($flota->equipo)
+                                                <tr>
+                                                    <td><span class="badge badge-primary patrimonio-code-badge">{{ $flota->equipo->tei }}</span></td>
+                                                    <td><span class="badge badge-info patrimonio-code-badge">{{ $flota->equipo->issi ?? '-' }}</span></td>
+                                                    <td>{{ $flota->equipo->tipo_terminal ? $flota->equipo->tipo_terminal->marca . ' ' . $flota->equipo->tipo_terminal->modelo : '-' }}</td>
+                                                    <td>{{ $flota->equipo->estado->nombre ?? '-' }}</td>
+                                                    @if($cargo->estaPendiente())
+                                                        <td class="text-center">
+                                                            <form method="POST" action="{{ route('patrimonio.cargos.equipos.quitar', [$cargo->id, $flota->id]) }}" class="d-inline js-quitar-equipo">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Quitar del cargo">
+                                                                    <i class="fas fa-times"></i>
+                                                                </button>
+                                                            </form>
+                                                        </td>
+                                                    @endif
+                                                </tr>
+                                                @endif
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @elseif ($cargo->equipo)
                                 <div class="table-responsive">
                                     <table class="table table-sm table-borderless mb-0 detail-table">
                                         <tbody>
-                                            <tr>
-                                                <th>TEI</th>
-                                                <td><span class="badge badge-primary patrimonio-code-badge">{{ $cargo->equipo->tei }}</span></td>
-                                            </tr>
-                                            <tr>
-                                                <th>ISSI</th>
-                                                <td><span class="badge badge-info patrimonio-code-badge">{{ $cargo->equipo->issi ?? '-' }}</span></td>
-                                            </tr>
+                                            <tr><th>TEI</th><td><span class="badge badge-primary patrimonio-code-badge">{{ $cargo->equipo->tei }}</span></td></tr>
+                                            <tr><th>ISSI</th><td><span class="badge badge-info patrimonio-code-badge">{{ $cargo->equipo->issi ?? '-' }}</span></td></tr>
                                             @if ($cargo->equipo->tipo_terminal)
-                                                <tr>
-                                                    <th>Marca / Modelo</th>
-                                                    <td>{{ $cargo->equipo->tipo_terminal->marca }} {{ $cargo->equipo->tipo_terminal->modelo }}</td>
-                                                </tr>
+                                                <tr><th>Marca / Modelo</th><td>{{ $cargo->equipo->tipo_terminal->marca }} {{ $cargo->equipo->tipo_terminal->modelo }}</td></tr>
                                             @endif
                                             @if ($cargo->equipo->estado)
-                                                <tr>
-                                                    <th>Estado</th>
-                                                    <td>{{ $cargo->equipo->estado->nombre }}</td>
-                                                </tr>
+                                                <tr><th>Estado</th><td>{{ $cargo->equipo->estado->nombre }}</td></tr>
                                             @endif
                                         </tbody>
                                     </table>
                                 </div>
                             @else
-                                <p class="text-muted mb-0">Equipo no encontrado</p>
+                                <p class="text-muted mb-0">No hay equipos asociados</p>
+                            @endif
+
+                            @if($cargo->estaPendiente())
+                                <hr>
+                                <form method="POST" action="{{ route('patrimonio.cargos.equipos.agregar', $cargo->id) }}">
+                                    @csrf
+                                    <div class="form-group mb-2">
+                                        <label>Agregar equipo al cargo</label>
+                                        <select name="flota_id" class="form-control select2 @error('flota_id') is-invalid @enderror">
+                                            <option value="">Seleccione un equipo disponible...</option>
+                                            @foreach($equiposDisponibles as $flotaDisponible)
+                                                @if($flotaDisponible->equipo)
+                                                    <option value="{{ $flotaDisponible->id }}">
+                                                        TEI: {{ $flotaDisponible->equipo->tei }} - ISSI: {{ $flotaDisponible->equipo->issi ?? '-' }}
+                                                        @if($flotaDisponible->cargo_id)
+                                                            (en otro cargo pendiente)
+                                                        @endif
+                                                    </option>
+                                                @endif
+                                            @endforeach
+                                        </select>
+                                        @error('flota_id')
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-primary" {{ $equiposDisponibles->isEmpty() ? 'disabled' : '' }}>
+                                        <i class="fas fa-plus mr-1"></i>Agregar equipo
+                                    </button>
+                                    @if($equiposDisponibles->isEmpty())
+                                        <small class="text-muted ml-2">No hay equipos disponibles para esta dependencia.</small>
+                                    @endif
+                                </form>
                             @endif
                         </div>
                     </div>
@@ -145,6 +204,14 @@
                                 <span class="detail-label">Dependencia del firmante</span>
                                 <strong class="d-block text-break">{{ $cargo->firmanteDestino->nombre ?? '-' }}</strong>
                             </div>
+                            @if($cargo->ruta_documento)
+                                <div class="col-12 mt-3">
+                                    <span class="detail-label">Acta firmada</span>
+                                    <a href="{{ route('patrimonio.cargos.acta', $cargo->id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-file-signature mr-1"></i>{{ $cargo->acta_nombre_original ?? 'Ver acta firmada' }}
+                                    </a>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -157,7 +224,7 @@
                             <div class="card-header">
                                 <h4><i class="fas fa-signature mr-2"></i>Firmar cargo</h4>
                             </div>
-                            <form method="POST" action="{{ route('patrimonio.cargos.firmar', $cargo->id) }}">
+                            <form method="POST" action="{{ route('patrimonio.cargos.firmar', $cargo->id) }}" enctype="multipart/form-data">
                                 @csrf
                                 <div class="card-body">
                                     <div class="row">
@@ -199,9 +266,19 @@
                                             </div>
                                         </div>
                                         <div class="col-12">
-                                            <div class="form-group mb-0">
+                                            <div class="form-group">
                                                 <label>Observaciones</label>
                                                 <textarea name="observaciones" class="form-control" rows="3">{{ old('observaciones') }}</textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-group mb-0">
+                                                <label>Acta firmada</label>
+                                                <input type="file" name="acta_firmada" class="form-control-file @error('acta_firmada') is-invalid @enderror" accept="application/pdf,image/jpeg,image/png,image/webp">
+                                                <small class="form-text text-muted">PDF o imagen JPG, PNG, WEBP. Máximo 10 MB.</small>
+                                                @error('acta_firmada')
+                                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                                @enderror
                                             </div>
                                         </div>
                                     </div>
@@ -260,6 +337,10 @@
 
         $('.js-rechazar-cargo').on('submit', function () {
             return confirm('¿Rechazar este cargo patrimonial?');
+        });
+
+        $('.js-quitar-equipo').on('submit', function () {
+            return confirm('¿Quitar este equipo del cargo patrimonial?');
         });
 
         setTimeout(function () {

@@ -23,6 +23,8 @@ class PatrimonioCargo extends Model
         'fecha_firma',
         'observaciones',
         'ruta_documento',
+        'acta_nombre_original',
+        'acta_mime',
         'usuario_creador',
     ];
 
@@ -56,6 +58,11 @@ class PatrimonioCargo extends Model
     public function flotaGeneral()
     {
         return $this->hasOne(FlotaGeneral::class, 'cargo_id');
+    }
+
+    public function flotas()
+    {
+        return $this->hasMany(FlotaGeneral::class, 'cargo_id');
     }
 
     public function firmanteDestino()
@@ -115,7 +122,7 @@ class PatrimonioCargo extends Model
     /**
      * Registrar firma del cargo patrimonial
      */
-    public function firmar($nombre, $cargo = null, $legajo = null, $observaciones = null, $firmanteDestinoId = null)
+    public function firmar($nombre, $cargo = null, $legajo = null, $observaciones = null, $firmanteDestinoId = null, ?string $rutaDocumento = null, ?string $actaNombreOriginal = null, ?string $actaMime = null)
     {
         $this->update([
             'firmante_nombre'     => $nombre,
@@ -125,6 +132,9 @@ class PatrimonioCargo extends Model
             'estado'              => 'firmado',
             'fecha_firma'         => now(),
             'observaciones'       => $observaciones,
+            'ruta_documento'      => $rutaDocumento,
+            'acta_nombre_original' => $actaNombreOriginal,
+            'acta_mime'           => $actaMime,
         ]);
 
         return $this;

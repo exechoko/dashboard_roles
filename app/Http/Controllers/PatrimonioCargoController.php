@@ -2,17 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AgregarEquipoPatrimonioCargoRequest;
+use App\Http\Requests\FirmarPatrimonioCargoRequest;
 use App\Models\Destino;
 use App\Models\FlotaGeneral;
 use App\Models\PatrimonioCargo;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PatrimonioCargoController extends Controller
 {
     function __construct()
     {
-        $this->middleware('permission:ver-patrimonio-cargos')->only(['index', 'show']);
-        $this->middleware('permission:firmar-patrimonio-cargos')->only(['firmar', 'rechazar']);
+        $this->middleware('permission:ver-patrimonio-cargos')->only(['index', 'show', 'acta']);
+        $this->middleware('permission:firmar-patrimonio-cargos')->only(['firmar', 'rechazar', 'agruparPendientes', 'agregarEquipo', 'quitarEquipo']);
         $this->middleware('permission:gestionar-patrimonio')->only(['dashboard']);
     }
 
@@ -24,9 +28,11 @@ class PatrimonioCargoController extends Controller
         $query = PatrimonioCargo::with([
             'equipo:id,tei,issi,tipo_terminal_id',
             'equipo.tipo_terminal:id,marca,modelo',
+            'flotas.equipo:id,tei,issi,tipo_terminal_id',
+            'flotas.equipo.tipo_terminal:id,marca,modelo',
             'destino:id,nombre,parent_id',
             'destino.padre:id,nombre',
-        ]);
+        ])->withCount('flotas');
 
         // Filtro por estado
         if ($request->filled('estado')) {
@@ -48,6 +54,10 @@ class PatrimonioCargoController extends Controller
                     ->orWhereHas('equipo', function ($sub) use ($busqueda) {
                         $sub->where('tei', 'like', '%' . $busqueda . '%')
                             ->orWhere('issi', 'like', '%' . $busqueda . '%');
+                    })
+                    ->orWhereHas('flotas.equipo', function ($sub) use ($busqueda) {
+                        $sub->where('tei', 'like', '%' . $busqueda . '%')
+                            ->orWhere('issi', 'like', '%' . $busqueda . '%');
                     });
             });
         }
@@ -62,6 +72,13 @@ class PatrimonioCargoController extends Controller
 
         $cargos = $query->orderBy('created_at', 'desc')->paginate(20);
         $destinos = Destino::orderBy('nombre')->get();
+        $pendientesAgrupables = PatrimonioCargo::query()
+            ->where('estado', 'pendiente')
+            ->select('destino_id')
+            ->selectRaw('COUNT(*) as total')
+            ->groupBy('destino_id')
+            ->having('total', '>', 1)
+            ->pluck('total', 'destino_id');
 
         // Contadores por estado
         $contadores = [
@@ -71,7 +88,38 @@ class PatrimonioCargoController extends Controller
             'rechazados' => PatrimonioCargo::where('estado', 'rechazado')->count(),
         ];
 
-        return view('patrimonio.cargos.index', compact('cargos', 'destinos', 'contadores'));
+        return view('patrimonio.cargos.index', compact('cargos', 'destinos', 'contadores', 'pendientesAgrupables'));
+    }
+
+    public function agruparPendientes($id)
+    {
+        $cargoBase = PatrimonioCargo::findOrFail($id);
+
+        if (!$cargoBase->estaPendiente()) {
+            return back()->with('error', 'Solo se pueden agrupar cargos pendientes');
+        }
+
+        $cargos = PatrimonioCargo::where('destino_id', $cargoBase->destino_id)
+            ->where('estado', 'pendiente')
+            ->orderBy('created_at')
+            ->get();
+
+        if ($cargos->count() < 2) {
+            return back()->with('error', 'No hay otros cargos pendientes para agrupar en esta dependencia');
+        }
+
+        DB::transaction(function () use ($cargoBase, $cargos) {
+            $cargoIds = $cargos->pluck('id');
+
+            FlotaGeneral::whereIn('cargo_id', $cargoIds)->update([
+                'cargo_id' => $cargoBase->id,
+            ]);
+
+            PatrimonioCargo::whereIn('id', $cargoIds->reject(fn($cargoId) => $cargoId === $cargoBase->id))->delete();
+        });
+
+        return redirect()->route('patrimonio.cargos.show', $cargoBase->id)
+            ->with('success', 'Cargos pendientes agrupados correctamente');
     }
 
     /**
@@ -83,6 +131,9 @@ class PatrimonioCargoController extends Controller
             'equipo',
             'equipo.tipo_terminal',
             'equipo.estado',
+            'flotas.equipo',
+            'flotas.equipo.tipo_terminal',
+            'flotas.equipo.estado',
             'destino',
             'destino.padre',
             'firmanteDestino',
@@ -91,27 +142,134 @@ class PatrimonioCargoController extends Controller
         ])->findOrFail($id);
 
         $destinos = Destino::orderBy('nombre')->get();
+        $equiposDisponibles = collect();
 
-        return view('patrimonio.cargos.show', compact('cargo', 'destinos'));
+        if ($cargo->estaPendiente()) {
+            $equiposDisponibles = FlotaGeneral::with([
+                'equipo:id,tei,issi,tipo_terminal_id',
+                'equipo.tipo_terminal:id,marca,modelo',
+                'cargo:id,estado,destino_id',
+            ])
+                ->where('id', '<>', 0)
+                ->where(function ($query) use ($cargo) {
+                    $query->where(function ($sub) use ($cargo) {
+                        $sub->where('patrimoniado', false)
+                            ->where('destino_id', $cargo->destino_id);
+                    })->orWhere(function ($sub) use ($cargo) {
+                        $sub->where('patrimoniado', true)
+                            ->where('destino_patrimonial_id', $cargo->destino_id)
+                            ->where('cargo_id', '<>', $cargo->id)
+                            ->whereHas('cargo', function ($cargoQuery) {
+                                $cargoQuery->where('estado', 'pendiente');
+                            });
+                    });
+                })
+                ->orderBy('equipo_id')
+                ->get();
+        }
+
+        return view('patrimonio.cargos.show', compact('cargo', 'destinos', 'equiposDisponibles'));
+    }
+
+    public function agregarEquipo(AgregarEquipoPatrimonioCargoRequest $request, $id)
+    {
+        $cargo = PatrimonioCargo::findOrFail($id);
+
+        if (!$cargo->estaPendiente()) {
+            return back()->with('error', 'Solo se pueden modificar cargos pendientes');
+        }
+
+        $flota = FlotaGeneral::with('cargo')->findOrFail($request->flota_id);
+
+        if ($flota->cargo_id === $cargo->id) {
+            return back()->with('error', 'El equipo ya pertenece a este cargo');
+        }
+
+        $puedeAgregar = (!$flota->patrimoniado && (int) $flota->destino_id === (int) $cargo->destino_id)
+            || ($flota->patrimoniado
+                && (int) $flota->destino_patrimonial_id === (int) $cargo->destino_id
+                && $flota->cargo
+                && $flota->cargo->estado === 'pendiente');
+
+        if (!$puedeAgregar) {
+            return back()->with('error', 'El equipo seleccionado no está disponible para este cargo');
+        }
+
+        DB::transaction(function () use ($cargo, $flota) {
+            $cargoAnteriorId = $flota->cargo_id;
+            $flota->patrimoniar($cargo->destino_id, $cargo->id);
+
+            if ($cargoAnteriorId && $cargoAnteriorId !== $cargo->id && !FlotaGeneral::where('cargo_id', $cargoAnteriorId)->exists()) {
+                PatrimonioCargo::where('id', $cargoAnteriorId)
+                    ->where('estado', 'pendiente')
+                    ->delete();
+            }
+        });
+
+        return redirect()->route('patrimonio.cargos.show', $cargo->id)
+            ->with('success', 'Equipo agregado al cargo patrimonial');
+    }
+
+    public function quitarEquipo($id, $flotaId)
+    {
+        $cargo = PatrimonioCargo::findOrFail($id);
+
+        if (!$cargo->estaPendiente()) {
+            return back()->with('error', 'Solo se pueden modificar cargos pendientes');
+        }
+
+        $flotasDelCargo = FlotaGeneral::where('cargo_id', $cargo->id)->count();
+
+        if ($flotasDelCargo <= 1) {
+            return back()->with('error', 'No se puede quitar el último equipo del cargo');
+        }
+
+        $flota = FlotaGeneral::where('cargo_id', $cargo->id)->findOrFail($flotaId);
+        $flota->despatrimoniar();
+
+        return redirect()->route('patrimonio.cargos.show', $cargo->id)
+            ->with('success', 'Equipo quitado del cargo patrimonial');
+    }
+
+    public function acta($id): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $cargo = PatrimonioCargo::findOrFail($id);
+
+        if (!$cargo->ruta_documento) {
+            abort(404);
+        }
+
+        $ruta = str_replace('anexos/', '', $cargo->ruta_documento);
+
+        if (!Storage::disk('anexos')->exists($ruta)) {
+            abort(404);
+        }
+
+        return response()->file(Storage::disk('anexos')->path($ruta), [
+            'Content-Type' => $cargo->acta_mime ?? Storage::disk('anexos')->mimeType($ruta),
+        ]);
     }
 
     /**
      * Firmar un cargo patrimonial
      */
-    public function firmar(Request $request, $id)
+    public function firmar(FirmarPatrimonioCargoRequest $request, $id)
     {
-        $request->validate([
-            'firmante_nombre'     => 'required|string|max:150',
-            'firmante_cargo'      => 'nullable|string|max:150',
-            'firmante_legajo'     => 'nullable|string|max:50',
-            'firmante_destino_id' => 'required|exists:destino,id',
-            'observaciones'       => 'nullable|string',
-        ]);
-
         $cargo = PatrimonioCargo::findOrFail($id);
 
         if (!$cargo->estaPendiente()) {
             return back()->with('error', 'Este cargo ya fue procesado');
+        }
+
+        $rutaDocumento = null;
+        $actaNombreOriginal = null;
+        $actaMime = null;
+
+        if ($request->hasFile('acta_firmada')) {
+            $archivo = $request->file('acta_firmada');
+            $rutaDocumento = 'anexos/' . $archivo->store('actas_patrimoniales', 'anexos');
+            $actaNombreOriginal = $archivo->getClientOriginalName();
+            $actaMime = $archivo->getClientMimeType();
         }
 
         $cargo->firmar(
@@ -119,7 +277,10 @@ class PatrimonioCargoController extends Controller
             $request->firmante_cargo,
             $request->firmante_legajo,
             $request->observaciones,
-            $request->firmante_destino_id
+            $request->firmante_destino_id,
+            $rutaDocumento,
+            $actaNombreOriginal,
+            $actaMime
         );
 
         return redirect()->route('patrimonio.cargos.show', $cargo->id)
@@ -143,9 +304,7 @@ class PatrimonioCargoController extends Controller
 
         $cargo->rechazar($request->observaciones);
 
-        // Al rechazar, limpiar patrimonio del equipo en flota
-        $flota = FlotaGeneral::where('equipo_id', $cargo->equipo_id)->first();
-        if ($flota && $flota->cargo_id === $cargo->id) {
+        foreach (FlotaGeneral::where('cargo_id', $cargo->id)->get() as $flota) {
             $flota->despatrimoniar();
         }
 

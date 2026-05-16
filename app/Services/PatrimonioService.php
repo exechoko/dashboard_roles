@@ -74,22 +74,28 @@ class PatrimonioService
     }
 
     /**
-     * Crear un cargo patrimonial para un equipo
+     * Crear o reutilizar un cargo patrimonial pendiente para una dependencia.
      */
     public function crearCargo(FlotaGeneral $flota, int $destinoId, ?int $historicoId = null, $fecha = null): PatrimonioCargo
     {
-        $cargo = PatrimonioCargo::create([
-            'equipo_id'       => $flota->equipo_id,
-            'destino_id'      => $destinoId,
-            'historico_id'    => $historicoId,
-            'estado'          => 'pendiente',
-            'usuario_creador' => auth()->user()->name ?? 'Sistema',
-        ]);
+        $cargo = PatrimonioCargo::where('destino_id', $destinoId)
+            ->where('estado', 'pendiente')
+            ->latest()
+            ->first();
 
-        // Marcar el equipo como patrimoniado
+        if (!$cargo) {
+            $cargo = PatrimonioCargo::create([
+                'equipo_id'       => $flota->equipo_id,
+                'destino_id'      => $destinoId,
+                'historico_id'    => $historicoId,
+                'estado'          => 'pendiente',
+                'usuario_creador' => auth()->user()->name ?? 'Sistema',
+            ]);
+        }
+
         $flota->patrimoniar($destinoId, $cargo->id, $fecha);
 
-        Log::info("Cargo patrimonial #{$cargo->id} creado para equipo #{$flota->equipo_id} en destino #{$destinoId}");
+        Log::info("Equipo #{$flota->equipo_id} agregado al cargo patrimonial #{$cargo->id} en destino #{$destinoId}");
 
         return $cargo;
     }

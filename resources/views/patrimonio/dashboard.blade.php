@@ -39,17 +39,33 @@
         </div>
 
         {{-- Barra de progreso general --}}
-        @php $pctPatrimoniado = $totales['total_flota'] > 0 ? round(($totales['patrimoniados'] / $totales['total_flota']) * 100) : 0; @endphp
+        @php
+            $pctPatrimoniado = $totales['total_flota'] > 0 ? round(($totales['patrimoniados'] / $totales['total_flota']) * 100) : 0;
+            $pctPendiente = $totales['total_flota'] > 0 ? round(($totales['pendientes_firma'] / $totales['total_flota']) * 100) : 0;
+        @endphp
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
                         <h6>Progreso de patrimoniado general: <strong>{{ $pctPatrimoniado }}%</strong></h6>
                         <div class="progress" style="height: 25px;">
-                            <div class="progress-bar bg-success" style="width: {{ $pctPatrimoniado }}%">{{ $totales['patrimoniados'] }} patrimoniados</div>
+                            <div class="progress-bar bg-success" style="width: {{ $pctPatrimoniado }}%">
+                                @if($pctPatrimoniado >= 12)
+                                    {{ $pctPatrimoniado }}%
+                                @endif
+                            </div>
                             @if($totales['pendientes_firma'] > 0)
-                            <div class="progress-bar bg-warning" style="width: {{ $totales['total_flota'] > 0 ? round(($totales['pendientes_firma'] / $totales['total_flota']) * 100) : 0 }}%">{{ $totales['pendientes_firma'] }} pendientes</div>
+                            <div class="progress-bar bg-warning" style="width: {{ $pctPendiente }}%">
+                                @if($pctPendiente >= 12)
+                                    {{ $pctPendiente }}%
+                                @endif
+                            </div>
                             @endif
+                        </div>
+                        <div class="progress-legend mt-2">
+                            <span><i class="fas fa-square text-success"></i> {{ $totales['patrimoniados'] }} patrimoniados</span>
+                            <span><i class="fas fa-square text-warning"></i> {{ $totales['pendientes_firma'] }} pendientes</span>
+                            <span><i class="fas fa-square text-danger"></i> {{ $totales['sin_patrimoniar'] }} sin patrimoniar</span>
                         </div>
                     </div>
                 </div>
@@ -158,4 +174,9 @@
     </div>
 </section>
 @endsection
-@push('styles')<style>.card{border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.08)}</style>@endpush
+@push('styles')
+<style>
+    .card{border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+    .progress-legend{display:flex;gap:1rem;flex-wrap:wrap;font-size:.85rem;color:var(--text-secondary)}
+</style>
+@endpush

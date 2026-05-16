@@ -124,13 +124,25 @@
                                 @foreach($direcciones as $dir)
                                     @php $totalDir = ($dir->stats['patrimoniados'] ?? 0) + ($dir->stats['sin_patrimoniar'] ?? 0); @endphp
                                     @if($totalDir > 0)
-                                    <tr>
-                                        <td>{{ $dir->nombre }}</td>
+                                    <tr class="font-weight-bold" style="background-color: #f7f7f7; cursor:pointer;" data-toggle="collapse" data-target=".direccion-hijos-{{ $dir->id }}">
+                                        <td><i class="fas fa-caret-down mr-2"></i>{{ $dir->nombre }}</td>
                                         <td class="text-center"><span class="badge badge-success">{{ $dir->stats['patrimoniados'] ?? 0 }}</span></td>
                                         <td class="text-center"><span class="badge badge-warning">{{ $dir->stats['pendientes_firma'] ?? 0 }}</span></td>
                                         <td class="text-center"><span class="badge badge-danger">{{ $dir->stats['sin_patrimoniar'] ?? 0 }}</span></td>
                                         <td class="text-center"><strong>{{ $totalDir }}</strong></td>
                                     </tr>
+                                    @foreach($dir->hijos as $hijo)
+                                        @php $totalHijo = ($hijo->stats['patrimoniados'] ?? 0) + ($hijo->stats['sin_patrimoniar'] ?? 0); @endphp
+                                        @if($totalHijo > 0)
+                                        <tr class="collapse direccion-hijos-{{ $dir->id }}">
+                                            <td class="pl-5"><i class="fas fa-level-up-alt fa-rotate-90 mr-1 text-muted"></i>{{ $hijo->nombre }}</td>
+                                            <td class="text-center">{{ $hijo->stats['patrimoniados'] ?? 0 }}</td>
+                                            <td class="text-center">{{ $hijo->stats['pendientes_firma'] ?? 0 }}</td>
+                                            <td class="text-center">{{ $hijo->stats['sin_patrimoniar'] ?? 0 }}</td>
+                                            <td class="text-center">{{ $totalHijo }}</td>
+                                        </tr>
+                                        @endif
+                                    @endforeach
                                     @endif
                                 @endforeach
                                 </tbody>

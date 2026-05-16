@@ -188,11 +188,18 @@ class PatrimonioCargoController extends Controller
 
         // También incluir direcciones y otras dependencias de primer nivel
         $direcciones = Destino::where('tipo', 'direccion')
+            ->with(['hijos' => function ($q) {
+                $q->orderBy('nombre');
+            }])
             ->orderBy('nombre')
             ->get();
 
         foreach ($direcciones as $direccion) {
             $direccion->stats = $direccion->getEstadisticasPatrimoniales(true);
+
+            foreach ($direccion->hijos as $hijo) {
+                $hijo->stats = $hijo->getEstadisticasPatrimoniales(true);
+            }
         }
 
         return view('patrimonio.dashboard', compact('departamentales', 'direcciones', 'totales'));

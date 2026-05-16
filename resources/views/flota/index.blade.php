@@ -201,13 +201,12 @@
                                             <th>Tipo / Modelo</th>
                                             <th>Fecha últ. mov.</th>
                                             <th>Movimiento</th>
-                                            <th>Patrimonio</th>
                                             <th class="col-recurso">
                                                 <i class="fas fa-car mr-1"></i>Recurso
                                             </th>
                                             <th>Dependencia</th>
                                             <th>Observaciones</th>
-                                            <th class="text-center" style="width:160px;">Acciones</th>
+                                            <th class="text-center actions-header" style="width:160px;"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -262,35 +261,6 @@
                                                     </span>
                                                 </td>
 
-                                                <td>
-                                                    @if($f->patrimoniado)
-                                                        @if($f->cargo && $f->cargo->estado === 'pendiente')
-                                                            <span class="badge badge-warning" style="border-radius:20px;padding:.25em .75em;font-size:.8rem;" data-toggle="tooltip" title="{{ $f->destinoPatrimonial->nombre ?? '' }}">
-                                                                <i class="fas fa-clock"></i> Pendiente
-                                                            </span>
-                                                        @else
-                                                            <span class="badge badge-success" style="border-radius:20px;padding:.25em .75em;font-size:.8rem;" data-toggle="tooltip" title="{{ $f->destinoPatrimonial->nombre ?? '' }}">
-                                                                <i class="fas fa-check-circle"></i> Patrimoniado
-                                                            </span>
-                                                        @endif
-                                                    @else
-                                                        @if($f->ultimo_movimiento === 'Movimiento patrimonial')
-                                                            <div class="custom-control custom-checkbox btn-patrimoniar-rapido-container d-inline-block">
-                                                                <input type="checkbox" class="custom-control-input check-patrimoniar-rapido" id="patrimoniar_{{ $f->id }}" data-id="{{ $f->id }}">
-                                                                <label class="custom-control-label" for="patrimoniar_{{ $f->id }}" title="Generar cargo patrimonial" data-toggle="tooltip">
-                                                                    <span class="badge badge-light border" style="border-radius:20px;padding:.25em .75em;font-size:.8rem; cursor:pointer;">
-                                                                        <i class="fas fa-magic text-primary"></i> Patrimoniar
-                                                                    </span>
-                                                                </label>
-                                                            </div>
-                                                        @else
-                                                            <span class="badge" style="background:#eee;color:#888;border-radius:20px;padding:.25em .75em;font-size:.8rem;">
-                                                                <i class="fas fa-minus-circle"></i> —
-                                                            </span>
-                                                        @endif
-                                                    @endif
-                                                </td>
-
                                                 <td class="col-recurso">
                                                     @if($f->recurso)
                                                         <div class="recurso-cell">
@@ -329,26 +299,56 @@
                                                 </td>
 
                                                 <td class="text-center action-td">
-                                                    <a class="action-btn btn-view" data-toggle="modal"
-                                                        data-target="#ModalDetalle{{ $f->id }}">
-                                                        <i class="far fa-eye"></i>
-                                                    </a>
-                                                    @can('editar-flota')
-                                                        <a class="action-btn btn-edit" href="{{ route('flota.edit', $f->id) }}">
-                                                            <i class="fas fa-edit"></i>
+                                                    <div class="action-buttons-line">
+                                                        <a class="action-btn btn-view" data-toggle="modal"
+                                                            data-target="#ModalDetalle{{ $f->id }}">
+                                                            <i class="far fa-eye"></i>
                                                         </a>
-                                                    @endcan
-                                                    @can('borrar-flota')
-                                                        <a class="action-btn btn-del" data-toggle="modal"
-                                                            data-target="#ModalDelete{{ $f->id }}">
-                                                            <i class="far fa-trash-alt"></i>
-                                                        </a>
-                                                    @endcan
+                                                        @can('editar-flota')
+                                                            <a class="action-btn btn-edit" href="{{ route('flota.edit', $f->id) }}">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                        @endcan
+                                                        @can('borrar-flota')
+                                                            <a class="action-btn btn-del" data-toggle="modal"
+                                                                data-target="#ModalDelete{{ $f->id }}">
+                                                                <i class="far fa-trash-alt"></i>
+                                                            </a>
+                                                        @endcan
+                                                    </div>
+                                                    <div class="action-patrimonio-line">
+                                                        @if($f->patrimoniado)
+                                                            @if($f->cargo && $f->cargo->estado === 'pendiente')
+                                                                <span class="badge badge-warning patrimonio-action-badge" data-toggle="tooltip" title="{{ $f->destinoPatrimonial->nombre ?? '' }}">
+                                                                    <i class="fas fa-clock"></i> Pendiente
+                                                                </span>
+                                                            @else
+                                                                <span class="badge badge-success patrimonio-action-badge" data-toggle="tooltip" title="{{ $f->destinoPatrimonial->nombre ?? '' }}">
+                                                                    <i class="fas fa-check-circle"></i> Patrimoniado
+                                                                </span>
+                                                            @endif
+                                                        @else
+                                                            @if($f->ultimo_movimiento === 'Movimiento patrimonial')
+                                                                <div class="custom-control custom-checkbox btn-patrimoniar-rapido-container d-inline-block patrimonio-action-control">
+                                                                    <input type="checkbox" class="custom-control-input check-patrimoniar-rapido" id="patrimoniar_{{ $f->id }}" data-id="{{ $f->id }}">
+                                                                    <label class="custom-control-label" for="patrimoniar_{{ $f->id }}" title="Generar cargo patrimonial" data-toggle="tooltip">
+                                                                        <span class="badge badge-light border patrimonio-action-badge">
+                                                                            <i class="fas fa-magic text-primary"></i> Patrimoniar
+                                                                        </span>
+                                                                    </label>
+                                                                </div>
+                                                            @else
+                                                                <span class="badge patrimonio-action-badge patrimonio-empty-badge">
+                                                                    <i class="fas fa-minus-circle"></i> Sin patrimonio
+                                                                </span>
+                                                            @endif
+                                                        @endif
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="9" class="text-center py-5">
+                                                <td colspan="8" class="text-center py-5">
                                                     <i class="fas fa-search fa-2x text-muted mb-2 d-block"></i>
                                                     <span class="text-muted">No se encontraron resultados</span>
                                                 </td>
@@ -386,6 +386,77 @@
     .desktop-table { display: block !important; }
 }
 .col-recurso { min-width: 170px; }
+
+.desktop-table {
+    overflow-x: auto;
+}
+
+.desktop-table .actions-header,
+.desktop-table .action-td {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    background: var(--card-bg);
+    box-shadow: -8px 0 12px -12px rgba(0, 0, 0, .45);
+}
+
+.desktop-table .actions-header {
+    z-index: 3;
+    background: var(--card-bg) !important;
+}
+
+.desktop-table .action-td .action-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 32px !important;
+    height: 32px;
+    padding: 0 !important;
+}
+
+.action-buttons-line {
+    display: flex;
+    justify-content: center;
+    gap: .25rem;
+    margin-bottom: .35rem;
+}
+
+.action-patrimonio-line {
+    display: flex;
+    justify-content: center;
+}
+
+.patrimonio-action-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: .72rem;
+    padding: .22em .55em;
+    white-space: nowrap;
+    width: 104px;
+}
+
+.patrimonio-empty-badge {
+    background: #eee;
+    color: #888;
+    cursor: default;
+}
+
+.patrimonio-action-control {
+    min-height: auto;
+    padding-left: 0;
+}
+
+.patrimonio-action-control .custom-control-label::before,
+.patrimonio-action-control .custom-control-label::after {
+    display: none;
+}
+
+.patrimonio-action-control .custom-control-label {
+    cursor: pointer;
+}
 
 /* ─── MOBILE CARDS ─── */
 .flota-card-modern {

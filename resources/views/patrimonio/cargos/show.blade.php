@@ -73,6 +73,14 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <div class="mt-3">
+                                <a href="{{ route('patrimonio.cargos.generar-acta', $cargo->id) }}" class="btn btn-primary">
+                                    <i class="fas fa-file-word mr-1"></i>Generar Acta Patrimonial
+                                </a>
+                                @if(!$cargo->firmante_nombre)
+                                    <small class="text-muted d-block mt-2">Si el cargo aún no tiene firmante registrado, el acta se genera con espacios para completar.</small>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -20,6 +20,7 @@ class TelegramTareasDiarias extends Command
 
     public function handle(TelegramService $telegram, EfemeridesService $efemerides): int
     {
+        $ahora = Carbon::now();
         $hoy = Carbon::today();
         $manana = Carbon::tomorrow();
 
@@ -50,7 +51,7 @@ class TelegramTareasDiarias extends Command
             ->get();
 
         $mensaje = "📋 <b>Resumen de Tareas Diarias</b>\n"
-            . "📅 {$hoy->format('d/m/Y')} - {$hoy->locale('es')->isoFormat('dddd')}\n";
+            . "📅 {$ahora->format('d/m/Y H:i')} - {$ahora->locale('es')->isoFormat('dddd')}\n";
 
         // ── Sección Novedades ──────────────────────────────────────
         $mensaje .= "\n━━━━━━━━━━━━━━━━━━\n";

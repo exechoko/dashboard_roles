@@ -51,6 +51,14 @@ class Kernel extends ConsoleKernel
                 app(TelegramService::class)->notificarScheduleFallido('cecoco:geocodificar-dia-anterior', 'El comando finalizó con error.');
             });
 
+        // Actualiza el caché diario de efemérides (Argentina / Entre Ríos) desde Wikipedia.
+        $schedule->command('efemerides:actualizar')->dailyAt('00:30')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/efemerides.log'))
+            ->onFailure(function () {
+                app(TelegramService::class)->notificarScheduleFallido('efemerides:actualizar', 'El comando finalizó con error.');
+            });
+
         $schedule->command('telegram:tareas-diarias')->dailyAt('07:00')
             ->onFailure(function () {
                 app(TelegramService::class)->notificarScheduleFallido('telegram:tareas-diarias', 'El comando finalizó con error.');

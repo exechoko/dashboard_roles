@@ -1,7 +1,7 @@
 "use strict";
 
-// ChartJS
-if(window.Chart) {
+// ChartJS (sólo Chart.js v2; en v3+ la API cambió a Chart.defaults.font.*)
+if(window.Chart && Chart.defaults && Chart.defaults.global) {
   Chart.defaults.global.defaultFontFamily = "'Nunito', 'Segoe UI', 'Arial'";
   Chart.defaults.global.defaultFontSize = 12;
   Chart.defaults.global.defaultFontStyle = 500;

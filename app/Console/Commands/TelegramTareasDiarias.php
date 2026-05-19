@@ -6,6 +6,7 @@ use App\Models\EntregaBodycam;
 use App\Models\EntregaEquipo;
 use App\Models\TareaItem;
 use App\Services\CecocoExpedienteService;
+use App\Services\EfemeridesService;
 use App\Services\TelegramService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -17,7 +18,7 @@ class TelegramTareasDiarias extends Command
 
     protected $description = 'Envía por Telegram las tareas de hoy y mañana (pendientes/en proceso).';
 
-    public function handle(TelegramService $telegram): int
+    public function handle(TelegramService $telegram, EfemeridesService $efemerides): int
     {
         $hoy = Carbon::today();
         $manana = Carbon::tomorrow();
@@ -105,6 +106,8 @@ class TelegramTareasDiarias extends Command
         $mensaje .= "   • CECOCO: " . $this->formatearTamanoRestauraciones($tamanoRest) . "\n";
         $mensaje .= "   • GPS: " . $this->formatearTamanoRestauraciones($tamanoRestGps) . "\n";
 
+        $mensaje .= $this->formatearEfemeride($efemerides);
+
         // ── Tareas ────────────────────────────────────────────────
         $mensaje .= "\n━━━━━━━━━━━━━━━━━━\n";
         $mensaje .= "📌 <b>TAREAS DE HOY</b> ({$tareasHoy->count()})\n";
@@ -173,6 +176,29 @@ class TelegramTareasDiarias extends Command
         }
 
         return $fallidos < $chatIds->count() ? 0 : 1;
+    }
+
+    private function formatearEfemeride(EfemeridesService $efemerides): string
+    {
+        try {
+            $destacada = $efemerides->obtenerDestacada();
+        } catch (\Throwable $e) {
+            return '';
+        }
+
+        if ($destacada === null) {
+            return '';
+        }
+
+        $anio = $destacada['anio'] ? "<b>{$destacada['anio']}</b> — " : '';
+        $texto = htmlspecialchars($destacada['texto'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $linea = "\n📅 <b>Efeméride ({$destacada['alcance']}):</b>\n   • {$anio}{$texto}";
+
+        if (! empty($destacada['url'])) {
+            $linea .= "\n   <a href=\"{$destacada['url']}\">🔗 Ver en Wikipedia</a>";
+        }
+
+        return $linea . "\n";
     }
 
     private function formatearTamanoRestauraciones(?array $cache): string

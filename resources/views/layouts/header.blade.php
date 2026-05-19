@@ -14,6 +14,9 @@
         backdrop-filter: blur(6px);
         -webkit-backdrop-filter: blur(6px);
         margin: 0 auto;
+        min-width: 0;
+        flex: 0 1 auto;
+        overflow: hidden;
     }
 
     .banner-fecha-hora__fila {
@@ -102,18 +105,72 @@
         white-space: nowrap;
     }
 
+    .banner-efemeride {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 10px;
+        border-radius: 8px;
+        background: rgba(0, 0, 0, 0.22);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #fff;
+        font-size: 12px;
+        line-height: 1.2;
+        max-width: 320px;
+        min-height: 32px;
+        text-decoration: none;
+        min-width: 0;
+    }
+
+    .banner-efemeride:hover,
+    .banner-efemeride:focus {
+        background: rgba(0, 0, 0, 0.35);
+        color: #fff;
+        text-decoration: none;
+        outline: none;
+    }
+
+    .banner-efemeride__anio {
+        font-weight: 700;
+        white-space: nowrap;
+        flex: 0 0 auto;
+    }
+
+    .banner-efemeride__texto {
+        opacity: 0.95;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+    }
+
+    /* Ocultar la efeméride cuando no hay espacio suficiente en el navbar */
+    @media (max-width: 1199.98px) {
+        .banner-efemeride__texto {
+            display: none;
+        }
+        .banner-efemeride {
+            padding: 4px 8px;
+            max-width: none;
+        }
+    }
+
+    @media (max-width: 991.98px) {
+        .banner-efemeride {
+            display: none !important;
+        }
+    }
+
     /* Responsive: en móviles compactar */
     @media (max-width: 767px) {
         .banner-fecha-hora {
             padding: 4px 8px;
             border-radius: 8px;
-            max-width: 70%;
             margin: 0;
-            margin-right: -5px;
         }
 
         .banner-fecha-hora__fila {
-            justify-content: center;
+            justify-content: flex-end;
             gap: 8px;
         }
 
@@ -162,17 +219,6 @@
             flex-direction: column;
             justify-content: center;
         }
-
-        /* Hide "Hoy:" label on mobile to save space */
-        .banner-divider {
-            margin: 0 2px;
-        }
-
-        /* Adjust main navbar to prevent wrapping */
-        .main-navbar {
-            padding-right: 5px !important;
-            padding-left: 5px !important;
-        }
     }
 
 </style>
@@ -195,6 +241,27 @@
         </div>
 
         <div class="banner-fecha-hora__der">
+            @php
+                try {
+                    $efemerideDestacada = app(\App\Services\EfemeridesService::class)->obtenerDestacada();
+                } catch (\Throwable $e) {
+                    $efemerideDestacada = null;
+                }
+            @endphp
+            @if($efemerideDestacada)
+                <a href="{{ $efemerideDestacada['url'] ?: 'https://es.wikipedia.org/wiki/Wikipedia:Efem%C3%A9rides' }}"
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   class="banner-efemeride"
+                   title="Efeméride del día ({{ $efemerideDestacada['alcance'] }}){{ $efemerideDestacada['anio'] ? ' · ' . $efemerideDestacada['anio'] : '' }}: {{ $efemerideDestacada['texto'] }}">
+                    <i class="fas fa-calendar-day" aria-hidden="true"></i>
+                    @if($efemerideDestacada['anio'])
+                        <span class="banner-efemeride__anio">{{ $efemerideDestacada['anio'] }}</span>
+                    @endif
+                    <span class="banner-efemeride__texto">{{ \Illuminate\Support\Str::limit($efemerideDestacada['texto'], 70) }}</span>
+                </a>
+            @endif
+
             <div class="banner-clima" id="banner-clima" title="Clima actual">
                 <i class="fas fa-cloud" id="clima-icono" aria-hidden="true"></i>
                 <div style="display:flex; flex-direction:column; line-height:1.1;">

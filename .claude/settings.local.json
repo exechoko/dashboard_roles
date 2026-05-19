@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(php C:/Apache24/htdocs/dashboard_roles/artisan migrate:status)",
-      "Bash(php:*)"
+      "Bash(php:*)",
+      "PowerShell(Test-Path *)",
+      "Bash(grep -oE '\\\\$\\\\{[A-Z_]+\\\\}' word/document.xml)",
+      "Bash(grep -oE '\\\\$\\\\{[A-Z_0-9]+\\\\}' word/document.xml)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "laravel-boost"
+  ]
 }

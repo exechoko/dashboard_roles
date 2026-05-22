@@ -18,6 +18,8 @@ class EfemeridesService
 {
     private const ENDPOINT = 'https://es.wikipedia.org/api/rest_v1/feed/onthisday/events/%s/%s';
 
+    private const ENDPOINT_HOLIDAYS = 'https://es.wikipedia.org/api/rest_v1/feed/onthisday/holidays/%s/%s';
+
     private const CACHE_TTL_HORAS = 26;
 
     /**
@@ -80,29 +82,90 @@ class EfemeridesService
     }
 
     /**
-     * Devuelve la única efeméride más relevante del día (o null si no hay).
-     * Prioriza Entre Ríos sobre Argentina, y dentro de cada grupo prefiere
-     * la que tenga URL de Wikipedia (más notable) y la más antigua (más histórica).
+     * Devuelve el día conmemorativo del día si existe (ej: "Día del Médico"),
+     * y si no hay, cae en la efeméride histórica de Argentina/Entre Ríos.
      *
-     * @return array{anio:?int, texto:string, url:?string, alcance:string}|null
+     * @return array{tipo:string, texto:string, url:?string, anio:?int, alcance:?string}|null
      */
     public function obtenerDestacada(?Carbon $fecha = null): ?array
     {
+        $dias = $this->obtenerDiasConmemorativos($fecha);
+        if (! empty($dias)) {
+            usort($dias, fn ($a, $b) => $this->prioridadHoliday($a) <=> $this->prioridadHoliday($b));
+            return array_merge($dias[0], ['tipo' => 'holiday', 'anio' => null, 'alcance' => null]);
+        }
+
         $datos = $this->obtener($fecha);
 
         $candidata = $this->mejorCandidata($datos['entre_rios']);
         if ($candidata !== null) {
-            $candidata['alcance'] = 'Entre Ríos';
-            return $candidata;
+            return array_merge($candidata, ['tipo' => 'evento', 'alcance' => 'Entre Ríos']);
         }
 
         $candidata = $this->mejorCandidata($datos['argentina']);
         if ($candidata !== null) {
-            $candidata['alcance'] = 'Argentina';
-            return $candidata;
+            return array_merge($candidata, ['tipo' => 'evento', 'alcance' => 'Argentina']);
         }
 
         return null;
+    }
+
+    /**
+     * Devuelve los días conmemorativos de la fecha (ej: "Día del Médico").
+     *
+     * @return array<int, array{texto:string, url:?string}>
+     */
+    public function obtenerDiasConmemorativos(?Carbon $fecha = null): array
+    {
+        $fecha = $fecha ?: Carbon::today();
+        $cacheKey = 'efemerides:holidays:' . $fecha->toDateString();
+
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        $mes = str_pad((string) $fecha->month, 2, '0', STR_PAD_LEFT);
+        $dia = str_pad((string) $fecha->day, 2, '0', STR_PAD_LEFT);
+        $url = sprintf(self::ENDPOINT_HOLIDAYS, $mes, $dia);
+
+        try {
+            $response = $this->http->get($url, [
+                'headers' => [
+                    'User-Agent' => 'DashboardRoles/1.0 (efemerides; contacto interno)',
+                    'Accept' => 'application/json',
+                ],
+            ]);
+            $datos = json_decode((string) $response->getBody(), true);
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo consultar días conmemorativos Wikipedia', [
+                'url' => $url,
+                'error' => $e->getMessage(),
+            ]);
+            Cache::put($cacheKey, [], now()->addHours(self::CACHE_TTL_HORAS));
+            return [];
+        }
+
+        if (! is_array($datos) || ! isset($datos['holidays']) || ! is_array($datos['holidays'])) {
+            Cache::put($cacheKey, [], now()->addHours(self::CACHE_TTL_HORAS));
+            return [];
+        }
+
+        $dias = [];
+        foreach ($datos['holidays'] as $holiday) {
+            $texto = trim((string) ($holiday['text'] ?? ''));
+            if ($texto === '') {
+                continue;
+            }
+            $urlPagina = null;
+            if (! empty($holiday['pages'][0]['content_urls']['desktop']['page'])) {
+                $urlPagina = $holiday['pages'][0]['content_urls']['desktop']['page'];
+            }
+            $dias[] = ['texto' => $texto, 'url' => $urlPagina];
+        }
+
+        Cache::put($cacheKey, $dias, now()->addHours(self::CACHE_TTL_HORAS));
+        return $dias;
     }
 
     /**
@@ -276,6 +339,30 @@ class EfemeridesService
             }
         }
         return false;
+    }
+
+    /**
+     * 1 = Día Mundial/Internacional · 2 = Argentina/Nacional · 3 = resto
+     *
+     * @param  array{texto:string, url:?string}  $holiday
+     */
+    private function prioridadHoliday(array $holiday): int
+    {
+        $texto = mb_strtolower($holiday['texto']);
+
+        if (str_contains($texto, 'mundial') || str_contains($texto, 'internacional')) {
+            return 1;
+        }
+
+        if (
+            str_contains($texto, 'argentina') || str_contains($texto, 'argentino') ||
+            str_contains($texto, 'argentinos') || str_contains($texto, 'nacional') ||
+            str_contains($texto, 'entre ríos') || str_contains($texto, 'entre rios')
+        ) {
+            return 2;
+        }
+
+        return 3;
     }
 
     private function cacheKey(Carbon $fecha): string

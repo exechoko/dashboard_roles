@@ -3,7 +3,8 @@
     "allow": [
       "Bash(php C:/Apache24/htdocs/dashboard_roles/artisan migrate:status)",
       "Bash(php:*)",
-      "mcp__laravel-boost__browser-logs"
+      "mcp__laravel-boost__browser-logs",
+      "mcp__laravel-boost__tinker"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -191,9 +191,14 @@ class TelegramTareasDiarias extends Command
             return '';
         }
 
-        $anio = $destacada['anio'] ? "<b>{$destacada['anio']}</b> — " : '';
         $texto = htmlspecialchars($destacada['texto'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        $linea = "\n📅 <b>Efeméride ({$destacada['alcance']}):</b>\n   • {$anio}{$texto}";
+
+        if ($destacada['tipo'] === 'holiday') {
+            $linea = "\n🎗 <b>Hoy:</b> {$texto}";
+        } else {
+            $anio = $destacada['anio'] ? "<b>{$destacada['anio']}</b> — " : '';
+            $linea = "\n📅 <b>Efeméride ({$destacada['alcance']}):</b>\n   • {$anio}{$texto}";
+        }
 
         if (! empty($destacada['url'])) {
             $linea .= "\n   <a href=\"{$destacada['url']}\">🔗 Ver en Wikipedia</a>";

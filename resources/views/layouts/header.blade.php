@@ -249,13 +249,19 @@
                 }
             @endphp
             @if($efemerideDestacada)
+                @php
+                    $esHoliday = ($efemerideDestacada['tipo'] ?? 'evento') === 'holiday';
+                    $bannerTitle = $esHoliday
+                        ? 'Hoy: ' . $efemerideDestacada['texto']
+                        : 'Efeméride del día (' . $efemerideDestacada['alcance'] . ')' . ($efemerideDestacada['anio'] ? ' · ' . $efemerideDestacada['anio'] : '') . ': ' . $efemerideDestacada['texto'];
+                @endphp
                 <a href="{{ $efemerideDestacada['url'] ?: 'https://es.wikipedia.org/wiki/Wikipedia:Efem%C3%A9rides' }}"
                    target="_blank"
                    rel="noopener noreferrer"
                    class="banner-efemeride"
-                   title="Efeméride del día ({{ $efemerideDestacada['alcance'] }}){{ $efemerideDestacada['anio'] ? ' · ' . $efemerideDestacada['anio'] : '' }}: {{ $efemerideDestacada['texto'] }}">
-                    <i class="fas fa-calendar-day" aria-hidden="true"></i>
-                    @if($efemerideDestacada['anio'])
+                   title="{{ $bannerTitle }}">
+                    <i class="fas {{ $esHoliday ? 'fa-ribbon' : 'fa-calendar-day' }}" aria-hidden="true"></i>
+                    @if(! $esHoliday && $efemerideDestacada['anio'])
                         <span class="banner-efemeride__anio">{{ $efemerideDestacada['anio'] }}</span>
                     @endif
                     <span class="banner-efemeride__texto">{{ \Illuminate\Support\Str::limit($efemerideDestacada['texto'], 70) }}</span>

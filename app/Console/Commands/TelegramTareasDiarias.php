@@ -197,7 +197,8 @@ class TelegramTareasDiarias extends Command
             $linea = "\n🎗 <b>Hoy:</b> {$texto}";
         } else {
             $anio = $destacada['anio'] ? "<b>{$destacada['anio']}</b> — " : '';
-            $linea = "\n📅 <b>Efeméride ({$destacada['alcance']}):</b>\n   • {$anio}{$texto}";
+            $alcance = $destacada['alcance'] === 'Entre Ríos' ? ' (Entre Ríos)' : '';
+            $linea = "\n📅 <b>Efeméride{$alcance}:</b>\n   • {$anio}{$texto}";
         }
 
         if (! empty($destacada['url'])) {

@@ -342,7 +342,7 @@ class EfemeridesService
     }
 
     /**
-     * 1 = Día Mundial/Internacional · 2 = Argentina/Nacional · 3 = resto
+     * 1 = Argentina/Nacional · 2 = Día Mundial/Internacional · 3 = resto
      *
      * @param  array{texto:string, url:?string}  $holiday
      */
@@ -350,15 +350,18 @@ class EfemeridesService
     {
         $texto = mb_strtolower($holiday['texto']);
 
-        if (str_contains($texto, 'mundial') || str_contains($texto, 'internacional')) {
+        $esMundial = str_contains($texto, 'mundial') || str_contains($texto, 'internacional');
+
+        $esArgentino = str_contains($texto, 'argentina') || str_contains($texto, 'argentino') ||
+            str_contains($texto, 'argentinos') ||
+            str_contains($texto, 'entre ríos') || str_contains($texto, 'entre rios') ||
+            (! $esMundial && str_contains($texto, 'nacional'));
+
+        if ($esArgentino) {
             return 1;
         }
 
-        if (
-            str_contains($texto, 'argentina') || str_contains($texto, 'argentino') ||
-            str_contains($texto, 'argentinos') || str_contains($texto, 'nacional') ||
-            str_contains($texto, 'entre ríos') || str_contains($texto, 'entre rios')
-        ) {
+        if ($esMundial) {
             return 2;
         }
 

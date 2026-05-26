@@ -1713,6 +1713,19 @@
             </div>
         </div>
 
+        {{-- Modal Cumpleaños --}}
+        @if($esSuperAdmin && $mostrarCumpleanos)
+        <div id="modalCumpleanos" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:10000; align-items:center; justify-content:center;">
+            <div style="background:linear-gradient(135deg,#667eea,#764ba2); border-radius:20px; padding:40px; max-width:500px; text-align:center; color:white; position:relative;">
+                <button onclick="cerrarModalCumpleanos()" style="position:absolute; top:15px; right:20px; background:none; border:none; color:white; font-size:2rem; cursor:pointer;">&times;</button>
+                <div style="font-size:4rem; margin-bottom:15px;"></div>
+                <h2 style="font-weight:bold; margin-bottom:10px;">¡Mañana es el cumpleaños de Exequiel!</h2>
+                <p style="margin-bottom:25px; font-size:1.1rem;">No te olvides de saludarlo </p>
+                <button onclick="cerrarModalCumpleanos()" style="background:white; color:#667eea; border:none; padding:12px 40px; border-radius:50px; font-weight:bold; cursor:pointer; font-size:1rem;">Entendido</button>
+            </div>
+        </div>
+        @endif
+
     </section>
 
 @endsection
@@ -1721,6 +1734,36 @@
     <script>
         $(document).ready(function () {
 
+            // === Modal Cumpleaños ===
+            @if($esSuperAdmin && $mostrarCumpleanos)
+            function mostrarNotificacionCumpleanos() {
+                if (document.getElementById('cumpleanos-badge-header')) return;
+                var badge = document.createElement('span');
+                badge.id = 'cumpleanos-badge-header';
+                badge.innerHTML = ' <i class="fas fa-birthday-cake text-warning ml-1"></i>';
+                var userName = document.querySelector('.d-sm-none.d-lg-inline-block');
+                if (userName) {
+                    userName.appendChild(badge);
+                }
+            }
+
+            window.cerrarModalCumpleanos = function() {
+                localStorage.setItem('cumpleanos_exequiel_mostrado', 'true');
+                var modal = document.getElementById('modalCumpleanos');
+                if (modal) modal.style.display = 'none';
+                mostrarNotificacionCumpleanos();
+            };
+
+            var modalCumpleanosShown = localStorage.getItem('cumpleanos_exequiel_mostrado');
+            if (!modalCumpleanosShown) {
+                setTimeout(function() {
+                    var modal = document.getElementById('modalCumpleanos');
+                    if (modal) modal.style.display = 'flex';
+                }, 500);
+            } else {
+                mostrarNotificacionCumpleanos();
+            }
+            @endif
 
             // Definir funciones de manejo de eventos
             function handleClickEvent(id, consultarFunction) {

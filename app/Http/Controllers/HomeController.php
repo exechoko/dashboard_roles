@@ -31,8 +31,12 @@ class HomeController extends Controller
         $this->middleware('auth');
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $user = auth()->user();
+        $esSuperAdmin = $user && $user->hasRole('Super Administrador');
+        $manana = Carbon::tomorrow();
+        $mostrarCumpleanos = $esSuperAdmin && $manana->day === 27 && $manana->month === 5;
         // Obtener IDs de estados una sola vez
         $estados = Estado::whereIn('nombre', [
             'Nuevo',
@@ -278,13 +282,13 @@ class HomeController extends Controller
             }
             $total = $propio + $totalDescendientes;
             return [
-                'id'        => $destino->id,
-                'name'      => $destino->nombre,
-                'value'     => $total,
-                'propio'    => $propio,
-                'tipo'      => $destino->tipo,
+                'id' => $destino->id,
+                'name' => $destino->nombre,
+                'value' => $total,
+                'propio' => $propio,
+                'tipo' => $destino->tipo,
                 // Ocultamos ramas sin equipos para no saturar visualmente.
-                'children'  => array_values(array_filter($nodosHijos, fn($n) => $n['value'] > 0)),
+                'children' => array_values(array_filter($nodosHijos, fn($n) => $n['value'] > 0)),
                 'collapsed' => true,
             ];
         };
@@ -302,12 +306,12 @@ class HomeController extends Controller
 
         // Raíz sintética para tener un único árbol.
         $arbol_dependencias = [
-            'id'        => null,
-            'name'      => 'Policía de Entre Ríos',
-            'value'     => $totalGlobal,
-            'propio'    => 0,
-            'tipo'      => 'raiz',
-            'children'  => $nodosRaiz,
+            'id' => null,
+            'name' => 'Policía de Entre Ríos',
+            'value' => $totalGlobal,
+            'propio' => 0,
+            'tipo' => 'raiz',
+            'children' => $nodosRaiz,
             'collapsed' => false,
         ];
 
@@ -367,6 +371,8 @@ class HomeController extends Controller
 
 
         return view('home', compact(
+            'esSuperAdmin',
+            'mostrarCumpleanos',
             'cant_usuarios',
             'cant_roles',
             'cant_equipos_en_stock',
@@ -472,14 +478,14 @@ class HomeController extends Controller
             // Verificar que las tablas existen antes de consultarlas
             if (!DB::getSchemaBuilder()->hasTable('jobs')) {
                 return response()->json([
-                    'error'    => 'tabla_jobs_inexistente',
-                    'mensaje'  => 'Ejecutar: php artisan queue:table && php artisan migrate',
+                    'error' => 'tabla_jobs_inexistente',
+                    'mensaje' => 'Ejecutar: php artisan queue:table && php artisan migrate',
                 ], 200);
             }
 
-            $pendientes  = DB::table('jobs')->whereNull('reserved_at')->count();
-            $procesando  = DB::table('jobs')->whereNotNull('reserved_at')->count();
-            $fallidos    = DB::getSchemaBuilder()->hasTable('failed_jobs')
+            $pendientes = DB::table('jobs')->whereNull('reserved_at')->count();
+            $procesando = DB::table('jobs')->whereNotNull('reserved_at')->count();
+            $fallidos = DB::getSchemaBuilder()->hasTable('failed_jobs')
                 ? DB::table('failed_jobs')->count()
                 : 0;
 
@@ -504,9 +510,9 @@ class HomeController extends Controller
                 ->get();
 
             // Geocodificación: se lee del caché pre-calculado por el schedule (nunca bloquea el request)
-            $geoCounts     = Cache::get('dashboard_geo_counts');
+            $geoCounts = Cache::get('dashboard_geo_counts');
             $totalDirecciones = $geoCounts[0] ?? null;
-            $geocodeadas      = $geoCounts[1] ?? null;
+            $geocodeadas = $geoCounts[1] ?? null;
 
             // Worker activo: si hay jobs siendo procesados ahora mismo, o si se reservaron hace menos de 10 min
             $workerActivo = $procesando > 0 || DB::table('jobs')
@@ -521,21 +527,21 @@ class HomeController extends Controller
         }
 
         return response()->json([
-            'worker_activo'      => $workerActivo,
-            'pendientes'         => $pendientes,
-            'procesando'         => $procesando,
-            'fallidos'           => $fallidos,
-            'jobs_por_tipo'      => $jobsPorTipo,
-            'geo_total_dir'      => $totalDirecciones,
-            'geo_cacheadas'      => $geocodeadas,
-            'geo_pendientes'     => ($totalDirecciones !== null && $geocodeadas !== null) ? max(0, $totalDirecciones - $geocodeadas) : null,
-            'restauraciones_mb'            => $tamanoRest['mb'] ?? null,
+            'worker_activo' => $workerActivo,
+            'pendientes' => $pendientes,
+            'procesando' => $procesando,
+            'fallidos' => $fallidos,
+            'jobs_por_tipo' => $jobsPorTipo,
+            'geo_total_dir' => $totalDirecciones,
+            'geo_cacheadas' => $geocodeadas,
+            'geo_pendientes' => ($totalDirecciones !== null && $geocodeadas !== null) ? max(0, $totalDirecciones - $geocodeadas) : null,
+            'restauraciones_mb' => $tamanoRest['mb'] ?? null,
             'restauraciones_consultado_en' => $tamanoRest['consultado_en'] ?? null,
-            'restauraciones_umbral_mb'     => 4000,
-            'restauraciones_gps_mb'            => $tamanoRestGps['mb'] ?? null,
+            'restauraciones_umbral_mb' => 4000,
+            'restauraciones_gps_mb' => $tamanoRestGps['mb'] ?? null,
             'restauraciones_gps_consultado_en' => $tamanoRestGps['consultado_en'] ?? null,
-            'restauraciones_gps_umbral_mb'     => 4000,
-            'restauraciones_gps_restauradas'   => Cache::get(\App\Services\CecocoExpedienteService::CACHE_KEY_FICHEROS_RESTAURADOS_GPS, []),
+            'restauraciones_gps_umbral_mb' => 4000,
+            'restauraciones_gps_restauradas' => Cache::get(\App\Services\CecocoExpedienteService::CACHE_KEY_FICHEROS_RESTAURADOS_GPS, []),
         ]);
     }
 

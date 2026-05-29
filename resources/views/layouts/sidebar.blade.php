@@ -107,7 +107,7 @@
     <div class="sidebar-filter">
         <div class="sidebar-filter-field">
             <i class="fas fa-search sidebar-filter-icon" aria-hidden="true"></i>
-            <input type="text" id="sidebar-filter-input" placeholder="Filtrar menu" autocomplete="off" aria-label="Filtrar menu">
+            <input type="search" id="sidebar-filter-input" name="sidebar_menu_filter" value="" placeholder="Filtrar menu" autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="search" readonly data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other" aria-label="Filtrar menu">
             <button type="button" id="sidebar-filter-clear" class="sidebar-filter-clear" aria-label="Limpiar filtro">
                 <i class="fas fa-times" aria-hidden="true"></i>
             </button>
@@ -134,6 +134,8 @@
             const normalizeText = function (value) {
                 return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
             };
+
+            let userInteracted = false;
 
             const filterMenu = function () {
                 const query = normalizeText(input.value);
@@ -178,6 +180,26 @@
                 emptyMessage.classList.toggle('is-visible', query.length > 0 && visibleItems === 0);
             };
 
+            const clearAutofill = function () {
+                if (!userInteracted && input.value) {
+                    input.value = '';
+                    filterMenu();
+                }
+            };
+
+            const enableInput = function () {
+                userInteracted = true;
+                input.removeAttribute('readonly');
+            };
+
+            clearAutofill();
+            [100, 300, 800, 1500, 2500].forEach(function (delay) {
+                window.setTimeout(clearAutofill, delay);
+            });
+
+            input.addEventListener('focus', enableInput);
+            input.addEventListener('pointerdown', enableInput);
+            input.addEventListener('keydown', enableInput);
             input.addEventListener('input', filterMenu);
             clearButton.addEventListener('click', function () {
                 input.value = '';

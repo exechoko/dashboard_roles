@@ -140,6 +140,12 @@ class SeederTablaPermisos extends Seeder
             'editar-entrega-bodycams',
             'borrar-entrega-bodycams',
 
+            //ENTREGAS – Combustible
+            'ver-entrega-combustible',
+            'crear-entrega-combustible',
+            'editar-entrega-combustible',
+            'borrar-entrega-combustible',
+
             //Bodycams
             'ver-bodycam',
             'crear-bodycam',

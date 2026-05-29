@@ -109,7 +109,8 @@
                                                     ],
                                                     'Entregas' => [
                                                         'entrega-equipos',
-                                                        'entrega-bodycams'
+                                                        'entrega-bodycams',
+                                                        'entrega-combustible'
                                                     ],
                                                     'Tareas' => [
                                                         'tarea'

@@ -3,6 +3,7 @@
 use App\Http\Controllers\AudioTranscriptionController;
 use App\Http\Controllers\BodycamController;
 use App\Http\Controllers\EntregasBodycamsController;
+use App\Http\Controllers\EntregasCombustibleController;
 use App\Http\Controllers\EntregasEquiposController;
 use App\Http\Controllers\PasswordVaultController;
 use App\Http\Controllers\PatrimonioBienController;
@@ -368,6 +369,25 @@ Route::group(['middleware' => ['auth']], function () {
     // Ruta para previsualizar el documento generado
     Route::get('entrega-bodycams/previsualizar/{id}', [EntregasBodycamsController::class, 'previsualizar'])
         ->name('entrega-bodycams.previsualizar');
+
+    Route::resource('entrega-combustible', EntregasCombustibleController::class)->names([
+        'index' => 'entrega-combustible.index',
+        'create' => 'entrega-combustible.create',
+        'store' => 'entrega-combustible.store',
+        'show' => 'entrega-combustible.show',
+        'edit' => 'entrega-combustible.edit',
+        'update' => 'entrega-combustible.update',
+        'destroy' => 'entrega-combustible.destroy',
+    ]);
+
+    Route::get('entrega-combustible/{entrega_combustible}/documento', [EntregasCombustibleController::class, 'generarDocumento'])
+        ->name('entrega-combustible.documento')
+        ->middleware('can:crear-entrega-combustible');
+    Route::get('entrega-combustible/{entrega_combustible}/descargar', [EntregasCombustibleController::class, 'descargarArchivo'])
+        ->name('entrega-combustible.descargar');
+    Route::post('entrega-combustible/{entrega_combustible}/acta-firmada', [EntregasCombustibleController::class, 'subirActaFirmada'])
+        ->name('entrega-combustible.acta-firmada')
+        ->middleware('can:editar-entrega-combustible');
 
 
     // Pantalla de verificación de contraseña maestra (sin el middleware para no crear loop)

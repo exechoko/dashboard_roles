@@ -113,7 +113,7 @@
 
 @can('ver-menu-entregas')
     <li
-        class="dropdown {{ request()->is('entrega-equipos*') ? 'active' : '' }} {{ request()->is('entrega-bodycams*') ? 'active' : '' }}">
+        class="dropdown {{ request()->is('entrega-equipos*') ? 'active' : '' }} {{ request()->is('entrega-bodycams*') ? 'active' : '' }} {{ request()->is('entrega-combustible*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-file-signature"></i><span>Entregas</span>
         </a>
@@ -129,6 +129,13 @@
                 <li class="{{ request()->is('entrega-bodycams*') ? 'active' : '' }}">
                     <a class="nav-link" href="/entrega-bodycams">
                         <i class="fas fa-mobile"></i><span>Bodycams</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-entrega-combustible')
+                <li class="{{ request()->is('entrega-combustible*') ? 'active' : '' }}">
+                    <a class="nav-link" href="/entrega-combustible">
+                        <i class="fas fa-gas-pump"></i><span>Combustible</span>
                     </a>
                 </li>
             @endcan

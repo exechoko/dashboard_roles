@@ -6,6 +6,7 @@ use App\Models\EntregaBodycam;
 use App\Models\EntregaEquipo;
 use App\Models\TareaItem;
 use App\Services\CecocoExpedienteService;
+use App\Services\EfemeridesService;
 use App\Services\TelegramService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -17,8 +18,9 @@ class TelegramTareasDiarias extends Command
 
     protected $description = 'Envía por Telegram las tareas de hoy y mañana (pendientes/en proceso).';
 
-    public function handle(TelegramService $telegram): int
+    public function handle(TelegramService $telegram, EfemeridesService $efemerides): int
     {
+        $ahora = Carbon::now();
         $hoy = Carbon::today();
         $manana = Carbon::tomorrow();
 
@@ -30,9 +32,11 @@ class TelegramTareasDiarias extends Command
 
         // Entregas activas de bodycams
         $entregasBodycams = EntregaBodycam::with(['bodycams', 'devoluciones.bodycams'])
-            ->whereIn('estado', [EntregaBodycam::ESTADO_ENTREGADA, EntregaBodycam::ESTADO_PARCIALMENTE_DEVUELTA])
+            ->activas()
+            ->conDevolucionEsperada()
             ->orderBy('fecha_entrega', 'desc')
-            ->get();
+            ->get()
+            ->filter(fn($entrega) => $entrega->bodycamsPendientes()->count() > 0);
 
         $tareasHoy = TareaItem::with('tarea')
             ->whereDate('fecha_programada', $hoy->toDateString())
@@ -49,7 +53,7 @@ class TelegramTareasDiarias extends Command
             ->get();
 
         $mensaje = "📋 <b>Resumen de Tareas Diarias</b>\n"
-            . "📅 {$hoy->format('d/m/Y')} - {$hoy->locale('es')->isoFormat('dddd')}\n";
+            . "📅 {$ahora->format('d/m/Y H:i')} - {$ahora->locale('es')->isoFormat('dddd')}\n";
 
         // ── Sección Novedades ──────────────────────────────────────
         $mensaje .= "\n━━━━━━━━━━━━━━━━━━\n";
@@ -66,9 +70,7 @@ class TelegramTareasDiarias extends Command
 
         $totalBodycamsActivas = 0;
         foreach ($entregasBodycams as $e) {
-            $devueltas = $e->devoluciones()->with('bodycams')->get()
-                ->pluck('bodycams')->flatten()->pluck('id')->unique()->count();
-            $totalBodycamsActivas += ($e->bodycams->count() - $devueltas);
+            $totalBodycamsActivas += $e->bodycamsPendientes()->count();
         }
 
         $mensaje .= "\n📦 <b>Equipos entregados:</b> {$totalEquiposActivos}\n";
@@ -88,9 +90,7 @@ class TelegramTareasDiarias extends Command
         $mensaje .= "\n📷 <b>Bodycams entregadas:</b> {$totalBodycamsActivas}\n";
         if ($entregasBodycams->isNotEmpty()) {
             foreach ($entregasBodycams as $e) {
-                $devueltas = $e->devoluciones()->with('bodycams')->get()
-                    ->pluck('bodycams')->flatten()->pluck('id')->unique()->count();
-                $pendientes = $e->bodycams->count() - $devueltas;
+                $pendientes = $e->bodycamsPendientes()->count();
                 if ($pendientes <= 0) continue;
                 $fecha = Carbon::parse($e->fecha_entrega)->format('d/m/Y');
                 $receptor = $e->personal_receptor ?? 'Sin datos';
@@ -104,6 +104,8 @@ class TelegramTareasDiarias extends Command
         $mensaje .= "\n🗄 <b>Bases de datos restauraciones:</b>\n";
         $mensaje .= "   • CECOCO: " . $this->formatearTamanoRestauraciones($tamanoRest) . "\n";
         $mensaje .= "   • GPS: " . $this->formatearTamanoRestauraciones($tamanoRestGps) . "\n";
+
+        $mensaje .= $this->formatearEfemeride($efemerides);
 
         // ── Tareas ────────────────────────────────────────────────
         $mensaje .= "\n━━━━━━━━━━━━━━━━━━\n";
@@ -173,6 +175,35 @@ class TelegramTareasDiarias extends Command
         }
 
         return $fallidos < $chatIds->count() ? 0 : 1;
+    }
+
+    private function formatearEfemeride(EfemeridesService $efemerides): string
+    {
+        try {
+            $destacada = $efemerides->obtenerDestacada();
+        } catch (\Throwable $e) {
+            return '';
+        }
+
+        if ($destacada === null) {
+            return '';
+        }
+
+        $texto = htmlspecialchars($destacada['texto'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        if ($destacada['tipo'] === 'holiday') {
+            $linea = "\n🎗 <b>Hoy:</b> {$texto}";
+        } else {
+            $anio = $destacada['anio'] ? "<b>{$destacada['anio']}</b> — " : '';
+            $alcance = $destacada['alcance'] === 'Entre Ríos' ? ' (Entre Ríos)' : '';
+            $linea = "\n📅 <b>Efeméride{$alcance}:</b>\n   • {$anio}{$texto}";
+        }
+
+        if (! empty($destacada['url'])) {
+            $linea .= "\n   <a href=\"{$destacada['url']}\">🔗 Ver en Wikipedia</a>";
+        }
+
+        return $linea . "\n";
     }
 
     private function formatearTamanoRestauraciones(?array $cache): string

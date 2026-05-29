@@ -20,8 +20,8 @@
                 <div class="alert alert-warning" role="alert">
                     <div class="text-center">
                         <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
-                        <h4>No hay bodycams disponibles</h4>
-                        <p>Actualmente no hay cámaras corporales disponibles para entrega. Todas las bodycams están entregadas o en mantenimiento.</p>
+                        <h4>No hay bodycams seleccionables</h4>
+                        <p>Actualmente no hay cámaras corporales disponibles o entregadas que puedan registrarse en una entrega.</p>
                         <a href="{{ route('entrega-bodycams.index') }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Volver al Listado
                         </a>
@@ -62,6 +62,22 @@
                                                 @error('hora_entrega')
                                                     <div class="invalid-feedback">{{ $message }}</div>
                                                 @enderror
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="tipo_entrega">Tipo de Entrega <span class="text-danger">*</span></label>
+                                                <select class="form-control @error('tipo_entrega') is-invalid @enderror" id="tipo_entrega" name="tipo_entrega" required>
+                                                    <option value="normal" {{ old('tipo_entrega', 'normal') === 'normal' ? 'selected' : '' }}>Normal</option>
+                                                    <option value="recambio_tecnologico" {{ old('tipo_entrega') === 'recambio_tecnologico' ? 'selected' : '' }}>Recambio Tecnológico</option>
+                                                </select>
+                                                @error('tipo_entrega')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                                <small class="form-text text-muted">El recambio tecnológico permite seleccionar bodycams ya entregadas y no genera devolución pendiente.</small>
                                             </div>
                                         </div>
                                     </div>
@@ -190,9 +206,9 @@
                         <div class="col-lg-12">
                             <div class="card">
                                 <div class="card-header">
-                                    <h4><i class="fas fa-video"></i> Bodycams Disponibles</h4>
+                                    <h4><i class="fas fa-video"></i> Bodycams Seleccionables</h4>
                                     <div class="card-header-action">
-                                        <span class="badge badge-success" id="totalDisponibles">{{ $bodycamsDisponibles->count() }} disponibles</span>
+                                        <span class="badge badge-success" id="totalDisponibles">{{ $bodycamsDisponibles->count() }} seleccionables</span>
                                         <span class="badge badge-info" id="contadorSeleccionados">0 seleccionados</span>
                                     </div>
                                 </div>
@@ -214,7 +230,8 @@
                                             <div class="bodycam-item" data-id="{{ $bodycam->id }}"
                                                 data-codigo="{{ $bodycam->codigo ?? '' }}"
                                                 data-numero_serie="{{ $bodycam->numero_serie ?? '' }}"
-                                                data-numero_bateria="{{ $bodycam->numero_bateria ?? '' }}">
+                                                data-numero_bateria="{{ $bodycam->numero_bateria ?? '' }}"
+                                                data-estado="{{ $bodycam->estado }}">
                                                 <div class="custom-control custom-checkbox">
                                                     <input type="checkbox" class="custom-control-input"
                                                         id="bodycam_{{ $bodycam->id }}" name="bodycams_seleccionadas[]"
@@ -229,7 +246,11 @@
                                                                 <strong>Modelo:</strong> {{ $bodycam->modelo ?? 'N/A' }}
                                                             </div>
                                                             <div class="mt-1">
-                                                                <span class="badge badge-success badge-sm">Disponible</span>
+                                                                @if($bodycam->estado === \App\Models\Bodycam::ESTADO_DISPONIBLE)
+                                                                    <span class="badge badge-success badge-sm">Disponible</span>
+                                                                @else
+                                                                    <span class="badge badge-warning badge-sm">Entregada - solo recambio</span>
+                                                                @endif
                                                             </div>
                                                         </div>
                                                     </label>
@@ -282,7 +303,7 @@
                                             </a>
                                         </div>
                                         <div class="text-center">
-                                            <small class="text-muted">Las bodycams seleccionadas cambiarán a estado "entregado"</small>
+                                            <small class="text-muted">Las bodycams seleccionadas quedarán en estado "entregada"</small>
                                         </div>
                                         <div>
                                             <button type="submit" class="btn btn-primary" id="btnCrear" disabled>
@@ -358,7 +379,8 @@
                         id: $item.data('id'),
                         codigo: $item.data('codigo'),
                         numero_serie: $item.data('numero_serie'),
-                        numero_bateria: $item.data('numero_bateria'),
+                    numero_bateria: $item.data('numero_bateria'),
+                    estado: $item.data('estado'),
                         element: $item
                     };
                     bodycamsDisponibles.push(bodycamData);
@@ -370,10 +392,12 @@
             // Update counter
             function actualizarContador() {
                 const seleccionados = $('input[name="bodycams_seleccionadas[]"]:checked').length;
-                const total = bodycamsDisponibles.length;
+                const total = $('.bodycam-item').filter(function() {
+                    return tipoEntregaPermiteBodycam($(this));
+                }).length;
 
                 $('#contadorSeleccionados').text(`${seleccionados} seleccionados`);
-                $('#totalDisponibles').text(`${total} disponibles`);
+                $('#totalDisponibles').text(`${total} seleccionables`);
 
                 // Update summary
                 if (seleccionados === 0) {
@@ -401,10 +425,10 @@
                     const numeroSerie = ($item.data('numero_serie') || '').toString().toLowerCase();
                     const bateria = ($item.data('numero_bateria') || '').toString().toLowerCase();
 
-                    const coincide = term === '' ||
+                    const coincide = tipoEntregaPermiteBodycam($item) && (term === '' ||
                         codigo.includes(term) ||
                         numeroSerie.includes(term) ||
-                        bateria.includes(term);
+                        bateria.includes(term));
 
                     if (coincide) {
                         $item.show();
@@ -424,6 +448,23 @@
                 } else {
                     $('#noBodycamsFound').hide();
                 }
+            }
+
+            function tipoEntregaPermiteBodycam($item) {
+                return $('#tipo_entrega').val() === 'recambio_tecnologico' || $item.data('estado') === 'disponible';
+            }
+
+            function actualizarBodycamsPorTipo() {
+                $('.bodycam-item').each(function() {
+                    const $item = $(this);
+                    if (!tipoEntregaPermiteBodycam($item)) {
+                        $item.find('input[type="checkbox"]').prop('checked', false).trigger('change');
+                    }
+                });
+
+                filtrarBodycams($('#buscarBodycam').val());
+                actualizarContador();
+                renderBodycamsSeleccionadas();
             }
 
             // Validate form
@@ -506,6 +547,8 @@
                 filtrarBodycams(searchTerm);
             });
 
+            $('#tipo_entrega').on('change', actualizarBodycamsPorTipo);
+
             // Remove bodycam from selected list
             $(document).on('click', '.quitar-bodycam', function() {
                 const id = $(this).data('id');
@@ -530,7 +573,7 @@
 
                 // Confirm creation
                 if (!confirm(
-                    `¿Está seguro de crear esta entrega con ${bodycamsSeleccionadas} bodycam(s)? Las bodycams seleccionadas cambiarán a estado "entregado".`
+                    `¿Está seguro de crear esta entrega con ${bodycamsSeleccionadas} bodycam(s)? Las bodycams seleccionadas quedarán en estado "entregada".`
                 )) {
                     e.preventDefault();
                     return false;
@@ -541,6 +584,7 @@
             });
 
             // Initialize counter and validation
+            actualizarBodycamsPorTipo();
             actualizarContador();
 
             // If there are old values, mark bodycams as selected

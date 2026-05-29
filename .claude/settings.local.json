@@ -3,9 +3,13 @@
     "allow": [
       "Bash(php C:/Apache24/htdocs/dashboard_roles/artisan migrate:status)",
       "Bash(php:*)",
-      "PowerShell(Test-Path *)",
-      "Bash(grep -oE '\\\\$\\\\{[A-Z_]+\\\\}' word/document.xml)",
-      "Bash(grep -oE '\\\\$\\\\{[A-Z_0-9]+\\\\}' word/document.xml)"
+      "mcp__laravel-boost__browser-logs",
+      "mcp__laravel-boost__tinker",
+      "WebSearch",
+      "Bash(gh api *)",
+      "WebFetch(domain:telegram-emojis.vercel.app)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)"
     ]
   },
   "enableAllProjectMcpServers": true,

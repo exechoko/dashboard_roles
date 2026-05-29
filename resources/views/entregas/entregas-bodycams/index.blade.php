@@ -71,6 +71,13 @@
                                                        placeholder="Dependencia" value="{{ request('dependencia') }}">
                                             </div>
                                             <div class="col-12 col-md-6 col-lg-2">
+                                                <select name="tipo_entrega" class="form-control form-control-mobile">
+                                                    <option value="">Todos los tipos</option>
+                                                    <option value="normal" {{ request('tipo_entrega') === 'normal' ? 'selected' : '' }}>Normal</option>
+                                                    <option value="recambio_tecnologico" {{ request('tipo_entrega') === 'recambio_tecnologico' ? 'selected' : '' }}>Recambio Tecnológico</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-12 col-md-6 col-lg-2">
                                                 <div class="d-grid gap-2 d-md-block">
                                                     <button type="submit" class="btn btn-info btn-block btn-mobile">
                                                         <i class="fas fa-search"></i> <span class="d-none d-md-inline">Buscar</span>
@@ -100,6 +107,7 @@
                                             <th>N° Acta</th>
                                             <th>Fecha</th>
                                             <th>Dependencia</th>
+                                            <th>Tipo</th>
                                             <th>Personal Receptor</th>
                                             <th>Entregó</th>
                                             <th>Cant. Bodycams</th>
@@ -117,6 +125,13 @@
                                                 </td>
                                                 <td data-label="Dependencia" class="text-truncate" style="max-width: 150px;" title="{{ $entrega->dependencia }}">
                                                     {{ $entrega->dependencia }}
+                                                </td>
+                                                <td data-label="Tipo">
+                                                    @if($entrega->esRecambioTecnologico())
+                                                        <span class="badge badge-primary">Recambio Tecnológico</span>
+                                                    @else
+                                                        <span class="badge badge-secondary">Normal</span>
+                                                    @endif
                                                 </td>
                                                 <td data-label="Personal Receptor" class="d-none d-md-table-cell">{{ $entrega->personal_receptor }}</td>
                                                 <td data-label="Entregó" class="d-none d-md-table-cell">{{ $entrega->personal_entrega }}</td>
@@ -136,7 +151,7 @@
                                                         @case('devuelta')
                                                             <span class="badge badge-success">Devuelta</span>
                                                             @break
-                                                        @case('perdido')
+                                                        @case('perdida')
                                                             <span class="badge badge-danger">Perdido</span>
                                                             @break
                                                         @default
@@ -179,7 +194,7 @@
                                                         @endcan
 
                                                         @can('editar-entrega-bodycams')
-                                                            @if(in_array($entrega->estado, ['entregada', 'devolucion_parcial']))
+                                                            @if(in_array($entrega->estado, ['entregada', 'parcialmente_devuelta']))
                                                                 <a href="{{ route('entrega-bodycams.edit', $entrega->id) }}" class="btn btn-info btn-sm btn-mobile-action" title="Editar">
                                                                     <i class="fas fa-edit"></i>
                                                                 </a>
@@ -195,7 +210,7 @@
                                                             @php
                                                                 $bodycamsPendientes = $entrega->bodycamsPendientes()->count();
                                                             @endphp
-                                                            @if($bodycamsPendientes > 0)
+                                                            @if(!$entrega->esRecambioTecnologico() && $bodycamsPendientes > 0)
                                                                 <a href="{{ route('entrega-bodycams.devolver', $entrega->id) }}" class="btn btn-success btn-sm btn-mobile-action" title="Devolver bodycams ({{ $bodycamsPendientes }} pendientes)">
                                                                     <i class="fas fa-undo"></i>
                                                                     @if($bodycamsPendientes < $entrega->bodycams->count())
@@ -221,7 +236,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="9" class="text-center py-4">No se encontraron entregas</td>
+                                                <td colspan="10" class="text-center py-4">No se encontraron entregas</td>
                                             </tr>
                                         @endforelse
                                     </tbody>

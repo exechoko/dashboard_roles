@@ -6,6 +6,7 @@ use App\Models\EntregaBodycam;
 use App\Models\EntregaEquipo;
 use App\Models\EventoCecoco;
 use App\Models\TareaItem;
+use App\Services\EfemeridesService;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Cache;
@@ -836,15 +837,16 @@ class TelegramService
 
             // Entregas activas de bodycams
             $entregasBodycams = EntregaBodycam::with(['bodycams', 'devoluciones.bodycams'])
-                ->whereIn('estado', [EntregaBodycam::ESTADO_ENTREGADA, EntregaBodycam::ESTADO_PARCIALMENTE_DEVUELTA])
+                ->activas()
+                ->conDevolucionEsperada()
                 ->orderBy('fecha_entrega', 'desc')
-                ->get();
+                ->get()
+                ->filter(fn($entrega) => $entrega->bodycamsPendientes()->count() > 0);
 
             $cantBodycamsEntregadas = 0;
             $detalleEntregasBodycams = [];
             foreach ($entregasBodycams as $entrega) {
-                $devueltas = $entrega->devoluciones->pluck('bodycams')->flatten()->pluck('id')->unique()->count();
-                $pendientes = $entrega->bodycams->count() - $devueltas;
+                $pendientes = $entrega->bodycamsPendientes()->count();
                 $cantBodycamsEntregadas += $pendientes;
                 if ($pendientes > 0) {
                     $fecha = $entrega->fecha_entrega ? $entrega->fecha_entrega->format('d/m/Y') : '';
@@ -899,11 +901,41 @@ class TelegramService
             $mensaje .= "CECOCO: " . $this->formatearTamanoRestauraciones($tamanoRest) . "\n";
             $mensaje .= "GPS: " . $this->formatearTamanoRestauraciones($tamanoRestGps) . "\n";
 
+            $mensaje .= $this->formatearEfemerideTelegram();
+
             $this->enviarMensaje($mensaje, $chatId);
         } catch (\Exception $e) {
             Log::channel('telegram')->error('Telegram: error respondiendo novedades', ['error' => $e->getMessage()]);
             $this->enviarMensaje('❌ Error al consultar novedades: ' . $e->getMessage(), $chatId);
         }
+    }
+
+    private function formatearEfemerideTelegram(): string
+    {
+        try {
+            $destacada = app(EfemeridesService::class)->obtenerDestacada();
+        } catch (\Throwable $e) {
+            return '';
+        }
+
+        if ($destacada === null) {
+            return '';
+        }
+
+        $texto = htmlspecialchars($destacada['texto'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        if ($destacada['tipo'] === 'holiday') {
+            $linea = "\n🎗 <b>Hoy:</b> {$texto}";
+        } else {
+            $anio = $destacada['anio'] ? "<b>{$destacada['anio']}</b> — " : '';
+            $linea = "\n📅 <b>Efeméride ({$destacada['alcance']}):</b>\n   • {$anio}{$texto}";
+        }
+
+        if (! empty($destacada['url'])) {
+            $linea .= "\n   <a href=\"{$destacada['url']}\">🔗 Ver en Wikipedia</a>";
+        }
+
+        return $linea . "\n";
     }
 
     private function formatearTamanoRestauraciones(?array $cache): string

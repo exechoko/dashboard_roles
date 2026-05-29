@@ -238,6 +238,54 @@
         color: #ffffff !important;
     }
 
+    .equipo-item,
+    .bodycam-item {
+        background-color: var(--card-bg) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+
+    .equipo-item:hover,
+    .bodycam-item:hover,
+    .equipo-item.selected,
+    .bodycam-item.selected {
+        background-color: var(--bg-secondary) !important;
+        border-color: #007bff !important;
+    }
+
+    .equipo-info,
+    .equipo-info div,
+    .bodycam-info,
+    .bodycam-info div,
+    .equipo-item .custom-control-label,
+    .bodycam-item .custom-control-label,
+    .contador-seleccionados {
+        color: var(--text-primary) !important;
+    }
+
+    .equipo-info strong,
+    .bodycam-info strong {
+        color: #007bff !important;
+    }
+
+    #listaEquipos,
+    #listaBodycams,
+    .contador-seleccionados,
+    .image-upload-item {
+        background-color: var(--card-bg) !important;
+        border-color: var(--border-color) !important;
+    }
+
+    #listaEquipos,
+    #listaBodycams {
+        background-color: var(--bg-secondary) !important;
+    }
+
+    .no-equipos-found,
+    .no-bodycams-found {
+        color: var(--text-secondary) !important;
+    }
+
     .list-group-item.d-flex {
         display: flex !important;
         align-items: center !important;

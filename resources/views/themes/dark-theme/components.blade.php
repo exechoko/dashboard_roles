@@ -393,6 +393,58 @@
         color: var(--text-primary) !important;
     }
 
+    [data-theme="dark"] .equipo-item,
+    [data-theme="dark"] .bodycam-item {
+        background-color: var(--card-bg) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+
+    [data-theme="dark"] .equipo-item:hover,
+    [data-theme="dark"] .bodycam-item:hover {
+        background-color: var(--bg-secondary) !important;
+        border-color: #007bff !important;
+    }
+
+    [data-theme="dark"] .equipo-item.selected,
+    [data-theme="dark"] .bodycam-item.selected {
+        background-color: rgba(0, 123, 255, 0.22) !important;
+        border-color: #007bff !important;
+    }
+
+    [data-theme="dark"] .equipo-info,
+    [data-theme="dark"] .equipo-info div,
+    [data-theme="dark"] .bodycam-info,
+    [data-theme="dark"] .bodycam-info div,
+    [data-theme="dark"] .equipo-item .custom-control-label,
+    [data-theme="dark"] .bodycam-item .custom-control-label,
+    [data-theme="dark"] .contador-seleccionados {
+        color: var(--text-primary) !important;
+    }
+
+    [data-theme="dark"] .equipo-info strong,
+    [data-theme="dark"] .bodycam-info strong {
+        color: #66b2ff !important;
+    }
+
+    [data-theme="dark"] #listaEquipos,
+    [data-theme="dark"] #listaBodycams,
+    [data-theme="dark"] .contador-seleccionados,
+    [data-theme="dark"] .image-upload-item {
+        background-color: var(--card-bg) !important;
+        border-color: var(--border-color) !important;
+    }
+
+    [data-theme="dark"] #listaEquipos,
+    [data-theme="dark"] #listaBodycams {
+        background-color: var(--bg-secondary) !important;
+    }
+
+    [data-theme="dark"] .no-equipos-found,
+    [data-theme="dark"] .no-bodycams-found {
+        color: var(--text-secondary) !important;
+    }
+
     /* Menú contextual del Geocoder en modo oscuro */
     [data-theme="dark"] .geocoder-control-suggestions.leaflet-bar {
         background-color: var(--card-bg) !important;

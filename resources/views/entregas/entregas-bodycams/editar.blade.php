@@ -68,6 +68,22 @@
                                     <div class="row">
                                         <div class="col-md-12">
                                             <div class="form-group">
+                                                <label for="tipo_entrega">Tipo de Entrega <span class="text-danger">*</span></label>
+                                                <select class="form-control @error('tipo_entrega') is-invalid @enderror" id="tipo_entrega" name="tipo_entrega" required>
+                                                    <option value="normal" {{ old('tipo_entrega', $entrega->tipo_entrega) === 'normal' ? 'selected' : '' }}>Normal</option>
+                                                    <option value="recambio_tecnologico" {{ old('tipo_entrega', $entrega->tipo_entrega) === 'recambio_tecnologico' ? 'selected' : '' }}>Recambio Tecnológico</option>
+                                                </select>
+                                                @error('tipo_entrega')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                                <small class="form-text text-muted">El recambio tecnológico permite seleccionar bodycams ya entregadas y no genera devolución pendiente.</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="form-group">
                                                 <label for="dependencia">Dependencia <span class="text-danger">*</span></label>
                                                 <select class="form-control select2 @error('dependencia') is-invalid @enderror" id="dependencia" name="dependencia" required>
                                                     <option value="">Seleccione una dependencia</option>
@@ -163,9 +179,9 @@
                         <div class="col-lg-4">
                             <div class="card">
                                 <div class="card-header">
-                                    <h4><i class="fas fa-video"></i> Bodycams Disponibles</h4>
+                                    <h4><i class="fas fa-video"></i> Bodycams Seleccionables</h4>
                                     <div class="card-header-action">
-                                        <span class="badge badge-success" id="totalDisponibles">{{ $bodycamsDisponibles->count() }} disponibles</span>
+                                        <span class="badge badge-success" id="totalDisponibles">{{ $bodycamsDisponibles->count() }} seleccionables</span>
                                         <span class="badge badge-info" id="contadorSeleccionados">0 seleccionados</span>
                                     </div>
                                 </div>
@@ -193,7 +209,9 @@
                                                 data-codigo="{{ $bodycam->codigo ?? '' }}"
                                                 data-serie="{{ $bodycam->numero_serie ?? '' }}"
                                                 data-marca="{{ $bodycam->marca ?? '' }}"
-                                                data-modelo="{{ $bodycam->modelo ?? '' }}">
+                                                data-modelo="{{ $bodycam->modelo ?? '' }}"
+                                                data-estado="{{ $bodycam->estado }}"
+                                                data-en-entrega="{{ $isEntregada ? '1' : '0' }}">
                                                 <div class="custom-control custom-checkbox">
                                                     <input type="checkbox" class="custom-control-input"
                                                         id="bodycam_{{ $bodycam->id }}" name="bodycams_seleccionadas[]"
@@ -211,6 +229,8 @@
                                                             <div class="mt-1">
                                                                 @if($isEntregada)
                                                                     <span class="badge badge-warning badge-sm">En esta entrega</span>
+                                                                @elseif($bodycam->estado === \App\Models\Bodycam::ESTADO_ENTREGADA)
+                                                                    <span class="badge badge-warning badge-sm">Entregada - solo recambio</span>
                                                                 @else
                                                                     <span class="badge badge-success badge-sm">Disponible</span>
                                                                 @endif
@@ -347,6 +367,8 @@
                         serie: $item.data('serie'),
                         marca: $item.data('marca'),
                         modelo: $item.data('modelo'),
+                        estado: $item.data('estado'),
+                        enEntrega: $item.data('en-entrega'),
                         element: $item
                     };
                     bodycamsDisponibles.push(bodycamData);
@@ -441,10 +463,12 @@
             // Función para actualizar contador
             function actualizarContador() {
                 const seleccionadas = $('input[name="bodycams_seleccionadas[]"]:checked').length;
-                const total = bodycamsDisponibles.length;
+                const total = $('.bodycam-item').filter(function() {
+                    return tipoEntregaPermiteBodycam($(this));
+                }).length;
 
                 $('#contadorSeleccionados').text(`${seleccionadas} seleccionados`);
-                $('#totalDisponibles').text(`${total} disponibles`);
+                $('#totalDisponibles').text(`${total} seleccionables`);
 
                 if (seleccionadas === 0) {
                     $('#resumenSeleccion').text('Selecciona bodycams para continuar');
@@ -472,11 +496,11 @@
                     const marca = ($item.data('marca') || '').toString().toLowerCase();
                     const modelo = ($item.data('modelo') || '').toString().toLowerCase();
 
-                    const coincide = term === '' ||
+                    const coincide = tipoEntregaPermiteBodycam($item) && (term === '' ||
                         codigo.includes(term) ||
                         serie.includes(term) ||
                         marca.includes(term) ||
-                        modelo.includes(term);
+                        modelo.includes(term));
 
                     if (coincide) {
                         $item.show();
@@ -495,6 +519,25 @@
                 } else {
                     $('#noBodycamsFound').hide();
                 }
+            }
+
+            function tipoEntregaPermiteBodycam($item) {
+                return $('#tipo_entrega').val() === 'recambio_tecnologico'
+                    || $item.data('estado') === 'disponible'
+                    || String($item.data('en-entrega')) === '1';
+            }
+
+            function actualizarBodycamsPorTipo() {
+                $('.bodycam-item').each(function() {
+                    const $item = $(this);
+                    if (!tipoEntregaPermiteBodycam($item)) {
+                        $item.find('input[type="checkbox"]').prop('checked', false).trigger('change');
+                    }
+                });
+
+                filtrarBodycams($('#buscarBodycam').val());
+                actualizarContador();
+                renderBodycamsSeleccionadas();
             }
 
             // Función para validar formulario
@@ -580,6 +623,8 @@
                 filtrarBodycams(searchTerm);
             });
 
+            $('#tipo_entrega').on('change', actualizarBodycamsPorTipo);
+
             // Validación en tiempo real
             $('#dependencia, #personal_receptor, #personal_entrega, #motivo_operativo').on('input', function() {
                 validarFormulario();
@@ -605,6 +650,7 @@
 
             // Inicializar
             inicializarBodycams();
+            actualizarBodycamsPorTipo();
             actualizarContador();
             renderBodycamsSeleccionadas();
 

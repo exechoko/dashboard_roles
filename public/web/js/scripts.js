@@ -1,7 +1,7 @@
 "use strict";
 
-// ChartJS
-if(window.Chart) {
+// ChartJS (sólo Chart.js v2; en v3+ la API cambió a Chart.defaults.font.*)
+if(window.Chart && Chart.defaults && Chart.defaults.global) {
   Chart.defaults.global.defaultFontFamily = "'Nunito', 'Segoe UI', 'Arial'";
   Chart.defaults.global.defaultFontSize = 12;
   Chart.defaults.global.defaultFontStyle = 500;
@@ -85,9 +85,7 @@ $(function() {
 
   var sidebar_dropdown = function() {
     if($(".main-sidebar").length) {
-      $(".main-sidebar").niceScroll(sidebar_nicescroll_opts);
-      sidebar_nicescroll = $(".main-sidebar").getNiceScroll();
-
+      // niceScroll deshabilitado: se usa el scroll nativo (overflow-y: auto) definido en navigation theme CSS
       $(".main-sidebar .sidebar-menu li a.has-dropdown").off('click').on('click', function() {
         var me     = $(this);
         var active = false;
@@ -151,13 +149,7 @@ $(function() {
 
     if(!mini) {
       body.removeClass('sidebar-mini');
-      $(".main-sidebar").css({
-        overflow: 'hidden'
-      });
-      setTimeout(function() {
-        $(".main-sidebar").niceScroll(sidebar_nicescroll_opts);
-        sidebar_nicescroll = $(".main-sidebar").getNiceScroll();
-      }, 500);
+      // niceScroll deshabilitado: el scroll nativo del sidebar lo maneja CSS (overflow-y: auto)
       $(".main-sidebar .sidebar-menu > li > ul .dropdown-title").remove();
       $(".main-sidebar .sidebar-menu > li > a").removeAttr('data-toggle');
       $(".main-sidebar .sidebar-menu > li > a").removeAttr('data-original-title');
@@ -165,8 +157,7 @@ $(function() {
     }else{
       body.addClass('sidebar-mini');
       body.removeClass('sidebar-show');
-      sidebar_nicescroll.remove();
-      sidebar_nicescroll = null;
+      // niceScroll deshabilitado
       $(".main-sidebar .sidebar-menu > li").each(function() {
         let me = $(this);
 
@@ -227,8 +218,7 @@ $(function() {
     if(w.outerWidth() <= 1024) {
       if($('body').hasClass('sidebar-mini')) {
         toggle_sidebar_mini(false);
-        $('.main-sidebar').niceScroll(sidebar_nicescroll_opts);
-        sidebar_nicescroll = $(".main-sidebar").getNiceScroll();
+        // niceScroll deshabilitado: scroll nativo via CSS
       }
 
       $("body").addClass("sidebar-gone");
@@ -265,10 +255,7 @@ $(function() {
             href: $('.navbar-brand').attr('href'),
           }).html($('.navbar-brand').html())
         ));
-        setTimeout(function() {
-          sidebar_nicescroll = main_sidebar.niceScroll(sidebar_nicescroll_opts);
-          sidebar_nicescroll = main_sidebar.getNiceScroll();
-        }, 700);
+        // niceScroll deshabilitado: scroll nativo via CSS
 
         sidebar_dropdown();
         $(".main-wrapper").removeClass("container");

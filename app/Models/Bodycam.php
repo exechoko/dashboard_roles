@@ -40,7 +40,7 @@ class Bodycam extends Model
     public function entregasActuales()
     {
         return $this->belongsToMany(EntregaBodycam::class, 'detalle_entrega_bodycams', 'bodycam_id', 'entrega_id')
-            ->whereIn('entregas_bodycams.estado', ['entregada', 'parcialmente_devuelta']);
+            ->whereIn('entregas_bodycams.estado', [EntregaBodycam::ESTADO_ENTREGADA, EntregaBodycam::ESTADO_PARCIALMENTE_DEVUELTA]);
     }
 
     public function entregasHistoricas()
@@ -67,6 +67,13 @@ class Bodycam extends Model
     public function scopeEntregadas($query)
     {
         return $query->where('estado', self::ESTADO_ENTREGADA);
+    }
+
+    public function scopeSinRecambioTecnologicoActivo($query)
+    {
+        return $query->whereDoesntHave('entregasActuales', function ($entregas) {
+            $entregas->where('entregas_bodycams.tipo_entrega', EntregaBodycam::TIPO_RECAMBIO_TECNOLOGICO);
+        });
     }
 
     public function scopePorCodigo($query, $codigo)

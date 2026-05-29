@@ -37,7 +37,7 @@
 
     [data-theme="dark"] .table-success {
         background-color: rgba(40, 167, 69, 0.15) !important;
-        color: var(--text-primary) !important;
+        color: #111111 !important;
     }
 
     [data-theme="dark"] .table-success:hover {
@@ -45,13 +45,13 @@
     }
 
     [data-theme="dark"] .table-success td {
-        color: var(--bg-primary) !important;
+        color: #111111 !important;
         border-color: var(--border-color) !important;
     }
 
     [data-theme="dark"] .table-warning {
         background-color: rgba(255, 193, 7, 0.15) !important;
-        color: var(--text-primary) !important;
+        color: #111111 !important;
     }
 
     [data-theme="dark"] .table-warning:hover {
@@ -59,13 +59,13 @@
     }
 
     [data-theme="dark"] .table-warning td {
-        color: var(--bg-primary) !important;
+        color: #111111 !important;
         border-color: var(--border-color) !important;
     }
 
     [data-theme="dark"] .table-danger {
         background-color: rgba(220, 53, 69, 0.15) !important;
-        color: var(--text-primary) !important;
+        color: #111111 !important;
     }
 
     [data-theme="dark"] .table-danger:hover {
@@ -73,13 +73,13 @@
     }
 
     [data-theme="dark"] .table-danger td {
-        color: var(--bg-primary) !important;
+        color: #111111 !important;
         border-color: var(--border-color) !important;
     }
 
     [data-theme="dark"] .table-info {
         background-color: rgba(23, 162, 184, 0.15) !important;
-        color: var(--text-primary) !important;
+        color: #111111 !important;
     }
 
     [data-theme="dark"] .table-info:hover {
@@ -87,7 +87,7 @@
     }
 
     [data-theme="dark"] .table-info td {
-        color: var(--text-primary) !important;
+        color: #111111 !important;
         border-color: var(--border-color) !important;
     }
 
@@ -140,6 +140,32 @@
 
     [data-theme="dark"] .table .text-muted {
         color: var(--text-secondary) !important;
+    }
+
+    [data-theme="dark"] .table-success small,
+    [data-theme="dark"] .table-warning small,
+    [data-theme="dark"] .table-danger small,
+    [data-theme="dark"] .table-info small,
+    [data-theme="dark"] .table-success .text-muted,
+    [data-theme="dark"] .table-warning .text-muted,
+    [data-theme="dark"] .table-danger .text-muted,
+    [data-theme="dark"] .table-info .text-muted {
+        color: #111111 !important;
+    }
+
+    [data-theme="dark"] .table tbody tr.table-success td,
+    [data-theme="dark"] .table tbody tr.table-warning td,
+    [data-theme="dark"] .table tbody tr.table-danger td,
+    [data-theme="dark"] .table tbody tr.table-info td,
+    [data-theme="dark"] .table tbody tr.table-success td small,
+    [data-theme="dark"] .table tbody tr.table-warning td small,
+    [data-theme="dark"] .table tbody tr.table-danger td small,
+    [data-theme="dark"] .table tbody tr.table-info td small,
+    [data-theme="dark"] .table tbody tr.table-success td .text-muted,
+    [data-theme="dark"] .table tbody tr.table-warning td .text-muted,
+    [data-theme="dark"] .table tbody tr.table-danger td .text-muted,
+    [data-theme="dark"] .table tbody tr.table-info td .text-muted {
+        color: #111111 !important;
     }
 
     [data-theme="dark"] .small-box {

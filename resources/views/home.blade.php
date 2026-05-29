@@ -38,9 +38,15 @@
     }
 
     .chart-card .chart-title {
+        color: var(--text-primary) !important;
         font-weight: 600;
         font-size: 1rem;
         margin: 0;
+    }
+
+    .chart-card .card-body,
+    .chart-card .text-muted {
+        color: var(--text-primary) !important;
     }
 
     /* Dark theme overrides */
@@ -2724,13 +2730,20 @@
                 chartInstances = {};
 
                 const isDark = detectTheme();
-                const textColor = isDark ? '#e2e8f0' : '#0f172a';
-                const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.15)';
+                const rootStyles = getComputedStyle(document.documentElement);
+                const themeTextColor = rootStyles.getPropertyValue('--text-primary').trim();
+                const themeSecondaryTextColor = rootStyles.getPropertyValue('--text-secondary').trim();
+                const textColor = isDark ? '#e2e8f0' : (themeTextColor || '#111827');
+                const mutedTextColor = isDark ? '#cbd5e1' : (themeSecondaryTextColor || '#374151');
+                const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(17, 24, 39, 0.18)';
+
+                Chart.defaults.color = textColor;
+                Chart.defaults.borderColor = gridColor;
 
                 const tooltipStyle = {
                     backgroundColor: isDark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
                     titleColor: isDark ? '#f1f5f9' : '#1e293b',
-                    bodyColor: isDark ? '#cbd5e1' : '#475569',
+                    bodyColor: mutedTextColor,
                     borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
                     borderWidth: 1,
                     padding: 10,
@@ -3037,6 +3050,15 @@
             observer.observe(document.documentElement, {
                 attributes: true,
                 attributeFilter: ['data-theme']
+            });
+
+            $('#terminales-tab3').on('shown.bs.tab', function () {
+                Object.values(chartInstances).forEach(function (chart) {
+                    if (chart) {
+                        chart.resize();
+                        chart.update();
+                    }
+                });
             });
         });
 

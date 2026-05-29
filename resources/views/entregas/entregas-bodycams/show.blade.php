@@ -466,6 +466,9 @@
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        @php
+                                            $bodycamsPendientesIds = $entrega->bodycamsPendientes()->pluck('bodycams.id')->toArray();
+                                        @endphp
                                         @foreach($entrega->bodycams as $index => $bodycam)
                                             @php
                                                 $devolucion = $entrega->devoluciones()

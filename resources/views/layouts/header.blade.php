@@ -221,17 +221,6 @@
         }
     }
 
-    /* Cumpleaños Badge Animation */
-    @keyframes pulse-cumpleanos {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.2); }
-    }
-    .cumpleanos-badge {
-        display: inline-flex;
-        align-items: center;
-        margin-left: 4px;
-    }
-
 </style>
 
 <div class="banner-fecha-hora d-flex align-items-center">
@@ -438,19 +427,6 @@
         actualizarClima();
         setInterval(actualizarClima, 10 * 60 * 1000);
 
-        // === Cumpleaños Badge ===
-        function initCumpleanosBadge() {
-            if (localStorage.getItem('cumpleanos_exequiel_mostrado')) {
-                var userName = document.getElementById('user-name-display');
-                if (userName && !document.getElementById('cumpleanos-badge-header')) {
-                    var badge = document.createElement('span');
-                    badge.id = 'cumpleanos-badge-header';
-                    badge.innerHTML = ' <i class="fas fa-birthday-cake text-warning" style="animation: pulse-cumpleanos 1.5s ease-in-out infinite;"></i>';
-                    userName.appendChild(badge);
-                }
-            }
-        }
-        initCumpleanosBadge();
     });
 </script>
 

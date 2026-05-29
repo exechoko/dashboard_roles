@@ -33,10 +33,6 @@ class HomeController extends Controller
 
     public function index(Request $request)
     {
-        $user = auth()->user();
-        $esSuperAdmin = $user && $user->hasRole('Super Administrador');
-        $manana = Carbon::tomorrow();
-        $mostrarCumpleanos = $esSuperAdmin && $manana->day === 27 && $manana->month === 5;
         // Obtener IDs de estados una sola vez
         $estados = Estado::whereIn('nombre', [
             'Nuevo',
@@ -371,8 +367,6 @@ class HomeController extends Controller
 
 
         return view('home', compact(
-            'esSuperAdmin',
-            'mostrarCumpleanos',
             'cant_usuarios',
             'cant_roles',
             'cant_equipos_en_stock',

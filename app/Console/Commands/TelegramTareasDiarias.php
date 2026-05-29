@@ -32,9 +32,11 @@ class TelegramTareasDiarias extends Command
 
         // Entregas activas de bodycams
         $entregasBodycams = EntregaBodycam::with(['bodycams', 'devoluciones.bodycams'])
-            ->whereIn('estado', [EntregaBodycam::ESTADO_ENTREGADA, EntregaBodycam::ESTADO_PARCIALMENTE_DEVUELTA])
+            ->activas()
+            ->conDevolucionEsperada()
             ->orderBy('fecha_entrega', 'desc')
-            ->get();
+            ->get()
+            ->filter(fn($entrega) => $entrega->bodycamsPendientes()->count() > 0);
 
         $tareasHoy = TareaItem::with('tarea')
             ->whereDate('fecha_programada', $hoy->toDateString())
@@ -68,9 +70,7 @@ class TelegramTareasDiarias extends Command
 
         $totalBodycamsActivas = 0;
         foreach ($entregasBodycams as $e) {
-            $devueltas = $e->devoluciones()->with('bodycams')->get()
-                ->pluck('bodycams')->flatten()->pluck('id')->unique()->count();
-            $totalBodycamsActivas += ($e->bodycams->count() - $devueltas);
+            $totalBodycamsActivas += $e->bodycamsPendientes()->count();
         }
 
         $mensaje .= "\n📦 <b>Equipos entregados:</b> {$totalEquiposActivos}\n";
@@ -90,9 +90,7 @@ class TelegramTareasDiarias extends Command
         $mensaje .= "\n📷 <b>Bodycams entregadas:</b> {$totalBodycamsActivas}\n";
         if ($entregasBodycams->isNotEmpty()) {
             foreach ($entregasBodycams as $e) {
-                $devueltas = $e->devoluciones()->with('bodycams')->get()
-                    ->pluck('bodycams')->flatten()->pluck('id')->unique()->count();
-                $pendientes = $e->bodycams->count() - $devueltas;
+                $pendientes = $e->bodycamsPendientes()->count();
                 if ($pendientes <= 0) continue;
                 $fecha = Carbon::parse($e->fecha_entrega)->format('d/m/Y');
                 $receptor = $e->personal_receptor ?? 'Sin datos';

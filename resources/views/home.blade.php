@@ -971,8 +971,7 @@
                                                                 <strong>Entregas activas:</strong>
                                                                 @foreach($entregas_bodycams_activas as $entrega)
                                                                     @php
-                                                                        $bodycamsDevueltas = $entrega->devoluciones->pluck('bodycams')->flatten()->pluck('id')->unique()->count();
-                                                                        $bodycamsPendientes = $entrega->bodycams->count() - $bodycamsDevueltas;
+                                                                        $bodycamsPendientes = $entrega->bodycamsPendientes()->count();
                                                                     @endphp
                                                                     <div
                                                                         style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">

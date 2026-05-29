@@ -837,15 +837,16 @@ class TelegramService
 
             // Entregas activas de bodycams
             $entregasBodycams = EntregaBodycam::with(['bodycams', 'devoluciones.bodycams'])
-                ->whereIn('estado', [EntregaBodycam::ESTADO_ENTREGADA, EntregaBodycam::ESTADO_PARCIALMENTE_DEVUELTA])
+                ->activas()
+                ->conDevolucionEsperada()
                 ->orderBy('fecha_entrega', 'desc')
-                ->get();
+                ->get()
+                ->filter(fn($entrega) => $entrega->bodycamsPendientes()->count() > 0);
 
             $cantBodycamsEntregadas = 0;
             $detalleEntregasBodycams = [];
             foreach ($entregasBodycams as $entrega) {
-                $devueltas = $entrega->devoluciones->pluck('bodycams')->flatten()->pluck('id')->unique()->count();
-                $pendientes = $entrega->bodycams->count() - $devueltas;
+                $pendientes = $entrega->bodycamsPendientes()->count();
                 $cantBodycamsEntregadas += $pendientes;
                 if ($pendientes > 0) {
                     $fecha = $entrega->fecha_entrega ? $entrega->fecha_entrega->format('d/m/Y') : '';

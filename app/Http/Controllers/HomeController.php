@@ -179,9 +179,11 @@ class HomeController extends Controller
 
         // Entregas activas de bodycams (no devueltas completamente)
         $entregas_bodycams_activas = EntregaBodycam::with(['bodycams', 'devoluciones.bodycams'])
-            ->whereIn('estado', [EntregaBodycam::ESTADO_ENTREGADA, EntregaBodycam::ESTADO_PARCIALMENTE_DEVUELTA])
+            ->activas()
+            ->conDevolucionEsperada()
             ->orderBy('fecha_entrega', 'desc')
-            ->get();
+            ->get()
+            ->filter(fn($entrega) => $entrega->bodycamsPendientes()->count() > 0);
 
         // Contar equipos actualmente entregados (sin devolver)
         $cant_equipos_entregados_total = 0;
@@ -200,15 +202,7 @@ class HomeController extends Controller
         // Contar bodycams actualmente entregadas (sin devolver)
         $cant_bodycams_entregadas_total = 0;
         foreach ($entregas_bodycams_activas as $entrega) {
-            $bodycamsDevueltas = $entrega->devoluciones()
-                ->with('bodycams')
-                ->get()
-                ->pluck('bodycams')
-                ->flatten()
-                ->pluck('id')
-                ->unique()
-                ->count();
-            $cant_bodycams_entregadas_total += ($entrega->bodycams->count() - $bodycamsDevueltas);
+            $cant_bodycams_entregadas_total += $entrega->bodycamsPendientes()->count();
         }
 
         $tareas_en_proceso = TareaItem::with(['tarea'])

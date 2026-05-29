@@ -15,6 +15,7 @@ class EntregaBodycam extends Model
     protected $fillable = [
         'fecha_entrega',
         'hora_entrega',
+        'tipo_entrega',
         'dependencia',
         'personal_receptor',
         'legajo_receptor',
@@ -39,6 +40,9 @@ class EntregaBodycam extends Model
     const ESTADO_DEVUELTA = 'devuelta';
     const ESTADO_PERDIDA = 'perdida';
 
+    const TIPO_NORMAL = 'normal';
+    const TIPO_RECAMBIO_TECNOLOGICO = 'recambio_tecnologico';
+
     protected static function boot()
     {
         parent::boot();
@@ -46,6 +50,10 @@ class EntregaBodycam extends Model
         static::creating(function ($model) {
             if (empty($model->estado)) {
                 $model->estado = self::ESTADO_ENTREGADA;
+            }
+
+            if (empty($model->tipo_entrega)) {
+                $model->tipo_entrega = self::TIPO_NORMAL;
             }
         });
     }
@@ -96,6 +104,11 @@ class EntregaBodycam extends Model
         return $query->whereIn('estado', [self::ESTADO_ENTREGADA, self::ESTADO_PARCIALMENTE_DEVUELTA]);
     }
 
+    public function scopeConDevolucionEsperada($query)
+    {
+        return $query->where('tipo_entrega', self::TIPO_NORMAL);
+    }
+
     public function scopeDevueltas($query)
     {
         return $query->where('estado', self::ESTADO_DEVUELTA);
@@ -104,6 +117,10 @@ class EntregaBodycam extends Model
     // Métodos
     public function bodycamsPendientes()
     {
+        if ($this->esRecambioTecnologico()) {
+            return $this->bodycams()->whereRaw('1 = 0');
+        }
+
         $bodycamsDevueltas = $this->devoluciones()
             ->with('bodycams')
             ->get()
@@ -113,7 +130,16 @@ class EntregaBodycam extends Model
             ->unique()
             ->toArray();
 
-        return $this->bodycams()->whereNotIn('bodycams.id', $bodycamsDevueltas);
+        $bodycamsEnRecambioTecnologico = Bodycam::whereHas('entregasActuales', function ($query) {
+            $query->where('entregas_bodycams.tipo_entrega', self::TIPO_RECAMBIO_TECNOLOGICO);
+        })
+            ->pluck('bodycams.id')
+            ->toArray();
+
+        return $this->bodycams()->whereNotIn('bodycams.id', array_unique(array_merge(
+            $bodycamsDevueltas,
+            $bodycamsEnRecambioTecnologico
+        )));
     }
 
     public function bodycamsDevueltas()
@@ -128,12 +154,19 @@ class EntregaBodycam extends Model
 
     public function actualizarEstado()
     {
-        $totalBodycams = $this->bodycams->count();
+        if ($this->esRecambioTecnologico()) {
+            $this->estado = self::ESTADO_ENTREGADA;
+            $this->save();
+
+            return;
+        }
+
         $bodycamsDevueltas = $this->bodycamsDevueltas()->count();
+        $bodycamsPendientes = $this->bodycamsPendientes()->count();
 
         if ($bodycamsDevueltas === 0) {
             $this->estado = self::ESTADO_ENTREGADA;
-        } elseif ($bodycamsDevueltas < $totalBodycams) {
+        } elseif ($bodycamsPendientes > 0) {
             $this->estado = self::ESTADO_PARCIALMENTE_DEVUELTA;
         } else {
             $this->estado = self::ESTADO_DEVUELTA;
@@ -145,6 +178,11 @@ class EntregaBodycam extends Model
     public function estaCompletamenteDevuelta()
     {
         return $this->estado === self::ESTADO_DEVUELTA;
+    }
+
+    public function esRecambioTecnologico()
+    {
+        return $this->tipo_entrega === self::TIPO_RECAMBIO_TECNOLOGICO;
     }
 
     public function tieneDevoluciones()
@@ -163,6 +201,16 @@ class EntregaBodycam extends Model
         ];
 
         return $estados[$this->estado] ?? 'Desconocido';
+    }
+
+    public function getTipoEntregaFormateadoAttribute()
+    {
+        $tipos = [
+            self::TIPO_NORMAL => 'Normal',
+            self::TIPO_RECAMBIO_TECNOLOGICO => 'Recambio Tecnológico'
+        ];
+
+        return $tipos[$this->tipo_entrega] ?? 'Desconocido';
     }
 
     public function getFechaEntregaFormateadaAttribute()

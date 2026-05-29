@@ -31,16 +31,16 @@
                             <h4>Información del Acta N° {{ $entrega->id }}</h4>
                             <div class="card-header-action">
                                 @switch($entrega->estado)
-                                    @case('entregado')
-                                        <span class="badge badge-warning badge-lg">Entregado</span>
+                                    @case('entregada')
+                                        <span class="badge badge-warning badge-lg">Entregada</span>
                                         @break
-                                    @case('devolucion_parcial')
+                                    @case('parcialmente_devuelta')
                                         <span class="badge badge-info badge-lg">Devolución Parcial</span>
                                         @break
-                                    @case('devuelto')
-                                        <span class="badge badge-success badge-lg">Devuelto</span>
+                                    @case('devuelta')
+                                        <span class="badge badge-success badge-lg">Devuelta</span>
                                         @break
-                                    @case('perdido')
+                                    @case('perdida')
                                         <span class="badge badge-danger badge-lg">Perdido</span>
                                         @break
                                 @endswitch
@@ -63,6 +63,18 @@
                             </div>
 
                             <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label><strong>Tipo de Entrega:</strong></label>
+                                        <p class="form-control-static">
+                                            @if($entrega->esRecambioTecnologico())
+                                                <span class="badge badge-primary badge-lg">{{ $entrega->tipo_entrega_formateado }}</span>
+                                            @else
+                                                <span class="badge badge-secondary badge-lg">{{ $entrega->tipo_entrega_formateado }}</span>
+                                            @endif
+                                        </p>
+                                    </div>
+                                </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label><strong>Dependencia:</strong></label>
@@ -288,6 +300,9 @@
                                         </tr>
                                     </thead>
                                     <tbody>
+                                        @php
+                                            $bodycamsPendientesIds = $entrega->bodycamsPendientes()->pluck('bodycams.id')->toArray();
+                                        @endphp
                                         @foreach($entrega->bodycams as $index => $bodycam)
                                             <tr>
                                                 <td>{{ $index + 1 }}</td>
@@ -424,11 +439,20 @@
                                     $bodycamsPendientes = $entrega->bodycamsPendientes()->count();
                                     $bodycamsDevueltas = $entrega->bodycamsDevueltas()->count();
                                 @endphp
-                                <span class="badge badge-warning">{{ $bodycamsPendientes }} pendientes</span>
-                                <span class="badge badge-success">{{ $bodycamsDevueltas }} devueltas</span>
+                                @if($entrega->esRecambioTecnologico())
+                                    <span class="badge badge-primary">Recambio tecnológico</span>
+                                @else
+                                    <span class="badge badge-warning">{{ $bodycamsPendientes }} pendientes</span>
+                                    <span class="badge badge-success">{{ $bodycamsDevueltas }} devueltas</span>
+                                @endif
                             </div>
                         </div>
                         <div class="card-body">
+                            @if($entrega->esRecambioTecnologico())
+                                <div class="alert alert-info">
+                                    Esta entrega corresponde a un recambio tecnológico. Las bodycams no quedan pendientes de devolución y no estarán disponibles para entregas normales.
+                                </div>
+                            @endif
                             <div class="table-responsive">
                                 <table class="table table-striped">
                                     <thead>
@@ -455,14 +479,18 @@
                                                 <td>{{ $bodycam->numero_serie ?: 'N/A' }}</td>
                                                 <td>{{ $bodycam->numero_bateria ?: 'N/A' }}</td>
                                                 <td>
-                                                    @if($devolucion)
+                                                    @if($entrega->esRecambioTecnologico() || (!$devolucion && !in_array($bodycam->id, $bodycamsPendientesIds)))
+                                                        <span class="badge badge-primary">Recambio tecnológico</span>
+                                                    @elseif($devolucion)
                                                         <span class="badge badge-success">Devuelta</span>
                                                     @else
                                                         <span class="badge badge-warning">Pendiente</span>
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    @if($devolucion)
+                                                    @if($entrega->esRecambioTecnologico() || (!$devolucion && !in_array($bodycam->id, $bodycamsPendientesIds)))
+                                                        <span class="text-muted">No aplica</span>
+                                                    @elseif($devolucion)
                                                         <small>
                                                             Devolución #{{ $devolucion->id }}<br>
                                                             {{ $devolucion->fecha_devolucion->format('d/m/Y') }}
@@ -497,7 +525,7 @@
 
                                 {{-- Editar --}}
                                 @can('editar-entrega-bodycams')
-                                    @if(in_array($entrega->estado, ['entregado', 'devolucion_parcial']))
+                                    @if(in_array($entrega->estado, ['entregada', 'parcialmente_devuelta']))
                                         <a href="{{ route('entrega-bodycams.edit', $entrega->id) }}"
                                         class="btn btn-warning btn-block mb-2">
                                             <i class="fas fa-edit"></i> Editar Entrega
@@ -510,7 +538,7 @@
                                     @php
                                         $bodycamsPendientes = $entrega->bodycamsPendientes()->count();
                                     @endphp
-                                    @if($bodycamsPendientes > 0)
+                                    @if(!$entrega->esRecambioTecnologico() && $bodycamsPendientes > 0)
                                         <a href="{{ route('entrega-bodycams.devolver', $entrega->id) }}"
                                         class="btn btn-success btn-block mb-2">
                                             <i class="fas fa-undo"></i> Devolver Bodycams
@@ -560,7 +588,7 @@
                                 $bodycamsDevueltas = $entrega->bodycamsDevueltas()->count();
                             @endphp
 
-                            @if($bodycamsPendientes > 0)
+                            @if(!$entrega->esRecambioTecnologico() && $bodycamsPendientes > 0)
                                 <div class="summary-item">
                                     <div class="summary-info">
                                         <h6>Bodycams Pendientes</h6>
@@ -583,16 +611,16 @@
                                     <h6>Estado de la Entrega</h6>
                                     <h4>
                                         @switch($entrega->estado)
-                                            @case('entregado')
+                                            @case('entregada')
                                                 <span class="text-warning">Bodycams Entregadas</span>
                                                 @break
-                                            @case('devolucion_parcial')
+                                            @case('parcialmente_devuelta')
                                                 <span class="text-info">Devolución Parcial</span>
                                                 @break
-                                            @case('devuelto')
+                                            @case('devuelta')
                                                 <span class="text-success">Completamente Devuelto</span>
                                                 @break
-                                            @case('perdido')
+                                            @case('perdida')
                                                 <span class="text-danger">Con Pérdidas</span>
                                                 @break
                                         @endswitch

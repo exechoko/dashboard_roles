@@ -13,6 +13,7 @@ use DB;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Log;
 use PhpOffice\PhpWord\TemplateProcessor;
 use PhpOffice\PhpWord\IOFactory;
@@ -27,7 +28,7 @@ class EntregasBodycamsController extends Controller
 
     public function index(Request $request)
     {
-        $query = EntregaBodycam::with(['bodycams', 'detalleEntregas']);
+        $query = EntregaBodycam::with(['bodycams', 'detalleEntregas', 'devoluciones']);
 
         // Aplicar filtros de búsqueda
         if ($request->filled('codigo')) {
@@ -46,6 +47,10 @@ class EntregasBodycamsController extends Controller
             $query->buscarPorDependencia($request->dependencia);
         }
 
+        if ($request->filled('tipo_entrega')) {
+            $query->where('tipo_entrega', $request->tipo_entrega);
+        }
+
         $entregas = $query->orderBy('created_at', 'desc')->paginate(15);
 
         return view('entregas.entregas-bodycams.index', compact('entregas'));
@@ -53,8 +58,9 @@ class EntregasBodycamsController extends Controller
 
     public function create()
     {
-        // Obtener bodycams disponibles (no entregadas actualmente)
-        $bodycamsDisponibles = Bodycam::where('estado', 'disponible')
+        // Las entregadas solo se pueden seleccionar cuando el tipo es recambio tecnológico.
+        $bodycamsDisponibles = Bodycam::whereIn('estado', [Bodycam::ESTADO_DISPONIBLE, Bodycam::ESTADO_ENTREGADA])
+            ->sinRecambioTecnologicoActivo()
             ->orderBy('codigo', 'asc')
             ->get();
 
@@ -70,6 +76,7 @@ class EntregasBodycamsController extends Controller
             'fecha_entrega' => 'required|date',
             'hora_entrega' => 'required',
             'dependencia' => 'required|string|max:255',
+            'tipo_entrega' => 'required|in:' . EntregaBodycam::TIPO_NORMAL . ',' . EntregaBodycam::TIPO_RECAMBIO_TECNOLOGICO,
             'motivo_operativo' => 'required|string',
             'bodycams_seleccionadas' => 'required|array|min:1',
             'bodycams_seleccionadas.*' => 'exists:bodycams,id',
@@ -78,6 +85,12 @@ class EntregasBodycamsController extends Controller
             'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048'
         ]);
+
+        $this->validarBodycamsSeleccionadas(
+            $request,
+            $request->tipo_entrega,
+            []
+        );
 
         // Procesar imágenes y archivos
         $rutasImagenes = [];
@@ -104,6 +117,7 @@ class EntregasBodycamsController extends Controller
             $entrega = EntregaBodycam::create([
                 'fecha_entrega' => $request->fecha_entrega,
                 'hora_entrega' => $request->hora_entrega,
+                'tipo_entrega' => $request->tipo_entrega,
                 'dependencia' => $request->dependencia,
                 'personal_receptor' => $request->personal_receptor ?? '',
                 'legajo_receptor' => $request->legajo_receptor ?? '',
@@ -122,8 +136,7 @@ class EntregasBodycamsController extends Controller
                     'bodycam_id' => $bodycamId
                 ]);
 
-                // Actualizar el estado de la bodycam a 'entregada'
-                Bodycam::find($bodycamId)->update(['estado' => 'entregada']);
+                Bodycam::find($bodycamId)->update(['estado' => Bodycam::ESTADO_ENTREGADA]);
             }
 
             DB::commit();
@@ -154,14 +167,16 @@ class EntregasBodycamsController extends Controller
     {
         $entrega = EntregaBodycam::with('bodycams')->findOrFail($id);
 
-        // Obtener bodycams disponibles o que ya están asignadas a esta entrega
-        $bodycamsDisponibles = Bodycam::where(function ($query) use ($entrega) {
-            $query->where('estado', 'disponible');
-        })
-        ->orWhere(function ($query) use ($entrega) {
-            $query->whereIn('id', $entrega->bodycams->pluck('id'));
-        })
-        ->get();
+        $bodycamsActuales = $entrega->bodycams->pluck('id');
+
+        // Obtener bodycams disponibles, entregadas seleccionables para recambio o ya asignadas a esta entrega.
+        $bodycamsDisponibles = Bodycam::whereIn('id', $bodycamsActuales)
+            ->orWhere(function ($query) {
+                $query->whereIn('estado', [Bodycam::ESTADO_DISPONIBLE, Bodycam::ESTADO_ENTREGADA])
+                    ->sinRecambioTecnologicoActivo();
+            })
+            ->orderBy('codigo')
+            ->get();
 
         // Destinos
         $destinos = Destino::all();
@@ -184,6 +199,7 @@ class EntregasBodycamsController extends Controller
             'fecha_entrega' => 'required|date',
             'hora_entrega' => 'required',
             'dependencia' => 'required|string|max:255',
+            'tipo_entrega' => 'required|in:' . EntregaBodycam::TIPO_NORMAL . ',' . EntregaBodycam::TIPO_RECAMBIO_TECNOLOGICO,
             'personal_receptor' => 'required|string|max:255',
             'legajo_receptor' => 'nullable|string|max:50',
             'personal_entrega' => 'required|string|max:255',
@@ -196,6 +212,14 @@ class EntregasBodycamsController extends Controller
             'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048'
         ]);
+
+        $bodycamsAnteriores = $entrega->bodycams->pluck('id')->toArray();
+
+        $this->validarBodycamsSeleccionadas(
+            $request,
+            $request->tipo_entrega,
+            $bodycamsAnteriores
+        );
 
         // Obtener las rutas de imágenes existentes
         $rutasImagenesExistentes = json_decode($entrega->rutas_imagenes, true) ?? [];
@@ -227,6 +251,7 @@ class EntregasBodycamsController extends Controller
             $entrega->update([
                 'fecha_entrega' => $request->fecha_entrega,
                 'hora_entrega' => $request->hora_entrega,
+                'tipo_entrega' => $request->tipo_entrega,
                 'dependencia' => $request->dependencia,
                 'personal_receptor' => $request->personal_receptor,
                 'legajo_receptor' => $request->legajo_receptor,
@@ -237,16 +262,14 @@ class EntregasBodycamsController extends Controller
                 'rutas_imagenes' => json_encode($rutasImagenes)
             ]);
 
-            // Actualizar bodycams: liberar las anteriores
-            $bodycamsAnteriores = $entrega->bodycams->pluck('id')->toArray();
-            foreach ($bodycamsAnteriores as $bodycamId) {
-                if (!in_array($bodycamId, $request->bodycams_seleccionadas)) {
-                    Bodycam::find($bodycamId)->update(['estado' => 'disponible']);
-                }
-            }
-
             // Eliminar detalles anteriores y crear nuevos
             $entrega->detalleEntregas()->delete();
+
+            foreach ($bodycamsAnteriores as $bodycamId) {
+                if (!in_array($bodycamId, $request->bodycams_seleccionadas)) {
+                    $this->sincronizarEstadoBodycam(Bodycam::find($bodycamId));
+                }
+            }
 
             foreach ($request->bodycams_seleccionadas as $bodycamId) {
                 DetalleEntregaBodycam::create([
@@ -254,7 +277,7 @@ class EntregasBodycamsController extends Controller
                     'bodycam_id' => $bodycamId
                 ]);
 
-                Bodycam::find($bodycamId)->update(['estado' => 'entregada']);
+                Bodycam::find($bodycamId)->update(['estado' => Bodycam::ESTADO_ENTREGADA]);
             }
 
             DB::commit();
@@ -409,6 +432,10 @@ class EntregasBodycamsController extends Controller
     {
         $entrega = EntregaBodycam::findOrFail($id);
 
+        if ($entrega->esRecambioTecnologico()) {
+            return redirect()->back()->with('error', 'Las entregas por recambio tecnológico no requieren devolución.');
+        }
+
         // Obtener bodycams pendientes de devolución
         $bodycamsPendientes = $entrega->bodycamsPendientes()->get();
 
@@ -422,6 +449,10 @@ class EntregasBodycamsController extends Controller
     public function procesarDevolucion(Request $request, $id)
     {
         $entrega = EntregaBodycam::findOrFail($id);
+
+        if ($entrega->esRecambioTecnologico()) {
+            return redirect()->back()->with('error', 'Las entregas por recambio tecnológico no requieren devolución.');
+        }
 
         $request->validate([
             'fecha_devolucion' => 'required|date',
@@ -478,8 +509,7 @@ class EntregasBodycamsController extends Controller
                     'bodycam_id' => $bodycamId
                 ]);
 
-                // Actualizar estado de la bodycam a 'disponible'
-                Bodycam::find($bodycamId)->update(['estado' => 'disponible']);
+                $this->sincronizarEstadoBodycam(Bodycam::find($bodycamId));
             }
 
             // Actualizar el estado de la entrega
@@ -502,15 +532,15 @@ class EntregasBodycamsController extends Controller
     {
         try {
             $entrega = EntregaBodycam::findOrFail($id);
+            $bodycams = $entrega->bodycams;
 
             DB::beginTransaction();
 
-            // Liberar bodycams antes de eliminar
-            foreach ($entrega->bodycams as $bodycam) {
-                $bodycam->update(['estado' => 'disponible']);
-            }
-
             $entrega->delete();
+
+            foreach ($bodycams as $bodycam) {
+                $this->sincronizarEstadoBodycam($bodycam);
+            }
 
             DB::commit();
 
@@ -552,6 +582,68 @@ class EntregasBodycamsController extends Controller
 
         $abreviacion = substr($abreviacion, 0, 15);
         return $this->limpiarNombreCarpeta($abreviacion) ?: 'DEPT';
+    }
+
+    private function validarBodycamsSeleccionadas(Request $request, string $tipoEntrega, array $bodycamsActuales): void
+    {
+        $idsSeleccionados = array_values(array_unique($request->bodycams_seleccionadas ?? []));
+        $bodycams = Bodycam::whereIn('id', $idsSeleccionados)->get();
+
+        if ($bodycams->count() !== count($idsSeleccionados)) {
+            throw ValidationException::withMessages([
+                'bodycams_seleccionadas' => 'Una o más bodycams seleccionadas no existen.'
+            ]);
+        }
+
+        $estadosPermitidos = $tipoEntrega === EntregaBodycam::TIPO_RECAMBIO_TECNOLOGICO
+            ? [Bodycam::ESTADO_DISPONIBLE, Bodycam::ESTADO_ENTREGADA]
+            : [Bodycam::ESTADO_DISPONIBLE];
+
+        $bodycamsNoPermitidas = $bodycams->filter(function (Bodycam $bodycam) use ($estadosPermitidos, $bodycamsActuales) {
+            return !in_array($bodycam->id, $bodycamsActuales) && !in_array($bodycam->estado, $estadosPermitidos);
+        });
+
+        if ($bodycamsNoPermitidas->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'bodycams_seleccionadas' => 'Solo se pueden seleccionar bodycams disponibles, salvo en recambio tecnológico.'
+            ]);
+        }
+
+        $bodycamsConRecambio = $bodycams->filter(function (Bodycam $bodycam) use ($bodycamsActuales) {
+            return !in_array($bodycam->id, $bodycamsActuales)
+                && $bodycam->entregasActuales()
+                    ->where('entregas_bodycams.tipo_entrega', EntregaBodycam::TIPO_RECAMBIO_TECNOLOGICO)
+                    ->exists();
+        });
+
+        if ($bodycamsConRecambio->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'bodycams_seleccionadas' => 'Una o más bodycams ya tienen una entrega por recambio tecnológico activa.'
+            ]);
+        }
+    }
+
+    private function sincronizarEstadoBodycam(?Bodycam $bodycam): void
+    {
+        if (!$bodycam) {
+            return;
+        }
+
+        $tieneAsignacionActiva = $bodycam->entregasActuales()
+            ->get()
+            ->contains(function (EntregaBodycam $entrega) use ($bodycam) {
+                return $entrega->esRecambioTecnologico()
+                    || $entrega->bodycamsPendientes()->where('bodycams.id', $bodycam->id)->exists();
+            });
+
+        if ($tieneAsignacionActiva) {
+            $bodycam->update(['estado' => Bodycam::ESTADO_ENTREGADA]);
+            return;
+        }
+
+        if ($bodycam->estado === Bodycam::ESTADO_ENTREGADA) {
+            $bodycam->update(['estado' => Bodycam::ESTADO_DISPONIBLE]);
+        }
     }
 
     private function limpiarNombreCarpeta($nombre)

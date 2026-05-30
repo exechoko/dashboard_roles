@@ -13,7 +13,6 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 use PhpOffice\PhpWord\TemplateProcessor;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use ZipArchive;
 
 class EntregasCombustibleController extends Controller
 {
@@ -59,7 +58,7 @@ class EntregasCombustibleController extends Controller
     public function store(StoreEntregaCombustibleRequest $request): RedirectResponse
     {
         $entrega = EntregaCombustible::create(array_merge(
-            $this->datosEntrega($request->validated()),
+            $request->validated(),
             ['usuario_creador' => auth()->user()->name]
         ));
 
@@ -79,7 +78,7 @@ class EntregasCombustibleController extends Controller
 
     public function update(UpdateEntregaCombustibleRequest $request, EntregaCombustible $entregaCombustible): RedirectResponse
     {
-        $entregaCombustible->update($this->datosEntrega($request->validated()));
+        $entregaCombustible->update($request->validated());
 
         return redirect()->route('entrega-combustible.show', $entregaCombustible)
             ->with('success', 'Entrega de combustible actualizada exitosamente.');
@@ -102,17 +101,24 @@ class EntregasCombustibleController extends Controller
         }
 
         try {
-            $templateTemporal = $this->crearTemplateTemporalNormalizado($templatePath);
-            $templateProcessor = new TemplateProcessor($templateTemporal);
+            $templateProcessor = new TemplateProcessor($templatePath);
+
+            $remitoTexto = $entregaCombustible->remito
+                ? ' - Remito ' . $entregaCombustible->remito
+                : '';
 
             $templateProcessor->setValue('DIA', $entregaCombustible->fecha_entrega->format('d'));
             $templateProcessor->setValue('MES', $this->mesEnEspanol($entregaCombustible->fecha_entrega));
             $templateProcessor->setValue('ANIO', $entregaCombustible->fecha_entrega->format('Y'));
             $templateProcessor->setValue('HORA', Carbon::parse($entregaCombustible->hora_entrega)->format('H:i'));
             $templateProcessor->setValue('TICKET', $entregaCombustible->ticket);
+            $templateProcessor->setValue('REMITO_TEXTO', $remitoTexto);
+            $templateProcessor->setValue('EMPRESA_SOPORTE', $entregaCombustible->empresa_soporte);
             $templateProcessor->setValue('PERSONAL_RECEPTOR', $entregaCombustible->personal_receptor);
             $templateProcessor->setValue('CANTIDAD_BIDONES', (string) $entregaCombustible->cantidad_bidones);
             $templateProcessor->setValue('CANTIDAD_BIDONES_LETRAS', strtoupper($this->numeroALetras($entregaCombustible->cantidad_bidones)));
+            $templateProcessor->setValue('LITROS_POR_BIDON', (string) $entregaCombustible->litros_por_bidon);
+            $templateProcessor->setValue('COMBUSTIBLE', $entregaCombustible->combustible);
 
             $fileName = 'entrega_combustible_' . $entregaCombustible->id . '_' . now()->format('Ymd_His') . '.docx';
             $relativePath = 'entregas_combustible/documentos/' . $fileName;
@@ -123,8 +129,6 @@ class EntregasCombustibleController extends Controller
             }
 
             $templateProcessor->saveAs($destinationPath);
-
-            @unlink($templateTemporal);
 
             $entregaCombustible->update(['ruta_archivo' => $relativePath]);
 
@@ -163,44 +167,6 @@ class EntregasCombustibleController extends Controller
             ->with('success', 'Acta firmada cargada exitosamente.');
     }
 
-    private function crearTemplateTemporalNormalizado(string $templatePath): string
-    {
-        $tempPath = storage_path('app/temp/template_entrega_combustible_' . uniqid('', true) . '.docx');
-
-        if (!file_exists(dirname($tempPath))) {
-            mkdir(dirname($tempPath), 0755, true);
-        }
-
-        copy($templatePath, $tempPath);
-
-        $zip = new ZipArchive();
-        if ($zip->open($tempPath) === true) {
-            $xml = $zip->getFromName('word/document.xml');
-            if ($xml !== false) {
-                $xml = preg_replace('/\$\{<\/w:t>.*?<w:t>CANTIDAD_<\/w:t>.*?<w:t>BIDONES<\/w:t>.*?<w:t>_LETRAS<\/w:t>.*?<w:t>\}/s', '${CANTIDAD_BIDONES_LETRAS}', $xml);
-                $xml = preg_replace('/\$\{CANTIDAD_<\/w:t>.*?<w:t>BIDONES<\/w:t>.*?<w:t>\)/s', '${CANTIDAD_BIDONES})', $xml);
-                $zip->addFromString('word/document.xml', $xml);
-            }
-
-            $zip->close();
-        }
-
-        return $tempPath;
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     * @return array<string, mixed>
-     */
-    private function datosEntrega(array $data): array
-    {
-        $data['cantidad_litros'] = 40;
-        $data['cantidad_bidones'] = 2;
-        $data['litros_por_bidon'] = 20;
-
-        return $data;
-    }
-
     private function mesEnEspanol(Carbon $fecha): string
     {
         $meses = [
@@ -223,30 +189,57 @@ class EntregasCombustibleController extends Controller
 
     private function numeroALetras(int $numero): string
     {
-        $numeros = [
-            0 => 'cero',
-            1 => 'un',
-            2 => 'dos',
-            3 => 'tres',
-            4 => 'cuatro',
-            5 => 'cinco',
-            6 => 'seis',
-            7 => 'siete',
-            8 => 'ocho',
-            9 => 'nueve',
-            10 => 'diez',
-            11 => 'once',
-            12 => 'doce',
-            13 => 'trece',
-            14 => 'catorce',
-            15 => 'quince',
-            16 => 'dieciséis',
-            17 => 'diecisiete',
-            18 => 'dieciocho',
-            19 => 'diecinueve',
-            20 => 'veinte',
+        $unidades = [
+            0 => 'cero', 1 => 'un', 2 => 'dos', 3 => 'tres', 4 => 'cuatro',
+            5 => 'cinco', 6 => 'seis', 7 => 'siete', 8 => 'ocho', 9 => 'nueve',
+            10 => 'diez', 11 => 'once', 12 => 'doce', 13 => 'trece', 14 => 'catorce',
+            15 => 'quince', 16 => 'dieciséis', 17 => 'diecisiete', 18 => 'dieciocho',
+            19 => 'diecinueve', 20 => 'veinte', 21 => 'veintiún', 22 => 'veintidós',
+            23 => 'veintitrés', 24 => 'veinticuatro', 25 => 'veinticinco',
+            26 => 'veintiséis', 27 => 'veintisiete', 28 => 'veintiocho', 29 => 'veintinueve',
         ];
 
-        return $numeros[$numero] ?? (string) $numero;
+        if ($numero < 0 || $numero > 999) {
+            return (string) $numero;
+        }
+
+        if (isset($unidades[$numero])) {
+            return $unidades[$numero];
+        }
+
+        $decenas = [
+            3 => 'treinta', 4 => 'cuarenta', 5 => 'cincuenta', 6 => 'sesenta',
+            7 => 'setenta', 8 => 'ochenta', 9 => 'noventa',
+        ];
+
+        $centenas = [
+            1 => 'ciento', 2 => 'doscientos', 3 => 'trescientos', 4 => 'cuatrocientos',
+            5 => 'quinientos', 6 => 'seiscientos', 7 => 'setecientos', 8 => 'ochocientos',
+            9 => 'novecientos',
+        ];
+
+        $resultado = '';
+
+        if ($numero >= 100) {
+            $c = (int) ($numero / 100);
+            $resultado = $numero === 100 ? 'cien' : $centenas[$c];
+            $numero -= $c * 100;
+            if ($numero > 0) {
+                $resultado .= ' ';
+            }
+        }
+
+        if ($numero >= 30) {
+            $d = (int) ($numero / 10);
+            $resultado .= $decenas[$d];
+            $numero -= $d * 10;
+            if ($numero > 0) {
+                $resultado .= ' y ' . $unidades[$numero];
+            }
+        } elseif ($numero > 0) {
+            $resultado .= $unidades[$numero];
+        }
+
+        return $resultado;
     }
 }

@@ -33,22 +33,28 @@
                         </div>
                         <div class="card-body">
                             <div class="row">
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="form-group">
                                         <label><strong>Fecha:</strong></label>
                                         <p class="form-control-static">{{ $entrega->fecha_entrega->format('d/m/Y') }}</p>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="form-group">
                                         <label><strong>Hora:</strong></label>
                                         <p class="form-control-static">{{ substr($entrega->hora_entrega, 0, 5) }}</p>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="form-group">
                                         <label><strong>Ticket:</strong></label>
                                         <p class="form-control-static">{{ $entrega->ticket }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label><strong>Remito:</strong></label>
+                                        <p class="form-control-static">{{ $entrega->remito ?: 'N/A' }}</p>
                                     </div>
                                 </div>
                             </div>

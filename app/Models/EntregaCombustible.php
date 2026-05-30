@@ -16,6 +16,7 @@ class EntregaCombustible extends Model
         'fecha_entrega',
         'hora_entrega',
         'ticket',
+        'remito',
         'empresa_soporte',
         'personal_receptor',
         'legajo_receptor',

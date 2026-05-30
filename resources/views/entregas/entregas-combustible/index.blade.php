@@ -76,11 +76,16 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center flex-column flex-md-row w-100">
                         <h4 class="card-title mb-2 mb-md-0">Listado de Entregas</h4>
-                        @can('crear-entrega-combustible')
-                            <a href="{{ route('entrega-combustible.create') }}" class="btn btn-primary btn-lg-mobile">
-                                <i class="fas fa-plus"></i> Nueva Entrega
-                            </a>
-                        @endcan
+                        <div class="d-flex flex-column flex-md-row" style="gap: .5rem;">
+                            <button type="button" class="btn btn-success btn-lg-mobile" data-toggle="modal" data-target="#modalWhatsappCombustible">
+                                <i class="fab fa-whatsapp"></i> Solicitar por WhatsApp
+                            </button>
+                            @can('crear-entrega-combustible')
+                                <a href="{{ route('entrega-combustible.create') }}" class="btn btn-primary btn-lg-mobile">
+                                    <i class="fas fa-plus"></i> Nueva Entrega
+                                </a>
+                            @endcan
+                        </div>
                     </div>
                 </div>
                 <div class="card-body">
@@ -123,6 +128,7 @@
                                     <th>N° Acta</th>
                                     <th>Fecha</th>
                                     <th>Ticket</th>
+                                    <th>Remito</th>
                                     <th>Empresa</th>
                                     <th>Receptor</th>
                                     <th>Cantidad</th>
@@ -136,6 +142,7 @@
                                         <td>{{ $entrega->id }}</td>
                                         <td>{{ $entrega->fecha_entrega->format('d/m/Y') }}<br><small class="text-muted">{{ substr($entrega->hora_entrega, 0, 5) }}</small></td>
                                         <td>{{ $entrega->ticket }}</td>
+                                        <td>{{ $entrega->remito ?: '—' }}</td>
                                         <td>{{ $entrega->empresa_soporte }}</td>
                                         <td>{{ $entrega->personal_receptor }}</td>
                                         <td><span class="badge badge-info">{{ $entrega->cantidad_litros }} litros</span><br><small>{{ $entrega->cantidad_bidones }} bidones x {{ $entrega->litros_por_bidon }} L</small></td>
@@ -184,7 +191,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="text-center py-4">No se encontraron entregas de combustible</td>
+                                        <td colspan="9" class="text-center py-4">No se encontraron entregas de combustible</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -198,4 +205,115 @@
             </div>
         </div>
     </section>
+
+    <div class="modal fade" id="modalWhatsappCombustible" tabindex="-1" role="dialog" aria-labelledby="modalWhatsappCombustibleLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="modalWhatsappCombustibleLabel">
+                        <i class="fab fa-whatsapp"></i> Solicitar combustible al 2° Jefe Patrulla
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small">Se abrirá WhatsApp Web/App con el mensaje pre-armado al número <strong>+54 9 3434 60-2014</strong>.</p>
+
+                    <div class="form-group">
+                        <label for="wa_saludo">Saludo</label>
+                        <select id="wa_saludo" class="form-control">
+                            <option value="Hola buenos días">Hola buenos días</option>
+                            <option value="Hola buenas tardes">Hola buenas tardes</option>
+                            <option value="Hola buenas noches">Hola buenas noches</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="wa_empresa">Empresa de soporte</label>
+                        <input type="text" id="wa_empresa" class="form-control" value="Patagonia Green">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="wa_litros">Cantidad de litros solicitados</label>
+                        <input type="number" id="wa_litros" class="form-control" value="40" min="1" max="9999">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="wa_mensaje">Mensaje (editable)</label>
+                        <textarea id="wa_mensaje" class="form-control" rows="4"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <a id="wa_enviar" href="#" target="_blank" rel="noopener" class="btn btn-success">
+                        <i class="fab fa-whatsapp"></i> Abrir WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
+
+@push('scripts')
+<script>
+    (function () {
+        var modal = document.getElementById('modalWhatsappCombustible');
+        if (!modal) {
+            return;
+        }
+        var saludo = document.getElementById('wa_saludo');
+        var empresa = document.getElementById('wa_empresa');
+        var litros = document.getElementById('wa_litros');
+        var mensaje = document.getElementById('wa_mensaje');
+        var enviar = document.getElementById('wa_enviar');
+        var telefono = '5493434602014';
+        var manual = false;
+
+        function sugerirSaludo() {
+            var h = new Date().getHours();
+            if (h < 12) {
+                saludo.value = 'Hola buenos días';
+            } else if (h < 20) {
+                saludo.value = 'Hola buenas tardes';
+            } else {
+                saludo.value = 'Hola buenas noches';
+            }
+        }
+
+        function regenerar() {
+            if (manual) {
+                actualizarLink();
+                return;
+            }
+            mensaje.value = saludo.value + ' Jefe. Desde la empresa de soporte ' + empresa.value +
+                ' nos solicitaron ' + litros.value + ' litros de combustible para los generadores ' +
+                'de la división y antenas radiobases';
+            actualizarLink();
+        }
+
+        function actualizarLink() {
+            enviar.href = 'https://wa.me/' + telefono + '?text=' + encodeURIComponent(mensaje.value);
+        }
+
+        if (typeof $ !== 'undefined') {
+            $(modal).on('show.bs.modal', function () {
+                manual = false;
+                sugerirSaludo();
+                regenerar();
+            });
+        } else {
+            sugerirSaludo();
+            regenerar();
+        }
+
+        saludo.addEventListener('change', regenerar);
+        empresa.addEventListener('input', regenerar);
+        litros.addEventListener('input', regenerar);
+        mensaje.addEventListener('input', function () {
+            manual = true;
+            actualizarLink();
+        });
+    })();
+</script>
+@endpush

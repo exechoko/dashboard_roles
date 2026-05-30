@@ -37,8 +37,8 @@
             <div class="col-md-4">
                 <div class="form-group">
                     <label for="remito">Remito (opcional)</label>
-                    <input type="text" class="form-control @error('remito') is-invalid @enderror" id="remito" name="remito" value="{{ old('remito', $entrega->remito ?? '') }}" maxlength="100" pattern="[A-Za-z0-9]+" placeholder="Alfanumérico, sin espacios">
-                    <small class="text-muted">Número de remito del ticket. Solo letras y números.</small>
+                    <input type="text" class="form-control @error('remito') is-invalid @enderror" id="remito" name="remito" value="{{ old('remito', $entrega->remito ?? '') }}" maxlength="100" pattern="[A-Za-z0-9\-]+" placeholder="Ej.: 0001-00012345">
+                    <small class="text-muted">Número de remito del ticket. Letras, números y guiones, sin espacios.</small>
                     @error('remito')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror

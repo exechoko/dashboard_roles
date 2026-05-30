@@ -70,6 +70,11 @@ class PatrimonioCargo extends Model
         return $this->belongsTo(Destino::class, 'firmante_destino_id');
     }
 
+    public function movimientosSalida()
+    {
+        return $this->hasMany(PatrimonioCargoMovimiento::class, 'cargo_id')->latest('fecha');
+    }
+
     // ─── Scopes ─────────────────────────────────────────────
 
     public function scopePendientes($query)

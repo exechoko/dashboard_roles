@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\FlotaGeneral;
+use App\Models\Historico;
 use App\Models\PatrimonioCargo;
+use App\Models\PatrimonioCargoMovimiento;
 use App\Models\TipoMovimiento;
 use Illuminate\Support\Facades\Log;
 
@@ -64,7 +66,7 @@ class PatrimonioService
         if (in_array($tipoMovimientoId, [
             $ids['baja'],
         ])) {
-            $this->limpiarPatrimonio($flota);
+            $this->limpiarPatrimonio($flota, $datos['historico_id'] ?? null, null, 'Baja');
             return null;
         }
 
@@ -78,6 +80,8 @@ class PatrimonioService
      */
     public function crearCargo(FlotaGeneral $flota, int $destinoId, ?int $historicoId = null, $fecha = null): PatrimonioCargo
     {
+        $this->registrarSalidaCargoFirmado($flota, $destinoId, $historicoId);
+
         $cargo = PatrimonioCargo::where('destino_id', $destinoId)
             ->where('estado', 'pendiente')
             ->latest()
@@ -126,15 +130,66 @@ class PatrimonioService
     /**
      * Limpiar patrimonio de un equipo
      */
-    public function limpiarPatrimonio(FlotaGeneral $flota): void
+    public function limpiarPatrimonio(FlotaGeneral $flota, ?int $historicoId = null, ?int $destinoDestinoId = null, ?string $motivo = null): void
     {
         if (!$flota->patrimoniado) {
             return;
         }
 
+        $this->registrarSalidaCargoFirmado($flota, $destinoDestinoId, $historicoId, $motivo);
+
         Log::info("Patrimonio limpiado para equipo #{$flota->equipo_id}");
 
         $flota->despatrimoniar();
+    }
+
+    /**
+     * Si el equipo está actualmente en un cargo FIRMADO, deja registrado que
+     * salió de ese cargo (a qué dependencia / por qué motivo) antes de que se
+     * reasigne o limpie su patrimonio. Los cargos pendientes no son actas, se ignoran.
+     */
+    private function registrarSalidaCargoFirmado(FlotaGeneral $flota, ?int $destinoDestinoId, ?int $historicoId, ?string $motivo = null): void
+    {
+        if (!$flota->cargo_id) {
+            return;
+        }
+
+        $cargo = $flota->cargo()->first();
+
+        if (!$cargo || $cargo->estado !== 'firmado') {
+            return;
+        }
+
+        $tipoMovimientoId = null;
+        $fecha = now();
+
+        if ($historicoId) {
+            $historico = Historico::find($historicoId);
+
+            if ($historico) {
+                $tipoMovimientoId = $historico->tipo_movimiento_id;
+                $fecha = $historico->fecha_asignacion ?? $fecha;
+            }
+        }
+
+        if (!$motivo && $tipoMovimientoId) {
+            $motivo = TipoMovimiento::where('id', $tipoMovimientoId)->value('nombre');
+        }
+
+        PatrimonioCargoMovimiento::create([
+            'cargo_id'           => $cargo->id,
+            'equipo_id'          => $flota->equipo_id,
+            'flota_id'           => $flota->id,
+            'destino_origen_id'  => $flota->destino_patrimonial_id,
+            'destino_destino_id' => $destinoDestinoId,
+            'historico_id'       => $historicoId,
+            'tipo_movimiento_id' => $tipoMovimientoId,
+            'motivo'             => $motivo,
+            'usuario'            => auth()->user()->name ?? 'Sistema',
+            'fecha'              => $fecha,
+        ]);
+
+        Log::info("Equipo #{$flota->equipo_id} salió del cargo firmado #{$cargo->id}");
     }
 
     /**

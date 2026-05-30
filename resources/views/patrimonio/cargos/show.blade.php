@@ -212,14 +212,73 @@
                                 <span class="detail-label">Dependencia del firmante</span>
                                 <strong class="d-block text-break">{{ $cargo->firmanteDestino->nombre ?? '-' }}</strong>
                             </div>
-                            @if($cargo->ruta_documento)
-                                <div class="col-12 mt-3">
-                                    <span class="detail-label">Acta firmada</span>
-                                    <a href="{{ route('patrimonio.cargos.acta', $cargo->id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <div class="col-12 mt-3">
+                                <span class="detail-label">Acta firmada</span>
+                                @if($cargo->ruta_documento)
+                                    <a href="{{ route('patrimonio.cargos.acta', $cargo->id) }}" target="_blank" class="btn btn-sm btn-outline-primary mb-2">
                                         <i class="fas fa-file-signature mr-1"></i>{{ $cargo->acta_nombre_original ?? 'Ver acta firmada' }}
                                     </a>
-                                </div>
-                            @endif
+                                @else
+                                    <p class="text-muted mb-2">Aún no se adjuntó el acta firmada.</p>
+                                @endif
+
+                                <form method="POST" action="{{ route('patrimonio.cargos.subir-acta', $cargo->id) }}" enctype="multipart/form-data" class="form-inline">
+                                    @csrf
+                                    <div class="form-group mr-2 mb-2">
+                                        <input type="file" name="acta_firmada" class="form-control-file @error('acta_firmada') is-invalid @enderror" accept="application/pdf,image/jpeg,image/png,image/webp" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-outline-success mb-2">
+                                        <i class="fas fa-upload mr-1"></i>{{ $cargo->ruta_documento ? 'Reemplazar acta' : 'Subir acta' }}
+                                    </button>
+                                    <small class="form-text text-muted w-100">PDF o imagen JPG, PNG, WEBP. Máximo 10 MB.</small>
+                                    @error('acta_firmada')
+                                        <div class="invalid-feedback d-block w-100">{{ $message }}</div>
+                                    @enderror
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            @if ($cargo->movimientosSalida->count() > 0)
+                <div class="card mt-4 border-left-warning">
+                    <div class="card-header">
+                        <h4><i class="fas fa-sign-out-alt mr-2 text-warning"></i>Equipos que salieron de este cargo</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small">Equipos que estaban en este cargo firmado y luego fueron movidos. Se conserva el registro de a dónde fueron.</p>
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>TEI</th>
+                                        <th>ISSI</th>
+                                        <th>Tipo / Modelo</th>
+                                        <th>Movimiento</th>
+                                        <th>Destino</th>
+                                        <th>Fecha</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($cargo->movimientosSalida as $salida)
+                                        <tr>
+                                            <td><span class="badge badge-primary patrimonio-code-badge">{{ $salida->equipo->tei ?? '-' }}</span></td>
+                                            <td><span class="badge badge-info patrimonio-code-badge">{{ $salida->equipo->issi ?? '-' }}</span></td>
+                                            <td>{{ $salida->equipo && $salida->equipo->tipo_terminal ? $salida->equipo->tipo_terminal->marca . ' ' . $salida->equipo->tipo_terminal->modelo : '-' }}</td>
+                                            <td>{{ $salida->tipoMovimiento->nombre ?? $salida->motivo ?? '-' }}</td>
+                                            <td>
+                                                @if($salida->destinoDestino)
+                                                    {{ $salida->destinoDestino->nombre }}
+                                                @else
+                                                    <span class="text-muted">{{ $salida->motivo ?? '-' }}</span>
+                                                @endif
+                                            </td>
+                                            <td>{{ $salida->fecha ? $salida->fecha->format('d/m/Y') : '-' }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AgregarEquipoPatrimonioCargoRequest;
 use App\Http\Requests\FirmarPatrimonioCargoRequest;
+use App\Http\Requests\SubirActaPatrimonioCargoRequest;
 use App\Models\Destino;
 use App\Models\FlotaGeneral;
 use App\Models\PatrimonioCargo;
@@ -20,7 +21,7 @@ class PatrimonioCargoController extends Controller
     function __construct()
     {
         $this->middleware('permission:ver-patrimonio-cargos')->only(['index', 'show', 'acta', 'generarActa']);
-        $this->middleware('permission:firmar-patrimonio-cargos')->only(['firmar', 'rechazar', 'agruparPendientes', 'agregarEquipo', 'quitarEquipo']);
+        $this->middleware('permission:firmar-patrimonio-cargos')->only(['firmar', 'rechazar', 'agruparPendientes', 'agregarEquipo', 'quitarEquipo', 'subirActa']);
         $this->middleware('permission:gestionar-patrimonio')->only(['dashboard']);
     }
 
@@ -143,6 +144,9 @@ class PatrimonioCargoController extends Controller
             'firmanteDestino',
             'historico',
             'historico.tipoMovimiento',
+            'movimientosSalida.equipo.tipo_terminal',
+            'movimientosSalida.destinoDestino',
+            'movimientosSalida.tipoMovimiento',
         ])->findOrFail($id);
 
         $destinos = Destino::orderBy('nombre')->get();
@@ -403,6 +407,37 @@ class PatrimonioCargoController extends Controller
 
         return redirect()->route('patrimonio.cargos.show', $cargo->id)
             ->with('success', 'Cargo patrimonial firmado exitosamente');
+    }
+
+    /**
+     * Subir o reemplazar el acta firmada de un cargo ya firmado.
+     */
+    public function subirActa(SubirActaPatrimonioCargoRequest $request, $id)
+    {
+        $cargo = PatrimonioCargo::findOrFail($id);
+
+        if (!$cargo->estaFirmado()) {
+            return back()->with('error', 'Solo se puede adjuntar el acta a un cargo firmado');
+        }
+
+        $archivo = $request->file('acta_firmada');
+        $rutaDocumento = 'anexos/' . $archivo->store('actas_patrimoniales', 'anexos');
+
+        if ($cargo->ruta_documento) {
+            $rutaAnterior = str_replace('anexos/', '', $cargo->ruta_documento);
+            if (Storage::disk('anexos')->exists($rutaAnterior)) {
+                Storage::disk('anexos')->delete($rutaAnterior);
+            }
+        }
+
+        $cargo->update([
+            'ruta_documento'       => $rutaDocumento,
+            'acta_nombre_original' => $archivo->getClientOriginalName(),
+            'acta_mime'            => $archivo->getClientMimeType(),
+        ]);
+
+        return redirect()->route('patrimonio.cargos.show', $cargo->id)
+            ->with('success', 'Acta firmada adjuntada exitosamente');
     }
 
     /**

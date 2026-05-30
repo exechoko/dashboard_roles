@@ -436,6 +436,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('cargos/{id}/equipos', [\App\Http\Controllers\PatrimonioCargoController::class, 'agregarEquipo'])->name('cargos.equipos.agregar');
         Route::delete('cargos/{id}/equipos/{flotaId}', [\App\Http\Controllers\PatrimonioCargoController::class, 'quitarEquipo'])->name('cargos.equipos.quitar');
         Route::post('cargos/{id}/firmar', [\App\Http\Controllers\PatrimonioCargoController::class, 'firmar'])->name('cargos.firmar');
+        Route::post('cargos/{id}/acta-firmada', [\App\Http\Controllers\PatrimonioCargoController::class, 'subirActa'])->name('cargos.subir-acta');
         Route::post('cargos/{id}/rechazar', [\App\Http\Controllers\PatrimonioCargoController::class, 'rechazar'])->name('cargos.rechazar');
 
         // Acciones especiales para bienes

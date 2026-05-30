@@ -26,6 +26,7 @@ class EntregaCombustible extends Model
         'cantidad_bidones',
         'litros_por_bidon',
         'combustible',
+        'estacion_servicio',
         'observaciones',
         'ruta_archivo',
         'ruta_acta_firmada',

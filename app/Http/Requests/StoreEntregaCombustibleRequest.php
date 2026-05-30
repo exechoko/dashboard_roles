@@ -35,6 +35,7 @@ class StoreEntregaCombustibleRequest extends FormRequest
             'cantidad_bidones' => ['required', 'integer', 'min:1', 'max:999'],
             'litros_por_bidon' => ['required', 'integer', 'min:1', 'max:999'],
             'combustible' => ['required', 'string', 'max:255'],
+            'estacion_servicio' => ['nullable', 'string', 'max:255'],
             'observaciones' => ['nullable', 'string'],
         ];
     }

@@ -122,6 +122,15 @@
                                 </div>
                             </div>
 
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label><strong>Estación de Servicio:</strong></label>
+                                        <p class="form-control-static">{{ $entrega->estacion_servicio ?: 'N/A' }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
                             @if($entrega->observaciones)
                                 <div class="form-group">
                                     <label><strong>Observaciones:</strong></label>

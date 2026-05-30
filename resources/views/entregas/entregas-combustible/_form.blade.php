@@ -138,6 +138,15 @@
         </div>
 
         <div class="form-group">
+            <label for="estacion_servicio">Estación de Servicio donde se cargó</label>
+            <input type="text" class="form-control @error('estacion_servicio') is-invalid @enderror" id="estacion_servicio" name="estacion_servicio" value="{{ old('estacion_servicio', $entrega->estacion_servicio ?? '') }}" maxlength="255" placeholder="Ej.: YPF Bv. Racedo, Shell Av. Almafuerte...">
+            <small class="text-muted">Sólo para registro interno. No se incluye en el acta de entrega.</small>
+            @error('estacion_servicio')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+
+        <div class="form-group">
             <label for="observaciones">Observaciones</label>
             <textarea class="form-control @error('observaciones') is-invalid @enderror" id="observaciones" name="observaciones" rows="3">{{ old('observaciones', $entrega->observaciones ?? '') }}</textarea>
             @error('observaciones')

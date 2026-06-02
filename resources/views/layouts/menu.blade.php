@@ -233,6 +233,27 @@
             <i class="fas fa-life-ring"></i><span>CeCoCo</span>
         </a>
         <ul class="dropdown-menu">
+            @can('ver-analitica-eventos-cecoco')
+                <li class="{{ request()->routeIs('cecoco.analitica') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('cecoco.analitica') }}">
+                        <i class="fas fa-chart-bar"></i><span>Analítica de Delitos</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-analizador-eventos-cecoco')
+                <li class="{{ request()->routeIs('cecoco.index') || request()->routeIs('cecoco.show') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('cecoco.index') }}">
+                        <i class="fas fa-database"></i><span>Analizador de Eventos</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-mapa-calor-servicios-cecoco')
+                <li class="{{ request()->routeIs('cecoco.mapa-calor') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('cecoco.mapa-calor') }}">
+                        <i class="fas fa-fire"></i><span>Mapa de Calor Analizador</span>
+                    </a>
+                </li>
+            @endcan
             @can('ver-mapa-cecoco-en-vivo')
                 <li class="">
                     <a class="nav-link" href="/indexMapaCecocoEnVivo">
@@ -254,6 +275,7 @@
                     </a>
                 </li>
             @endcan
+            {{--
             @can('ver-mapa-calor-servicios-cecoco')
                 <li class="">
                     <a class="nav-link" href="/indexMapaCalor">
@@ -275,17 +297,18 @@
                     </a>
                 </li>
             @endcan
+            --}}
             @can('ver-historico-movil-cecoco')
                 <li class="{{ request()->routeIs('cecoco.historico-movil') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('cecoco.historico-movil') }}">
-                        <i class="fas fa-file-import"></i><span>Procesar Histórico Móvil</span>
+                        <i class="fas fa-file-import"></i><span>Procesar Histórico Excel</span>
                     </a>
                 </li>
             @endcan
             @can('ver-historico-movil-gis-cecoco')
                 <li class="{{ request()->routeIs('cecoco.historico-movil-gis') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('cecoco.historico-movil-gis') }}">
-                        <i class="fas fa-satellite-dish"></i><span>Histórico Móvil GIS</span>
+                        <i class="fas fa-satellite-dish"></i><span>Procesar Histórico GIS</span>
                     </a>
                 </li>
             @endcan
@@ -293,27 +316,6 @@
                 <li class="">
                     <a class="nav-link" href="/get-eventos">
                         <i class="far fa-file-alt"></i><span>Eventos</span>
-                    </a>
-                </li>
-            @endcan
-            @can('ver-analizador-eventos-cecoco')
-                <li class="{{ request()->routeIs('cecoco.index') || request()->routeIs('cecoco.show') ? 'active' : '' }}">
-                    <a class="nav-link" href="{{ route('cecoco.index') }}">
-                        <i class="fas fa-database"></i><span>Analizador de Eventos</span>
-                    </a>
-                </li>
-            @endcan
-            @can('ver-mapa-calor-servicios-cecoco')
-                <li class="{{ request()->routeIs('cecoco.mapa-calor') ? 'active' : '' }}">
-                    <a class="nav-link" href="{{ route('cecoco.mapa-calor') }}">
-                        <i class="fas fa-fire"></i><span>Mapa de Calor Analizador</span>
-                    </a>
-                </li>
-            @endcan
-            @can('ver-analitica-eventos-cecoco')
-                <li class="{{ request()->routeIs('cecoco.analitica') ? 'active' : '' }}">
-                    <a class="nav-link" href="{{ route('cecoco.analitica') }}">
-                        <i class="fas fa-chart-bar"></i><span>Analítica de Delitos</span>
                     </a>
                 </li>
             @endcan

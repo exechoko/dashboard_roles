@@ -26,6 +26,19 @@ use Carbon\Carbon;
 
 class HomeController extends Controller
 {
+    /**
+     * TTL (segundos) para los agregados de equipos/cámaras del dashboard.
+     * Cambian con ediciones de los usuarios; un valor corto coalesce recargas
+     * sin sacrificar frescura útil.
+     */
+    private const CACHE_TTL_PANEL = 60;
+
+    /**
+     * TTL (segundos) para las estadísticas Cecoco. Son de días ya cerrados
+     * (append-only por importación), por lo que pueden cachearse más tiempo.
+     */
+    private const CACHE_TTL_CECOCO = 21600;
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -46,6 +59,9 @@ class HomeController extends Controller
             'En revision'
         ])->pluck('id', 'nombre');
 
+        // Agregados que cambian lentamente: se cachean para que el GET /home
+        // (la pantalla a la que se llega tras el login) responda rápido.
+        extract(Cache::remember('dashboard.home.panel', self::CACHE_TTL_PANEL, function () use ($estados) {
         // Contadores básicos
         $cant_usuarios = User::count();
         $cant_roles = Role::count();
@@ -167,6 +183,30 @@ class HomeController extends Controller
             })
             ->count();
 
+        return compact(
+            'cant_usuarios',
+            'cant_roles',
+            'cant_camaras',
+            'cant_camaras_bde',
+            'cant_sitios_activos',
+            'cant_sitios_inactivos',
+            'cant_equipos_sin_funcionar',
+            'cant_equipos_temporales',
+            'cant_equipos_en_revision',
+            'cant_equipos_baja',
+            'cant_equipos_funcionales',
+            'cant_equipos_provisto_por_pg',
+            'cant_equipos_provisto_por_telecom',
+            'cant_equipos_provisto_por_per',
+            'cant_equipos_en_stock',
+            'cant_equipos_en_departamental',
+            'cant_equipos_en_div_911',
+            'cant_equipos_en_div_bancaria',
+            'cant_equipos_en_pg',
+            'cant_desinstalaciones'
+        );
+        }));
+
         // Datos para pestaña Novedades
         $fecha_actual = Carbon::now()->format('d/m/Y H:i');
         $hoy = Carbon::today();
@@ -225,7 +265,8 @@ class HomeController extends Controller
             ->orderBy('fecha_programada')
             ->get();
 
-        // Datos agrupados para gráficos
+        // Datos agrupados para gráficos (también agregados de cambio lento).
+        extract(Cache::remember('dashboard.home.graficos', self::CACHE_TTL_PANEL, function () use ($estados) {
         // Cámaras por tipo (agrupadas por el campo 'tipo' exacto de tipo_camara)
         $camaras_por_tipo = Camara::whereHas('sitio', fn($q) => $q->where('activo', true))
             ->with('tipoCamara')
@@ -305,7 +346,15 @@ class HomeController extends Controller
             'collapsed' => false,
         ];
 
+        return compact('camaras_por_tipo', 'arbol_dependencias');
+        }));
+
         // ── Cecoco: estadísticas de la semana anterior (ayer menos 6 días hasta ayer, para sumar 7 días) ──────────
+        // Datos de días ya cerrados: se cachean por jornada para no recalcular en cada carga.
+        extract(Cache::remember(
+            'dashboard.home.cecoco.' . Carbon::yesterday()->toDateString(),
+            self::CACHE_TTL_CECOCO,
+            function () {
         $cecocoFinSemana = Carbon::yesterday()->endOfDay();
         $cecocoInicioSemana = Carbon::yesterday()->subDays(6)->startOfDay();
 
@@ -359,6 +408,24 @@ class HomeController extends Controller
 
         $cecoco_hechos_ant = $cecoco_accidentes_ant + $cecoco_robos_ant + $cecoco_hurtos_ant + $cecoco_abuso_armas_ant + $cecoco_homicidios_ant;
 
+        return compact(
+            'cecoco_total_semana',
+            'cecoco_hechos',
+            'cecoco_accidentes',
+            'cecoco_robos',
+            'cecoco_hurtos',
+            'cecoco_abuso_armas',
+            'cecoco_homicidios',
+            'cecoco_periodo_label',
+            'cecoco_hechos_ant',
+            'cecoco_accidentes_ant',
+            'cecoco_robos_ant',
+            'cecoco_hurtos_ant',
+            'cecoco_abuso_armas_ant',
+            'cecoco_homicidios_ant'
+        );
+            }
+        ));
 
         return view('home', compact(
             'cant_usuarios',

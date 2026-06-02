@@ -98,6 +98,31 @@
         .periodo-rapido .btn {
             font-size: .82rem;
         }
+
+        .dashboard-config-card {
+            border: 1px dashed rgba(13, 110, 253, .35);
+            border-radius: 12px;
+            background: rgba(13, 110, 253, .04);
+        }
+
+        [data-theme="dark"] .dashboard-config-card {
+            background: rgba(56, 189, 248, .08);
+            border-color: rgba(56, 189, 248, .28);
+        }
+
+        .dashboard-config-card .form-check-label {
+            font-size: .86rem;
+        }
+
+        .eventos-table td {
+            vertical-align: top;
+            font-size: .86rem;
+        }
+
+        .eventos-table .descripcion-evento {
+            max-width: 560px;
+            white-space: normal;
+        }
     </style>
 @endsection
 
@@ -157,6 +182,69 @@
                         style="background: linear-gradient(135deg, #ec4899, #8b5cf6); border:none; box-shadow: 0 0 10px rgba(236, 72, 153, 0.5);">
                         <i class="bi bi-stars me-1"></i>Analizar
                     </button>
+                    <button id="btn-exportar-pdf" class="btn btn-outline-danger btn-sm px-3 ms-1" disabled>
+                        <i class="bi bi-file-earmark-pdf me-1"></i>Exportar PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-config-card p-3 mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+            <div>
+                <div class="fw-semibold"><i class="bi bi-sliders me-1 text-primary"></i>Dashboard configurable</div>
+                <small class="text-muted">Elegí qué gráficos y datos ver. La exportación incluye esta misma selección.</small>
+            </div>
+            <button id="btn-restaurar-dashboard" class="btn btn-outline-secondary btn-sm" type="button">Restaurar vista</button>
+        </div>
+        <div class="row g-2" id="dashboard-selector">
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="form-check">
+                    <input class="form-check-input dashboard-toggle" type="checkbox" value="fecha" id="toggle-fecha" checked>
+                    <label class="form-check-label" for="toggle-fecha">Llamadas por día</label>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="form-check">
+                    <input class="form-check-input dashboard-toggle" type="checkbox" value="comparativa" id="toggle-comparativa" checked>
+                    <label class="form-check-label" for="toggle-comparativa">Comparativa</label>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="form-check">
+                    <input class="form-check-input dashboard-toggle" type="checkbox" value="hora" id="toggle-hora" checked>
+                    <label class="form-check-label" for="toggle-hora">Por hora</label>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="form-check">
+                    <input class="form-check-input dashboard-toggle" type="checkbox" value="dia" id="toggle-dia" checked>
+                    <label class="form-check-label" for="toggle-dia">Por día semanal</label>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="form-check">
+                    <input class="form-check-input dashboard-toggle" type="checkbox" value="tipos" id="toggle-tipos" checked>
+                    <label class="form-check-label" for="toggle-tipos">Top tipificaciones</label>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="form-check">
+                    <input class="form-check-input dashboard-toggle" type="checkbox" value="calles" id="toggle-calles" checked>
+                    <label class="form-check-label" for="toggle-calles">Top calles/sectores</label>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="form-check">
+                    <input class="form-check-input dashboard-toggle" type="checkbox" value="incidencias" id="toggle-incidencias" checked>
+                    <label class="form-check-label" for="toggle-incidencias">Ranking sectores</label>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="form-check">
+                    <input class="form-check-input dashboard-toggle" type="checkbox" value="eventos" id="toggle-eventos" checked>
+                    <label class="form-check-label" for="toggle-eventos">Eventos analizados</label>
                 </div>
             </div>
         </div>
@@ -221,7 +309,7 @@
         </div>
 
         {{-- Tendencia diaria --}}
-        <div class="row g-3 mb-4">
+        <div class="row g-3 mb-4" data-dashboard-section="fecha">
             <div class="col-12">
                 <div class="chart-card">
                     <h6><i class="bi bi-telephone me-1"></i>Llamadas al 911 por día</h6>
@@ -231,7 +319,7 @@
         </div>
 
         {{-- Gráfico Comparativo --}}
-        <div class="row g-3 mb-4">
+        <div class="row g-3 mb-4" data-dashboard-section="comparativa">
             <div class="col-12">
                 <div class="chart-card">
                     <h6><i class="bi bi-bar-chart-steps me-1 text-primary"></i>Comparativa de Hechos de Relevancia (Período
@@ -243,13 +331,13 @@
 
         {{-- Gráficos --}}
         <div class="row g-3 mb-4">
-            <div class="col-12 col-lg-7">
+            <div class="col-12 col-lg-7" data-dashboard-section="hora">
                 <div class="chart-card h-100">
                     <h6><i class="bi bi-clock me-1"></i>Eventos por hora del día</h6>
                     <canvas id="chart-hora" height="200"></canvas>
                 </div>
             </div>
-            <div class="col-12 col-lg-5">
+            <div class="col-12 col-lg-5" data-dashboard-section="dia">
                 <div class="chart-card h-100">
                     <h6><i class="bi bi-calendar-week me-1"></i>Eventos por día de semana</h6>
                     <canvas id="chart-dia" height="200"></canvas>
@@ -258,13 +346,13 @@
         </div>
 
         <div class="row g-3 mb-4">
-            <div class="col-12 col-lg-6">
+            <div class="col-12 col-lg-6" data-dashboard-section="tipos">
                 <div class="chart-card">
                     <h6><i class="bi bi-list-ul me-1"></i>Top tipificaciones</h6>
                     <canvas id="chart-tipos" height="280"></canvas>
                 </div>
             </div>
-            <div class="col-12 col-lg-6">
+            <div class="col-12 col-lg-6" data-dashboard-section="calles">
                 <div class="chart-card">
                     <h6><i class="bi bi-signpost-2 me-1"></i>Top calles / sectores con más incidentes</h6>
                     <canvas id="chart-calles" height="280"></canvas>
@@ -273,13 +361,39 @@
         </div>
 
         {{-- Mayores incidencias en Paraná --}}
-        <div class="card mb-4" id="seccion-incidencias">
+        <div class="card mb-4" id="seccion-incidencias" data-dashboard-section="incidencias">
             <div class="card-header fw-semibold d-flex align-items-center gap-2">
                 <i class="bi bi-geo-alt-fill text-danger"></i>
                 Sectores con mayor concentración de incidencias — Paraná
             </div>
             <div class="card-body p-0">
                 <div id="tabla-incidencias-container" class="px-3 py-2"></div>
+            </div>
+        </div>
+
+        <div class="card mb-4" id="seccion-eventos" data-dashboard-section="eventos">
+            <div class="card-header fw-semibold d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <span><i class="bi bi-card-list text-primary me-1"></i>Eventos analizados</span>
+                <small class="text-muted" id="eventos-resumen">Últimos eventos del período seleccionado</small>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0 eventos-table">
+                        <thead>
+                            <tr>
+                                <th style="width:150px">Nro. expediente</th>
+                                <th style="width:140px">Fecha/hora</th>
+                                <th>Descripción</th>
+                                <th style="width:180px">Tipo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="eventos-analizados-body">
+                            <tr>
+                                <td colspan="4" class="text-muted text-center py-3">Sin datos cargados.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -353,10 +467,71 @@
             // ---- Estado ----
             let ultimosDatos = null;
             let chartHora = null, chartDia = null, chartTipos = null, chartCalles = null, chartFecha = null, chartComparativa = null;
+            const dashboardStorageKey = 'cecoco-analitica-dashboard';
+            const chartInstances = () => [chartFecha, chartComparativa, chartHora, chartDia, chartTipos, chartCalles].filter(Boolean);
+            const dashboardDefaults = ['fecha', 'comparativa', 'hora', 'dia', 'tipos', 'calles', 'incidencias', 'eventos'];
+            const chartLabels = {
+                fecha: 'Llamadas al 911 por día',
+                comparativa: 'Comparativa de hechos de relevancia',
+                hora: 'Eventos por hora del día',
+                dia: 'Eventos por día de semana',
+                tipos: 'Top tipificaciones',
+                calles: 'Top calles / sectores',
+                incidencias: 'Sectores con mayor concentración',
+                eventos: 'Eventos analizados'
+            };
+
+            function escapeHtml(value) {
+                return String(value ?? '').replace(/[&<>"']/g, function (char) {
+                    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char];
+                });
+            }
+
+            function truncar(value, maxLength) {
+                const text = String(value ?? '-');
+                return text.length > maxLength ? text.slice(0, maxLength - 1) + '…' : text;
+            }
+
+            function obtenerWidgetsSeleccionados() {
+                return Array.from(document.querySelectorAll('.dashboard-toggle:checked')).map(input => input.value);
+            }
+
+            function aplicarDashboardSeleccionado(guardar = true) {
+                const selected = obtenerWidgetsSeleccionados();
+                document.querySelectorAll('[data-dashboard-section]').forEach(section => {
+                    section.style.display = selected.includes(section.dataset.dashboardSection) ? '' : 'none';
+                });
+
+                if (guardar) {
+                    localStorage.setItem(dashboardStorageKey, JSON.stringify(selected));
+                }
+
+                requestAnimationFrame(function () {
+                    chartInstances().forEach(chart => chart.resize());
+                });
+            }
+
+            function cargarDashboardSeleccionado() {
+                let selected = dashboardDefaults;
+                try {
+                    const stored = JSON.parse(localStorage.getItem(dashboardStorageKey));
+                    if (Array.isArray(stored) && stored.length > 0) {
+                        selected = stored.filter(item => dashboardDefaults.includes(item));
+                    }
+                } catch (error) {
+                    selected = dashboardDefaults;
+                }
+
+                document.querySelectorAll('.dashboard-toggle').forEach(input => {
+                    input.checked = selected.includes(input.value);
+                });
+                aplicarDashboardSeleccionado(false);
+            }
 
             // Inicializar filtros
             document.getElementById('filtro-desde').value = haceDias(7);
             document.getElementById('filtro-hasta').value = hoy();
+            cargarDashboardSeleccionado();
 
             // Botones período rápido
             document.querySelectorAll('.periodo-rapido [data-dias]').forEach(btn => {
@@ -374,6 +549,14 @@
             });
             document.querySelector('[data-dias="7"]').classList.replace('btn-outline-primary', 'btn-primary');
             document.getElementById('btn-analizar').addEventListener('click', cargarDatos);
+            document.getElementById('btn-exportar-pdf').addEventListener('click', exportarPdf);
+            document.getElementById('btn-restaurar-dashboard').addEventListener('click', function () {
+                document.querySelectorAll('.dashboard-toggle').forEach(input => input.checked = true);
+                aplicarDashboardSeleccionado();
+            });
+            document.querySelectorAll('.dashboard-toggle').forEach(input => {
+                input.addEventListener('change', aplicarDashboardSeleccionado);
+            });
 
             // ---- Renderizar gráficos con colores del tema actual ----
             function renderCharts(datos) {
@@ -642,6 +825,151 @@
                 el.innerHTML = rows;
             }
 
+            function mostrarEventos(datos) {
+                const eventos = datos.eventos || [];
+                const body = document.getElementById('eventos-analizados-body');
+                const resumen = document.getElementById('eventos-resumen');
+
+                resumen.textContent = eventos.length > 0
+                    ? `Mostrando ${eventos.length.toLocaleString('es-AR')} de ${datos.total.toLocaleString('es-AR')} eventos del período`
+                    : 'Sin eventos para el período seleccionado';
+
+                if (eventos.length === 0) {
+                    body.innerHTML = '<tr><td colspan="4" class="text-muted text-center py-3">Sin eventos para el período seleccionado.</td></tr>';
+                    return;
+                }
+
+                body.innerHTML = eventos.map(evento => `
+                    <tr>
+                        <td class="fw-semibold">${escapeHtml(evento.nro_expediente)}</td>
+                        <td>${escapeHtml(evento.fecha_hora)}</td>
+                        <td class="descripcion-evento">${escapeHtml(truncar(evento.descripcion, 360))}</td>
+                        <td>${escapeHtml(evento.tipo_servicio)}</td>
+                    </tr>
+                `).join('');
+            }
+
+            function rangoAnalizado() {
+                const desde = document.getElementById('filtro-desde').value || '-';
+                const hasta = document.getElementById('filtro-hasta').value || '-';
+                const tipo = document.getElementById('filtro-tipo').value || 'Todas las tipificaciones';
+                const comparar = document.getElementById('filtro-comparar');
+                const compararTexto = comparar.options[comparar.selectedIndex] ? comparar.options[comparar.selectedIndex].text : '-';
+
+                return { desde, hasta, tipo, compararTexto };
+            }
+
+            async function exportarPdf() {
+                if (!ultimosDatos) {
+                    alert('Primero analizá un período para exportar.');
+                    return;
+                }
+
+                if (!window.jspdf || typeof html2canvas === 'undefined') {
+                    alert('No se encontraron las librerías necesarias para generar el PDF.');
+                    return;
+                }
+
+                const selected = obtenerWidgetsSeleccionados();
+                if (selected.length === 0) {
+                    alert('Seleccioná al menos un gráfico o sección para exportar.');
+                    return;
+                }
+
+                const button = document.getElementById('btn-exportar-pdf');
+                const originalText = button.innerHTML;
+                button.disabled = true;
+                button.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generando...';
+
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    const margin = 12;
+                    const contentWidth = pageWidth - margin * 2;
+                    const rango = rangoAnalizado();
+                    let y = 14;
+
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.setFontSize(15);
+                    pdf.text('Analítica de eventos CECOCO', margin, y);
+                    y += 8;
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(9);
+                    pdf.text(`Rango: ${rango.desde} a ${rango.hasta}`, margin, y);
+                    y += 5;
+                    pdf.text(`Tipificación: ${rango.tipo}`, margin, y);
+                    y += 5;
+                    pdf.text(`Comparación: ${rango.compararTexto}`, margin, y);
+                    y += 5;
+                    pdf.text(`Total eventos: ${ultimosDatos.total.toLocaleString('es-AR')} | Promedio diario: ${ultimosDatos.promedio_diario}`, margin, y);
+                    y += 7;
+
+                    for (const key of selected) {
+                        if (key === 'eventos') {
+                            continue;
+                        }
+
+                        const section = document.querySelector(`[data-dashboard-section="${key}"]`);
+                        if (!section || section.offsetParent === null) {
+                            continue;
+                        }
+
+                        const target = section.querySelector('.chart-card, .card') || section;
+                        const canvas = await html2canvas(target, { backgroundColor: '#ffffff', scale: 2 });
+                        const imageData = canvas.toDataURL('image/png');
+                        const imageHeight = Math.min((canvas.height * contentWidth) / canvas.width, 92);
+
+                        if (y + imageHeight + 10 > pageHeight - margin) {
+                            pdf.addPage();
+                            y = margin;
+                        }
+
+                        pdf.setFont('helvetica', 'bold');
+                        pdf.setFontSize(10);
+                        pdf.text(chartLabels[key] || key, margin, y);
+                        y += 4;
+                        pdf.addImage(imageData, 'PNG', margin, y, contentWidth, imageHeight);
+                        y += imageHeight + 7;
+                    }
+
+                    if (selected.includes('eventos') && ultimosDatos.eventos && ultimosDatos.eventos.length > 0) {
+                        if (typeof pdf.autoTable === 'function') {
+                            pdf.addPage();
+                            pdf.setFont('helvetica', 'bold');
+                            pdf.setFontSize(12);
+                            pdf.text('Eventos analizados', margin, margin);
+                            pdf.autoTable({
+                                startY: margin + 5,
+                                head: [['Nro. expediente', 'Fecha/hora', 'Descripción']],
+                                body: ultimosDatos.eventos.map(evento => [
+                                    evento.nro_expediente,
+                                    evento.fecha_hora,
+                                    truncar(evento.descripcion, 180)
+                                ]),
+                                styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak' },
+                                headStyles: { fillColor: [13, 110, 253] },
+                                columnStyles: {
+                                    0: { cellWidth: 34 },
+                                    1: { cellWidth: 30 },
+                                    2: { cellWidth: 126 }
+                                },
+                                margin: { left: margin, right: margin }
+                            });
+                        }
+                    }
+
+                    pdf.save(`analitica-cecoco-${rango.desde}-${rango.hasta}.pdf`);
+                } catch (error) {
+                    console.error(error);
+                    alert('No se pudo generar el PDF. Revisá la consola.');
+                } finally {
+                    button.disabled = false;
+                    button.innerHTML = originalText;
+                }
+            }
+
             // ---- Carga de datos ----
             function cargarDatos() {
                 const desde = document.getElementById('filtro-desde').value;
@@ -658,7 +986,13 @@
                 if (tipo) params.append('tipo', tipo);
 
                 fetch(`{{ route('api.cecoco.analitica.datos') }}?${params}`)
-                    .then(r => r.json())
+                    .then(r => r.json().then(payload => {
+                        if (!r.ok) {
+                            throw new Error(payload.message || 'No se pudieron obtener los datos.');
+                        }
+
+                        return payload;
+                    }))
                     .then(datos => {
                         ultimosDatos = datos;
 
@@ -672,14 +1006,18 @@
 
                         renderCharts(datos);
                         mostrarIncidencias(datos);
+                        mostrarEventos(datos);
 
                         document.getElementById('loading-analitica').style.display = 'none';
                         document.getElementById('contenido-analitica').style.display = 'block';
+                        document.getElementById('btn-exportar-pdf').disabled = false;
+                        aplicarDashboardSeleccionado(false);
                     })
                     .catch(err => {
                         console.error(err);
                         document.getElementById('loading-analitica').style.display = 'none';
-                        alert('Error al obtener datos. Revisá la consola.');
+                        document.getElementById('btn-exportar-pdf').disabled = true;
+                        alert(err.message || 'Error al obtener datos. Revisá la consola.');
                     });
             }
 

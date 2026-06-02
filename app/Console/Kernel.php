@@ -3,8 +3,10 @@
 namespace App\Console;
 
 use App\Services\TelegramService;
+use Carbon\Carbon;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Support\Facades\Cache;
 
 class Kernel extends ConsoleKernel
 {
@@ -36,6 +38,9 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/cecoco_importacion.log'))
             ->onSuccess(function () {
+                // Invalida el caché de estadísticas Cecoco del dashboard para que
+                // refleje los datos recién importados sin esperar al TTL.
+                Cache::forget('dashboard.home.cecoco.' . Carbon::yesterday()->toDateString());
                 app(TelegramService::class)->notificarScheduleCompletado('cecoco:importar-dia-anterior');
             })
             ->onFailure(function () {

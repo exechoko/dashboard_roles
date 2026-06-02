@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AnaliticaEventoCecocoRequest;
 use App\Models\EventoCecoco;
 use App\Models\Importacion;
 use App\Services\EventoCecocoParser;
@@ -814,17 +815,19 @@ class EventoCecocoController extends Controller
         return view('eventos-cecoco.analitica', compact('tipos'));
     }
 
-    public function analiticaDatos(Request $request): JsonResponse
+    public function analiticaDatos(AnaliticaEventoCecocoRequest $request): JsonResponse
     {
+        $validated = $request->validated();
+
         $desde = $request->filled('desde')
-            ? $request->desde . ' 00:00:00'
+            ? $validated['desde'] . ' 00:00:00'
             : now()->subDays(6)->startOfDay()->format('Y-m-d H:i:s');
 
         $hasta = $request->filled('hasta')
-            ? $request->hasta . ' 23:59:59'
+            ? $validated['hasta'] . ' 23:59:59'
             : now()->endOfDay()->format('Y-m-d H:i:s');
 
-        $tipo = $request->input('tipo');
+        $tipo = $validated['tipo'] ?? null;
 
         $base = EventoCecoco::whereBetween('fecha_hora', [$desde, $hasta]);
 
@@ -927,7 +930,7 @@ class EventoCecocoController extends Controller
         $diaPicoNombre = $diasNombres[$diaPico] ?? '-';
 
         // ── Comparativa Hechos de Relevancia (Período dinámico) ──
-        $compararCon = request('comparar_con', 'mes'); // 'semana', 'mes', 'anio'
+        $compararCon = $validated['comparar_con'] ?? 'mes'; // 'semana', 'mes', 'anio'
 
         $desdeAnteriorObj = \Carbon\Carbon::parse($desde);
         $hastaAnteriorObj = \Carbon\Carbon::parse($hasta);
@@ -971,6 +974,21 @@ class EventoCecocoController extends Controller
             $comparativaAnterior[] = (clone $baseAnterior)->whereRaw($condition)->count();
         }
 
+        $eventos = (clone $base)
+            ->select(['id', 'nro_expediente', 'fecha_hora', 'descripcion', 'tipo_servicio'])
+            ->orderByDesc('fecha_hora')
+            ->limit(100)
+            ->get()
+            ->map(function (EventoCecoco $evento): array {
+                return [
+                    'id' => $evento->id,
+                    'nro_expediente' => $evento->nro_expediente ?: '-',
+                    'fecha_hora' => $evento->fecha_hora ? $evento->fecha_hora->format('d/m/Y H:i') : '-',
+                    'descripcion' => $evento->descripcion ?: '-',
+                    'tipo_servicio' => $evento->tipo_servicio ?: '-',
+                ];
+            });
+
         return response()->json([
             'total' => $total,
             'desde' => $desde,
@@ -985,6 +1003,8 @@ class EventoCecocoController extends Controller
             'promedio_diario' => $promedioDiario,
             'comparativa_actual' => $comparativaActual,
             'comparativa_anterior' => $comparativaAnterior,
+            'eventos' => $eventos,
+            'eventos_limit' => 100,
         ]);
     }
 }

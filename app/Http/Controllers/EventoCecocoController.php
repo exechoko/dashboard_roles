@@ -10,6 +10,7 @@ use App\Services\CecocoExpedienteService;
 use App\Services\CecocoGrabacionesService;
 use App\Services\CecocoGrabacionesLocalService;
 use App\Jobs\DescargarEventosCecoco;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
@@ -31,7 +32,7 @@ class EventoCecocoController extends Controller
     {
         $eventos = null;
         $totalResultados = null;
-        $tieneFiltros = $request->hasAny(['anio', 'mes', 'operador', 'tipo', 'desde_datetime', 'hasta_datetime', 'desde', 'hasta', 'buscar']);
+        $tieneFiltros = $request->hasAny(['anio', 'mes', 'operador', 'tipo', 'tipos', 'desde_datetime', 'hasta_datetime', 'desde', 'hasta', 'buscar']);
 
         if ($tieneFiltros) {
             $query = EventoCecoco::select([
@@ -59,7 +60,10 @@ class EventoCecocoController extends Controller
                 $query->porOperador($request->operador);
             }
 
-            if ($request->filled('tipo')) {
+            $tiposFiltro = $this->tiposDesdeRequest($request);
+            if ($tiposFiltro !== []) {
+                $this->aplicarFiltroTipos($query, $tiposFiltro);
+            } elseif ($request->filled('tipo')) {
                 $query->porTipo($request->tipo);
             }
 
@@ -90,6 +94,7 @@ class EventoCecocoController extends Controller
                 'mes' => $request->input('mes'),
                 'operador' => $request->input('operador'),
                 'tipo' => $request->input('tipo'),
+                'tipos' => $request->input('tipos'),
                 'desde_datetime' => $request->input('desde_datetime'),
                 'hasta_datetime' => $request->input('hasta_datetime'),
                 'desde' => $request->input('desde'),
@@ -154,6 +159,7 @@ class EventoCecocoController extends Controller
             'mes',
             'operador',
             'tipo',
+            'tipos',
             'desde_datetime',
             'hasta_datetime',
             'desde',
@@ -274,7 +280,10 @@ class EventoCecocoController extends Controller
             $query->porOperador($request->operador);
         }
 
-        if ($request->filled('tipo')) {
+        $tiposFiltro = $this->tiposDesdeRequest($request);
+        if ($tiposFiltro !== []) {
+            $this->aplicarFiltroTipos($query, $tiposFiltro);
+        } elseif ($request->filled('tipo')) {
             $query->porTipo($request->tipo);
         }
 
@@ -373,7 +382,10 @@ class EventoCecocoController extends Controller
             $query->delMes((int) $request->mes);
         }
 
-        if ($request->filled('tipo')) {
+        $tiposFiltro = $this->tiposDesdeRequest($request);
+        if ($tiposFiltro !== []) {
+            $this->aplicarFiltroTipos($query, $tiposFiltro);
+        } elseif ($request->filled('tipo')) {
             $query->porTipo($request->tipo);
         }
 
@@ -415,6 +427,7 @@ class EventoCecocoController extends Controller
                 'mes',
                 'operador',
                 'tipo',
+                'tipos',
                 'desde_datetime',
                 'hasta_datetime',
                 'desde',
@@ -803,6 +816,45 @@ class EventoCecocoController extends Controller
         return trim($tipo);
     }
 
+    /**
+     * @return array<int, string>
+     */
+    private function tiposDesdeRequest(Request $request): array
+    {
+        $tipos = $request->input('tipos', []);
+
+        if (!is_array($tipos)) {
+            $tipos = [$tipos];
+        }
+
+        return collect($tipos)
+            ->filter(fn($tipo) => is_string($tipo) && trim($tipo) !== '')
+            ->map(fn($tipo) => trim($tipo))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param array<int, string> $tipos
+     */
+    private function aplicarFiltroTipos(Builder $query, array $tipos): void
+    {
+        if ($tipos === []) {
+            return;
+        }
+
+        $query->where(function (Builder $query) use ($tipos): void {
+            foreach ($tipos as $tipo) {
+                if ($tipo === 'Dispositivo Dual') {
+                    $query->orWhereRaw("tipo_servicio REGEXP '^[Dd]\\.?[[:space:]]*[Dd]\\.?$'");
+                } else {
+                    $query->orWhere('tipo_servicio', 'like', '%' . $tipo . '%');
+                }
+            }
+        });
+    }
+
     public function analitica(Request $request)
     {
         $tipos = Cache::rememberForever('cecoco_tipos', function () {
@@ -827,17 +879,21 @@ class EventoCecocoController extends Controller
             ? $validated['hasta'] . ' 23:59:59'
             : now()->endOfDay()->format('Y-m-d H:i:s');
 
-        $tipo = $validated['tipo'] ?? null;
+        $tiposFiltro = collect($validated['tipos'] ?? [])
+            ->filter(fn($tipo) => is_string($tipo) && trim($tipo) !== '')
+            ->map(fn($tipo) => trim($tipo))
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($tiposFiltro === [] && !empty($validated['tipo'])) {
+            $tiposFiltro = [$validated['tipo']];
+        }
 
         $base = EventoCecoco::whereBetween('fecha_hora', [$desde, $hasta]);
 
-        if ($tipo) {
-            if ($tipo === 'Dispositivo Dual') {
-                // Busca todas las variantes: D.D., dd, D.d, D.D, d.d. etc.
-                $base->whereRaw("tipo_servicio REGEXP '^[Dd]\\.?[[:space:]]*[Dd]\\.?$'");
-            } else {
-                $base->where('tipo_servicio', 'like', '%' . $tipo . '%');
-            }
+        if ($tiposFiltro !== []) {
+            $this->aplicarFiltroTipos($base, $tiposFiltro);
         }
 
         // Total
@@ -950,12 +1006,8 @@ class EventoCecocoController extends Controller
         $hastaAnterior = $hastaAnteriorObj->format('Y-m-d H:i:s');
         $baseAnterior = EventoCecoco::whereBetween('fecha_hora', [$desdeAnterior, $hastaAnterior]);
 
-        if ($tipo) {
-            if ($tipo === 'Dispositivo Dual') {
-                $baseAnterior->whereRaw("tipo_servicio REGEXP '^[Dd]\\.?[[:space:]]*[Dd]\\.?$'");
-            } else {
-                $baseAnterior->where('tipo_servicio', 'like', '%' . $tipo . '%');
-            }
+        if ($tiposFiltro !== []) {
+            $this->aplicarFiltroTipos($baseAnterior, $tiposFiltro);
         }
 
         $condicionesRel = [

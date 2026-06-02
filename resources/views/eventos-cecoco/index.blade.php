@@ -13,6 +13,11 @@
 @if($eventos !== null)
     <div class="alert alert-light border mb-4">
         <strong>Eventos encontrados:</strong> {{ number_format($totalResultados ?? 0) }}
+        @if(is_array(request('tipos')) && count(request('tipos')) > 0)
+            <div class="small text-muted mt-1">
+                <strong>Tipificaciones filtradas:</strong> {{ implode(', ', request('tipos')) }}
+            </div>
+        @endif
     </div>
 @endif
 

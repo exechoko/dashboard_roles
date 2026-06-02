@@ -114,14 +114,21 @@
             font-size: .86rem;
         }
 
-        .eventos-table td {
-            vertical-align: top;
-            font-size: .86rem;
+        .tipificaciones-panel {
+            border: 1px solid rgba(0, 0, 0, .08);
+            border-radius: 10px;
+            max-height: 185px;
+            overflow-y: auto;
+            padding: .75rem;
         }
 
-        .eventos-table .descripcion-evento {
-            max-width: 560px;
-            white-space: normal;
+        [data-theme="dark"] .tipificaciones-panel {
+            border-color: rgba(255, 255, 255, .12);
+            background: rgba(15, 23, 42, .35);
+        }
+
+        .tipificaciones-panel .form-check-label {
+            font-size: .82rem;
         }
     </style>
 @endsection
@@ -140,7 +147,7 @@
     {{-- Filtros --}}
     <div class="card mb-4">
         <div class="card-body">
-            <div class="row g-3 align-items-end">
+            <div class="row g-3 align-items-end mb-3">
                 <div class="col-12 col-md-auto">
                     <label class="form-label fw-semibold mb-1" style="font-size:.82rem">PERÍODO RÁPIDO</label>
                     <div class="d-flex gap-1 periodo-rapido flex-wrap">
@@ -158,17 +165,6 @@
                     <label class="form-label fw-semibold mb-1" style="font-size:.82rem">HASTA</label>
                     <input type="date" id="filtro-hasta" class="form-control form-control-sm">
                 </div>
-                <div class="col-12 col-lg-3 col-xl-2">
-                    <label class="form-label fw-semibold mb-1" style="font-size:.82rem">TIPIFICACIÓN (opcional)</label>
-                    <select id="filtro-tipo" class="form-select form-select-sm select2-tipificacion" style="width:100%">
-                        <option value="">Todas las tipificaciones</option>
-                        @foreach($tipos as $tipo)
-                            @if($tipo)
-                                <option value="{{ $tipo }}">{{ $tipo }}</option>
-                            @endif
-                        @endforeach
-                    </select>
-                </div>
                 <div class="col-12 col-lg-2 col-xl-2">
                     <label class="form-label fw-semibold mb-1" style="font-size:.82rem">COMPARAR CON</label>
                     <select id="filtro-comparar" class="form-select form-select-sm" style="width:100%">
@@ -177,13 +173,46 @@
                         <option value="anio">Año anterior</option>
                     </select>
                 </div>
-                <div class="col-12 col-lg-auto col-xl-auto">
+            </div>
+
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                    <label class="form-label fw-semibold mb-0" style="font-size:.82rem">TIPIFICACIONES A MOSTRAR</label>
+                    <small class="text-muted">Marcá una o varias; con “Todas” no se aplica filtro por tipo.</small>
+                </div>
+                <div class="tipificaciones-panel">
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6 col-lg-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="tipos-todas" checked>
+                                <label class="form-check-label fw-semibold" for="tipos-todas">Todas las tipificaciones</label>
+                            </div>
+                        </div>
+                        @foreach($tipos as $index => $tipo)
+                            @if($tipo)
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input tipo-checkbox" type="checkbox" value="{{ $tipo }}" id="tipo-{{ $index }}">
+                                        <label class="form-check-label" for="tipo-{{ $index }}">{{ $tipo }}</label>
+                                    </div>
+                                </div>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end flex-wrap gap-2 pt-2 border-top">
+                <button id="btn-ver-analizador" class="btn btn-outline-primary btn-sm px-3" disabled>
+                    <i class="bi bi-box-arrow-up-right me-1"></i>Ver eventos en Analizador
+                </button>
+                <button id="btn-exportar-pdf" class="btn btn-outline-danger btn-sm px-3" disabled>
+                    <i class="bi bi-file-earmark-pdf me-1"></i>Exportar PDF
+                </button>
+                <div>
                     <button id="btn-analizar" class="btn btn-primary btn-sm px-4"
                         style="background: linear-gradient(135deg, #ec4899, #8b5cf6); border:none; box-shadow: 0 0 10px rgba(236, 72, 153, 0.5);">
                         <i class="bi bi-stars me-1"></i>Analizar
-                    </button>
-                    <button id="btn-exportar-pdf" class="btn btn-outline-danger btn-sm px-3 ms-1" disabled>
-                        <i class="bi bi-file-earmark-pdf me-1"></i>Exportar PDF
                     </button>
                 </div>
             </div>
@@ -239,12 +268,6 @@
                 <div class="form-check">
                     <input class="form-check-input dashboard-toggle" type="checkbox" value="incidencias" id="toggle-incidencias" checked>
                     <label class="form-check-label" for="toggle-incidencias">Ranking sectores</label>
-                </div>
-            </div>
-            <div class="col-6 col-md-4 col-lg-3">
-                <div class="form-check">
-                    <input class="form-check-input dashboard-toggle" type="checkbox" value="eventos" id="toggle-eventos" checked>
-                    <label class="form-check-label" for="toggle-eventos">Eventos analizados</label>
                 </div>
             </div>
         </div>
@@ -371,32 +394,6 @@
             </div>
         </div>
 
-        <div class="card mb-4" id="seccion-eventos" data-dashboard-section="eventos">
-            <div class="card-header fw-semibold d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <span><i class="bi bi-card-list text-primary me-1"></i>Eventos analizados</span>
-                <small class="text-muted" id="eventos-resumen">Últimos eventos del período seleccionado</small>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover mb-0 eventos-table">
-                        <thead>
-                            <tr>
-                                <th style="width:150px">Nro. expediente</th>
-                                <th style="width:140px">Fecha/hora</th>
-                                <th>Descripción</th>
-                                <th style="width:180px">Tipo</th>
-                            </tr>
-                        </thead>
-                        <tbody id="eventos-analizados-body">
-                            <tr>
-                                <td colspan="4" class="text-muted text-center py-3">Sin datos cargados.</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
     </div>
 @endsection
 
@@ -424,14 +421,6 @@
         });
 
         $(function () {
-            // Select2 para tipificación
-            $('#filtro-tipo').select2({
-                placeholder: 'Todas las tipificaciones',
-                allowClear: true,
-                width: '100%',
-                dropdownAutoWidth: true
-            });
-
             // Select2 para filtro comparar
             $('#filtro-comparar').select2({
                 width: '100%',
@@ -469,7 +458,7 @@
             let chartHora = null, chartDia = null, chartTipos = null, chartCalles = null, chartFecha = null, chartComparativa = null;
             const dashboardStorageKey = 'cecoco-analitica-dashboard';
             const chartInstances = () => [chartFecha, chartComparativa, chartHora, chartDia, chartTipos, chartCalles].filter(Boolean);
-            const dashboardDefaults = ['fecha', 'comparativa', 'hora', 'dia', 'tipos', 'calles', 'incidencias', 'eventos'];
+            const dashboardDefaults = ['fecha', 'comparativa', 'hora', 'dia', 'tipos', 'calles', 'incidencias'];
             const chartLabels = {
                 fecha: 'Llamadas al 911 por día',
                 comparativa: 'Comparativa de hechos de relevancia',
@@ -477,20 +466,8 @@
                 dia: 'Eventos por día de semana',
                 tipos: 'Top tipificaciones',
                 calles: 'Top calles / sectores',
-                incidencias: 'Sectores con mayor concentración',
-                eventos: 'Eventos analizados'
+                incidencias: 'Sectores con mayor concentración'
             };
-
-            function escapeHtml(value) {
-                return String(value ?? '').replace(/[&<>"']/g, function (char) {
-                    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[char];
-                });
-            }
-
-            function truncar(value, maxLength) {
-                const text = String(value ?? '-');
-                return text.length > maxLength ? text.slice(0, maxLength - 1) + '…' : text;
-            }
 
             function obtenerWidgetsSeleccionados() {
                 return Array.from(document.querySelectorAll('.dashboard-toggle:checked')).map(input => input.value);
@@ -528,6 +505,36 @@
                 aplicarDashboardSeleccionado(false);
             }
 
+            function obtenerTiposSeleccionados() {
+                if (document.getElementById('tipos-todas').checked) {
+                    return [];
+                }
+
+                return Array.from(document.querySelectorAll('.tipo-checkbox:checked')).map(input => input.value);
+            }
+
+            function resumenTiposSeleccionados() {
+                const tipos = obtenerTiposSeleccionados();
+                return tipos.length > 0 ? tipos.join(', ') : 'Todas las tipificaciones';
+            }
+
+            function sincronizarTipificaciones(event) {
+                const todas = document.getElementById('tipos-todas');
+
+                if (event && event.target === todas && todas.checked) {
+                    document.querySelectorAll('.tipo-checkbox').forEach(input => input.checked = false);
+                    return;
+                }
+
+                if (event && event.target.classList.contains('tipo-checkbox') && event.target.checked) {
+                    todas.checked = false;
+                }
+
+                if (document.querySelectorAll('.tipo-checkbox:checked').length === 0) {
+                    todas.checked = true;
+                }
+            }
+
             // Inicializar filtros
             document.getElementById('filtro-desde').value = haceDias(7);
             document.getElementById('filtro-hasta').value = hoy();
@@ -550,6 +557,11 @@
             document.querySelector('[data-dias="7"]').classList.replace('btn-outline-primary', 'btn-primary');
             document.getElementById('btn-analizar').addEventListener('click', cargarDatos);
             document.getElementById('btn-exportar-pdf').addEventListener('click', exportarPdf);
+            document.getElementById('btn-ver-analizador').addEventListener('click', abrirAnalizadorEventos);
+            document.getElementById('tipos-todas').addEventListener('change', sincronizarTipificaciones);
+            document.querySelectorAll('.tipo-checkbox').forEach(input => {
+                input.addEventListener('change', sincronizarTipificaciones);
+            });
             document.getElementById('btn-restaurar-dashboard').addEventListener('click', function () {
                 document.querySelectorAll('.dashboard-toggle').forEach(input => input.checked = true);
                 aplicarDashboardSeleccionado();
@@ -825,38 +837,47 @@
                 el.innerHTML = rows;
             }
 
-            function mostrarEventos(datos) {
-                const eventos = datos.eventos || [];
-                const body = document.getElementById('eventos-analizados-body');
-                const resumen = document.getElementById('eventos-resumen');
-
-                resumen.textContent = eventos.length > 0
-                    ? `Mostrando ${eventos.length.toLocaleString('es-AR')} de ${datos.total.toLocaleString('es-AR')} eventos del período`
-                    : 'Sin eventos para el período seleccionado';
-
-                if (eventos.length === 0) {
-                    body.innerHTML = '<tr><td colspan="4" class="text-muted text-center py-3">Sin eventos para el período seleccionado.</td></tr>';
-                    return;
-                }
-
-                body.innerHTML = eventos.map(evento => `
-                    <tr>
-                        <td class="fw-semibold">${escapeHtml(evento.nro_expediente)}</td>
-                        <td>${escapeHtml(evento.fecha_hora)}</td>
-                        <td class="descripcion-evento">${escapeHtml(truncar(evento.descripcion, 360))}</td>
-                        <td>${escapeHtml(evento.tipo_servicio)}</td>
-                    </tr>
-                `).join('');
-            }
-
             function rangoAnalizado() {
                 const desde = document.getElementById('filtro-desde').value || '-';
                 const hasta = document.getElementById('filtro-hasta').value || '-';
-                const tipo = document.getElementById('filtro-tipo').value || 'Todas las tipificaciones';
+                const tipo = resumenTiposSeleccionados();
                 const comparar = document.getElementById('filtro-comparar');
                 const compararTexto = comparar.options[comparar.selectedIndex] ? comparar.options[comparar.selectedIndex].text : '-';
 
                 return { desde, hasta, tipo, compararTexto };
+            }
+
+            function construirParametrosAnalisis() {
+                const desde = document.getElementById('filtro-desde').value;
+                const hasta = document.getElementById('filtro-hasta').value;
+                const compararCon = document.getElementById('filtro-comparar').value;
+                const params = new URLSearchParams({ desde, hasta, comparar_con: compararCon });
+
+                obtenerTiposSeleccionados().forEach(tipo => {
+                    params.append('tipos[]', tipo);
+                });
+
+                return params;
+            }
+
+            function abrirAnalizadorEventos() {
+                const desde = document.getElementById('filtro-desde').value;
+                const hasta = document.getElementById('filtro-hasta').value;
+
+                if (!desde || !hasta) {
+                    alert('Seleccioná un período de fechas.');
+                    return;
+                }
+
+                const url = new URL(`{{ route('cecoco.index') }}`, window.location.origin);
+                url.searchParams.set('desde_datetime', `${desde}T00:00`);
+                url.searchParams.set('hasta_datetime', `${hasta}T23:59`);
+
+                obtenerTiposSeleccionados().forEach(tipo => {
+                    url.searchParams.append('tipos[]', tipo);
+                });
+
+                window.location.href = url.toString();
             }
 
             async function exportarPdf() {
@@ -907,10 +928,6 @@
                     y += 7;
 
                     for (const key of selected) {
-                        if (key === 'eventos') {
-                            continue;
-                        }
-
                         const section = document.querySelector(`[data-dashboard-section="${key}"]`);
                         if (!section || section.offsetParent === null) {
                             continue;
@@ -934,32 +951,6 @@
                         y += imageHeight + 7;
                     }
 
-                    if (selected.includes('eventos') && ultimosDatos.eventos && ultimosDatos.eventos.length > 0) {
-                        if (typeof pdf.autoTable === 'function') {
-                            pdf.addPage();
-                            pdf.setFont('helvetica', 'bold');
-                            pdf.setFontSize(12);
-                            pdf.text('Eventos analizados', margin, margin);
-                            pdf.autoTable({
-                                startY: margin + 5,
-                                head: [['Nro. expediente', 'Fecha/hora', 'Descripción']],
-                                body: ultimosDatos.eventos.map(evento => [
-                                    evento.nro_expediente,
-                                    evento.fecha_hora,
-                                    truncar(evento.descripcion, 180)
-                                ]),
-                                styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak' },
-                                headStyles: { fillColor: [13, 110, 253] },
-                                columnStyles: {
-                                    0: { cellWidth: 34 },
-                                    1: { cellWidth: 30 },
-                                    2: { cellWidth: 126 }
-                                },
-                                margin: { left: margin, right: margin }
-                            });
-                        }
-                    }
-
                     pdf.save(`analitica-cecoco-${rango.desde}-${rango.hasta}.pdf`);
                 } catch (error) {
                     console.error(error);
@@ -974,16 +965,13 @@
             function cargarDatos() {
                 const desde = document.getElementById('filtro-desde').value;
                 const hasta = document.getElementById('filtro-hasta').value;
-                const tipo = document.getElementById('filtro-tipo').value;
-                const compararCon = document.getElementById('filtro-comparar').value;
 
                 if (!desde || !hasta) { alert('Seleccioná un período de fechas.'); return; }
 
                 document.getElementById('loading-analitica').style.display = 'block';
                 document.getElementById('contenido-analitica').style.display = 'none';
 
-                const params = new URLSearchParams({ desde, hasta, comparar_con: compararCon });
-                if (tipo) params.append('tipo', tipo);
+                const params = construirParametrosAnalisis();
 
                 fetch(`{{ route('api.cecoco.analitica.datos') }}?${params}`)
                     .then(r => r.json().then(payload => {
@@ -1006,17 +994,18 @@
 
                         renderCharts(datos);
                         mostrarIncidencias(datos);
-                        mostrarEventos(datos);
 
                         document.getElementById('loading-analitica').style.display = 'none';
                         document.getElementById('contenido-analitica').style.display = 'block';
                         document.getElementById('btn-exportar-pdf').disabled = false;
+                        document.getElementById('btn-ver-analizador').disabled = false;
                         aplicarDashboardSeleccionado(false);
                     })
                     .catch(err => {
                         console.error(err);
                         document.getElementById('loading-analitica').style.display = 'none';
                         document.getElementById('btn-exportar-pdf').disabled = true;
+                        document.getElementById('btn-ver-analizador').disabled = true;
                         alert(err.message || 'Error al obtener datos. Revisá la consola.');
                     });
             }

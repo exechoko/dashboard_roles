@@ -64,10 +64,19 @@ return [
     ],
 
     // Motor gratuito de geocodificación (OpenStreetMap / Nominatim). Sin API key.
-    // Política de uso: máximo 1 request/seg y User-Agent identificable.
+    // Por defecto apunta a la instancia self-hosted en el servidor (extract de
+    // Entre Ríos, ver README_NOMINATIM.md). Al ser propia NO rige la política de
+    // 1 request/seg del servidor público, por eso el delay por defecto es bajo.
+    // Para volver al servidor público de OSM: NOMINATIM_BASE_URL=https://nominatim.openstreetmap.org
+    // y NOMINATIM_DELAY_MS=1100 (su política exige máximo 1 req/seg).
     'nominatim' => [
-        'base_url'  => env('NOMINATIM_BASE_URL', 'https://nominatim.openstreetmap.org'),
-        'delay_ms'  => (int) env('NOMINATIM_DELAY_MS', 1100),
+        'base_url'  => env('NOMINATIM_BASE_URL', 'http://193.169.1.246:8088'),
+        'delay_ms'  => (int) env('NOMINATIM_DELAY_MS', 100),
+        // Sufijo de contexto que se agrega a la dirección antes de buscar. La
+        // instancia self-hosted (extract de Entre Ríos) NO resuelve si se le pasa
+        // ", Entre Ríos, Argentina"; con ", Paraná" resuelve bien y el bounding box
+        // posterior filtra los falsos positivos fuera del Gran Paraná.
+        'contexto'  => env('NOMINATIM_CONTEXTO', ', Paraná'),
         // Tope de llamadas nuevas por request en el batch inverso, para no exceder
         // el timeout de Cloudflare (100s). El resto se resuelve en consultas
         // posteriores a medida que el caché en base se va llenando.

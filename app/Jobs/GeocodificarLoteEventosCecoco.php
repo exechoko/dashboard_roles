@@ -21,7 +21,7 @@ class GeocodificarLoteEventosCecoco implements ShouldQueue
     /** @var string[] */
     protected array $direcciones;
 
-    /** Pausa en milisegundos entre cada llamada a la API de Google */
+    /** Pausa en milisegundos entre cada llamada al motor de geocodificación (Nominatim exige ≥1100 ms) */
     protected int $pausaMs;
 
     /** Contexto para logging (ej. "2025-04-03", "importacion_42") */

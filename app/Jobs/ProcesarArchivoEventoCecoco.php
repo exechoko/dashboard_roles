@@ -168,7 +168,7 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
     /**
      * Encola en lotes la geocodificación de las direcciones de los eventos
      * recién importados para pre-calentar el caché del mapa de calor.
-     * Lote: 20 dir. | Pausa: 500 ms entre llamadas | Delay: 30 s entre lotes.
+     * Lote: 50 dir. | Pausa: según motor activo (Nominatim ≥1100 ms) | Delay: 20 s entre lotes.
      */
     private function despacharGeocodificacion(Importacion $importacion): void
     {
@@ -229,7 +229,7 @@ class ProcesarArchivoEventoCecoco implements ShouldQueue
 
             $tamanoLote    = 50;
             $delaySegundos = 20;
-            $pausaMs       = 300;
+            $pausaMs       = $geocoder->pausaRecomendadaMs();
             $contexto      = "importacion_{$importacion->id}";
 
             $lotes = array_chunk($pendientes, $tamanoLote);

@@ -1139,6 +1139,7 @@
                                                             <div class="estado-procesos-bloque">
                                                                 <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-map-marker-alt mr-1"></i><strong>Geocodificación</strong></small>
                                                                 <div class="d-flex align-items-center flex-wrap" style="gap:0.75rem;">
+                                                                    <span><small>Servicio:</small> <span id="workers-geo-servicio" class="badge badge-secondary" title="Estado del servidor de geocodificación">Verificando...</span></span>
                                                                     <span><small>Cacheadas:</small> <span id="workers-geo-cacheadas" class="badge badge-success">—</span></span>
                                                                     <span><small>Pendientes:</small> <span id="workers-geo-pendientes" class="badge badge-secondary">—</span></span>
                                                                 </div>
@@ -3163,6 +3164,18 @@
                         if (elFall) { elFall.textContent = d.fallidos; elFall.className = d.fallidos > 0 ? 'badge badge-danger' : 'badge badge-secondary'; }
 
                         // Geocodificación
+                        var elGeoServicio = document.getElementById('workers-geo-servicio');
+                        if (elGeoServicio) {
+                            var motor = d.geo_servicio_motor || 'Geocodificación';
+                            if (d.geo_servicio_online) {
+                                elGeoServicio.innerHTML = '<i class="fas fa-check-circle mr-1"></i>' + motor + ': Online';
+                                elGeoServicio.className = 'badge badge-success';
+                            } else {
+                                elGeoServicio.innerHTML = '<i class="fas fa-times-circle mr-1"></i>' + motor + ': Offline';
+                                elGeoServicio.className = 'badge badge-danger';
+                            }
+                        }
+
                         var elGeoCach = document.getElementById('workers-geo-cacheadas');
                         if (elGeoCach) elGeoCach.textContent = d.geo_cacheadas !== null ? d.geo_cacheadas : '—';
 

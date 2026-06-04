@@ -21,6 +21,7 @@ use App\Models\EntregaEquipo;
 use App\Models\EntregaBodycam;
 use App\Models\TareaItem;
 use App\Services\CecocoExpedienteService;
+use App\Services\GeocodificacionService;
 use App\Jobs\ConsultarTamanoRestauracionesCecoco;
 use Carbon\Carbon;
 
@@ -569,6 +570,14 @@ class HomeController extends Controller
             $totalDirecciones = $geoCounts[0] ?? null;
             $geocodeadas = $geoCounts[1] ?? null;
 
+            // Estado del servidor Nominatim. Se cachea 55s para no disparar una
+            // llamada HTTP en cada poll del dashboard (que refresca cada 60s).
+            $geoServicioOnline = Cache::remember(
+                'dashboard_geo_servicio_online',
+                55,
+                fn () => app(GeocodificacionService::class)->nominatimDisponible()
+            );
+
             // Worker activo: si hay jobs siendo procesados ahora mismo, o si se reservaron hace menos de 10 min
             $workerActivo = $procesando > 0 || DB::table('jobs')
                 ->where('reserved_at', '>=', now()->subMinutes(10)->timestamp)
@@ -590,6 +599,8 @@ class HomeController extends Controller
             'geo_total_dir' => $totalDirecciones,
             'geo_cacheadas' => $geocodeadas,
             'geo_pendientes' => ($totalDirecciones !== null && $geocodeadas !== null) ? max(0, $totalDirecciones - $geocodeadas) : null,
+            'geo_servicio_online' => $geoServicioOnline,
+            'geo_servicio_motor' => config('services.google.geocoding_enabled', false) ? 'Google' : 'Nominatim',
             'restauraciones_mb' => $tamanoRest['mb'] ?? null,
             'restauraciones_consultado_en' => $tamanoRest['consultado_en'] ?? null,
             'restauraciones_umbral_mb' => 4000,

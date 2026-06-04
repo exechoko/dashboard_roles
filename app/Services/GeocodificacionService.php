@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\GeocodificacionDirecta;
 use App\Models\GeocodificacionInversa;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class GeocodificacionService
@@ -15,6 +16,7 @@ class GeocodificacionService
     private string $nominatimBaseUrl;
     private int $nominatimDelayMs;
     private int $reverseBatchMax;
+    private string $nominatimContexto;
 
     private const LIMITE_DIARIO_GOOGLE = 2000;
 
@@ -31,6 +33,32 @@ class GeocodificacionService
         $this->nominatimBaseUrl = rtrim(config('services.nominatim.base_url', 'https://nominatim.openstreetmap.org'), '/');
         $this->nominatimDelayMs = (int) config('services.nominatim.delay_ms', 1100);
         $this->reverseBatchMax = (int) config('services.nominatim.reverse_batch_max', 50);
+        $this->nominatimContexto = (string) config('services.nominatim.contexto', ', Paraná');
+    }
+
+    /**
+     * Pausa recomendada (en milisegundos) entre llamadas sucesivas al motor de
+     * geocodificación activo. Para Nominatim se usa `nominatim.delay_ms`: bajo
+     * contra la instancia self-hosted (sin límite de rate) y ≥1100 ms si se
+     * apunta al servidor público de OSM (que exige máximo 1 req/seg). Para Google
+     * se mantiene una pausa corta fija.
+     */
+    public function pausaRecomendadaMs(): int
+    {
+        return $this->googleHabilitado ? 300 : $this->nominatimDelayMs;
+    }
+
+    /**
+     * Verifica que el servidor Nominatim responda (endpoint /status → "OK").
+     * Se usa para el indicador de estado en el dashboard.
+     */
+    public function nominatimDisponible(): bool
+    {
+        try {
+            return Http::timeout(3)->get($this->nominatimBaseUrl . '/status')->successful();
+        } catch (\Exception) {
+            return false;
+        }
     }
 
     /**
@@ -420,7 +448,7 @@ class GeocodificacionService
      */
     public function geocodificarNominatim(string $direccion): ?array
     {
-        $query = $direccion . ', Paraná, Entre Ríos, Argentina';
+        $query = $direccion . $this->nominatimContexto;
 
         $url = $this->nominatimBaseUrl . '/search?' . http_build_query([
             'q'            => $query,

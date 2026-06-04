@@ -25,7 +25,7 @@ class GeocodificarEventosDiaAnterior extends Command
                             {--fecha=        : Fecha en formato Y-m-d (default: ayer)}
                             {--lote=50       : Direcciones por lote / job}
                             {--delay=20      : Segundos de retraso entre lotes encolados}
-                            {--pausa=300     : Milisegundos entre llamadas a Google dentro de un lote (300 ms = ~3 RPS)}
+                            {--pausa=        : Milisegundos entre llamadas dentro de un lote (default: según motor activo — Nominatim ≥1100 ms)}
                             {--sincrono      : Ejecutar sincrónicamente en lugar de encolar jobs}';
 
     protected $description = 'Geocodifica en lotes (sin saturar Google API) las direcciones de los eventos CECOCO del día anterior para el mapa de calor';
@@ -38,7 +38,9 @@ class GeocodificarEventosDiaAnterior extends Command
 
         $tamanoLote    = max(1, (int) $this->option('lote'));
         $delaySegundos = max(0, (int) $this->option('delay'));
-        $pausaMs       = max(0, (int) $this->option('pausa'));
+        $pausaMs       = $this->option('pausa') !== null
+            ? max(0, (int) $this->option('pausa'))
+            : $geocoder->pausaRecomendadaMs();
         $sincrono      = (bool) $this->option('sincrono');
         $contexto      = $fecha->format('Y-m-d');
 

@@ -13,7 +13,7 @@ class GeocodificarHistoricoCecoco extends Command
     protected $signature = 'cecoco:geocodificar-historico
                             {--lote=50      : Direcciones por lote / job}
                             {--delay=20     : Segundos de retraso entre lotes encolados}
-                            {--pausa=300    : Milisegundos entre llamadas a Google dentro de un lote}
+                            {--pausa=        : Milisegundos entre llamadas dentro de un lote (default: según motor activo — Nominatim ≥1100 ms)}
                             {--limit=0      : Limitar a N direcciones (0 = todas)}
                             {--sincrono     : Ejecutar sincrónicamente en lugar de encolar jobs}
                             {--dry-run      : Solo mostrar estadísticas, sin procesar}';
@@ -24,7 +24,9 @@ class GeocodificarHistoricoCecoco extends Command
     {
         $tamanoLote    = max(1, (int) $this->option('lote'));
         $delaySegundos = max(0, (int) $this->option('delay'));
-        $pausaMs       = max(0, (int) $this->option('pausa'));
+        $pausaMs       = $this->option('pausa') !== null
+            ? max(0, (int) $this->option('pausa'))
+            : $geocoder->pausaRecomendadaMs();
         $limit         = max(0, (int) $this->option('limit'));
         $sincrono      = (bool) $this->option('sincrono');
         $dryRun        = (bool) $this->option('dry-run');
@@ -87,12 +89,17 @@ class GeocodificarHistoricoCecoco extends Command
         $tiempoApiSeg       = ($totalPendiente * $pausaMs) / 1000;
         $tiempoDelaySeg     = ($totalLotes - 1) * $delaySegundos;
         $tiempoTotalMin     = round(($tiempoApiSeg + $tiempoDelaySeg) / 60, 1);
-        $costoEstimado      = round($totalPendiente / 1000 * 0.005, 2); // Google: USD 5 por 1000 reqs
 
         $this->line('');
         $this->line("  Lotes a encolar : {$totalLotes}");
+        $this->line("  Pausa por dir.  : {$pausaMs} ms");
         $this->line("  Tiempo estimado : ~{$tiempoTotalMin} min");
-        $this->line("  Costo estimado  : ~USD {$costoEstimado} (Google Maps API)");
+        if (config('services.google.geocoding_enabled', false)) {
+            $costoEstimado = round($totalPendiente / 1000 * 0.005, 2); // Google: USD 5 por 1000 reqs
+            $this->line("  Costo estimado  : ~USD {$costoEstimado} (Google Maps API)");
+        } else {
+            $this->line('  Costo estimado  : USD 0 (Nominatim / OpenStreetMap, gratis)');
+        }
         $this->line('');
 
         if ($dryRun) {

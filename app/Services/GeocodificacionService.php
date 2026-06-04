@@ -11,6 +11,10 @@ class GeocodificacionService
 {
     private string $apiKey;
     private string $ciudadContexto;
+    private bool $googleHabilitado;
+    private string $nominatimBaseUrl;
+    private int $nominatimDelayMs;
+    private int $reverseBatchMax;
 
     private const LIMITE_DIARIO_GOOGLE = 2000;
 
@@ -23,6 +27,10 @@ class GeocodificacionService
     {
         $this->apiKey = config('services.google.api_key', '');
         $this->ciudadContexto = ', Entre Ríos, Argentina';
+        $this->googleHabilitado = (bool) config('services.google.geocoding_enabled', false);
+        $this->nominatimBaseUrl = rtrim(config('services.nominatim.base_url', 'https://nominatim.openstreetmap.org'), '/');
+        $this->nominatimDelayMs = (int) config('services.nominatim.delay_ms', 1100);
+        $this->reverseBatchMax = (int) config('services.nominatim.reverse_batch_max', 50);
     }
 
     /**
@@ -80,24 +88,31 @@ class GeocodificacionService
             return null;
         }
 
-        // Verificar límite diario ANTES de llamar a Google.
-        // Si se alcanzó el límite NO se guarda nada en la tabla para poder reintentarlo mañana.
-        if (!$this->hayDisponibilidadDiariaGoogle()) {
-            Log::info('Geocodificación diferida por límite diario', ['direccion' => $direccion]);
-            return null;
+        // Motor gratuito (Nominatim) cuando Google está deshabilitado por costos.
+        if (!$this->googleHabilitado) {
+            $resultado = $this->geocodificarNominatim($direccion);
+            $fuente    = 'nominatim';
+        } else {
+            // Verificar límite diario ANTES de llamar a Google.
+            // Si se alcanzó el límite NO se guarda nada en la tabla para poder reintentarlo mañana.
+            if (!$this->hayDisponibilidadDiariaGoogle()) {
+                Log::info('Geocodificación diferida por límite diario', ['direccion' => $direccion]);
+                return null;
+            }
+
+            // Consultar Google e incrementar el contador diario
+            $resultado = $this->consultarGoogle($direccion . $this->ciudadContexto);
+            $fuente    = 'google';
         }
 
-        // Consultar Google e incrementar el contador diario
-        $resultado = $this->consultarGoogle($direccion . $this->ciudadContexto);
-
-        // Guardar en tabla: incluso null de Google, para no reintentar una dirección que no existe.
-        // (Nunca llegamos aquí si el límite fue la causa del null.)
+        // Guardar en tabla: incluso null del motor, para no reintentar una dirección que no existe.
+        // (Nunca llegamos aquí si el límite diario de Google fue la causa del null.)
         GeocodificacionDirecta::create([
             'direccion_original'    => $direccion,
             'direccion_normalizada' => $resultado['formatted_address'] ?? null,
             'latitud'               => $resultado['lat'] ?? null,
             'longitud'              => $resultado['lng'] ?? null,
-            'fuente'                => 'google',
+            'fuente'                => $fuente,
             'nro_expediente'        => $nroExpediente,
         ]);
 
@@ -184,7 +199,9 @@ class GeocodificacionService
             return $row->direccion;
         }
 
-        $direccion = $this->consultarReverseGoogle($lat, $lng);
+        $direccion = $this->googleHabilitado
+            ? $this->consultarReverseGoogle($lat, $lng)
+            : $this->consultarReverseNominatim($lat, $lng);
 
         // Persistir también los null para no reintentar siempre sobre la misma coord.
         try {
@@ -315,12 +332,21 @@ class GeocodificacionService
             return $resultado;
         }
 
+        // 3a) Motor gratuito (Nominatim) cuando Google está deshabilitado por costos.
+        //     Nominatim limita a 1 req/seg, así que se resuelve secuencialmente y se
+        //     acota a `reverseBatchMax` por request para no exceder el timeout de
+        //     Cloudflare (100s). Lo que quede sin resolver se completará en consultas
+        //     posteriores a medida que el caché en base se va llenando.
+        if (!$this->googleHabilitado) {
+            return $this->reverseGeocodeBatchNominatim($resultado, $pendientes);
+        }
+
         if (empty($this->apiKey)) {
             Log::warning('API_GOOGLE no configurada para geocodificación inversa (batch)');
             return $resultado;
         }
 
-        // 3) Google Maps en paralelo con Guzzle Pool
+        // 3b) Google Maps en paralelo con Guzzle Pool
         $client = new \GuzzleHttp\Client([
             'base_uri'        => 'https://maps.googleapis.com',
             'timeout'         => 10,
@@ -396,7 +422,7 @@ class GeocodificacionService
     {
         $query = $direccion . ', Paraná, Entre Ríos, Argentina';
 
-        $url = 'https://nominatim.openstreetmap.org/search?' . http_build_query([
+        $url = $this->nominatimBaseUrl . '/search?' . http_build_query([
             'q'            => $query,
             'format'       => 'json',
             'limit'        => 5,
@@ -436,6 +462,101 @@ class GeocodificacionService
             Log::error('Error en geocodificación Nominatim', ['error' => $e->getMessage()]);
             return null;
         }
+    }
+
+    /**
+     * Reverse-geocode gratuito con Nominatim (OpenStreetMap) para una coordenada.
+     * Sin API key. Respeta la política de 1 req/seg vía User-Agent identificable.
+     */
+    private function consultarReverseNominatim(float $lat, float $lng): ?string
+    {
+        $url = $this->nominatimBaseUrl . '/reverse?' . http_build_query([
+            'lat'    => $lat,
+            'lon'    => $lng,
+            'format' => 'jsonv2',
+            'zoom'   => 18,
+        ]);
+
+        try {
+            $context = stream_context_create(['http' => [
+                'header'  => "User-Agent: DashboardRoles/1.0 (geocodificacion inversa)\r\n",
+                'timeout' => 8,
+            ]]);
+            $response = @file_get_contents($url, false, $context);
+            if (!$response) {
+                return null;
+            }
+
+            $data = json_decode($response, true);
+            if (is_array($data) && !empty($data['display_name'])) {
+                return (string) $data['display_name'];
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error('Error en reverse-geocode Nominatim', [
+                'error' => $e->getMessage(),
+                'lat'   => $lat,
+                'lng'   => $lng,
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Resuelve un lote de coordenadas pendientes con Nominatim de forma secuencial
+     * (1 req/seg) y acotada a `reverseBatchMax` por invocación. Persiste los nuevos
+     * resultados en `geocodificacion_inversa`. Las coordenadas que excedan el tope
+     * quedan en null y se resolverán en consultas posteriores desde el caché en base.
+     *
+     * @param array<string,?string>           $resultado  Mapa acumulado clave → dirección.
+     * @param array<string,array{0:float,1:float}> $pendientes Coordenadas sin resolver.
+     * @return array<string,?string>
+     */
+    private function reverseGeocodeBatchNominatim(array $resultado, array $pendientes): array
+    {
+        $nuevos    = [];
+        $resueltos = 0;
+
+        foreach ($pendientes as $clave => [$lat, $lng]) {
+            if ($resueltos >= $this->reverseBatchMax) {
+                break;
+            }
+
+            $direccion = $this->consultarReverseNominatim($lat, $lng);
+            $resultado[$clave] = $direccion;
+            $nuevos[] = [
+                'latitud'    => $lat,
+                'longitud'   => $lng,
+                'direccion'  => $direccion,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+            $resueltos++;
+
+            if ($this->nominatimDelayMs > 0 && $resueltos < $this->reverseBatchMax) {
+                usleep($this->nominatimDelayMs * 1000);
+            }
+        }
+
+        if (!empty($nuevos)) {
+            try {
+                GeocodificacionInversa::insert($nuevos);
+            } catch (\Exception $e) {
+                Log::warning('No se pudo bulk-insert en geocodificacion_inversa (Nominatim)', [
+                    'error' => $e->getMessage(),
+                    'count' => count($nuevos),
+                ]);
+            }
+        }
+
+        Log::info('Reverse-geocode batch Nominatim', [
+            'resueltos'    => $resueltos,
+            'sin_resolver' => count($pendientes) - $resueltos,
+            'tope'         => $this->reverseBatchMax,
+        ]);
+
+        return $resultado;
     }
 
     /**

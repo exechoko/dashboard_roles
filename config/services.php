@@ -56,6 +56,22 @@ return [
 
     'google' => [
         'api_key' => env('API_GOOGLE', ''),
+
+        // Interruptor de costos de geocodificación. En false (por defecto) NO se
+        // realiza ninguna llamada paga a la API de Google Maps Geocoding: se sirve
+        // desde el caché en base y, para lo que falte, se usa Nominatim (gratis).
+        'geocoding_enabled' => env('GEOCODING_GOOGLE_ENABLED', false),
+    ],
+
+    // Motor gratuito de geocodificación (OpenStreetMap / Nominatim). Sin API key.
+    // Política de uso: máximo 1 request/seg y User-Agent identificable.
+    'nominatim' => [
+        'base_url'  => env('NOMINATIM_BASE_URL', 'https://nominatim.openstreetmap.org'),
+        'delay_ms'  => (int) env('NOMINATIM_DELAY_MS', 1100),
+        // Tope de llamadas nuevas por request en el batch inverso, para no exceder
+        // el timeout de Cloudflare (100s). El resto se resuelve en consultas
+        // posteriores a medida que el caché en base se va llenando.
+        'reverse_batch_max' => (int) env('NOMINATIM_REVERSE_BATCH_MAX', 50),
     ],
 
     'open_route_service' => [

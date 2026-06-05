@@ -38,10 +38,9 @@ class ImportCallesGeoref extends Command
 
         $filtroBase = ['provincia' => $provincia] + ($localidad ? ['localidad_censal' => $localidad] : []);
 
-        $sondeo = Http::timeout(60)->get(self::ENDPOINT, $filtroBase + ['max' => 1, 'campos' => 'id']);
+        $sondeo = $this->fetchConReintentos(self::ENDPOINT, $filtroBase + ['max' => 1, 'campos' => 'id']);
 
-        if (!$sondeo->successful()) {
-            $this->error("Error API Georef (sondeo) HTTP {$sondeo->status()}: " . $sondeo->body());
+        if (!$sondeo) {
             return 1;
         }
 
@@ -81,33 +80,30 @@ class ImportCallesGeoref extends Command
 
     private function traerDepartamentos(string $provincia): array
     {
-        $resp = Http::timeout(60)->get(self::ENDPOINT_DEPTOS, [
+        $resp = $this->fetchConReintentos(self::ENDPOINT_DEPTOS, [
             'provincia' => $provincia,
             'max'       => 1000,
             'campos'    => 'id,nombre',
         ]);
-        if (!$resp->successful()) {
-            $this->error("Error trayendo departamentos: " . $resp->body());
-            return [];
-        }
-        return $resp->json()['departamentos'] ?? [];
+        return $resp ? ($resp->json()['departamentos'] ?? []) : [];
     }
 
     private function totalDeChunk(array $filtros): int
     {
-        $resp = Http::timeout(60)->get(self::ENDPOINT, $filtros + ['max' => 1, 'campos' => 'id']);
-        return (int) ($resp->json()['total'] ?? 0);
+        usleep(300_000); // 0.3s entre sondeos
+        $resp = $this->fetchConReintentos(self::ENDPOINT, $filtros + ['max' => 1, 'campos' => 'id']);
+        return $resp ? (int) ($resp->json()['total'] ?? 0) : 0;
     }
 
     private function procesarPorLocalidades(string $provincia, mixed $departamentoId, int $max, bool $dry): void
     {
-        $resp = Http::timeout(60)->get('https://apis.datos.gob.ar/georef/api/localidades', [
+        $resp = $this->fetchConReintentos('https://apis.datos.gob.ar/georef/api/localidades', [
             'provincia'    => $provincia,
             'departamento' => $departamentoId,
             'max'          => 5000,
             'campos'       => 'id,nombre',
         ]);
-        $locs = $resp->json()['localidades'] ?? [];
+        $locs = $resp ? ($resp->json()['localidades'] ?? []) : [];
         foreach ($locs as $loc) {
             $total = $this->totalDeChunk(['provincia' => $provincia, 'localidad_censal' => $loc['id']]);
             if ($total === 0) {

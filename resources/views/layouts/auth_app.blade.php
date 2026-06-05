@@ -135,6 +135,7 @@
         }
 
         .auth-logo {
+            position: relative;
             width: 76px;
             height: 76px;
             border-radius: 50%;
@@ -146,10 +147,46 @@
             box-shadow: 0 0 28px rgba(0, 229, 255, 0.32);
         }
 
+        .auth-logo::before,
+        .auth-logo::after {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 229, 255, 0.34);
+            pointer-events: none;
+        }
+
+        .auth-logo::before {
+            border-top-color: rgba(139, 92, 246, 0.85);
+            border-right-color: rgba(0, 229, 255, 0.85);
+            animation: authLogoOrbit 5s linear infinite;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.18);
+        }
+
+        .auth-logo::after {
+            inset: -15px;
+            border-style: dashed;
+            border-color: rgba(0, 229, 255, 0.2);
+            animation: authLogoOrbit 9s linear infinite reverse;
+        }
+
         .auth-logo img {
+            position: relative;
+            z-index: 1;
             width: 58px;
             height: 58px;
             border-radius: 50%;
+        }
+
+        @keyframes authLogoOrbit {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .auth-kicker {

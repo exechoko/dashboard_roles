@@ -91,17 +91,105 @@
         border-color: #6777ef;
         background: rgba(255, 255, 255, .1);
     }
+
+    .sidebar-logo-orbit {
+        position: relative;
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        background: rgba(255, 255, 255, 0.94);
+        border: 1px solid rgba(0, 153, 255, 0.3);
+        box-shadow: 0 0 18px rgba(0, 153, 255, 0.24);
+    }
+
+    .sidebar-logo-orbit::before,
+    .sidebar-logo-orbit::after {
+        content: '';
+        position: absolute;
+        border-radius: 50%;
+        pointer-events: none;
+    }
+
+    .sidebar-logo-orbit::before {
+        inset: -5px;
+        border: 1px solid rgba(0, 153, 255, 0.34);
+        border-top-color: rgba(106, 92, 255, 0.78);
+        border-right-color: rgba(0, 153, 255, 0.78);
+        animation: sidebarLogoOrbit 5s linear infinite;
+    }
+
+    .sidebar-logo-orbit::after {
+        inset: -10px;
+        border: 1px dashed rgba(0, 153, 255, 0.2);
+        animation: sidebarLogoOrbit 9s linear infinite reverse;
+    }
+
+    .sidebar-logo-orbit img.navbar-brand-full {
+        position: relative;
+        z-index: 1;
+        width: 42px !important;
+        height: 42px !important;
+        margin: 0 !important;
+    }
+
+    [data-theme="dark"] .sidebar-logo-orbit {
+        background: rgba(255, 255, 255, 0.96);
+        border-color: rgba(0, 229, 255, 0.38);
+        box-shadow: 0 0 22px rgba(0, 229, 255, 0.32);
+    }
+
+    [data-theme="dark"] .sidebar-logo-orbit::before {
+        border-color: rgba(0, 229, 255, 0.34);
+        border-top-color: rgba(139, 92, 246, 0.85);
+        border-right-color: rgba(0, 229, 255, 0.85);
+    }
+
+    [data-theme="dark"] .sidebar-logo-orbit::after {
+        border-color: rgba(0, 229, 255, 0.22);
+    }
+
+    body.sidebar-mini .sidebar-logo-orbit {
+        width: 46px;
+        height: 46px;
+    }
+
+    body.sidebar-mini .sidebar-logo-orbit::after {
+        inset: -7px;
+    }
+
+    body.sidebar-mini .sidebar-logo-orbit img.navbar-brand-full {
+        width: 36px !important;
+        height: 36px !important;
+    }
+
+    @keyframes sidebarLogoOrbit {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
 </style>
 
 <aside id="sidebar-wrapper">
     <div class="sidebar-brand">
-        <img class="navbar-brand-full app-header-logo" src="{{ asset('img/logo.ico') }}" width="45"
-             alt="Logo 911">
+        <div class="sidebar-logo-orbit">
+            <img class="navbar-brand-full app-header-logo" src="{{ asset('img/logo.ico') }}" width="45"
+                 alt="Logo 911">
+        </div>
         <a href="{{ url('/home') }}"></a>
     </div>
     <div class="sidebar-brand sidebar-brand-sm">
         <a href="{{ url('/home') }}" class="small-sidebar-text">
-            <img class="navbar-brand-full" src="{{ asset('img/logo.ico') }}" width="45px" alt=""/>
+            <span class="sidebar-logo-orbit">
+                <img class="navbar-brand-full" src="{{ asset('img/logo.ico') }}" width="45px" alt="Logo 911"/>
+            </span>
         </a>
     </div>
     <div class="sidebar-filter">

@@ -128,7 +128,6 @@ class ImportCallesGeoref extends Command
             $params = $filtros + [
                 'max'    => $max,
                 'inicio' => $inicio,
-                'campos' => 'id,nombre,categoria,altura-inicio-derecha,altura-fin-derecha,localidad_censal-id,localidad_censal-nombre,provincia-nombre',
             ];
 
             $resp = Http::timeout(60)->get(self::ENDPOINT, $params);

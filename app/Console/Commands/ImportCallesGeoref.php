@@ -21,7 +21,10 @@ class ImportCallesGeoref extends Command
 
     private const ENDPOINT        = 'https://apis.datos.gob.ar/georef/api/calles';
     private const ENDPOINT_DEPTOS = 'https://apis.datos.gob.ar/georef/api/departamentos';
+    private const ENDPOINT_BULK   = 'https://apis.datos.gob.ar/georef/api';
     private const LIMITE_API      = 10000;
+    private const BULK_MAX_TOTAL  = 5000; // límite de resultados por bulk request
+    private const BULK_PAG_SIZE   = 1000; // resultados por consulta dentro del bulk
 
     private int $insertados         = 0;
     private int $actualizados       = 0;
@@ -116,89 +119,121 @@ class ImportCallesGeoref extends Command
 
     private function procesarChunk(array $filtros, int $total, int $max, bool $dry): void
     {
-        $inicio = 0;
-        $bar    = $this->output->createProgressBar($total);
+        $bar = $this->output->createProgressBar($total);
         $bar->start();
 
-        do {
-            $params = $filtros + [
-                'max'    => $max,
-                'inicio' => $inicio,
-            ];
+        // Armar todas las páginas que hacen falta.
+        $paginas = [];
+        for ($inicio = 0; $inicio < min($total, self::LIMITE_API); $inicio += self::BULK_PAG_SIZE) {
+            $paginas[] = $filtros + ['max' => self::BULK_PAG_SIZE, 'inicio' => $inicio];
+        }
 
-            $resp = $this->fetchConReintentos(self::ENDPOINT, $params);
+        // Agrupar en batches de hasta 5 consultas (5 × 1000 = 5000 resultados, límite bulk).
+        $batches    = array_chunk($paginas, (int) (self::BULK_MAX_TOTAL / self::BULK_PAG_SIZE));
+        $callesBuff = [];
+
+        foreach ($batches as $batch) {
+            $body = ['calles' => $batch];
+            $resp = $this->fetchBulk($body);
             if (!$resp) {
                 return;
             }
 
-            $calles = $resp->json()['calles'] ?? [];
-            if (empty($calles)) {
-                break;
+            foreach ($resp->json()['resultados'] ?? [] as $resultado) {
+                foreach ($resultado['calles'] ?? [] as $c) {
+                    $callesBuff[] = $c;
+                }
             }
 
-            foreach ($calles as $c) {
-                $georefId   = $c['id'] ?? null;
-                $nombre     = trim($c['nombre'] ?? '');
-                $tipo       = trim($c['categoria'] ?? '');
-                $alturaIni  = (int) data_get($c, 'altura.inicio.derecha', 0);
-                $alturaFin  = (int) data_get($c, 'altura.fin.derecha', 0);
-                $locNombre  = trim(data_get($c, 'localidad_censal.nombre', '') ?? '');
-                $provNombre = trim(data_get($c, 'provincia.nombre', '') ?? '');
+            usleep(300_000); // 0.3 s entre bulk requests
+        }
 
-                if (empty($georefId) || empty($nombre)) {
-                    $bar->advance();
-                    continue;
-                }
+        foreach ($callesBuff as $c) {
+            $georefId   = $c['id'] ?? null;
+            $nombre     = trim($c['nombre'] ?? '');
+            $tipo       = trim($c['categoria'] ?? '');
+            $alturaIni  = (int) data_get($c, 'altura.inicio.derecha', 0);
+            $alturaFin  = (int) data_get($c, 'altura.fin.derecha', 0);
+            $locNombre  = trim(data_get($c, 'localidad_censal.nombre', '') ?? '');
+            $provNombre = trim(data_get($c, 'provincia.nombre', '') ?? '');
 
-                $nombreLimpio    = self::limpiarPrefijoTipo($nombre);
-                $nombreParaCalle = $tipo ? trim("$tipo $nombreLimpio") : trim($nombre);
-                $callenorm       = AliasNormalizer::toAlias($nombreParaCalle);
-
-                if ($dry) {
-                    $bar->advance();
-                    continue;
-                }
-
-                $loc         = $this->resolveLocalidad($locNombre, $provNombre);
-                $localidadId = $loc['id'];
-                $localidadCp = $loc['cp'];
-
-                $data = [
-                    'georef_id'         => $georefId,
-                    'calle'             => $nombreParaCalle,
-                    'tipo'              => $tipo ?: null,
-                    'calle_normalizada' => $callenorm,
-                    'altura_inicio'     => $alturaIni,
-                    'altura_fin'        => $alturaFin,
-                    'localidad'         => $locNombre,
-                    'localidad_id'      => $localidadId,
-                    'provincia'         => $provNombre,
-                    'cp'                => $localidadCp,
-                    'user'              => 'georef',
-                ];
-
-                $existing = Calle::where('georef_id', $georefId)->first();
-                if ($existing) {
-                    $existing->update($data);
-                    $calleId = $existing->id;
-                    $this->actualizados++;
-                } else {
-                    $nueva   = Calle::create($data);
-                    $calleId = $nueva->id;
-                    $this->insertados++;
-                }
-
-                $this->sinonimosGenerados += $this->generarSinonimos($calleId, $nombre, $tipo, $localidadId);
-
+            if (empty($georefId) || empty($nombre)) {
                 $bar->advance();
+                continue;
             }
 
-            $inicio += $max;
-            usleep(500_000); // 0.5 s entre páginas para respetar el rate limit de Georef
-        } while ($inicio < $total && $inicio < self::LIMITE_API);
+            $nombreLimpio    = self::limpiarPrefijoTipo($nombre);
+            $nombreParaCalle = $tipo ? trim("$tipo $nombreLimpio") : trim($nombre);
+            $callenorm       = AliasNormalizer::toAlias($nombreParaCalle);
+
+            if ($dry) {
+                $bar->advance();
+                continue;
+            }
+
+            $loc         = $this->resolveLocalidad($locNombre, $provNombre);
+            $localidadId = $loc['id'];
+            $localidadCp = $loc['cp'];
+
+            $data = [
+                'georef_id'         => $georefId,
+                'calle'             => $nombreParaCalle,
+                'tipo'              => $tipo ?: null,
+                'calle_normalizada' => $callenorm,
+                'altura_inicio'     => $alturaIni,
+                'altura_fin'        => $alturaFin,
+                'localidad'         => $locNombre,
+                'localidad_id'      => $localidadId,
+                'provincia'         => $provNombre,
+                'cp'                => $localidadCp,
+                'user'              => 'georef',
+            ];
+
+            $existing = Calle::where('georef_id', $georefId)->first();
+            if ($existing) {
+                $existing->update($data);
+                $calleId = $existing->id;
+                $this->actualizados++;
+            } else {
+                $nueva   = Calle::create($data);
+                $calleId = $nueva->id;
+                $this->insertados++;
+            }
+
+            $this->sinonimosGenerados += $this->generarSinonimos($calleId, $nombre, $tipo, $localidadId);
+            $bar->advance();
+        }
 
         $bar->finish();
         $this->line('');
+    }
+
+    /**
+     * POST al endpoint bulk. Hasta 5 consultas × 1000 resultados = 5000 por request.
+     */
+    private function fetchBulk(array $body, int $intentos = 5): ?\Illuminate\Http\Client\Response
+    {
+        $espera = 2;
+        for ($i = 0; $i < $intentos; $i++) {
+            $resp = Http::timeout(60)->post(self::ENDPOINT_BULK, $body);
+
+            if ($resp->successful()) {
+                return $resp;
+            }
+
+            if ($resp->status() === 429 || $resp->status() >= 500) {
+                $this->warn("  Rate limit bulk {$resp->status()}, esperando {$espera}s...");
+                sleep($espera);
+                $espera = min($espera * 2, 60);
+                continue;
+            }
+
+            $this->error("Error bulk Georef HTTP {$resp->status()}: " . $resp->body());
+            return null;
+        }
+
+        $this->error('Se agotaron los reintentos en bulk');
+        return null;
     }
 
     /**

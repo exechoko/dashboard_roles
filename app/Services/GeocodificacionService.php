@@ -548,10 +548,23 @@ class GeocodificacionService
     }
 
     /**
-     * Reverse-geocode gratuito con Nominatim (OpenStreetMap) para una coordenada.
-     * Sin API key. Respeta la política de 1 req/seg vía User-Agent identificable.
+     * Reverse-geocode con Nominatim self-hosted. Si no devuelve resultado
+     * (coordenada fuera del extract de Paraná), cae a Georef /api/ubicacion
+     * que cubre toda Argentina y retorna localidad + departamento.
      */
     private function consultarReverseNominatim(float $lat, float $lng): ?string
+    {
+        $resultado = $this->fetchReverseNominatim($lat, $lng);
+
+        if ($resultado !== null) {
+            return $resultado;
+        }
+
+        // Fallback: Georef /api/ubicacion — cubre toda Argentina, sin rate limit.
+        return $this->consultarReverseGeoref($lat, $lng);
+    }
+
+    private function fetchReverseNominatim(float $lat, float $lng): ?string
     {
         $url = $this->nominatimBaseUrl . '/reverse?' . http_build_query([
             'lat'    => $lat,
@@ -582,6 +595,42 @@ class GeocodificacionService
                 'lat'   => $lat,
                 'lng'   => $lng,
             ]);
+            return null;
+        }
+    }
+
+    /**
+     * Reverse-geocode con Georef /api/ubicacion.
+     * Devuelve "Calle X, Localidad, Departamento" o lo que esté disponible.
+     * Cubre toda Argentina, gratuito, sin rate limit.
+     */
+    private function consultarReverseGeoref(float $lat, float $lng): ?string
+    {
+        try {
+            $resp = Http::timeout(8)->get('https://apis.datos.gob.ar/georef/api/ubicacion', [
+                'lat' => $lat,
+                'lon' => $lng,
+            ]);
+
+            if (!$resp->successful()) {
+                return null;
+            }
+
+            $ubicacion = $resp->json()['ubicacion'] ?? null;
+            if (!$ubicacion) {
+                return null;
+            }
+
+            $partes = array_filter([
+                data_get($ubicacion, 'municipio.nombre'),
+                data_get($ubicacion, 'departamento.nombre'),
+                data_get($ubicacion, 'provincia.nombre'),
+            ]);
+
+            return implode(', ', $partes) ?: null;
+
+        } catch (\Exception $e) {
+            Log::warning('Error en reverse-geocode Georef', ['error' => $e->getMessage()]);
             return null;
         }
     }

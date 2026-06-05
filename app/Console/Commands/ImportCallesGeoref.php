@@ -75,22 +75,38 @@ class ImportCallesGeoref extends Command
 
     private function procesarCsv(string $csv, bool $dry): void
     {
-        $lineas = explode("\n", trim($csv));
-        $header = str_getcsv(array_shift($lineas));
+        $provincia = $this->option('provincia');
+        $lineas    = explode("\n", trim($csv));
+        $header    = str_getcsv(array_shift($lineas));
+        $idx       = array_flip($header);
 
-        // Mapear índices de columnas por nombre
-        $idx = array_flip($header);
+        // Filtrar solo las calles de la provincia solicitada
+        $provNorm = mb_strtolower(trim($provincia));
+        $filtradas = array_filter($lineas, function (string $linea) use ($idx, $provNorm) {
+            if (trim($linea) === '') {
+                return false;
+            }
+            $row  = str_getcsv($linea);
+            $prov = mb_strtolower(trim($row[$idx['provincia_nombre'] ?? -1] ?? ''));
+            return $prov === $provNorm;
+        });
 
-        $total = count($lineas);
-        $this->info("Calles a procesar: $total");
+        $total = count($filtradas);
+        $this->info("Calles de $provincia: $total");
+
+        if ($dry || $total === 0) {
+            return;
+        }
+
         $bar = $this->output->createProgressBar($total);
         $bar->start();
 
-        foreach ($lineas as $linea) {
-            if (trim($linea) === '') {
-                continue;
-            }
+        $batchCalles    = [];
+        $batchSinonimos = [];
+        $chunkSize      = 500;
+        $now            = now()->toDateTimeString();
 
+        foreach ($filtradas as $linea) {
             $row = str_getcsv($linea);
 
             $georefId   = $row[$idx['calle_id'] ?? $idx['id'] ?? -1] ?? null;
@@ -109,17 +125,9 @@ class ImportCallesGeoref extends Command
             $nombreLimpio    = self::limpiarPrefijoTipo($nombre);
             $nombreParaCalle = $tipo ? trim("$tipo $nombreLimpio") : trim($nombre);
             $callenorm       = AliasNormalizer::toAlias($nombreParaCalle);
+            $loc             = $this->resolveLocalidad($locNombre, $provNombre);
 
-            if ($dry) {
-                $bar->advance();
-                continue;
-            }
-
-            $loc         = $this->resolveLocalidad($locNombre, $provNombre);
-            $localidadId = $loc['id'];
-            $localidadCp = $loc['cp'];
-
-            $data = [
+            $batchCalles[] = [
                 'georef_id'         => $georefId,
                 'calle'             => $nombreParaCalle,
                 'tipo'              => $tipo ?: null,
@@ -127,29 +135,148 @@ class ImportCallesGeoref extends Command
                 'altura_inicio'     => $alturaIni,
                 'altura_fin'        => $alturaFin,
                 'localidad'         => $locNombre,
-                'localidad_id'      => $localidadId,
+                'localidad_id'      => $loc['id'],
                 'provincia'         => $provNombre,
-                'cp'                => $localidadCp,
+                'cp'                => $loc['cp'],
                 'user'              => 'georef',
+                'created_at'        => $now,
+                'updated_at'        => $now,
+                '_nombre_orig'      => $nombre, // solo para generar sinónimos, no se guarda
+                '_tipo_orig'        => $tipo,
             ];
 
-            $existing = Calle::where('georef_id', $georefId)->first();
-            if ($existing) {
-                $existing->update($data);
-                $calleId = $existing->id;
-                $this->actualizados++;
-            } else {
-                $nueva   = Calle::create($data);
-                $calleId = $nueva->id;
-                $this->insertados++;
+            if (count($batchCalles) >= $chunkSize) {
+                $batchSinonimos = array_merge($batchSinonimos, $this->flushCalles($batchCalles, $now));
+                $bar->advance(count($batchCalles));
+                $batchCalles = [];
             }
 
-            $this->sinonimosGenerados += $this->generarSinonimos($calleId, $nombre, $tipo, $localidadId);
-            $bar->advance();
+            if (count($batchSinonimos) >= $chunkSize * 5) {
+                $this->flushSinonimos($batchSinonimos);
+                $batchSinonimos = [];
+            }
+        }
+
+        // Flush final
+        if (!empty($batchCalles)) {
+            $batchSinonimos = array_merge($batchSinonimos, $this->flushCalles($batchCalles, $now));
+            $bar->advance(count($batchCalles));
+        }
+        if (!empty($batchSinonimos)) {
+            $this->flushSinonimos($batchSinonimos);
         }
 
         $bar->finish();
         $this->line('');
+    }
+
+    /**
+     * Upsert batch de calles y devuelve los sinónimos a insertar.
+     */
+    private function flushCalles(array $batch, string $now): array
+    {
+        // Separar columnas internas de las de DB
+        $rows = array_map(function (array $row) {
+            unset($row['_nombre_orig'], $row['_tipo_orig']);
+            return $row;
+        }, $batch);
+
+        DB::table('calles')->upsert(
+            $rows,
+            ['georef_id'],
+            ['calle', 'tipo', 'calle_normalizada', 'altura_inicio', 'altura_fin', 'localidad', 'localidad_id', 'provincia', 'cp', 'updated_at']
+        );
+
+        $this->insertados += count($rows);
+
+        // Obtener los IDs recién upserted para generar sinónimos
+        $georefIds = array_column($rows, 'georef_id');
+        $callesMap = DB::table('calles')
+            ->whereIn('georef_id', $georefIds)
+            ->pluck('id', 'georef_id');
+
+        $sinonimos = [];
+        foreach ($batch as $row) {
+            $calleId = $callesMap[$row['georef_id']] ?? null;
+            if (!$calleId) {
+                continue;
+            }
+            $sinonimos = array_merge(
+                $sinonimos,
+                $this->prepararSinonimos($calleId, $row['_nombre_orig'], $row['_tipo_orig'], $row['localidad_id'])
+            );
+        }
+
+        return $sinonimos;
+    }
+
+    /**
+     * Upsert batch de sinónimos.
+     */
+    private function flushSinonimos(array $sinonimos): void
+    {
+        if (empty($sinonimos)) {
+            return;
+        }
+
+        $chunks = array_chunk($sinonimos, 500);
+        foreach ($chunks as $chunk) {
+            try {
+                DB::table('sinonimos_calles')->upsert(
+                    $chunk,
+                    ['alias', 'localidad_id'],
+                    ['calle_id', 'origen', 'confianza', 'updated_at']
+                );
+                $this->sinonimosGenerados += count($chunk);
+            } catch (\Throwable) {
+                // colisiones ignoradas
+            }
+        }
+    }
+
+    /**
+     * Prepara el array de sinónimos para un batch (sin persistir).
+     */
+    private function prepararSinonimos(int $calleId, string $nombre, string $tipo, ?int $localidadId): array
+    {
+        $norm = fn(string $s) => AliasNormalizer::toAlias($s);
+        $now  = now()->toDateTimeString();
+
+        $nombreLimpio = AliasNormalizer::toAliasSinTipo($nombre);
+
+        $variantes   = [];
+        $variantes[] = $norm($nombreLimpio);
+        $variantes[] = $norm($nombre);
+
+        if ($tipo !== '') {
+            $variantes[] = $norm("$tipo $nombreLimpio");
+            foreach (self::abreviaturasTipo($tipo) as $abrev) {
+                if ($abrev !== '') {
+                    $variantes[] = $norm("$abrev $nombreLimpio");
+                }
+            }
+        }
+
+        foreach (self::expandirTitulos($nombreLimpio) as $alt) {
+            $variantes[] = $norm($alt);
+        }
+
+        $variantes = array_values(array_unique(array_filter($variantes, fn($v) => $v !== '' && mb_strlen($v) >= 2)));
+
+        $rows = [];
+        foreach ($variantes as $alias) {
+            $rows[] = [
+                'calle_id'    => $calleId,
+                'alias'       => mb_substr($alias, 0, 150),
+                'localidad_id' => $localidadId,
+                'origen'      => 'georef',
+                'confianza'   => 90,
+                'created_at'  => $now,
+                'updated_at'  => $now,
+            ];
+        }
+
+        return $rows;
     }
 
     private function traerDepartamentos(string $provincia): array

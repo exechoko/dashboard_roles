@@ -488,7 +488,18 @@ class GeocodificacionService
                 return null;
             }
 
-            return ['lat' => (float) $lat, 'lng' => (float) $lng];
+            $lat = (float) $lat;
+            $lng = (float) $lng;
+
+            // Validación geográfica: Gran Paraná (Oro Verde, San Benito, C. Avellaneda)
+            if ($lat < -31.90 || $lat > -31.60 || $lng < -60.60 || $lng > -60.30) {
+                Log::warning('Georef: coordenada fuera del Gran Paraná descartada', [
+                    'dir' => $direccion, 'lat' => $lat, 'lng' => $lng,
+                ]);
+                return null;
+            }
+
+            return ['lat' => $lat, 'lng' => $lng];
 
         } catch (\Exception $e) {
             Log::warning('Georef /direcciones error', ['error' => $e->getMessage(), 'dir' => $direccion]);

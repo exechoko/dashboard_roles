@@ -14,7 +14,8 @@
       "mcp__laravel-boost__database-schema",
       "mcp__plugin_engram_engram__mem_save",
       "Bash(curl -s \"http://193.169.1.246:8088/search?q=San+Martin+456,+Entre+Ríos,+Argentina&format=json&limit=3&countrycodes=ar\")",
-      "WebFetch(domain:datosgobar.github.io)"
+      "WebFetch(domain:datosgobar.github.io)",
+      "WebFetch(domain:datos.gob.ar)"
     ]
   },
   "enableAllProjectMcpServers": true,

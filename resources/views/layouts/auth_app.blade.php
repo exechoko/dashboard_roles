@@ -178,34 +178,30 @@
             margin-bottom: 28px;
         }
 
-        .auth-metrics {
+        .auth-credit {
             position: relative;
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 12px;
             max-width: 620px;
-        }
-
-        .auth-metric {
-            padding: 16px;
+            padding: 18px 20px;
             border-radius: 18px;
             background: rgba(0, 229, 255, 0.08);
             border: 1px solid rgba(0, 229, 255, 0.18);
         }
 
-        .auth-metric strong {
+        .auth-credit span {
             display: block;
-            color: #ffffff;
-            font-size: 1.5rem;
-            line-height: 1;
-            margin-bottom: 8px;
+            color: var(--auth-muted);
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
         }
 
-        .auth-metric span {
-            color: var(--auth-muted);
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
+        .auth-credit strong {
+            display: block;
+            color: #ffffff;
+            font-size: 1rem;
+            line-height: 1.4;
         }
 
         .auth-panel {
@@ -267,9 +263,6 @@
                 padding: 18px;
             }
 
-            .auth-metrics {
-                grid-template-columns: 1fr;
-            }
         }
 
         @media (orientation: portrait) and (min-width: 769px) {
@@ -315,23 +308,13 @@
                             <div class="auth-kicker">Acceso operacional seguro</div>
                             <h1 class="auth-title">Control y Administración de Recursos 911</h1>
                             <p class="auth-copy">
-                                Cámaras, móviles, GPS, eventos y llamados coordinados desde una única consola para respuesta en tiempo real.
+                                Cámaras, móviles, eventos y llamados coordinados desde una única consola.
                             </p>
                         </div>
 
-                        <div class="auth-metrics">
-                            <div class="auth-metric">
-                                <strong>24/7</strong>
-                                <span>Monitoreo activo</span>
-                            </div>
-                            <div class="auth-metric">
-                                <strong>GPS</strong>
-                                <span>Móviles en campo</span>
-                            </div>
-                            <div class="auth-metric">
-                                <strong>911</strong>
-                                <span>Eventos críticos</span>
-                            </div>
+                        <div class="auth-credit">
+                            <span>Desarrollado por</span>
+                            <strong>Sección Técnica - División 911 y Videovigilancia</strong>
                         </div>
                     </aside>
 

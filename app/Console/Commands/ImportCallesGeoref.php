@@ -13,11 +13,9 @@ class ImportCallesGeoref extends Command
 {
     protected $signature = 'calles:import-georef
                             {--provincia=Entre Ríos : Nombre o ID de provincia a importar}
-                            {--localidad= : Nombre de localidad (filtra dentro de la provincia)}
-                            {--max=1000 : Tamaño de página en la API (max 5000)}
                             {--dry-run : No persiste, solo muestra cantidades}';
 
-    protected $description = 'Importa calles de Entre Ríos desde la API Georef con geometría para geocodificación local';
+    protected $description = 'Importa calles de Entre Ríos desde Georef (descarga CSV completa, sin rate limit)';
 
     private const ENDPOINT        = 'https://apis.datos.gob.ar/georef/api/calles';
     private const ENDPOINT_DEPTOS = 'https://apis.datos.gob.ar/georef/api/departamentos';
@@ -33,52 +31,125 @@ class ImportCallesGeoref extends Command
     public function handle(): int
     {
         $provincia = $this->option('provincia');
-        $localidad = $this->option('localidad');
-        $max       = (int) $this->option('max');
         $dry       = (bool) $this->option('dry-run');
 
-        $this->info("Importando calles de provincia=$provincia" . ($localidad ? ", localidad=$localidad" : '') . ($dry ? ' [DRY-RUN]' : ''));
+        $this->info("Descargando CSV de calles — provincia: $provincia" . ($dry ? ' [DRY-RUN]' : ''));
 
-        $filtroBase = ['provincia' => $provincia] + ($localidad ? ['localidad_censal' => $localidad] : []);
+        $url = self::ENDPOINT . '.csv?' . http_build_query(['provincia' => $provincia]);
+        $this->line("URL: $url");
 
-        $sondeo = $this->fetchConReintentos(self::ENDPOINT, $filtroBase + ['max' => 1, 'campos' => 'id']);
-
-        if (!$sondeo) {
+        $csv = $this->descargarCsv($url);
+        if ($csv === null) {
             return 1;
         }
 
-        $total = (int) ($sondeo->json()['total'] ?? 0);
-        $this->info("Total reportado por API: $total");
-
-        if ($total === 0) {
-            $this->warn('Sin resultados.');
-            return 0;
-        }
-
-        if ($total <= self::LIMITE_API || !empty($localidad)) {
-            $this->procesarChunk($filtroBase, $total, $max, $dry);
-        } else {
-            $this->info("Total supera el límite ($total > " . self::LIMITE_API . "). Chunkeando por departamento.");
-            $deptos = $this->traerDepartamentos($provincia);
-            $this->info("Departamentos a procesar: " . count($deptos));
-            foreach ($deptos as $depto) {
-                $this->line("→ Departamento: {$depto['nombre']} (id {$depto['id']})");
-                $totalDepto = $this->totalDeChunk(['provincia' => $provincia, 'departamento' => $depto['id']]);
-                if ($totalDepto === 0) {
-                    continue;
-                }
-                if ($totalDepto > self::LIMITE_API) {
-                    $this->warn("  Departamento {$depto['nombre']} tiene $totalDepto calles (excede límite). Chunkeando por localidad.");
-                    $this->procesarPorLocalidades($provincia, $depto['id'], $max, $dry);
-                } else {
-                    $this->procesarChunk(['provincia' => $provincia, 'departamento' => $depto['id']], $totalDepto, $max, $dry);
-                }
-            }
-        }
+        $this->procesarCsv($csv, $dry);
 
         $this->line('');
         $this->info("Insertados: {$this->insertados} | Actualizados: {$this->actualizados} | Sinónimos generados: {$this->sinonimosGenerados}");
         return 0;
+    }
+
+    private function descargarCsv(string $url): ?string
+    {
+        $this->line('Descargando...');
+        try {
+            $resp = Http::timeout(120)->withHeaders([
+                'User-Agent' => 'DashboardRoles/1.0 (importacion calles)',
+            ])->get($url);
+
+            if (!$resp->successful()) {
+                $this->error("Error descargando CSV HTTP {$resp->status()}: " . $resp->body());
+                return null;
+            }
+
+            $contenido = $resp->body();
+            $lineas    = substr_count($contenido, "\n");
+            $this->info("Descarga completa. Líneas: $lineas");
+            return $contenido;
+        } catch (\Exception $e) {
+            $this->error("Error de conexión: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    private function procesarCsv(string $csv, bool $dry): void
+    {
+        $lineas = explode("\n", trim($csv));
+        $header = str_getcsv(array_shift($lineas));
+
+        // Mapear índices de columnas por nombre
+        $idx = array_flip($header);
+
+        $total = count($lineas);
+        $this->info("Calles a procesar: $total");
+        $bar = $this->output->createProgressBar($total);
+        $bar->start();
+
+        foreach ($lineas as $linea) {
+            if (trim($linea) === '') {
+                continue;
+            }
+
+            $row = str_getcsv($linea);
+
+            $georefId   = $row[$idx['calle_id'] ?? $idx['id'] ?? -1] ?? null;
+            $nombre     = trim($row[$idx['calle_nombre'] ?? $idx['nombre'] ?? -1] ?? '');
+            $tipo       = trim($row[$idx['calle_categoria'] ?? $idx['categoria'] ?? -1] ?? '');
+            $alturaIni  = (int) ($row[$idx['calle_altura_inicio_derecha'] ?? -1] ?? 0);
+            $alturaFin  = (int) ($row[$idx['calle_altura_fin_derecha'] ?? -1] ?? 0);
+            $locNombre  = trim($row[$idx['localidad_censal_nombre'] ?? -1] ?? '');
+            $provNombre = trim($row[$idx['provincia_nombre'] ?? -1] ?? '');
+
+            if (empty($georefId) || empty($nombre)) {
+                $bar->advance();
+                continue;
+            }
+
+            $nombreLimpio    = self::limpiarPrefijoTipo($nombre);
+            $nombreParaCalle = $tipo ? trim("$tipo $nombreLimpio") : trim($nombre);
+            $callenorm       = AliasNormalizer::toAlias($nombreParaCalle);
+
+            if ($dry) {
+                $bar->advance();
+                continue;
+            }
+
+            $loc         = $this->resolveLocalidad($locNombre, $provNombre);
+            $localidadId = $loc['id'];
+            $localidadCp = $loc['cp'];
+
+            $data = [
+                'georef_id'         => $georefId,
+                'calle'             => $nombreParaCalle,
+                'tipo'              => $tipo ?: null,
+                'calle_normalizada' => $callenorm,
+                'altura_inicio'     => $alturaIni,
+                'altura_fin'        => $alturaFin,
+                'localidad'         => $locNombre,
+                'localidad_id'      => $localidadId,
+                'provincia'         => $provNombre,
+                'cp'                => $localidadCp,
+                'user'              => 'georef',
+            ];
+
+            $existing = Calle::where('georef_id', $georefId)->first();
+            if ($existing) {
+                $existing->update($data);
+                $calleId = $existing->id;
+                $this->actualizados++;
+            } else {
+                $nueva   = Calle::create($data);
+                $calleId = $nueva->id;
+                $this->insertados++;
+            }
+
+            $this->sinonimosGenerados += $this->generarSinonimos($calleId, $nombre, $tipo, $localidadId);
+            $bar->advance();
+        }
+
+        $bar->finish();
+        $this->line('');
     }
 
     private function traerDepartamentos(string $provincia): array

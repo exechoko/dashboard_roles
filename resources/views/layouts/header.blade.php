@@ -251,9 +251,10 @@
             @if($efemerideDestacada)
                 @php
                     $esHoliday = ($efemerideDestacada['tipo'] ?? 'evento') === 'holiday';
+                    $textoYaMenciona = $efemerideDestacada['alcance'] && mb_stripos($efemerideDestacada['texto'], $efemerideDestacada['alcance']) !== false;
                     $bannerTitle = $esHoliday
                         ? 'Hoy: ' . $efemerideDestacada['texto']
-                        : 'Efeméride del día (' . $efemerideDestacada['alcance'] . ')' . ($efemerideDestacada['anio'] ? ' · ' . $efemerideDestacada['anio'] : '') . ': ' . $efemerideDestacada['texto'];
+                        : 'Efeméride del día' . ($textoYaMenciona ? '' : ' (' . $efemerideDestacada['alcance'] . ')') . ($efemerideDestacada['anio'] ? ' · ' . $efemerideDestacada['anio'] : '') . ': ' . $efemerideDestacada['texto'];
                 @endphp
                 <a href="{{ $efemerideDestacada['url'] ?: 'https://es.wikipedia.org/wiki/Wikipedia:Efem%C3%A9rides' }}"
                    target="_blank"

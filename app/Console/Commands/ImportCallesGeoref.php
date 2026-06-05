@@ -130,9 +130,8 @@ class ImportCallesGeoref extends Command
                 'inicio' => $inicio,
             ];
 
-            $resp = Http::timeout(60)->get(self::ENDPOINT, $params);
-            if (!$resp->successful()) {
-                $this->error("Error API Georef HTTP {$resp->status()}: " . $resp->body());
+            $resp = $this->fetchConReintentos(self::ENDPOINT, $params);
+            if (!$resp) {
                 return;
             }
 
@@ -199,10 +198,40 @@ class ImportCallesGeoref extends Command
             }
 
             $inicio += $max;
+            usleep(500_000); // 0.5 s entre páginas para respetar el rate limit de Georef
         } while ($inicio < $total && $inicio < self::LIMITE_API);
 
         $bar->finish();
         $this->line('');
+    }
+
+    /**
+     * Hace GET con reintentos exponenciales ante rate limit (429) o errores transitorios.
+     * Devuelve null si se agotan los intentos.
+     */
+    private function fetchConReintentos(string $url, array $params, int $intentos = 5): ?\Illuminate\Http\Client\Response
+    {
+        $espera = 2;
+        for ($i = 0; $i < $intentos; $i++) {
+            $resp = Http::timeout(60)->get($url, $params);
+
+            if ($resp->successful()) {
+                return $resp;
+            }
+
+            if ($resp->status() === 429 || $resp->status() >= 500) {
+                $this->warn("  Rate limit o error {$resp->status()}, esperando {$espera}s...");
+                sleep($espera);
+                $espera = min($espera * 2, 60);
+                continue;
+            }
+
+            $this->error("Error API Georef HTTP {$resp->status()}: " . $resp->body());
+            return null;
+        }
+
+        $this->error("Se agotaron los reintentos para $url");
+        return null;
     }
 
     private function resolveLocalidad(string $nombre, string $provincia): array

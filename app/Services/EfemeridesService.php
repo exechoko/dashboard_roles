@@ -157,6 +157,8 @@ class EfemeridesService
             if ($texto === '') {
                 continue;
             }
+            // La API de Wikipedia a veces repite el nombre de la región al inicio: "Argentina Argentina:\n..."
+            $texto = preg_replace('/^(.+?)\h+\1:\s*/u', '', $texto);
             $urlPagina = null;
             if (! empty($holiday['pages'][0]['content_urls']['desktop']['page'])) {
                 $urlPagina = $holiday['pages'][0]['content_urls']['desktop']['page'];

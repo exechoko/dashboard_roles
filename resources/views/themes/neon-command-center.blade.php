@@ -199,7 +199,7 @@
     [data-theme="dark"] .table tbody tr.table-warning td .text-muted,
     [data-theme="dark"] .table tbody tr.table-danger td .text-muted,
     [data-theme="dark"] .table tbody tr.table-info td .text-muted {
-        color: var(--text-primary) !important;
+        color: #102033 !important;
     }
 
     .table strong,
@@ -274,6 +274,21 @@
     [data-theme="dark"] .banner-efemeride:focus {
         background: rgba(0, 229, 255, 0.16) !important;
         color: #ffffff !important;
+    }
+
+    [data-theme="dark"] .table .badge-success,
+    [data-theme="dark"] .table .badge-info,
+    [data-theme="dark"] .table .badge-danger,
+    [data-theme="dark"] .table .badge-secondary,
+    [data-theme="dark"] .table .badge-primary,
+    [data-theme="dark"] .table .badge-dark {
+        color: #ffffff !important;
+        text-shadow: none !important;
+    }
+
+    [data-theme="dark"] .table .badge-warning {
+        color: #06101f !important;
+        text-shadow: none !important;
     }
 
     .modal.show,

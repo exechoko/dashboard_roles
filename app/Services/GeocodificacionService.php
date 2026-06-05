@@ -584,11 +584,12 @@ class GeocodificacionService
             }
 
             $data = json_decode($response, true);
-            if (is_array($data) && !empty($data['display_name'])) {
-                return (string) $data['display_name'];
+            if (!is_array($data)) {
+                return null;
             }
 
-            return null;
+            return $this->formatearDireccionNominatim($data['address'] ?? []);
+
         } catch (\Exception $e) {
             Log::error('Error en reverse-geocode Nominatim', [
                 'error' => $e->getMessage(),
@@ -597,6 +598,27 @@ class GeocodificacionService
             ]);
             return null;
         }
+    }
+
+    /**
+     * Formatea el objeto `address` de Nominatim al estilo argentino:
+     * "Gualeguaychú 472, Barrio Saenz Peña, Paraná"
+     */
+    private function formatearDireccionNominatim(array $address): ?string
+    {
+        if (empty($address)) {
+            return null;
+        }
+
+        $calle  = $address['road'] ?? $address['pedestrian'] ?? $address['path'] ?? null;
+        $numero = $address['house_number'] ?? null;
+        $barrio = $address['suburb'] ?? $address['neighbourhood'] ?? $address['quarter'] ?? null;
+        $ciudad = $address['city'] ?? $address['town'] ?? $address['village'] ?? $address['municipality'] ?? null;
+
+        $linea1 = trim(implode(' ', array_filter([$calle, $numero])));
+        $partes = array_filter([$linea1 ?: null, $barrio, $ciudad]);
+
+        return implode(', ', $partes) ?: null;
     }
 
     /**

@@ -10,7 +10,7 @@
 
     <!-- General CSS Files -->
     <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" href="{{ asset('css/font-awesome.min.css') }}">
+    <link href="{{ asset('assets/css/@fortawesome/fontawesome-free/css/all.css') }}" rel="stylesheet" type="text/css">
 
     <!-- Template CSS -->
     <link rel="stylesheet" href="{{ asset('web/css/style.css') }}">
@@ -20,7 +20,30 @@
     <link href="{{ asset('assets/css/select2.min.css') }}" rel="stylesheet" type="text/css" />
 
     <style>
-        /* Video background styles */
+        :root {
+            --auth-bg: #06101f;
+            --auth-surface: rgba(7, 20, 38, 0.84);
+            --auth-surface-strong: rgba(8, 27, 50, 0.94);
+            --auth-border: rgba(0, 229, 255, 0.24);
+            --auth-text: #eaf6ff;
+            --auth-muted: #96abc3;
+            --auth-cyan: #00e5ff;
+            --auth-violet: #8b5cf6;
+            --auth-danger: #ff355d;
+            --auth-success: #00f2a6;
+        }
+
+        html,
+        body {
+            min-height: 100%;
+        }
+
+        body {
+            background: var(--auth-bg) !important;
+            color: var(--auth-text);
+            overflow-x: hidden;
+        }
+
         .video-background {
             position: fixed;
             top: 0;
@@ -45,92 +68,207 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.4);
+            background:
+                radial-gradient(circle at 18% 18%, rgba(0, 229, 255, 0.24), transparent 28rem),
+                radial-gradient(circle at 80% 72%, rgba(139, 92, 246, 0.22), transparent 26rem),
+                linear-gradient(120deg, rgba(3, 8, 18, 0.9), rgba(5, 16, 31, 0.78));
             z-index: -1;
         }
 
-        /* Ensure content is above video */
         #app {
             position: relative;
             z-index: 1;
+            min-height: 100vh;
         }
 
-        /* Remove the old background image from body */
-        body {
-            background-image: none !important;
-            background-color: #000;
+        .auth-section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 42px 0;
         }
 
-        /* Improve card visibility over video */
-        .card,
-        .login-brand {
-            background-color: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(5px);
-            border-radius: 10px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        .auth-shell {
+            display: grid;
+            grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.72fr);
+            gap: 28px;
+            align-items: stretch;
         }
 
-        /* Make login brand background semi-transparent */
-        .login-brand {
-            padding: 20px;
-            margin-bottom: 20px;
+        .auth-hero,
+        .auth-panel {
+            border: 1px solid var(--auth-border);
+            background: var(--auth-surface);
+            border-radius: 28px;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.42), 0 0 42px rgba(0, 229, 255, 0.1);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            overflow: hidden;
         }
 
-        .login-brand h2 {
-            color: #333 !important;
-            /* Change text color to dark for better visibility */
+        .auth-hero {
+            position: relative;
+            min-height: 580px;
+            padding: 42px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
-        /* Estilo para el fondo oscuro (keeping original overlay styles) */
-        .overlay {
+        .auth-hero::before {
+            content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            inset: 0;
+            background:
+                linear-gradient(rgba(0, 229, 255, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 229, 255, 0.08) 1px, transparent 1px);
+            background-size: 42px 42px;
+            mask-image: linear-gradient(120deg, rgba(0, 0, 0, 0.95), transparent 78%);
             pointer-events: none;
         }
 
-        /* Estilo para el contenedor del logo */
-        .logo-container {
-            width: 100px;
-            height: 100px;
-            background-color: white;
+        .auth-brand {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .auth-logo {
+            width: 76px;
+            height: 76px;
             border-radius: 50%;
-            overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid rgba(0, 229, 255, 0.38);
+            box-shadow: 0 0 28px rgba(0, 229, 255, 0.32);
         }
 
-        /* Estilo para la imagen del logo */
-        .logo-img {
-            width: 80px;
-            height: 80px;
+        .auth-logo img {
+            width: 58px;
+            height: 58px;
             border-radius: 50%;
         }
 
-        /* Responsive video adjustments */
-        @media (max-width: 768px) {
-            .video-background video {
-                width: 100%;
-                height: auto;
-                min-height: 100vh;
+        .auth-kicker {
+            color: var(--auth-cyan);
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .auth-title {
+            color: #ffffff;
+            font-size: clamp(2.1rem, 4vw, 4.2rem);
+            font-weight: 900;
+            line-height: 0.96;
+            letter-spacing: -0.06em;
+            margin-bottom: 18px;
+        }
+
+        .auth-copy {
+            color: var(--auth-muted);
+            max-width: 560px;
+            font-size: 1.02rem;
+            line-height: 1.7;
+            margin-bottom: 28px;
+        }
+
+        .auth-metrics {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            max-width: 620px;
+        }
+
+        .auth-metric {
+            padding: 16px;
+            border-radius: 18px;
+            background: rgba(0, 229, 255, 0.08);
+            border: 1px solid rgba(0, 229, 255, 0.18);
+        }
+
+        .auth-metric strong {
+            display: block;
+            color: #ffffff;
+            font-size: 1.5rem;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .auth-metric span {
+            color: var(--auth-muted);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .auth-panel {
+            background: var(--auth-surface-strong);
+            padding: 30px;
+            display: flex;
+            align-items: center;
+        }
+
+        .auth-panel-inner {
+            width: 100%;
+        }
+
+        .simple-footer {
+            color: rgba(234, 246, 255, 0.62);
+            text-align: center;
+            font-size: 0.78rem;
+            margin-top: 18px;
+        }
+
+        @media (max-width: 991.98px) {
+            .auth-shell {
+                grid-template-columns: 1fr;
+                max-width: 460px;
+                margin: 0 auto;
             }
 
-            /* Pause video on mobile to save battery */
+            .auth-hero {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
             .video-background {
                 display: none;
             }
 
-            /* Fallback background for mobile */
             body {
                 background-image: url('{{ asset('img/video_vigilancia_oscura.webp') }}') !important;
                 background-size: cover;
                 background-position: center center;
                 background-attachment: fixed;
+            }
+
+            .auth-section {
+                padding: 18px 0;
+            }
+
+            .auth-hero,
+            .auth-panel {
+                border-radius: 22px;
+            }
+
+            .auth-hero {
+                padding: 26px;
+            }
+
+            .auth-panel {
+                padding: 18px;
+            }
+
+            .auth-metrics {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -140,15 +278,6 @@
                 height: 100%;
                 min-width: 100vw;
             }
-        }
-
-        /* Ensure footer is visible */
-        .simple-footer {
-            color: white;
-            background-color: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 20px;
         }
     </style>
 </head>
@@ -168,22 +297,52 @@
     <div class="video-overlay"></div>
 
     <div id="app">
-        <section class="section">
-            <div class="container mt-5">
-                <div class="row">
-                    <div class="col-md-6 offset-md-3">
-                        <div class="login-brand">
-                            <div class="logo-container">
-                                <img src="{{ asset('img/logo.ico') }}" alt="logo" class="logo-img">
+        <section class="auth-section">
+            <div class="container">
+                <div class="auth-shell">
+                    <aside class="auth-hero">
+                        <div class="auth-brand">
+                            <div class="auth-logo">
+                                <img src="{{ asset('img/logo.ico') }}" alt="C.A.R. 911">
                             </div>
-                            <h2 style="margin-top: 10px; text-transform: none;">Control y Administración de Recursos 911
-                            </h2>
+                            <div>
+                                <div class="auth-kicker">Centro de monitoreo</div>
+                                <strong>C.A.R. 911</strong>
+                            </div>
                         </div>
-                        @yield('content')
-                        <div class="simple-footer">
-                            {{-- Copyright &copy; {{ getSettingValue('application_name') }} {{ date('Y') }} --}}
+
+                        <div>
+                            <div class="auth-kicker">Acceso operacional seguro</div>
+                            <h1 class="auth-title">Control y Administración de Recursos 911</h1>
+                            <p class="auth-copy">
+                                Cámaras, móviles, GPS, eventos y llamados coordinados desde una única consola para respuesta en tiempo real.
+                            </p>
                         </div>
-                    </div>
+
+                        <div class="auth-metrics">
+                            <div class="auth-metric">
+                                <strong>24/7</strong>
+                                <span>Monitoreo activo</span>
+                            </div>
+                            <div class="auth-metric">
+                                <strong>GPS</strong>
+                                <span>Móviles en campo</span>
+                            </div>
+                            <div class="auth-metric">
+                                <strong>911</strong>
+                                <span>Eventos críticos</span>
+                            </div>
+                        </div>
+                    </aside>
+
+                    <main class="auth-panel">
+                        <div class="auth-panel-inner">
+                            @yield('content')
+                            <div class="simple-footer">
+                                Acceso restringido a personal autorizado
+                            </div>
+                        </div>
+                    </main>
                 </div>
             </div>
         </section>

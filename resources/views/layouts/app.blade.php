@@ -90,6 +90,9 @@
     @include('themes.dark-theme.animations')
     @include('themes.dark-theme.modal-fix')
 
+    <!-- COMMAND CENTER VISUAL LAYER -->
+    @include('themes.neon-command-center')
+
     @yield('css')
 </head>
 

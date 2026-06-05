@@ -20,7 +20,6 @@ return new class extends Migration {
             $table->string('provincia', 100)->nullable();
             $table->string('cp', 20)->nullable();
             $table->string('user', 50)->nullable();
-            $table->json('geometria')->nullable();
             $table->timestamps();
 
             $table->index('calle_normalizada');

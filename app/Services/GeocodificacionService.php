@@ -118,18 +118,19 @@ class GeocodificacionService
             return null;
         }
 
-        // 1er motor: tabla local de calles importadas desde Georef (sin llamadas externas).
-        $resultadoLocal = $this->geocodificarLocal($direccion);
-        if ($resultadoLocal) {
+        // 1er motor: API Georef /direcciones — gratuita, sin límites, específica para Argentina.
+        // El resultado se cachea en geocodificacion_directa como cualquier otro motor.
+        $resultadoGeoref = $this->geocodificarGeoref($direccion);
+        if ($resultadoGeoref) {
             GeocodificacionDirecta::create([
                 'direccion_original'    => $direccion,
                 'direccion_normalizada' => null,
-                'latitud'               => $resultadoLocal['lat'],
-                'longitud'              => $resultadoLocal['lng'],
-                'fuente'                => 'local',
+                'latitud'               => $resultadoGeoref['lat'],
+                'longitud'              => $resultadoGeoref['lng'],
+                'fuente'                => 'georef',
                 'nro_expediente'        => $nroExpediente,
             ]);
-            return $resultadoLocal;
+            return $resultadoGeoref;
         }
 
         // Motor gratuito (Nominatim) cuando Google está deshabilitado por costos.
@@ -458,151 +459,41 @@ class GeocodificacionService
     }
 
     /**
-     * Geocodificación local usando la tabla `calles` importada desde Georef.
-     * Cero llamadas externas. Cubre solo las calles previamente importadas.
-     *
-     * Algoritmo:
-     *   1. Parsear nombre de calle y número desde la dirección.
-     *   2. Buscar el alias normalizado en `sinonimos_calles`.
-     *   3. Verificar que el número esté dentro del rango altura_inicio/altura_fin.
-     *   4. Interpolar a lo largo de la geometría (linestring GeoJSON) para obtener lat/lng.
+     * Geocodifica usando la API Georef /api/direcciones (datos.gob.ar).
+     * Gratuita, sin límites publicados, hace interpolación por número de altura.
+     * Restringida a la provincia de Entre Ríos.
      */
-    public function geocodificarLocal(string $direccion): ?array
+    public function geocodificarGeoref(string $direccion): ?array
     {
-        [$calleRaw, $numero] = $this->parsearCalleYNumero($direccion);
+        try {
+            $resp = Http::timeout(8)->get('https://apis.datos.gob.ar/georef/api/direcciones', [
+                'direccion' => $direccion,
+                'provincia' => 'Entre Ríos',
+                'max'       => 1,
+            ]);
 
-        if ($calleRaw === null || $numero === null) {
-            return null;
-        }
-
-        $alias = AliasNormalizer::toAlias($calleRaw);
-        if ($alias === '') {
-            return null;
-        }
-
-        // Buscar en sinonimos_calles el alias (puede haber varios; tomamos el de mayor confianza).
-        $sinonimo = DB::table('sinonimos_calles')
-            ->where('alias', $alias)
-            ->orderByDesc('confianza')
-            ->first();
-
-        if (!$sinonimo) {
-            return null;
-        }
-
-        // Buscar la calle que cubra el número pedido.
-        $calle = DB::table('calles')
-            ->where('id', $sinonimo->calle_id)
-            ->where(function ($q) use ($numero) {
-                $q->where(function ($q2) use ($numero) {
-                    // Rango conocido: el número debe estar dentro.
-                    $q2->where('altura_inicio', '>', 0)
-                       ->where('altura_fin', '>', 0)
-                       ->where('altura_inicio', '<=', $numero)
-                       ->where('altura_fin', '>=', $numero);
-                })->orWhere(function ($q2) {
-                    // Sin rango: aceptamos igual (usaremos el punto medio de la geometría).
-                    $q2->where('altura_inicio', 0)->where('altura_fin', 0);
-                });
-            })
-            ->first();
-
-        if (!$calle || empty($calle->geometria)) {
-            return null;
-        }
-
-        $geom = json_decode($calle->geometria, true);
-        $coords = $geom['coordinates'] ?? null;
-
-        // La geometría puede venir como LineString o MultiLineString.
-        if (($geom['type'] ?? '') === 'MultiLineString' && !empty($coords)) {
-            $coords = $coords[0]; // Tomamos el primer segmento.
-        }
-
-        if (empty($coords) || !is_array($coords)) {
-            return null;
-        }
-
-        $alturaIni = (int) $calle->altura_inicio;
-        $alturaFin = (int) $calle->altura_fin;
-
-        $ratio = ($alturaIni > 0 && $alturaFin > $alturaIni)
-            ? ($numero - $alturaIni) / ($alturaFin - $alturaIni)
-            : 0.5;
-
-        $ratio = max(0.0, min(1.0, $ratio));
-
-        return $this->interpolarEnLinestring($coords, $ratio);
-    }
-
-    /**
-     * Parsea "Av San Martín 1234" → ["Av San Martín", 1234].
-     * Reconoce sufijos como "al 500", "Nº 500", "n° 500" además del número final simple.
-     * Devuelve [null, null] si no se puede parsear.
-     *
-     * @return array{0: string|null, 1: int|null}
-     */
-    private function parsearCalleYNumero(string $direccion): array
-    {
-        $direccion = trim($direccion);
-
-        // "Calle al 1234" o "Calle Nº 1234" o "Calle n° 1234"
-        if (preg_match('/^(.+?)\s+(?:al|n[°º]\.?)\s*(\d{1,5})\s*$/iu', $direccion, $m)) {
-            return [trim($m[1]), (int) $m[2]];
-        }
-
-        // "Calle 1234" — número al final separado por espacio.
-        if (preg_match('/^(.+?)\s+(\d{1,5})\s*$/u', $direccion, $m)) {
-            return [trim($m[1]), (int) $m[2]];
-        }
-
-        return [null, null];
-    }
-
-    /**
-     * Interpola un punto a lo largo de un linestring GeoJSON ([lng, lat] pairs).
-     *
-     * @param array<int, array{0: float, 1: float}> $coords Coordenadas [[lng,lat], ...]
-     * @param float $ratio Posición relativa 0.0–1.0 a lo largo de la línea.
-     * @return array{lat: float, lng: float}
-     */
-    private function interpolarEnLinestring(array $coords, float $ratio): array
-    {
-        if (count($coords) === 1) {
-            return ['lat' => (float) $coords[0][1], 'lng' => (float) $coords[0][0]];
-        }
-
-        // Calcular longitudes de cada segmento (Euclidean: válido para distancias cortas).
-        $longitudes   = [];
-        $longitudTotal = 0.0;
-        for ($i = 0; $i < count($coords) - 1; $i++) {
-            $dx = $coords[$i + 1][0] - $coords[$i][0];
-            $dy = $coords[$i + 1][1] - $coords[$i][1];
-            $d  = sqrt($dx * $dx + $dy * $dy);
-            $longitudes[]  = $d;
-            $longitudTotal += $d;
-        }
-
-        if ($longitudTotal === 0.0) {
-            return ['lat' => (float) $coords[0][1], 'lng' => (float) $coords[0][0]];
-        }
-
-        $objetivo    = $ratio * $longitudTotal;
-        $acumulado   = 0.0;
-
-        for ($i = 0; $i < count($longitudes); $i++) {
-            $segmento = $longitudes[$i];
-            if ($acumulado + $segmento >= $objetivo || $i === count($longitudes) - 1) {
-                $t   = $segmento > 0 ? ($objetivo - $acumulado) / $segmento : 0;
-                $lng = $coords[$i][0] + $t * ($coords[$i + 1][0] - $coords[$i][0]);
-                $lat = $coords[$i][1] + $t * ($coords[$i + 1][1] - $coords[$i][1]);
-                return ['lat' => (float) $lat, 'lng' => (float) $lng];
+            if (!$resp->successful()) {
+                return null;
             }
-            $acumulado += $segmento;
-        }
 
-        $ultimo = end($coords);
-        return ['lat' => (float) $ultimo[1], 'lng' => (float) $ultimo[0]];
+            $item = $resp->json()['direcciones'][0] ?? null;
+            if (!$item) {
+                return null;
+            }
+
+            $lat = data_get($item, 'ubicacion.lat');
+            $lng = data_get($item, 'ubicacion.lon');
+
+            if ($lat === null || $lng === null) {
+                return null;
+            }
+
+            return ['lat' => (float) $lat, 'lng' => (float) $lng];
+
+        } catch (\Exception $e) {
+            Log::warning('Georef /direcciones error', ['error' => $e->getMessage(), 'dir' => $direccion]);
+            return null;
+        }
     }
 
     /**

@@ -20,10 +20,5 @@ class Calle extends Model
         'provincia',
         'cp',
         'user',
-        'geometria',
-    ];
-
-    protected $casts = [
-        'geometria' => 'array',
     ];
 }

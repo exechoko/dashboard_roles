@@ -128,7 +128,7 @@ class ImportCallesGeoref extends Command
             $params = $filtros + [
                 'max'    => $max,
                 'inicio' => $inicio,
-                'campos' => 'id,nombre,categoria,altura.inicio.derecha,altura.fin.derecha,localidad_censal.id,localidad_censal.nombre,provincia.nombre,geometria',
+                'campos' => 'id,nombre,categoria,altura-inicio-derecha,altura-fin-derecha,localidad_censal-id,localidad_censal-nombre,provincia-nombre',
             ];
 
             $resp = Http::timeout(60)->get(self::ENDPOINT, $params);
@@ -150,7 +150,6 @@ class ImportCallesGeoref extends Command
                 $alturaFin  = (int) data_get($c, 'altura.fin.derecha', 0);
                 $locNombre  = trim(data_get($c, 'localidad_censal.nombre', '') ?? '');
                 $provNombre = trim(data_get($c, 'provincia.nombre', '') ?? '');
-                $geometria  = data_get($c, 'geometria') ?: null;
 
                 if (empty($georefId) || empty($nombre)) {
                     $bar->advance();
@@ -182,7 +181,6 @@ class ImportCallesGeoref extends Command
                     'provincia'         => $provNombre,
                     'cp'                => $localidadCp,
                     'user'              => 'georef',
-                    'geometria'         => $geometria ? json_encode($geometria) : null,
                 ];
 
                 $existing = Calle::where('georef_id', $georefId)->first();

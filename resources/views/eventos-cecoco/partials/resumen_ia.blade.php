@@ -11,8 +11,8 @@
             <button type="button" class="btn btn-sm btn-info" data-resumen-ia-btn>
                 <i class="bi bi-stars"></i> Generar resumen
             </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-resumen-ia-refrescar style="display:none;" title="Regenerar">
-                <i class="bi bi-arrow-clockwise"></i>
+            <button type="button" class="btn btn-sm btn-outline-info ml-2" data-resumen-ia-refrescar style="display:none;" title="Volver a generar el resumen con IA">
+                <i class="bi bi-arrow-clockwise"></i> Regenerar
             </button>
         </div>
     </div>
@@ -24,9 +24,9 @@
         <div data-resumen-ia-error class="alert alert-danger py-2 mb-0" style="display:none;"></div>
         <div data-resumen-ia-result style="display:none;">
             <p data-ia-resumen class="mb-3" style="font-size:14px;"></p>
-            <div class="d-flex flex-wrap gap-2 mb-3">
-                <span class="badge bg-dark" data-ia-tipo style="display:none;"></span>
-                <span class="badge bg-success" data-ia-estado style="display:none;"></span>
+            <div class="mb-3">
+                <span class="badge badge-dark" data-ia-tipo style="display:none; font-size:.85rem;"></span>
+                <span class="badge badge-success ml-1" data-ia-estado style="display:none; font-size:.85rem;"></span>
             </div>
             <div data-ia-resultado-wrap class="mb-3" style="display:none;">
                 <div class="small text-muted">Resultado</div>

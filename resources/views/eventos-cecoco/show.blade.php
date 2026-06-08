@@ -172,11 +172,11 @@
             <hr class="my-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="mb-0"><i class="bi bi-truck"></i> Recursos que intervinieron</h5>
-                <span class="badge bg-secondary">{{ count($recursosQuick) }}</span>
+                <span class="badge badge-secondary">{{ count($recursosQuick) }}</span>
             </div>
-            <div class="d-flex flex-wrap gap-2 mb-3">
+            <div class="mb-3">
                 @foreach($recursosQuick as $r)
-                    <span class="badge bg-primary" style="font-size:.9rem;">
+                    <span class="badge badge-primary mr-1 mb-1" style="font-size:.9rem;">
                         <i class="bi bi-geo-alt-fill"></i> {{ ($r['unidad'] ?? $r['tr_amites'] ?? '') ?: '-' }}
                     </span>
                 @endforeach

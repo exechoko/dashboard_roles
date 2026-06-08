@@ -850,12 +850,72 @@ class CecocoExpedienteService
 
     private function extraerTramites(\DOMXPath $xpath): array
     {
-        $tramites = [];
-        $tablas = $xpath->query('//table');
+        // Elegir la tabla de Trámites real (encabezado limpio que empieza en "Unidad"),
+        // descartando las tablas combinadas Acciones+Trámites que el reporte anida y
+        // cuyo encabezado arranca en "Fecha - Hora".
+        [$tabla, $enc, $headerTr] = $this->seleccionarMejorTablaTramites($xpath);
+        if ($tabla === null) {
+            return [];
+        }
 
-        foreach ($tablas as $tabla) {
-            // Buscar la fila de encabezados con MÁS DE UNA celda <th>
-            // (evita tomar la fila de título "Trámites" que tiene colspan)
+        $tramites = [];
+
+        foreach ($xpath->query('.//tr', $tabla) as $fila) {
+            if ($headerTr && $fila->isSameNode($headerTr)) {
+                continue;
+            }
+            $celdas = $xpath->query('.//td', $fila);
+            if ($celdas->length < 2) {
+                continue;
+            }
+
+            $valores = [];
+            foreach ($celdas as $celda) {
+                $valor = $this->limpiarTextoCelda($celda->textContent);
+                // Normalizar sentinel de fecha nula de CECOCO
+                if ($valor === '01/01/2000 00:00:00' || $valor === '01/01/2000') {
+                    $valor = '';
+                }
+                $valores[] = $valor;
+            }
+
+            // La primera columna es la Unidad: debe tener un valor real
+            if (($valores[0] ?? '') === '' || ($valores[0] ?? '') === '-') {
+                continue;
+            }
+
+            $tramite = [];
+            for ($i = 0; $i < count($valores) && $i < count($enc); $i++) {
+                if ($enc[$i] !== '') {
+                    $tramite[$enc[$i]] = $valores[$i];
+                }
+            }
+
+            $tramites[] = $tramite;
+        }
+
+        if (!empty($tramites)) {
+            Log::info('Trámites extraídos', ['total' => count($tramites)]);
+        }
+
+        return $tramites;
+    }
+
+    /**
+     * Selecciona la tabla de Trámites con más unidades. El encabezado de la tabla
+     * real comienza en "Unidad"; las tablas combinadas Acciones+Trámites (cuyo
+     * encabezado arranca en "Fecha - Hora") quedan descartadas.
+     *
+     * @return array{0: ?\DOMNode, 1: array<int, string>, 2: ?\DOMNode}
+     */
+    private function seleccionarMejorTablaTramites(\DOMXPath $xpath): array
+    {
+        $mejorTabla = null;
+        $mejorEnc = [];
+        $mejorHeader = null;
+        $maxUnidades = 0;
+
+        foreach ($xpath->query('//table') as $tabla) {
             $headerTr = null;
             foreach ($xpath->query('.//tr', $tabla) as $trPosible) {
                 if ($xpath->query('.//th', $trPosible)->length > 1) {
@@ -863,93 +923,44 @@ class CecocoExpedienteService
                     break;
                 }
             }
-            if (!$headerTr)
+            if (!$headerTr) {
                 continue;
+            }
 
             $enc = [];
             foreach ($xpath->query('.//th|.//td', $headerTr) as $celda) {
                 $enc[] = $this->normalizarClaveColumna(trim($celda->textContent));
             }
-            $h = implode(' ', $enc);
 
-            // Detectar tabla de Trámites por encabezados típicos
-            $esTramites = (strpos($h, 'unidad') !== false || strpos($h, 'tr_amites') !== false) &&
-                (strpos($h, 'h_asig') !== false || strpos($h, 'asig') !== false);
-
-            if (!$esTramites)
+            // La tabla de Trámites tiene su primera columna "Unidad" y horarios de asignación
+            if (empty($enc) || $enc[0] !== 'unidad' || strpos(implode(' ', $enc), 'asig') === false) {
                 continue;
-
-            // Detectar la clave de "Unidad" en los encabezados
-            $unidadKey = '';
-            foreach ($enc as $k) {
-                if (strpos($k, 'unidad') !== false || strpos($k, 'tr_amites') !== false) {
-                    $unidadKey = $k;
-                    break;
-                }
             }
 
-            // Parsear filas de trámites
+            $unidades = 0;
             foreach ($xpath->query('.//tr', $tabla) as $fila) {
-                if ($headerTr && $fila->isSameNode($headerTr)) {
+                if ($fila->isSameNode($headerTr)) {
                     continue;
                 }
                 $celdas = $xpath->query('.//td', $fila);
                 if ($celdas->length < 2) {
                     continue;
                 }
-
-                $valores = [];
-                foreach ($celdas as $celda) {
-                    $valor = $celda->textContent;
-                    $valor = preg_replace('/\x{00A0}|\xC2\xA0/u', ' ', $valor);
-                    $valor = preg_replace('/\s+/u', ' ', (string) $valor);
-                    $valor = trim((string) $valor);
-                    // Normalizar sentinel de fecha nula de CECOCO
-                    if ($valor === '01/01/2000 00:00:00' || $valor === '01/01/2000') {
-                        $valor = '';
-                    }
-                    $valores[] = $valor;
+                $unidad = $this->limpiarTextoCelda($celdas->item(0)->textContent);
+                if ($unidad !== '' && $unidad !== '-') {
+                    $unidades++;
                 }
-
-                // Construir trámite con encabezados detectados
-                $tramite = [];
-                for ($i = 0; $i < count($valores) && $i < count($enc); $i++) {
-                    if ($enc[$i] !== '') {
-                        $tramite[$enc[$i]] = $valores[$i];
-                    }
-                }
-
-                // Requerir que la columna "Unidad" tenga un valor real
-                $unidad = $unidadKey !== '' ? ($tramite[$unidadKey] ?? '') : '';
-                if ($unidad === '' || $unidad === '-') {
-                    continue;
-                }
-
-                // Validar que al menos un horario tenga dato
-                $tieneHorario = false;
-                $columnasTiempo = ['h_asig', 'asig', 'h_sal', 'sal', 'h_llegada', 'llegada', 'h_f_atencion', 'f_atencion', 'h_f_atenci_on', 'f_atenci_on', 'h_desasig', 'desasig', 'h_invalido', 'invalido', 'h_inv_alido', 'inv_alido'];
-                foreach ($tramite as $k => $v) {
-                    if ($v !== '' && $v !== '-' && in_array($k, $columnasTiempo)) {
-                        $tieneHorario = true;
-                        break;
-                    }
-                }
-
-                if (!$tieneHorario) {
-                    continue;
-                }
-
-                $tramites[] = $tramite;
             }
 
-            // Si encontramos trámites, terminar
-            if (!empty($tramites)) {
-                Log::info('Trámites extraídos', ['total' => count($tramites)]);
-                break;
+            if ($unidades > $maxUnidades) {
+                $maxUnidades = $unidades;
+                $mejorTabla = $tabla;
+                $mejorEnc = $enc;
+                $mejorHeader = $headerTr;
             }
         }
 
-        return $tramites;
+        return [$mejorTabla, $mejorEnc, $mejorHeader];
     }
 
     /**

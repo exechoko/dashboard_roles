@@ -30,7 +30,8 @@
       "Bash(Out-String)",
       "PowerShell(php artisan route:list --name=resumen-ia)",
       "PowerShell(php artisan cecoco:prefetch-detalles --fecha=2026-05-12 --limite=5 --refrescar --pausa=100)",
-      "PowerShell(php artisan cecoco:prefetch-detalles --fecha=2026-05-11 --limite=3 --pausa=100)"
+      "PowerShell(php artisan cecoco:prefetch-detalles --fecha=2026-05-11 --limite=3 --pausa=100)",
+      "PowerShell(php artisan cecoco:resumir-pendientes)"
     ]
   },
   "enableAllProjectMcpServers": true,

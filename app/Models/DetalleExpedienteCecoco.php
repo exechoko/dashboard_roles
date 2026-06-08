@@ -19,6 +19,8 @@ class DetalleExpedienteCecoco extends Model
         'fecha_consulta',
         'resumen_ia',
         'resumen_ia_generado_en',
+        'resumen_ia_estado',
+        'resumen_ia_error',
     ];
 
     protected $casts = [

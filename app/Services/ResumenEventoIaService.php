@@ -12,6 +12,7 @@ class ResumenEventoIaService
     private string $model;
     private int $timeout;
     private string $keepAlive;
+    private ?bool $think;
 
     public function __construct()
     {
@@ -19,13 +20,15 @@ class ResumenEventoIaService
         $this->model = (string) config('ia.model');
         $this->timeout = (int) config('ia.timeout', 180);
         $this->keepAlive = (string) config('ia.keep_alive', '30m');
+        $think = config('ia.think');
+        $this->think = $think === null ? null : (bool) $think;
     }
 
     /**
      * Genera un resumen estructurado del evento a partir del detalle ya parseado.
      *
      * @param array<string, mixed> $detalle Resultado de CecocoExpedienteService::obtenerDetalleExpediente()
-     * @return array{resumen: string, tipo: string, resultado: string, recursos: array<int, string>, personas: array<int, array{nombre: string, rol: string, dni: string}>, direccion: string, estado_final: string, modelo: string}
+     * @return array{resumen: string, tipo: string, resultado: string, recursos: array<int, string>, personas: array<int, array{nombre: string, rol: string, dni: string}>, vehiculos: array<int, array{tipo: string, marca: string, modelo: string, color: string, distintivo: string, dominio: string}>, lugar: array{direccion: string, interseccion: string, localidad: string}, estado_final: string, modelo: string}
      */
     public function resumir(array $detalle): array
     {
@@ -47,6 +50,11 @@ class ResumenEventoIaService
                 ['role' => 'user', 'content' => $this->construirEntrada($detalle)],
             ],
         ];
+
+        // Modelos razonadores (qwen3): desactivar "thinking" para no disparar la latencia.
+        if ($this->think !== null) {
+            $payload['think'] = $this->think;
+        }
 
         try {
             $respuesta = Http::timeout($this->timeout)
@@ -84,14 +92,23 @@ class ResumenEventoIaService
         return 'Sos un asistente del centro de comando 911 de la policía. Te paso los datos de un evento '
             . 'policial. Devolvé SOLO un JSON válido (sin texto adicional) con esta estructura exacta: '
             . '{"resumen": string de 2 a 3 frases en español neutro, "tipo": string, "resultado": string corto, '
-            . '"recursos": [string], "personas": [{"nombre": string, "rol": string, "dni": string}], '
-            . '"direccion": string, "estado_final": string}. '
+            . '"recursos": [string], '
+            . '"personas": [{"nombre": string, "rol": string, "dni": string}], '
+            . '"vehiculos": [{"tipo": string, "marca": string, "modelo": string, "color": string, "distintivo": string, "dominio": string}], '
+            . '"lugar": {"direccion": string, "interseccion": string, "localidad": string}, '
+            . '"estado_final": string}. '
             . 'No inventes datos: si algo no figura, usá string vacío o lista vacía. '
             . 'Escribí el "resumen" en tercera persona y respetá quién hizo qué: no inviertas el sujeto '
             . '(por ejemplo, si personas arrojan piedras a vehículos, NO digas que los vehículos arrojan piedras). '
             . 'En "personas" incluí solo a quienes se mencionen explícitamente (víctimas, demorados, autores, llamante). '
             . 'El campo "dni" SOLO se completa si el texto dice explícitamente "DNI" o "documento" seguido del número '
-            . '(7 u 8 dígitos). NUNCA uses como DNI un número de teléfono ni un número entre paréntesis: esos son teléfonos, no documentos.';
+            . '(7 u 8 dígitos). NUNCA uses como DNI un número de teléfono ni un número entre paréntesis: esos son teléfonos, no documentos. '
+            . 'En "vehiculos" incluí solo los vehículos mencionados explícitamente en el texto; si no se menciona ningún vehículo, devolvé lista vacía. '
+            . '"tipo": moto, auto, camioneta, camión, bicicleta, colectivo, etc. "dominio" es la patente: copialo TAL CUAL aparece en el texto, '
+            . 'solo si figura una patente real; si no figura, dejá "dominio" vacío. Nunca inventes una patente. '
+            . '"distintivo": rasgos particulares (calcomanías, daños, inscripciones, llantas, etc.). '
+            . 'En "lugar": "direccion" = calle y altura/numeral del hecho; "interseccion" = las dos calles si es una esquina o cruce; '
+            . '"localidad" = ciudad o localidad (ej. Paraná, San Benito). Usá la dirección, barrio y municipio que te paso como referencia.';
     }
 
     /**
@@ -114,11 +131,15 @@ class ResumenEventoIaService
     private function construirEntrada(array $detalle): string
     {
         $recursos = $this->recursosDesdeDetalle($detalle);
+        $historial = $detalle['historial'] ?? [];
 
         $lineas = [
             'Expediente: ' . ($detalle['nro_expediente'] ?? ''),
             'Tipo de servicio: ' . ($detalle['tipo_servicio'] ?? ''),
             'Dirección: ' . ($detalle['direccion'] ?? ''),
+            'Barrio: ' . ($historial['barrio'] ?? ''),
+            'Jurisdicción: ' . ($historial['jurisdiccion'] ?? ''),
+            'Municipio/Localidad: ' . ($historial['municipio'] ?? ''),
             'Fecha: ' . ($detalle['fecha_hora_inicial'] ?? ''),
             'Descripción: ' . ($detalle['descripcion_inicial'] ?? ''),
             'Observaciones de cierre: ' . ($detalle['cierre']['observaciones'] ?? ''),
@@ -153,13 +174,40 @@ class ResumenEventoIaService
             }
         }
 
+        $vehiculos = [];
+        foreach ($datos['vehiculos'] ?? [] as $vehiculo) {
+            if (!is_array($vehiculo)) {
+                continue;
+            }
+            $v = [
+                'tipo' => trim((string) ($vehiculo['tipo'] ?? '')),
+                'marca' => trim((string) ($vehiculo['marca'] ?? '')),
+                'modelo' => trim((string) ($vehiculo['modelo'] ?? '')),
+                'color' => trim((string) ($vehiculo['color'] ?? '')),
+                'distintivo' => trim((string) ($vehiculo['distintivo'] ?? '')),
+                'dominio' => strtoupper(trim((string) ($vehiculo['dominio'] ?? ''))),
+            ];
+            // Descartar vehículos totalmente vacíos
+            if (implode('', $v) !== '') {
+                $vehiculos[] = $v;
+            }
+        }
+
+        $lugarRaw = is_array($datos['lugar'] ?? null) ? $datos['lugar'] : [];
+        $lugar = [
+            'direccion' => trim((string) ($lugarRaw['direccion'] ?? ($datos['direccion'] ?? ''))),
+            'interseccion' => trim((string) ($lugarRaw['interseccion'] ?? '')),
+            'localidad' => trim((string) ($lugarRaw['localidad'] ?? '')),
+        ];
+
         return [
             'resumen' => (string) ($datos['resumen'] ?? ''),
             'tipo' => (string) ($datos['tipo'] ?? ''),
             'resultado' => (string) ($datos['resultado'] ?? ''),
             'recursos' => $recursos,
             'personas' => $personas,
-            'direccion' => (string) ($datos['direccion'] ?? ''),
+            'vehiculos' => $vehiculos,
+            'lugar' => $lugar,
             'estado_final' => (string) ($datos['estado_final'] ?? ''),
         ];
     }

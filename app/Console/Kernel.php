@@ -106,6 +106,12 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/callanalysis.log'));
 
+        // Genera en segundo plano los resúmenes IA de eventos encolados desde la pantalla.
+        $schedule->command('cecoco:resumir-pendientes')
+            ->everyMinute()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/cecoco_resumen_ia.log'));
+
         // Pre-calienta el caché de conteos de geocodificación para el dashboard.
         // Se corre en background cada 5 min para que el endpoint nunca haga la query pesada en el request.
         $schedule->call(function () {

@@ -456,7 +456,12 @@ class EventoCecocoController extends Controller
     }
 
     /**
-     * Genera (o devuelve cacheado) un resumen estructurado del evento usando IA local.
+     * Endpoint de polling para el resumen IA. NO genera el resumen en el request
+     * (la inferencia es lenta y Cloudflare cortaría la conexión): si no existe, lo
+     * deja en estado "pendiente" para que lo procese el comando cecoco:resumir-pendientes,
+     * y el front consulta este endpoint cada pocos segundos hasta que esté listo.
+     *
+     * Estados devueltos: completado | pendiente | procesando | error.
      */
     public function resumenIa(Request $request, EventoCecoco $eventoCecoco): JsonResponse
     {
@@ -469,25 +474,23 @@ class EventoCecocoController extends Controller
             ], 503);
         }
 
-        // La inferencia en CPU puede tardar; evitamos que PHP corte la request.
-        set_time_limit((int) config('ia.timeout', 180) + 30);
-
         $refrescar = $request->boolean('refrescar');
 
         try {
             $cache = \App\Models\DetalleExpedienteCecoco::where('evento_cecoco_id', $eventoCecoco->id)->first();
 
-            // Devolver el resumen ya persistido si existe y no se pide refrescar.
-            if (!$refrescar && $cache && !empty($cache->resumen_ia)) {
-                return response()->json([
-                    'success' => true,
-                    'resumen' => $cache->resumen_ia,
-                    'generado_en' => optional($cache->resumen_ia_generado_en)->format('d/m/Y H:i'),
-                    'cacheado' => true,
-                ]);
+            // En cola o procesándose tiene prioridad: mientras se (re)genera, no devolver
+            // el resumen viejo aunque exista.
+            if (!$refrescar && $cache && in_array($cache->resumen_ia_estado, ['pendiente', 'procesando'], true)) {
+                return $this->respuestaResumen($cache->resumen_ia_estado, $cache);
             }
 
-            // Asegurar que tenemos el detalle del expediente para alimentar a la IA.
+            // Ya generado y no se pide refrescar → devolverlo de una.
+            if (!$refrescar && $cache && !empty($cache->resumen_ia)) {
+                return $this->respuestaResumen('completado', $cache);
+            }
+
+            // Asegurar que tenemos el detalle (fetch rápido a CECOCO, dentro del límite de Cloudflare).
             $detalle = $cache?->detalle_json;
             if (!$detalle) {
                 $detalle = $this->expedienteService->obtenerDetalleExpediente($eventoCecoco->nro_expediente);
@@ -501,19 +504,13 @@ class EventoCecocoController extends Controller
                 );
             }
 
-            $resumen = $this->resumenIaService->resumir($detalle);
-
+            // Encolar la generación (la hace cecoco:resumir-pendientes en segundo plano).
             $cache->update([
-                'resumen_ia' => $resumen,
-                'resumen_ia_generado_en' => now(),
+                'resumen_ia_estado' => 'pendiente',
+                'resumen_ia_error' => null,
             ]);
 
-            return response()->json([
-                'success' => true,
-                'resumen' => $resumen,
-                'generado_en' => now()->format('d/m/Y H:i'),
-                'cacheado' => false,
-            ]);
+            return $this->respuestaResumen('pendiente', $cache);
         } catch (\Exception $e) {
             Log::error('resumen IA evento cecoco', [
                 'evento_id' => $eventoCecoco->id,
@@ -525,6 +522,19 @@ class EventoCecocoController extends Controller
                 'message' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    private function respuestaResumen(string $estado, \App\Models\DetalleExpedienteCecoco $cache): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'estado' => $estado,
+            'resumen' => $estado === 'completado' ? $cache->resumen_ia : null,
+            'generado_en' => $estado === 'completado'
+                ? optional($cache->resumen_ia_generado_en)->format('d/m/Y H:i')
+                : null,
+            'error' => $estado === 'error' ? $cache->resumen_ia_error : null,
+        ]);
     }
 
     public function mapaCalor()

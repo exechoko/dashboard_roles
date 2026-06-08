@@ -22,7 +22,7 @@ return [
 
     // Ventana de búsqueda alrededor del evento CECOCO: arranca N minutos antes
     // de la fecha/hora del evento y termina en la fecha de cierre del evento.
-    'minutos_antes'    => (int) env('GRABADOR_MINUTOS_ANTES', 15),
+    'minutos_antes'    => (int) env('GRABADOR_MINUTOS_ANTES', 10),
 
     // Fallback de minutos después cuando el evento no tiene fecha de cierre.
     'minutos_despues_sin_cierre' => (int) env('GRABADOR_MINUTOS_DESPUES_SIN_CIERRE', 60),

@@ -443,8 +443,20 @@ function escHtml(str) {
                 </button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-info py-2 mb-3" id="modulaciones-ventana" style="display:none; font-size:.85rem;">
+                <div class="alert alert-info py-2 mb-2" id="modulaciones-ventana" style="display:none; font-size:.85rem;">
                     <i class="bi bi-clock"></i> Ventana de búsqueda: <span id="mod-ventana-desde"></span> → <span id="mod-ventana-hasta"></span>
+                </div>
+                <div id="modulaciones-filtro-wrap" class="mb-2" style="display:none;">
+                    <div class="input-group input-group-sm">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        </div>
+                        <input type="text" id="modulaciones-filtro" class="form-control" autocomplete="off"
+                               placeholder="Filtrar por recurso, canal u hora (ej: M2231216, Cria 904, 06:16)...">
+                        <div class="input-group-append">
+                            <span class="input-group-text text-muted" id="modulaciones-contador">0</span>
+                        </div>
+                    </div>
                 </div>
                 <div id="modulaciones-loading" class="text-center py-4">
                     <i class="bi bi-arrow-repeat grabacion-spin"></i> Buscando modulaciones...
@@ -452,6 +464,9 @@ function escHtml(str) {
                 <div id="modulaciones-empty" style="display:none;" class="text-center py-4 text-muted">
                     <i class="bi bi-broadcast" style="font-size:2rem;"></i>
                     <p class="mt-2">No se encontraron modulaciones en la ventana del evento.</p>
+                </div>
+                <div id="modulaciones-sin-filtro" style="display:none;" class="text-center py-3 text-muted small">
+                    <i class="bi bi-funnel"></i> Ninguna modulación coincide con el filtro.
                 </div>
                 <div id="modulaciones-error" style="display:none;" class="alert alert-danger py-2"></div>
                 <div id="modulaciones-lista" style="display:none;"></div>
@@ -466,12 +481,15 @@ function escHtml(str) {
 
 <script>
 function abrirModulaciones() {
-    document.getElementById('modulaciones-loading').style.display = 'block';
-    document.getElementById('modulaciones-empty').style.display   = 'none';
-    document.getElementById('modulaciones-error').style.display   = 'none';
-    document.getElementById('modulaciones-lista').style.display   = 'none';
-    document.getElementById('modulaciones-ventana').style.display = 'none';
-    document.getElementById('modulaciones-lista').innerHTML       = '';
+    document.getElementById('modulaciones-loading').style.display     = 'block';
+    document.getElementById('modulaciones-empty').style.display       = 'none';
+    document.getElementById('modulaciones-error').style.display       = 'none';
+    document.getElementById('modulaciones-lista').style.display       = 'none';
+    document.getElementById('modulaciones-ventana').style.display     = 'none';
+    document.getElementById('modulaciones-filtro-wrap').style.display = 'none';
+    document.getElementById('modulaciones-sin-filtro').style.display  = 'none';
+    document.getElementById('modulaciones-lista').innerHTML           = '';
+    document.getElementById('modulaciones-filtro').value             = '';
 
     $('#modalModulaciones').modal('show');
 
@@ -506,39 +524,50 @@ function abrirModulaciones() {
             var streamUrl   = m.url;
             var downloadUrl = streamUrl + '&download=1';
 
-            var card = document.createElement('div');
-            card.className = 'grabacion-card';
-
-            var partes = [];
-            if (m.grupo)       { partes.push('<span><i class="bi bi-people"></i> ' + escHtml(m.grupo) + '</span>'); }
-            if (m.canal)       { partes.push('<span><i class="bi bi-broadcast"></i> ' + escHtml(m.canal) + '</span>'); }
-            if (m.operador)    { partes.push('<span><i class="bi bi-person"></i> ' + escHtml(m.operador) + '</span>'); }
-            if (m.ssiLlamante) { partes.push('<span><i class="bi bi-mic"></i> ' + escHtml(m.ssiLlamante) + '</span>'); }
-            if (m.ssiLlamado)  { partes.push('<span><i class="bi bi-headset"></i> ' + escHtml(m.ssiLlamado) + '</span>'); }
-            if (m.tipo)        { partes.push('<span><i class="bi bi-diagram-3"></i> ' + escHtml(m.tipo) + '</span>'); }
+            // Etiqueta principal: recurso si existe, si no el canal.
+            var etiqueta = m.recurso || m.canal || m.grupo || m.tipo || '—';
+            var hora     = (m.fechaInicio || '').split(' ')[1] || (m.fechaInicio || '—');
 
             var nOperadores = (m.operadores && m.operadores.length) ? m.operadores.length : (m.copias || 1);
-            var copiasBadge = (nOperadores > 1)
-                ? ' <span class="badge badge-secondary" title="Registrada por: ' + escHtml((m.operadores || []).join(', ')) + '">' +
-                      '<i class="bi bi-people-fill"></i> ' + nOperadores + ' operadores</span>'
+            var opsBadge = (nOperadores > 1)
+                ? '<span class="badge badge-secondary ml-1" title="Registrada por: ' + escHtml((m.operadores || []).join(', ')) + '">' +
+                      '<i class="bi bi-people-fill"></i> ' + nOperadores + '</span>'
                 : '';
 
+            // Texto sobre el que se filtra (recurso + canal + hora + ssi).
+            var filtro = [m.recurso, m.canal, m.grupo, m.tipo, m.fechaInicio, m.ssiLlamante, m.ssiLlamado]
+                .filter(Boolean).join(' ').toLowerCase();
+
+            var card = document.createElement('div');
+            card.className = 'modulacion-card';
+            card.setAttribute('data-filtro', filtro);
+
+            // Subtítulo: el canal sólo si difiere de la etiqueta principal.
+            var sub = (m.canal && m.canal !== etiqueta) ? escHtml(m.canal) : '';
+
             card.innerHTML =
-                '<div class="grabacion-nombre"><i class="bi bi-soundwave"></i> ' +
-                    escHtml(m.fechaInicio || '—') +
-                    ' &nbsp;<small class="text-muted">(' + escHtml(m.duracion || '—') + ')</small>' + copiasBadge + '</div>' +
-                '<div class="grabacion-meta">' + partes.join(' &nbsp;|&nbsp; ') + '</div>' +
-                '<audio controls preload="none" style="width:100%;margin-top:.5rem;">' +
+                '<div class="mod-info">' +
+                    '<div class="mod-titulo">' +
+                        '<i class="bi bi-broadcast-pin text-primary"></i> ' +
+                        '<span class="mod-recurso">' + escHtml(etiqueta) + '</span>' + opsBadge +
+                    '</div>' +
+                    '<div class="mod-meta">' +
+                        '<span><i class="bi bi-clock"></i> ' + escHtml(hora) + '</span>' +
+                        '<span><i class="bi bi-stopwatch"></i> ' + escHtml(m.duracion || '—') + '</span>' +
+                        (sub ? '<span><i class="bi bi-broadcast"></i> ' + sub + '</span>' : '') +
+                    '</div>' +
+                '</div>' +
+                '<audio class="mod-audio" controls preload="none">' +
                     '<source src="' + streamUrl + '">' +
-                    'Tu navegador no soporta reproducción de audio.' +
                 '</audio>' +
-                '<div class="grabacion-actions">' +
-                    '<a href="' + downloadUrl + '" class="btn btn-sm btn-outline-primary" download>' +
-                        '<i class="bi bi-download"></i> Descargar' +
-                    '</a>' +
-                '</div>';
+                '<a href="' + downloadUrl + '" class="btn btn-sm btn-link mod-dl" download title="Descargar">' +
+                    '<i class="bi bi-download"></i>' +
+                '</a>';
             lista.appendChild(card);
         });
+
+        document.getElementById('modulaciones-filtro-wrap').style.display = 'block';
+        filtrarModulaciones();
     })
     .catch(function(err) {
         document.getElementById('modulaciones-loading').style.display = 'none';
@@ -548,6 +577,23 @@ function abrirModulaciones() {
     });
 }
 
+function filtrarModulaciones() {
+    var q       = (document.getElementById('modulaciones-filtro').value || '').trim().toLowerCase();
+    var cards   = document.querySelectorAll('#modulaciones-lista .modulacion-card');
+    var visibles = 0;
+
+    cards.forEach(function(card) {
+        var coincide = (q === '') || (card.getAttribute('data-filtro') || '').indexOf(q) !== -1;
+        card.style.display = coincide ? '' : 'none';
+        if (coincide) { visibles++; }
+    });
+
+    document.getElementById('modulaciones-contador').textContent = visibles + ' / ' + cards.length;
+    document.getElementById('modulaciones-sin-filtro').style.display = (visibles === 0 && cards.length > 0) ? 'block' : 'none';
+}
+
+document.getElementById('modulaciones-filtro').addEventListener('input', filtrarModulaciones);
+
 $('#modalModulaciones').on('hide.bs.modal', function() {
     document.querySelectorAll('#modulaciones-lista audio').forEach(function(audio) {
         audio.pause();
@@ -555,6 +601,40 @@ $('#modalModulaciones').on('hide.bs.modal', function() {
     });
 });
 </script>
+
+<style>
+.modulacion-card {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .4rem .6rem;
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 6px;
+    margin-bottom: .4rem;
+    background: var(--bs-secondary-bg, #f8f9fa);
+}
+.modulacion-card .mod-info { flex: 1 1 40%; min-width: 0; }
+.modulacion-card .mod-titulo {
+    font-weight: 600;
+    font-size: .85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.modulacion-card .mod-meta {
+    font-size: .72rem;
+    color: #6c757d;
+    display: flex;
+    gap: .6rem;
+    flex-wrap: wrap;
+}
+.modulacion-card .mod-audio { flex: 1 1 55%; height: 32px; max-width: 320px; }
+.modulacion-card .mod-dl { flex: 0 0 auto; padding: .1rem .3rem; }
+@media (max-width: 575px) {
+    .modulacion-card { flex-wrap: wrap; }
+    .modulacion-card .mod-audio { flex: 1 1 100%; max-width: none; }
+}
+</style>
 @endpush
 
 @endcan

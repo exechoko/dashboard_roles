@@ -182,10 +182,24 @@ class CecocoModulacionesLocalService
             'fechaInicio' => $fechaInicio->format('Y-m-d H:i:s'),
             'duracion'    => $duracion,
             'canal'       => $canal,
+            'recurso'     => $this->extraerRecurso($canal),
             'operador'    => basename(dirname($filepath)),
             'path'        => $filepath,
             'fuente'      => 'local',
         ];
+    }
+
+    /**
+     * Extrae el recurso/unidad de la etiqueta del canal: lo que está entre corchetes.
+     * Ej: "GENERAL (Grupo) [Cria 904 (M2230904)] (TETRA)" → "Cria 904 (M2230904)".
+     */
+    private function extraerRecurso(string $canal): string
+    {
+        if (preg_match('/\[([^\]]+)\]/', $canal, $m)) {
+            return trim($m[1]);
+        }
+
+        return '';
     }
 
     /**

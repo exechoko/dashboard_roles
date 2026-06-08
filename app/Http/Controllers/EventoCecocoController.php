@@ -898,7 +898,7 @@ class EventoCecocoController extends Controller
             ]);
         }
 
-        $minutosAntes = (int) config('grabador.minutos_antes', 15);
+        $minutosAntes = (int) config('grabador.minutos_antes', 10);
         $desde = $eventoCecoco->fecha_hora->copy()->subMinutes($minutosAntes);
         $hasta = $eventoCecoco->fecha_cierre
             ? $eventoCecoco->fecha_cierre->copy()

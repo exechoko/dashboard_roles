@@ -25,7 +25,7 @@ class ResumenEventoIaService
      * Genera un resumen estructurado del evento a partir del detalle ya parseado.
      *
      * @param array<string, mixed> $detalle Resultado de CecocoExpedienteService::obtenerDetalleExpediente()
-     * @return array{resumen: string, tipo: string, resultado: string, recursos: array<int, string>, personas: array<int, array{nombre: string, rol: string, dni: string}>, direccion: string, estado_final: string}
+     * @return array{resumen: string, tipo: string, resultado: string, recursos: array<int, string>, personas: array<int, array{nombre: string, rol: string, dni: string}>, direccion: string, estado_final: string, modelo: string}
      */
     public function resumir(array $detalle): array
     {
@@ -63,7 +63,16 @@ class ResumenEventoIaService
                 throw new Exception('La respuesta de la IA no es un JSON válido.');
             }
 
-            return $this->normalizarSalida($datos);
+            $salida = $this->normalizarSalida($datos);
+
+            // Los recursos son dato duro del expediente: los tomamos de los trámites
+            // parseados, no de lo que devuelva el modelo (que a veces los omite).
+            $salida['recursos'] = $this->recursosDesdeDetalle($detalle);
+
+            // Guardamos el modelo que generó el resumen para mostrarlo y trazarlo.
+            $salida['modelo'] = $this->model;
+
+            return $salida;
         } catch (Exception $e) {
             Log::error('Error al generar resumen IA del evento', ['error' => $e->getMessage()]);
             throw new Exception('No se pudo generar el resumen con IA: ' . $e->getMessage());
@@ -78,7 +87,25 @@ class ResumenEventoIaService
             . '"recursos": [string], "personas": [{"nombre": string, "rol": string, "dni": string}], '
             . '"direccion": string, "estado_final": string}. '
             . 'No inventes datos: si algo no figura, usá string vacío o lista vacía. '
-            . 'En "personas" incluí solo a quienes se mencionen explícitamente (víctimas, demorados, autores, llamante).';
+            . 'Escribí el "resumen" en tercera persona y respetá quién hizo qué: no inviertas el sujeto '
+            . '(por ejemplo, si personas arrojan piedras a vehículos, NO digas que los vehículos arrojan piedras). '
+            . 'En "personas" incluí solo a quienes se mencionen explícitamente (víctimas, demorados, autores, llamante). '
+            . 'El campo "dni" SOLO se completa si el texto dice explícitamente "DNI" o "documento" seguido del número '
+            . '(7 u 8 dígitos). NUNCA uses como DNI un número de teléfono ni un número entre paréntesis: esos son teléfonos, no documentos.';
+    }
+
+    /**
+     * Extrae las unidades/móviles asignados desde los trámites parseados del expediente.
+     *
+     * @param array<string, mixed> $detalle
+     * @return array<int, string>
+     */
+    private function recursosDesdeDetalle(array $detalle): array
+    {
+        return array_values(array_unique(array_filter(array_map(
+            static fn ($t) => trim((string) ($t['unidad'] ?? $t['tr_amites'] ?? '')),
+            $detalle['tramites'] ?? []
+        ))));
     }
 
     /**
@@ -86,10 +113,7 @@ class ResumenEventoIaService
      */
     private function construirEntrada(array $detalle): string
     {
-        $recursos = array_values(array_filter(array_map(
-            static fn ($t) => $t['unidad'] ?? $t['tr_amites'] ?? '',
-            $detalle['tramites'] ?? []
-        )));
+        $recursos = $this->recursosDesdeDetalle($detalle);
 
         $lineas = [
             'Expediente: ' . ($detalle['nro_expediente'] ?? ''),
@@ -118,7 +142,7 @@ class ResumenEventoIaService
             $personas[] = [
                 'nombre' => (string) ($persona['nombre'] ?? ''),
                 'rol' => (string) ($persona['rol'] ?? ''),
-                'dni' => (string) ($persona['dni'] ?? ''),
+                'dni' => $this->dniValido((string) ($persona['dni'] ?? '')),
             ];
         }
 
@@ -138,5 +162,17 @@ class ResumenEventoIaService
             'direccion' => (string) ($datos['direccion'] ?? ''),
             'estado_final' => (string) ($datos['estado_final'] ?? ''),
         ];
+    }
+
+    /**
+     * Valida que el DNI tenga 7 u 8 dígitos. Si tiene más (típico de un teléfono que
+     * el modelo confundió) o ninguno, lo descarta.
+     */
+    private function dniValido(string $dni): string
+    {
+        $digitos = preg_replace('/\D+/', '', $dni);
+        $largo = strlen((string) $digitos);
+
+        return ($largo === 7 || $largo === 8) ? $dni : '';
     }
 }

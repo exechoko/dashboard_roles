@@ -97,8 +97,9 @@
         }
 
         var gen = root.querySelector('[data-ia-generado]');
+        var iaLabel = 'IA local' + (r.modelo ? ' · modelo ' + r.modelo : '');
         gen.textContent = data.generado_en
-            ? ('Generado el ' + data.generado_en + (data.cacheado ? ' (cacheado)' : '') + ' · IA local')
+            ? ('Generado el ' + data.generado_en + (data.cacheado ? ' (cacheado)' : '') + ' · ' + iaLabel)
             : '';
 
         result.style.display = '';

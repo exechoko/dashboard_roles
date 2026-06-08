@@ -90,8 +90,24 @@ class CecocoModulacionesLocalService
                     }
 
                     $fechaArchivo = Carbon::parse($modulacion['fechaInicio']);
-                    if ($fechaArchivo->between($desde, $hasta)) {
-                        $modulaciones[] = $modulacion;
+                    if (!$fechaArchivo->between($desde, $hasta)) {
+                        continue;
+                    }
+
+                    // CECOCO graba la misma modulación una vez por operador que la escucha;
+                    // se colapsan las copias por inicio + duración + canal (sólo difieren
+                    // en el id inicial y en la carpeta del operador).
+                    $clave = $modulacion['fechaInicio'] . '|' . $modulacion['duracion'] . '|' . $modulacion['canal'];
+
+                    if (isset($modulaciones[$clave])) {
+                        $modulaciones[$clave]['copias']++;
+                        if (!in_array($modulacion['operador'], $modulaciones[$clave]['operadores'], true)) {
+                            $modulaciones[$clave]['operadores'][] = $modulacion['operador'];
+                        }
+                    } else {
+                        $modulacion['copias']     = 1;
+                        $modulacion['operadores'] = $modulacion['operador'] !== '' ? [$modulacion['operador']] : [];
+                        $modulaciones[$clave]     = $modulacion;
                     }
                 }
             }
@@ -99,12 +115,14 @@ class CecocoModulacionesLocalService
             $cursor->addMinute();
         }
 
+        $modulaciones = array_values($modulaciones);
         usort($modulaciones, fn ($a, $b) => strcmp($a['fechaInicio'], $b['fechaInicio']));
 
         Log::info('CecocoModulacionesLocalService: modulaciones encontradas', [
-            'desde' => $desde->format('Y-m-d H:i:s'),
-            'hasta' => $hasta->format('Y-m-d H:i:s'),
-            'total' => count($modulaciones),
+            'desde'  => $desde->format('Y-m-d H:i:s'),
+            'hasta'  => $hasta->format('Y-m-d H:i:s'),
+            'unicas' => count($modulaciones),
+            'copias' => array_sum(array_column($modulaciones, 'copias')),
         ]);
 
         return [

@@ -460,10 +460,16 @@ function abrirModulaciones() {
             if (m.ssiLlamado)  { partes.push('<span><i class="bi bi-headset"></i> ' + escHtml(m.ssiLlamado) + '</span>'); }
             if (m.tipo)        { partes.push('<span><i class="bi bi-diagram-3"></i> ' + escHtml(m.tipo) + '</span>'); }
 
+            var nOperadores = (m.operadores && m.operadores.length) ? m.operadores.length : (m.copias || 1);
+            var copiasBadge = (nOperadores > 1)
+                ? ' <span class="badge badge-secondary" title="Registrada por: ' + escHtml((m.operadores || []).join(', ')) + '">' +
+                      '<i class="bi bi-people-fill"></i> ' + nOperadores + ' operadores</span>'
+                : '';
+
             card.innerHTML =
                 '<div class="grabacion-nombre"><i class="bi bi-soundwave"></i> ' +
                     escHtml(m.fechaInicio || '—') +
-                    ' &nbsp;<small class="text-muted">(' + escHtml(m.duracion || '—') + ')</small></div>' +
+                    ' &nbsp;<small class="text-muted">(' + escHtml(m.duracion || '—') + ')</small>' + copiasBadge + '</div>' +
                 '<div class="grabacion-meta">' + partes.join(' &nbsp;|&nbsp; ') + '</div>' +
                 '<audio controls preload="none" style="width:100%;margin-top:.5rem;">' +
                     '<source src="' + streamUrl + '">' +

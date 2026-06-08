@@ -136,7 +136,14 @@
                     <tbody>
                         @foreach($eventos as $evento)
                             <tr>
-                                <td><strong class="text-nowrap">{{ $evento->nro_expediente }}</strong></td>
+                                <td>
+                                    <strong class="text-nowrap">{{ $evento->nro_expediente }}</strong>
+                                    @if($evento->tiene_detalle)
+                                        <span class="badge badge-success" title="Detalle completo guardado en la base">
+                                            <i class="bi bi-check-circle"></i> Detalle
+                                        </span>
+                                    @endif
+                                </td>
                                 <td class="text-nowrap">
                                     <div>{{ $evento->fecha_hora->format('d/m/Y') }}</div>
                                     <small class="text-muted">{{ $evento->fecha_hora->format('H:i') }}</small>

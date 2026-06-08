@@ -17,11 +17,15 @@ class DetalleExpedienteCecoco extends Model
         'nro_expediente',
         'detalle_json',
         'fecha_consulta',
+        'resumen_ia',
+        'resumen_ia_generado_en',
     ];
 
     protected $casts = [
         'detalle_json' => 'array',
         'fecha_consulta' => 'datetime',
+        'resumen_ia' => 'array',
+        'resumen_ia_generado_en' => 'datetime',
     ];
 
     public function eventoCecoco(): BelongsTo

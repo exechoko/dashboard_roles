@@ -15,7 +15,22 @@
       "mcp__plugin_engram_engram__mem_save",
       "Bash(curl -s \"http://193.169.1.246:8088/search?q=San+Martin+456,+Entre+Ríos,+Argentina&format=json&limit=3&countrycodes=ar\")",
       "WebFetch(domain:datosgobar.github.io)",
-      "WebFetch(domain:datos.gob.ar)"
+      "WebFetch(domain:datos.gob.ar)",
+      "Bash(curl -s -m 15 -i -u admin:tetra http://172.20.123.1/)",
+      "Bash(echo \"=== EXIT: $? ===\")",
+      "Bash(curl -s -m 15 -u admin:tetra -A 'Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/120 Firefox/115' -c /tmp/grab_cookies.txt http://172.20.123.1/)",
+      "Bash(curl -s -m 20 -A 'Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) Firefox/115' -c /tmp/grab_cookies.txt -b /tmp/grab_cookies.txt -i -d id=login -d action=secureauthorise -d username=admin -d password=tetra -d partialbranding=default -d useminimalnavigation=0 http://172.20.123.1/)",
+      "Bash(curl -s -m 20 -A 'Mozilla/5.0 Firefox/115' http://172.20.123.1/static/js/pages/rb_login__v4-7-330.js)",
+      "Bash(curl -s -m 20 -A 'Mozilla/5.0 Firefox/115' http://172.20.123.1/static/js/rb_navigation__v4-7-330.js)",
+      "Bash(curl *)",
+      "Bash(grep -o -i \"<title>[^<]*</title>\\\\|SessionID[^,;\\\\\"<]\\\\{0,40\\\\}\\\\|frame[^>]*src=\\\\\"[^\\\\\"]*\\\\\"\\\\|conectado\\\\|loginerror\\\\|invalid\\\\|incorrect\" /tmp/rb_postlogin.html)",
+      "Bash(python3 -)",
+      "Bash(xargs echo \"rutas modulacion:\")",
+      "mcp__laravel-boost__get-config",
+      "Bash(Out-String)",
+      "PowerShell(php artisan route:list --name=resumen-ia)",
+      "PowerShell(php artisan cecoco:prefetch-detalles --fecha=2026-05-12 --limite=5 --refrescar --pausa=100)",
+      "PowerShell(php artisan cecoco:prefetch-detalles --fecha=2026-05-11 --limite=3 --pausa=100)"
     ]
   },
   "enableAllProjectMcpServers": true,

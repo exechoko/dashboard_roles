@@ -56,6 +56,18 @@ class Kernel extends ConsoleKernel
                 app(TelegramService::class)->notificarScheduleFallido('cecoco:geocodificar-dia-anterior', 'El comando finalizó con error.');
             });
 
+        // Pre-trae y guarda el detalle completo (acciones/recursos/cierre) de los eventos
+        // del día anterior. Corre después del import (06:00) reutilizando una sola sesión.
+        $schedule->command('cecoco:prefetch-detalles')->dailyAt('06:45')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/cecoco_prefetch_detalles.log'))
+            ->onSuccess(function () {
+                app(TelegramService::class)->notificarScheduleCompletado('cecoco:prefetch-detalles');
+            })
+            ->onFailure(function () {
+                app(TelegramService::class)->notificarScheduleFallido('cecoco:prefetch-detalles', 'El comando finalizó con error.');
+            });
+
         // Actualiza el caché diario de efemérides (Argentina / Entre Ríos) desde Wikipedia.
         $schedule->command('efemerides:actualizar')->dailyAt('00:30')
             ->withoutOverlapping()

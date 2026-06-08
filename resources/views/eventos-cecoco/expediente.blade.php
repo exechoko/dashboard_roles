@@ -16,6 +16,8 @@
         </a>
     </div>
 
+    @include('eventos-cecoco.partials.resumen_ia', ['eventoCecoco' => $eventoCecoco])
+
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h4 class="mb-0">

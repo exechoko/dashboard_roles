@@ -11,6 +11,7 @@ use App\Services\CecocoGrabacionesService;
 use App\Services\CecocoGrabacionesLocalService;
 use App\Services\GrabadorTetraService;
 use App\Services\CecocoModulacionesLocalService;
+use App\Services\ResumenEventoIaService;
 use App\Jobs\DescargarEventosCecoco;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -24,8 +25,11 @@ class EventoCecocoController extends Controller
     private EventoCecocoParser $parser;
     private CecocoExpedienteService $expedienteService;
 
-    public function __construct(EventoCecocoParser $parser, CecocoExpedienteService $expedienteService)
-    {
+    public function __construct(
+        EventoCecocoParser $parser,
+        CecocoExpedienteService $expedienteService,
+        private ResumenEventoIaService $resumenIaService
+    ) {
         $this->parser = $parser;
         $this->expedienteService = $expedienteService;
     }
@@ -48,7 +52,9 @@ class EventoCecocoController extends Controller
                 'periodo',
                 'anio',
                 'mes'
-            ]);
+            ])->withExists(['detalle as tiene_detalle' => function ($q) {
+                $q->whereNotNull('detalle_json');
+            }]);
 
             if ($request->filled('anio')) {
                 $query->delAnio((int) $request->anio);
@@ -446,6 +452,78 @@ class EventoCecocoController extends Controller
             return redirect()
                 ->route('cecoco.show', $eventoCecoco)
                 ->with('error', 'Error al obtener el detalle del expediente: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Genera (o devuelve cacheado) un resumen estructurado del evento usando IA local.
+     */
+    public function resumenIa(Request $request, EventoCecoco $eventoCecoco): JsonResponse
+    {
+        $this->authorize('ver-expediente-cecoco');
+
+        if (!config('ia.enabled')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'La función de resumen con IA está desactivada.',
+            ], 503);
+        }
+
+        // La inferencia en CPU puede tardar; evitamos que PHP corte la request.
+        set_time_limit((int) config('ia.timeout', 180) + 30);
+
+        $refrescar = $request->boolean('refrescar');
+
+        try {
+            $cache = \App\Models\DetalleExpedienteCecoco::where('evento_cecoco_id', $eventoCecoco->id)->first();
+
+            // Devolver el resumen ya persistido si existe y no se pide refrescar.
+            if (!$refrescar && $cache && !empty($cache->resumen_ia)) {
+                return response()->json([
+                    'success' => true,
+                    'resumen' => $cache->resumen_ia,
+                    'generado_en' => optional($cache->resumen_ia_generado_en)->format('d/m/Y H:i'),
+                    'cacheado' => true,
+                ]);
+            }
+
+            // Asegurar que tenemos el detalle del expediente para alimentar a la IA.
+            $detalle = $cache?->detalle_json;
+            if (!$detalle) {
+                $detalle = $this->expedienteService->obtenerDetalleExpediente($eventoCecoco->nro_expediente);
+                $cache = \App\Models\DetalleExpedienteCecoco::updateOrCreate(
+                    ['evento_cecoco_id' => $eventoCecoco->id],
+                    [
+                        'nro_expediente' => $eventoCecoco->nro_expediente,
+                        'detalle_json' => $detalle,
+                        'fecha_consulta' => now(),
+                    ]
+                );
+            }
+
+            $resumen = $this->resumenIaService->resumir($detalle);
+
+            $cache->update([
+                'resumen_ia' => $resumen,
+                'resumen_ia_generado_en' => now(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'resumen' => $resumen,
+                'generado_en' => now()->format('d/m/Y H:i'),
+                'cacheado' => false,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('resumen IA evento cecoco', [
+                'evento_id' => $eventoCecoco->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
         }
     }
 

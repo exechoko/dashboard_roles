@@ -137,18 +137,26 @@ class CecocoExpedienteService
         return $base . '/' . ltrim($src, '/');
     }
 
-    public function obtenerDetalleExpediente(string $nroExpediente): array
+    /**
+     * Obtiene y parsea el detalle de un expediente. En procesos por lote se puede
+     * pasar un cliente ya autenticado (ver iniciarSesionCompartida) para reutilizar
+     * una única sesión CECOCO en vez de hacer login por cada expediente.
+     *
+     * @param \Illuminate\Http\Client\PendingRequest|null $client
+     */
+    public function obtenerDetalleExpediente(string $nroExpediente, $client = null): array
     {
+        $modoLote = $client !== null;
+
         try {
-            Log::info('Consultando expediente CECOCO', ['expediente' => $nroExpediente]);
+            if (!$modoLote) {
+                Log::info('Consultando expediente CECOCO', ['expediente' => $nroExpediente]);
+            }
 
-            Log::info('Paso 1: Iniciando sesión CECOCO');
-            $client = $this->iniciarSesion();
+            $client = $client ?: $this->iniciarSesion();
 
-            Log::info('Paso 2: Obteniendo reporte HTML del expediente');
             $htmlReporte = $this->obtenerReporteHTML($client, $nroExpediente);
 
-            Log::info('Paso 3: Parseando datos del HTML');
             $datosExpediente = $this->parsearHTMLExpediente($htmlReporte, $nroExpediente);
 
             if (empty($datosExpediente)) {
@@ -164,6 +172,17 @@ class CecocoExpedienteService
             ]);
             throw $e;
         }
+    }
+
+    /**
+     * Devuelve un cliente HTTP con sesión CECOCO iniciada, para reutilizarlo en
+     * procesos por lote que consultan muchos expedientes seguidos.
+     *
+     * @return \Illuminate\Http\Client\PendingRequest
+     */
+    public function iniciarSesionCompartida()
+    {
+        return $this->iniciarSesion();
     }
 
     private function iniciarSesion()

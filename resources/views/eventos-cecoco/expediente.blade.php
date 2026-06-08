@@ -10,6 +10,10 @@
             class="btn btn-outline-primary">
             <i class="bi bi-file-text"></i> Ver resumen
         </a>
+        <a href="{{ route('cecoco.expediente', array_merge($filtros ?? [], ['eventoCecoco' => $eventoCecoco, 'refrescar' => 1])) }}"
+            class="btn btn-outline-success">
+            <i class="bi bi-arrow-clockwise"></i> Actualizar desde CECOCO
+        </a>
     </div>
 
     <div class="card mb-4">
@@ -169,6 +173,34 @@
                     <div class="p-3 border rounded"
                         style="white-space: pre-wrap; font-size: 13px; background-color: var(--bs-secondary-bg);">
                         {{ $detalle['descripcion_inicial'] }}</div>
+                </div>
+            @endif
+
+            {{-- ===== DATOS DEL CIERRE ===== --}}
+            @php $cierre = $detalle['cierre'] ?? []; @endphp
+            @if(!empty(array_filter($cierre ?? [])))
+                <div class="mb-3">
+                    <h6 class="text-muted"><i class="bi bi-door-closed"></i> Datos del cierre</h6>
+                    <table class="table table-sm table-bordered mb-2">
+                        <tbody>
+                            @if(!empty($cierre['fecha']))
+                                <tr>
+                                    <th width="20%" class="table-secondary">Fecha de cierre:</th>
+                                    <td>{{ $cierre['fecha'] }}</td>
+                                </tr>
+                            @endif
+                            @if(!empty($cierre['tipo']))
+                                <tr>
+                                    <th class="table-secondary">Tipo de cierre:</th>
+                                    <td>{{ $cierre['tipo'] }}</td>
+                                </tr>
+                            @endif
+                        </tbody>
+                    </table>
+                    <div class="small text-muted mb-1">Observaciones de cierre</div>
+                    <div class="p-3 border rounded"
+                        style="white-space: pre-wrap; font-size: 13px; background-color: var(--bs-secondary-bg);">
+                        {{ !empty($cierre['observaciones']) ? $cierre['observaciones'] : 'Sin observaciones de cierre.' }}</div>
                 </div>
             @endif
 

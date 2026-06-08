@@ -155,7 +155,7 @@ class EventoCecocoController extends Controller
 
     public function show(Request $request, EventoCecoco $eventoCecoco)
     {
-        $eventoCecoco->load('importacion');
+        $eventoCecoco->load('importacion', 'detalle');
         $filtros = $request->only([
             'anio',
             'mes',

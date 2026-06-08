@@ -160,6 +160,61 @@
             </div>
         </div>
 
+        @php
+            $detalleCache = optional($eventoCecoco->detalle)->detalle_json ?? [];
+            $recursosQuick = $detalleCache['tramites'] ?? [];
+            $cierreQuick = $detalleCache['cierre'] ?? [];
+        @endphp
+
+        @if(!empty($recursosQuick))
+            <hr class="my-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0"><i class="bi bi-truck"></i> Recursos que intervinieron</h5>
+                <span class="badge bg-secondary">{{ count($recursosQuick) }}</span>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                @foreach($recursosQuick as $r)
+                    <span class="badge bg-primary" style="font-size:.9rem;">
+                        <i class="bi bi-geo-alt-fill"></i> {{ ($r['unidad'] ?? $r['tr_amites'] ?? '') ?: '-' }}
+                    </span>
+                @endforeach
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered mb-0">
+                    <thead class="table-secondary">
+                        <tr>
+                            <th>Unidad</th>
+                            <th>H. Asignación</th>
+                            <th>H. Llegada</th>
+                            <th>H. Fin Atención</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($recursosQuick as $r)
+                            <tr>
+                                <td><strong>{{ ($r['unidad'] ?? $r['tr_amites'] ?? '') ?: '-' }}</strong></td>
+                                <td><small>{{ ($r['h_asig'] ?? '') ?: '-' }}</small></td>
+                                <td><small>{{ ($r['h_llegada'] ?? '') ?: '-' }}</small></td>
+                                <td><small>{{ ($r['h_f_atenci_on'] ?? $r['h_f_atencion'] ?? '') ?: '-' }}</small></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @elseif($eventoCecoco->detalle)
+            <hr class="my-4">
+            <h5 class="mb-2"><i class="bi bi-truck"></i> Recursos que intervinieron</h5>
+            <p class="text-muted mb-0"><em>No se registraron recursos asignados para este evento.</em></p>
+        @endif
+
+        @if(!empty(array_filter($cierreQuick)))
+            <hr class="my-4">
+            <h5 class="mb-2"><i class="bi bi-door-closed"></i> Observaciones de cierre</h5>
+            <div class="p-3 border rounded mb-2" style="white-space: pre-wrap; font-size: 13px; background-color: var(--bs-secondary-bg);">
+                {{ !empty($cierreQuick['observaciones']) ? $cierreQuick['observaciones'] : 'Sin observaciones de cierre.' }}
+            </div>
+        @endif
+
         <hr class="my-4">
 
         <h5 class="mb-3">Descripción completa</h5>

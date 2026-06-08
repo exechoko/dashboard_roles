@@ -402,6 +402,9 @@ class CecocoExpedienteService
             // Extraer tabla de Trámites
             $tramites = $this->extraerTramites($xpath);
 
+            // Extraer el bloque "Datos del cierre" (fecha, tipo y observaciones de cierre)
+            $cierre = $this->extraerDatosCierre($xpath);
+
             return [
                 'nro_expediente' => $resumen['expediente'] ?? $nroExpediente,
                 'fecha_hora_inicial' => $primerEvento['fecha_hora'] ?? ($resumen['fecha_inicio'] ?? null),
@@ -415,6 +418,7 @@ class CecocoExpedienteService
                 'total_eventos' => count($timeline),
                 'tramites' => $tramites,
                 'total_tramites' => count($tramites),
+                'cierre' => $cierre,
             ];
 
         } catch (Exception $e) {
@@ -946,6 +950,93 @@ class CecocoExpedienteService
         }
 
         return $tramites;
+    }
+
+    /**
+     * Extrae el bloque "Datos del cierre" del reporte BIRT: fecha de cierre,
+     * tipo de cierre y observaciones de cierre. El bloque aparece después del
+     * encabezado "Datos del cierre" con las etiquetas "Fecha:", "Tipo de cierre:"
+     * y "Observaciones:" en las filas siguientes.
+     *
+     * @return array{fecha: string, tipo: string, observaciones: string}
+     */
+    private function extraerDatosCierre(\DOMXPath $xpath): array
+    {
+        $cierre = [
+            'fecha' => '',
+            'tipo' => '',
+            'observaciones' => '',
+        ];
+
+        $titulos = $xpath->query('//div[normalize-space()="Datos del cierre"]');
+        if ($titulos->length === 0) {
+            return $cierre;
+        }
+
+        // Subir desde el título hasta la fila <tr> que lo contiene
+        $fila = $titulos->item(0);
+        while ($fila !== null && strtolower($fila->nodeName) !== 'tr') {
+            $fila = $fila->parentNode;
+        }
+        if ($fila === null) {
+            return $cierre;
+        }
+
+        // Recorrer las filas siguientes hasta encontrar las etiquetas o llegar a "Acciones"
+        $hermano = $fila->nextSibling;
+        $filasRecorridas = 0;
+        while ($hermano !== null && $filasRecorridas < 8) {
+            if ($hermano->nodeType === XML_ELEMENT_NODE && strtolower($hermano->nodeName) === 'tr') {
+                $filasRecorridas++;
+
+                if (strpos($this->normalizarEtiquetaCierre($hermano->textContent), 'acciones') !== false) {
+                    break;
+                }
+
+                $celdas = [];
+                foreach ($xpath->query('.//td', $hermano) as $celda) {
+                    $celdas[] = $celda;
+                }
+
+                $totalCeldas = count($celdas);
+                for ($i = 0; $i < $totalCeldas - 1; $i++) {
+                    $etiqueta = $this->normalizarEtiquetaCierre($celdas[$i]->textContent);
+                    $valor = $this->limpiarTextoCelda($celdas[$i + 1]->textContent);
+
+                    if ($etiqueta === 'fecha' && $cierre['fecha'] === '') {
+                        $cierre['fecha'] = $valor;
+                    } elseif ($etiqueta === 'tipo de cierre') {
+                        $cierre['tipo'] = $valor;
+                    } elseif ($etiqueta === 'observaciones') {
+                        $cierre['observaciones'] = $valor;
+                    }
+                }
+            }
+            $hermano = $hermano->nextSibling;
+        }
+
+        return $cierre;
+    }
+
+    /**
+     * Normaliza el contenido textual de una celda: colapsa espacios y reemplaza
+     * el espacio duro (&#xa0;) que BIRT usa en celdas vacías.
+     */
+    private function limpiarTextoCelda(string $texto): string
+    {
+        $texto = preg_replace('/\x{00A0}|\xC2\xA0/u', ' ', $texto);
+        $texto = preg_replace('/\s+/u', ' ', (string) $texto);
+
+        return trim((string) $texto);
+    }
+
+    /**
+     * Normaliza una etiqueta del bloque de cierre a minúsculas sin los dos puntos
+     * finales, para compararla con "fecha", "tipo de cierre" u "observaciones".
+     */
+    private function normalizarEtiquetaCierre(string $texto): string
+    {
+        return rtrim(mb_strtolower($this->limpiarTextoCelda($texto), 'UTF-8'), ': ');
     }
 
     /**

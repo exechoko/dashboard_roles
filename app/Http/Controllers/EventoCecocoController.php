@@ -9,6 +9,8 @@ use App\Services\EventoCecocoParser;
 use App\Services\CecocoExpedienteService;
 use App\Services\CecocoGrabacionesService;
 use App\Services\CecocoGrabacionesLocalService;
+use App\Services\GrabadorTetraService;
+use App\Services\CecocoModulacionesLocalService;
 use App\Jobs\DescargarEventosCecoco;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -800,6 +802,164 @@ class EventoCecocoController extends Controller
             Log::error('stream grabacion cecoco', ['url' => $url, 'error' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => 'No se pudo acceder al audio.'], 404);
         }
+    }
+
+    /**
+     * Busca modulaciones de radio TETRA del grabador para el evento, dentro de la
+     * ventana que arranca N minutos antes de la fecha del evento y termina en su cierre.
+     */
+    public function modulaciones(EventoCecoco $eventoCecoco): JsonResponse
+    {
+        $this->authorize('escuchar-modulaciones-cecoco');
+
+        if (empty($eventoCecoco->fecha_hora)) {
+            return response()->json([
+                'success'      => false,
+                'message'      => 'El evento no tiene fecha/hora registrada. No es posible buscar modulaciones.',
+                'modulaciones' => [],
+            ]);
+        }
+
+        $minutosAntes = (int) config('grabador.minutos_antes', 15);
+        $desde = $eventoCecoco->fecha_hora->copy()->subMinutes($minutosAntes);
+        $hasta = $eventoCecoco->fecha_cierre
+            ? $eventoCecoco->fecha_cierre->copy()
+            : $eventoCecoco->fecha_hora->copy()->addMinutes((int) config('grabador.minutos_despues_sin_cierre', 60));
+
+        try {
+            // 1. Buscar en disco local (rápido, no consulta el grabador).
+            $localService = new CecocoModulacionesLocalService();
+            $resultado    = $localService->buscarModulaciones($desde, $hasta);
+
+            foreach ($resultado['modulaciones'] as &$m) {
+                $m['url'] = route('api.cecoco.modulacion.stream', ['path' => base64_encode($m['path'])]);
+                unset($m['path']); // no exponer la ruta física al cliente
+            }
+            unset($m);
+
+            // 2. Si no hubo resultados locales, consultar la web del grabador como respaldo.
+            if (empty($resultado['modulaciones']) && config('grabador.url')) {
+                $grabador  = new GrabadorTetraService();
+                $resultado = $grabador->buscarModulaciones($desde, $hasta);
+
+                foreach ($resultado['modulaciones'] as &$m) {
+                    $m['url'] = route('api.cecoco.modulacion.stream', ['itemid' => $m['itemid']]);
+                }
+                unset($m);
+            }
+
+            return response()->json([
+                'success'      => true,
+                'modulaciones' => $resultado['modulaciones'],
+                'total'        => count($resultado['modulaciones']),
+                'ventana'      => $resultado['ventana'],
+                'fuente'       => $resultado['fuente'] ?? 'grabador',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('modulaciones evento cecoco', [
+                'evento_id' => $eventoCecoco->id,
+                'error'     => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al buscar modulaciones: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Proxy para reproducir/descargar una modulación: desde disco local (path) o
+     * desde el grabador web (itemid).
+     */
+    public function streamModulacion(Request $request)
+    {
+        $this->authorize('escuchar-modulaciones-cecoco');
+
+        // Modulación en disco local.
+        if ($request->filled('path')) {
+            return $this->streamModulacionLocal($request);
+        }
+
+        $itemid = (string) $request->input('itemid', '');
+        if (!preg_match('/^\d+_\d+$/', $itemid)) {
+            return response()->json(['success' => false, 'message' => 'Identificador de modulación inválido.'], 400);
+        }
+
+        try {
+            $servicio = new GrabadorTetraService();
+            $response = $servicio->descargarAudio($itemid);
+
+            $statusCode  = $response->getStatusCode();
+            $contentType = $response->getHeaderLine('Content-Type');
+
+            if ($statusCode !== 200 || !str_contains($contentType, 'audio')) {
+                Log::warning('streamModulacion: respuesta no es audio', [
+                    'itemid'       => $itemid,
+                    'status'       => $statusCode,
+                    'content_type' => $contentType,
+                ]);
+
+                return response()->json(['success' => false, 'message' => 'No se pudo obtener el audio de la modulación.'], 404);
+            }
+
+            $disposition = $request->boolean('download') ? 'attachment' : 'inline';
+            $nombre      = 'modulacion_' . $itemid . '.wav';
+
+            $headers = [
+                'Content-Type'        => 'audio/wav',
+                'Content-Disposition' => $disposition . '; filename="' . rawurlencode($nombre) . '"',
+                'Accept-Ranges'       => 'bytes',
+            ];
+
+            $contentLength = $response->getHeaderLine('Content-Length');
+            if ($contentLength !== '') {
+                $headers['Content-Length'] = $contentLength;
+            }
+
+            return response($response->getBody()->getContents(), 200, $headers);
+        } catch (\Exception $e) {
+            Log::error('stream modulacion grabador', ['itemid' => $itemid, 'error' => $e->getMessage()]);
+
+            return response()->json(['success' => false, 'message' => 'No se pudo acceder al audio de la modulación.'], 404);
+        }
+    }
+
+    /**
+     * Sirve un archivo de modulación desde disco local (validando el path).
+     */
+    private function streamModulacionLocal(Request $request)
+    {
+        $filepath = base64_decode((string) $request->input('path'), true);
+        if ($filepath === false) {
+            return response()->json(['success' => false, 'message' => 'Path inválido.'], 400);
+        }
+
+        $servicio = new CecocoModulacionesLocalService();
+        if (!$servicio->validarPath($filepath)) {
+            return response()->json(['success' => false, 'message' => 'Archivo no permitido.'], 403);
+        }
+
+        if (!file_exists($filepath)) {
+            return response()->json(['success' => false, 'message' => 'Archivo no encontrado.'], 404);
+        }
+
+        $nombre = basename($filepath);
+        $ext    = strtolower(pathinfo($nombre, PATHINFO_EXTENSION));
+        $mime   = match ($ext) {
+            'wav' => 'audio/wav',
+            'mp3' => 'audio/mpeg',
+            'ogg' => 'audio/ogg',
+            'aac' => 'audio/aac',
+            default => 'application/octet-stream',
+        };
+
+        $disposition = $request->boolean('download') ? 'attachment' : 'inline';
+
+        return response()->file($filepath, [
+            'Content-Type'        => $mime,
+            'Content-Disposition' => $disposition . '; filename="' . rawurlencode($nombre) . '"',
+        ]);
     }
 
     /**

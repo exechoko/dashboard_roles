@@ -15,6 +15,11 @@
         <i class="bi bi-mic-fill"></i> Grabaciones de llamada
     </button>
     @endcan
+    @can('escuchar-modulaciones-cecoco')
+    <button type="button" class="btn btn-primary" id="btnModulaciones" onclick="abrirModulaciones()">
+        <i class="bi bi-broadcast-pin"></i> Modulaciones
+    </button>
+    @endcan
 </div>
 
 <div class="card">
@@ -360,6 +365,132 @@ function escHtml(str) {
     if (!str) return '';
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+</script>
+@endpush
+
+@endcan
+
+{{-- ===== MODAL MODULACIONES TETRA (grabador) ===== --}}
+@can('escuchar-modulaciones-cecoco')
+
+@push('scripts')
+<div class="modal fade" id="modalModulaciones" tabindex="-1" role="dialog" aria-labelledby="modalModulacionesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalModulacionesLabel">
+                    <i class="bi bi-broadcast-pin"></i> Modulaciones &mdash; Exp. {{ $eventoCecoco->nro_expediente }}
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info py-2 mb-3" id="modulaciones-ventana" style="display:none; font-size:.85rem;">
+                    <i class="bi bi-clock"></i> Ventana de búsqueda: <span id="mod-ventana-desde"></span> → <span id="mod-ventana-hasta"></span>
+                </div>
+                <div id="modulaciones-loading" class="text-center py-4">
+                    <i class="bi bi-arrow-repeat grabacion-spin"></i> Buscando modulaciones...
+                </div>
+                <div id="modulaciones-empty" style="display:none;" class="text-center py-4 text-muted">
+                    <i class="bi bi-broadcast" style="font-size:2rem;"></i>
+                    <p class="mt-2">No se encontraron modulaciones en la ventana del evento.</p>
+                </div>
+                <div id="modulaciones-error" style="display:none;" class="alert alert-danger py-2"></div>
+                <div id="modulaciones-lista" style="display:none;"></div>
+            </div>
+            <div class="modal-footer">
+                <small class="text-muted mr-auto">Las modulaciones se reproducen directamente en el navegador.</small>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function abrirModulaciones() {
+    document.getElementById('modulaciones-loading').style.display = 'block';
+    document.getElementById('modulaciones-empty').style.display   = 'none';
+    document.getElementById('modulaciones-error').style.display   = 'none';
+    document.getElementById('modulaciones-lista').style.display   = 'none';
+    document.getElementById('modulaciones-ventana').style.display = 'none';
+    document.getElementById('modulaciones-lista').innerHTML       = '';
+
+    $('#modalModulaciones').modal('show');
+
+    fetch('{{ route("api.cecoco.modulaciones", $eventoCecoco) }}', {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        document.getElementById('modulaciones-loading').style.display = 'none';
+
+        if (!data.success) {
+            document.getElementById('modulaciones-error').style.display = 'block';
+            document.getElementById('modulaciones-error').textContent   = data.message || 'Error al obtener modulaciones.';
+            return;
+        }
+
+        if (data.ventana) {
+            document.getElementById('mod-ventana-desde').textContent       = data.ventana.desde;
+            document.getElementById('mod-ventana-hasta').textContent       = data.ventana.hasta;
+            document.getElementById('modulaciones-ventana').style.display  = 'block';
+        }
+
+        if (!data.modulaciones || data.modulaciones.length === 0) {
+            document.getElementById('modulaciones-empty').style.display = 'block';
+            return;
+        }
+
+        var lista = document.getElementById('modulaciones-lista');
+        lista.style.display = 'block';
+
+        data.modulaciones.forEach(function(m) {
+            var streamUrl   = m.url;
+            var downloadUrl = streamUrl + '&download=1';
+
+            var card = document.createElement('div');
+            card.className = 'grabacion-card';
+
+            var partes = [];
+            if (m.grupo)       { partes.push('<span><i class="bi bi-people"></i> ' + escHtml(m.grupo) + '</span>'); }
+            if (m.canal)       { partes.push('<span><i class="bi bi-broadcast"></i> ' + escHtml(m.canal) + '</span>'); }
+            if (m.operador)    { partes.push('<span><i class="bi bi-person"></i> ' + escHtml(m.operador) + '</span>'); }
+            if (m.ssiLlamante) { partes.push('<span><i class="bi bi-mic"></i> ' + escHtml(m.ssiLlamante) + '</span>'); }
+            if (m.ssiLlamado)  { partes.push('<span><i class="bi bi-headset"></i> ' + escHtml(m.ssiLlamado) + '</span>'); }
+            if (m.tipo)        { partes.push('<span><i class="bi bi-diagram-3"></i> ' + escHtml(m.tipo) + '</span>'); }
+
+            card.innerHTML =
+                '<div class="grabacion-nombre"><i class="bi bi-soundwave"></i> ' +
+                    escHtml(m.fechaInicio || '—') +
+                    ' &nbsp;<small class="text-muted">(' + escHtml(m.duracion || '—') + ')</small></div>' +
+                '<div class="grabacion-meta">' + partes.join(' &nbsp;|&nbsp; ') + '</div>' +
+                '<audio controls preload="none" style="width:100%;margin-top:.5rem;">' +
+                    '<source src="' + streamUrl + '">' +
+                    'Tu navegador no soporta reproducción de audio.' +
+                '</audio>' +
+                '<div class="grabacion-actions">' +
+                    '<a href="' + downloadUrl + '" class="btn btn-sm btn-outline-primary" download>' +
+                        '<i class="bi bi-download"></i> Descargar' +
+                    '</a>' +
+                '</div>';
+            lista.appendChild(card);
+        });
+    })
+    .catch(function(err) {
+        document.getElementById('modulaciones-loading').style.display = 'none';
+        document.getElementById('modulaciones-error').style.display   = 'block';
+        document.getElementById('modulaciones-error').textContent     = 'Error de red al obtener modulaciones.';
+        console.error(err);
+    });
+}
+
+$('#modalModulaciones').on('hide.bs.modal', function() {
+    document.querySelectorAll('#modulaciones-lista audio').forEach(function(audio) {
+        audio.pause();
+        audio.currentTime = 0;
+    });
+});
 </script>
 @endpush
 

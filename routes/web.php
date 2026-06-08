@@ -493,6 +493,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/eventos/{eventoCecoco}/grabaciones', [App\Http\Controllers\EventoCecocoController::class, 'grabaciones'])->name('grabaciones');
         Route::get('/grabacion/stream', [App\Http\Controllers\EventoCecocoController::class, 'streamGrabacion'])->name('grabacion.stream');
         Route::get('/grabacion/stream-local', [App\Http\Controllers\EventoCecocoController::class, 'streamGrabacionLocal'])->name('grabacion.stream.local');
+        Route::get('/eventos/{eventoCecoco}/modulaciones', [App\Http\Controllers\EventoCecocoController::class, 'modulaciones'])->name('modulaciones');
+        Route::get('/modulacion/stream', [App\Http\Controllers\EventoCecocoController::class, 'streamModulacion'])->name('modulacion.stream');
         Route::get('/analitica/datos', [App\Http\Controllers\EventoCecocoController::class, 'analiticaDatos'])->name('analitica.datos');
     });
 

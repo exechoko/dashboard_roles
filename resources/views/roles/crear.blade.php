@@ -104,6 +104,7 @@
                                                         'mapa-gis-historico-cecoco',
                                                         'importar-eventos',
                                                         'ver-grabacion-evento',
+                                                        'modulaciones-cecoco',
                                                         'ver-historico-movil-cecoco',
                                                         'ver-historico-movil-gis-cecoco',
                                                     ],

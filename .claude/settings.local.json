@@ -69,7 +69,17 @@
       "Bash(python -c \"import json,sys; d=json.loads\\(sys.stdin.read\\(\\)\\); print\\('cpu disponible:', d['disponible'], '| puestos:', len\\(d.get\\('puestos',[]\\)\\)\\); print\\('camaras:', json.dumps\\(d['camaras'], ensure_ascii=False\\)[:300]\\)\")",
       "Read(//c/Apache24/htdocs/dashboard_roles/**)",
       "Bash(schtasks /query /fo csv)",
-      "PowerShell(Get-CimInstance *)"
+      "PowerShell(Get-CimInstance *)",
+      "mcp__laravel-boost__database-query",
+      "PowerShell($dirs = @\\('LARRAMENDI 3520', 'Guido Marizza 1904', 'Dr. Julian Obaid 1618', 'Turi 222', 'Balcar 851', 'Lavallejas al 1883'\\); foreach \\($d in $dirs\\) { try { $r = Invoke-RestMethod -Uri \\(\"https://apis.datos.gob.ar/georef/api/direcciones?direccion=\" + [uri]::EscapeDataString\\($d\\) + \"&provincia=Entre%20R%C3%ADos&max=1\"\\) -TimeoutSec 10; $item = $r.direcciones | Select-Object -First 1; if \\($item\\) { Write-Output \\(\"{0} => {1}, {2}\" -f $d, $item.ubicacion.lat, $item.ubicacion.lon\\) } else { Write-Output \\(\"{0} => SIN RESULTADO\" -f $d\\) } } catch { Write-Output \\(\"{0} => ERROR {1}\" -f $d, $_.Exception.Message\\) } })",
+      "PowerShell(Select-String -Path .env -Pattern 'NOMINATIM|GOOGLE' | ForEach-Object { $_.Line })",
+      "PowerShell($base='http://193.169.1.246:8088'; try { $st = Invoke-RestMethod -Uri \"$base/status\" -TimeoutSec 5; Write-Output \\(\"STATUS: \" + \\($st | ConvertTo-Json -Compress -Depth 3\\)\\) } catch { Write-Output \\(\"STATUS ERROR: \" + $_.Exception.Message\\) }; $dirs = @\\('Larramendi 3520, Paraná', 'Guido Marizza 1904, Paraná', 'Turi 222, Paraná', 'Balcar 851, Paraná', 'Lavalleja 1883, Paraná', 'Los Jazmines 2635, Paraná'\\); foreach \\($d in $dirs\\) { try { $r = Invoke-RestMethod -Uri \\(\"$base/search?format=json&limit=1&countrycodes=ar&q=\" + [uri]::EscapeDataString\\($d\\)\\) -TimeoutSec 8; if \\($r -and $r.Count -gt 0\\) { Write-Output \\(\"{0} => {1}, {2} | {3}\" -f $d, $r[0].lat, $r[0].lon, $r[0].display_name\\) } else { Write-Output \\(\"{0} => SIN RESULTADO\" -f $d\\) } } catch { Write-Output \\(\"{0} => ERROR {1}\" -f $d, $_.Exception.Message\\) } })",
+      "PowerShell($base='http://193.169.1.246:8088'; foreach \\($calle in @\\('Moussy, Paraná','Ramirez, Paraná'\\)\\) { try { $r = Invoke-RestMethod -Uri \\(\"$base/search?format=json&limit=10&polygon_geojson=1&q=\" + [uri]::EscapeDataString\\($calle\\)\\) -TimeoutSec 8; Write-Output \\(\"--- {0}: {1} resultados\" -f $calle, $r.Count\\); foreach \\($it in $r\\) { Write-Output \\(\"  class={0} type={1} geo={2} pts={3} | {4}\" -f $it.class, $it.type, $it.geojson.type, \\($it.geojson.coordinates | Measure-Object\\).Count, $it.display_name.Substring\\(0,[Math]::Min\\(60,$it.display_name.Length\\)\\)\\) } } catch { Write-Output \\(\"{0} => ERROR {1}\" -f $calle, $_.Exception.Message\\) } })",
+      "PowerShell(php artisan make:command ReintentarGeocodificacionFallida --no-interaction)",
+      "PowerShell(php artisan make:test GeocodificacionServiceTest --no-interaction)",
+      "PowerShell(php artisan test --compact tests/Feature/GeocodificacionServiceTest.php)",
+      "PowerShell(php artisan cecoco:reintentar-geocodificacion-fallida --limite=30 --pausa=100)",
+      "PowerShell(php artisan test --compact)"
     ]
   },
   "enableAllProjectMcpServers": true,

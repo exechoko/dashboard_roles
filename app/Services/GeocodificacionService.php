@@ -20,6 +20,9 @@ class GeocodificacionService
     private int $reverseBatchMax;
     private string $nominatimContexto;
 
+    /** @var array<string, array> Caché en memoria de geometrías de calles por nombre */
+    private array $cacheGeometriasCalles = [];
+
     private const LIMITE_DIARIO_GOOGLE = 2000;
 
     private const PATRONES_INVALIDOS = [
@@ -118,8 +121,22 @@ class GeocodificacionService
             return null;
         }
 
-        // 1er motor: API Georef /direcciones — gratuita, sin límites, específica para Argentina.
-        // El resultado se cachea en geocodificacion_directa como cualquier otro motor.
+        // 1er motor: Nominatim self-hosted — el que mejor cubre el Gran Paraná.
+        // Prueba variantes normalizadas y, para intersecciones, el cruce geométrico.
+        $resolucion = $this->resolverConNominatim($direccion);
+        if ($resolucion) {
+            GeocodificacionDirecta::create([
+                'direccion_original'    => $direccion,
+                'direccion_normalizada' => $resolucion['candidato'],
+                'latitud'               => $resolucion['lat'],
+                'longitud'              => $resolucion['lng'],
+                'fuente'                => $resolucion['fuente'],
+                'nro_expediente'        => $nroExpediente,
+            ]);
+            return ['lat' => $resolucion['lat'], 'lng' => $resolucion['lng']];
+        }
+
+        // 2º motor: API Georef /direcciones (datos.gob.ar) — gratuita, interpola por altura.
         $resultadoGeoref = $this->geocodificarGeoref($direccion);
         if ($resultadoGeoref) {
             GeocodificacionDirecta::create([
@@ -133,11 +150,11 @@ class GeocodificacionService
             return $resultadoGeoref;
         }
 
-        // Motor gratuito (Nominatim) cuando Google está deshabilitado por costos.
-        if (!$this->googleHabilitado) {
-            $resultado = $this->geocodificarNominatim($direccion);
-            $fuente    = 'nominatim';
-        } else {
+        // 3er motor: Google (pago, deshabilitado por defecto vía GEOCODING_GOOGLE_ENABLED).
+        $resultado = null;
+        $fuente    = 'nominatim';
+
+        if ($this->googleHabilitado) {
             // Verificar límite diario ANTES de llamar a Google.
             // Si se alcanzó el límite NO se guarda nada en la tabla para poder reintentarlo mañana.
             if (!$this->hayDisponibilidadDiariaGoogle()) {
@@ -192,8 +209,9 @@ class GeocodificacionService
         $patrones = [
             // "calle NombreCalle 1234"
             '/(?:calle|calles|av\.?|avenida|bv\.?|boulevard|pasaje|pje\.?)\s+([A-ZÁÉÍÓÚÜÑa-záéíóúüñ\s\.]+?\s+\d{1,5})/iu',
-            // "NombreCalle y OtraCalle" (intersección)
-            '/([A-ZÁÉÍÓÚÜÑa-záéíóúüñ\s\.]+?\s+y\s+[A-ZÁÉÍÓÚÜÑa-záéíóúüñ\s\.]+)/iu',
+            // "calle NombreCalle y OtraCalle" (intersección, anclada a un tipo de vía
+            // para no capturar narrativa; la segunda calle se limita a 3 palabras)
+            '/(?:calle|calles|av\.?|avenida|bv\.?|boulevard|pasaje|pje\.?|esquina)\s+([A-ZÁÉÍÓÚÜÑa-záéíóúüñ\s\.]{3,40}?\s+y\s+[A-ZÁÉÍÓÚÜÑa-záéíóúüñ\.]+(?:\s+[A-ZÁÉÍÓÚÜÑa-záéíóúüñ\.]+){0,2})/iu',
             // "NombreCalle al 1234" o "NombreCalle Nº 1234"
             '/([A-ZÁÉÍÓÚÜÑa-záéíóúüñ\s\.]+?\s+(?:al|n[°ºo]\.?)\s*\d{1,5})/iu',
         ];
@@ -217,6 +235,271 @@ class GeocodificacionService
     public function tieneNumeracion(string $direccion): bool
     {
         return preg_match('/\d/', $direccion) === 1;
+    }
+
+    /**
+     * Genera variantes normalizadas de una dirección para maximizar la chance
+     * de resolverla: quita "al"/"Nº" antes de la altura, convierte "A entre B y C"
+     * en intersecciones, recorta palabras de relato arrastradas tras la segunda
+     * calle y extrae la dirección embebida cuando el texto es una narrativa.
+     *
+     * @return string[] Lista ordenada (la más fiel al original primero); vacía si
+     *                  es una narrativa sin dirección extraíble.
+     */
+    public function generarCandidatos(string $direccion): array
+    {
+        $dir = trim(preg_replace('/\s+/u', ' ', $direccion));
+        $dir = trim($dir, " \t.,;-");
+
+        if (mb_strlen($dir) > 80) {
+            $extraida = $this->extraerDireccionDeDescripcion($dir);
+            if ($extraida === null) {
+                return [];
+            }
+            $dir = trim($extraida, " .,;-");
+        }
+
+        $candidatos = [$dir];
+
+        // "Lavalleja al 1883" / "San Juan Nº 950" → "Lavalleja 1883" / "San Juan 950"
+        $sinAl = preg_replace('/\s+(?:al|n[°ºo]\.?)\s*(\d)/iu', ' $1', $dir);
+        $candidatos[] = $sinAl;
+
+        // "Moreno entre Salta y San Luis" → "Moreno y Salta" / "Moreno y San Luis".
+        // Si la base trae altura ("Santos Tala 1172 entre ...") también la base sola.
+        if (preg_match('/^(.+?)\s+entre\s+(.+?)\s+y\s+(.+)$/iu', $sinAl, $m)) {
+            $base = trim($m[1]);
+            if (preg_match('/\d/', $base)) {
+                $candidatos[] = $base;
+            }
+            $calle = trim(preg_replace('/\s*\d+\s*$/', '', $base));
+            $candidatos[] = $calle . ' y ' . trim($m[2]);
+            $candidatos[] = $calle . ' y ' . trim($m[3]);
+        }
+
+        // "calle San Juan 950" → "San Juan 950"
+        foreach ($candidatos as $c) {
+            $sinPrefijo = preg_replace('/^calles?\s+/iu', '', $c);
+            if ($sinPrefijo !== $c) {
+                $candidatos[] = $sinPrefijo;
+            }
+        }
+
+        // Intersecciones con la segunda calle recortada: la extracción desde una
+        // narrativa puede arrastrar palabras del relato ("Balbin y Larralde habria").
+        foreach ($candidatos as $c) {
+            if (preg_match('/\d/', $c) || !preg_match('/^(.+?\s+y\s+)(\S+(?:\s+\S+)+)$/iu', $c, $m)) {
+                continue;
+            }
+            $palabras = preg_split('/\s+/', trim($m[2]));
+            while (count($palabras) > 1) {
+                array_pop($palabras);
+                if (count($palabras) === 1 && (mb_strlen($palabras[0]) < 5 || preg_match('/^(san|santa|santo|gral|general|dr|doctor|av|avenida)$/iu', $palabras[0]))) {
+                    break;
+                }
+                $candidatos[] = $m[1] . implode(' ', $palabras);
+            }
+        }
+
+        return array_slice(array_values(array_unique($candidatos)), 0, 8);
+    }
+
+    /**
+     * Intenta resolver una dirección con Nominatim probando las variantes de
+     * generarCandidatos(). Para las variantes con forma de intersección ("A y B"),
+     * que la búsqueda por texto libre no resuelve, calcula el cruce geométrico
+     * de ambas calles.
+     *
+     * @return array{lat: float, lng: float, fuente: string, candidato: string}|null
+     */
+    public function resolverConNominatim(string $direccion): ?array
+    {
+        $intentosInterseccion = 0;
+
+        foreach ($this->generarCandidatos($direccion) as $candidato) {
+            $resultado = $this->geocodificarNominatim($candidato);
+            if ($resultado) {
+                return $resultado + ['fuente' => 'nominatim', 'candidato' => $candidato];
+            }
+
+            if ($intentosInterseccion < 4 && !preg_match('/\d/', $candidato)
+                && preg_match('/^(.{3,}?)\s+y\s+(.{3,})$/iu', $candidato, $m)) {
+                $intentosInterseccion++;
+                $resultado = $this->geocodificarInterseccion(trim($m[1]), trim($m[2]));
+                if ($resultado) {
+                    return $resultado + ['fuente' => 'nominatim_interseccion', 'candidato' => $candidato];
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Resuelve la intersección de dos calles por geometría: obtiene las polilíneas
+     * de ambas desde Nominatim (polygon_geojson) y calcula el punto de cruce.
+     * Nominatim no resuelve "Calle A y Calle B" como texto libre y ese formato es
+     * muy común en los eventos CECOCO.
+     */
+    public function geocodificarInterseccion(string $calleA, string $calleB): ?array
+    {
+        $lineasA = $this->obtenerGeometriaCalle($calleA);
+        if (empty($lineasA)) {
+            return null;
+        }
+
+        $lineasB = $this->obtenerGeometriaCalle($calleB);
+        if (empty($lineasB)) {
+            return null;
+        }
+
+        $cruce = $this->calcularCruce($lineasA, $lineasB);
+
+        return $cruce ? ['lat' => $cruce[1], 'lng' => $cruce[0]] : null;
+    }
+
+    /**
+     * Busca una calle por nombre en Nominatim y devuelve sus polilíneas como
+     * [[ [lng, lat], ... ], ...]. Solo resultados de clase highway con al menos
+     * un vértice dentro del Gran Paraná. Cachea en memoria por nombre porque en
+     * los lotes las mismas calles se repiten mucho.
+     *
+     * @return array<int, array<int, array{0: float, 1: float}>>
+     */
+    private function obtenerGeometriaCalle(string $calle): array
+    {
+        $clave = mb_strtolower(trim($calle));
+        if (isset($this->cacheGeometriasCalles[$clave])) {
+            return $this->cacheGeometriasCalles[$clave];
+        }
+
+        $lineas = [];
+
+        try {
+            $resp = Http::withHeaders(['User-Agent' => 'DashboardRoles/1.0 (interseccion de calles)'])
+                ->timeout(8)
+                ->get($this->nominatimBaseUrl . '/search', [
+                    'q'               => $calle . $this->nominatimContexto,
+                    'format'          => 'json',
+                    'limit'           => 10,
+                    'countrycodes'    => 'ar',
+                    'polygon_geojson' => 1,
+                ]);
+
+            if ($resp->successful()) {
+                foreach ($resp->json() ?? [] as $item) {
+                    if (($item['class'] ?? '') !== 'highway') {
+                        continue;
+                    }
+                    $geo = $item['geojson'] ?? null;
+                    if (!$geo) {
+                        continue;
+                    }
+                    if ($geo['type'] === 'LineString') {
+                        $lineas[] = $geo['coordinates'];
+                    } elseif ($geo['type'] === 'MultiLineString') {
+                        foreach ($geo['coordinates'] as $linea) {
+                            $lineas[] = $linea;
+                        }
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning('Nominatim: error obteniendo geometría de calle', [
+                'calle' => $calle,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        $lineas = array_values(array_filter($lineas, function (array $linea): bool {
+            foreach ($linea as $p) {
+                if ($p[1] >= -31.90 && $p[1] <= -31.60 && $p[0] >= -60.60 && $p[0] <= -60.30) {
+                    return true;
+                }
+            }
+            return false;
+        }));
+
+        if (count($this->cacheGeometriasCalles) >= 500) {
+            $this->cacheGeometriasCalles = [];
+        }
+
+        return $this->cacheGeometriasCalles[$clave] = $lineas;
+    }
+
+    /**
+     * Punto de cruce entre dos conjuntos de polilíneas [lng, lat]. Si ningún par
+     * de segmentos se corta, acepta el par de vértices más cercano cuando la
+     * separación es menor a 60 m (calles que en OSM no llegan a tocarse).
+     *
+     * @return array{0: float, 1: float}|null [lng, lat]
+     */
+    private function calcularCruce(array $lineasA, array $lineasB): ?array
+    {
+        foreach ($lineasA as $lineaA) {
+            for ($i = 0, $nA = count($lineaA) - 1; $i < $nA; $i++) {
+                foreach ($lineasB as $lineaB) {
+                    for ($j = 0, $nB = count($lineaB) - 1; $j < $nB; $j++) {
+                        $p = $this->interseccionSegmentos($lineaA[$i], $lineaA[$i + 1], $lineaB[$j], $lineaB[$j + 1]);
+                        if ($p) {
+                            return $p;
+                        }
+                    }
+                }
+            }
+        }
+
+        $mejor     = null;
+        $mejorDist = INF;
+        foreach ($lineasA as $lineaA) {
+            foreach ($lineaA as $pa) {
+                foreach ($lineasB as $lineaB) {
+                    foreach ($lineaB as $pb) {
+                        $d = $this->distanciaMetros($pa, $pb);
+                        if ($d < $mejorDist) {
+                            $mejorDist = $d;
+                            $mejor     = [($pa[0] + $pb[0]) / 2, ($pa[1] + $pb[1]) / 2];
+                        }
+                    }
+                }
+            }
+        }
+
+        return $mejorDist <= 60 ? $mejor : null;
+    }
+
+    /**
+     * Intersección de los segmentos p1→p2 y p3→p4 (puntos [lng, lat]).
+     * Aproximación planar, suficiente a escala urbana.
+     *
+     * @return array{0: float, 1: float}|null [lng, lat]
+     */
+    private function interseccionSegmentos(array $p1, array $p2, array $p3, array $p4): ?array
+    {
+        $d = ($p2[0] - $p1[0]) * ($p4[1] - $p3[1]) - ($p2[1] - $p1[1]) * ($p4[0] - $p3[0]);
+        if (abs($d) < 1e-12) {
+            return null;
+        }
+
+        $t = (($p3[0] - $p1[0]) * ($p4[1] - $p3[1]) - ($p3[1] - $p1[1]) * ($p4[0] - $p3[0])) / $d;
+        $u = (($p3[0] - $p1[0]) * ($p2[1] - $p1[1]) - ($p3[1] - $p1[1]) * ($p2[0] - $p1[0])) / $d;
+
+        if ($t < 0 || $t > 1 || $u < 0 || $u > 1) {
+            return null;
+        }
+
+        return [$p1[0] + $t * ($p2[0] - $p1[0]), $p1[1] + $t * ($p2[1] - $p1[1])];
+    }
+
+    /**
+     * Distancia aproximada en metros entre dos puntos [lng, lat] (equirectangular).
+     */
+    private function distanciaMetros(array $a, array $b): float
+    {
+        $dLat = ($b[1] - $a[1]) * 111320.0;
+        $dLng = ($b[0] - $a[0]) * 111320.0 * cos(deg2rad(($a[1] + $b[1]) / 2));
+
+        return sqrt($dLat * $dLat + $dLng * $dLng);
     }
 
     /**
@@ -508,34 +791,28 @@ class GeocodificacionService
     }
 
     /**
-     * Geocodifica usando Nominatim (OpenStreetMap) — sin API key, límite 1 req/s.
-     * Solo para uso manual (una dirección a la vez), nunca para batch automático.
-     * Restringe resultados al bounding box del Gran Paraná.
+     * Geocodifica una consulta puntual con Nominatim (self-hosted, sin API key).
+     * Restringe resultados al bounding box del Gran Paraná. Para aprovechar las
+     * variantes normalizadas usar resolverConNominatim().
      */
     public function geocodificarNominatim(string $direccion): ?array
     {
-        $query = $direccion . $this->nominatimContexto;
-
-        $url = $this->nominatimBaseUrl . '/search?' . http_build_query([
-            'q'            => $query,
-            'format'       => 'json',
-            'limit'        => 5,
-            'countrycodes' => 'ar',
-            'viewbox'      => '-60.60,-31.60,-60.30,-31.90',
-        ]);
-
         try {
-            $context = stream_context_create(['http' => [
-                'header'  => "User-Agent: DashboardRoles/1.0 (geocodificacion manual)\r\n",
-                'timeout' => 8,
-            ]]);
-            $response = @file_get_contents($url, false, $context);
+            $resp = Http::withHeaders(['User-Agent' => 'DashboardRoles/1.0 (geocodificacion)'])
+                ->timeout(8)
+                ->get($this->nominatimBaseUrl . '/search', [
+                    'q'            => $direccion . $this->nominatimContexto,
+                    'format'       => 'json',
+                    'limit'        => 5,
+                    'countrycodes' => 'ar',
+                    'viewbox'      => '-60.60,-31.60,-60.30,-31.90',
+                ]);
 
-            if (!$response) {
+            if (!$resp->successful()) {
                 return null;
             }
 
-            $data = json_decode($response, true);
+            $data = $resp->json();
             if (!is_array($data) || empty($data)) {
                 return null;
             }
@@ -549,7 +826,6 @@ class GeocodificacionService
                 }
             }
 
-            Log::warning('Nominatim: ningún resultado dentro del Gran Paraná', ['dir' => $direccion, 'resultados' => count($data)]);
             return null;
 
         } catch (\Exception $e) {
@@ -577,24 +853,21 @@ class GeocodificacionService
 
     private function fetchReverseNominatim(float $lat, float $lng): ?string
     {
-        $url = $this->nominatimBaseUrl . '/reverse?' . http_build_query([
-            'lat'    => $lat,
-            'lon'    => $lng,
-            'format' => 'jsonv2',
-            'zoom'   => 18,
-        ]);
-
         try {
-            $context = stream_context_create(['http' => [
-                'header'  => "User-Agent: DashboardRoles/1.0 (geocodificacion inversa)\r\n",
-                'timeout' => 8,
-            ]]);
-            $response = @file_get_contents($url, false, $context);
-            if (!$response) {
+            $resp = Http::withHeaders(['User-Agent' => 'DashboardRoles/1.0 (geocodificacion inversa)'])
+                ->timeout(8)
+                ->get($this->nominatimBaseUrl . '/reverse', [
+                    'lat'    => $lat,
+                    'lon'    => $lng,
+                    'format' => 'jsonv2',
+                    'zoom'   => 18,
+                ]);
+
+            if (!$resp->successful()) {
                 return null;
             }
 
-            $data = json_decode($response, true);
+            $data = $resp->json();
             if (!is_array($data)) {
                 return null;
             }

@@ -56,6 +56,16 @@ class Kernel extends ConsoleKernel
                 app(TelegramService::class)->notificarScheduleFallido('cecoco:geocodificar-dia-anterior', 'El comando finalizó con error.');
             });
 
+        // Reintenta con Nominatim las direcciones que quedaron sin coordenadas en el
+        // caché (backlog de la época en que Google era el único motor). Corre de
+        // madrugada en lotes acotados hasta agotar el backlog.
+        $schedule->command('cecoco:reintentar-geocodificacion-fallida --limite=10000 --pausa=50')->dailyAt('02:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/cecoco_geocodificacion_reintentos.log'))
+            ->onFailure(function () {
+                app(TelegramService::class)->notificarScheduleFallido('cecoco:reintentar-geocodificacion-fallida', 'El comando finalizó con error.');
+            });
+
         // Pre-trae y guarda el detalle completo (acciones/recursos/cierre) de los eventos
         // del día anterior. Corre después del import (06:00) reutilizando una sola sesión.
         $schedule->command('cecoco:prefetch-detalles')->dailyAt('06:45')

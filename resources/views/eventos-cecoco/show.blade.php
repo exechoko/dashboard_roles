@@ -3,21 +3,21 @@
 @section('content')
 <div class="mb-4">
     <a href="{{ !empty($filtros) ? route('cecoco.index', $filtros) : route('cecoco.index') }}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left"></i> Volver al listado
+        <i class="fas fa-arrow-left"></i> Volver al listado
     </a>
     @can('ver-expediente-cecoco')
     <a href="{{ route('cecoco.expediente', $eventoCecoco) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-success">
-        <i class="bi bi-file-earmark-text"></i> Ver Detalle Completo
+        <i class="fas fa-file-alt"></i> Ver Detalle Completo
     </a>
     @endcan
     @can('ver-grabacion-evento')
     <button type="button" class="btn btn-dark" id="btnGrabaciones" onclick="abrirGrabaciones()">
-        <i class="bi bi-mic-fill"></i> Grabaciones de llamada
+        <i class="fas fa-microphone"></i> Grabaciones de llamada
     </button>
     @endcan
     @can('escuchar-modulaciones-cecoco')
     <button type="button" class="btn btn-primary" id="btnModulaciones" onclick="abrirModulaciones()">
-        <i class="bi bi-broadcast-pin"></i> Modulaciones
+        <i class="fas fa-broadcast-tower"></i> Modulaciones
     </button>
     @endcan
 </div>
@@ -171,13 +171,13 @@
         @if(!empty($recursosQuick))
             <hr class="my-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h5 class="mb-0"><i class="bi bi-truck"></i> Recursos que intervinieron</h5>
+                <h5 class="mb-0"><i class="fas fa-truck"></i> Recursos que intervinieron</h5>
                 <span class="badge badge-secondary">{{ count($recursosQuick) }}</span>
             </div>
             <div class="mb-3">
                 @foreach($recursosQuick as $r)
                     <span class="badge badge-primary mr-1 mb-1" style="font-size:.9rem;">
-                        <i class="bi bi-geo-alt-fill"></i> {{ ($r['unidad'] ?? $r['tr_amites'] ?? '') ?: '-' }}
+                        <i class="fas fa-map-marker-alt"></i> {{ ($r['unidad'] ?? $r['tr_amites'] ?? '') ?: '-' }}
                     </span>
                 @endforeach
             </div>
@@ -205,13 +205,13 @@
             </div>
         @elseif($eventoCecoco->detalle)
             <hr class="my-4">
-            <h5 class="mb-2"><i class="bi bi-truck"></i> Recursos que intervinieron</h5>
+            <h5 class="mb-2"><i class="fas fa-truck"></i> Recursos que intervinieron</h5>
             <p class="text-muted mb-0"><em>No se registraron recursos asignados para este evento.</em></p>
         @endif
 
         @if(!empty(array_filter($cierreQuick)))
             <hr class="my-4">
-            <h5 class="mb-2"><i class="bi bi-door-closed"></i> Observaciones de cierre</h5>
+            <h5 class="mb-2"><i class="fas fa-door-closed"></i> Observaciones de cierre</h5>
             <div class="p-3 border rounded mb-2" style="white-space: pre-wrap; font-size: 13px; background-color: var(--bs-secondary-bg);">
                 {{ !empty($cierreQuick['observaciones']) ? $cierreQuick['observaciones'] : 'Sin observaciones de cierre.' }}
             </div>
@@ -230,7 +230,7 @@
     </div>
     <div class="card-footer text-muted">
         <small>
-            <i class="bi bi-file-earmark"></i>
+            <i class="fas fa-file"></i>
             Archivo origen: <strong>{{ $eventoCecoco->importacion ? $eventoCecoco->importacion->nombre_archivo_corto : 'N/A' }}</strong>
             @if($eventoCecoco->importacion)
                 | Importado el {{ $eventoCecoco->importacion->created_at->format('d/m/Y H:i') }}
@@ -286,7 +286,7 @@
         <div class="modal-content">
             <div class="modal-header bg-dark text-white">
                 <h5 class="modal-title" id="modalGrabacionesLabel">
-                    <i class="bi bi-mic-fill"></i> Grabaciones BRI &mdash; Exp. {{ $eventoCecoco->nro_expediente }}
+                    <i class="fas fa-microphone"></i> Grabaciones BRI &mdash; Exp. {{ $eventoCecoco->nro_expediente }}
                 </h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
                     <span aria-hidden="true">&times;</span>
@@ -294,13 +294,13 @@
             </div>
             <div class="modal-body">
                 <div class="alert alert-info py-2 mb-3" id="grabaciones-ventana" style="display:none; font-size:.85rem;">
-                    <i class="bi bi-clock"></i> Ventana de búsqueda: <span id="ventana-desde"></span> → <span id="ventana-hasta"></span>
+                    <i class="fas fa-clock"></i> Ventana de búsqueda: <span id="ventana-desde"></span> → <span id="ventana-hasta"></span>
                 </div>
                 <div id="grabaciones-loading" class="text-center py-4">
-                    <i class="bi bi-arrow-repeat grabacion-spin"></i> Buscando grabaciones...
+                    <i class="fas fa-sync-alt grabacion-spin"></i> Buscando grabaciones...
                 </div>
                 <div id="grabaciones-empty" style="display:none;" class="text-center py-4 text-muted">
-                    <i class="bi bi-mic-mute" style="font-size:2rem;"></i>
+                    <i class="fas fa-microphone-slash" style="font-size:2rem;"></i>
                     <p class="mt-2">No se encontraron grabaciones para este evento.</p>
                     <small>Teléfono buscado: <strong>{{ $eventoCecoco->telefono ?? 'sin teléfono' }}</strong></small>
                 </div>
@@ -372,21 +372,21 @@ function abrirGrabaciones() {
                       '<source src="' + streamUrl + '" type="audio/ogg">' +
                       'Tu navegador no soporta reproducción de audio.' +
                   '</audio>'
-                : '<div class="text-muted" style="font-size:.8rem;margin-top:.4rem;"><i class="bi bi-exclamation-circle"></i> Sin enlace de audio disponible</div>';
+                : '<div class="text-muted" style="font-size:.8rem;margin-top:.4rem;"><i class="fas fa-exclamation-circle"></i> Sin enlace de audio disponible</div>';
 
             var downloadHtml = downloadUrl
                 ? '<a href="' + downloadUrl + '" class="btn btn-sm btn-outline-primary" download="' + escHtml(nombre) + '">' +
-                      '<i class="bi bi-download"></i> Descargar' +
+                      '<i class="fas fa-download"></i> Descargar' +
                   '</a>'
                 : '';
 
             card.innerHTML =
-                '<div class="grabacion-nombre"><i class="bi bi-file-earmark-music"></i> ' + escHtml(nombre) + '</div>' +
+                '<div class="grabacion-nombre"><i class="fas fa-file-audio"></i> ' + escHtml(nombre) + '</div>' +
                 '<div class="grabacion-meta">' +
-                    '<span><i class="bi bi-calendar3"></i> ' + escHtml(g.fechaInicio || '—') + '</span>' +
-                    ' &nbsp;|&nbsp; <span><i class="bi bi-stopwatch"></i> ' + escHtml(duracion) + '</span>' +
-                    ' &nbsp;|&nbsp; <span><i class="bi bi-person"></i> ' + escHtml(g.operador || '—') + '</span>' +
-                    (g.numero ? ' &nbsp;|&nbsp; <span><i class="bi bi-telephone"></i> ' + escHtml(g.numero) + '</span>' : '') +
+                    '<span><i class="fas fa-calendar-alt3"></i> ' + escHtml(g.fechaInicio || '—') + '</span>' +
+                    ' &nbsp;|&nbsp; <span><i class="fas fa-stopwatch"></i> ' + escHtml(duracion) + '</span>' +
+                    ' &nbsp;|&nbsp; <span><i class="fas fa-user"></i> ' + escHtml(g.operador || '—') + '</span>' +
+                    (g.numero ? ' &nbsp;|&nbsp; <span><i class="fas fa-phone"></i> ' + escHtml(g.numero) + '</span>' : '') +
                 '</div>' +
                 audioHtml +
                 '<div class="grabacion-actions">' + downloadHtml + '</div>';
@@ -436,7 +436,7 @@ function escHtml(str) {
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="modalModulacionesLabel">
-                    <i class="bi bi-broadcast-pin"></i> Modulaciones &mdash; Exp. {{ $eventoCecoco->nro_expediente }}
+                    <i class="fas fa-broadcast-tower"></i> Modulaciones &mdash; Exp. {{ $eventoCecoco->nro_expediente }}
                 </h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
                     <span aria-hidden="true">&times;</span>
@@ -444,7 +444,7 @@ function escHtml(str) {
             </div>
             <div class="modal-body">
                 <div class="alert alert-info py-2 mb-2" id="modulaciones-ventana" style="display:none; font-size:.85rem;">
-                    <i class="bi bi-clock"></i> Ventana de búsqueda: <span id="mod-ventana-desde"></span> → <span id="mod-ventana-hasta"></span>
+                    <i class="fas fa-clock"></i> Ventana de búsqueda: <span id="mod-ventana-desde"></span> → <span id="mod-ventana-hasta"></span>
                     <span class="badge badge-light ml-1" id="mod-fuente" style="display:none;" title="De dónde se obtuvo el listado"></span>
                     <span class="badge badge-warning ml-1" id="mod-sin-audio" style="display:none;"
                           title="Modulaciones que ningún operador de CECOCO escuchó (no hay copia en el backup) y cuyo WAV no se puede obtener porque este servidor no tiene el Replay Server del grabador"></span>
@@ -452,7 +452,7 @@ function escHtml(str) {
                 <div id="modulaciones-filtro-wrap" class="mb-2" style="display:none;">
                     <div class="input-group input-group-sm">
                         <div class="input-group-prepend">
-                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
                         </div>
                         <input type="text" id="modulaciones-filtro" class="form-control" autocomplete="off"
                                placeholder="Filtrar por recurso, SSI, canal u hora (ej: M2231216, Cria 904, 06:16)...">
@@ -462,14 +462,14 @@ function escHtml(str) {
                     </div>
                 </div>
                 <div id="modulaciones-loading" class="text-center py-4">
-                    <i class="bi bi-arrow-repeat grabacion-spin"></i> Buscando modulaciones...
+                    <i class="fas fa-sync-alt grabacion-spin"></i> Buscando modulaciones...
                 </div>
                 <div id="modulaciones-empty" style="display:none;" class="text-center py-4 text-muted">
-                    <i class="bi bi-broadcast" style="font-size:2rem;"></i>
+                    <i class="fas fa-signal" style="font-size:2rem;"></i>
                     <p class="mt-2">No se encontraron modulaciones en la ventana del evento.</p>
                 </div>
                 <div id="modulaciones-sin-filtro" style="display:none;" class="text-center py-3 text-muted small">
-                    <i class="bi bi-funnel"></i> Ninguna modulación coincide con el filtro.
+                    <i class="fas fa-filter"></i> Ninguna modulación coincide con el filtro.
                 </div>
                 <div id="modulaciones-error" style="display:none;" class="alert alert-danger py-2"></div>
                 <div id="modulaciones-lista" style="display:none;"></div>
@@ -565,7 +565,7 @@ function abrirModulaciones() {
             var nOperadores = (m.operadores && m.operadores.length) ? m.operadores.length : (m.copias || 1);
             var opsBadge = (nOperadores > 1)
                 ? ' <span class="badge badge-secondary" title="Registrada por: ' + escHtml((m.operadores || []).join(', ')) + '">' +
-                      '<i class="bi bi-people-fill"></i> ' + nOperadores + '</span>'
+                      '<i class="fas fa-users"></i> ' + nOperadores + '</span>'
                 : '';
 
             // Texto sobre el que se filtra (recurso + canal + hora + ssi + tipo).
@@ -583,27 +583,27 @@ function abrirModulaciones() {
             // (Replay Server inaccesible), se muestra el aviso directamente.
             var audioHtml = (m.audioDisponible === false)
                 ? '<span class="mod-audio mod-audio-error badge badge-warning" title="El servidor no tiene acceso al Replay Server del grabador">' +
-                      '<i class="bi bi-volume-mute"></i> Audio no disponible</span>'
+                      '<i class="fas fa-volume-mute"></i> Audio no disponible</span>'
                 : '<audio class="mod-audio" controls preload="none">' +
                       '<source src="' + streamUrl + '">' +
                   '</audio>' +
                   '<a href="' + downloadUrl + '" class="btn btn-sm btn-outline-secondary mod-dl" download title="Descargar audio">' +
-                      '<i class="bi bi-download"></i>' +
+                      '<i class="fas fa-download"></i>' +
                   '</a>';
 
             card.innerHTML =
                 '<div class="mod-info">' +
                     '<div class="mod-titulo">' +
-                        '<i class="bi bi-mic-fill text-primary"></i> ' +
+                        '<i class="fas fa-microphone text-primary"></i> ' +
                         '<span class="mod-recurso" title="Quién moduló">' + escHtml(quien) + '</span>' +
-                        (destino ? ' <i class="bi bi-arrow-right mod-flecha"></i> <span class="mod-destino" title="A quién/qué grupo moduló">' + escHtml(destino) + '</span>' : '') +
+                        (destino ? ' <i class="fas fa-arrow-right mod-flecha"></i> <span class="mod-destino" title="A quién/qué grupo moduló">' + escHtml(destino) + '</span>' : '') +
                         tipoBadge + opsBadge +
                     '</div>' +
                     '<div class="mod-meta">' +
-                        '<span title="Hora de inicio"><i class="bi bi-clock"></i> ' + escHtml(hora) + '</span>' +
-                        '<span title="Duración"><i class="bi bi-stopwatch"></i> ' + escHtml(m.duracion || '—') + '</span>' +
-                        (llamante && quien.indexOf(llamante) === -1 ? '<span title="SSI que moduló"><i class="bi bi-mic"></i> SSI ' + escHtml(llamante) + '</span>' : '') +
-                        (sub ? '<span title="Canal"><i class="bi bi-broadcast"></i> ' + sub + '</span>' : '') +
+                        '<span title="Hora de inicio"><i class="fas fa-clock"></i> ' + escHtml(hora) + '</span>' +
+                        '<span title="Duración"><i class="fas fa-stopwatch"></i> ' + escHtml(m.duracion || '—') + '</span>' +
+                        (llamante && quien.indexOf(llamante) === -1 ? '<span title="SSI que moduló"><i class="fas fa-microphone-alt"></i> SSI ' + escHtml(llamante) + '</span>' : '') +
+                        (sub ? '<span title="Canal"><i class="fas fa-signal"></i> ' + sub + '</span>' : '') +
                     '</div>' +
                 '</div>' +
                 audioHtml;
@@ -618,7 +618,7 @@ function abrirModulaciones() {
                     if (audioEl) {
                         var aviso = document.createElement('span');
                         aviso.className = 'mod-audio mod-audio-error badge badge-warning';
-                        aviso.innerHTML = '<i class="bi bi-volume-mute"></i> Audio no disponible';
+                        aviso.innerHTML = '<i class="fas fa-volume-mute"></i> Audio no disponible';
                         audioEl.replaceWith(aviso);
                     }
                 });

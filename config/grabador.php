@@ -35,6 +35,10 @@ return [
     // hay resultados, se consulta la web del grabador como respaldo.
     'recordings_path'  => env('GRABADOR_RECORDINGS_PATH', env('CECOCO_RECORDINGS_PATH', 'G:\\Audios Cecoco')),
 
+    // Binario de ffmpeg para convertir a MP3 los WAV del grabador al descargarlos.
+    // Si no está disponible, la descarga cae al WAV original.
+    'ffmpeg_path' => env('GRABADOR_FFMPEG_PATH', 'ffmpeg'),
+
     // Tolerancia (en segundos) al emparejar una fila del grabador con un .mp3 del
     // backup local por hora de inicio (las copias de CECOCO arrancan con un pequeño
     // corrimiento respecto del grabador).

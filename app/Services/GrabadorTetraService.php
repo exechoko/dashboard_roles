@@ -161,6 +161,53 @@ class GrabadorTetraService
     }
 
     /**
+     * Convierte un WAV (contenido binario) a MP3 usando ffmpeg. Devuelve null si
+     * ffmpeg no está disponible o la conversión falla (se sirve el WAV original).
+     */
+    public function convertirWavAMp3(string $wav): ?string
+    {
+        $ffmpeg  = (string) config('grabador.ffmpeg_path', 'ffmpeg');
+        $baseTmp = tempnam(sys_get_temp_dir(), 'mod');
+
+        if ($baseTmp === false) {
+            return null;
+        }
+
+        $tmpWav = $baseTmp . '.wav';
+        $tmpMp3 = $baseTmp . '.mp3';
+
+        try {
+            file_put_contents($tmpWav, $wav);
+
+            $cmd = escapeshellarg($ffmpeg)
+                 . ' -y -i ' . escapeshellarg($tmpWav)
+                 . ' -codec:a libmp3lame -b:a 64k '
+                 . escapeshellarg($tmpMp3) . ' 2>&1';
+
+            exec($cmd, $output, $exitCode);
+
+            if ($exitCode !== 0 || !is_file($tmpMp3) || filesize($tmpMp3) === 0) {
+                Log::warning('GrabadorTetraService: conversión WAV a MP3 falló, se sirve el WAV', [
+                    'exit'   => $exitCode,
+                    'salida' => implode(' ', array_slice($output ?? [], -3)),
+                ]);
+
+                return null;
+            }
+
+            return file_get_contents($tmpMp3) ?: null;
+        } catch (\Exception $e) {
+            Log::warning('GrabadorTetraService: error al convertir a MP3', ['error' => $e->getMessage()]);
+
+            return null;
+        } finally {
+            @unlink($baseTmp);
+            @unlink($tmpWav);
+            @unlink($tmpMp3);
+        }
+    }
+
+    /**
      * Verifica si el Replay Server (que sirve los WAV) es alcanzable desde este
      * servidor. Está instalado como aplicación local: en máquinas sin él los WAV
      * del grabador no se pueden reproducir. Resultado cacheado 5 minutos.

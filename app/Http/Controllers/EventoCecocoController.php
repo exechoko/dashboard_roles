@@ -1027,21 +1027,28 @@ class EventoCecocoController extends Controller
                 return response()->json(['success' => false, 'message' => 'No se pudo obtener el audio de la modulación.'], 404);
             }
 
+            $contenido   = $response->getBody()->getContents();
             $disposition = $request->boolean('download') ? 'attachment' : 'inline';
             $nombre      = 'modulacion_' . $itemid . '.wav';
+            $mime        = 'audio/wav';
 
-            $headers = [
-                'Content-Type'        => 'audio/wav',
-                'Content-Disposition' => $disposition . '; filename="' . rawurlencode($nombre) . '"',
-                'Accept-Ranges'       => 'bytes',
-            ];
-
-            $contentLength = $response->getHeaderLine('Content-Length');
-            if ($contentLength !== '') {
-                $headers['Content-Length'] = $contentLength;
+            // Al descargar se convierte a MP3 (mucho más liviano); si ffmpeg no
+            // está disponible se entrega el WAV original.
+            if ($request->boolean('download')) {
+                $mp3 = $servicio->convertirWavAMp3($contenido);
+                if ($mp3 !== null) {
+                    $contenido = $mp3;
+                    $nombre    = 'modulacion_' . $itemid . '.mp3';
+                    $mime      = 'audio/mpeg';
+                }
             }
 
-            return response($response->getBody()->getContents(), 200, $headers);
+            return response($contenido, 200, [
+                'Content-Type'        => $mime,
+                'Content-Disposition' => $disposition . '; filename="' . rawurlencode($nombre) . '"',
+                'Content-Length'      => (string) strlen($contenido),
+                'Accept-Ranges'       => 'bytes',
+            ]);
         } catch (\Exception $e) {
             Log::error('stream modulacion grabador', ['itemid' => $itemid, 'error' => $e->getMessage()]);
 

@@ -24,16 +24,15 @@ class CecocoModulacionesLocalService
 {
     private string $baseDir;
     private string $marcadorTelefonia;
+    private int $toleranciaEmparejado;
 
     private const EXTENSIONES_AUDIO = ['mp3', 'wav', 'ogg', 'aac'];
 
-    /** Tolerancia (en segundos) al emparejar una fila del grabador con un archivo local. */
-    private const TOLERANCIA_EMPAREJADO = 3;
-
     public function __construct()
     {
-        $this->baseDir           = rtrim(config('grabador.recordings_path', 'G:\\Audios Cecoco'), '\\/');
-        $this->marcadorTelefonia = (string) config('grabador.marcador_telefonia', '(RDSI)');
+        $this->baseDir              = rtrim(config('grabador.recordings_path', 'G:\\Audios Cecoco'), '\\/');
+        $this->marcadorTelefonia    = (string) config('grabador.marcador_telefonia', '(RDSI)');
+        $this->toleranciaEmparejado = (int) config('grabador.tolerancia_emparejado', 5);
     }
 
     /**
@@ -116,7 +115,7 @@ class CecocoModulacionesLocalService
             $mejor       = null;
             $mejorDelta  = PHP_INT_MAX;
 
-            for ($delta = -self::TOLERANCIA_EMPAREJADO; $delta <= self::TOLERANCIA_EMPAREJADO; $delta++) {
+            for ($delta = -$this->toleranciaEmparejado; $delta <= $this->toleranciaEmparejado; $delta++) {
                 foreach ($porSegundo[$ts + $delta] ?? [] as $i) {
                     $durArchivo = $this->duracionASegundos($archivos[$i]['duracion']);
                     if ($durGrabador !== null && $durArchivo !== null && abs($durGrabador - $durArchivo) > 2) {

@@ -35,6 +35,11 @@ return [
     // hay resultados, se consulta la web del grabador como respaldo.
     'recordings_path'  => env('GRABADOR_RECORDINGS_PATH', env('CECOCO_RECORDINGS_PATH', 'G:\\Audios Cecoco')),
 
+    // Tolerancia (en segundos) al emparejar una fila del grabador con un .mp3 del
+    // backup local por hora de inicio (las copias de CECOCO arrancan con un pequeño
+    // corrimiento respecto del grabador).
+    'tolerancia_emparejado' => (int) env('GRABADOR_TOLERANCIA_EMPAREJADO', 5),
+
     // Las modulaciones de radio son todos los audios que NO son llamadas telefónicas.
     // Las telefónicas se identifican por este marcador en el nombre; el resto
     // (TETRA, Multiconferencia, Escucha, etc.) se considera modulación.

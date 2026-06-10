@@ -161,6 +161,38 @@ class GrabadorTetraService
     }
 
     /**
+     * Verifica si el Replay Server (que sirve los WAV) es alcanzable desde este
+     * servidor. Está instalado como aplicación local: en máquinas sin él los WAV
+     * del grabador no se pueden reproducir. Resultado cacheado 5 minutos.
+     */
+    public function replayDisponible(): bool
+    {
+        $cacheKey = 'grabador_replay_ok_' . md5($this->replayUrl);
+
+        return (bool) Cache::remember($cacheKey, now()->addMinutes(5), function (): bool {
+            $host = parse_url($this->replayUrl, PHP_URL_HOST) ?: 'localhost';
+            $port = parse_url($this->replayUrl, PHP_URL_PORT) ?: 8880;
+
+            $errno  = 0;
+            $errstr = '';
+            $socket = @fsockopen($host, (int) $port, $errno, $errstr, 2);
+
+            if ($socket === false) {
+                Log::info('GrabadorTetraService: Replay Server no disponible', [
+                    'replay_url' => $this->replayUrl,
+                    'error'      => $errstr ?: ('errno ' . $errno),
+                ]);
+
+                return false;
+            }
+
+            fclose($socket);
+
+            return true;
+        });
+    }
+
+    /**
      * Autentica contra el grabador y devuelve un SessionID válido (cacheado ~15 min).
      */
     private function autenticar(): string

@@ -930,6 +930,23 @@ class EventoCecocoController extends Controller
                     if (!empty($resultado['modulaciones'])) {
                         $resultado['modulaciones'] = $localService->emparejarConGrabador($resultado['modulaciones'], $desde, $hasta);
                         $resultado['fuente']       = 'grabador';
+
+                        // Los audios sin .mp3 local se sirven como WAV vía el Replay
+                        // Server, que es una aplicación local: si este servidor no lo
+                        // tiene, esos audios no se pueden reproducir.
+                        $sinMatch = count(array_filter($resultado['modulaciones'], fn ($m) => empty($m['path'])));
+                        if ($sinMatch > 0 && !$grabador->replayDisponible()) {
+                            if ($sinMatch === count($resultado['modulaciones'])) {
+                                $resultado = null; // nada reproducible: mejor la búsqueda local directa
+                            } else {
+                                foreach ($resultado['modulaciones'] as &$m) {
+                                    if (empty($m['path'])) {
+                                        $m['audioDisponible'] = false;
+                                    }
+                                }
+                                unset($m);
+                            }
+                        }
                     }
                 } catch (\Exception $e) {
                     Log::warning('modulaciones: grabador no disponible, se usa el disco local', [

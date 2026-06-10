@@ -445,6 +445,7 @@ function escHtml(str) {
             <div class="modal-body">
                 <div class="alert alert-info py-2 mb-2" id="modulaciones-ventana" style="display:none; font-size:.85rem;">
                     <i class="bi bi-clock"></i> Ventana de búsqueda: <span id="mod-ventana-desde"></span> → <span id="mod-ventana-hasta"></span>
+                    <span class="badge badge-light ml-1" id="mod-fuente" style="display:none;" title="De dónde se obtuvo el listado"></span>
                 </div>
                 <div id="modulaciones-filtro-wrap" class="mb-2" style="display:none;">
                     <div class="input-group input-group-sm">
@@ -512,6 +513,12 @@ function abrirModulaciones() {
             document.getElementById('modulaciones-ventana').style.display  = 'block';
         }
 
+        if (data.fuente) {
+            var fuenteEl = document.getElementById('mod-fuente');
+            fuenteEl.textContent   = (data.fuente === 'grabador') ? 'Fuente: grabador' : 'Fuente: backup local';
+            fuenteEl.style.display = '';
+        }
+
         if (!data.modulaciones || data.modulaciones.length === 0) {
             document.getElementById('modulaciones-empty').style.display = 'block';
             return;
@@ -561,6 +568,18 @@ function abrirModulaciones() {
             // El canal completo va en la línea de detalle sólo si difiere del título.
             var sub = (m.canal && m.canal !== quien) ? escHtml(m.canal) : '';
 
+            // Player + descarga; si el backend avisa que el audio no está disponible
+            // (Replay Server inaccesible), se muestra el aviso directamente.
+            var audioHtml = (m.audioDisponible === false)
+                ? '<span class="mod-audio mod-audio-error badge badge-warning" title="El servidor no tiene acceso al Replay Server del grabador">' +
+                      '<i class="bi bi-volume-mute"></i> Audio no disponible</span>'
+                : '<audio class="mod-audio" controls preload="none">' +
+                      '<source src="' + streamUrl + '">' +
+                  '</audio>' +
+                  '<a href="' + downloadUrl + '" class="btn btn-sm btn-outline-secondary mod-dl" download title="Descargar audio">' +
+                      '<i class="bi bi-download"></i>' +
+                  '</a>';
+
             card.innerHTML =
                 '<div class="mod-info">' +
                     '<div class="mod-titulo">' +
@@ -576,13 +595,23 @@ function abrirModulaciones() {
                         (sub ? '<span title="Canal"><i class="bi bi-broadcast"></i> ' + sub + '</span>' : '') +
                     '</div>' +
                 '</div>' +
-                '<audio class="mod-audio" controls preload="none">' +
-                    '<source src="' + streamUrl + '">' +
-                '</audio>' +
-                '<a href="' + downloadUrl + '" class="btn btn-sm btn-link mod-dl" download title="Descargar">' +
-                    '<i class="bi bi-download"></i>' +
-                '</a>';
+                audioHtml;
             lista.appendChild(card);
+
+            // Si el navegador no logra cargar el audio (ej. el proxy devuelve un
+            // error), se reemplaza el player por un aviso claro.
+            var sourceEl = card.querySelector('audio source');
+            if (sourceEl) {
+                sourceEl.addEventListener('error', function() {
+                    var audioEl = card.querySelector('audio');
+                    if (audioEl) {
+                        var aviso = document.createElement('span');
+                        aviso.className = 'mod-audio mod-audio-error badge badge-warning';
+                        aviso.innerHTML = '<i class="bi bi-volume-mute"></i> Audio no disponible';
+                        audioEl.replaceWith(aviso);
+                    }
+                });
+            }
         });
 
         document.getElementById('modulaciones-filtro-wrap').style.display = 'block';
@@ -651,7 +680,13 @@ $('#modalModulaciones').on('hide.bs.modal', function() {
 .modulacion-card .mod-flecha { color: #6c757d; }
 .modulacion-card .mod-tipo { font-size: .65rem; vertical-align: middle; }
 .modulacion-card .mod-audio { flex: 1 1 55%; height: 32px; max-width: 320px; }
-.modulacion-card .mod-dl { flex: 0 0 auto; padding: .1rem .3rem; }
+.modulacion-card .mod-audio-error {
+    height: auto;
+    padding: .35rem .5rem;
+    text-align: center;
+    white-space: normal;
+}
+.modulacion-card .mod-dl { flex: 0 0 auto; padding: .15rem .45rem; }
 @media (max-width: 575px) {
     .modulacion-card { flex-wrap: wrap; }
     .modulacion-card .mod-audio { flex: 1 1 100%; max-width: none; }

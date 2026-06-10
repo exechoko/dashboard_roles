@@ -432,7 +432,7 @@ function escHtml(str) {
 
 @push('scripts')
 <div class="modal fade" id="modalModulaciones" tabindex="-1" role="dialog" aria-labelledby="modalModulacionesLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="modalModulacionesLabel">
@@ -448,6 +448,8 @@ function escHtml(str) {
                     <span class="badge badge-light ml-1" id="mod-fuente" style="display:none;" title="De dónde se obtuvo el listado"></span>
                     <span class="badge badge-warning ml-1" id="mod-sin-audio" style="display:none;"
                           title="Modulaciones que ningún operador de CECOCO escuchó (no hay copia en el backup) y cuyo WAV no se puede obtener porque este servidor no tiene el Replay Server del grabador"></span>
+                    <span class="badge badge-success ml-1" id="mod-del-evento" style="display:none;"
+                          title="Modulaciones de recursos que intervinieron en este evento (resaltadas en verde)"></span>
                 </div>
                 <div id="modulaciones-filtro-wrap" class="mb-2" style="display:none;">
                     <div class="input-group input-group-sm">
@@ -483,6 +485,49 @@ function escHtml(str) {
 </div>
 
 <script>
+@php
+    $unidadesEvento = collect(optional($eventoCecoco->detalle)->detalle_json['tramites'] ?? [])
+        ->map(fn ($r) => trim((string) (($r['unidad'] ?? $r['tr_amites'] ?? '') ?: '')))
+        ->filter()
+        ->unique()
+        ->values();
+@endphp
+// Unidades de "Recursos que intervinieron" del evento (ej: P1018, Cria903, MP12).
+var recursosEvento = (@json($unidadesEvento)).map(function(u) {
+    var num = (String(u).match(/(\d{2,})/) || [])[1] || '';
+    return { codigo: String(u).toLowerCase().replace(/\s+/g, ''), num: num };
+});
+
+// Determina si la modulación pertenece a un recurso del evento: por código de la
+// unidad en la etiqueta (sin espacios), por número como token, o por sufijo del SSI.
+function esRecursoDelEvento(m) {
+    var label       = ((m.recurso || '') + ' ' + (m.canal || '') + ' ' + (m.grupo || '')).toLowerCase();
+    var labelSinEsp = label.replace(/\s+/g, '');
+    var ssi         = String(m.ssiLlamante || '');
+
+    return recursosEvento.some(function(r) {
+        if (r.codigo && labelSinEsp.indexOf(r.codigo) !== -1) { return true; }
+        if (r.num) {
+            if (new RegExp('(^|\\D)' + r.num + '($|\\D)').test(label)) { return true; }
+            if (r.num.length >= 3 && ssi.length >= r.num.length && ssi.slice(-r.num.length) === r.num) { return true; }
+        }
+        return false;
+    });
+}
+
+// Modulaciones ya escuchadas (persistidas por evento en el navegador).
+var MOD_LS_KEY = 'modEscuchadas_{{ $eventoCecoco->id }}';
+function cargarEscuchadas() {
+    try { return JSON.parse(localStorage.getItem(MOD_LS_KEY)) || []; } catch (e) { return []; }
+}
+function guardarEscuchada(clave) {
+    var lista = cargarEscuchadas();
+    if (lista.indexOf(clave) === -1) {
+        lista.push(clave);
+        try { localStorage.setItem(MOD_LS_KEY, JSON.stringify(lista)); } catch (e) {}
+    }
+}
+
 function abrirModulaciones() {
     document.getElementById('modulaciones-loading').style.display     = 'block';
     document.getElementById('modulaciones-empty').style.display       = 'none';
@@ -538,6 +583,9 @@ function abrirModulaciones() {
         var lista = document.getElementById('modulaciones-lista');
         lista.style.display = 'block';
 
+        var escuchadas = cargarEscuchadas();
+        var delEvento  = 0;
+
         data.modulaciones.forEach(function(m) {
             var streamUrl   = m.url;
             var downloadUrl = streamUrl + '&download=1';
@@ -579,6 +627,17 @@ function abrirModulaciones() {
             card.className = 'modulacion-card';
             card.setAttribute('data-filtro', filtro);
 
+            var claveAudio = m.itemid || streamUrl;
+            if (escuchadas.indexOf(claveAudio) !== -1) {
+                card.classList.add('mod-escuchada');
+            }
+
+            var esDelEvento = esRecursoDelEvento(m);
+            if (esDelEvento) {
+                card.classList.add('mod-del-evento');
+                delEvento++;
+            }
+
             // El canal completo va en la línea de detalle sólo si difiere del título.
             var sub = (m.canal && m.canal !== quien) ? escHtml(m.canal) : '';
 
@@ -597,7 +656,9 @@ function abrirModulaciones() {
             card.innerHTML =
                 '<div class="mod-info">' +
                     '<div class="mod-titulo">' +
-                        '<i class="fas fa-microphone text-primary"></i> ' +
+                        (esDelEvento
+                            ? '<i class="fas fa-truck text-success" title="Recurso que intervino en el evento"></i> '
+                            : '<i class="fas fa-microphone text-primary"></i> ') +
                         '<span class="mod-recurso" title="Quién moduló">' + escHtml(quien) + '</span>' +
                         (destino ? ' <i class="fas fa-arrow-right mod-flecha"></i> <span class="mod-destino" title="A quién/qué grupo moduló">' + escHtml(destino) + '</span>' : '') +
                         tipoBadge + opsBadge +
@@ -626,7 +687,24 @@ function abrirModulaciones() {
                     }
                 });
             }
+
+            // Marcar como escuchada al reproducir (queda guardado en el navegador).
+            var playerEl = card.querySelector('audio');
+            if (playerEl) {
+                playerEl.addEventListener('play', function() {
+                    card.classList.add('mod-escuchada');
+                    guardarEscuchada(claveAudio);
+                });
+            }
         });
+
+        var delEventoEl = document.getElementById('mod-del-evento');
+        if (delEvento > 0) {
+            delEventoEl.textContent   = delEvento + ' de recursos del evento';
+            delEventoEl.style.display = '';
+        } else {
+            delEventoEl.style.display = 'none';
+        }
 
         document.getElementById('modulaciones-filtro-wrap').style.display = 'block';
         filtrarModulaciones();
@@ -665,6 +743,9 @@ $('#modalModulaciones').on('hide.bs.modal', function() {
 </script>
 
 <style>
+#modalModulaciones .modal-dialog {
+    max-width: 1100px;
+}
 .modulacion-card {
     display: flex;
     align-items: center;
@@ -674,6 +755,22 @@ $('#modalModulaciones').on('hide.bs.modal', function() {
     border-radius: 6px;
     margin-bottom: .4rem;
     background: var(--bs-secondary-bg, #f8f9fa);
+    border-left: 4px solid transparent;
+}
+/* Modulación de un recurso que intervino en el evento. */
+.modulacion-card.mod-del-evento {
+    border-left-color: #28a745;
+    background: rgba(40, 167, 69, .08);
+}
+/* Modulación ya escuchada. */
+.modulacion-card.mod-escuchada {
+    opacity: .65;
+}
+.modulacion-card.mod-escuchada .mod-titulo::after {
+    content: '\2713';
+    color: #28a745;
+    margin-left: .35rem;
+    font-weight: 700;
 }
 .modulacion-card .mod-info { flex: 1 1 40%; min-width: 0; }
 .modulacion-card .mod-titulo {
@@ -693,7 +790,7 @@ $('#modalModulaciones').on('hide.bs.modal', function() {
 .modulacion-card .mod-destino { font-weight: 400; }
 .modulacion-card .mod-flecha { color: #6c757d; }
 .modulacion-card .mod-tipo { font-size: .65rem; vertical-align: middle; }
-.modulacion-card .mod-audio { flex: 1 1 55%; height: 32px; max-width: 320px; }
+.modulacion-card .mod-audio { flex: 1 1 55%; height: 32px; max-width: 420px; }
 .modulacion-card .mod-audio-error {
     height: auto;
     padding: .35rem .5rem;
@@ -711,6 +808,14 @@ $('#modalModulaciones').on('hide.bs.modal', function() {
     background: var(--bg-secondary, #0b1b31) !important;
     border-color: var(--border-color, rgba(255, 255, 255, .15)) !important;
     color: var(--text-primary, #eaf6ff);
+    border-left-color: transparent !important;
+}
+[data-theme="dark"] .modulacion-card.mod-del-evento {
+    border-left-color: #2ecc71 !important;
+    background: rgba(46, 204, 113, .12) !important;
+}
+[data-theme="dark"] .modulacion-card.mod-escuchada {
+    opacity: .55;
 }
 [data-theme="dark"] .modulacion-card .mod-dl {
     color: var(--text-primary, #eaf6ff) !important;

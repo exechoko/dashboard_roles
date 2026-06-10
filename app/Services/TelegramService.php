@@ -894,6 +894,8 @@ class TelegramService
             $mensaje .= "⏳ Pendientes hoy: <b>{$tareasHoy}</b>\n";
             $mensaje .= "📌 Pendientes mañana: <b>{$tareasManana}</b>\n";
 
+            $mensaje .= $this->formatearCpuVideo();
+
             $tamanoRest = Cache::get(CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES);
             $tamanoRestGps = Cache::get(CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES_GPS);
             $mensaje .= "\n━━━━━━━━━━━━━━━━━━\n";
@@ -936,6 +938,40 @@ class TelegramService
         }
 
         return $linea . "\n";
+    }
+
+    /**
+     * Sección de novedades con las PCs de operadores de video (grupo CCTV en
+     * LibreNMS) que superan el umbral de CPU, según la última lectura cacheada
+     * por el comando librenms:monitorear-cpu.
+     */
+    private function formatearCpuVideo(): string
+    {
+        $cache = Cache::get(LibreNmsService::CACHE_KEY_ULTIMO_USO);
+
+        if (empty($cache['dispositivos'])) {
+            return '';
+        }
+
+        $umbral = (int) config('librenms.umbral_cpu');
+        $altos = array_filter($cache['dispositivos'], fn (array $d) => $d['promedio'] > $umbral);
+
+        $texto = "\n━━━━━━━━━━━━━━━━━━\n";
+        $texto .= "🖥 <b>CPU OPERADORES DE VIDEO</b>\n";
+
+        if (empty($altos)) {
+            $texto .= "✅ Todos por debajo del {$umbral}%\n";
+        } else {
+            foreach ($altos as $d) {
+                $texto .= "⚠️ <b>{$d['hostname']}</b>: {$d['promedio']}% promedio (núcleo máx {$d['maximo']}%)\n";
+            }
+        }
+
+        if (!empty($cache['consultado_en'])) {
+            $texto .= '<i>Actualizado ' . Carbon::parse($cache['consultado_en'])->format('d/m H:i') . "</i>\n";
+        }
+
+        return $texto;
     }
 
     private function formatearTamanoRestauraciones(?array $cache): string

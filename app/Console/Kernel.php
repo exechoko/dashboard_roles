@@ -112,6 +112,13 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/cecoco_resumen_ia.log'));
 
+        // Vigila en LibreNMS el uso de CPU de las PCs de los operadores de video
+        // (grupo CCTV) y alerta por Telegram cuando un equipo supera el umbral.
+        $schedule->command('librenms:monitorear-cpu')
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/librenms_cpu.log'));
+
         // Pre-calienta el caché de conteos de geocodificación para el dashboard.
         // Se corre en background cada 5 min para que el endpoint nunca haga la query pesada en el request.
         $schedule->call(function () {

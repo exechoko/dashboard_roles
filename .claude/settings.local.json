@@ -54,7 +54,14 @@
       "PowerShell(php storage\\\\app\\\\test_pag3.php)",
       "PowerShell(php storage\\\\app\\\\test_pag4.php)",
       "PowerShell(php storage\\\\app\\\\test_ventana.php)",
-      "PowerShell(php -l app\\\\Http\\\\Controllers\\\\EventoCecocoController.php; php -l app\\\\Services\\\\CecocoModulacionesLocalService.php; php -l app\\\\Services\\\\GrabadorTetraService.php)"
+      "PowerShell(php -l app\\\\Http\\\\Controllers\\\\EventoCecocoController.php; php -l app\\\\Services\\\\CecocoModulacionesLocalService.php; php -l app\\\\Services\\\\GrabadorTetraService.php)",
+      "Read(//c/tmp/**)",
+      "Bash(rm -f lnms_cookies.txt)",
+      "Bash(sed 's/.*value=\"//')",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('total:',d.get\\('total'\\)\\); r=d['rows'][0]; print\\('keys:',list\\(r.keys\\(\\)\\)\\); [print\\(k,'=',str\\(v\\)[:120]\\) for k,v in r.items\\(\\) if k!='device_hostname']\")",
+      "Bash(python -c ' *)",
+      "Bash(python -)",
+      "Bash(grep -o '343[^0-9][^<]\\\\{0,80\\\\}' group9.html)"
     ]
   },
   "enableAllProjectMcpServers": true,

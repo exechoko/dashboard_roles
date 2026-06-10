@@ -505,6 +505,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/api/dashboard/workers-status', [App\Http\Controllers\HomeController::class, 'workersStatus'])
         ->name('api.dashboard.workers-status');
 
+    Route::get('/api/dashboard/estado-cctv', [App\Http\Controllers\HomeController::class, 'estadoCctv'])
+        ->name('api.dashboard.estado-cctv');
+
     Route::post('/api/dashboard/refresh-restauraciones', [App\Http\Controllers\HomeController::class, 'refreshRestauracionesCache'])
         ->middleware('throttle:3,1')
         ->name('api.dashboard.refresh-restauraciones');

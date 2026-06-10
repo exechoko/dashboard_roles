@@ -22,6 +22,7 @@ use App\Models\EntregaBodycam;
 use App\Models\TareaItem;
 use App\Services\CecocoExpedienteService;
 use App\Services\GeocodificacionService;
+use App\Services\LibreNmsService;
 use App\Jobs\ConsultarTamanoRestauracionesCecoco;
 use Carbon\Carbon;
 
@@ -526,6 +527,31 @@ class HomeController extends Controller
             ->get();
 
         return response()->json($puntos);
+    }
+
+    /**
+     * Estado CCTV (LibreNMS): última lectura de CPU de las PCs de operadores
+     * de video, cacheada por el comando librenms:monitorear-cpu. Devuelve los
+     * puestos con mayor carga, ya ordenados de mayor a menor.
+     */
+    public function estadoCctv(): JsonResponse
+    {
+        $cache = Cache::get(LibreNmsService::CACHE_KEY_ULTIMO_USO);
+
+        if (empty($cache['dispositivos'])) {
+            return response()->json(['disponible' => false]);
+        }
+
+        $umbral = (int) config('librenms.umbral_cpu');
+
+        return response()->json([
+            'disponible'    => true,
+            'umbral'        => $umbral,
+            'consultado_en' => $cache['consultado_en'] ?? null,
+            'puestos'       => array_slice($cache['dispositivos'], 0, 6),
+            'en_alerta'     => count(array_filter($cache['dispositivos'], fn (array $d) => $d['promedio'] > $umbral)),
+            'total'         => count($cache['dispositivos']),
+        ]);
     }
 
     public function workersStatus(): JsonResponse

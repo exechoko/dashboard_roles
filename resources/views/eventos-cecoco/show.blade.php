@@ -452,7 +452,7 @@ function escHtml(str) {
                             <span class="input-group-text"><i class="bi bi-search"></i></span>
                         </div>
                         <input type="text" id="modulaciones-filtro" class="form-control" autocomplete="off"
-                               placeholder="Filtrar por recurso, canal u hora (ej: M2231216, Cria 904, 06:16)...">
+                               placeholder="Filtrar por recurso, SSI, canal u hora (ej: M2231216, Cria 904, 06:16)...">
                         <div class="input-group-append">
                             <span class="input-group-text text-muted" id="modulaciones-contador">0</span>
                         </div>
@@ -523,18 +523,34 @@ function abrirModulaciones() {
         data.modulaciones.forEach(function(m) {
             var streamUrl   = m.url;
             var downloadUrl = streamUrl + '&download=1';
+            var hora        = (m.fechaInicio || '').split(' ')[1] || (m.fechaInicio || '—');
 
-            // Etiqueta principal: recurso si existe, si no el canal.
-            var etiqueta = m.recurso || m.canal || m.grupo || m.tipo || '—';
-            var hora     = (m.fechaInicio || '').split(' ')[1] || (m.fechaInicio || '—');
+            // Quién moduló: SSI llamante del grabador; si el recurso ya lo contiene
+            // (ej. "Cria 904 (M2230904)") se usa esa etiqueta, que es más clara.
+            var llamante = m.ssiLlamante || '';
+            var quien    = m.recurso || llamante || m.canal || m.grupo || '—';
+            if (llamante && m.recurso && m.recurso.indexOf(llamante) === -1) {
+                quien = m.recurso + ' (' + llamante + ')';
+            }
+
+            // A quién moduló: SSI llamado, o el grupo si fue una llamada de grupo.
+            var destino = m.ssiLlamado || m.grupo || '';
+
+            // Tipo de llamada (Símplex / Dúplex) según el grabador.
+            var tipoBadge = '';
+            if (m.tipo) {
+                var esDuplex = m.tipo.toLowerCase().indexOf('d') === 0;
+                tipoBadge = ' <span class="badge ' + (esDuplex ? 'badge-warning' : 'badge-info') +
+                            ' mod-tipo" title="Tipo de llamada">' + escHtml(m.tipo) + '</span>';
+            }
 
             var nOperadores = (m.operadores && m.operadores.length) ? m.operadores.length : (m.copias || 1);
             var opsBadge = (nOperadores > 1)
-                ? '<span class="badge badge-secondary ml-1" title="Registrada por: ' + escHtml((m.operadores || []).join(', ')) + '">' +
+                ? ' <span class="badge badge-secondary" title="Registrada por: ' + escHtml((m.operadores || []).join(', ')) + '">' +
                       '<i class="bi bi-people-fill"></i> ' + nOperadores + '</span>'
                 : '';
 
-            // Texto sobre el que se filtra (recurso + canal + hora + ssi).
+            // Texto sobre el que se filtra (recurso + canal + hora + ssi + tipo).
             var filtro = [m.recurso, m.canal, m.grupo, m.tipo, m.fechaInicio, m.ssiLlamante, m.ssiLlamado]
                 .filter(Boolean).join(' ').toLowerCase();
 
@@ -542,19 +558,22 @@ function abrirModulaciones() {
             card.className = 'modulacion-card';
             card.setAttribute('data-filtro', filtro);
 
-            // Subtítulo: el canal sólo si difiere de la etiqueta principal.
-            var sub = (m.canal && m.canal !== etiqueta) ? escHtml(m.canal) : '';
+            // El canal completo va en la línea de detalle sólo si difiere del título.
+            var sub = (m.canal && m.canal !== quien) ? escHtml(m.canal) : '';
 
             card.innerHTML =
                 '<div class="mod-info">' +
                     '<div class="mod-titulo">' +
-                        '<i class="bi bi-broadcast-pin text-primary"></i> ' +
-                        '<span class="mod-recurso">' + escHtml(etiqueta) + '</span>' + opsBadge +
+                        '<i class="bi bi-mic-fill text-primary"></i> ' +
+                        '<span class="mod-recurso" title="Quién moduló">' + escHtml(quien) + '</span>' +
+                        (destino ? ' <i class="bi bi-arrow-right mod-flecha"></i> <span class="mod-destino" title="A quién/qué grupo moduló">' + escHtml(destino) + '</span>' : '') +
+                        tipoBadge + opsBadge +
                     '</div>' +
                     '<div class="mod-meta">' +
-                        '<span><i class="bi bi-clock"></i> ' + escHtml(hora) + '</span>' +
-                        '<span><i class="bi bi-stopwatch"></i> ' + escHtml(m.duracion || '—') + '</span>' +
-                        (sub ? '<span><i class="bi bi-broadcast"></i> ' + sub + '</span>' : '') +
+                        '<span title="Hora de inicio"><i class="bi bi-clock"></i> ' + escHtml(hora) + '</span>' +
+                        '<span title="Duración"><i class="bi bi-stopwatch"></i> ' + escHtml(m.duracion || '—') + '</span>' +
+                        (llamante && quien.indexOf(llamante) === -1 ? '<span title="SSI que moduló"><i class="bi bi-mic"></i> SSI ' + escHtml(llamante) + '</span>' : '') +
+                        (sub ? '<span title="Canal"><i class="bi bi-broadcast"></i> ' + sub + '</span>' : '') +
                     '</div>' +
                 '</div>' +
                 '<audio class="mod-audio" controls preload="none">' +
@@ -628,12 +647,29 @@ $('#modalModulaciones').on('hide.bs.modal', function() {
     gap: .6rem;
     flex-wrap: wrap;
 }
+.modulacion-card .mod-destino { font-weight: 400; }
+.modulacion-card .mod-flecha { color: #6c757d; }
+.modulacion-card .mod-tipo { font-size: .65rem; vertical-align: middle; }
 .modulacion-card .mod-audio { flex: 1 1 55%; height: 32px; max-width: 320px; }
 .modulacion-card .mod-dl { flex: 0 0 auto; padding: .1rem .3rem; }
 @media (max-width: 575px) {
     .modulacion-card { flex-wrap: wrap; }
     .modulacion-card .mod-audio { flex: 1 1 100%; max-width: none; }
 }
+
+/* Modo oscuro */
+[data-theme="dark"] .modulacion-card {
+    background: var(--bg-secondary, #0b1b31) !important;
+    border-color: var(--border-color, rgba(255, 255, 255, .15)) !important;
+    color: var(--text-primary, #eaf6ff);
+}
+[data-theme="dark"] .modulacion-card .mod-titulo { color: var(--text-primary, #eaf6ff); }
+[data-theme="dark"] .modulacion-card .mod-meta,
+[data-theme="dark"] .modulacion-card .mod-flecha { color: var(--text-secondary, #9fb6c9); }
+[data-theme="dark"] .modulacion-card .mod-audio { color-scheme: dark; }
+[data-theme="dark"] #modulaciones-empty,
+[data-theme="dark"] #modulaciones-sin-filtro,
+[data-theme="dark"] #modulaciones-loading { color: var(--text-secondary, #9fb6c9) !important; }
 </style>
 @endpush
 

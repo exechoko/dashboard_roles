@@ -27,6 +27,9 @@ class CecocoModulacionesLocalService
 
     private const EXTENSIONES_AUDIO = ['mp3', 'wav', 'ogg', 'aac'];
 
+    /** Tolerancia (en segundos) al emparejar una fila del grabador con un archivo local. */
+    private const TOLERANCIA_EMPAREJADO = 3;
+
     public function __construct()
     {
         $this->baseDir           = rtrim(config('grabador.recordings_path', 'G:\\Audios Cecoco'), '\\/');
@@ -41,13 +44,126 @@ class CecocoModulacionesLocalService
     public function buscarModulaciones(Carbon $desde, Carbon $hasta): array
     {
         $modulaciones = [];
-        $vistos       = [];
-        $realBase     = realpath($this->baseDir) ?: $this->baseDir;
+
+        foreach ($this->archivosEnVentana($desde, $hasta) as $modulacion) {
+            // CECOCO graba la misma modulación una vez por operador que la escucha;
+            // se colapsan las copias por inicio + duración + canal (sólo difieren
+            // en el id inicial y en la carpeta del operador).
+            $clave = $modulacion['fechaInicio'] . '|' . $modulacion['duracion'] . '|' . $modulacion['canal'];
+
+            if (isset($modulaciones[$clave])) {
+                $modulaciones[$clave]['copias']++;
+                if (!in_array($modulacion['operador'], $modulaciones[$clave]['operadores'], true)) {
+                    $modulaciones[$clave]['operadores'][] = $modulacion['operador'];
+                }
+            } else {
+                $modulacion['copias']     = 1;
+                $modulacion['operadores'] = $modulacion['operador'] !== '' ? [$modulacion['operador']] : [];
+                $modulaciones[$clave]     = $modulacion;
+            }
+        }
+
+        $modulaciones = array_values($modulaciones);
+        usort($modulaciones, fn ($a, $b) => strcmp($a['fechaInicio'], $b['fechaInicio']));
+
+        Log::info('CecocoModulacionesLocalService: modulaciones encontradas', [
+            'desde'  => $desde->format('Y-m-d H:i:s'),
+            'hasta'  => $hasta->format('Y-m-d H:i:s'),
+            'unicas' => count($modulaciones),
+            'copias' => array_sum(array_column($modulaciones, 'copias')),
+        ]);
+
+        return [
+            'modulaciones' => $modulaciones,
+            'ventana'      => $this->ventana($desde, $hasta),
+            'fuente'       => 'local',
+        ];
+    }
+
+    /**
+     * Empareja las modulaciones que devuelve el grabador (una fila por modulación
+     * real) con los .mp3 del backup local, por hora de inicio (± tolerancia) y
+     * duración. Los ids no sirven para cruzar: el rowid del grabador no coincide
+     * con el número inicial del nombre del archivo (que además cambia por copia).
+     * Cuando hay coincidencia se agrega 'path' para servir el .mp3 local en lugar
+     * del WAV del Replay Server.
+     *
+     * @param array<int, array<string, mixed>> $modulacionesGrabador
+     * @return array<int, array<string, mixed>>
+     */
+    public function emparejarConGrabador(array $modulacionesGrabador, Carbon $desde, Carbon $hasta): array
+    {
+        $archivos = $this->archivosEnVentana($desde, $hasta);
+        if (empty($archivos) || empty($modulacionesGrabador)) {
+            return $modulacionesGrabador;
+        }
+
+        $porSegundo = [];
+        foreach ($archivos as $i => $archivo) {
+            $porSegundo[Carbon::parse($archivo['fechaInicio'])->getTimestamp()][] = $i;
+        }
+
+        $emparejadas = 0;
+
+        foreach ($modulacionesGrabador as &$m) {
+            try {
+                $ts = Carbon::parse($m['fechaInicio'])->getTimestamp();
+            } catch (\Exception $e) {
+                continue;
+            }
+
+            $durGrabador = $this->duracionASegundos((string) ($m['duracion'] ?? ''));
+            $mejor       = null;
+            $mejorDelta  = PHP_INT_MAX;
+
+            for ($delta = -self::TOLERANCIA_EMPAREJADO; $delta <= self::TOLERANCIA_EMPAREJADO; $delta++) {
+                foreach ($porSegundo[$ts + $delta] ?? [] as $i) {
+                    $durArchivo = $this->duracionASegundos($archivos[$i]['duracion']);
+                    if ($durGrabador !== null && $durArchivo !== null && abs($durGrabador - $durArchivo) > 2) {
+                        continue;
+                    }
+                    if (abs($delta) < $mejorDelta) {
+                        $mejorDelta = abs($delta);
+                        $mejor      = $archivos[$i];
+                    }
+                }
+            }
+
+            if ($mejor !== null) {
+                $m['path']        = $mejor['path'];
+                $m['fuenteAudio'] = 'local';
+                if (empty($m['recurso']) && $mejor['recurso'] !== '') {
+                    $m['recurso'] = $mejor['recurso'];
+                }
+                $emparejadas++;
+            }
+        }
+        unset($m);
+
+        Log::info('CecocoModulacionesLocalService: emparejado con grabador', [
+            'grabador'    => count($modulacionesGrabador),
+            'emparejadas' => $emparejadas,
+        ]);
+
+        return $modulacionesGrabador;
+    }
+
+    /**
+     * Escanea el disco y devuelve todos los archivos de modulación de la ventana,
+     * sin deduplicar (una entrada por archivo/copia).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function archivosEnVentana(Carbon $desde, Carbon $hasta): array
+    {
+        $resultado = [];
+        $vistos    = [];
+        $realBase  = realpath($this->baseDir) ?: $this->baseDir;
 
         if (!is_dir($this->baseDir)) {
             Log::debug('CecocoModulacionesLocalService: directorio base no existe', ['baseDir' => $this->baseDir]);
 
-            return ['modulaciones' => [], 'ventana' => $this->ventana($desde, $hasta), 'fuente' => 'local'];
+            return [];
         }
 
         $cursor = $desde->copy()->startOfMinute();
@@ -89,47 +205,38 @@ class CecocoModulacionesLocalService
                         continue;
                     }
 
-                    $fechaArchivo = Carbon::parse($modulacion['fechaInicio']);
-                    if (!$fechaArchivo->between($desde, $hasta)) {
+                    if (!Carbon::parse($modulacion['fechaInicio'])->between($desde, $hasta)) {
                         continue;
                     }
 
-                    // CECOCO graba la misma modulación una vez por operador que la escucha;
-                    // se colapsan las copias por inicio + duración + canal (sólo difieren
-                    // en el id inicial y en la carpeta del operador).
-                    $clave = $modulacion['fechaInicio'] . '|' . $modulacion['duracion'] . '|' . $modulacion['canal'];
-
-                    if (isset($modulaciones[$clave])) {
-                        $modulaciones[$clave]['copias']++;
-                        if (!in_array($modulacion['operador'], $modulaciones[$clave]['operadores'], true)) {
-                            $modulaciones[$clave]['operadores'][] = $modulacion['operador'];
-                        }
-                    } else {
-                        $modulacion['copias']     = 1;
-                        $modulacion['operadores'] = $modulacion['operador'] !== '' ? [$modulacion['operador']] : [];
-                        $modulaciones[$clave]     = $modulacion;
-                    }
+                    $resultado[] = $modulacion;
                 }
             }
 
             $cursor->addMinute();
         }
 
-        $modulaciones = array_values($modulaciones);
-        usort($modulaciones, fn ($a, $b) => strcmp($a['fechaInicio'], $b['fechaInicio']));
+        return $resultado;
+    }
 
-        Log::info('CecocoModulacionesLocalService: modulaciones encontradas', [
-            'desde'  => $desde->format('Y-m-d H:i:s'),
-            'hasta'  => $hasta->format('Y-m-d H:i:s'),
-            'unicas' => count($modulaciones),
-            'copias' => array_sum(array_column($modulaciones, 'copias')),
-        ]);
+    /**
+     * Convierte una duración ("21", "00:21", "0:00:21") a segundos.
+     */
+    private function duracionASegundos(string $duracion): ?int
+    {
+        $duracion = trim($duracion);
 
-        return [
-            'modulaciones' => $modulaciones,
-            'ventana'      => $this->ventana($desde, $hasta),
-            'fuente'       => 'local',
-        ];
+        if ($duracion === '') {
+            return null;
+        }
+        if (ctype_digit($duracion)) {
+            return (int) $duracion;
+        }
+        if (preg_match('/^(?:(\d+):)?(\d{1,2}):(\d{2})$/', $duracion, $m)) {
+            return ((int) $m[1]) * 3600 + ((int) $m[2]) * 60 + (int) $m[3];
+        }
+
+        return null;
     }
 
     /**

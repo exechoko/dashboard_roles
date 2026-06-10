@@ -915,26 +915,45 @@ class EventoCecocoController extends Controller
             : $eventoCecoco->fecha_hora->copy()->addMinutes((int) config('grabador.minutos_despues_sin_cierre', 60));
 
         try {
-            // 1. Buscar en disco local (rápido, no consulta el grabador).
             $localService = new CecocoModulacionesLocalService();
-            $resultado    = $localService->buscarModulaciones($desde, $hasta);
+            $resultado    = null;
+
+            // 1. El grabador es la fuente autoritativa: devuelve una sola fila por
+            //    modulación real (CECOCO en cambio graba una copia por operador que
+            //    escucha). Cada fila se empareja con su .mp3 del backup local por
+            //    hora de inicio y duración para servir el audio desde disco.
+            if (config('grabador.url')) {
+                try {
+                    $grabador  = new GrabadorTetraService();
+                    $resultado = $grabador->buscarModulaciones($desde, $hasta);
+
+                    if (!empty($resultado['modulaciones'])) {
+                        $resultado['modulaciones'] = $localService->emparejarConGrabador($resultado['modulaciones'], $desde, $hasta);
+                        $resultado['fuente']       = 'grabador';
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('modulaciones: grabador no disponible, se usa el disco local', [
+                        'evento_id' => $eventoCecoco->id,
+                        'error'     => $e->getMessage(),
+                    ]);
+                    $resultado = null;
+                }
+            }
+
+            // 2. Respaldo: búsqueda directa en disco local (deduplicando copias por operador).
+            if ($resultado === null || empty($resultado['modulaciones'])) {
+                $resultado = $localService->buscarModulaciones($desde, $hasta);
+            }
 
             foreach ($resultado['modulaciones'] as &$m) {
-                $m['url'] = route('api.cecoco.modulacion.stream', ['path' => base64_encode($m['path'])]);
-                unset($m['path']); // no exponer la ruta física al cliente
-            }
-            unset($m);
-
-            // 2. Si no hubo resultados locales, consultar la web del grabador como respaldo.
-            if (empty($resultado['modulaciones']) && config('grabador.url')) {
-                $grabador  = new GrabadorTetraService();
-                $resultado = $grabador->buscarModulaciones($desde, $hasta);
-
-                foreach ($resultado['modulaciones'] as &$m) {
+                if (!empty($m['path'])) {
+                    $m['url'] = route('api.cecoco.modulacion.stream', ['path' => base64_encode($m['path'])]);
+                    unset($m['path']); // no exponer la ruta física al cliente
+                } else {
                     $m['url'] = route('api.cecoco.modulacion.stream', ['itemid' => $m['itemid']]);
                 }
-                unset($m);
             }
+            unset($m);
 
             return response()->json([
                 'success'      => true,

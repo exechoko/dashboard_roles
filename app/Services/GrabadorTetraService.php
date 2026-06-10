@@ -272,17 +272,34 @@ class GrabadorTetraService
             return null;
         }
 
+        $grupo = $campos[self::F_GRUPO] ?? '';
+        $canal = $campos[self::F_CANAL] ?? '';
+
         return [
             'itemid'      => $rowId . '_' . $inicioRaw,
             'fechaInicio' => $this->formatearFecha($inicioRaw),
             'fechaFin'    => $this->formatearFecha($campos[self::F_FIN] ?? ''),
             'duracion'    => $campos[self::F_DURACION] ?? '',
-            'grupo'       => $campos[self::F_GRUPO] ?? '',
-            'canal'       => $campos[self::F_CANAL] ?? '',
+            'grupo'       => $grupo,
+            'canal'       => $canal,
+            'recurso'     => $this->extraerRecurso($canal !== '' ? $canal : $grupo),
             'tipo'        => $campos[self::F_TIPO_COM] ?? '',
             'ssiLlamante' => $campos[self::F_SSI_LLAMANTE] ?? '',
             'ssiLlamado'  => $campos[self::F_SSI_LLAMADO] ?? '',
         ];
+    }
+
+    /**
+     * Extrae el recurso/unidad de la etiqueta del canal: lo que está entre corchetes.
+     * Ej: "GENERAL (Grupo) [Cria 904 (M2230904)] (TETRA)" → "Cria 904 (M2230904)".
+     */
+    private function extraerRecurso(string $canal): string
+    {
+        if (preg_match('/\[([^\]]+)\]/', $canal, $m)) {
+            return trim($m[1]);
+        }
+
+        return '';
     }
 
     /**

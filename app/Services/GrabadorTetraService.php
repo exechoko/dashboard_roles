@@ -161,13 +161,16 @@ class GrabadorTetraService
     }
 
     /**
-     * Convierte un WAV (contenido binario) a MP3 usando ffmpeg. Devuelve null si
-     * ffmpeg no está disponible o la conversión falla (se sirve el WAV original).
+     * Convierte un WAV (contenido binario) a MP3. El conversor se configura en
+     * grabador.ffmpeg_path y puede ser ffmpeg o lame.exe (útil en servidores
+     * viejos donde los builds nuevos de ffmpeg no corren: el WAV del grabador es
+     * PCM 16 bits / 8 kHz, que LAME codifica directo). Devuelve null si el
+     * conversor no está disponible o falla (se sirve el WAV original).
      */
     public function convertirWavAMp3(string $wav): ?string
     {
-        $ffmpeg  = (string) config('grabador.ffmpeg_path', 'ffmpeg');
-        $baseTmp = tempnam(sys_get_temp_dir(), 'mod');
+        $conversor = (string) config('grabador.ffmpeg_path', 'ffmpeg');
+        $baseTmp   = tempnam(sys_get_temp_dir(), 'mod');
 
         if ($baseTmp === false) {
             return null;
@@ -179,17 +182,22 @@ class GrabadorTetraService
         try {
             file_put_contents($tmpWav, $wav);
 
-            $cmd = escapeshellarg($ffmpeg)
-                 . ' -y -i ' . escapeshellarg($tmpWav)
-                 . ' -codec:a libmp3lame -b:a 64k '
-                 . escapeshellarg($tmpMp3) . ' 2>&1';
+            $cmd = str_contains(strtolower(basename($conversor)), 'lame')
+                ? escapeshellarg($conversor)
+                    . ' --silent -b 64 '
+                    . escapeshellarg($tmpWav) . ' ' . escapeshellarg($tmpMp3) . ' 2>&1'
+                : escapeshellarg($conversor)
+                    . ' -y -i ' . escapeshellarg($tmpWav)
+                    . ' -codec:a libmp3lame -b:a 64k '
+                    . escapeshellarg($tmpMp3) . ' 2>&1';
 
             exec($cmd, $output, $exitCode);
 
             if ($exitCode !== 0 || !is_file($tmpMp3) || filesize($tmpMp3) === 0) {
                 Log::warning('GrabadorTetraService: conversión WAV a MP3 falló, se sirve el WAV', [
-                    'exit'   => $exitCode,
-                    'salida' => implode(' ', array_slice($output ?? [], -3)),
+                    'conversor' => $conversor,
+                    'exit'      => $exitCode,
+                    'salida'    => implode(' ', array_slice($output ?? [], -3)),
                 ]);
 
                 return null;

@@ -41,7 +41,10 @@
       "PowerShell(php storage\\\\app\\\\test_replay_directo.php)",
       "PowerShell(php -l app\\\\Http\\\\Controllers\\\\EventoCecocoController.php)",
       "PowerShell(try { \\(Get-Command ffmpeg -ErrorAction Stop\\).Source } catch { 'ffmpeg no esta en PATH' })",
-      "PowerShell(php -l app\\\\Services\\\\GrabadorTetraService.php; php -l app\\\\Http\\\\Controllers\\\\EventoCecocoController.php)"
+      "PowerShell(php -l app\\\\Services\\\\GrabadorTetraService.php; php -l app\\\\Http\\\\Controllers\\\\EventoCecocoController.php)",
+      "PowerShell(php storage\\\\app\\\\test_wavinfo.php)",
+      "PowerShell(php -l app\\\\Services\\\\GrabadorTetraService.php)",
+      "PowerShell(php storage\\\\app\\\\test_lame.php)"
     ]
   },
   "enableAllProjectMcpServers": true,

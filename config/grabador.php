@@ -35,8 +35,9 @@ return [
     // hay resultados, se consulta la web del grabador como respaldo.
     'recordings_path'  => env('GRABADOR_RECORDINGS_PATH', env('CECOCO_RECORDINGS_PATH', 'G:\\Audios Cecoco')),
 
-    // Binario de ffmpeg para convertir a MP3 los WAV del grabador al descargarlos.
-    // Si no está disponible, la descarga cae al WAV original.
+    // Conversor para pasar a MP3 los WAV del grabador al descargarlos: ffmpeg o
+    // lame.exe (en servidores viejos tipo 2012 R2 usar lame, que es un único .exe
+    // sin dependencias). Si no está disponible, la descarga cae al WAV original.
     'ffmpeg_path' => env('GRABADOR_FFMPEG_PATH', 'ffmpeg'),
 
     // Tolerancia (en segundos) al emparejar una fila del grabador con un .mp3 del

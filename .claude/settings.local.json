@@ -37,7 +37,9 @@
       "PowerShell(php storage\\\\app\\\\test_emparejar.php)",
       "PowerShell(Remove-Item *)",
       "mcp__laravel-boost__read-log-entries",
-      "PowerShell(php artisan tinker --no-interaction --execute=\"$s = new App\\\\Services\\\\GrabadorTetraService\\(\\); var_dump\\($s->replayDisponible\\(\\)\\); config\\(['grabador.replay_url' => 'http://localhost:9999']\\); Illuminate\\\\Support\\\\Facades\\\\Cache::forget\\('grabador_replay_ok_' . md5\\('http://localhost:9999'\\)\\); $s2 = new App\\\\Services\\\\GrabadorTetraService\\(\\); var_dump\\($s2->replayDisponible\\(\\)\\);\")"
+      "PowerShell(php artisan tinker --no-interaction --execute=\"$s = new App\\\\Services\\\\GrabadorTetraService\\(\\); var_dump\\($s->replayDisponible\\(\\)\\); config\\(['grabador.replay_url' => 'http://localhost:9999']\\); Illuminate\\\\Support\\\\Facades\\\\Cache::forget\\('grabador_replay_ok_' . md5\\('http://localhost:9999'\\)\\); $s2 = new App\\\\Services\\\\GrabadorTetraService\\(\\); var_dump\\($s2->replayDisponible\\(\\)\\);\")",
+      "PowerShell(php storage\\\\app\\\\test_replay_directo.php)",
+      "PowerShell(php -l app\\\\Http\\\\Controllers\\\\EventoCecocoController.php)"
     ]
   },
   "enableAllProjectMcpServers": true,

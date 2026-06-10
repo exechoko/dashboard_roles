@@ -446,6 +446,8 @@ function escHtml(str) {
                 <div class="alert alert-info py-2 mb-2" id="modulaciones-ventana" style="display:none; font-size:.85rem;">
                     <i class="bi bi-clock"></i> Ventana de búsqueda: <span id="mod-ventana-desde"></span> → <span id="mod-ventana-hasta"></span>
                     <span class="badge badge-light ml-1" id="mod-fuente" style="display:none;" title="De dónde se obtuvo el listado"></span>
+                    <span class="badge badge-warning ml-1" id="mod-sin-audio" style="display:none;"
+                          title="Modulaciones que ningún operador de CECOCO escuchó (no hay copia en el backup) y cuyo WAV no se puede obtener porque este servidor no tiene el Replay Server del grabador"></span>
                 </div>
                 <div id="modulaciones-filtro-wrap" class="mb-2" style="display:none;">
                     <div class="input-group input-group-sm">
@@ -517,6 +519,15 @@ function abrirModulaciones() {
             var fuenteEl = document.getElementById('mod-fuente');
             fuenteEl.textContent   = (data.fuente === 'grabador') ? 'Fuente: grabador' : 'Fuente: backup local';
             fuenteEl.style.display = '';
+        }
+
+        var sinAudio = (data.modulaciones || []).filter(function(m) { return m.audioDisponible === false; }).length;
+        var sinAudioEl = document.getElementById('mod-sin-audio');
+        if (sinAudio > 0) {
+            sinAudioEl.textContent   = sinAudio + ' sin audio';
+            sinAudioEl.style.display = '';
+        } else {
+            sinAudioEl.style.display = 'none';
         }
 
         if (!data.modulaciones || data.modulaciones.length === 0) {
@@ -697,6 +708,13 @@ $('#modalModulaciones').on('hide.bs.modal', function() {
     background: var(--bg-secondary, #0b1b31) !important;
     border-color: var(--border-color, rgba(255, 255, 255, .15)) !important;
     color: var(--text-primary, #eaf6ff);
+}
+[data-theme="dark"] .modulacion-card .mod-dl {
+    color: var(--text-primary, #eaf6ff) !important;
+    border-color: rgba(255, 255, 255, .45) !important;
+}
+[data-theme="dark"] .modulacion-card .mod-dl:hover {
+    background: rgba(255, 255, 255, .15) !important;
 }
 [data-theme="dark"] .modulacion-card .mod-titulo { color: var(--text-primary, #eaf6ff); }
 [data-theme="dark"] .modulacion-card .mod-meta,

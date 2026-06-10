@@ -31,7 +31,11 @@
       "PowerShell(php artisan route:list --name=resumen-ia)",
       "PowerShell(php artisan cecoco:prefetch-detalles --fecha=2026-05-12 --limite=5 --refrescar --pausa=100)",
       "PowerShell(php artisan cecoco:prefetch-detalles --fecha=2026-05-11 --limite=3 --pausa=100)",
-      "PowerShell(php artisan cecoco:resumir-pendientes)"
+      "PowerShell(php artisan cecoco:resumir-pendientes)",
+      "Bash(claude update *)",
+      "PowerShell(php -l app\\\\Services\\\\CecocoModulacionesLocalService.php; php -l app\\\\Services\\\\GrabadorTetraService.php; php -l app\\\\Http\\\\Controllers\\\\EventoCecocoController.php)",
+      "PowerShell(php storage\\\\app\\\\test_emparejar.php)",
+      "PowerShell(Remove-Item *)"
     ]
   },
   "enableAllProjectMcpServers": true,

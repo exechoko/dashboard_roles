@@ -30,14 +30,15 @@ class GrabadorTetraService
     private const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:115.0) Gecko/20100101 Firefox/115.0';
 
     /** Ids de descriptores TETRA devueltos por el grabador en cada fila. */
-    private const F_INICIO       = '1';
-    private const F_FIN          = '14';
-    private const F_DURACION     = '18';
-    private const F_GRUPO        = '23';
-    private const F_CANAL        = '24';
-    private const F_TIPO_COM     = '98';
-    private const F_SSI_LLAMANTE = '102';
-    private const F_SSI_LLAMADO  = '105';
+    private const F_INICIO         = '1';
+    private const F_FIN            = '14';
+    private const F_DURACION       = '18';
+    private const F_GRUPO          = '23';
+    private const F_CANAL          = '24';
+    private const F_TIPO_COM       = '98';
+    private const F_SIMPLEX_DUPLEX = '99';
+    private const F_SSI_LLAMANTE   = '102';
+    private const F_SSI_LLAMADO    = '105';
 
     public function __construct()
     {
@@ -68,7 +69,6 @@ class GrabadorTetraService
             'criteriacount'     => '1',
             'replaytophone'     => '0',
             'SearchDirection'   => '1',
-            'MaximumResults'    => (string) config('grabador.max_resultados', 500),
             'Criteria1FieldID'  => '1',
             'Criteria1FieldType'=> '3',
             'Criteria1Type'     => '2',
@@ -97,8 +97,59 @@ class GrabadorTetraService
             ];
         }
 
+        // El grabador pagina: la primera página la limita la preferencia del usuario
+        // (típicamente 100 filas). Las siguientes se piden con "continuesearch",
+        // que es asíncrono: devuelve un searchid nuevo y los resultados se
+        // recuperan con "getstatus" hasta que searchStatus sea "done".
+        // "maximumresults" es un ENUM (1=25, 2=50, 3=100, 4=200, 5=500, 6=750,
+        // 7=1000), no una cantidad.
+        $filas       = $json['results']['gridRows'];
+        $searchId    = $json['searchid'] ?? null;
+        $maxTotal    = (int) config('grabador.max_resultados', 500);
+        $skip        = count($filas);
+        $iteraciones = 0;
+
+        while (!empty($searchId) && $skip > 0 && count($filas) < $maxTotal && $iteraciones < 10) {
+            $iteraciones++;
+
+            $respPag = $client->get($this->baseUrl . '/', [
+                'query' => [
+                    'id'             => 'searchapi',
+                    'SessionID'      => $sessionId,
+                    'action'         => 'continuesearch',
+                    'searchid'       => (string) $searchId,
+                    'maximumresults' => '7',
+                    'resultstoskip'  => (string) $skip,
+                ],
+                'headers' => $this->cookieHeader($sessionId),
+            ]);
+
+            $jsonPag  = json_decode((string) $respPag->getBody(), true);
+            $searchId = $jsonPag['searchid'] ?? null;
+
+            if (empty($searchId) || $searchId === '0') {
+                break;
+            }
+
+            $nuevas = $this->esperarResultados($client, $sessionId, (string) $searchId);
+
+            if (empty($nuevas)) {
+                break;
+            }
+
+            $filas = array_merge($filas, $nuevas);
+            $skip += count($nuevas);
+
+            // Una página más corta que la página mínima significa que no hay más.
+            if (count($nuevas) < 25) {
+                break;
+            }
+        }
+
+        $filas = array_slice($filas, 0, $maxTotal);
+
         $modulaciones = [];
-        foreach ($json['results']['gridRows'] as $row) {
+        foreach ($filas as $row) {
             $modulacion = $this->parsearFila($row);
             if ($modulacion !== null) {
                 $modulaciones[] = $modulacion;
@@ -158,6 +209,40 @@ class GrabadorTetraService
             $resp->getHeaders(),
             (string) $resp->getBody()
         );
+    }
+
+    /**
+     * Espera los resultados de una búsqueda asíncrona ("continuesearch") haciendo
+     * poll de "getstatus" hasta que el grabador la marque como terminada.
+     *
+     * @return array<int, array<string, mixed>> Filas del grid (vacío si no hubo resultados)
+     */
+    private function esperarResultados(Client $client, string $sessionId, string $searchId): array
+    {
+        for ($poll = 0; $poll < 20; $poll++) {
+            usleep(300000);
+
+            $resp = $client->get($this->baseUrl . '/', [
+                'query' => [
+                    'id'        => 'searchapi',
+                    'SessionID' => $sessionId,
+                    'action'    => 'getstatus',
+                    'searchid'  => $searchId,
+                ],
+                'headers' => $this->cookieHeader($sessionId),
+            ]);
+
+            $json   = json_decode((string) $resp->getBody(), true);
+            $estado = is_array($json) ? ($json['searchStatus'] ?? '') : '';
+
+            if ($estado === 'done') {
+                return $json['results']['gridRows'] ?? [];
+            }
+        }
+
+        Log::warning('GrabadorTetraService: getstatus no terminó a tiempo', ['searchid' => $searchId]);
+
+        return [];
     }
 
     /**
@@ -371,6 +456,7 @@ class GrabadorTetraService
             'canal'       => $canal,
             'recurso'     => $this->extraerRecurso($canal !== '' ? $canal : $grupo),
             'tipo'        => $campos[self::F_TIPO_COM] ?? '',
+            'simplexDuplex' => $campos[self::F_SIMPLEX_DUPLEX] ?? '',
             'ssiLlamante' => $campos[self::F_SSI_LLAMANTE] ?? '',
             'ssiLlamado'  => $campos[self::F_SSI_LLAMADO] ?? '',
         ];
@@ -402,11 +488,18 @@ class GrabadorTetraService
     }
 
     /**
-     * Decodifica entidades numéricas sueltas ("S&#195&#173mplex") y entidades HTML normales.
+     * Decodifica entidades numéricas sueltas ("S&#195&#173mplex" → "Símplex") y
+     * entidades HTML normales. El grabador emite los BYTES UTF-8 del texto como
+     * entidades numéricas (no code points), por eso los valores < 256 se
+     * convierten con chr().
      */
     private function decodificar(string $value): string
     {
-        $value = preg_replace_callback('/&#(\d+);?/', fn ($m) => mb_chr((int) $m[1], 'UTF-8'), $value) ?? $value;
+        $value = preg_replace_callback(
+            '/&#(\d+);?/',
+            fn ($m) => ((int) $m[1]) < 256 ? chr((int) $m[1]) : mb_chr((int) $m[1], 'UTF-8'),
+            $value
+        ) ?? $value;
 
         return trim(html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
     }

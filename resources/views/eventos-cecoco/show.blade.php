@@ -554,12 +554,15 @@ function abrirModulaciones() {
             // A quién moduló: SSI llamado, o el grupo si fue una llamada de grupo.
             var destino = m.ssiLlamado || m.grupo || '';
 
-            // Tipo de llamada (Símplex / Dúplex) según el grabador.
+            // Tipo de comunicación y Símplex/Dúplex según el grabador.
             var tipoBadge = '';
             if (m.tipo) {
-                var esDuplex = m.tipo.toLowerCase().indexOf('d') === 0;
-                tipoBadge = ' <span class="badge ' + (esDuplex ? 'badge-warning' : 'badge-info') +
-                            ' mod-tipo" title="Tipo de llamada">' + escHtml(m.tipo) + '</span>';
+                tipoBadge += ' <span class="badge badge-info mod-tipo" title="Tipo de comunicación">' + escHtml(m.tipo) + '</span>';
+            }
+            if (m.simplexDuplex) {
+                var esDuplex = m.simplexDuplex.toLowerCase().indexOf('d') === 0;
+                tipoBadge += ' <span class="badge ' + (esDuplex ? 'badge-warning' : 'badge-light') +
+                             ' mod-tipo" title="Símplex / Dúplex">' + escHtml(m.simplexDuplex) + '</span>';
             }
 
             var nOperadores = (m.operadores && m.operadores.length) ? m.operadores.length : (m.copias || 1);
@@ -569,7 +572,7 @@ function abrirModulaciones() {
                 : '';
 
             // Texto sobre el que se filtra (recurso + canal + hora + ssi + tipo).
-            var filtro = [m.recurso, m.canal, m.grupo, m.tipo, m.fechaInicio, m.ssiLlamante, m.ssiLlamado]
+            var filtro = [m.recurso, m.canal, m.grupo, m.tipo, m.simplexDuplex, m.fechaInicio, m.ssiLlamante, m.ssiLlamado]
                 .filter(Boolean).join(' ').toLowerCase();
 
             var card = document.createElement('div');

@@ -44,7 +44,15 @@
       "PowerShell(php -l app\\\\Services\\\\GrabadorTetraService.php; php -l app\\\\Http\\\\Controllers\\\\EventoCecocoController.php)",
       "PowerShell(php storage\\\\app\\\\test_wavinfo.php)",
       "PowerShell(php -l app\\\\Services\\\\GrabadorTetraService.php)",
-      "PowerShell(php storage\\\\app\\\\test_lame.php)"
+      "PowerShell(php storage\\\\app\\\\test_lame.php)",
+      "PowerShell(php storage\\\\app\\\\test_paginado.php)",
+      "PowerShell($t = Get-Content \"C:\\\\Users\\\\Usuario\\\\.claude\\\\projects\\\\C--Apache24-htdocs-dashboard-roles\\\\0e6d5356-258e-443d-9797-8b1164c16901\\\\tool-results\\\\bazk887it.txt\"; foreach \\($l in $t\\) { if \\($l -match '^\\(Metadatos raiz|getsearchresults|getresults|getmoreresults|nextresults|continueresults|getsearchstatus|gridRows\\)'\\) { if \\($l.Length -gt 400\\) { $l.Substring\\(0,400\\) } else { $l } } })",
+      "PowerShell(php storage\\\\app\\\\test_js.php)",
+      "PowerShell(php storage\\\\app\\\\test_js2.php)",
+      "PowerShell(php storage\\\\app\\\\test_js3.php)",
+      "PowerShell(php -l app\\\\Services\\\\GrabadorTetraService.php; php storage\\\\app\\\\test_pag2.php)",
+      "PowerShell(php storage\\\\app\\\\test_pag3.php)",
+      "PowerShell(php storage\\\\app\\\\test_pag4.php)"
     ]
   },
   "enableAllProjectMcpServers": true,

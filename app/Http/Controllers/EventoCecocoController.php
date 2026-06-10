@@ -894,9 +894,12 @@ class EventoCecocoController extends Controller
 
     /**
      * Busca modulaciones de radio TETRA del grabador para el evento, dentro de la
-     * ventana que arranca N minutos antes de la fecha del evento y termina en su cierre.
+     * ventana que arranca N minutos antes de la fecha del evento y termina en su
+     * cierre. Pagina con un cursor (searchid + skip): el frontend pide página por
+     * página con requests cortos para que el proxy (Cloudflare, ~100 s) no corte
+     * la conexión cuando hay muchas modulaciones.
      */
-    public function modulaciones(EventoCecoco $eventoCecoco): JsonResponse
+    public function modulaciones(Request $request, EventoCecoco $eventoCecoco): JsonResponse
     {
         $this->authorize('escuchar-modulaciones-cecoco');
 
@@ -914,9 +917,34 @@ class EventoCecocoController extends Controller
             ? $eventoCecoco->fecha_cierre->copy()
             : $eventoCecoco->fecha_hora->copy()->addMinutes((int) config('grabador.minutos_despues_sin_cierre', 60));
 
+        $cursor = (string) $request->input('searchid', '');
+        $skip   = max(0, (int) $request->input('skip', 0));
+
         try {
             $localService = new CecocoModulacionesLocalService();
-            $resultado    = null;
+
+            // Página de continuación de una búsqueda ya iniciada en el grabador.
+            if ($cursor !== '' && preg_match('/^\d+$/', $cursor)) {
+                $grabador = new GrabadorTetraService();
+                $pagina   = $grabador->buscarPagina($desde, $hasta, $cursor, $skip);
+
+                $pagina['modulaciones'] = $localService->emparejarConGrabador($pagina['modulaciones'], $desde, $hasta);
+                $this->marcarAudiosSinReplay($pagina['modulaciones'], $grabador);
+                $this->asignarUrlsDeStream($pagina['modulaciones']);
+
+                return response()->json([
+                    'success'      => true,
+                    'modulaciones' => $pagina['modulaciones'],
+                    'total'        => count($pagina['modulaciones']),
+                    'searchid'     => $pagina['hayMas'] ? $pagina['searchid'] : null,
+                    'skip'         => $pagina['skip'],
+                    'hayMas'       => $pagina['hayMas'],
+                    'fuente'       => 'grabador',
+                ]);
+            }
+
+            $resultado = null;
+            $paginado  = ['searchid' => null, 'skip' => 0, 'hayMas' => false];
 
             // 1. El grabador es la fuente autoritativa: devuelve una sola fila por
             //    modulación real (CECOCO en cambio graba una copia por operador que
@@ -924,28 +952,30 @@ class EventoCecocoController extends Controller
             //    hora de inicio y duración para servir el audio desde disco.
             if (config('grabador.url')) {
                 try {
-                    $grabador  = new GrabadorTetraService();
-                    $resultado = $grabador->buscarModulaciones($desde, $hasta);
+                    $grabador = new GrabadorTetraService();
+                    $pagina   = $grabador->buscarPagina($desde, $hasta);
 
-                    if (!empty($resultado['modulaciones'])) {
-                        $resultado['modulaciones'] = $localService->emparejarConGrabador($resultado['modulaciones'], $desde, $hasta);
-                        $resultado['fuente']       = 'grabador';
+                    if (!empty($pagina['modulaciones'])) {
+                        $pagina['modulaciones'] = $localService->emparejarConGrabador($pagina['modulaciones'], $desde, $hasta);
 
                         // Los audios sin .mp3 local se sirven como WAV vía el Replay
-                        // Server, que es una aplicación local: si este servidor no lo
-                        // tiene, esos audios no se pueden reproducir.
-                        $sinMatch = count(array_filter($resultado['modulaciones'], fn ($m) => empty($m['path'])));
-                        if ($sinMatch > 0 && !$grabador->replayDisponible()) {
-                            if ($sinMatch === count($resultado['modulaciones'])) {
-                                $resultado = null; // nada reproducible: mejor la búsqueda local directa
-                            } else {
-                                foreach ($resultado['modulaciones'] as &$m) {
-                                    if (empty($m['path'])) {
-                                        $m['audioDisponible'] = false;
-                                    }
-                                }
-                                unset($m);
-                            }
+                        // Server: si este servidor no lo tiene y nada tiene respaldo
+                        // local, conviene la búsqueda local directa.
+                        $sinMatch = count(array_filter($pagina['modulaciones'], fn ($m) => empty($m['path'])));
+                        if ($sinMatch === count($pagina['modulaciones']) && $sinMatch > 0 && !$grabador->replayDisponible() && !$pagina['hayMas']) {
+                            $resultado = null;
+                        } else {
+                            $this->marcarAudiosSinReplay($pagina['modulaciones'], $grabador);
+                            $resultado = [
+                                'modulaciones' => $pagina['modulaciones'],
+                                'ventana'      => ['desde' => $desde->format('Y-m-d H:i:s'), 'hasta' => $hasta->format('Y-m-d H:i:s')],
+                                'fuente'       => 'grabador',
+                            ];
+                            $paginado = [
+                                'searchid' => $pagina['hayMas'] ? $pagina['searchid'] : null,
+                                'skip'     => $pagina['skip'],
+                                'hayMas'   => $pagina['hayMas'],
+                            ];
                         }
                     }
                 } catch (\Exception $e) {
@@ -960,17 +990,10 @@ class EventoCecocoController extends Controller
             // 2. Respaldo: búsqueda directa en disco local (deduplicando copias por operador).
             if ($resultado === null || empty($resultado['modulaciones'])) {
                 $resultado = $localService->buscarModulaciones($desde, $hasta);
+                $paginado  = ['searchid' => null, 'skip' => 0, 'hayMas' => false];
             }
 
-            foreach ($resultado['modulaciones'] as &$m) {
-                if (!empty($m['path'])) {
-                    $m['url'] = route('api.cecoco.modulacion.stream', ['path' => base64_encode($m['path'])]);
-                    unset($m['path']); // no exponer la ruta física al cliente
-                } else {
-                    $m['url'] = route('api.cecoco.modulacion.stream', ['itemid' => $m['itemid']]);
-                }
-            }
-            unset($m);
+            $this->asignarUrlsDeStream($resultado['modulaciones']);
 
             return response()->json([
                 'success'      => true,
@@ -978,6 +1001,9 @@ class EventoCecocoController extends Controller
                 'total'        => count($resultado['modulaciones']),
                 'ventana'      => $resultado['ventana'],
                 'fuente'       => $resultado['fuente'] ?? 'grabador',
+                'searchid'     => $paginado['searchid'],
+                'skip'         => $paginado['skip'],
+                'hayMas'       => $paginado['hayMas'],
             ]);
         } catch (\Exception $e) {
             Log::error('modulaciones evento cecoco', [
@@ -990,6 +1016,46 @@ class EventoCecocoController extends Controller
                 'message' => 'Error al buscar modulaciones: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Marca como no disponibles los audios que sólo existen en el grabador cuando
+     * el Replay Server (que sirve los WAV) no es alcanzable desde este servidor.
+     *
+     * @param array<int, array<string, mixed>> $modulaciones
+     */
+    private function marcarAudiosSinReplay(array &$modulaciones, GrabadorTetraService $grabador): void
+    {
+        $haySinMatch = array_filter($modulaciones, fn ($m) => empty($m['path']));
+        if (empty($haySinMatch) || $grabador->replayDisponible()) {
+            return;
+        }
+
+        foreach ($modulaciones as &$m) {
+            if (empty($m['path'])) {
+                $m['audioDisponible'] = false;
+            }
+        }
+        unset($m);
+    }
+
+    /**
+     * Asigna a cada modulación la URL del proxy de audio (mp3 local o WAV del grabador)
+     * y quita la ruta física para no exponerla al cliente.
+     *
+     * @param array<int, array<string, mixed>> $modulaciones
+     */
+    private function asignarUrlsDeStream(array &$modulaciones): void
+    {
+        foreach ($modulaciones as &$m) {
+            if (!empty($m['path'])) {
+                $m['url'] = route('api.cecoco.modulacion.stream', ['path' => base64_encode($m['path'])]);
+                unset($m['path']);
+            } else {
+                $m['url'] = route('api.cecoco.modulacion.stream', ['itemid' => $m['itemid']]);
+            }
+        }
+        unset($m);
     }
 
     /**

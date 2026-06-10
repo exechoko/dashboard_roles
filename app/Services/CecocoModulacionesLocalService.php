@@ -155,6 +155,20 @@ class CecocoModulacionesLocalService
      */
     private function archivosEnVentana(Carbon $desde, Carbon $hasta): array
     {
+        // Cache corto: cuando el frontend pagina las modulaciones hace varios
+        // requests seguidos sobre la misma ventana; así se escanea el disco una vez.
+        $cacheKey = 'mod_archivos_' . md5($this->baseDir . '|' . $desde->format('YmdHis') . '|' . $hasta->format('YmdHis'));
+
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addSeconds(90), function () use ($desde, $hasta): array {
+            return $this->escanearVentana($desde, $hasta);
+        });
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function escanearVentana(Carbon $desde, Carbon $hasta): array
+    {
         $resultado = [];
         $vistos    = [];
         $realBase  = realpath($this->baseDir) ?: $this->baseDir;

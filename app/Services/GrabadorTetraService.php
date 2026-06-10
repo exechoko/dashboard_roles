@@ -62,100 +62,125 @@ class GrabadorTetraService
     {
         // Presupuesto total: el proxy (Cloudflare) corta la conexión a los ~100 s,
         // así que la búsqueda completa debe terminar bien antes y devolver lo que haya.
-        // En Windows max_execution_time cuenta tiempo real (incluye red/sleep), por
-        // eso se extiende para que PHP no mate el request antes del presupuesto.
+        $limite      = microtime(true) + $this->timeoutTotal;
+        $maxTotal    = (int) config('grabador.max_resultados', 500);
+        $todas       = [];
+        $searchId    = null;
+        $skip        = 0;
+        $iteraciones = 0;
+
+        do {
+            $iteraciones++;
+            $pagina   = $this->buscarPagina($desde, $hasta, $searchId, $skip);
+            $todas    = array_merge($todas, $pagina['modulaciones']);
+            $searchId = $pagina['searchid'];
+            $skip     = $pagina['skip'];
+        } while ($pagina['hayMas'] && count($todas) < $maxTotal && $iteraciones < 10 && microtime(true) < $limite);
+
+        usort($todas, fn ($a, $b) => strcmp($a['fechaInicio'], $b['fechaInicio']));
+
+        Log::info('GrabadorTetraService: modulaciones encontradas', [
+            'desde' => $desde->format('Y-m-d H:i'),
+            'hasta' => $hasta->format('Y-m-d H:i'),
+            'total' => count($todas),
+        ]);
+
+        return [
+            'modulaciones' => $todas,
+            'ventana'      => $this->ventana($desde, $hasta),
+        ];
+    }
+
+    /**
+     * Busca UNA página de modulaciones, pensada para que el frontend pagine con
+     * requests cortos que no lleguen al corte del proxy. Con $searchId null
+     * inicia la búsqueda (la primera página la limita la preferencia del usuario
+     * del grabador, típicamente 100 filas); con $searchId continúa la búsqueda
+     * anterior desde $skip ("continuesearch" es asíncrono: devuelve un searchid
+     * nuevo y los resultados se levantan con "getstatus" hasta searchStatus=done;
+     * su "maximumresults" es un ENUM 1=25, 2=50, 3=100, 4=200, 5=500, 6=750,
+     * 7=1000, no una cantidad).
+     *
+     * @return array{modulaciones: array<int, array<string, mixed>>, searchid: ?string, skip: int, hayMas: bool}
+     */
+    public function buscarPagina(Carbon $desde, Carbon $hasta, ?string $searchId = null, int $skip = 0): array
+    {
+        // En Windows max_execution_time cuenta tiempo real (incluye red/sleep).
         @set_time_limit($this->timeoutTotal + 60);
         $limite = microtime(true) + $this->timeoutTotal;
 
         $sessionId = $this->autenticar();
+        $client    = $this->httpClient();
 
-        $client = $this->httpClient();
-
-        $params = [
-            'id'                => 'searchapi',
-            'SessionID'         => $sessionId,
-            'action'            => 'startsearch',
-            'criteriacount'     => '1',
-            'replaytophone'     => '0',
-            'SearchDirection'   => '1',
-            'Criteria1FieldID'  => '1',
-            'Criteria1FieldType'=> '3',
-            'Criteria1Type'     => '2',
-            'Criteria1Date1'    => $desde->format('Ymd'),
-            'Criteria1Time1'    => $desde->format('Hi'),
-            'Criteria1Date2'    => $hasta->format('Ymd'),
-            'Criteria1Time2'    => $hasta->format('Hi'),
-        ];
-
-        $resp = $client->get($this->baseUrl . '/', [
-            'query'   => $params,
-            'headers' => $this->cookieHeader($sessionId),
-        ]);
-
-        $json = json_decode((string) $resp->getBody(), true);
-
-        if (!is_array($json) || !isset($json['results']['gridRows'])) {
-            Log::warning('GrabadorTetraService: respuesta de búsqueda inesperada', [
-                'status'  => $resp->getStatusCode(),
-                'preview' => mb_substr((string) $resp->getBody(), 0, 300),
+        if ($searchId === null) {
+            $resp = $client->get($this->baseUrl . '/', [
+                'query' => [
+                    'id'                => 'searchapi',
+                    'SessionID'         => $sessionId,
+                    'action'            => 'startsearch',
+                    'criteriacount'     => '1',
+                    'replaytophone'     => '0',
+                    'SearchDirection'   => '1',
+                    'Criteria1FieldID'  => '1',
+                    'Criteria1FieldType'=> '3',
+                    'Criteria1Type'     => '2',
+                    'Criteria1Date1'    => $desde->format('Ymd'),
+                    'Criteria1Time1'    => $desde->format('Hi'),
+                    'Criteria1Date2'    => $hasta->format('Ymd'),
+                    'Criteria1Time2'    => $hasta->format('Hi'),
+                ],
+                'headers' => $this->cookieHeader($sessionId),
             ]);
 
-            return [
-                'modulaciones' => [],
-                'ventana'      => $this->ventana($desde, $hasta),
-            ];
-        }
+            $json = json_decode((string) $resp->getBody(), true);
 
-        // El grabador pagina: la primera página la limita la preferencia del usuario
-        // (típicamente 100 filas). Las siguientes se piden con "continuesearch",
-        // que es asíncrono: devuelve un searchid nuevo y los resultados se
-        // recuperan con "getstatus" hasta que searchStatus sea "done".
-        // "maximumresults" es un ENUM (1=25, 2=50, 3=100, 4=200, 5=500, 6=750,
-        // 7=1000), no una cantidad.
-        $filas       = $json['results']['gridRows'];
-        $searchId    = $json['searchid'] ?? null;
-        $maxTotal    = (int) config('grabador.max_resultados', 500);
-        $skip        = count($filas);
-        $iteraciones = 0;
+            if (!is_array($json) || !isset($json['results']['gridRows'])) {
+                Log::warning('GrabadorTetraService: respuesta de búsqueda inesperada', [
+                    'status'  => $resp->getStatusCode(),
+                    'preview' => mb_substr((string) $resp->getBody(), 0, 300),
+                ]);
 
-        while (!empty($searchId) && $skip > 0 && count($filas) < $maxTotal && $iteraciones < 10 && microtime(true) < $limite) {
-            $iteraciones++;
+                return ['modulaciones' => [], 'searchid' => null, 'skip' => 0, 'hayMas' => false];
+            }
 
+            $filas    = $json['results']['gridRows'];
+            $searchId = !empty($json['searchid']) ? (string) $json['searchid'] : null;
+
+            // Primera página llena (la preferencia mínima es 25): puede haber más.
+            $hayMas = $searchId !== null && count($filas) >= 25;
+        } else {
             $respPag = $client->get($this->baseUrl . '/', [
                 'query' => [
                     'id'             => 'searchapi',
                     'SessionID'      => $sessionId,
                     'action'         => 'continuesearch',
-                    'searchid'       => (string) $searchId,
+                    'searchid'       => $searchId,
                     'maximumresults' => '7',
                     'resultstoskip'  => (string) $skip,
                 ],
                 'headers' => $this->cookieHeader($sessionId),
             ]);
 
-            $jsonPag  = json_decode((string) $respPag->getBody(), true);
-            $searchId = $jsonPag['searchid'] ?? null;
+            $jsonPag = json_decode((string) $respPag->getBody(), true);
+            $nuevoId = is_array($jsonPag) ? ($jsonPag['searchid'] ?? null) : null;
+            $filas   = [];
 
-            if (empty($searchId) || $searchId === '0') {
-                break;
+            if (!empty($nuevoId) && $nuevoId !== '0') {
+                $searchId = (string) $nuevoId;
+                $filas    = $this->esperarResultados($client, $sessionId, $searchId, $limite);
+            } else {
+                $searchId = null;
             }
 
-            $nuevas = $this->esperarResultados($client, $sessionId, (string) $searchId, $limite);
-
-            if (empty($nuevas)) {
-                break;
-            }
-
-            $filas = array_merge($filas, $nuevas);
-            $skip += count($nuevas);
-
-            // Una página más corta que la página mínima significa que no hay más.
-            if (count($nuevas) < 25) {
-                break;
-            }
+            // Página de continuación llena (enum 7 = 1000): puede haber más.
+            $hayMas = $searchId !== null && count($filas) >= 1000;
         }
 
-        $filas = array_slice($filas, 0, $maxTotal);
+        $maxTotal = (int) config('grabador.max_resultados', 500);
+        if ($skip + count($filas) >= $maxTotal) {
+            $filas  = array_slice($filas, 0, max(0, $maxTotal - $skip));
+            $hayMas = false;
+        }
 
         $modulaciones = [];
         foreach ($filas as $row) {
@@ -167,15 +192,11 @@ class GrabadorTetraService
 
         usort($modulaciones, fn ($a, $b) => strcmp($a['fechaInicio'], $b['fechaInicio']));
 
-        Log::info('GrabadorTetraService: modulaciones encontradas', [
-            'desde' => $desde->format('Y-m-d H:i'),
-            'hasta' => $hasta->format('Y-m-d H:i'),
-            'total' => count($modulaciones),
-        ]);
-
         return [
             'modulaciones' => $modulaciones,
-            'ventana'      => $this->ventana($desde, $hasta),
+            'searchid'     => $searchId,
+            'skip'         => $skip + count($filas),
+            'hayMas'       => $hayMas,
         ];
     }
 

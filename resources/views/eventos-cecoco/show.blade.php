@@ -528,8 +528,11 @@ function guardarEscuchada(clave) {
     }
 }
 
+var MOD_URL_BASE = '{{ route("api.cecoco.modulaciones", $eventoCecoco) }}';
+
 function abrirModulaciones() {
     document.getElementById('modulaciones-loading').style.display     = 'block';
+    document.getElementById('modulaciones-loading').innerHTML         = '<i class="fas fa-sync-alt grabacion-spin"></i> Buscando modulaciones...';
     document.getElementById('modulaciones-empty').style.display       = 'none';
     document.getElementById('modulaciones-error').style.display       = 'none';
     document.getElementById('modulaciones-lista').style.display       = 'none';
@@ -541,18 +544,58 @@ function abrirModulaciones() {
 
     $('#modalModulaciones').modal('show');
 
-    fetch('{{ route("api.cecoco.modulaciones", $eventoCecoco) }}', {
+    cargarPaginaModulaciones(MOD_URL_BASE, { modulaciones: [], ventana: null, fuente: null });
+}
+
+// Pide las modulaciones página por página: cada request al servidor dura pocos
+// segundos, así el proxy (Cloudflare corta a los ~100 s) nunca llega a cortar
+// aunque haya miles de modulaciones. Muestra el progreso mientras carga.
+function cargarPaginaModulaciones(url, acumulado) {
+    fetch(url, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-        document.getElementById('modulaciones-loading').style.display = 'none';
-
         if (!data.success) {
-            document.getElementById('modulaciones-error').style.display = 'block';
-            document.getElementById('modulaciones-error').textContent   = data.message || 'Error al obtener modulaciones.';
+            if (acumulado.modulaciones.length > 0) { renderizarModulaciones(acumulado); return; }
+            document.getElementById('modulaciones-loading').style.display = 'none';
+            document.getElementById('modulaciones-error').style.display   = 'block';
+            document.getElementById('modulaciones-error').textContent     = data.message || 'Error al obtener modulaciones.';
             return;
         }
+
+        acumulado.modulaciones = acumulado.modulaciones.concat(data.modulaciones || []);
+        if (!acumulado.ventana && data.ventana) { acumulado.ventana = data.ventana; }
+        if (!acumulado.fuente && data.fuente)   { acumulado.fuente  = data.fuente; }
+
+        if (data.hayMas && data.searchid) {
+            document.getElementById('modulaciones-loading').innerHTML =
+                '<i class="fas fa-sync-alt grabacion-spin"></i> Buscando modulaciones... (' + acumulado.modulaciones.length + ' encontradas)';
+            cargarPaginaModulaciones(
+                MOD_URL_BASE + '?searchid=' + encodeURIComponent(data.searchid) + '&skip=' + encodeURIComponent(data.skip || 0),
+                acumulado
+            );
+            return;
+        }
+
+        renderizarModulaciones(acumulado);
+    })
+    .catch(function(err) {
+        console.error(err);
+        if (acumulado.modulaciones.length > 0) { renderizarModulaciones(acumulado); return; }
+        document.getElementById('modulaciones-loading').style.display = 'none';
+        document.getElementById('modulaciones-error').style.display   = 'block';
+        document.getElementById('modulaciones-error').textContent     = 'Error de red al obtener modulaciones.';
+    });
+}
+
+function renderizarModulaciones(data) {
+    document.getElementById('modulaciones-loading').style.display = 'none';
+
+    // Las páginas llegan por bloques: ordenar todo por hora de inicio.
+    data.modulaciones.sort(function(a, b) {
+        return String(a.fechaInicio || '').localeCompare(String(b.fechaInicio || ''));
+    });
 
         if (data.ventana) {
             document.getElementById('mod-ventana-desde').textContent       = data.ventana.desde;
@@ -708,13 +751,6 @@ function abrirModulaciones() {
 
         document.getElementById('modulaciones-filtro-wrap').style.display = 'block';
         filtrarModulaciones();
-    })
-    .catch(function(err) {
-        document.getElementById('modulaciones-loading').style.display = 'none';
-        document.getElementById('modulaciones-error').style.display   = 'block';
-        document.getElementById('modulaciones-error').textContent     = 'Error de red al obtener modulaciones.';
-        console.error(err);
-    });
 }
 
 function filtrarModulaciones() {

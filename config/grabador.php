@@ -18,7 +18,13 @@ return [
     'replay_url'       => env('GRABADOR_REPLAY_URL', 'http://localhost:8880'),
 
     'lang_id'          => env('GRABADOR_LANG_ID', 'es'),
-    'timeout'          => (int) env('GRABADOR_TIMEOUT', 60),
+
+    // Timeout por request HTTP al grabador.
+    'timeout'          => (int) env('GRABADOR_TIMEOUT', 30),
+
+    // Presupuesto total para la búsqueda completa (login + búsqueda + paginado).
+    // Debe quedar bien por debajo de los 100 s en que Cloudflare corta la conexión.
+    'timeout_total'    => (int) env('GRABADOR_TIMEOUT_TOTAL', 60),
 
     // Ventana de búsqueda alrededor del evento CECOCO: arranca N minutos antes
     // de la fecha/hora del evento y termina en la fecha de cierre del evento.

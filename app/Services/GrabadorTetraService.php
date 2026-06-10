@@ -26,6 +26,7 @@ class GrabadorTetraService
     private string $password;
     private string $langId;
     private int    $timeout;
+    private int    $timeoutTotal;
 
     private const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:115.0) Gecko/20100101 Firefox/115.0';
 
@@ -48,7 +49,8 @@ class GrabadorTetraService
         $this->user            = (string) config('grabador.user', '');
         $this->password        = (string) config('grabador.password', '');
         $this->langId          = (string) config('grabador.lang_id', 'es');
-        $this->timeout         = (int) config('grabador.timeout', 60);
+        $this->timeout         = (int) config('grabador.timeout', 30);
+        $this->timeoutTotal    = (int) config('grabador.timeout_total', 60);
     }
 
     /**
@@ -58,6 +60,13 @@ class GrabadorTetraService
      */
     public function buscarModulaciones(Carbon $desde, Carbon $hasta): array
     {
+        // Presupuesto total: el proxy (Cloudflare) corta la conexión a los ~100 s,
+        // así que la búsqueda completa debe terminar bien antes y devolver lo que haya.
+        // En Windows max_execution_time cuenta tiempo real (incluye red/sleep), por
+        // eso se extiende para que PHP no mate el request antes del presupuesto.
+        @set_time_limit($this->timeoutTotal + 60);
+        $limite = microtime(true) + $this->timeoutTotal;
+
         $sessionId = $this->autenticar();
 
         $client = $this->httpClient();
@@ -109,7 +118,7 @@ class GrabadorTetraService
         $skip        = count($filas);
         $iteraciones = 0;
 
-        while (!empty($searchId) && $skip > 0 && count($filas) < $maxTotal && $iteraciones < 10) {
+        while (!empty($searchId) && $skip > 0 && count($filas) < $maxTotal && $iteraciones < 10 && microtime(true) < $limite) {
             $iteraciones++;
 
             $respPag = $client->get($this->baseUrl . '/', [
@@ -131,7 +140,7 @@ class GrabadorTetraService
                 break;
             }
 
-            $nuevas = $this->esperarResultados($client, $sessionId, (string) $searchId);
+            $nuevas = $this->esperarResultados($client, $sessionId, (string) $searchId, $limite);
 
             if (empty($nuevas)) {
                 break;
@@ -217,9 +226,9 @@ class GrabadorTetraService
      *
      * @return array<int, array<string, mixed>> Filas del grid (vacío si no hubo resultados)
      */
-    private function esperarResultados(Client $client, string $sessionId, string $searchId): array
+    private function esperarResultados(Client $client, string $sessionId, string $searchId, float $limite): array
     {
-        for ($poll = 0; $poll < 20; $poll++) {
+        for ($poll = 0; $poll < 20 && microtime(true) < $limite; $poll++) {
             usleep(300000);
 
             $resp = $client->get($this->baseUrl . '/', [
@@ -529,10 +538,11 @@ class GrabadorTetraService
     private function httpClient(): Client
     {
         return new Client([
-            'timeout'     => $this->timeout,
-            'http_errors' => false,
-            'verify'      => false,
-            'headers'     => [
+            'timeout'         => $this->timeout,
+            'connect_timeout' => 5,
+            'http_errors'     => false,
+            'verify'          => false,
+            'headers'         => [
                 'User-Agent' => self::USER_AGENT,
                 'Connection' => 'close',
             ],

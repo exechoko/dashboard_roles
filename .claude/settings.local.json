@@ -52,7 +52,9 @@
       "PowerShell(php storage\\\\app\\\\test_js3.php)",
       "PowerShell(php -l app\\\\Services\\\\GrabadorTetraService.php; php storage\\\\app\\\\test_pag2.php)",
       "PowerShell(php storage\\\\app\\\\test_pag3.php)",
-      "PowerShell(php storage\\\\app\\\\test_pag4.php)"
+      "PowerShell(php storage\\\\app\\\\test_pag4.php)",
+      "PowerShell(php storage\\\\app\\\\test_ventana.php)",
+      "PowerShell(php -l app\\\\Http\\\\Controllers\\\\EventoCecocoController.php; php -l app\\\\Services\\\\CecocoModulacionesLocalService.php; php -l app\\\\Services\\\\GrabadorTetraService.php)"
     ]
   },
   "enableAllProjectMcpServers": true,

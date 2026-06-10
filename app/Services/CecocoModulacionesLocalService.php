@@ -92,8 +92,28 @@ class CecocoModulacionesLocalService
      */
     public function emparejarConGrabador(array $modulacionesGrabador, Carbon $desde, Carbon $hasta): array
     {
-        $archivos = $this->archivosEnVentana($desde, $hasta);
-        if (empty($archivos) || empty($modulacionesGrabador)) {
+        if (empty($modulacionesGrabador)) {
+            return $modulacionesGrabador;
+        }
+
+        // Sólo se escanean los minutos donde el grabador reportó modulaciones
+        // (± 1 min por la tolerancia), no toda la ventana: así el costo escala con
+        // la cantidad de modulaciones y no con el largo de la ventana (clave en
+        // ventanas de varias horas sobre disco real).
+        $minutos = [];
+        foreach ($modulacionesGrabador as $m) {
+            try {
+                $t = Carbon::parse($m['fechaInicio']);
+            } catch (\Exception $e) {
+                continue;
+            }
+            foreach ([-1, 0, 1] as $offset) {
+                $minutos[$t->copy()->addMinutes($offset)->format('Ymd_Hi')] = true;
+            }
+        }
+
+        $archivos = $this->archivosEnMinutos(array_keys($minutos));
+        if (empty($archivos)) {
             return $modulacionesGrabador;
         }
 
@@ -155,78 +175,90 @@ class CecocoModulacionesLocalService
      */
     private function archivosEnVentana(Carbon $desde, Carbon $hasta): array
     {
-        // Cache corto: cuando el frontend pagina las modulaciones hace varios
-        // requests seguidos sobre la misma ventana; así se escanea el disco una vez.
-        $cacheKey = 'mod_archivos_' . md5($this->baseDir . '|' . $desde->format('YmdHis') . '|' . $hasta->format('YmdHis'));
+        $prefijos = [];
+        $cursor   = $desde->copy()->startOfMinute();
 
-        return \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addSeconds(90), function () use ($desde, $hasta): array {
-            return $this->escanearVentana($desde, $hasta);
-        });
+        while ($cursor->lte($hasta)) {
+            $prefijos[] = $cursor->format('Ymd_Hi');
+            $cursor->addMinute();
+        }
+
+        return $this->archivosEnMinutos($prefijos, $desde, $hasta);
     }
 
     /**
+     * Escanea el disco sólo en los minutos indicados (prefijos "Ymd_Hi") y
+     * devuelve los archivos de modulación, sin deduplicar. Cachea cada minuto por
+     * separado 90 s para que la paginación del frontend no re-escanee el disco.
+     *
+     * @param array<int, string> $prefijos  Minutos a escanear, formato "Ymd_Hi"
      * @return array<int, array<string, mixed>>
      */
-    private function escanearVentana(Carbon $desde, Carbon $hasta): array
+    private function archivosEnMinutos(array $prefijos, ?Carbon $desde = null, ?Carbon $hasta = null): array
     {
-        $resultado = [];
-        $vistos    = [];
-        $realBase  = realpath($this->baseDir) ?: $this->baseDir;
-
         if (!is_dir($this->baseDir)) {
             Log::debug('CecocoModulacionesLocalService: directorio base no existe', ['baseDir' => $this->baseDir]);
 
             return [];
         }
 
-        $cursor = $desde->copy()->startOfMinute();
+        $resultado = [];
 
-        while ($cursor->lte($hasta)) {
-            $dir = $this->baseDir
-                 . DIRECTORY_SEPARATOR . $cursor->format('Y')
-                 . DIRECTORY_SEPARATOR . $cursor->format('Y_m');
+        foreach (array_unique($prefijos) as $prefijo) {
+            $cacheKey = 'mod_min_' . md5($this->baseDir) . '_' . $prefijo;
 
-            if (is_dir($dir)) {
-                // Patrón por minuto: cualquier audio con el timestamp _YYYYMMDD_HHMM.
-                $prefijo  = $cursor->format('Ymd') . '_' . $cursor->format('Hi');
-                $pattern  = $dir . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*_' . $prefijo . '*';
-                $archivos = glob($pattern, GLOB_NOSORT) ?: [];
+            $delMinuto = \Illuminate\Support\Facades\Cache::remember(
+                $cacheKey,
+                now()->addSeconds(90),
+                fn (): array => $this->escanearMinuto($prefijo)
+            );
 
-                foreach ($archivos as $filepath) {
-                    $real = realpath($filepath) ?: $filepath;
-                    if (!str_starts_with($real, $realBase)) {
-                        continue;
-                    }
-
-                    $filename = basename($filepath);
-
-                    // Sólo audios y sólo modulaciones (excluir llamadas telefónicas).
-                    if (!in_array(strtolower(pathinfo($filename, PATHINFO_EXTENSION)), self::EXTENSIONES_AUDIO, true)) {
-                        continue;
-                    }
-                    if ($this->marcadorTelefonia !== '' && str_contains($filename, $this->marcadorTelefonia)) {
-                        continue;
-                    }
-
-                    if (isset($vistos[$filename])) {
-                        continue;
-                    }
-                    $vistos[$filename] = true;
-
-                    $modulacion = $this->parsearNombreArchivo($filename, $filepath);
-                    if (!$modulacion) {
-                        continue;
-                    }
-
-                    if (!Carbon::parse($modulacion['fechaInicio'])->between($desde, $hasta)) {
-                        continue;
-                    }
-
-                    $resultado[] = $modulacion;
+            foreach ($delMinuto as $modulacion) {
+                if ($desde && $hasta && !Carbon::parse($modulacion['fechaInicio'])->between($desde, $hasta)) {
+                    continue;
                 }
+                $resultado[] = $modulacion;
+            }
+        }
+
+        return $resultado;
+    }
+
+    /**
+     * Escanea el disco para un único minuto (prefijo "Ymd_Hi").
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function escanearMinuto(string $prefijo): array
+    {
+        $anio = substr($prefijo, 0, 4);
+        $mes  = substr($prefijo, 4, 2);
+        $dir  = $this->baseDir . DIRECTORY_SEPARATOR . $anio . DIRECTORY_SEPARATOR . $anio . '_' . $mes;
+
+        if (!is_dir($dir)) {
+            return [];
+        }
+
+        // Patrón por minuto: cualquier audio con el timestamp _YYYYMMDD_HHMM.
+        $pattern  = $dir . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*_' . $prefijo . '*';
+        $archivos = glob($pattern, GLOB_NOSORT) ?: [];
+
+        $resultado = [];
+        foreach ($archivos as $filepath) {
+            $filename = basename($filepath);
+
+            // Sólo audios y sólo modulaciones (excluir llamadas telefónicas).
+            if (!in_array(strtolower(pathinfo($filename, PATHINFO_EXTENSION)), self::EXTENSIONES_AUDIO, true)) {
+                continue;
+            }
+            if ($this->marcadorTelefonia !== '' && str_contains($filename, $this->marcadorTelefonia)) {
+                continue;
             }
 
-            $cursor->addMinute();
+            $modulacion = $this->parsearNombreArchivo($filename, $filepath);
+            if ($modulacion) {
+                $resultado[] = $modulacion;
+            }
         }
 
         return $resultado;

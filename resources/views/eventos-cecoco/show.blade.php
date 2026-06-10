@@ -554,7 +554,12 @@ function cargarPaginaModulaciones(url, acumulado) {
     fetch(url, {
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
-    .then(function(r) { return r.json(); })
+    .then(function(r) {
+        return r.json().catch(function() {
+            // El servidor no devolvió JSON (ej. página de error de Apache/Cloudflare).
+            throw new Error('HTTP ' + r.status + ' (respuesta no JSON)');
+        });
+    })
     .then(function(data) {
         if (!data.success) {
             if (acumulado.modulaciones.length > 0) { renderizarModulaciones(acumulado); return; }
@@ -585,7 +590,7 @@ function cargarPaginaModulaciones(url, acumulado) {
         if (acumulado.modulaciones.length > 0) { renderizarModulaciones(acumulado); return; }
         document.getElementById('modulaciones-loading').style.display = 'none';
         document.getElementById('modulaciones-error').style.display   = 'block';
-        document.getElementById('modulaciones-error').textContent     = 'Error de red al obtener modulaciones.';
+        document.getElementById('modulaciones-error').textContent     = 'Error al obtener modulaciones: ' + (err && err.message ? err.message : 'error de red');
     });
 }
 

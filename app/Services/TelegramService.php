@@ -895,6 +895,7 @@ class TelegramService
             $mensaje .= "📌 Pendientes mañana: <b>{$tareasManana}</b>\n";
 
             $mensaje .= $this->formatearCpuVideo();
+            $mensaje .= $this->formatearCamaras();
 
             $tamanoRest = Cache::get(CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES);
             $tamanoRestGps = Cache::get(CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES_GPS);
@@ -964,6 +965,45 @@ class TelegramService
         } else {
             foreach ($altos as $d) {
                 $texto .= "⚠️ <b>{$d['hostname']}</b>: {$d['promedio']}% promedio (núcleo máx {$d['maximo']}%)\n";
+            }
+        }
+
+        if (!empty($cache['consultado_en'])) {
+            $texto .= '<i>Actualizado ' . Carbon::parse($cache['consultado_en'])->format('d/m H:i') . "</i>\n";
+        }
+
+        return $texto;
+    }
+
+    /**
+     * Sección de novedades con el estado de las cámaras 911 (grupo Camaras en
+     * LibreNMS): total monitoreadas y las que están offline con hace cuánto no
+     * responden, según el caché del comando librenms:monitorear-camaras.
+     */
+    private function formatearCamaras(): string
+    {
+        $cache = Cache::get(LibreNmsService::CACHE_KEY_CAMARAS);
+
+        if (empty($cache['total'])) {
+            return '';
+        }
+
+        $offline = $cache['offline'] ?? [];
+
+        $texto = "\n━━━━━━━━━━━━━━━━━━\n";
+        $texto .= "📷 <b>CÁMARAS 911</b>\n";
+
+        if (empty($offline)) {
+            $texto .= "✅ Las {$cache['total']} cámaras online\n";
+        } else {
+            $texto .= '⚠️ <b>' . count($offline) . "</b> offline de {$cache['total']}:\n";
+            foreach (array_slice($offline, 0, 10) as $camara) {
+                $nombre = htmlspecialchars($camara['nombre'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $hace = $camara['caida_hace'] ? " (hace {$camara['caida_hace']})" : '';
+                $texto .= "• <b>{$nombre}</b>{$hace}\n";
+            }
+            if (count($offline) > 10) {
+                $texto .= '… y ' . (count($offline) - 10) . " más\n";
             }
         }
 

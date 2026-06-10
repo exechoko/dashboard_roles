@@ -60,6 +60,55 @@ class LibreNmsServiceTest extends TestCase
         $this->assertSame(5.0, $resumen[1]['promedio']);
     }
 
+    public function test_parsea_fila_de_camara(): void
+    {
+        $fila = $this->filaCamara(179, 'FJ. - Terminal de &Oacute;mnibus', '172.40.32.26', 'up', '1h 29m 37s');
+
+        $this->assertSame([
+            'device_id' => 179,
+            'nombre'    => 'FJ. - Terminal de Ómnibus',
+            'ip'        => '172.40.32.26',
+            'estado'    => 'up',
+            'tiempo'    => '1h 29m 37s',
+        ], LibreNmsService::parsearFilaCamara($fila));
+    }
+
+    public function test_agrega_estado_de_camaras_y_lista_las_caidas(): void
+    {
+        $filas = [
+            $this->filaCamara(179, 'Terminal', '172.40.32.26', 'up', '1h'),
+            $this->filaCamara(500, 'Z-Rotonda Sur', '172.40.33.213', 'down', '4h 48m 22s'),
+            $this->filaCamara(501, 'Acceso Norte', '172.40.33.1', 'down', '10m'),
+            ['hostname' => '<span>fila inválida</span>'],
+        ];
+
+        $estado = LibreNmsService::agregarEstadoCamaras($filas);
+
+        $this->assertSame(3, $estado['total']);
+        $this->assertCount(2, $estado['offline']);
+        $this->assertSame('Acceso Norte', $estado['offline'][0]['nombre']);
+        $this->assertSame('10m', $estado['offline'][0]['caida_hace']);
+        $this->assertSame('Z-Rotonda Sur', $estado['offline'][1]['nombre']);
+        $this->assertSame('4h 48m 22s', $estado['offline'][1]['caida_hace']);
+    }
+
+    /**
+     * Arma una fila como la que devuelve el endpoint ajax/table/device de
+     * LibreNMS para la lista de dispositivos.
+     *
+     * @return array{status: string, hostname: string, uptime: string, device_id: int}
+     */
+    private function filaCamara(int $deviceId, string $nombre, string $ip, string $estado, string $uptime): array
+    {
+        return [
+            'status'    => $estado,
+            'hostname'  => '<a href="http://172.40.20.113/device/' . $deviceId . '" class="device-link-' . $estado . '"'
+                . ' x-data="deviceLink({device_id: ' . $deviceId . '})">' . $nombre . '</a><br />' . $ip,
+            'uptime'    => $uptime,
+            'device_id' => $deviceId,
+        ];
+    }
+
     /**
      * Arma una fila como la que devuelve el endpoint ajax/table/processors de
      * LibreNMS: el hostname dentro de un enlace al dispositivo y el uso en la

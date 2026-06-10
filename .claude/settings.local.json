@@ -61,7 +61,15 @@
       "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('total:',d.get\\('total'\\)\\); r=d['rows'][0]; print\\('keys:',list\\(r.keys\\(\\)\\)\\); [print\\(k,'=',str\\(v\\)[:120]\\) for k,v in r.items\\(\\) if k!='device_hostname']\")",
       "Bash(python -c ' *)",
       "Bash(python -)",
-      "Bash(grep -o '343[^0-9][^<]\\\\{0,80\\\\}' group9.html)"
+      "Bash(grep -o '343[^0-9][^<]\\\\{0,80\\\\}' group9.html)",
+      "Bash(grep -o 'post_data[^;]\\\\{0,200\\\\}' devgroup2.html)",
+      "Bash(grep -o 'device_group[^<>]\\\\{0,120\\\\}' devgroup2.html)",
+      "Bash(awk 'NR>=1 && /ajax\\\\/table\\\\/device/{print NR\": \"substr\\($0, index\\($0,\"ajax\"\\)-200, 500\\)}' devgroup2.html)",
+      "Bash(grep -o '.\\\\{0,150\\\\}groups.id.\\\\{0,150\\\\}' devgroup2.html)",
+      "Bash(python -c \"import json,sys; d=json.loads\\(sys.stdin.read\\(\\)\\); print\\('cpu disponible:', d['disponible'], '| puestos:', len\\(d.get\\('puestos',[]\\)\\)\\); print\\('camaras:', json.dumps\\(d['camaras'], ensure_ascii=False\\)[:300]\\)\")",
+      "Read(//c/Apache24/htdocs/dashboard_roles/**)",
+      "Bash(schtasks /query /fo csv)",
+      "PowerShell(Get-CimInstance *)"
     ]
   },
   "enableAllProjectMcpServers": true,

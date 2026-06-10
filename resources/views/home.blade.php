@@ -1115,6 +1115,13 @@
                                                             style="gap:1.25rem;">
                                                             <span class="text-muted">Cargando...</span>
                                                         </div>
+                                                        <hr class="my-3">
+                                                        <small class="text-muted d-block mb-2" id="cctv-camaras-subtitulo">
+                                                            <i class="fas fa-camera mr-1"></i>Cámaras 911</small>
+                                                        <div id="cctv-camaras-container" class="d-flex flex-wrap"
+                                                            style="gap:0.75rem;">
+                                                            <span class="text-muted">Cargando...</span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -3161,6 +3168,47 @@
                 return '#22c55e';
             }
 
+            function renderCamaras(c) {
+                var cont = document.getElementById('cctv-camaras-container');
+                var sub = document.getElementById('cctv-camaras-subtitulo');
+                if (!cont) return;
+
+                if (!c || !c.disponible) {
+                    cont.innerHTML = '<span class="text-muted"><i class="fas fa-exclamation-circle mr-1"></i>'
+                        + 'Sin lectura reciente de cámaras (el monitor corre cada 5 minutos)</span>';
+                    return;
+                }
+
+                if (sub) {
+                    sub.innerHTML = '<i class="fas fa-camera mr-1"></i>Cámaras 911 — '
+                        + (c.caidas > 0
+                            ? '<span style="color:#ef4444;font-weight:bold;">' + c.caidas + ' offline</span> de ' + c.total
+                            : 'las ' + c.total + ' online');
+                }
+
+                if (c.caidas === 0) {
+                    cont.innerHTML = '<span style="color:#22c55e;"><i class="fas fa-check-circle mr-1"></i>'
+                        + 'Todas las cámaras respondiendo</span>';
+                    return;
+                }
+
+                var html = c.offline.map(function (cam) {
+                    return '<div style="min-width:230px;flex:0 0 auto;border-left:3px solid #ef4444;padding-left:8px;">'
+                        + '<div><i class="fas fa-video-slash mr-1" style="color:#ef4444;"></i>'
+                        + '<strong>' + escapar(cam.nombre) + '</strong></div>'
+                        + '<small class="text-muted">' + (cam.ip ? escapar(cam.ip) + ' — ' : '')
+                        + 'sin responder hace ' + (cam.caida_hace ? escapar(cam.caida_hace) : '?') + '</small>'
+                        + '</div>';
+                }).join('');
+
+                if (c.caidas > c.offline.length) {
+                    html += '<div class="align-self-center"><small class="text-muted">... y '
+                        + (c.caidas - c.offline.length) + ' más</small></div>';
+                }
+
+                cont.innerHTML = html;
+            }
+
             function verificar() {
                 fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                     .then(function (r) { return r.json(); })
@@ -3171,6 +3219,7 @@
                         if (!d.disponible) {
                             cont.innerHTML = '<span class="text-muted"><i class="fas fa-exclamation-circle mr-1"></i>'
                                 + 'Sin lectura reciente de LibreNMS (el monitor corre cada 5 minutos)</span>';
+                            renderCamaras(d.camaras);
                             return;
                         }
 
@@ -3202,6 +3251,8 @@
                         if (el && d.consultado_en) {
                             el.textContent = 'Lectura LibreNMS: ' + d.consultado_en.substring(11, 16);
                         }
+
+                        renderCamaras(d.camaras);
                     })
                     .catch(function () {
                         var cont = document.getElementById('cctv-puestos-container');

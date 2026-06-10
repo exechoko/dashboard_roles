@@ -18,6 +18,9 @@ return [
     // (grupo "CCTV", el mismo del filtro filter[groups.id][eq]=9 en la web).
     'grupo_video' => (int) env('LIBRENMS_GRUPO_VIDEO', 9),
 
+    // ID del device group "Camaras 911" (filter[groups.id][eq]=2, +300 cámaras).
+    'grupo_camaras' => (int) env('LIBRENMS_GRUPO_CAMARAS', 2),
+
     // Umbral de uso de CPU (% promedio entre núcleos) que dispara la alerta.
     'umbral_cpu' => (int) env('LIBRENMS_UMBRAL_CPU', 60),
 

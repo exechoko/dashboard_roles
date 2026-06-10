@@ -15,6 +15,12 @@ class LibreNmsService
      */
     public const CACHE_KEY_ULTIMO_USO = 'librenms.cpu_video.ultimo';
 
+    /**
+     * Último estado de las cámaras 911 (total y caídas), guardado por el
+     * comando librenms:monitorear-camaras.
+     */
+    public const CACHE_KEY_CAMARAS = 'librenms.camaras.estado';
+
     private Client $client;
 
     private CookieJar $cookies;
@@ -56,6 +62,68 @@ class LibreNmsService
         $filas = $this->obtenerFilasProcesadores();
 
         return self::agregarUsoPorDispositivo($filas, $idsGrupo);
+    }
+
+    /**
+     * Devuelve el estado de las cámaras del grupo: total monitoreadas y
+     * listado de las que están caídas, con hace cuánto no responden.
+     *
+     * @return array{total: int, offline: array<int, array{device_id: int, nombre: string, ip: string|null, caida_hace: string}>}
+     */
+    public function obtenerEstadoCamaras(?int $grupoId = null): array
+    {
+        $grupoId = $grupoId ?? (int) config('librenms.grupo_camaras');
+
+        $this->iniciarSesion();
+        $this->asegurarTokenCsrf($grupoId);
+
+        $respuesta = $this->client->post('ajax/table/device', [
+            'headers' => [
+                'X-Requested-With' => 'XMLHttpRequest',
+                'X-CSRF-TOKEN'     => $this->csrfToken,
+            ],
+            'form_params' => [
+                'current'      => 1,
+                'rowCount'     => -1,
+                'searchPhrase' => '',
+                'group'        => $grupoId,
+            ],
+        ]);
+
+        if ($respuesta->getStatusCode() !== 200) {
+            throw new RuntimeException("LibreNMS: la tabla de dispositivos devolvió HTTP {$respuesta->getStatusCode()}.");
+        }
+
+        $datos = json_decode((string) $respuesta->getBody(), true);
+
+        if (!is_array($datos) || !isset($datos['rows'])) {
+            throw new RuntimeException('LibreNMS: respuesta inesperada de la tabla de dispositivos.');
+        }
+
+        return self::agregarEstadoCamaras($datos['rows']);
+    }
+
+    /**
+     * Captura el token CSRF de la sesión (meta csrf-token) si todavía no se
+     * obtuvo en esta instancia, usando la página de devices del grupo.
+     */
+    private function asegurarTokenCsrf(int $grupoId): void
+    {
+        if ($this->csrfToken !== null) {
+            return;
+        }
+
+        $respuesta = $this->client->get('devices', [
+            'query' => ['filter[groups.id][eq]' => $grupoId],
+        ]);
+
+        if (preg_match('/name="csrf-token"\s+content="([^"]+)"/', (string) $respuesta->getBody(), $m)) {
+            $this->csrfToken = $m[1];
+
+            return;
+        }
+
+        throw new RuntimeException('LibreNMS: no se pudo obtener el token CSRF de la sesión.');
     }
 
     private function iniciarSesion(): void
@@ -205,6 +273,70 @@ class LibreNmsService
         usort($resumen, fn (array $a, array $b) => $b['promedio'] <=> $a['promedio']);
 
         return $resumen;
+    }
+
+    /**
+     * Resume las filas de la tabla de dispositivos: cuenta el total y arma el
+     * listado de cámaras caídas. Para los equipos down, la columna uptime de
+     * LibreNMS muestra hace cuánto está sin responder.
+     *
+     * @param array<int, array{status?: string, hostname?: string, uptime?: string, device_id?: int|string}> $filas
+     * @return array{total: int, offline: array<int, array{device_id: int, nombre: string, ip: string|null, caida_hace: string}>}
+     */
+    public static function agregarEstadoCamaras(array $filas): array
+    {
+        $total = 0;
+        $offline = [];
+
+        foreach ($filas as $fila) {
+            $camara = self::parsearFilaCamara($fila);
+
+            if ($camara === null) {
+                continue;
+            }
+
+            $total++;
+
+            if ($camara['estado'] !== 'up') {
+                $offline[] = [
+                    'device_id'  => $camara['device_id'],
+                    'nombre'     => $camara['nombre'],
+                    'ip'         => $camara['ip'],
+                    'caida_hace' => $camara['tiempo'],
+                ];
+            }
+        }
+
+        usort($offline, fn (array $a, array $b) => strcasecmp($a['nombre'], $b['nombre']));
+
+        return ['total' => $total, 'offline' => $offline];
+    }
+
+    /**
+     * Parsea una fila de la tabla de dispositivos: nombre e IP del enlace al
+     * dispositivo, estado (up/down) y el tiempo de la columna uptime (que para
+     * equipos caídos indica hace cuánto no responden).
+     *
+     * @param array{status?: string, hostname?: string, uptime?: string, device_id?: int|string} $fila
+     * @return array{device_id: int, nombre: string, ip: string|null, estado: string, tiempo: string}|null
+     */
+    public static function parsearFilaCamara(array $fila): ?array
+    {
+        $celdaHost = $fila['hostname'] ?? '';
+
+        if (!preg_match('#<a[^>]*/device/(\d+)[^>]*>\s*([^<]+?)\s*</a>#', $celdaHost, $host)) {
+            return null;
+        }
+
+        $ip = preg_match('#<br\s*/?>\s*([0-9a-fA-F.:]+)#', $celdaHost, $mIp) ? $mIp[1] : null;
+
+        return [
+            'device_id' => (int) ($fila['device_id'] ?? $host[1]),
+            'nombre'    => html_entity_decode($host[2], ENT_QUOTES | ENT_HTML5, 'UTF-8'),
+            'ip'        => $ip,
+            'estado'    => $fila['status'] ?? 'desconocido',
+            'tiempo'    => trim(strip_tags((string) ($fila['uptime'] ?? ''))),
+        ];
     }
 
     /**

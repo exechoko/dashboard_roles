@@ -119,6 +119,13 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/librenms_cpu.log'));
 
+        // Estado de las +300 cámaras 911 en LibreNMS: cachea total y caídas
+        // (con hace cuánto no responden) para el dashboard y el bot.
+        $schedule->command('librenms:monitorear-camaras')
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/librenms_camaras.log'));
+
         // Pre-calienta el caché de conteos de geocodificación para el dashboard.
         // Se corre en background cada 5 min para que el endpoint nunca haga la query pesada en el request.
         $schedule->call(function () {

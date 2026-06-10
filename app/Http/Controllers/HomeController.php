@@ -536,21 +536,38 @@ class HomeController extends Controller
      */
     public function estadoCctv(): JsonResponse
     {
-        $cache = Cache::get(LibreNmsService::CACHE_KEY_ULTIMO_USO);
-
-        if (empty($cache['dispositivos'])) {
-            return response()->json(['disponible' => false]);
-        }
+        $cpu = Cache::get(LibreNmsService::CACHE_KEY_ULTIMO_USO);
+        $camaras = Cache::get(LibreNmsService::CACHE_KEY_CAMARAS);
 
         $umbral = (int) config('librenms.umbral_cpu');
 
+        $respuestaCpu = ['disponible' => false];
+        if (!empty($cpu['dispositivos'])) {
+            $respuestaCpu = [
+                'disponible'    => true,
+                'umbral'        => $umbral,
+                'consultado_en' => $cpu['consultado_en'] ?? null,
+                'puestos'       => array_slice($cpu['dispositivos'], 0, 6),
+                'en_alerta'     => count(array_filter($cpu['dispositivos'], fn (array $d) => $d['promedio'] > $umbral)),
+                'total'         => count($cpu['dispositivos']),
+            ];
+        }
+
+        $respuestaCamaras = ['disponible' => false];
+        if (!empty($camaras['total'])) {
+            $respuestaCamaras = [
+                'disponible'    => true,
+                'total'         => $camaras['total'],
+                'caidas'        => count($camaras['offline']),
+                'offline'       => array_slice($camaras['offline'], 0, 15),
+                'consultado_en' => $camaras['consultado_en'] ?? null,
+            ];
+        }
+
         return response()->json([
-            'disponible'    => true,
-            'umbral'        => $umbral,
-            'consultado_en' => $cache['consultado_en'] ?? null,
-            'puestos'       => array_slice($cache['dispositivos'], 0, 6),
-            'en_alerta'     => count(array_filter($cache['dispositivos'], fn (array $d) => $d['promedio'] > $umbral)),
-            'total'         => count($cache['dispositivos']),
+            // Compatibilidad con el poller del dashboard: claves de CPU al nivel raíz.
+            ...$respuestaCpu,
+            'camaras' => $respuestaCamaras,
         ]);
     }
 

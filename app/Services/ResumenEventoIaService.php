@@ -28,7 +28,7 @@ class ResumenEventoIaService
      * Genera un resumen estructurado del evento a partir del detalle ya parseado.
      *
      * @param array<string, mixed> $detalle Resultado de CecocoExpedienteService::obtenerDetalleExpediente()
-     * @return array{resumen: string, tipo: string, resultado: string, recursos: array<int, string>, personas: array<int, array{nombre: string, rol: string, dni: string}>, vehiculos: array<int, array{tipo: string, marca: string, modelo: string, color: string, distintivo: string, dominio: string}>, lugar: array{direccion: string, interseccion: string, localidad: string}, estado_final: string, modelo: string}
+     * @return array{resumen: string, mensaje: string, tipo: string, resultado: string, recursos: array<int, string>, personas: array<int, array{nombre: string, rol: string, dni: string}>, vehiculos: array<int, array{tipo: string, marca: string, modelo: string, color: string, distintivo: string, dominio: string}>, lugar: array{direccion: string, interseccion: string, localidad: string}, estado_final: string, modelo: string}
      */
     public function resumir(array $detalle): array
     {
@@ -43,7 +43,7 @@ class ResumenEventoIaService
             'keep_alive' => $this->keepAlive,
             'options' => [
                 'temperature' => 0.2,
-                'num_ctx' => 4096,
+                'num_ctx' => 8192,
             ],
             'messages' => [
                 ['role' => 'system', 'content' => $this->promptSistema()],
@@ -77,6 +77,9 @@ class ResumenEventoIaService
             // parseados, no de lo que devuelva el modelo (que a veces los omite).
             $salida['recursos'] = $this->recursosDesdeDetalle($detalle);
 
+            // Texto listo para copiar y enviar por mensaje (fecha/hora + narrativa).
+            $salida['mensaje'] = $this->mensajeParaEnviar($detalle, $salida['resumen']);
+
             // Guardamos el modelo que generó el resumen para mostrarlo y trazarlo.
             $salida['modelo'] = $this->model;
 
@@ -91,14 +94,25 @@ class ResumenEventoIaService
     {
         return 'Sos un asistente del centro de comando 911 de la policía. Te paso los datos de un evento '
             . 'policial. Devolvé SOLO un JSON válido (sin texto adicional) con esta estructura exacta: '
-            . '{"resumen": string de 2 a 3 frases en español neutro, "tipo": string, "resultado": string corto, '
+            . '{"resumen": string, "tipo": string, "resultado": string corto, '
             . '"recursos": [string], '
             . '"personas": [{"nombre": string, "rol": string, "dni": string}], '
             . '"vehiculos": [{"tipo": string, "marca": string, "modelo": string, "color": string, "distintivo": string, "dominio": string}], '
             . '"lugar": {"direccion": string, "interseccion": string, "localidad": string}, '
             . '"estado_final": string}. '
             . 'No inventes datos: si algo no figura, usá string vacío o lista vacía. '
-            . 'Escribí el "resumen" en tercera persona y respetá quién hizo qué: no inviertas el sujeto '
+            . 'El "resumen" es un parte policial narrativo de hasta 3 párrafos separados por un salto de línea (\n): '
+            . '1) cómo se origina el evento: quién se comunica al 911 (si figura el nombre del llamante), '
+            . 'el lugar del hecho y qué informa, por ejemplo "Se comunica la Sra. X al 911 informando que en calle Y..."; '
+            . '2) los móviles o recursos comisionados y a cargo de quién (jerarquía y apellido, si figuran en las novedades) '
+            . 'y qué hicieron en el lugar, por ejemplo "Se comisionó al móvil 901, a cargo del Sargento X, cuyos efectivos..."; '
+            . '3) cómo concluye la intervención, empezando con "Finalmente, ...", por ejemplo '
+            . '"Finalmente, la intervención concluyó sin novedad.". '
+            . 'Si no figuran móviles o no figura el cierre, omití ese párrafo; NO empieces el resumen con la fecha. '
+            . 'Incluí en la narrativa TODOS los datos aportados sobre las personas o vehículos involucrados: '
+            . 'vestimenta, tatuajes, características físicas, edad aproximada, apodos, dirección de fuga, patente, etc. '
+            . 'Esos datos sirven para identificar a los involucrados y no se pueden perder. '
+            . 'Escribí el "resumen" en tercera persona, en pasado, y respetá quién hizo qué: no inviertas el sujeto '
             . '(por ejemplo, si personas arrojan piedras a vehículos, NO digas que los vehículos arrojan piedras). '
             . 'En "personas" incluí solo a quienes se mencionen explícitamente (víctimas, demorados, autores, llamante). '
             . 'El campo "dni" SOLO se completa si el texto dice explícitamente "DNI" o "documento" seguido del número '
@@ -142,11 +156,70 @@ class ResumenEventoIaService
             'Municipio/Localidad: ' . ($historial['municipio'] ?? ''),
             'Fecha: ' . ($detalle['fecha_hora_inicial'] ?? ''),
             'Descripción: ' . ($detalle['descripcion_inicial'] ?? ''),
-            'Observaciones de cierre: ' . ($detalle['cierre']['observaciones'] ?? ''),
-            'Recursos asignados: ' . implode(', ', $recursos),
+            'Novedades del evento (en orden cronológico):',
         ];
 
+        foreach ($this->novedadesDesdeDetalle($detalle) as $novedad) {
+            $lineas[] = '- ' . $novedad;
+        }
+
+        $lineas[] = 'Observaciones de cierre: ' . ($detalle['cierre']['observaciones'] ?? '');
+        $lineas[] = 'Recursos asignados: ' . implode(', ', $recursos);
+
         return implode("\n", $lineas);
+    }
+
+    /**
+     * Devuelve las descripciones del timeline (novedades de los operadores), que es donde
+     * figura a quién se comisiona y a cargo de quién está cada móvil. Se acota el total
+     * para no exceder la ventana de contexto del modelo.
+     *
+     * @param array<string, mixed> $detalle
+     * @return array<int, string>
+     */
+    private function novedadesDesdeDetalle(array $detalle, int $maxCaracteres = 6000): array
+    {
+        $novedades = [];
+        $acumulado = 0;
+
+        foreach ($detalle['timeline'] ?? [] as $evento) {
+            $descripcion = trim((string) ($evento['descripcion'] ?? ''));
+            if ($descripcion === '' || $descripcion === '-') {
+                continue;
+            }
+
+            $linea = trim((string) ($evento['fecha_hora'] ?? '')) . ' ' . $descripcion;
+            $acumulado += strlen($linea);
+            if ($acumulado > $maxCaracteres) {
+                break;
+            }
+
+            $novedades[] = $linea;
+        }
+
+        return $novedades;
+    }
+
+    /**
+     * Arma el texto listo para enviar por mensaje: fecha/hora del evento en la primera
+     * línea y la narrativa con el prefijo "Descripción:".
+     *
+     * @param array<string, mixed> $detalle
+     */
+    private function mensajeParaEnviar(array $detalle, string $resumen): string
+    {
+        $fecha = trim((string) ($detalle['fecha_hora_inicial'] ?? ''));
+        foreach (['d/m/Y H:i:s', 'd/m/Y H:i'] as $formato) {
+            $dt = \DateTime::createFromFormat($formato, $fecha);
+            if ($dt instanceof \DateTime) {
+                $fecha = $dt->format('d/m/Y H:i');
+                break;
+            }
+        }
+
+        $cuerpo = trim($resumen) === '' ? '' : 'Descripción: ' . trim($resumen);
+
+        return trim($fecha . "\n" . $cuerpo);
     }
 
     /**
@@ -201,7 +274,7 @@ class ResumenEventoIaService
         ];
 
         return [
-            'resumen' => (string) ($datos['resumen'] ?? ''),
+            'resumen' => $this->separarParrafos((string) ($datos['resumen'] ?? '')),
             'tipo' => (string) ($datos['tipo'] ?? ''),
             'resultado' => (string) ($datos['resultado'] ?? ''),
             'recursos' => $recursos,
@@ -210,6 +283,21 @@ class ResumenEventoIaService
             'lugar' => $lugar,
             'estado_final' => (string) ($datos['estado_final'] ?? ''),
         ];
+    }
+
+    /**
+     * El modelo a veces devuelve la narrativa en un solo bloque aunque se le pidan
+     * párrafos: si no trae saltos de línea, los inserta antes del párrafo de los
+     * móviles comisionados y del cierre ("Finalmente, ...").
+     */
+    private function separarParrafos(string $resumen): string
+    {
+        $resumen = trim($resumen);
+        if ($resumen === '' || str_contains($resumen, "\n")) {
+            return $resumen;
+        }
+
+        return (string) preg_replace('/\s+(?=Se comision|Finalmente,)/u', "\n", $resumen, 2);
     }
 
     /**

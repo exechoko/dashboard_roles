@@ -14,6 +14,9 @@
             <button type="button" class="btn btn-sm btn-outline-info ml-2" data-resumen-ia-refrescar style="display:none;" title="Volver a generar el resumen con IA">
                 <i class="bi bi-arrow-clockwise"></i> Regenerar
             </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary ml-2" data-resumen-ia-copiar style="display:none;" title="Copiar el resumen para enviarlo por mensaje">
+                <i class="fas fa-copy"></i> Copiar
+            </button>
         </div>
     </div>
     <div class="card-body" data-resumen-ia-body style="display:none;">
@@ -23,7 +26,7 @@
         </div>
         <div data-resumen-ia-error class="alert alert-danger py-2 mb-0" style="display:none;"></div>
         <div data-resumen-ia-result style="display:none;">
-            <p data-ia-resumen class="mb-3" style="font-size:14px;"></p>
+            <p data-ia-resumen class="mb-3" style="font-size:14px; white-space:pre-line;"></p>
             <div class="mb-3">
                 <span class="badge badge-dark" data-ia-tipo style="display:none; font-size:.85rem;"></span>
                 <span class="badge badge-success ml-1" data-ia-estado style="display:none; font-size:.85rem;"></span>
@@ -68,6 +71,8 @@
     var url        = @json(route('api.cecoco.resumen-ia', $eventoCecoco));
     var btn        = root.querySelector('[data-resumen-ia-btn]');
     var btnRe      = root.querySelector('[data-resumen-ia-refrescar]');
+    var btnCopiar  = root.querySelector('[data-resumen-ia-copiar]');
+    var textoMensaje = '';
     var body       = root.querySelector('[data-resumen-ia-body]');
     var loading    = root.querySelector('[data-resumen-ia-loading]');
     var estadoText = root.querySelector('[data-resumen-ia-estado-text]');
@@ -141,9 +146,35 @@
             ? ('Generado el ' + data.generado_en + ' · ' + iaLabel)
             : '';
 
+        // Texto listo para enviar por mensaje. Los resúmenes viejos (cacheados antes
+        // del cambio de formato) no traen "mensaje": se usa el resumen solo.
+        textoMensaje = r.mensaje || r.resumen || '';
+        btnCopiar.style.display = textoMensaje ? '' : 'none';
+
         result.style.display = '';
         btnRe.style.display = '';
         btn.innerHTML = '<i class="bi bi-stars"></i> Ver resumen';
+    }
+
+    function copiarMensaje() {
+        if (!textoMensaje) { return; }
+        var confirmar = function () {
+            btnCopiar.innerHTML = '<i class="fas fa-check"></i> Copiado';
+            setTimeout(function () { btnCopiar.innerHTML = '<i class="fas fa-copy"></i> Copiar'; }, 2000);
+        };
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(textoMensaje).then(confirmar);
+            return;
+        }
+        // Fallback para contextos sin HTTPS (red interna)
+        var ta = document.createElement('textarea');
+        ta.value = textoMensaje;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); confirmar(); } catch (e) {}
+        document.body.removeChild(ta);
     }
 
     function finalizar() {
@@ -200,6 +231,7 @@
         estadoText.textContent = 'Encolando resumen…';
         errorBox.style.display = 'none';
         result.style.display = 'none';
+        btnCopiar.style.display = 'none';
         btn.disabled = true; btnRe.disabled = true;
 
         consultar(refrescar);
@@ -207,6 +239,7 @@
 
     btn.addEventListener('click', function () { generar(false); });
     btnRe.addEventListener('click', function () { generar(true); });
+    btnCopiar.addEventListener('click', copiarMensaje);
 })();
 </script>
 @endif

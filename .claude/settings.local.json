@@ -80,7 +80,8 @@
       "PowerShell(php artisan test --compact tests/Feature/GeocodificacionServiceTest.php)",
       "PowerShell(php artisan cecoco:reintentar-geocodificacion-fallida --limite=30 --pausa=100)",
       "PowerShell(php artisan test --compact)",
-      "PowerShell(Start-Process -FilePath \"php\" -ArgumentList \"artisan\",\"cecoco:reintentar-geocodificacion-fallida\",\"--limite=0\",\"--pausa=0\" -WorkingDirectory \"C:\\\\Apache24\\\\htdocs\\\\dashboard_roles\" -WindowStyle Hidden -RedirectStandardOutput \"C:\\\\Apache24\\\\htdocs\\\\dashboard_roles\\\\storage\\\\logs\\\\cecoco_geocodificacion_reintentos_manual.log\" -RedirectStandardError \"C:\\\\Apache24\\\\htdocs\\\\dashboard_roles\\\\storage\\\\logs\\\\cecoco_geocodificacion_reintentos_manual_err.log\" -PassThru | Select-Object Id, ProcessName, StartTime)"
+      "PowerShell(Start-Process -FilePath \"php\" -ArgumentList \"artisan\",\"cecoco:reintentar-geocodificacion-fallida\",\"--limite=0\",\"--pausa=0\" -WorkingDirectory \"C:\\\\Apache24\\\\htdocs\\\\dashboard_roles\" -WindowStyle Hidden -RedirectStandardOutput \"C:\\\\Apache24\\\\htdocs\\\\dashboard_roles\\\\storage\\\\logs\\\\cecoco_geocodificacion_reintentos_manual.log\" -RedirectStandardError \"C:\\\\Apache24\\\\htdocs\\\\dashboard_roles\\\\storage\\\\logs\\\\cecoco_geocodificacion_reintentos_manual_err.log\" -PassThru | Select-Object Id, ProcessName, StartTime)",
+      "PowerShell(php -l app\\\\Services\\\\ResumenEventoIaService.php)"
     ]
   },
   "enableAllProjectMcpServers": true,

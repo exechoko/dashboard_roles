@@ -107,6 +107,7 @@
                                                         'modulaciones-cecoco',
                                                         'ver-historico-movil-cecoco',
                                                         'ver-historico-movil-gis-cecoco',
+                                                        'recurso-alias-cecoco',
                                                     ],
                                                     'Entregas' => [
                                                         'entrega-equipos',

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Equipo extends Model
 {
@@ -57,6 +58,11 @@ class Equipo extends Model
 
     public function flota_general(){
         return $this->hasMany(FlotaGeneral::class);
+    }
+
+    public function cecocoAliases(): HasMany
+    {
+        return $this->hasMany(CecocoRecursoAlias::class);
     }
 
     public function historico(){

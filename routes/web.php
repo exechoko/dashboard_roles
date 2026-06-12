@@ -27,6 +27,7 @@ use App\Http\Controllers\MapaController;
 use App\Http\Controllers\TipoCamaraController;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\CamaraFisicaController;
+use App\Http\Controllers\CecocoRecursoAliasController;
 use App\Http\Controllers\SitioController;
 use App\Http\Controllers\CecocoController;
 use App\Http\Controllers\TranscripcionController;
@@ -85,6 +86,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('dependencias', DependenciaController::class);
     Route::resource('vehiculos', VehiculoController::class);
     Route::resource('recursos', RecursoController::class);
+    Route::resource('cecoco/recursos-alias', CecocoRecursoAliasController::class)
+        ->parameters(['recursos-alias' => 'cecocoRecursoAlias'])
+        ->names('cecoco.recursos-alias');
     Route::resource('flota', FlotaGeneralController::class);
     Route::resource('camaras', CamaraController::class);
     Route::resource('camaras_fisicas', CamaraFisicaController::class);

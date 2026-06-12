@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Recurso extends Model
 {
@@ -19,6 +20,16 @@ class Recurso extends Model
 
     public function flota_general(){
         return $this->hasMany(FlotaGeneral::class);
+    }
+
+    public function flotaActiva(): HasMany
+    {
+        return $this->hasMany(FlotaGeneral::class)->whereNull('fecha_desasignacion');
+    }
+
+    public function cecocoAliases(): HasMany
+    {
+        return $this->hasMany(CecocoRecursoAlias::class);
     }
 
     public function historico(){

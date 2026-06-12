@@ -128,6 +128,10 @@ class SeederTablaPermisos extends Seeder
             'escuchar-modulaciones-cecoco',
             'ver-historico-movil-cecoco',
             'ver-historico-movil-gis-cecoco',
+            'ver-recurso-alias-cecoco',
+            'crear-recurso-alias-cecoco',
+            'editar-recurso-alias-cecoco',
+            'borrar-recurso-alias-cecoco',
 
             //ENTREGAS – Equipos
             'ver-entrega-equipos',

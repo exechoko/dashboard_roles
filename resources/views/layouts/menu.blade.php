@@ -228,7 +228,7 @@
 
 @can('ver-menu-cecoco')
     <li
-        class="dropdown {{ request()->is('indexMoviles*') ? 'active' : '' }} {{ request()->is('indexLlamadas*') ? 'active' : '' }}">
+        class="dropdown {{ request()->is('indexMoviles*') ? 'active' : '' }} {{ request()->is('indexLlamadas*') ? 'active' : '' }} {{ request()->is('cecoco/recursos-alias*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-life-ring"></i><span>CeCoCo</span>
         </a>
@@ -244,6 +244,13 @@
                 <li class="{{ request()->routeIs('cecoco.index') || request()->routeIs('cecoco.show') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('cecoco.index') }}">
                         <i class="fas fa-database"></i><span>Analizador de Eventos</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-recurso-alias-cecoco')
+                <li class="{{ request()->routeIs('cecoco.recursos-alias.*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('cecoco.recursos-alias.index') }}">
+                        <i class="fas fa-project-diagram"></i><span>Mapeo de Recursos</span>
                     </a>
                 </li>
             @endcan

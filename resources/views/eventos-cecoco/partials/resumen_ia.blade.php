@@ -80,7 +80,7 @@
     var result     = root.querySelector('[data-resumen-ia-result]');
 
     var INTERVALO_MS = 3000;   // cada cuánto consulta el estado
-    var MAX_INTENTOS = 100;    // ~5 min de espera máxima
+    var MAX_INTENTOS = 240;    // ~12 min de espera máxima (gemma4:e4b tarda ~5-8 min)
     var intentos = 0;
     var pollTimer = null;
 

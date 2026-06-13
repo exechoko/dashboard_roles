@@ -28,15 +28,16 @@ class ResumirPendientesCecoco extends Command
 
         $limite = max(1, (int) $this->option('limite'));
 
-        // Tomar pendientes y también "procesando" que quedaron colgados (>10 min):
-        // si el proceso anterior murió, hay que reintentarlos.
+        // Tomar pendientes y también "procesando" que quedaron colgados (>30 min,
+        // holgura sobre los ~8 min que puede tardar gemma4:e4b en frío): si el
+        // proceso anterior murió, hay que reintentarlos.
         $pendientes = DetalleExpedienteCecoco::query()
             ->whereNotNull('detalle_json')
             ->where(function ($q) {
                 $q->where('resumen_ia_estado', 'pendiente')
                     ->orWhere(function ($q2) {
                         $q2->where('resumen_ia_estado', 'procesando')
-                            ->where('updated_at', '<', Carbon::now()->subMinutes(10));
+                            ->where('updated_at', '<', Carbon::now()->subMinutes(30));
                     });
             })
             ->orderBy('updated_at')

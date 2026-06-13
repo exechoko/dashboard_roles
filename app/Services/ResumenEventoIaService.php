@@ -104,16 +104,22 @@ class ResumenEventoIaService
             . 'El "resumen" es un parte policial narrativo de hasta 3 párrafos separados por un salto de línea (\n): '
             . '1) cómo se origina el evento: quién se comunica al 911 (si figura el nombre del llamante), '
             . 'el lugar del hecho y qué informa, por ejemplo "Se comunica la Sra. X al 911 informando que en calle Y..."; '
-            . '2) los móviles o recursos comisionados y a cargo de quién (jerarquía y apellido, si figuran en las novedades) '
-            . 'y qué hicieron en el lugar, por ejemplo "Se comisionó al móvil 901, a cargo del Sargento X, cuyos efectivos..."; '
+            . '2) los móviles o recursos comisionados y a cargo de quién (jerarquía y apellido, SOLO si figuran textualmente '
+            . 'en las novedades; NUNCA inventes una jerarquía ni un nombre) y qué hicieron en el lugar, por ejemplo '
+            . '"Se comisionó al móvil 901, a cargo del Sargento X, cuyos efectivos...". Incluí el resultado de las '
+            . 'entrevistas o diligencias: con quién se entrevistaron los efectivos y qué manifestó el entrevistado; '
             . '3) cómo concluye la intervención, empezando con "Finalmente, ...", por ejemplo '
             . '"Finalmente, la intervención concluyó sin novedad.". '
             . 'Si no figuran móviles o no figura el cierre, omití ese párrafo; NO empieces el resumen con la fecha. '
-            . 'Incluí en la narrativa TODOS los datos aportados sobre las personas o vehículos involucrados: '
-            . 'vestimenta, tatuajes, características físicas, edad aproximada, apodos, dirección de fuga, patente, etc. '
-            . 'Esos datos sirven para identificar a los involucrados y no se pueden perder. '
+            . 'Incluí en la narrativa TODOS los datos aportados sobre las personas o vehículos involucrados '
+            . '(vestimenta, tatuajes, características físicas, edad aproximada, apodos, dirección de fuga, patente, etc.) '
+            . 'y sobre el lugar del hecho (color y descripción de la vivienda, comercios o referencias cercanas, rejas, etc.). '
+            . 'Esos datos sirven para identificar a los involucrados y el lugar, y no se pueden perder. '
+            . 'Abreviaturas frecuentes en las novedades: "s/n" después de una calle es "sin número"; '
+            . '"masc." es masculino y "fem." es femenina. '
             . 'Escribí el "resumen" en tercera persona, en pasado, y respetá quién hizo qué: no inviertas el sujeto '
-            . '(por ejemplo, si personas arrojan piedras a vehículos, NO digas que los vehículos arrojan piedras). '
+            . '(por ejemplo, si personas arrojan piedras a vehículos, NO digas que los vehículos arrojan piedras; '
+            . 'si la llamante dice que conoce al masculino y le da alimento, NO digas que el masculino la conoce a ella). '
             . 'En "personas" incluí solo a quienes se mencionen explícitamente (víctimas, demorados, autores, llamante). '
             . 'El campo "dni" SOLO se completa si el texto dice explícitamente "DNI" o "documento" seguido del número '
             . '(7 u 8 dígitos). NUNCA uses como DNI un número de teléfono ni un número entre paréntesis: esos son teléfonos, no documentos. '
@@ -155,15 +161,15 @@ class ResumenEventoIaService
             'Jurisdicción: ' . ($historial['jurisdiccion'] ?? ''),
             'Municipio/Localidad: ' . ($historial['municipio'] ?? ''),
             'Fecha: ' . ($detalle['fecha_hora_inicial'] ?? ''),
-            'Descripción: ' . ($detalle['descripcion_inicial'] ?? ''),
+            'Descripción: ' . $this->expandirAbreviaturas((string) ($detalle['descripcion_inicial'] ?? '')),
             'Novedades del evento (en orden cronológico):',
         ];
 
         foreach ($this->novedadesDesdeDetalle($detalle) as $novedad) {
-            $lineas[] = '- ' . $novedad;
+            $lineas[] = '- ' . $this->expandirAbreviaturas($novedad);
         }
 
-        $lineas[] = 'Observaciones de cierre: ' . ($detalle['cierre']['observaciones'] ?? '');
+        $lineas[] = 'Observaciones de cierre: ' . $this->expandirAbreviaturas((string) ($detalle['cierre']['observaciones'] ?? ''));
         $lineas[] = 'Recursos asignados: ' . implode(', ', $recursos);
 
         return implode("\n", $lineas);
@@ -177,7 +183,7 @@ class ResumenEventoIaService
      * @param array<string, mixed> $detalle
      * @return array<int, string>
      */
-    private function novedadesDesdeDetalle(array $detalle, int $maxCaracteres = 6000): array
+    private function novedadesDesdeDetalle(array $detalle, int $maxCaracteres = 4000): array
     {
         $novedades = [];
         $acumulado = 0;
@@ -198,6 +204,28 @@ class ResumenEventoIaService
         }
 
         return $novedades;
+    }
+
+    /**
+     * Expande las abreviaturas policiales de las novedades antes de pasarlas al modelo:
+     * un modelo chico las malinterpreta ("a/c" como nombre, "cria" como criadera), así
+     * que es más confiable resolverlas acá que explicarlas en el prompt.
+     */
+    private function expandirAbreviaturas(string $texto): string
+    {
+        return (string) preg_replace(
+            [
+                '/\ba\/c\b\.?/iu',
+                '/\bjefe de cr[ií]a\b\.?/iu',
+                '/\bcr[ií]a\b\.?/iu',
+            ],
+            [
+                'a cargo de',
+                'Jefe de Comisaría',
+                'Comisaría',
+            ],
+            $texto
+        );
     }
 
     /**

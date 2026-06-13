@@ -12,6 +12,7 @@ class ResumenEventoIaService
     private string $model;
     private int $timeout;
     private string $keepAlive;
+    private int $numThread;
     private ?bool $think;
 
     public function __construct()
@@ -20,6 +21,7 @@ class ResumenEventoIaService
         $this->model = (string) config('ia.model');
         $this->timeout = (int) config('ia.timeout', 180);
         $this->keepAlive = (string) config('ia.keep_alive', '30m');
+        $this->numThread = (int) config('ia.num_thread', 16);
         $think = config('ia.think');
         $this->think = $think === null ? null : (bool) $think;
     }
@@ -44,6 +46,7 @@ class ResumenEventoIaService
             'options' => [
                 'temperature' => 0.2,
                 'num_ctx' => 8192,
+                'num_thread' => $this->numThread,
             ],
             'messages' => [
                 ['role' => 'system', 'content' => $this->promptSistema()],

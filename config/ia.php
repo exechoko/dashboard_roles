@@ -16,6 +16,11 @@ return [
     // Mantener el modelo cargado en memoria entre pedidos para evitar la carga en frío.
     'keep_alive' => env('IA_KEEP_ALIVE', '30m'),
 
+    // Hilos de CPU para la inferencia. En el Xeon sin AVX2 el prefill es compute-bound:
+    // 16 hilos dieron el mejor prefill (~16 tok/s vs ~11 del default; 24 empeora por
+    // sobre-suscripción). Ajustar según los núcleos físicos del server de inferencia.
+    'num_thread' => env('IA_NUM_THREAD', 16),
+
     // Modo "thinking" de modelos razonadores (qwen3, etc.). Dejar en false para esos
     // modelos: el razonamiento dispara la latencia. null = no enviar el parámetro
     // (para modelos que no lo soportan, como qwen2.5 o gemma).

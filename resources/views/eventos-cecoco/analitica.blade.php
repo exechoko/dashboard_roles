@@ -242,6 +242,12 @@
             </div>
             <div class="col-6 col-md-4 col-lg-3">
                 <div class="form-check">
+                    <input class="form-check-input dashboard-toggle" type="checkbox" value="resultados" id="toggle-resultados" checked>
+                    <label class="form-check-label" for="toggle-resultados">Resultados operativos</label>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="form-check">
                     <input class="form-check-input dashboard-toggle" type="checkbox" value="hora" id="toggle-hora" checked>
                     <label class="form-check-label" for="toggle-hora">Por hora</label>
                 </div>
@@ -326,6 +332,56 @@
                     <div>
                         <div class="stat-value" id="stat-promedio-diario">-</div>
                         <div class="stat-label">Llamadas/día promedio</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Resultados operativos (estimados desde el texto de las novedades) --}}
+        <div class="mb-4" data-dashboard-section="resultados">
+            <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+                <h6 class="mb-0 fw-semibold"><i class="bi bi-clipboard2-check me-1 text-primary"></i>Resultados operativos del período</h6>
+                <span class="badge bg-secondary-subtle text-secondary-emphasis border" style="font-size:.7rem">VALORES APROX.</span>
+            </div>
+            <p class="text-muted mb-3" style="font-size:.8rem">
+                <i class="bi bi-info-circle me-1"></i>Estimados a partir del texto de las novedades; cuentan eventos cuya
+                descripción coincide, no cantidades exactas. Pueden no reflejar la cifra oficial.
+            </p>
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon text-primary"><i class="bi bi-person-fill-lock"></i></div>
+                        <div>
+                            <div class="stat-value" id="stat-demorados">-</div>
+                            <div class="stat-label">Demorados / detenidos</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon text-danger"><i class="bi bi-bullseye"></i></div>
+                        <div>
+                            <div class="stat-value" id="stat-armas">-</div>
+                            <div class="stat-label">Armas de fuego secuestradas</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon text-warning"><i class="bi bi-bicycle"></i></div>
+                        <div>
+                            <div class="stat-value" id="stat-motos">-</div>
+                            <div class="stat-label">Motovehículos recuperados</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon text-success"><i class="bi bi-car-front-fill"></i></div>
+                        <div>
+                            <div class="stat-value" id="stat-vehiculos">-</div>
+                            <div class="stat-label">Vehículos recuperados</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -458,8 +514,9 @@
             let chartHora = null, chartDia = null, chartTipos = null, chartCalles = null, chartFecha = null, chartComparativa = null;
             const dashboardStorageKey = 'cecoco-analitica-dashboard';
             const chartInstances = () => [chartFecha, chartComparativa, chartHora, chartDia, chartTipos, chartCalles].filter(Boolean);
-            const dashboardDefaults = ['fecha', 'comparativa', 'hora', 'dia', 'tipos', 'calles', 'incidencias'];
+            const dashboardDefaults = ['resultados', 'fecha', 'comparativa', 'hora', 'dia', 'tipos', 'calles', 'incidencias'];
             const chartLabels = {
+                resultados: 'Resultados operativos del período (aprox.)',
                 fecha: 'Llamadas al 911 por día',
                 comparativa: 'Comparativa de hechos de relevancia',
                 hora: 'Eventos por hora del día',
@@ -991,6 +1048,13 @@
                             datos.top_calles && datos.top_calles.length > 0 ? datos.top_calles[0].calle : '-';
                         document.getElementById('stat-promedio-diario').textContent =
                             datos.promedio_diario != null ? datos.promedio_diario.toLocaleString('es-AR') : '-';
+
+                        const indicadores = datos.indicadores_resultado || {};
+                        const fmtIndicador = v => (v != null ? Number(v).toLocaleString('es-AR') : '-');
+                        document.getElementById('stat-demorados').textContent = fmtIndicador(indicadores.demorados);
+                        document.getElementById('stat-armas').textContent = fmtIndicador(indicadores.armas_secuestradas);
+                        document.getElementById('stat-motos').textContent = fmtIndicador(indicadores.motos_recuperadas);
+                        document.getElementById('stat-vehiculos').textContent = fmtIndicador(indicadores.vehiculos_recuperados);
 
                         renderCharts(datos);
                         mostrarIncidencias(datos);

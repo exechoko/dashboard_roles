@@ -1383,6 +1383,17 @@ class EventoCecocoController extends Controller
             $comparativaAnterior[] = (clone $baseAnterior)->whereRaw($condition)->count();
         }
 
+        // ── Resultados operativos (aproximados, extraídos del texto de la descripción) ──
+        // No existen como columnas: se infieren del relato de las novedades, por lo que
+        // son estimaciones (cuentan eventos cuya descripción coincide, no cantidades exactas).
+        $indicadoresResultado = [];
+        foreach ($this->patronesResultadoOperativo() as $clave => $patron) {
+            $indicadoresResultado[$clave] = (clone $base)
+                ->whereNotNull('descripcion')
+                ->whereRaw('descripcion REGEXP ?', [$patron])
+                ->count();
+        }
+
         $eventos = (clone $base)
             ->select(['id', 'nro_expediente', 'fecha_hora', 'descripcion', 'tipo_servicio'])
             ->orderByDesc('fecha_hora')
@@ -1412,9 +1423,28 @@ class EventoCecocoController extends Controller
             'promedio_diario' => $promedioDiario,
             'comparativa_actual' => $comparativaActual,
             'comparativa_anterior' => $comparativaAnterior,
+            'indicadores_resultado' => $indicadoresResultado,
             'eventos' => $eventos,
             'eventos_limit' => 100,
         ]);
+    }
+
+    /**
+     * Patrones REGEXP para estimar resultados operativos desde el texto libre de las
+     * novedades. Buscan los términos relevantes en cercanía (sin cruzar el punto final
+     * de la oración) para reducir falsos positivos. Las cifras resultantes son
+     * aproximadas: cuentan eventos cuya descripción coincide, no cantidades exactas.
+     *
+     * @return array<string, string>
+     */
+    private function patronesResultadoOperativo(): array
+    {
+        return [
+            'demorados' => 'demorad[oa]|aprehend|aprehensi[oó]n|detenci[oó]n del (masculino|femenino|menor|ciudadano|sujeto|joven|autor)|detenido el (masculino|menor|sujeto|autor)|proced[a-z]+ a la detenci[oó]n',
+            'armas_secuestradas' => '(secuestr|incaut|decomis)[a-z]*[^.]{0,45}arma de fuego|arma de fuego[^.]{0,45}(secuestr|incaut|decomis)',
+            'motos_recuperadas' => 'recuper[a-z]*[^.]{0,45}(motoveh|motociclet|\\bmoto\\b)|(motoveh|motociclet|\\bmoto\\b)[^.]{0,45}recuper',
+            'vehiculos_recuperados' => 'recuper[a-z]*[^.]{0,45}(\\bveh[ií]culo|autom[oó]vil|\\bauto\\b|camioneta)|(\\bveh[ií]culo|autom[oó]vil|\\bauto\\b|camioneta)[^.]{0,45}recuper',
+        ];
     }
 }
 

@@ -470,16 +470,8 @@
     </li>
 @endcanany
 
-@can('ver-menu-auditoria')
-    <li class="{{ request()->is('auditoria*') ? 'active' : '' }}">
-        <a class="nav-link" href="/auditoria">
-            <i class=" fas fa-search"></i><span>Auditoría</span>
-        </a>
-    </li>
-@endcan
-
 @canany(['ver-menu-web', 'editar-web-contadores', 'editar-web-textos', 'editar-web-historia', 'editar-web-tecnologia', 'editar-web-dependencias', 'crear-noticia', 'editar-noticia', 'eliminar-noticia'])
-    <li class="{{ request()->is('web-admin*') || request()->is('noticias*') || request()->is('web-dependencias*') ? 'active' : '' }}">
+    <li class="{{ request()->is('web-admin*') || request()->is('noticias*') || request()->is('web-dependencias*') || request()->is('web-historia*') || request()->is('web-tecnologia*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-globe"></i><span>Administrar Web</span>
         </a>
@@ -529,5 +521,13 @@
         </ul>
     </li>
 @endcanany
+
+@can('ver-menu-auditoria')
+    <li class="{{ request()->is('auditoria*') ? 'active' : '' }}">
+        <a class="nav-link" href="/auditoria">
+            <i class=" fas fa-search"></i><span>Auditoría</span>
+        </a>
+    </li>
+@endcan
 
 <!--Documentacion en GetStisla-->

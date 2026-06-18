@@ -5,12 +5,21 @@
         <div class="section-header d-flex justify-content-between align-items-center">
             <h3 class="page__heading">Administrar Web — Textos</h3>
             <div>
-                <a href="{{ route('web-historia.index') }}" class="btn btn-info">
-                    <i class="fas fa-stream"></i> Cards de Historia
-                </a>
-                <a href="{{ route('web-admin.contadores.edit') }}" class="btn btn-light">
-                    <i class="fas fa-sort-numeric-up"></i> Contadores
-                </a>
+                @can('editar-web-historia')
+                    <a href="{{ route('web-historia.index') }}" class="btn btn-info">
+                        <i class="fas fa-stream"></i> Cards de Historia
+                    </a>
+                @endcan
+                @can('editar-web-tecnologia')
+                    <a href="{{ route('web-tecnologia.index') }}" class="btn btn-info">
+                        <i class="fas fa-microchip"></i> Cards de Tecnología
+                    </a>
+                @endcan
+                @can('editar-web-contadores')
+                    <a href="{{ route('web-admin.contadores.edit') }}" class="btn btn-light">
+                        <i class="fas fa-sort-numeric-up"></i> Contadores
+                    </a>
+                @endcan
             </div>
         </div>
 

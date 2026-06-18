@@ -18,7 +18,7 @@ class WebTechCardController extends Controller
 {
     public function __construct(private GeneradorTecnologiaJs $generador)
     {
-        $this->middleware('permission:editar-web-textos');
+        $this->middleware('permission:editar-web-tecnologia');
     }
 
     public function imagen(string $archivo): \Symfony\Component\HttpFoundation\BinaryFileResponse

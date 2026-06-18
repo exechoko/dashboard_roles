@@ -202,7 +202,7 @@
                         <li>El <strong>orden</strong> define la posición en la línea de tiempo (menor número = primero).</li>
                         <li>Podés <strong>editar</strong> o <strong>eliminar</strong> cualquier tarjeta. Los cambios se publican al instante en <strong>historia.html</strong>.</li>
                     </ol>
-                    @can('editar-web-textos')
+                    @can('editar-web-historia')
                         <a href="{{ route('web-historia.index') }}" class="btn btn-sm btn-outline-primary mb-2">
                             <i class="fas fa-stream"></i> Ir a Cards de Historia
                         </a>

@@ -12,7 +12,7 @@ class StoreWebTechCardRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()?->can('editar-web-textos') === true;
+        return $this->user()?->can('editar-web-tecnologia') === true;
     }
 
     /**

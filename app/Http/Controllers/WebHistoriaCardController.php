@@ -16,7 +16,7 @@ class WebHistoriaCardController extends Controller
 {
     public function __construct(private GeneradorHistoriaJs $generador)
     {
-        $this->middleware('permission:editar-web-textos');
+        $this->middleware('permission:editar-web-historia');
     }
 
     public function index(): View

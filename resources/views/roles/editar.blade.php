@@ -157,6 +157,8 @@
                                                         'menu-web',
                                                         'web-contadores',
                                                         'web-textos',
+                                                        'web-historia',
+                                                        'web-tecnologia',
                                                         'web-dependencias',
                                                         'noticia'
                                                     ]

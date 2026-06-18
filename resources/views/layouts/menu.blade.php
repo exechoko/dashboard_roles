@@ -478,7 +478,7 @@
     </li>
 @endcan
 
-@canany(['ver-menu-web', 'editar-web-contadores', 'editar-web-textos', 'editar-web-dependencias', 'crear-noticia', 'editar-noticia', 'eliminar-noticia'])
+@canany(['ver-menu-web', 'editar-web-contadores', 'editar-web-textos', 'editar-web-historia', 'editar-web-tecnologia', 'editar-web-dependencias', 'crear-noticia', 'editar-noticia', 'eliminar-noticia'])
     <li class="{{ request()->is('web-admin*') || request()->is('noticias*') || request()->is('web-dependencias*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-globe"></i><span>Administrar Web</span>
@@ -497,11 +497,15 @@
                         <i class="fas fa-font mr-1"></i><span>Textos</span>
                     </a>
                 </li>
+            @endcan
+            @can('editar-web-historia')
                 <li class="{{ request()->is('web-historia*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('web-historia.index') }}">
                         <i class="fas fa-stream mr-1"></i><span>Historia (timeline)</span>
                     </a>
                 </li>
+            @endcan
+            @can('editar-web-tecnologia')
                 <li class="{{ request()->is('web-tecnologia*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('web-tecnologia.index') }}">
                         <i class="fas fa-microchip mr-1"></i><span>Tecnología (cards)</span>

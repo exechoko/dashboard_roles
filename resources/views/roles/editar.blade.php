@@ -152,6 +152,12 @@
                                                         'buscar-moviles-recorridos',
                                                         'reiniciar-camara',
                                                         'herramientas-mapa'
+                                                    ],
+                                                    'Administrar Web' => [
+                                                        'menu-web',
+                                                        'web-contadores',
+                                                        'web-textos',
+                                                        'noticia'
                                                     ]
                                                 ];
 

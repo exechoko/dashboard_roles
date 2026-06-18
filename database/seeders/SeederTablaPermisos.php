@@ -222,6 +222,14 @@ class SeederTablaPermisos extends Seeder
             'cargar-instructivos',
             'descargar-instructivos',
             'borrar-instructivos',
+
+            //Administrar Web (div911.stper.com.ar)
+            'ver-menu-web',
+            'editar-web-contadores',
+            'editar-web-textos',
+            'crear-noticia',
+            'editar-noticia',
+            'eliminar-noticia',
         ];
 
         // Crear permisos si no existen

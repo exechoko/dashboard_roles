@@ -24,10 +24,13 @@ class WebAdminController extends Controller
     public function editContadores(): View
     {
         $datos = WebConfigDato::comoMapa();
+        $ahora = now();
 
         return view('web-admin.contadores', [
-            'datos'  => $datos,
-            'meses'  => $datos['meses2026'] ?? ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+            'datos'      => $datos,
+            'meses'      => $datos['meses2026'] ?? ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+            'anioActual' => $ahora->year,
+            'mesActual'  => ucfirst($ahora->locale('es')->translatedFormat('F')) . ' ' . $ahora->year,
         ]);
     }
 

@@ -28,6 +28,8 @@
     ];
 
     $val = fn ($clave, $default = 0) => old($clave, $datos[$clave] ?? $default);
+
+    $meses = old('meses2026', $datos['meses2026'] ?? ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun']);
 @endphp
 
 @section('content')
@@ -98,28 +100,49 @@
                 @endforeach
 
                 <div class="card">
-                    <div class="card-header"><h4>Resultados 2026 por mes</h4></div>
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+                        <h4 class="mb-0">Resultados {{ $anioActual }} por mes</h4>
+                        <div class="mt-2 mt-md-0">
+                            <span class="badge badge-info mr-2">Mes actual: {{ $mesActual }}</span>
+                            <button type="button" class="btn btn-sm btn-success" id="btnAgregarMes">
+                                <i class="fas fa-plus"></i> Agregar mes
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" id="btnQuitarMes">
+                                <i class="fas fa-minus"></i> Quitar último
+                            </button>
+                        </div>
+                    </div>
                     <div class="card-body">
-                        <p class="text-muted">Cargá un valor por mes. Los totales del año se suman automáticamente en la web.</p>
+                        <p class="text-muted">Cargá un valor por mes. Podés agregar o quitar columnas; los totales del año se suman solos en la web.</p>
+                        @foreach (['armasPorMes', 'vehiculosPorMes', 'motosPorMes'] as $serie)
+                            @error($serie)
+                                <div class="alert alert-danger py-1">{{ $message }}</div>
+                            @enderror
+                        @endforeach
                         <div class="table-responsive">
-                            <table class="table table-bordered table-striped">
+                            <table class="table table-bordered table-striped" id="tablaMeses">
                                 <thead>
-                                    <tr>
-                                        <th>Indicador</th>
+                                    <tr id="filaMeses">
+                                        <th style="min-width:170px">Indicador</th>
                                         @foreach ($meses as $mes)
-                                            <th class="text-center">{{ $mes }}</th>
+                                            <th class="text-center mes-col">
+                                                <input type="text" name="meses2026[]" value="{{ $mes }}"
+                                                       maxlength="12" required
+                                                       class="form-control form-control-sm text-center font-weight-bold input-mes"
+                                                       style="min-width:64px">
+                                            </th>
                                         @endforeach
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($series as $clave => $etiqueta)
                                         @php $valores = old($clave, $datos[$clave] ?? array_fill(0, count($meses), 0)); @endphp
-                                        <tr>
+                                        <tr data-serie="{{ $clave }}">
                                             <td class="align-middle"><strong>{{ $etiqueta }}</strong></td>
                                             @foreach ($meses as $i => $mes)
-                                                <td>
+                                                <td class="mes-col">
                                                     <input type="number" min="0" step="1"
-                                                           class="form-control text-center @error($clave.'.'.$i) is-invalid @enderror"
+                                                           class="form-control text-center"
                                                            name="{{ $clave }}[]"
                                                            value="{{ $valores[$i] ?? 0 }}" required>
                                                 </td>
@@ -182,4 +205,67 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+            const filaMeses = document.getElementById('filaMeses');
+            const tbody = document.querySelector('#tablaMeses tbody');
+
+            function sugerirSiguienteMes() {
+                const inputs = filaMeses.querySelectorAll('.input-mes');
+                if (!inputs.length) {
+                    return MESES[0];
+                }
+                const ultimo = inputs[inputs.length - 1].value.trim().toLowerCase();
+                const idx = MESES.findIndex(m => m.toLowerCase() === ultimo);
+                return idx === -1 ? '' : MESES[(idx + 1) % 12];
+            }
+
+            document.getElementById('btnAgregarMes').addEventListener('click', function () {
+                const th = document.createElement('th');
+                th.className = 'text-center mes-col';
+                const inp = document.createElement('input');
+                inp.type = 'text';
+                inp.name = 'meses2026[]';
+                inp.maxLength = 12;
+                inp.required = true;
+                inp.className = 'form-control form-control-sm text-center font-weight-bold input-mes';
+                inp.style.minWidth = '64px';
+                inp.value = sugerirSiguienteMes();
+                th.appendChild(inp);
+                filaMeses.appendChild(th);
+
+                tbody.querySelectorAll('tr[data-serie]').forEach(function (tr) {
+                    const td = document.createElement('td');
+                    td.className = 'mes-col';
+                    const n = document.createElement('input');
+                    n.type = 'number';
+                    n.min = '0';
+                    n.step = '1';
+                    n.required = true;
+                    n.className = 'form-control text-center';
+                    n.name = tr.dataset.serie + '[]';
+                    n.value = '0';
+                    td.appendChild(n);
+                    tr.appendChild(td);
+                });
+            });
+
+            document.getElementById('btnQuitarMes').addEventListener('click', function () {
+                const cols = filaMeses.querySelectorAll('.mes-col');
+                if (cols.length <= 1) {
+                    alert('Debe quedar al menos un mes.');
+                    return;
+                }
+                cols[cols.length - 1].remove();
+                tbody.querySelectorAll('tr[data-serie]').forEach(function (tr) {
+                    const tds = tr.querySelectorAll('td.mes-col');
+                    if (tds.length) {
+                        tds[tds.length - 1].remove();
+                    }
+                });
+            });
+        });
+    </script>
 @endsection

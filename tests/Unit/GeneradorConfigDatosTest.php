@@ -89,6 +89,22 @@ class GeneradorConfigDatosTest extends TestCase
         $this->assertStringNotContainsString('alert(1)', $contenido);
     }
 
+    public function test_soporta_cantidad_dinamica_de_meses(): void
+    {
+        $datos = $this->datos();
+        $datos['meses2026']       = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul'];
+        $datos['armasPorMes']     = [9, 0, 9, 4, 8, 2, 5];
+        $datos['vehiculosPorMes'] = [2, 1, 3, 3, 2, 1, 4];
+        $datos['motosPorMes']     = [3, 4, 7, 4, 7, 6, 1];
+
+        $ruta = (new GeneradorConfigDatos())->generar($datos);
+        $contenido = file_get_contents($ruta);
+
+        $this->assertStringContainsString("'Jun', 'Jul'", $contenido);
+        $this->assertStringContainsString('armasPorMes:     [9, 0, 9, 4, 8, 2, 5]', $contenido);
+        $this->assertStringContainsString('motosPorMes:     [3, 4, 7, 4, 7, 6, 1]', $contenido);
+    }
+
     public function test_crea_backup_del_archivo_previo(): void
     {
         $generador = new GeneradorConfigDatos();

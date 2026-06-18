@@ -32,13 +32,34 @@ class WebContadoresRequest extends FormRequest
             'dispositivosDuales'  => 'required|integer|min:0|max:1000000',
             'usuariosBotonPanico' => 'required|integer|min:0|max:1000000',
 
-            'armasPorMes'         => 'required|array|size:6',
+            'meses2026'           => 'required|array|min:1|max:24',
+            'meses2026.*'         => 'required|string|max:12',
+
+            'armasPorMes'         => 'required|array',
             'armasPorMes.*'       => 'required|integer|min:0|max:100000',
-            'vehiculosPorMes'     => 'required|array|size:6',
+            'vehiculosPorMes'     => 'required|array',
             'vehiculosPorMes.*'   => 'required|integer|min:0|max:100000',
-            'motosPorMes'         => 'required|array|size:6',
+            'motosPorMes'         => 'required|array',
             'motosPorMes.*'       => 'required|integer|min:0|max:100000',
         ];
+    }
+
+    /**
+     * Verifica que cada serie mensual tenga exactamente un valor por mes.
+     */
+    public function withValidator(\Illuminate\Validation\Validator $validator): void
+    {
+        $validator->after(function (\Illuminate\Validation\Validator $validator): void {
+            $meses = $this->input('meses2026', []);
+            $cantidadMeses = is_array($meses) ? count($meses) : 0;
+
+            foreach (['armasPorMes', 'vehiculosPorMes', 'motosPorMes'] as $serie) {
+                $valores = $this->input($serie, []);
+                if (! is_array($valores) || count($valores) !== $cantidadMeses) {
+                    $validator->errors()->add($serie, "Debe tener un valor por cada mes ({$cantidadMeses}).");
+                }
+            }
+        });
     }
 
     /**
@@ -47,12 +68,11 @@ class WebContadoresRequest extends FormRequest
     public function messages(): array
     {
         return [
-            '*.required'           => 'Este campo es obligatorio.',
-            '*.integer'            => 'Debe ser un número entero.',
-            '*.min'                => 'No puede ser negativo.',
-            'armasPorMes.size'     => 'Debe haber un valor por cada uno de los 6 meses.',
-            'vehiculosPorMes.size' => 'Debe haber un valor por cada uno de los 6 meses.',
-            'motosPorMes.size'     => 'Debe haber un valor por cada uno de los 6 meses.',
+            '*.required'        => 'Este campo es obligatorio.',
+            '*.integer'         => 'Debe ser un número entero.',
+            '*.min'             => 'No puede ser negativo.',
+            'meses2026.min'     => 'Debe haber al menos un mes.',
+            'meses2026.*.max'   => 'El nombre del mes es demasiado largo.',
         ];
     }
 }

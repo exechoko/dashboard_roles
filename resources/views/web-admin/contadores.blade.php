@@ -186,13 +186,18 @@
                     <h6 class="text-primary"><i class="fas fa-font"></i> Editar textos <span class="badge badge-secondary">próximamente</span></h6>
                     <p class="mb-2 text-muted">Desde el panel vas a poder editar títulos y descripciones de las páginas. (En desarrollo.)</p>
 
-                    <h6 class="text-primary"><i class="fas fa-newspaper"></i> Crear una noticia <span class="badge badge-secondary">próximamente</span></h6>
-                    <ol class="text-muted">
-                        <li>Entrar a <strong>Noticias → Nueva noticia</strong>.</li>
-                        <li>Completar título, bajada y cuerpo del texto.</li>
-                        <li>Subir una o más imágenes.</li>
-                        <li>Marcar <strong>Publicada</strong> y guardar para que aparezca en la web.</li>
+                    <h6 class="text-primary"><i class="fas fa-newspaper"></i> Crear una noticia</h6>
+                    <ol>
+                        <li>Entrar a <strong>Administrar Web → Noticias → Nueva noticia</strong>.</li>
+                        <li>Completar título, fecha, bajada y cuerpo del texto (un párrafo por línea).</li>
+                        <li>Subir una o más imágenes y elegir cuál es la <strong>miniatura</strong> (la que se ve en la tarjeta).</li>
+                        <li>Dejar marcado <strong>Publicada</strong> y guardar: aparece al instante en la web, las más nuevas primero.</li>
                     </ol>
+                    @canany(['crear-noticia', 'editar-noticia', 'eliminar-noticia'])
+                        <a href="{{ route('noticias.index') }}" class="btn btn-sm btn-outline-primary mb-2">
+                            <i class="fas fa-newspaper"></i> Ir a Noticias
+                        </a>
+                    @endcanany
 
                     <div class="alert alert-light border mb-0">
                         <i class="fas fa-shield-alt text-success"></i>

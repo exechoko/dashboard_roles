@@ -36,6 +36,7 @@ use App\Http\Controllers\PlanoEdificioController;
 use App\Http\Controllers\PersonalController;
 use App\Http\Controllers\ManualesController;
 use App\Http\Controllers\WebAdminController;
+use App\Http\Controllers\NoticiaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,6 +64,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::put('web-admin/contadores', [WebAdminController::class, 'updateContadores'])
         ->name('web-admin.contadores.update')
         ->middleware('can:editar-web-contadores');
+    Route::get('noticias/imagen/{archivo}', [NoticiaController::class, 'imagen'])->name('noticias.imagen');
+    Route::resource('noticias', NoticiaController::class)->except(['show']);
 
     Route::resource('roles', RolController::class);
     Route::resource('usuarios', UsuarioController::class);

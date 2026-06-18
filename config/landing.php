@@ -20,4 +20,12 @@ return [
     */
     'config_datos_js' => 'js/config-datos.js',
 
+    /*
+    | Rutas relativas (dentro de 'path') para el módulo de Noticias:
+    | - noticias_json: archivo de datos que consume la web estática.
+    | - noticias_img_dir: carpeta donde se guardan las imágenes subidas.
+    */
+    'noticias_json'    => 'data/noticias.json',
+    'noticias_img_dir' => 'images/noticias',
+
 ];

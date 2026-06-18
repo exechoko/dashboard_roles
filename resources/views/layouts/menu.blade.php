@@ -478,11 +478,27 @@
     </li>
 @endcan
 
-@canany(['ver-menu-web', 'editar-web-contadores', 'editar-web-textos'])
-    <li class="{{ request()->is('web-admin*') ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('web-admin.contadores.edit') }}">
+@canany(['ver-menu-web', 'editar-web-contadores', 'editar-web-textos', 'crear-noticia', 'editar-noticia', 'eliminar-noticia'])
+    <li class="{{ request()->is('web-admin*') || request()->is('noticias*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-globe"></i><span>Administrar Web</span>
         </a>
+        <ul class="dropdown-menu">
+            @can('editar-web-contadores')
+                <li class="{{ request()->is('web-admin/contadores*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('web-admin.contadores.edit') }}">
+                        <i class="fas fa-sort-numeric-up mr-1"></i><span>Contadores</span>
+                    </a>
+                </li>
+            @endcan
+            @canany(['crear-noticia', 'editar-noticia', 'eliminar-noticia'])
+                <li class="{{ request()->is('noticias*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('noticias.index') }}">
+                        <i class="fas fa-newspaper mr-1"></i><span>Noticias</span>
+                    </a>
+                </li>
+            @endcanany
+        </ul>
     </li>
 @endcanany
 

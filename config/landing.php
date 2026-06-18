@@ -31,6 +31,22 @@ return [
     'historia_js' => 'js/historia-data.js',
 
     /*
+    | Cards de la página Tecnología: archivo JS generado, carpeta de imágenes
+    | y paleta de colores (deben coincidir con las clases color-* del CSS).
+    */
+    'tecnologia_js'      => 'js/tecnologia-data.js',
+    'tecnologia_img_dir' => 'images/tecnologia',
+    'tecnologia_colores' => [
+        'blue'   => 'Azul',
+        'green'  => 'Verde',
+        'purple' => 'Violeta',
+        'pink'   => 'Rosa',
+        'indigo' => 'Índigo',
+        'orange' => 'Naranja',
+        'red'    => 'Rojo',
+    ],
+
+    /*
     | Rutas relativas (dentro de 'path') para el módulo de Noticias:
     | - noticias_json: archivo de datos que consume la web estática.
     | - noticias_img_dir: carpeta donde se guardan las imágenes subidas.

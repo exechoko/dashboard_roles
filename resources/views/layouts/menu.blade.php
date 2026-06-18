@@ -502,6 +502,11 @@
                         <i class="fas fa-stream mr-1"></i><span>Historia (timeline)</span>
                     </a>
                 </li>
+                <li class="{{ request()->is('web-tecnologia*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('web-tecnologia.index') }}">
+                        <i class="fas fa-microchip mr-1"></i><span>Tecnología (cards)</span>
+                    </a>
+                </li>
             @endcan
             @can('editar-web-dependencias')
                 <li class="{{ request()->is('web-dependencias*') ? 'active' : '' }}">

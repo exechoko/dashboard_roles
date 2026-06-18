@@ -39,6 +39,7 @@ use App\Http\Controllers\WebAdminController;
 use App\Http\Controllers\NoticiaController;
 use App\Http\Controllers\WebDependenciaController;
 use App\Http\Controllers\WebHistoriaCardController;
+use App\Http\Controllers\WebTechCardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -80,6 +81,10 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('web-historia', WebHistoriaCardController::class)
         ->except(['show'])
         ->parameters(['web-historia' => 'card']);
+    Route::get('web-tecnologia/imagen/{archivo}', [WebTechCardController::class, 'imagen'])->name('web-tecnologia.imagen');
+    Route::resource('web-tecnologia', WebTechCardController::class)
+        ->except(['show'])
+        ->parameters(['web-tecnologia' => 'card']);
 
     Route::resource('roles', RolController::class);
     Route::resource('usuarios', UsuarioController::class);

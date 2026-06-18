@@ -91,7 +91,9 @@
       "Read(//c/Apache24/conf/**)",
       "Bash(composer show *)",
       "Bash(xargs cat)",
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Bash(xargs -I{} sed -n '{},+15p' css/styles.css)",
+      "Bash(echo \"EXIT:$?\")"
     ]
   },
   "enableAllProjectMcpServers": true,

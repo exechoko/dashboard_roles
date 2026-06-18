@@ -18,6 +18,7 @@ class SeederPermisosWeb extends Seeder
             'ver-menu-web',
             'editar-web-contadores',
             'editar-web-textos',
+            'editar-web-dependencias',
             'crear-noticia',
             'editar-noticia',
             'eliminar-noticia',

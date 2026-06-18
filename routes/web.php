@@ -37,6 +37,7 @@ use App\Http\Controllers\PersonalController;
 use App\Http\Controllers\ManualesController;
 use App\Http\Controllers\WebAdminController;
 use App\Http\Controllers\NoticiaController;
+use App\Http\Controllers\WebDependenciaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -64,8 +65,17 @@ Route::group(['middleware' => ['auth']], function () {
     Route::put('web-admin/contadores', [WebAdminController::class, 'updateContadores'])
         ->name('web-admin.contadores.update')
         ->middleware('can:editar-web-contadores');
+    Route::get('web-admin/textos', [WebAdminController::class, 'editTextos'])
+        ->name('web-admin.textos.edit')
+        ->middleware('can:editar-web-textos');
+    Route::put('web-admin/textos', [WebAdminController::class, 'updateTextos'])
+        ->name('web-admin.textos.update')
+        ->middleware('can:editar-web-textos');
     Route::get('noticias/imagen/{archivo}', [NoticiaController::class, 'imagen'])->name('noticias.imagen');
     Route::resource('noticias', NoticiaController::class)->except(['show']);
+    Route::resource('web-dependencias', WebDependenciaController::class)
+        ->except(['show'])
+        ->parameters(['web-dependencias' => 'dependencia']);
 
     Route::resource('roles', RolController::class);
     Route::resource('usuarios', UsuarioController::class);

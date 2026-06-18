@@ -478,8 +478,8 @@
     </li>
 @endcan
 
-@canany(['ver-menu-web', 'editar-web-contadores', 'editar-web-textos', 'crear-noticia', 'editar-noticia', 'eliminar-noticia'])
-    <li class="{{ request()->is('web-admin*') || request()->is('noticias*') ? 'active' : '' }}">
+@canany(['ver-menu-web', 'editar-web-contadores', 'editar-web-textos', 'editar-web-dependencias', 'crear-noticia', 'editar-noticia', 'eliminar-noticia'])
+    <li class="{{ request()->is('web-admin*') || request()->is('noticias*') || request()->is('web-dependencias*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-globe"></i><span>Administrar Web</span>
         </a>
@@ -488,6 +488,20 @@
                 <li class="{{ request()->is('web-admin/contadores*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('web-admin.contadores.edit') }}">
                         <i class="fas fa-sort-numeric-up mr-1"></i><span>Contadores</span>
+                    </a>
+                </li>
+            @endcan
+            @can('editar-web-textos')
+                <li class="{{ request()->is('web-admin/textos*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('web-admin.textos.edit') }}">
+                        <i class="fas fa-font mr-1"></i><span>Textos</span>
+                    </a>
+                </li>
+            @endcan
+            @can('editar-web-dependencias')
+                <li class="{{ request()->is('web-dependencias*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('web-dependencias.index') }}">
+                        <i class="fas fa-building mr-1"></i><span>Dependencias</span>
                     </a>
                 </li>
             @endcan

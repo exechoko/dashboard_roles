@@ -21,6 +21,11 @@ return [
     'config_datos_js' => 'js/config-datos.js',
 
     /*
+    | Ruta relativa del archivo de textos editables generado.
+    */
+    'config_textos_js' => 'js/config-textos.js',
+
+    /*
     | Rutas relativas (dentro de 'path') para el módulo de Noticias:
     | - noticias_json: archivo de datos que consume la web estática.
     | - noticias_img_dir: carpeta donde se guardan las imágenes subidas.
@@ -34,5 +39,19 @@ return [
     */
     'noticias_img_max_ancho' => (int) env('LANDING_IMG_MAX_ANCHO', 1920),
     'noticias_img_calidad'   => (int) env('LANDING_IMG_CALIDAD', 82),
+
+    /*
+    | Dependencias / comisarías: archivo JS generado y catálogo de categorías
+    | (deben coincidir con los filtros definidos en js/dependencias.js).
+    */
+    'dependencias_js' => 'js/dependencias-data.js',
+    'dependencias_categorias' => [
+        'ciudad-parana'             => 'Comisarías de Paraná',
+        'ciudad-colonia-avellaneda' => 'Colonia Avellaneda',
+        'ciudad-oro-verde'          => 'Oro Verde',
+        'ciudad-san-benito'         => 'San Benito',
+        'departamental'             => 'Departamental',
+        'divisiones'                => 'Divisiones',
+    ],
 
 ];

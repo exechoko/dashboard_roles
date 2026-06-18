@@ -183,8 +183,17 @@
 
                     <hr>
 
-                    <h6 class="text-primary"><i class="fas fa-font"></i> Editar textos <span class="badge badge-secondary">próximamente</span></h6>
-                    <p class="mb-2 text-muted">Desde el panel vas a poder editar títulos y descripciones de las páginas. (En desarrollo.)</p>
+                    <h6 class="text-primary"><i class="fas fa-font"></i> Editar textos</h6>
+                    <ol>
+                        <li>Entrar a <strong>Administrar Web → Textos</strong>.</li>
+                        <li>Editar los textos disponibles (títulos y descripciones de las páginas).</li>
+                        <li>Guardar: los cambios se publican al instante en la web.</li>
+                    </ol>
+                    @can('editar-web-textos')
+                        <a href="{{ route('web-admin.textos.edit') }}" class="btn btn-sm btn-outline-primary mb-2">
+                            <i class="fas fa-font"></i> Ir a Textos
+                        </a>
+                    @endcan
 
                     <h6 class="text-primary"><i class="fas fa-newspaper"></i> Crear una noticia</h6>
                     <ol>

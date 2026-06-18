@@ -157,6 +157,7 @@
                                                         'menu-web',
                                                         'web-contadores',
                                                         'web-textos',
+                                                        'web-dependencias',
                                                         'noticia'
                                                     ]
                                                 ];

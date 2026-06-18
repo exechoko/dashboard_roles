@@ -478,4 +478,12 @@
     </li>
 @endcan
 
+@canany(['ver-menu-web', 'editar-web-contadores', 'editar-web-textos'])
+    <li class="{{ request()->is('web-admin*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('web-admin.contadores.edit') }}">
+            <i class="fas fa-globe"></i><span>Administrar Web</span>
+        </a>
+    </li>
+@endcanany
+
 <!--Documentacion en GetStisla-->

@@ -35,6 +35,7 @@ use App\Http\Controllers\RAGController;
 use App\Http\Controllers\PlanoEdificioController;
 use App\Http\Controllers\PersonalController;
 use App\Http\Controllers\ManualesController;
+use App\Http\Controllers\WebAdminController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,6 +56,14 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::group(['middleware' => ['auth']], function () {
+    // 🔹 ADMINISTRAR WEB (div911.stper.com.ar)
+    Route::get('web-admin/contadores', [WebAdminController::class, 'editContadores'])
+        ->name('web-admin.contadores.edit')
+        ->middleware('can:editar-web-contadores');
+    Route::put('web-admin/contadores', [WebAdminController::class, 'updateContadores'])
+        ->name('web-admin.contadores.update')
+        ->middleware('can:editar-web-contadores');
+
     Route::resource('roles', RolController::class);
     Route::resource('usuarios', UsuarioController::class);
     Route::resource('blogs', BlogController::class);

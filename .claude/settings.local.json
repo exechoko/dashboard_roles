@@ -86,7 +86,11 @@
       "WebFetch(domain:ollama.com)",
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('eval_count:',d.get\\('eval_count'\\),'tokens'\\); print\\('eval_duration:',round\\(d.get\\('eval_duration',0\\)/1e9,1\\),'s'\\); print\\('tok/s:',round\\(d.get\\('eval_count',0\\)/\\(d.get\\('eval_duration',1\\)/1e9\\),1\\)\\); print\\('prompt_eval:',d.get\\('prompt_eval_count'\\),'tok in',round\\(d.get\\('prompt_eval_duration',0\\)/1e9,1\\),'s'\\); print\\('total:',round\\(d.get\\('total_duration',0\\)/1e9,1\\),'s'\\)\")",
       "Bash(python -c \"print\\('Novedad: movil 901 a cargo del sargento Perez se constituye en el lugar y entrevista al damnificado quien manifiesta que sujetos desconocidos. '*40\\)\")",
-      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); pc=d.get\\('prompt_eval_count',0\\); pd=d.get\\('prompt_eval_duration',1\\)/1e9; print\\('prompt_eval:',pc,'tok in',round\\(pd,1\\),'s =>',round\\(pc/pd,1\\),'tok/s prefill'\\)\")"
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); pc=d.get\\('prompt_eval_count',0\\); pd=d.get\\('prompt_eval_duration',1\\)/1e9; print\\('prompt_eval:',pc,'tok in',round\\(pd,1\\),'s =>',round\\(pc/pd,1\\),'tok/s prefill'\\)\")",
+      "Read(//c/Apache24/htdocs/**)",
+      "Read(//c/Apache24/conf/**)",
+      "Bash(composer show *)",
+      "Bash(xargs cat)"
     ]
   },
   "enableAllProjectMcpServers": true,

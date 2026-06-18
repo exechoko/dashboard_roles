@@ -28,4 +28,11 @@ return [
     'noticias_json'    => 'data/noticias.json',
     'noticias_img_dir' => 'images/noticias',
 
+    /*
+    | Optimización de imágenes de noticias: se convierten a WebP y se
+    | redimensionan si superan el ancho máximo (en px). Calidad 0-100.
+    */
+    'noticias_img_max_ancho' => (int) env('LANDING_IMG_MAX_ANCHO', 1920),
+    'noticias_img_calidad'   => (int) env('LANDING_IMG_CALIDAD', 82),
+
 ];

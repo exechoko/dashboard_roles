@@ -144,8 +144,7 @@ class NoticiaController extends Controller
         $creadas = [];
 
         foreach ($archivos as $archivo) {
-            $nombre = Str::uuid()->toString() . '.' . $archivo->getClientOriginalExtension();
-            $archivo->move($directorio, $nombre);
+            $nombre = $this->guardarComoWebp($archivo, $directorio);
 
             $creadas[] = $noticia->imagenes()->create([
                 'archivo'      => $nombre,
@@ -155,6 +154,56 @@ class NoticiaController extends Controller
         }
 
         return $creadas;
+    }
+
+    /**
+     * Convierte la imagen subida a WebP (más liviana), redimensionándola si
+     * supera el ancho máximo. Si la conversión falla, guarda el original.
+     */
+    private function guardarComoWebp(UploadedFile $archivo, string $directorio): string
+    {
+        $imagen = $this->crearImagenGd($archivo);
+
+        if ($imagen === false) {
+            $nombre = Str::uuid()->toString() . '.' . $archivo->getClientOriginalExtension();
+            $archivo->move($directorio, $nombre);
+
+            return $nombre;
+        }
+
+        $maxAncho = (int) config('landing.noticias_img_max_ancho');
+        if ($maxAncho > 0 && imagesx($imagen) > $maxAncho) {
+            $escalada = imagescale($imagen, $maxAncho);
+            if ($escalada !== false) {
+                imagedestroy($imagen);
+                $imagen = $escalada;
+            }
+        }
+
+        imagepalettetotruecolor($imagen);
+        imagealphablending($imagen, false);
+        imagesavealpha($imagen, true);
+
+        $nombre = Str::uuid()->toString() . '.webp';
+        imagewebp($imagen, $directorio . DIRECTORY_SEPARATOR . $nombre, (int) config('landing.noticias_img_calidad'));
+        imagedestroy($imagen);
+
+        return $nombre;
+    }
+
+    /**
+     * @return \GdImage|false
+     */
+    private function crearImagenGd(UploadedFile $archivo): \GdImage|false
+    {
+        $ruta = $archivo->getPathname();
+
+        return match ($archivo->getClientMimeType()) {
+            'image/jpeg', 'image/jpg' => @imagecreatefromjpeg($ruta),
+            'image/png'               => @imagecreatefrompng($ruta),
+            'image/webp'              => @imagecreatefromwebp($ruta),
+            default                   => false,
+        };
     }
 
     /**

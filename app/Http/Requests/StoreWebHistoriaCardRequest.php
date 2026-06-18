@@ -26,6 +26,7 @@ class StoreWebHistoriaCardRequest extends FormRequest
             'titulo' => 'required|string|max:200',
             'texto'  => 'required|string|max:5000',
             'tag'    => 'nullable|string|max:60',
+            'imagen' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'orden'  => 'nullable|integer|min:0|max:9999',
         ];
     }
@@ -39,6 +40,9 @@ class StoreWebHistoriaCardRequest extends FormRequest
             'anio.required'   => 'El año (o período) es obligatorio.',
             'titulo.required' => 'El título es obligatorio.',
             'texto.required'  => 'El texto es obligatorio.',
+            'imagen.image'    => 'El archivo debe ser una imagen.',
+            'imagen.mimes'    => 'Formatos permitidos: jpg, png o webp.',
+            'imagen.max'      => 'La imagen no puede superar los 5 MB.',
         ];
     }
 }

@@ -17,7 +17,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('web-historia.update', $card) }}" method="POST">
+            <form action="{{ route('web-historia.update', $card) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
                 @include('web-historia._form')

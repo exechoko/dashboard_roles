@@ -41,11 +41,27 @@
             @error('titulo') <div class="invalid-feedback">{{ $message }}</div> @enderror
         </div>
 
-        <div class="form-group mb-0">
+        <div class="form-group">
             <label for="texto">Texto <span class="text-danger">*</span></label>
             <textarea name="texto" id="texto" rows="5" required
                       class="form-control @error('texto') is-invalid @enderror">{{ old('texto', $card->texto ?? '') }}</textarea>
             @error('texto') <div class="invalid-feedback">{{ $message }}</div> @enderror
+        </div>
+
+        <div class="form-group mb-0">
+            <label for="imagen">Imagen solapada (jpg, png, webp · máx. 5 MB)</label>
+            @if (isset($card) && $card->imagen)
+                <div class="mb-2">
+                    <img src="{{ route('web-historia.imagen', $card->imagen) }}" alt=""
+                         style="height:120px;border-radius:8px;object-fit:cover;">
+                    <div class="custom-control custom-checkbox mt-1">
+                        <input type="checkbox" name="quitar_imagen" value="1" id="quitar_imagen" class="custom-control-input">
+                        <label class="custom-control-label text-danger" for="quitar_imagen">Quitar la imagen actual</label>
+                    </div>
+                </div>
+            @endif
+            <input type="file" name="imagen" id="imagen" accept="image/*" class="form-control-file">
+            <small class="text-muted">Aparece solapada sobre la tarjeta en la línea de tiempo. Si no cargás imagen, la tarjeta se muestra sin foto.</small>
         </div>
     </div>
 </div>

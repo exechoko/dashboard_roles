@@ -16,6 +16,7 @@ class WebHistoriaCard extends Model
         'titulo',
         'texto',
         'tag',
+        'imagen',
         'orden',
     ];
 }

@@ -26,9 +26,11 @@ return [
     'config_textos_js' => 'js/config-textos.js',
 
     /*
-    | Línea de tiempo de la página Historia (cards generadas).
+    | Línea de tiempo de la página Historia (cards generadas) y carpeta de
+    | imágenes que se muestran solapadas sobre cada tarjeta del timeline.
     */
-    'historia_js' => 'js/historia-data.js',
+    'historia_js'      => 'js/historia-data.js',
+    'historia_img_dir' => 'images/historia',
 
     /*
     | Cards de la página Tecnología: archivo JS generado, carpeta de imágenes

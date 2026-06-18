@@ -42,6 +42,7 @@
                             <thead>
                                 <tr>
                                     <th style="width:60px">#</th>
+                                    <th style="width:90px">Imagen</th>
                                     <th style="width:120px">Año</th>
                                     <th>Título</th>
                                     <th>Etiqueta</th>
@@ -52,6 +53,14 @@
                                 @forelse ($cards as $card)
                                     <tr>
                                         <td>{{ $card->orden }}</td>
+                                        <td>
+                                            @if ($card->imagen)
+                                                <img src="{{ route('web-historia.imagen', $card->imagen) }}" alt=""
+                                                     style="width:70px;height:45px;object-fit:cover;border-radius:6px;">
+                                            @else
+                                                <span class="text-muted"><i class="fas fa-image fa-2x"></i></span>
+                                            @endif
+                                        </td>
                                         <td><span class="badge badge-primary">{{ $card->anio }}</span></td>
                                         <td>
                                             <strong>{{ $card->titulo }}</strong>
@@ -72,7 +81,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted py-4">No hay tarjetas cargadas.</td>
+                                        <td colspan="6" class="text-center text-muted py-4">No hay tarjetas cargadas.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

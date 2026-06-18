@@ -78,6 +78,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('web-dependencias', WebDependenciaController::class)
         ->except(['show'])
         ->parameters(['web-dependencias' => 'dependencia']);
+    Route::get('web-historia/imagen/{archivo}', [WebHistoriaCardController::class, 'imagen'])->name('web-historia.imagen');
     Route::resource('web-historia', WebHistoriaCardController::class)
         ->except(['show'])
         ->parameters(['web-historia' => 'card']);

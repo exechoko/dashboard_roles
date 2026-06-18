@@ -23,6 +23,8 @@ class GeneradorHistoriaJs
             @copy($ruta, $ruta . '.bak');
         }
 
+        $imgDir = trim(config('landing.historia_img_dir'), '/');
+
         $cards = WebHistoriaCard::query()
             ->orderBy('orden')
             ->orderBy('id')
@@ -32,6 +34,7 @@ class GeneradorHistoriaJs
                 'titulo' => $c->titulo,
                 'texto'  => $c->texto,
                 'tag'    => $c->tag ?? '',
+                'imagen' => $c->imagen ? $imgDir . '/' . $c->imagen : null,
             ])
             ->all();
 

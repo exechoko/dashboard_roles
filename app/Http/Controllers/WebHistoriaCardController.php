@@ -8,7 +8,9 @@ use App\Models\Auditoria;
 use App\Models\WebHistoriaCard;
 use App\Services\GeneradorHistoriaJs;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Throwable;
 
@@ -17,6 +19,14 @@ class WebHistoriaCardController extends Controller
     public function __construct(private GeneradorHistoriaJs $generador)
     {
         $this->middleware('permission:editar-web-historia');
+    }
+
+    public function imagen(string $archivo): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $ruta = $this->directorioImagenes() . DIRECTORY_SEPARATOR . basename($archivo);
+        abort_unless(is_file($ruta), 404);
+
+        return response()->file($ruta);
     }
 
     public function index(): View
@@ -36,7 +46,13 @@ class WebHistoriaCardController extends Controller
 
     public function store(StoreWebHistoriaCardRequest $request): RedirectResponse
     {
-        $card = WebHistoriaCard::create($this->datos($request->validated()));
+        $datos = $this->datos($request->validated());
+
+        if ($request->hasFile('imagen')) {
+            $datos['imagen'] = $this->guardarComoWebp($request->file('imagen'));
+        }
+
+        $card = WebHistoriaCard::create($datos);
 
         $this->regenerar();
         $this->auditar($card, 'crear');
@@ -51,7 +67,21 @@ class WebHistoriaCardController extends Controller
 
     public function update(UpdateWebHistoriaCardRequest $request, WebHistoriaCard $card): RedirectResponse
     {
-        $card->update($this->datos($request->validated()));
+        $datos = $this->datos($request->validated());
+
+        if ($request->boolean('quitar_imagen') && $card->imagen) {
+            $this->eliminarArchivo($card->imagen);
+            $datos['imagen'] = null;
+        }
+
+        if ($request->hasFile('imagen')) {
+            if ($card->imagen) {
+                $this->eliminarArchivo($card->imagen);
+            }
+            $datos['imagen'] = $this->guardarComoWebp($request->file('imagen'));
+        }
+
+        $card->update($datos);
 
         $this->regenerar();
         $this->auditar($card, 'editar');
@@ -61,6 +91,10 @@ class WebHistoriaCardController extends Controller
 
     public function destroy(WebHistoriaCard $card): RedirectResponse
     {
+        if ($card->imagen) {
+            $this->eliminarArchivo($card->imagen);
+        }
+
         $this->auditar($card, 'eliminar');
         $card->delete();
         $this->regenerar();
@@ -81,6 +115,65 @@ class WebHistoriaCardController extends Controller
             'tag'    => $validated['tag'] ?? null,
             'orden'  => (int) ($validated['orden'] ?? 0),
         ];
+    }
+
+    /**
+     * Convierte la imagen subida a WebP (redimensionada). Devuelve el nombre del archivo.
+     */
+    private function guardarComoWebp(UploadedFile $archivo): string
+    {
+        $directorio = $this->directorioImagenes();
+        if (! is_dir($directorio)) {
+            @mkdir($directorio, 0775, true);
+        }
+
+        $imagen = match ($archivo->getClientMimeType()) {
+            'image/jpeg', 'image/jpg' => @imagecreatefromjpeg($archivo->getPathname()),
+            'image/png'               => @imagecreatefrompng($archivo->getPathname()),
+            'image/webp'              => @imagecreatefromwebp($archivo->getPathname()),
+            default                   => false,
+        };
+
+        if ($imagen === false) {
+            $nombre = Str::uuid()->toString() . '.' . $archivo->getClientOriginalExtension();
+            $archivo->move($directorio, $nombre);
+
+            return $nombre;
+        }
+
+        $maxAncho = (int) config('landing.noticias_img_max_ancho', 1920);
+        if ($maxAncho > 0 && imagesx($imagen) > $maxAncho) {
+            $escalada = imagescale($imagen, $maxAncho);
+            if ($escalada !== false) {
+                imagedestroy($imagen);
+                $imagen = $escalada;
+            }
+        }
+
+        imagepalettetotruecolor($imagen);
+        imagealphablending($imagen, false);
+        imagesavealpha($imagen, true);
+
+        $nombre = Str::uuid()->toString() . '.webp';
+        imagewebp($imagen, $directorio . DIRECTORY_SEPARATOR . $nombre, (int) config('landing.noticias_img_calidad', 82));
+        imagedestroy($imagen);
+
+        return $nombre;
+    }
+
+    private function directorioImagenes(): string
+    {
+        return rtrim(config('landing.path'), '/\\')
+            . DIRECTORY_SEPARATOR
+            . str_replace('/', DIRECTORY_SEPARATOR, config('landing.historia_img_dir'));
+    }
+
+    private function eliminarArchivo(string $nombre): void
+    {
+        $ruta = $this->directorioImagenes() . DIRECTORY_SEPARATOR . $nombre;
+        if (is_file($ruta)) {
+            @unlink($ruta);
+        }
     }
 
     private function regenerar(): void

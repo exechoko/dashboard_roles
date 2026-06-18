@@ -17,7 +17,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('web-historia.store') }}" method="POST">
+            <form action="{{ route('web-historia.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @include('web-historia._form', ['card' => null])
 

@@ -195,6 +195,19 @@
                         </a>
                     @endcan
 
+                    <h6 class="text-primary"><i class="fas fa-stream"></i> Línea de tiempo de Historia</h6>
+                    <ol>
+                        <li>Entrar a <strong>Administrar Web → Historia (timeline)</strong> (o el botón "Cards de Historia" en Textos).</li>
+                        <li>Para <strong>agregar</strong> una tarjeta: tocá "Nueva tarjeta" y completá año/período (ej. 2012, 2012 - 2020, Hoy), título, texto y, opcional, una etiqueta.</li>
+                        <li>El <strong>orden</strong> define la posición en la línea de tiempo (menor número = primero).</li>
+                        <li>Podés <strong>editar</strong> o <strong>eliminar</strong> cualquier tarjeta. Los cambios se publican al instante en <strong>historia.html</strong>.</li>
+                    </ol>
+                    @can('editar-web-textos')
+                        <a href="{{ route('web-historia.index') }}" class="btn btn-sm btn-outline-primary mb-2">
+                            <i class="fas fa-stream"></i> Ir a Cards de Historia
+                        </a>
+                    @endcan
+
                     <h6 class="text-primary"><i class="fas fa-newspaper"></i> Crear una noticia</h6>
                     <ol>
                         <li>Entrar a <strong>Administrar Web → Noticias → Nueva noticia</strong>.</li>

@@ -4,9 +4,14 @@
     <section class="section">
         <div class="section-header d-flex justify-content-between align-items-center">
             <h3 class="page__heading">Administrar Web — Textos</h3>
-            <a href="{{ route('web-admin.contadores.edit') }}" class="btn btn-light">
-                <i class="fas fa-sort-numeric-up"></i> Contadores
-            </a>
+            <div>
+                <a href="{{ route('web-historia.index') }}" class="btn btn-info">
+                    <i class="fas fa-stream"></i> Cards de Historia
+                </a>
+                <a href="{{ route('web-admin.contadores.edit') }}" class="btn btn-light">
+                    <i class="fas fa-sort-numeric-up"></i> Contadores
+                </a>
+            </div>
         </div>
 
         <div class="section-body">

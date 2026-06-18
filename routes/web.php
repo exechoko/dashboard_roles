@@ -38,6 +38,7 @@ use App\Http\Controllers\ManualesController;
 use App\Http\Controllers\WebAdminController;
 use App\Http\Controllers\NoticiaController;
 use App\Http\Controllers\WebDependenciaController;
+use App\Http\Controllers\WebHistoriaCardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -76,6 +77,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('web-dependencias', WebDependenciaController::class)
         ->except(['show'])
         ->parameters(['web-dependencias' => 'dependencia']);
+    Route::resource('web-historia', WebHistoriaCardController::class)
+        ->except(['show'])
+        ->parameters(['web-historia' => 'card']);
 
     Route::resource('roles', RolController::class);
     Route::resource('usuarios', UsuarioController::class);

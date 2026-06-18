@@ -26,6 +26,11 @@ return [
     'config_textos_js' => 'js/config-textos.js',
 
     /*
+    | Línea de tiempo de la página Historia (cards generadas).
+    */
+    'historia_js' => 'js/historia-data.js',
+
+    /*
     | Rutas relativas (dentro de 'path') para el módulo de Noticias:
     | - noticias_json: archivo de datos que consume la web estática.
     | - noticias_img_dir: carpeta donde se guardan las imágenes subidas.

@@ -90,7 +90,8 @@
       "Read(//c/Apache24/htdocs/**)",
       "Read(//c/Apache24/conf/**)",
       "Bash(composer show *)",
-      "Bash(xargs cat)"
+      "Bash(xargs cat)",
+      "Bash(git check-ignore *)"
     ]
   },
   "enableAllProjectMcpServers": true,

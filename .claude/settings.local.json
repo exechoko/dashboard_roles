@@ -93,7 +93,8 @@
       "Bash(xargs cat)",
       "Bash(git check-ignore *)",
       "Bash(xargs -I{} sed -n '{},+15p' css/styles.css)",
-      "Bash(echo \"EXIT:$?\")"
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(node --check js/historia.js)"
     ]
   },
   "enableAllProjectMcpServers": true,

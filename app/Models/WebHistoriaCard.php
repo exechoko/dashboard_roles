@@ -16,7 +16,14 @@ class WebHistoriaCard extends Model
         'titulo',
         'texto',
         'tag',
-        'imagen',
+        'imagenes',
         'orden',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'imagenes' => 'array',
     ];
 }

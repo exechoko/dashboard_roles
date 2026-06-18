@@ -49,19 +49,31 @@
         </div>
 
         <div class="form-group mb-0">
-            <label for="imagen">Imagen solapada (jpg, png, webp · máx. 5 MB)</label>
-            @if (isset($card) && $card->imagen)
-                <div class="mb-2">
-                    <img src="{{ route('web-historia.imagen', $card->imagen) }}" alt=""
-                         style="height:120px;border-radius:8px;object-fit:cover;">
-                    <div class="custom-control custom-checkbox mt-1">
-                        <input type="checkbox" name="quitar_imagen" value="1" id="quitar_imagen" class="custom-control-input">
-                        <label class="custom-control-label text-danger" for="quitar_imagen">Quitar la imagen actual</label>
-                    </div>
+            <label for="imagenes">Imágenes solapadas — hasta 3 (jpg, png, webp · máx. 5 MB c/u)</label>
+            @if (isset($card) && !empty($card->imagenes))
+                <div class="d-flex flex-wrap mb-2" style="gap:1rem;">
+                    @foreach ($card->imagenes as $nombre)
+                        <div class="text-center">
+                            <img src="{{ route('web-historia.imagen', $nombre) }}" alt=""
+                                 style="height:110px;border-radius:8px;object-fit:cover;">
+                            <div class="custom-control custom-checkbox mt-1">
+                                <input type="checkbox" name="quitar_imagenes[]" value="{{ $nombre }}"
+                                       id="quitar_{{ $loop->index }}" class="custom-control-input">
+                                <label class="custom-control-label text-danger" for="quitar_{{ $loop->index }}">Quitar</label>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
             @endif
-            <input type="file" name="imagen" id="imagen" accept="image/*" class="form-control-file">
-            <small class="text-muted">Aparece solapada sobre la tarjeta en la línea de tiempo. Si no cargás imagen, la tarjeta se muestra sin foto.</small>
+            <input type="file" name="imagenes[]" id="imagenes" accept="image/*" multiple class="form-control-file">
+            <small class="text-muted">
+                Se muestran solapadas en la esquina de la tarjeta; al hacer clic se abre una galería con todas.
+                @if (isset($card) && !empty($card->imagenes))
+                    Ya tiene {{ count($card->imagenes) }}/3; las que subas se suman a las que conserves.
+                @else
+                    Si no cargás ninguna, la tarjeta se muestra sin fotos.
+                @endif
+            </small>
         </div>
     </div>
 </div>

@@ -30,11 +30,13 @@ class GeneradorHistoriaJs
             ->orderBy('id')
             ->get()
             ->map(fn (WebHistoriaCard $c): array => [
-                'anio'   => $c->anio,
-                'titulo' => $c->titulo,
-                'texto'  => $c->texto,
-                'tag'    => $c->tag ?? '',
-                'imagen' => $c->imagen ? $imgDir . '/' . $c->imagen : null,
+                'anio'     => $c->anio,
+                'titulo'   => $c->titulo,
+                'texto'    => $c->texto,
+                'tag'      => $c->tag ?? '',
+                'imagenes' => collect($c->imagenes ?? [])
+                    ->map(fn (string $nombre): string => $imgDir . '/' . $nombre)
+                    ->all(),
             ])
             ->all();
 

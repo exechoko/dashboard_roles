@@ -48,9 +48,11 @@ class WebHistoriaCardController extends Controller
     {
         $datos = $this->datos($request->validated());
 
-        if ($request->hasFile('imagen')) {
-            $datos['imagen'] = $this->guardarComoWebp($request->file('imagen'));
+        $nuevas = [];
+        foreach ($request->file('imagenes', []) as $archivo) {
+            $nuevas[] = $this->guardarComoWebp($archivo);
         }
+        $datos['imagenes'] = $nuevas ?: null;
 
         $card = WebHistoriaCard::create($datos);
 
@@ -69,17 +71,29 @@ class WebHistoriaCardController extends Controller
     {
         $datos = $this->datos($request->validated());
 
-        if ($request->boolean('quitar_imagen') && $card->imagen) {
-            $this->eliminarArchivo($card->imagen);
-            $datos['imagen'] = null;
+        $actuales = $card->imagenes ?? [];
+        $quitar = array_values(array_intersect((array) $request->input('quitar_imagenes', []), $actuales));
+        $conservar = array_values(array_diff($actuales, $quitar));
+
+        $nuevas = [];
+        foreach ($request->file('imagenes', []) as $archivo) {
+            $nuevas[] = $this->guardarComoWebp($archivo);
         }
 
-        if ($request->hasFile('imagen')) {
-            if ($card->imagen) {
-                $this->eliminarArchivo($card->imagen);
+        $final = array_merge($conservar, $nuevas);
+        if (count($final) > 3) {
+            foreach ($nuevas as $nombre) {
+                $this->eliminarArchivo($nombre);
             }
-            $datos['imagen'] = $this->guardarComoWebp($request->file('imagen'));
+
+            return back()->withInput()->with('error', 'Una tarjeta puede tener hasta 3 imágenes. Quitá alguna antes de agregar más.');
         }
+
+        foreach ($quitar as $nombre) {
+            $this->eliminarArchivo($nombre);
+        }
+
+        $datos['imagenes'] = $final ?: null;
 
         $card->update($datos);
 
@@ -91,8 +105,8 @@ class WebHistoriaCardController extends Controller
 
     public function destroy(WebHistoriaCard $card): RedirectResponse
     {
-        if ($card->imagen) {
-            $this->eliminarArchivo($card->imagen);
+        foreach ($card->imagenes ?? [] as $nombre) {
+            $this->eliminarArchivo($nombre);
         }
 
         $this->auditar($card, 'eliminar');

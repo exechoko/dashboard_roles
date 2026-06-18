@@ -54,12 +54,12 @@
                                     <tr>
                                         <td>{{ $card->orden }}</td>
                                         <td>
-                                            @if ($card->imagen)
-                                                <img src="{{ route('web-historia.imagen', $card->imagen) }}" alt=""
-                                                     style="width:70px;height:45px;object-fit:cover;border-radius:6px;">
-                                            @else
+                                            @forelse ($card->imagenes ?? [] as $nombre)
+                                                <img src="{{ route('web-historia.imagen', $nombre) }}" alt=""
+                                                     style="width:46px;height:34px;object-fit:cover;border-radius:5px;margin:1px;">
+                                            @empty
                                                 <span class="text-muted"><i class="fas fa-image fa-2x"></i></span>
-                                            @endif
+                                            @endforelse
                                         </td>
                                         <td><span class="badge badge-primary">{{ $card->anio }}</span></td>
                                         <td>

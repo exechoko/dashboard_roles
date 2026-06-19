@@ -481,6 +481,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('bienes/{id}/traslado', [PatrimonioBienController::class, 'traslado'])->name('bienes.traslado');
         Route::post('bienes/{id}/traslado', [PatrimonioBienController::class, 'procesarTraslado'])->name('bienes.procesarTraslado');
         Route::get('bienes/items-disponibles', [PatrimonioBienController::class, 'getItemsDisponibles'])->name('bienes.items-disponibles');
+        Route::post('bienes/masivo', [PatrimonioBienController::class, 'storeMasivo'])->name('bienes.store-masivo');
         // Tipos de Bien
         Route::resource('tipos-bien', PatrimonioTipoBienController::class)->except(['show']);
         // Bienes

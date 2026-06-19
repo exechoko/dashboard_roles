@@ -79,10 +79,10 @@ class PatrimonioBienController extends Controller
             'numero_serie' => 'nullable|string|max:255',
             'fecha_alta' => 'required|date',
             'observaciones' => 'nullable|string',
-            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048'
+            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:51200',
+            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:51200',
+            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:51200',
+            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:51200'
         ]);
 
         DB::beginTransaction();
@@ -176,6 +176,93 @@ class PatrimonioBienController extends Controller
         }
     }
 
+    public function storeMasivo(Request $request)
+    {
+        $validated = $request->validate([
+            'tipo_bien_id' => 'required|exists:patrimonio_tipos_bien,id',
+            'destino_id' => 'nullable|exists:destino,id',
+            'ubicacion' => 'nullable|string|max:150',
+            'descripcion' => 'required|string',
+            'fecha_alta' => 'required|date',
+            'observaciones' => 'nullable|string',
+            'items' => 'required|array|min:1',
+            'items.*.siaf' => 'nullable|string|max:100',
+            'items.*.numero_serie' => 'nullable|string|max:255',
+            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:51200',
+            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:51200',
+            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:51200',
+            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:51200',
+        ], [
+            'items.required' => 'Debe agregar al menos una unidad para la carga masiva.',
+            'items.min' => 'Debe agregar al menos una unidad para la carga masiva.',
+        ]);
+
+        $tipoBien = PatrimonioTipoBien::findOrFail($validated['tipo_bien_id']);
+
+        if ($tipoBien->tiene_tabla_propia) {
+            return back()->with('error', 'La carga masiva no está disponible para tipos de bien vinculados a otra tabla. Use el alta individual.')
+                ->withInput();
+        }
+
+        DB::beginTransaction();
+        try {
+            $rutasImagenes = [];
+
+            for ($i = 1; $i <= 3; $i++) {
+                $inputName = 'imagen' . $i;
+                if ($request->hasFile($inputName)) {
+                    $rutaImagen = $request->file($inputName)->store('', 'anexos');
+                    $rutasImagenes[] = 'anexos/' . $rutaImagen;
+                    Log::info("Carga masiva - imagen {$i} subida: anexos/{$rutaImagen}");
+                }
+            }
+
+            if ($request->hasFile('archivo')) {
+                $rutaArchivo = $request->file('archivo')->store('', 'anexos');
+                $rutasImagenes[] = 'anexos/' . $rutaArchivo;
+                Log::info("Carga masiva - archivo adjunto subido: anexos/{$rutaArchivo}");
+            }
+
+            $rutasJson = !empty($rutasImagenes) ? json_encode($rutasImagenes) : null;
+
+            $creados = 0;
+            foreach ($validated['items'] as $item) {
+                $bien = PatrimonioBien::create([
+                    'tipo_bien_id' => $validated['tipo_bien_id'],
+                    'destino_id' => $validated['destino_id'] ?? null,
+                    'ubicacion' => $validated['ubicacion'] ?? null,
+                    'siaf' => $item['siaf'] ?? null,
+                    'descripcion' => $validated['descripcion'],
+                    'numero_serie' => $item['numero_serie'] ?? null,
+                    'fecha_alta' => $validated['fecha_alta'],
+                    'observaciones' => $validated['observaciones'] ?? null,
+                    'estado' => 'activo',
+                    'rutas_imagenes' => $rutasJson,
+                ]);
+
+                $bien->registrarMovimiento(
+                    'alta',
+                    null,
+                    null,
+                    $validated['destino_id'] ?? null,
+                    $validated['ubicacion'] ?? null,
+                    'Alta inicial del bien patrimonial (carga masiva)'
+                );
+
+                $creados++;
+            }
+
+            DB::commit();
+
+            return redirect()->route('patrimonio.bienes.index')
+                ->with('success', "Se registraron {$creados} bienes patrimoniales exitosamente.");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error al registrar los bienes: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
     public function show($id)
     {
         $bien = PatrimonioBien::with(['tipoBien', 'destino', 'movimientos.destinoDesde', 'movimientos.destinoHasta'])
@@ -206,10 +293,10 @@ class PatrimonioBienController extends Controller
             'numero_serie' => 'nullable|string|max:255',
             'fecha_alta' => 'required|date',
             'observaciones' => 'nullable|string',
-            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048'
+            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:51200',
+            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:51200',
+            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:51200',
+            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:51200'
         ]);
 
         DB::beginTransaction();
@@ -307,10 +394,10 @@ class PatrimonioBienController extends Controller
             'tipo_baja' => 'required|in:baja_desuso,baja_transferencia,baja_rotura',
             'observaciones' => 'required|string',
             'destino_transferencia' => 'required_if:tipo_baja,baja_transferencia|nullable|exists:destino,id',
-            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048'
+            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:51200',
+            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:51200',
+            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:51200',
+            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:51200'
         ]);
 
         DB::beginTransaction();
@@ -384,10 +471,10 @@ class PatrimonioBienController extends Controller
             'destino_hasta_id' => 'required|exists:destino,id',
             'ubicacion_hasta' => 'nullable|string|max:150',
             'observaciones' => 'nullable|string',
-            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:2048'
+            'imagen1' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:51200',
+            'imagen2' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:51200',
+            'imagen3' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:51200',
+            'archivo' => 'nullable|mimes:pdf,doc,docx,xlsx,zip,rar|max:51200'
         ]);
 
         DB::beginTransaction();

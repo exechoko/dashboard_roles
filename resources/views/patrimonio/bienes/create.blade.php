@@ -16,6 +16,39 @@
                 </div>
             @endif
 
+            @if($errors->any())
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <h6 class="mb-2"><i class="fas fa-exclamation-circle"></i> Revise los siguientes datos:</h6>
+                    <ul class="mb-0 pl-3">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            @endif
+
+            <div class="card mb-3">
+                <div class="card-body py-3">
+                    <label class="d-block mb-2"><strong><i class="fas fa-layer-group"></i> Modo de carga</strong></label>
+                    <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                        <label class="btn btn-outline-primary active">
+                            <input type="radio" name="modo_carga" value="individual" checked> Individual
+                        </label>
+                        <label class="btn btn-outline-primary">
+                            <input type="radio" name="modo_carga" value="masivo"> Carga masiva
+                        </label>
+                    </div>
+                    <small class="d-block text-muted mt-2">
+                        La carga masiva permite registrar varias unidades del mismo bien (misma descripción, tipo, destino)
+                        cargando solo el SIAF y N° de serie de cada una. Disponible para tipos sin tabla vinculada.
+                    </small>
+                </div>
+            </div>
+
+            <div id="modo-individual">
             <form action="{{ route('patrimonio.bienes.store') }}" method="POST" enctype="multipart/form-data">
                 @csrf
 
@@ -210,7 +243,7 @@
                                     <i class="fas fa-file"></i> Archivo adjunto
                                 </label>
                                 <input type="file" name="archivo" class="form-control" accept=".pdf,.doc,.docx,.xlsx,.zip,.rar">
-                                <small class="text-muted">Formatos permitidos: PDF, DOC, DOCX, XLSX, ZIP, RAR (Máx. 2MB)</small>
+                                <small class="text-muted">Formatos permitidos: PDF, DOC, DOCX, XLSX, ZIP, RAR (Máx. 50MB)</small>
                             </div>
                         </div>
 
@@ -241,6 +274,168 @@
                     </div>
                 </div>
             </form>
+            </div>
+
+            <div id="modo-masivo" style="display: none;">
+            <form action="{{ route('patrimonio.bienes.store-masivo') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <input type="hidden" name="modo_carga" value="masivo">
+                <input type="hidden" id="masivo_old" value="{{ old('modo_carga') === 'masivo' ? '1' : '0' }}"
+                    data-items='@json(old("items", []))'
+                    data-tipo="{{ old('tipo_bien_id') }}"
+                    data-destino="{{ old('destino_id') }}"
+                    data-ubicacion="{{ old('ubicacion') }}"
+                    data-descripcion="{{ old('descripcion') }}"
+                    data-observaciones="{{ old('observaciones') }}">
+
+
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4><i class="fas fa-boxes"></i> Datos compartidos del lote</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="masivo_tipo_bien_id">Tipo de Bien <span class="text-danger">*</span></label>
+                                            <select class="form-control" id="masivo_tipo_bien_id" name="tipo_bien_id" required>
+                                                <option value="">Seleccione un tipo</option>
+                                                @foreach($tiposBien->where('tiene_tabla_propia', false) as $tipo)
+                                                    <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
+                                                @endforeach
+                                            </select>
+                                            <small class="text-muted">Solo tipos sin tabla vinculada</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="masivo_destino_id">Destino</label>
+                                            <select class="form-control" id="masivo_destino_id" name="destino_id">
+                                                <option value="">Sin asignar</option>
+                                                @foreach($destinos as $destino)
+                                                    <option value="{{ $destino->id }}">{{ $destino->nombre }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="masivo_ubicacion">Ubicación Específica</label>
+                                            <input type="text" class="form-control" id="masivo_ubicacion" name="ubicacion"
+                                                maxlength="150" placeholder="Ej: Oficina 201, Estante A">
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="masivo_fecha_alta">Fecha de Alta <span class="text-danger">*</span></label>
+                                            <input type="date" class="form-control" id="masivo_fecha_alta" name="fecha_alta"
+                                                value="{{ date('Y-m-d') }}">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="masivo_descripcion">Descripción <span class="text-danger">*</span></label>
+                                    <textarea class="form-control" id="masivo_descripcion" name="descripcion" rows="3"
+                                        placeholder="Marca, modelo y características comunes a todas las unidades del lote"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="masivo_observaciones">Observaciones</label>
+                                    <textarea class="form-control" id="masivo_observaciones" name="observaciones" rows="2"
+                                        placeholder="Observaciones comunes (opcional)"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h4 class="mb-0"><i class="fas fa-list-ol"></i> Unidades del lote</h4>
+                                <div class="form-inline">
+                                    <label for="masivo_cantidad" class="mr-2 mb-0">Cantidad</label>
+                                    <input type="number" id="masivo_cantidad" min="1" max="100" value="2"
+                                        class="form-control mr-2" style="width: 90px;">
+                                    <button type="button" id="generarFilas" class="btn btn-success">
+                                        <i class="fas fa-sync-alt"></i> Generar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted">Complete el SIAF y N° de serie propios de cada unidad. El resto de los
+                                    datos se toma de la sección "Datos compartidos del lote".</p>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-sm" id="tablaUnidades">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th style="width: 50px;">#</th>
+                                                <th>Código SIAF</th>
+                                                <th>Número de Serie</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="unidadesBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4><i class="fas fa-paperclip"></i> Adjuntos del lote</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info py-2">
+                                    <small>Las imágenes y el archivo se asignan por igual a todas las unidades del lote.</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="masivo_imagen1"><i class="fas fa-image"></i> Imagen 1</label>
+                                    <input type="file" name="imagen1" id="masivo_imagen1" class="form-control" accept="image/*">
+                                </div>
+                                <div class="form-group">
+                                    <label for="masivo_imagen2"><i class="fas fa-image"></i> Imagen 2</label>
+                                    <input type="file" name="imagen2" id="masivo_imagen2" class="form-control" accept="image/*">
+                                </div>
+                                <div class="form-group">
+                                    <label for="masivo_imagen3"><i class="fas fa-image"></i> Imagen 3</label>
+                                    <input type="file" name="imagen3" id="masivo_imagen3" class="form-control" accept="image/*">
+                                </div>
+                                <div class="form-group">
+                                    <label for="masivo_archivo"><i class="fas fa-file"></i> Archivo adjunto</label>
+                                    <input type="file" name="archivo" id="masivo_archivo" class="form-control"
+                                        accept=".pdf,.doc,.docx,.xlsx,.zip,.rar">
+                                    <small class="text-muted">PDF, DOC, DOCX, XLSX, ZIP, RAR (Máx. 50MB)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ route('patrimonio.bienes.index') }}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left"></i> Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Crear lote de bienes
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            </div>
         </div>
     </section>
 @endsection
@@ -287,7 +482,7 @@
                             </button>
                         </div>
                     </div>
-                    <small class="text-muted">JPG, PNG, GIF (Máx. 2MB)</small>
+                    <small class="text-muted">JPG, PNG, GIF, WEBP (Máx. 50MB)</small>
                 </div>
             `;
 
@@ -399,8 +594,100 @@
                 });
             }
 
-            // Si hay un valor old, cargar los items
-            @if(old('tipo_bien_id'))
+            // ===== Modo de carga: individual / masivo =====
+            let masivoSelect2Init = false;
+
+            $('input[name="modo_carga"]').on('change', function () {
+                if ($(this).val() === 'masivo') {
+                    $('#modo-individual').hide();
+                    $('#modo-masivo').show();
+
+                    // Inicializar select2 recién cuando el contenedor es visible
+                    if (!masivoSelect2Init) {
+                        $('#masivo_tipo_bien_id, #masivo_destino_id').select2({
+                            width: '100%'
+                        });
+                        masivoSelect2Init = true;
+                    }
+
+                    if ($('#unidadesBody tr').length === 0) {
+                        generarFilas();
+                    }
+                } else {
+                    $('#modo-masivo').hide();
+                    $('#modo-individual').show();
+                }
+            });
+
+            function generarFilas(seed) {
+                const cantidad = parseInt($('#masivo_cantidad').val(), 10) || 0;
+                if (cantidad < 1) {
+                    alert('Ingrese una cantidad válida (mínimo 1)');
+                    return;
+                }
+
+                // Conservar lo ya cargado en pantalla
+                const valores = [];
+                $('#unidadesBody tr').each(function (i) {
+                    valores[i] = {
+                        siaf: $(this).find('input[name$="[siaf]"]').val() || '',
+                        serie: $(this).find('input[name$="[numero_serie]"]').val() || ''
+                    };
+                });
+
+                const $body = $('#unidadesBody').empty();
+                for (let i = 0; i < cantidad; i++) {
+                    const base = (seed && seed[i])
+                        ? { siaf: seed[i].siaf || '', serie: seed[i].numero_serie || '' }
+                        : null;
+                    const v = base || valores[i] || { siaf: '', serie: '' };
+
+                    const $row = $(`
+                        <tr>
+                            <td class="text-center align-middle">${i + 1}</td>
+                            <td><input type="text" class="form-control siaf-input" name="items[${i}][siaf]" maxlength="100" placeholder="SIAF"></td>
+                            <td><input type="text" class="form-control serie-input" name="items[${i}][numero_serie]" maxlength="255" placeholder="N° de serie"></td>
+                        </tr>
+                    `);
+                    $row.find('.siaf-input').val(v.siaf);
+                    $row.find('.serie-input').val(v.serie);
+                    $body.append($row);
+                }
+            }
+
+            $('#generarFilas').on('click', function () {
+                generarFilas();
+            });
+
+            // ===== Restaurar estado tras un rebote de validación =====
+            const $oldMeta = $('#masivo_old');
+            if ($oldMeta.length && $oldMeta.val() === '1') {
+                // Repoblar campos compartidos
+                $('#masivo_tipo_bien_id').val($oldMeta.data('tipo'));
+                $('#masivo_destino_id').val($oldMeta.data('destino'));
+                $('#masivo_ubicacion').val($oldMeta.data('ubicacion'));
+                $('#masivo_descripcion').val($oldMeta.data('descripcion'));
+                $('#masivo_observaciones').val($oldMeta.data('observaciones'));
+
+                const oldItems = $oldMeta.data('items') || [];
+                if (oldItems.length) {
+                    $('#masivo_cantidad').val(oldItems.length);
+                }
+
+                // Activar el botón de modo masivo y mostrar el formulario
+                $('input[name="modo_carga"]').filter('[value="individual"]').closest('label').removeClass('active');
+                $('input[name="modo_carga"]').filter('[value="masivo"]').closest('label').addClass('active');
+                $('#modo-individual').hide();
+                $('#modo-masivo').show();
+                if (!masivoSelect2Init) {
+                    $('#masivo_tipo_bien_id, #masivo_destino_id').select2({ width: '100%' }).trigger('change');
+                    masivoSelect2Init = true;
+                }
+                generarFilas(oldItems);
+            }
+
+            // Si hay un valor old (alta individual), cargar los items vinculados
+            @if(old('tipo_bien_id') && old('modo_carga') !== 'masivo')
                 $('#tipo_bien_id').trigger('change');
 
                 @if(old('item_origen_id'))

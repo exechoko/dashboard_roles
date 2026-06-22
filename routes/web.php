@@ -38,6 +38,7 @@ use App\Http\Controllers\ManualesController;
 use App\Http\Controllers\WebAdminController;
 use App\Http\Controllers\NoticiaController;
 use App\Http\Controllers\WebDependenciaController;
+use App\Http\Controllers\WebGaleriaImagenController;
 use App\Http\Controllers\WebHistoriaCardController;
 use App\Http\Controllers\WebTechCardController;
 
@@ -89,6 +90,13 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('web-tecnologia', WebTechCardController::class)
         ->except(['show'])
         ->parameters(['web-tecnologia' => 'card']);
+    Route::get('web-galeria/imagen', [WebGaleriaImagenController::class, 'imagen'])->name('web-galeria.imagen');
+    Route::resource('web-galeria', WebGaleriaImagenController::class)
+        ->except(['show'])
+        ->parameters(['web-galeria' => 'imagen']);
+    Route::get('web-admin/preview', [WebAdminController::class, 'previewWeb'])
+        ->name('web-admin.preview')
+        ->middleware('permission:ver-menu-web|editar-web-contadores|editar-web-textos|editar-web-historia|editar-web-tecnologia|editar-web-dependencias|editar-web-galeria');
 
     Route::resource('roles', RolController::class);
     Route::resource('usuarios', UsuarioController::class);

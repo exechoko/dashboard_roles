@@ -4,9 +4,15 @@
     <section class="section">
         <div class="section-header d-flex justify-content-between align-items-center">
             <h3 class="page__heading">Administrar Web — Dependencias</h3>
-            <a href="{{ route('web-dependencias.create') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Nueva dependencia
-            </a>
+            <div>
+                <button type="button" class="btn btn-outline-primary js-web-preview"
+                        data-pagina="dependencias.html" data-title="Dependencias">
+                    <i class="fas fa-eye"></i> Vista previa
+                </button>
+                <a href="{{ route('web-dependencias.create') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nueva dependencia
+                </a>
+            </div>
         </div>
 
         <div class="section-body">
@@ -71,4 +77,6 @@
             </div>
         </div>
     </section>
+
+    @include('web-admin._preview')
 @endsection

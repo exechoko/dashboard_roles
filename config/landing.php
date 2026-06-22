@@ -63,6 +63,13 @@ return [
     'noticias_img_dir' => 'images/noticias',
 
     /*
+    | Galería (slider de galeria.html): archivo JS generado (window.GALERIA) y
+    | carpeta donde se guardan las imágenes subidas desde el panel.
+    */
+    'galeria_js'      => 'js/galeria-data.js',
+    'galeria_img_dir' => 'images/galeria',
+
+    /*
     | Optimización de imágenes de noticias: se convierten a WebP y se
     | redimensionan si superan el ancho máximo (en px). Calidad 0-100.
     */

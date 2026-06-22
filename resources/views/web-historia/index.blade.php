@@ -10,6 +10,10 @@
                         <i class="fas fa-font"></i> Textos
                     </a>
                 @endcan
+                <button type="button" class="btn btn-outline-primary js-web-preview"
+                        data-pagina="historia.html" data-title="Historia">
+                    <i class="fas fa-eye"></i> Vista previa
+                </button>
                 <a href="{{ route('web-historia.create') }}" class="btn btn-primary">
                     <i class="fas fa-plus"></i> Nueva tarjeta
                 </a>
@@ -93,4 +97,6 @@
             </div>
         </div>
     </section>
+
+    @include('web-admin._preview')
 @endsection

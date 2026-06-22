@@ -470,8 +470,8 @@
     </li>
 @endcanany
 
-@canany(['ver-menu-web', 'editar-web-contadores', 'editar-web-textos', 'editar-web-historia', 'editar-web-tecnologia', 'editar-web-dependencias', 'crear-noticia', 'editar-noticia', 'eliminar-noticia'])
-    <li class="{{ request()->is('web-admin*') || request()->is('noticias*') || request()->is('web-dependencias*') || request()->is('web-historia*') || request()->is('web-tecnologia*') ? 'active' : '' }}">
+@canany(['ver-menu-web', 'editar-web-contadores', 'editar-web-textos', 'editar-web-historia', 'editar-web-tecnologia', 'editar-web-dependencias', 'editar-web-galeria', 'crear-noticia', 'editar-noticia', 'eliminar-noticia'])
+    <li class="{{ request()->is('web-admin*') || request()->is('noticias*') || request()->is('web-dependencias*') || request()->is('web-historia*') || request()->is('web-tecnologia*') || request()->is('web-galeria*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-globe"></i><span>Administrar Web</span>
         </a>
@@ -501,6 +501,13 @@
                 <li class="{{ request()->is('web-tecnologia*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('web-tecnologia.index') }}">
                         <i class="fas fa-microchip mr-1"></i><span>Tecnología (cards)</span>
+                    </a>
+                </li>
+            @endcan
+            @can('editar-web-galeria')
+                <li class="{{ request()->is('web-galeria*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('web-galeria.index') }}">
+                        <i class="fas fa-images mr-1"></i><span>Galería</span>
                     </a>
                 </li>
             @endcan

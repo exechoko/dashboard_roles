@@ -159,6 +159,7 @@
                                                         'web-textos',
                                                         'web-historia',
                                                         'web-tecnologia',
+                                                        'web-galeria',
                                                         'web-dependencias',
                                                         'noticia'
                                                     ]

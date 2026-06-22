@@ -230,6 +230,7 @@ class SeederTablaPermisos extends Seeder
             'editar-web-historia',
             'editar-web-tecnologia',
             'editar-web-dependencias',
+            'editar-web-galeria',
             'crear-noticia',
             'editar-noticia',
             'eliminar-noticia',

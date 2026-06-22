@@ -136,8 +136,30 @@ class WebAdminController extends Controller
             'textos.*' => 'nullable|string',
         ]);
 
-        $pagina = $datos['pagina'];
-        if (! in_array($pagina, $this->paginasDisponibles(), true)) {
+        return $this->renderPreview($datos['pagina'], $datos['textos'] ?? []);
+    }
+
+    /**
+     * Vista previa genérica (GET) de cualquier página de la web, reflejando los
+     * datos locales ya guardados (contadores, cards, dependencias, galería, etc.).
+     */
+    public function previewWeb(Request $request): Response
+    {
+        $datos = $request->validate(['pagina' => 'required|string']);
+
+        return $this->renderPreview($datos['pagina'], []);
+    }
+
+    /**
+     * Lee la página local, hace que los assets carguen del sitio publicado y
+     * reemplaza los datos publicados por los locales (más, opcionalmente, los
+     * textos enviados sin guardar). Así la previa coincide con lo que se publicará.
+     *
+     * @param  array<string, string|null>  $textosOverride
+     */
+    private function renderPreview(string $pagina, array $textosOverride): Response
+    {
+        if (! preg_match('/^[a-z0-9-]+\.html$/i', $pagina)) {
             abort(404);
         }
 
@@ -146,23 +168,83 @@ class WebAdminController extends Controller
             abort(404, 'No se encontró el archivo de la página en el sitio.');
         }
 
-        $valores = $this->valoresPreview($datos['textos'] ?? []);
-        $html = $this->inyectarPreview((string) file_get_contents($archivo), $valores);
+        $html = (string) file_get_contents($archivo);
+        $html = $this->inyectarBase($html);
+
+        // Reemplazar cada archivo de datos publicado por su versión local (la BD).
+        foreach ([
+            'js/config-datos.js'      => 'config_datos_js',
+            'js/historia-data.js'     => 'historia_js',
+            'js/tecnologia-data.js'   => 'tecnologia_js',
+            'js/dependencias-data.js' => 'dependencias_js',
+            'js/galeria-data.js'      => 'galeria_js',
+        ] as $src => $configKey) {
+            $contenido = $this->contenidoLocal($configKey);
+            if ($contenido !== null) {
+                $html = $this->reemplazarScript($html, $src, "<script>\n{$contenido}\n</script>");
+            }
+        }
+
+        // Textos: reemplazar config-textos.js por los valores actuales (con override).
+        $html = $this->reemplazarScript($html, 'js/config-textos.js', $this->scriptTextos($textosOverride));
 
         return response($html, 200, ['Content-Type' => 'text/html; charset=UTF-8']);
     }
 
     /**
-     * @return list<string>
+     * Inserta el <base> al sitio publicado y un parche de fetch para que las
+     * noticias también se lean del archivo local (evita CORS y refleja la BD).
      */
-    private function paginasDisponibles(): array
+    private function inyectarBase(string $html): string
     {
-        return collect(config('textos_web', []))
-            ->pluck('pagina')
-            ->filter()
-            ->unique()
-            ->values()
-            ->all();
+        if (stripos($html, '<base') !== false) {
+            return $html;
+        }
+
+        $base = rtrim((string) config('landing.url'), '/') . '/';
+        $inyeccion = "\n    <base href=\"{$base}\">";
+
+        $noticias = config('landing.noticias_json');
+        $rutaNoticias = $noticias
+            ? rtrim((string) config('landing.path'), '/\\') . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $noticias)
+            : null;
+
+        if ($rutaNoticias && is_file($rutaNoticias)) {
+            $jsonLiteral = json_encode((string) file_get_contents($rutaNoticias), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT);
+            $inyeccion .= "\n    <script>(function(){var d={$jsonLiteral};var of=window.fetch;window.fetch=function(u){try{if(typeof u==='string'&&u.indexOf('noticias.json')>-1){return Promise.resolve(new Response(d,{status:200,headers:{'Content-Type':'application/json'}}));}}catch(e){}return of.apply(this,arguments);};})();</script>";
+        }
+
+        return preg_replace('/<head(\s[^>]*)?>/i', '$0' . $inyeccion, $html, 1) ?? $html;
+    }
+
+    /**
+     * Construye el script que aplica los textos (guardados + override) por
+     * encima de los publicados.
+     *
+     * @param  array<string, string|null>  $override
+     */
+    private function scriptTextos(array $override): string
+    {
+        $json = json_encode(
+            $this->valoresPreview($override),
+            JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+        );
+
+        return <<<HTML
+<script>
+(function () {
+    var TEXTOS = {$json};
+    document.querySelectorAll('[data-edit]').forEach(function (el) {
+        var v = TEXTOS[el.dataset.edit];
+        if (v !== undefined && v !== null) { el.textContent = v; }
+    });
+    document.querySelectorAll('[data-edit-html]').forEach(function (el) {
+        var v = TEXTOS[el.dataset.editHtml];
+        if (v !== undefined && v !== null) { el.innerHTML = v; }
+    });
+})();
+</script>
+HTML;
     }
 
     /**
@@ -190,43 +272,37 @@ class WebAdminController extends Controller
     }
 
     /**
-     * Inserta un <base> al sitio (para que carguen CSS/JS/imágenes) y un script
-     * final que aplica los textos de la vista previa por encima de los publicados.
-     *
-     * @param  array<string, string>  $valores
+     * Devuelve el contenido del archivo JS local apuntado por config('landing.<key>').
      */
-    private function inyectarPreview(string $html, array $valores): string
+    private function contenidoLocal(string $configKey): ?string
     {
-        $base = rtrim((string) config('landing.url'), '/') . '/';
-        $json = json_encode(
-            $valores,
-            JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
-        );
-
-        if (stripos($html, '<base') === false) {
-            $html = preg_replace('/<head(\s[^>]*)?>/i', '$0' . "\n    <base href=\"{$base}\">", $html, 1);
+        $relativo = config("landing.{$configKey}");
+        if (! $relativo) {
+            return null;
         }
 
-        $script = <<<HTML
-<script>
-(function () {
-    var TEXTOS = {$json};
-    document.querySelectorAll('[data-edit]').forEach(function (el) {
-        var v = TEXTOS[el.dataset.edit];
-        if (v !== undefined && v !== null) { el.textContent = v; }
-    });
-    document.querySelectorAll('[data-edit-html]').forEach(function (el) {
-        var v = TEXTOS[el.dataset.editHtml];
-        if (v !== undefined && v !== null) { el.innerHTML = v; }
-    });
-})();
-</script>
-HTML;
+        $ruta = rtrim((string) config('landing.path'), '/\\') . DIRECTORY_SEPARATOR
+            . str_replace('/', DIRECTORY_SEPARATOR, $relativo);
+
+        return is_file($ruta) ? (string) file_get_contents($ruta) : null;
+    }
+
+    /**
+     * Reemplaza el <script src="..."> indicado por contenido inline. Si no está
+     * presente, inyecta el contenido antes de </body> como respaldo.
+     */
+    private function reemplazarScript(string $html, string $src, string $reemplazo): string
+    {
+        $patron = '#<script\s+src=(["\'])' . preg_quote($src, '#') . '\1\s*></script>#i';
+
+        if (preg_match($patron, $html)) {
+            return (string) preg_replace($patron, addcslashes($reemplazo, '\\$'), $html, 1);
+        }
 
         if (stripos($html, '</body>') !== false) {
-            return str_ireplace('</body>', $script . "\n</body>", $html);
+            return str_ireplace('</body>', $reemplazo . "\n</body>", $html);
         }
 
-        return $html . $script;
+        return $html . $reemplazo;
     }
 }

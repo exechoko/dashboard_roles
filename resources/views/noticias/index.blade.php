@@ -4,11 +4,17 @@
     <section class="section">
         <div class="section-header d-flex justify-content-between align-items-center">
             <h3 class="page__heading">Noticias</h3>
-            @can('crear-noticia')
-                <a href="{{ route('noticias.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Nueva noticia
-                </a>
-            @endcan
+            <div>
+                <button type="button" class="btn btn-outline-primary js-web-preview"
+                        data-pagina="noticias.html" data-title="Noticias">
+                    <i class="fas fa-eye"></i> Vista previa
+                </button>
+                @can('crear-noticia')
+                    <a href="{{ route('noticias.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nueva noticia
+                    </a>
+                @endcan
+            </div>
         </div>
 
         <div class="section-body">
@@ -95,4 +101,6 @@
             </div>
         </div>
     </section>
+
+    @include('web-admin._preview')
 @endsection

@@ -3,7 +3,7 @@
 @section('content')
     <section class="section">
         <div class="section-header d-flex justify-content-between align-items-center">
-            <h3 class="page__heading">Tecnología — Cards</h3>
+            <h3 class="page__heading">Galería — Imágenes</h3>
             <div>
                 @can('editar-web-textos')
                     <a href="{{ route('web-admin.textos.edit') }}" class="btn btn-light">
@@ -11,11 +11,11 @@
                     </a>
                 @endcan
                 <button type="button" class="btn btn-outline-primary js-web-preview"
-                        data-pagina="tecnologia.html" data-title="Tecnología">
+                        data-pagina="galeria.html" data-title="Galería">
                     <i class="fas fa-eye"></i> Vista previa
                 </button>
-                <a href="{{ route('web-tecnologia.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Nueva card
+                <a href="{{ route('web-galeria.create') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nueva imagen
                 </a>
             </div>
         </div>
@@ -36,7 +36,7 @@
 
             <div class="alert alert-light border">
                 <i class="fas fa-info-circle text-info"></i>
-                Cards de la página <strong>tecnologia.html</strong>. Podés ponerle una imagen de cabecera a cada una; si no, se muestra el color.
+                Imágenes del slider de <strong>galeria.html</strong>. Cada imagen lleva un título/descripción y, opcionalmente, una categoría. El orden controla la posición en el carrusel.
             </div>
 
             <div class="card">
@@ -46,35 +46,34 @@
                             <thead>
                                 <tr>
                                     <th style="width:60px">#</th>
-                                    <th style="width:90px">Imagen</th>
-                                    <th>Título</th>
-                                    <th style="width:110px">Color</th>
+                                    <th style="width:110px">Imagen</th>
+                                    <th>Título / descripción</th>
+                                    <th style="width:160px">Categoría</th>
                                     <th style="width:120px" class="text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse ($cards as $card)
+                                @forelse ($imagenes as $imagen)
                                     <tr>
-                                        <td>{{ $card->orden }}</td>
+                                        <td>{{ $imagen->orden }}</td>
                                         <td>
-                                            @if ($card->imagen)
-                                                <img src="{{ route('web-tecnologia.imagen', $card->imagen) }}" alt=""
-                                                     style="width:70px;height:45px;object-fit:cover;border-radius:6px;">
+                                            <img src="{{ route('web-galeria.imagen', ['ruta' => $imagen->imagen]) }}" alt=""
+                                                 style="width:90px;height:55px;object-fit:cover;border-radius:6px;">
+                                        </td>
+                                        <td><strong>{{ $imagen->titulo }}</strong></td>
+                                        <td>
+                                            @if ($imagen->categoria)
+                                                <span class="badge badge-secondary">{{ $imagen->categoria }}</span>
                                             @else
-                                                <span class="text-muted"><i class="fas fa-image fa-2x"></i></span>
+                                                <span class="text-muted">—</span>
                                             @endif
                                         </td>
-                                        <td>
-                                            <strong>{{ $card->titulo }}</strong>
-                                            <div class="text-muted small">{{ Str::limit($card->texto, 90) }}</div>
-                                        </td>
-                                        <td><span class="badge badge-secondary">{{ $colores[$card->color] ?? $card->color }}</span></td>
                                         <td class="text-right">
-                                            <a href="{{ route('web-tecnologia.edit', $card) }}" class="btn btn-sm btn-info">
+                                            <a href="{{ route('web-galeria.edit', $imagen) }}" class="btn btn-sm btn-info">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <form action="{{ route('web-tecnologia.destroy', $card) }}" method="POST" class="d-inline"
-                                                  onsubmit="return confirm('¿Eliminar esta card? Se quitará también de la web.');">
+                                            <form action="{{ route('web-galeria.destroy', $imagen) }}" method="POST" class="d-inline"
+                                                  onsubmit="return confirm('¿Quitar esta imagen de la galería? Se eliminará también de la web.');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
@@ -83,14 +82,14 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted py-4">No hay cards cargadas.</td>
+                                        <td colspan="5" class="text-center text-muted py-4">No hay imágenes cargadas.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
 
-                    {{ $cards->links() }}
+                    {{ $imagenes->links() }}
                 </div>
             </div>
         </div>

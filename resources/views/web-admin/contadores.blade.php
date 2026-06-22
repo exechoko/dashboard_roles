@@ -36,9 +36,15 @@
     <section class="section">
         <div class="section-header d-flex justify-content-between align-items-center">
             <h3 class="page__heading">Administrar Web — Contadores</h3>
-            <button type="button" class="btn btn-info" data-toggle="modal" data-target="#modalTutorial">
-                <i class="fas fa-question-circle"></i> Tutorial
-            </button>
+            <div>
+                <button type="button" class="btn btn-outline-primary js-web-preview"
+                        data-pagina="index.html" data-title="Inicio (contadores)">
+                    <i class="fas fa-eye"></i> Vista previa
+                </button>
+                <button type="button" class="btn btn-info" data-toggle="modal" data-target="#modalTutorial">
+                    <i class="fas fa-question-circle"></i> Tutorial
+                </button>
+            </div>
         </div>
 
         <div class="section-body">
@@ -163,6 +169,8 @@
             </form>
         </div>
     </section>
+
+    @include('web-admin._preview')
 
     {{-- Modal Tutorial --}}
     <div class="modal fade" id="modalTutorial" tabindex="-1" role="dialog" aria-hidden="true">

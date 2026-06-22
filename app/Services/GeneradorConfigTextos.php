@@ -68,7 +68,8 @@ class GeneradorConfigTextos
 // ============================================================
 //  TEXTOS EDITABLES — División 911 y V.V
 //  ⚠️ ARCHIVO GENERADO AUTOMÁTICAMENTE desde el panel del sistema.
-//  Reemplaza el contenido de los elementos con [data-edit].
+//  Reemplaza el contenido de los elementos con [data-edit] (texto plano)
+//  y [data-edit-html] (contenido con formato).
 // ============================================================
 
 const TEXTOS = {$json};
@@ -78,6 +79,12 @@ const TEXTOS = {$json};
         var valor = TEXTOS[el.dataset.edit];
         if (valor !== undefined && valor !== null) {
             el.textContent = valor;
+        }
+    });
+    document.querySelectorAll('[data-edit-html]').forEach(function (el) {
+        var valor = TEXTOS[el.dataset.editHtml];
+        if (valor !== undefined && valor !== null) {
+            el.innerHTML = valor;
         }
     });
 })();

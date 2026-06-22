@@ -24,7 +24,7 @@ class WebTextosRequest extends FormRequest
     {
         return [
             'textos'   => 'required|array',
-            'textos.*' => 'required|string|max:5000',
+            'textos.*' => 'required|string|max:20000',
         ];
     }
 
@@ -51,7 +51,7 @@ class WebTextosRequest extends FormRequest
     {
         return [
             'textos.*.required' => 'El texto no puede quedar vacío.',
-            'textos.*.max'      => 'El texto es demasiado largo (máx. 5000 caracteres).',
+            'textos.*.max'      => 'El texto es demasiado largo (máx. 20000 caracteres).',
         ];
     }
 }

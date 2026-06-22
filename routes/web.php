@@ -73,6 +73,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::put('web-admin/textos', [WebAdminController::class, 'updateTextos'])
         ->name('web-admin.textos.update')
         ->middleware('can:editar-web-textos');
+    Route::post('web-admin/textos/preview', [WebAdminController::class, 'previewTextos'])
+        ->name('web-admin.textos.preview')
+        ->middleware('can:editar-web-textos');
     Route::get('noticias/imagen/{archivo}', [NoticiaController::class, 'imagen'])->name('noticias.imagen');
     Route::resource('noticias', NoticiaController::class)->except(['show']);
     Route::resource('web-dependencias', WebDependenciaController::class)

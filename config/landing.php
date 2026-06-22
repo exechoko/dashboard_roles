@@ -16,6 +16,12 @@ return [
     'path' => env('LANDING_PATH', base_path('../LandingPage-911-y-VV')),
 
     /*
+    | URL pública del sitio, usada para la vista previa dentro del panel.
+    | Muestra la versión publicada (los cambios aparecen al guardar).
+    */
+    'url' => env('LANDING_URL', 'https://div911.stper.com.ar'),
+
+    /*
     | Ruta relativa (dentro de 'path') del archivo de contadores generado.
     */
     'config_datos_js' => 'js/config-datos.js',

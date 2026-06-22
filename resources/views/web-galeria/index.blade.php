@@ -45,7 +45,7 @@
                         <table class="table table-striped align-middle">
                             <thead>
                                 <tr>
-                                    <th style="width:60px">#</th>
+                                    <th style="width:70px">Orden</th>
                                     <th style="width:110px">Imagen</th>
                                     <th>Título / descripción</th>
                                     <th style="width:160px">Categoría</th>
@@ -55,7 +55,7 @@
                             <tbody>
                                 @forelse ($imagenes as $imagen)
                                     <tr>
-                                        <td>{{ $imagen->orden }}</td>
+                                        <td><span class="badge badge-primary">{{ $imagenes->firstItem() + $loop->index }}</span></td>
                                         <td>
                                             <img src="{{ route('web-galeria.imagen', ['ruta' => $imagen->imagen]) }}" alt=""
                                                  style="width:90px;height:55px;object-fit:cover;border-radius:6px;">

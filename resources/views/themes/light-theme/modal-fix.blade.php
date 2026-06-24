@@ -311,6 +311,17 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // El tema visual aplica backdrop-filter a .card/.table-responsive/.modal-content,
+        // lo que convierte a esos contenedores en "containing block" de los descendientes
+        // position:fixed. Si un modal queda anidado dentro de una card, tras hacer scroll
+        // se posiciona respecto a la card (fuera del viewport) y "aparece arriba y no se ve".
+        // Reubicar el modal al <body> antes de mostrarlo lo soluciona para toda la app.
+        $(document).on('show.bs.modal', '.modal', function() {
+            if (this.parentNode && this.parentNode !== document.body) {
+                document.body.appendChild(this);
+            }
+        });
+
         $(document).on('shown.bs.modal', function(e) {
             const $modal = $(e.target);
             const $backdrop = $modal.next('.modal-backdrop');

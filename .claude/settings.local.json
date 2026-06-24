@@ -94,7 +94,22 @@
       "Bash(git check-ignore *)",
       "Bash(xargs -I{} sed -n '{},+15p' css/styles.css)",
       "Bash(echo \"EXIT:$?\")",
-      "Bash(node --check js/historia.js)"
+      "Bash(node --check js/historia.js)",
+      "mcp__laravel-boost__last-error",
+      "Bash(node --check storage/app/gis_main.js)",
+      "Bash(grep -o '`' storage/app/gis_main.js)",
+      "Bash(grep -n 'const .*=\\\\s*`\\\\|=\\\\s*`<\\\\|<script\\\\|</script\\\\|<\\\\\\\\/script\\\\|`;' storage/app/gis_main.js)",
+      "Bash(grep -n '</scr\\\\|<\\\\\\\\/scr\\\\|< /scr\\\\|<\\\\\\\\\\\\\\\\/scr' storage/app/gis_main.js)",
+      "Bash(node storage/app/scan2.js storage/app/gis_main.js)",
+      "Bash(node storage/app/scan3.js storage/app/gis_main.js)",
+      "Bash(grep -n '`' storage/app/gis_main.js)",
+      "Bash(node -e ' *)",
+      "Bash(rm -f storage/app/gis_render.html storage/app/gis_main.js storage/app/gis_main2.js storage/app/scan.js storage/app/scan2.js storage/app/scan3.js)",
+      "Bash(ls storage/app/*.js storage/app/gis_render.html)",
+      "Bash(awk 'NR>=5480 && NR<=5905 && \\(/<script/||/<\\\\/script>/\\){print NR\": \"$0}' storage/app/gis_served.html)",
+      "Bash(grep -n \"head\\\\|body\\\\|str_replace\\\\|preg_replace\\\\|inject\\\\|</\\\\|position\\\\|stripos\\\\|strpos\" vendor/laravel/boost/src/Middleware/InjectBoost.php)",
+      "Bash(grep -n \"</head>\\\\|</body>\\\\|<head>\\\\|<body>\\\\|<\\\\\\\\\\\\\\\\/head\\\\|<\\\\\\\\\\\\\\\\/body\" resources/views/cecoco/historico_movil_gis/index.blade.php)",
+      "Bash(rm -f storage/app/gis_served.html storage/app/gis_served2.html)"
     ]
   },
   "enableAllProjectMcpServers": true,

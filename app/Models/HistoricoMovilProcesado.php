@@ -22,9 +22,13 @@ class HistoricoMovilProcesado extends Model
         'registros_json',
     ];
 
+    /**
+     * Las columnas fecha_inicio/fecha_fin son string y guardan el rango ya
+     * formateado para mostrar (ej. "23/06/2026 00:00:00"). No deben castearse a
+     * datetime: Carbon no puede parsear el formato d/m/Y y lanza
+     * InvalidFormatException al guardar (rompía "Procesar Histórico GIS").
+     */
     protected $casts = [
-        'fecha_inicio' => 'datetime',
-        'fecha_fin' => 'datetime',
         'metadata' => 'array',
     ];
 

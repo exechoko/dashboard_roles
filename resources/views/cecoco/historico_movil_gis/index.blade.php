@@ -952,7 +952,7 @@
         .flag-start { background:#00a832; } .flag-end { background:#e74c3c; }
         .leaflet-popup-content { min-width:200px; font-size:.82rem; }
     </style>
-</head>
+<\/head>
 <body>
     <div class="modal-shell">
         <div class="modal-header">
@@ -1246,8 +1246,8 @@
         });
         cargarLeaflet(init);
     <\/script>
-</body>
-</html>`;
+<\/body>
+<\/html>`;
     }
 
     /* ═══ HISTORIAL ═══ */

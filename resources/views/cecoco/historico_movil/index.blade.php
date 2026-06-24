@@ -1313,7 +1313,7 @@
         .flag-start { background:#00a832; } .flag-end { background:#e74c3c; }
         .leaflet-popup-content { min-width:200px; font-size:.82rem; }
     </style>
-</head>
+<\/head>
 <body>
     <div class="modal-shell">
         <div class="modal-header">
@@ -1607,8 +1607,8 @@
         });
         cargarLeaflet(init);
     <\/script>
-</body>
-</html>`;
+<\/body>
+<\/html>`;
     }
 
     /* ════════════════════════════════════════
@@ -1635,7 +1635,7 @@
             .exceso { background:#ff0000; color:#fff; padding:2px 8px; border-radius:10px; font-weight:700; }
             .ley { margin-bottom:8px; } .lb { display:inline-block; padding:2px 10px; border-radius:10px; font-size:10px; font-weight:600; }
             @media print { .no-print { display:none } }
-        </style></head><body>
+        </style><\/head><body>
         <div class="no-print" style="position:fixed;top:10px;right:10px;display:flex;gap:8px">
             <button onclick="window.print()" style="background:#1d6f42;color:#fff;border:none;padding:7px 16px;border-radius:6px;cursor:pointer">🖨 Imprimir / PDF</button>
             <button onclick="window.close()" style="background:#c0392b;color:#fff;border:none;padding:7px 16px;border-radius:6px;cursor:pointer">✕ Cerrar</button>
@@ -1663,7 +1663,7 @@
             </tr>`;
         });
 
-        html += '</tbody></table></body></html>';
+        html += '</tbody></table><\/body><\/html>';
         const win = window.open('','_blank','width=1100,height=800');
         win.document.write(html); win.document.close();
     });

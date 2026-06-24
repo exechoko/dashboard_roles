@@ -109,7 +109,10 @@
       "Bash(awk 'NR>=5480 && NR<=5905 && \\(/<script/||/<\\\\/script>/\\){print NR\": \"$0}' storage/app/gis_served.html)",
       "Bash(grep -n \"head\\\\|body\\\\|str_replace\\\\|preg_replace\\\\|inject\\\\|</\\\\|position\\\\|stripos\\\\|strpos\" vendor/laravel/boost/src/Middleware/InjectBoost.php)",
       "Bash(grep -n \"</head>\\\\|</body>\\\\|<head>\\\\|<body>\\\\|<\\\\\\\\\\\\\\\\/head\\\\|<\\\\\\\\\\\\\\\\/body\" resources/views/cecoco/historico_movil_gis/index.blade.php)",
-      "Bash(rm -f storage/app/gis_served.html storage/app/gis_served2.html)"
+      "Bash(rm -f storage/app/gis_served.html storage/app/gis_served2.html)",
+      "Bash(grep -n \"</head>\\\\|</body>\\\\|</html>\\\\|<\\\\\\\\\\\\\\\\/script\\\\|<\\\\\\\\\\\\\\\\/head\\\\|<\\\\\\\\\\\\\\\\/body\\\\|construirHtmlRecorridoExportable\\\\|return \\\\`<!DOCTYPE\" resources/views/cecoco/historico_movil/index.blade.php)",
+      "Bash(grep -n \"<script\\\\|</script>\\\\|<\\\\\\\\\\\\\\\\/script\\\\|<!DOCTYPE\\\\|<head>\\\\|</head>\\\\|<body>\\\\|</body>\\\\|</html>\\\\|<\\\\\\\\\\\\\\\\/head\\\\|<\\\\\\\\\\\\\\\\/body\\\\|<\\\\\\\\\\\\\\\\/html\" resources/views/cecoco/historico_movil/index.blade.php)",
+      "Bash(rm -f storage/app/excel_served.html)"
     ]
   },
   "enableAllProjectMcpServers": true,

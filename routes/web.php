@@ -126,6 +126,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('get-departamentales', [App\Http\Controllers\DependenciaController::class, 'getDepartamentales'])->name('getDepartamentales');
     Route::get('get-divisiones', [App\Http\Controllers\DependenciaController::class, 'getDivisiones'])->name('getDivisiones');
     Route::get('get-comisarias', [App\Http\Controllers\DependenciaController::class, 'getComisarias'])->name('getComisarias');
+    Route::get('dependencias/{id}/jurisdiccion', [DependenciaController::class, 'jurisdiccionShow'])->name('dependencias.jurisdiccion.show');
+    Route::put('dependencias/{id}/jurisdiccion', [DependenciaController::class, 'jurisdiccionUpdate'])->name('dependencias.jurisdiccion.update');
     Route::resource('dependencias', DependenciaController::class);
     Route::resource('vehiculos', VehiculoController::class);
     Route::resource('recursos', RecursoController::class);

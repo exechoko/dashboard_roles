@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateJurisdiccionRequest;
+use App\Models\Comisaria;
 use App\Models\Destino;
 use Exception;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -571,5 +574,75 @@ class DependenciaController extends Controller
         $posiblesPadres = Destino::whereIn('tipo', $tiposValidos)->get();
 
         return response()->json($posiblesPadres);
+    }
+
+    /**
+     * Resuelve la comisaría (tabla comisarias, con su jurisdicción) asociada a una
+     * dependencia de tipo comisaría. La vinculación es por nombre, ya que no existe
+     * clave foránea entre ambas tablas.
+     */
+    private function resolverComisaria(int $id): ?Comisaria
+    {
+        $dependencia = Destino::findOrFail($id);
+
+        if ($dependencia->tipo !== 'comisaria') {
+            return null;
+        }
+
+        return Comisaria::where('nombre', $dependencia->nombre)->first();
+    }
+
+    /**
+     * Devuelve los puntos de la jurisdicción de una comisaría para cargarlos en el mapa.
+     */
+    public function jurisdiccionShow(int $id): JsonResponse
+    {
+        $comisaria = $this->resolverComisaria($id);
+
+        if (!$comisaria) {
+            return response()->json([
+                'ok'      => false,
+                'mensaje' => 'No se encontró una comisaría asociada a esta dependencia.',
+            ], 404);
+        }
+
+        $puntos = json_decode($comisaria->jurisdiccion ?? '[]', true) ?: [];
+
+        return response()->json([
+            'ok'     => true,
+            'nombre' => $comisaria->nombre,
+            'puntos' => $puntos,
+        ]);
+    }
+
+    /**
+     * Guarda el polígono de jurisdicción editado en el mapa.
+     */
+    public function jurisdiccionUpdate(UpdateJurisdiccionRequest $request, int $id): JsonResponse
+    {
+        $comisaria = $this->resolverComisaria($id);
+
+        if (!$comisaria) {
+            return response()->json([
+                'ok'      => false,
+                'mensaje' => 'No se encontró una comisaría asociada a esta dependencia.',
+            ], 404);
+        }
+
+        $puntos = array_map(static function (array $punto): array {
+            return [
+                'lat' => (float) $punto['lat'],
+                'lng' => (float) $punto['lng'],
+            ];
+        }, $request->validated()['puntos']);
+
+        $comisaria->jurisdiccion = json_encode($puntos);
+        $comisaria->save();
+
+        return response()->json([
+            'ok'      => true,
+            'mensaje' => 'Jurisdicción actualizada correctamente.',
+            'total'   => count($puntos),
+        ]);
     }
 }

@@ -22,7 +22,7 @@
                     <form action="{{ route('armas.retenciones.update', $armaRetencion) }}" method="POST">
                         @csrf
                         @method('PUT')
-                        @include('armas.retenciones._form', ['retencion' => $armaRetencion])
+                        @include('arma-retenciones._form', ['retencion' => $armaRetencion])
 
                         <div class="row mt-4">
                             <div class="col-12">

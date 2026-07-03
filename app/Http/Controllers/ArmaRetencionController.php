@@ -71,7 +71,7 @@ class ArmaRetencionController extends Controller
     {
         $this->service->crear($request->validated());
 
-        return redirect()->route('arma-retenciones.index')->with('success', 'Retención de arma registrada correctamente.');
+        return redirect()->route('armas.retenciones.index')->with('success', 'Retención de arma registrada correctamente.');
     }
 
     public function show(ArmaRetencion $armaRetencion): View
@@ -93,14 +93,14 @@ class ArmaRetencionController extends Controller
     {
         $this->service->actualizar($armaRetencion, $request->validated());
 
-        return redirect()->route('arma-retenciones.index')->with('success', 'Retención de arma actualizada correctamente.');
+        return redirect()->route('armas.retenciones.index')->with('success', 'Retención de arma actualizada correctamente.');
     }
 
     public function destroy(ArmaRetencion $armaRetencion): RedirectResponse
     {
         $this->service->eliminar($armaRetencion);
 
-        return redirect()->route('arma-retenciones.index')->with('success', 'Retención de arma eliminada correctamente.');
+        return redirect()->route('armas.retenciones.index')->with('success', 'Retención de arma eliminada correctamente.');
     }
 
     public function elevar(Request $request, ArmaRetencion $armaRetencion): RedirectResponse
@@ -113,7 +113,7 @@ class ArmaRetencionController extends Controller
 
         $this->service->elevar($armaRetencion, $request->fecha_elevacion);
 
-        return redirect()->route('arma-retenciones.show', $armaRetencion)->with('success', 'Arma elevada a Jefatura Central correctamente.');
+        return redirect()->route('armas.retenciones.show', $armaRetencion)->with('success', 'Arma elevada a Jefatura Central correctamente.');
     }
 
     public function devolver(Request $request, ArmaRetencion $armaRetencion): RedirectResponse
@@ -126,7 +126,7 @@ class ArmaRetencionController extends Controller
 
         $this->service->devolver($armaRetencion, $request->fecha_devolucion);
 
-        return redirect()->route('arma-retenciones.show', $armaRetencion)->with('success', 'Arma devuelta al funcionario correctamente.');
+        return redirect()->route('armas.retenciones.show', $armaRetencion)->with('success', 'Arma devuelta al funcionario correctamente.');
     }
 
     public function importarForm(): View

@@ -212,6 +212,13 @@
                     </a>
                 </li>
             @endcan
+            @can('ver-personal')
+                <li class="{{ request()->is('armas/personal*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('armas.personal.index') }}">
+                        <i class="fas fa-users"></i><span>Personal</span>
+                    </a>
+                </li>
+            @endcan
         </ul>
     </li>
 @endcan

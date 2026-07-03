@@ -24,6 +24,10 @@ class SeederPermisosArmaRetencion extends Seeder
             'crear-arma-motivo',
             'editar-arma-motivo',
             'borrar-arma-motivo',
+            'ver-personal',
+            'crear-personal',
+            'editar-personal',
+            'borrar-personal',
         ];
 
         foreach ($permisos as $nombre) {

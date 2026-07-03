@@ -21,7 +21,7 @@
 
                     <form action="{{ route('armas.retenciones.store') }}" method="POST">
                         @csrf
-                        @include('armas.retenciones._form')
+                        @include('arma-retenciones._form')
 
                         <div class="row mt-4">
                             <div class="col-12">

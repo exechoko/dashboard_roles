@@ -41,6 +41,8 @@ use App\Http\Controllers\WebDependenciaController;
 use App\Http\Controllers\WebGaleriaImagenController;
 use App\Http\Controllers\WebHistoriaCardController;
 use App\Http\Controllers\WebTechCardController;
+use App\Http\Controllers\ArmaRetencionController;
+use App\Http\Controllers\ArmaMotivoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -499,6 +501,26 @@ Route::group(['middleware' => ['auth']], function () {
         Route::resource('tipos-bien', PatrimonioTipoBienController::class)->except(['show']);
         // Bienes
         Route::resource('bienes', PatrimonioBienController::class);
+    });
+
+    // ── Control de Armas ──────────────────────────────────────────────────
+    Route::prefix('armas')->name('armas.')->group(function () {
+        // Retenciones de armas
+        Route::get('retenciones', [ArmaRetencionController::class, 'index'])->name('retenciones.index');
+        Route::get('retenciones/create', [ArmaRetencionController::class, 'create'])->name('retenciones.create');
+        Route::post('retenciones', [ArmaRetencionController::class, 'store'])->name('retenciones.store');
+        Route::get('retenciones/{armaRetencion}', [ArmaRetencionController::class, 'show'])->name('retenciones.show');
+        Route::get('retenciones/{armaRetencion}/edit', [ArmaRetencionController::class, 'edit'])->name('retenciones.edit');
+        Route::put('retenciones/{armaRetencion}', [ArmaRetencionController::class, 'update'])->name('retenciones.update');
+        Route::delete('retenciones/{armaRetencion}', [ArmaRetencionController::class, 'destroy'])->name('retenciones.destroy');
+        Route::post('retenciones/{armaRetencion}/elevar', [ArmaRetencionController::class, 'elevar'])->name('retenciones.elevar');
+        Route::post('retenciones/{armaRetencion}/devolver', [ArmaRetencionController::class, 'devolver'])->name('retenciones.devolver');
+        Route::get('retenciones/importar', [ArmaRetencionController::class, 'importarForm'])->name('retenciones.importar');
+        Route::post('retenciones/importar', [ArmaRetencionController::class, 'importar'])->name('retenciones.importar.post');
+        Route::get('retenciones/exportar', [ArmaRetencionController::class, 'exportar'])->name('retenciones.exportar');
+
+        // Motivos
+        Route::resource('motivos', ArmaMotivoController::class)->except(['show']);
     });
 
     Route::prefix('cecoco')->name('cecoco.')->group(function () {

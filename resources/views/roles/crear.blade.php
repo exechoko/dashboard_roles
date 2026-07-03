@@ -63,6 +63,7 @@
                                                         'menu-ia',
                                                         'menu-gestor-claves',
                                                         'menu-patrimonio',
+                                                        'menu-armamento',
                                                         'menu-incidencias-911',
                                                         'menu-plano-edificio',
                                                         'menu-manuales',
@@ -123,6 +124,10 @@
                                                     'Patrimonio' => [
                                                         'bien',
                                                         'tipo-bien'
+                                                    ],
+                                                    'Control de Armas' => [
+                                                        'arma-retencion',
+                                                        'arma-motivo'
                                                     ],
                                                     'Incidencias 911' => [
                                                         'periodo-911',

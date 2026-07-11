@@ -27,6 +27,13 @@ class ArmaRetencionController extends Controller
 
     public function index(Request $request): View
     {
+        $alertas_vencimiento = ArmaRetencion::where('estado', 'EN_ARMERIA')
+            ->whereNotNull('dias_restantes')
+            ->where('dias_restantes', '<=', 15)
+            ->with(['personal', 'motivo'])
+            ->orderBy('dias_restantes')
+            ->get();
+
         $query = ArmaRetencion::query()
             ->with(['personal', 'motivo', 'creadoPor']);
 
@@ -56,7 +63,7 @@ class ArmaRetencionController extends Controller
         $retenciones = $query->orderByDesc('fecha_posesion')
             ->paginate(15);
 
-        return view('arma-retenciones.index', compact('retenciones'));
+        return view('arma-retenciones.index', compact('retenciones', 'alertas_vencimiento'));
     }
 
     public function create(): View

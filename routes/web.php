@@ -527,9 +527,11 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('personal', [ArmaPersonalController::class, 'index'])->name('personal.index');
         Route::get('personal/create', [ArmaPersonalController::class, 'create'])->name('personal.create');
         Route::post('personal', [ArmaPersonalController::class, 'store'])->name('personal.store');
+        Route::get('personal/{personal}', [ArmaPersonalController::class, 'show'])->name('personal.show');
         Route::get('personal/{personal}/edit', [ArmaPersonalController::class, 'edit'])->name('personal.edit');
         Route::put('personal/{personal}', [ArmaPersonalController::class, 'update'])->name('personal.update');
         Route::delete('personal/{personal}', [ArmaPersonalController::class, 'destroy'])->name('personal.destroy');
+        Route::post('personal/{id}/restaurar', [ArmaPersonalController::class, 'restore'])->name('personal.restore');
     });
 
     Route::prefix('cecoco')->name('cecoco.')->group(function () {

@@ -280,7 +280,8 @@
                                                                                             'buscar' => 'fas fa-search text-info',
                                                                                             'reiniciar' => 'fas fa-sync-alt text-primary',
                                                                                             'cargar' => 'fas fa-upload text-success',
-                                                                                            'descargar' => 'fas fa-download text-primary',
+                                                                                            'restaurar' => 'fas fa-undo text-success',
+                                                            'descargar' => 'fas fa-download text-primary',
                                                                                         ];
                                                                                     @endphp
 

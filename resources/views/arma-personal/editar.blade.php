@@ -26,18 +26,16 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="apellido">Apellido</label>
+                                    <label for="apellido">Apellido <span class="badge badge-secondary">No editable</span></label>
                                     <input type="text" id="apellido" class="form-control"
                                            value="{{ old('apellido', $personal->apellido) }}" readonly>
-                                    <small class="form-text text-muted">No editable. Cree un nuevo registro si necesita cambiar estos datos.</small>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="nombre">Nombre</label>
+                                    <label for="nombre">Nombre <span class="badge badge-secondary">No editable</span></label>
                                     <input type="text" id="nombre" class="form-control"
                                            value="{{ old('nombre', $personal->nombre) }}" readonly>
-                                    <small class="form-text text-muted">No editable. Cree un nuevo registro si necesita cambiar estos datos.</small>
                                 </div>
                             </div>
                         </div>
@@ -45,10 +43,9 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="lp">Legajo Policial (LP)</label>
+                                    <label for="lp">Legajo Policial (LP) <span class="badge badge-secondary">No editable</span></label>
                                     <input type="text" id="lp" class="form-control"
                                            value="{{ old('lp', $personal->lp) }}" readonly>
-                                    <small class="form-text text-muted">No editable. Cree un nuevo registro si necesita cambiar estos datos.</small>
                                 </div>
                             </div>
                             <div class="col-md-6">

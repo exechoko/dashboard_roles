@@ -33,6 +33,23 @@
                 </div>
             @endif
 
+            @if ($alertas_vencimiento->isNotEmpty())
+                <div class="alert alert-danger alert-dismissible fade show">
+                    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+                    <h6><i class="fas fa-exclamation-triangle"></i> Retenciones próximas a vencer</h6>
+                    <ul class="mb-0 pl-3">
+                        @foreach ($alertas_vencimiento as $alerta)
+                            <li>
+                                <strong>{{ $alerta->personal->apellido }}, {{ $alerta->personal->nombre }}</strong>
+                                - Arma: {{ $alerta->numeracion_arma }}
+                                - <span class="badge badge-{{ $alerta->dias_restantes <= 5 ? 'danger' : 'warning' }}">{{ $alerta->dias_restantes }} días</span>
+                                <a href="{{ route('armas.retenciones.show', $alerta) }}" class="ml-1">Ver detalle</a>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <div class="card">
                 <div class="card-body">
                     <form method="GET" action="{{ route('armas.retenciones.index') }}" class="mb-3">

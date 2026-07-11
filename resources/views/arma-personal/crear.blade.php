@@ -50,7 +50,8 @@
                                 <div class="form-group">
                                     <label for="lp">Legajo Policial (LP) <span class="text-danger">*</span></label>
                                     <input type="text" name="lp" id="lp" class="form-control @error('lp') is-invalid @enderror"
-                                           value="{{ old('lp') }}" required maxlength="5">
+                                           value="{{ old('lp') }}" required maxlength="5" pattern="\d{5}" inputmode="numeric"
+                                           oninput="this.value=this.value.replace(/[^0-9]/g,'')">
                                     @error('lp')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror

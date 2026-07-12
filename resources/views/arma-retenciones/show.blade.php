@@ -167,7 +167,7 @@
                                     </form>
                                 @endif
 
-                                @if($armaRetencion->fecha_elevacion && !$armaRetencion->fecha_devolucion)
+                                @if(!$armaRetencion->fecha_devolucion && ($armaRetencion->fecha_elevacion || $armaRetencion->estado == 'EN_ARMERIA'))
                                     <form action="{{ route('armas.retenciones.devolver', $armaRetencion) }}" method="POST" class="d-inline">
                                         @csrf
                                         <div class="form-row align-items-end">

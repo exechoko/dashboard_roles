@@ -58,11 +58,15 @@
                             <table class="table table-borderless">
                                 <tr>
                                     <th style="width: 40%">Numeración:</th>
-                                    <td>{{ $armaRetencion->numeracion_arma }}</td>
+                                    <td>{{ $armaRetencion->personal->numeracion_arma ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Tipo:</th>
+                                    <td>{{ $armaRetencion->personal->tipoArma?->nombre ?? '-' }}</td>
                                 </tr>
                                 <tr>
                                     <th>N° Chaleco:</th>
-                                    <td>{{ $armaRetencion->nro_chaleco ?? '-' }}</td>
+                                    <td>{{ $armaRetencion->personal->nro_chaleco ?? '-' }}</td>
                                 </tr>
                             </table>
                         </div>

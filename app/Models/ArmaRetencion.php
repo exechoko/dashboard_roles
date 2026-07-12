@@ -15,8 +15,6 @@ class ArmaRetencion extends Model
 
     protected $fillable = [
         'personal_id',
-        'numeracion_arma',
-        'nro_chaleco',
         'tipo',
         'motivo_id',
         'fecha_posesion',

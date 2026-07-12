@@ -21,8 +21,10 @@ class ArmaRetencionImport implements ToCollection, WithHeadingRow, WithValidatio
     {
         foreach ($rows as $row) {
             try {
+                $buscarTipo = $this->buscarTipoArma($row['modelo_arma'] ?? '');
+
                 // Buscar o crear personal
-                $personal = $this->buscarOCrearPersonal($row);
+                $personal = $this->buscarOCrearPersonal($row, $buscarTipo);
 
                 if (!$personal) {
                     $this->errors[] = "Fila {$row['fila']}: No se pudo encontrar/crear el personal";
@@ -43,8 +45,6 @@ class ArmaRetencionImport implements ToCollection, WithHeadingRow, WithValidatio
                 // Crear retención
                 ArmaRetencion::create([
                     'personal_id' => $personal->id,
-                    'numeracion_arma' => $row['numeracion_arma'] ?? '',
-                    'nro_chaleco' => $row['nro_chaleco'] ?? null,
                     'tipo' => $tipo,
                     'motivo_id' => $motivo->id,
                     'fecha_posesion' => $this->parseDate($row['fecha_posesion'] ?? now()),
@@ -63,7 +63,7 @@ class ArmaRetencionImport implements ToCollection, WithHeadingRow, WithValidatio
         }
     }
 
-    private function buscarOCrearPersonal($row): ?Personal
+    private function buscarOCrearPersonal($row, ?int $armaTipoId): ?Personal
     {
         $lp = $row['legajo'] ?? null;
         $nombre = $row['nombre'] ?? '';
@@ -95,10 +95,20 @@ class ArmaRetencionImport implements ToCollection, WithHeadingRow, WithValidatio
                 'apellido' => $apellido,
                 'lp' => $lp,
                 'jerarquia' => $jerarquia,
+                'numeracion_arma' => $row['numeracion_arma'] ?? '',
+                'arma_tipo_id' => $armaTipoId,
+                'nro_chaleco' => $row['nro_chaleco'] ?? null,
             ]);
         }
 
         return null;
+    }
+
+    private function buscarTipoArma(string $nombre): ?int
+    {
+        $tipo = \App\Models\ArmaTipo::where('nombre', 'like', "%{$nombre}%")->first();
+
+        return $tipo?->id;
     }
 
     private function buscarMotivo(string $motivoNombre): ?ArmaMotivo

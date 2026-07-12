@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ArmaMotivo;
 use App\Models\ArmaRetencion;
 use App\Models\Auditoria;
+use App\Models\Personal;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -62,10 +63,10 @@ class ArmaRetencionService
         try {
             $motivo = ArmaMotivo::findOrFail($datos['motivo_id']);
 
+            $personal = Personal::findOrFail($datos['personal_id']);
+
             $retencion = ArmaRetencion::create([
-                'personal_id' => $datos['personal_id'],
-                'numeracion_arma' => $datos['numeracion_arma'],
-                'nro_chaleco' => $datos['nro_chaleco'] ?? null,
+                'personal_id' => $personal->id,
                 'tipo' => $motivo->tipo_asignado,
                 'motivo_id' => $motivo->id,
                 'fecha_posesion' => $datos['fecha_posesion'],
@@ -81,7 +82,7 @@ class ArmaRetencionService
             $retencion->estado = $this->calcularEstado($retencion);
             $retencion->save();
 
-            $this->auditar($retencion, 'CREAR', 'Registro creado: Funcionario ' . $retencion->personal->nombre_completo . ' - Arma ' . $retencion->numeracion_arma);
+            $this->auditar($retencion, 'CREAR', 'Registro creado: Funcionario ' . $personal->nombre_completo . ' - Arma ' . $personal->numeracion_arma);
 
             DB::commit();
 
@@ -113,16 +114,6 @@ class ArmaRetencionService
             if (isset($datos['personal_id']) && $datos['personal_id'] != $retencion->personal_id) {
                 $cambios[] = 'Funcionario: ' . $retencion->personal->nombre_completo . ' → ' . $retencion->personal->nombre_completo;
                 $retencion->personal_id = $datos['personal_id'];
-            }
-
-            if (isset($datos['numeracion_arma']) && $datos['numeracion_arma'] !== $retencion->numeracion_arma) {
-                $cambios[] = 'Arma: ' . $retencion->numeracion_arma . ' → ' . $datos['numeracion_arma'];
-                $retencion->numeracion_arma = $datos['numeracion_arma'];
-            }
-
-            if (array_key_exists('nro_chaleco', $datos) && $datos['nro_chaleco'] !== $retencion->nro_chaleco) {
-                $cambios[] = 'Chaleco: ' . ($retencion->nro_chaleco ?? 'vacío') . ' → ' . ($datos['nro_chaleco'] ?? 'vacío');
-                $retencion->nro_chaleco = $datos['nro_chaleco'];
             }
 
             if (isset($datos['fecha_posesion']) && $datos['fecha_posesion'] !== $retencion->fecha_posesion->format('Y-m-d')) {
@@ -216,7 +207,7 @@ class ArmaRetencionService
         DB::beginTransaction();
 
         try {
-            $this->auditar($retencion, 'ELIMINAR', 'Registro eliminado: Funcionario ' . $retencion->personal->nombre_completo . ' - Arma ' . $retencion->numeracion_arma);
+            $this->auditar($retencion, 'ELIMINAR', 'Registro eliminado: Funcionario ' . $retencion->personal->nombre_completo . ' - Arma ' . $retencion->personal->numeracion_arma);
 
             $retencion->updated_by = Auth::id();
             $retencion->save();
@@ -242,7 +233,7 @@ class ArmaRetencionService
             'cambios' => json_encode([
                 'id' => $retencion->id,
                 'personal_id' => $retencion->personal_id,
-                'numeracion_arma' => $retencion->numeracion_arma,
+                'numeracion_arma' => $retencion->personal->numeracion_arma,
                 'detalle' => $cambios,
             ]),
         ]);

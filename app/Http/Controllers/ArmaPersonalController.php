@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreArmaPersonalRequest;
 use App\Http\Requests\UpdateArmaPersonalRequest;
+use App\Models\ArmaTipo;
 use App\Models\Personal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -48,7 +49,7 @@ class ArmaPersonalController extends Controller
 
     public function show(Request $request, Personal $personal): View
     {
-        $personal->load(['creadoPor', 'actualizadoPor']);
+        $personal->load(['creadoPor', 'actualizadoPor', 'tipoArma', 'armasAnteriores.tipoArma', 'armasAnteriores.creadoPor']);
 
         $retencionesQuery = $personal->retenciones()->with(['motivo', 'creadoPor']);
 
@@ -64,7 +65,9 @@ class ArmaPersonalController extends Controller
 
     public function create(): View
     {
-        return view('arma-personal.crear');
+        $armaTipos = ArmaTipo::activos()->orderBy('nombre')->get();
+
+        return view('arma-personal.crear', compact('armaTipos'));
     }
 
     public function store(StoreArmaPersonalRequest $request): RedirectResponse
@@ -79,7 +82,9 @@ class ArmaPersonalController extends Controller
 
     public function edit(Personal $personal): View
     {
-        return view('arma-personal.editar', compact('personal'));
+        $armaTipos = ArmaTipo::activos()->orderBy('nombre')->get();
+
+        return view('arma-personal.editar', compact('personal', 'armaTipos'));
     }
 
     public function update(UpdateArmaPersonalRequest $request, Personal $personal): RedirectResponse
@@ -87,7 +92,20 @@ class ArmaPersonalController extends Controller
         $data = $request->validated();
         $data['updated_by'] = auth()->id();
 
-        $personal->update($data);
+        if (!empty($data['cambiar_arma']) && !empty($data['numeracion_arma']) && !empty($data['arma_tipo_id'])) {
+            $personal->cambiarArma(
+                $data['numeracion_arma'],
+                $data['arma_tipo_id'],
+                $data['nro_chaleco'] ?? null,
+                now()->toDateString(),
+                $data['motivo_cambio'] ?? 'Cambio por administración'
+            );
+        }
+
+        $personal->update([
+            'jerarquia' => $data['jerarquia'],
+            'updated_by' => auth()->id(),
+        ]);
 
         return redirect()->route('armas.personal.index')->with('success', 'Funcionario actualizado correctamente.');
     }

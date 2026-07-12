@@ -60,12 +60,99 @@
                             </div>
                         </div>
 
+                        <hr>
+                        <h5 class="text-primary"><i class="fas fa-gun"></i> Arma Asignada</h5>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            Si el funcionario cambia de arma, marque "Cambiar arma" y complete los nuevos datos.
+                            El arma anterior se registrará automáticamente en el historial.
+                        </div>
+
+                        <div class="form-group">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" class="custom-control-input" id="cambiar_arma_check" name="cambiar_arma" value="1">
+                                <label class="custom-control-label" for="cambiar_arma_check">
+                                    <strong>Cambiar arma</strong>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="arma_actual" class="row">
+                            <div class="col-md-12">
+                                <div class="card bg-light">
+                                    <div class="card-body py-2">
+                                        <strong>Arma actual:</strong>
+                                        {{ $personal->numeracion_arma ?? 'Sin asignar' }}
+                                        @if($personal->tipoArma)
+                                            - {{ $personal->tipoArma->nombre }}
+                                        @endif
+                                        @if($personal->nro_chaleco)
+                                            | Chaleco: {{ $personal->nro_chaleco }}
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="arma_nueva" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="numeracion_arma">Nueva Numeración del Arma <span class="text-danger">*</span></label>
+                                        <input type="text" name="numeracion_arma" id="numeracion_arma" class="form-control @error('numeracion_arma') is-invalid @enderror"
+                                               value="{{ old('numeracion_arma') }}">
+                                        @error('numeracion_arma')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="arma_tipo_id">Nuevo Tipo de Arma <span class="text-danger">*</span></label>
+                                        <select name="arma_tipo_id" id="arma_tipo_id" class="form-control @error('arma_tipo_id') is-invalid @enderror">
+                                            <option value="">Seleccione un tipo</option>
+                                            @foreach ($armaTipos as $tipo)
+                                                <option value="{{ $tipo->id }}" {{ old('arma_tipo_id') == $tipo->id ? 'selected' : '' }}>
+                                                    {{ $tipo->nombre }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        @error('arma_tipo_id')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="nro_chaleco">Número de Chaleco</label>
+                                        <input type="text" name="nro_chaleco" id="nro_chaleco" class="form-control @error('nro_chaleco') is-invalid @enderror"
+                                               value="{{ old('nro_chaleco') }}">
+                                        @error('nro_chaleco')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="motivo_cambio">Motivo del Cambio <span class="text-danger">*</span></label>
+                                        <textarea name="motivo_cambio" id="motivo_cambio" class="form-control @error('motivo_cambio') is-invalid @enderror" rows="2">{{ old('motivo_cambio') }}</textarea>
+                                        @error('motivo_cambio')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="row mt-4">
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-save"></i> Actualizar
                                 </button>
-                                <a href="{{ route('armas.personal.index') }}" class="btn btn-secondary">
+                                <a href="{{ route('armas.personal.show', $personal) }}" class="btn btn-secondary">
                                     <i class="fas fa-times"></i> Cancelar
                                 </a>
                             </div>
@@ -76,3 +163,23 @@
         </div>
     </section>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkbox = document.getElementById('cambiar_arma_check');
+    const armaActual = document.getElementById('arma_actual');
+    const armaNueva = document.getElementById('arma_nueva');
+
+    checkbox.addEventListener('change', function() {
+        if (this.checked) {
+            armaActual.style.display = 'none';
+            armaNueva.style.display = 'block';
+        } else {
+            armaActual.style.display = 'block';
+            armaNueva.style.display = 'none';
+        }
+    });
+});
+</script>
+@endpush

@@ -68,6 +68,7 @@
                                     <th>Nombre</th>
                                     <th>LP</th>
                                     <th>Jerarquía</th>
+                                    <th>Arma</th>
                                     <th class="text-right">Acciones</th>
                                 </tr>
                             </thead>
@@ -83,6 +84,13 @@
                                         <td>{{ $personal->nombre }}</td>
                                         <td>{{ $personal->lp }}</td>
                                         <td>{{ $personal->jerarquia }}</td>
+                                        <td>
+                                            @if($personal->numeracion_arma)
+                                                <span class="badge badge-secondary">{{ $personal->numeracion_arma }}</span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
                                         <td class="text-right">
                                             @if($personal->trashed())
                                                 @can('restaurar-personal')
@@ -120,7 +128,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted py-4">
+                                        <td colspan="6" class="text-center text-muted py-4">
                                             @if($ver_eliminados === 'eliminados')
                                                 No hay funcionarios eliminados.
                                             @else

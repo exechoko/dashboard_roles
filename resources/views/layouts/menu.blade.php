@@ -201,7 +201,7 @@
             @can('ver-arma-retencion')
                 <li class="{{ request()->is('armas/retenciones*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('armas.retenciones.index') }}">
-                        <i class="fas fa-gun"></i><span>Retenciones</span>
+                        <i class="fas fa-crosshairs"></i><span>Retenciones</span>
                     </a>
                 </li>
             @endcan
@@ -209,6 +209,13 @@
                 <li class="{{ request()->is('armas/motivos*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('armas.motivos.index') }}">
                         <i class="fas fa-list"></i><span>Motivos</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-arma-tipo')
+                <li class="{{ request()->is('armas/tipos*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('armas.tipos.index') }}">
+                        <i class="fas fa-tag"></i><span>Tipos de Arma</span>
                     </a>
                 </li>
             @endcan

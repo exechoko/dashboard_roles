@@ -55,8 +55,9 @@ class ArmaRetencionController extends Controller
                 $q->whereHas('personal', function ($q2) use ($busqueda) {
                     $q2->where('nombre', 'like', "%{$busqueda}%")
                        ->orWhere('apellido', 'like', "%{$busqueda}%")
-                       ->orWhere('lp', 'like', "%{$busqueda}%");
-                })->orWhere('numeracion_arma', 'like', "%{$busqueda}%");
+                       ->orWhere('lp', 'like', "%{$busqueda}%")
+                       ->orWhere('numeracion_arma', 'like', "%{$busqueda}%");
+                });
             });
         }
 
@@ -68,7 +69,9 @@ class ArmaRetencionController extends Controller
 
     public function create(): View
     {
-        $personales = Personal::orderBy('apellido')->orderBy('nombre')->get();
+        $personales = Personal::whereDoesntHave('retenciones', function ($query) {
+            $query->whereIn('estado', ['EN_ARMERIA', 'EN_JEF_CENTRAL']);
+        })->whereNotNull('numeracion_arma')->orderBy('apellido')->orderBy('nombre')->get();
         $motivos = ArmaMotivo::activos()->orderBy('nombre')->get();
 
         return view('arma-retenciones.crear', compact('personales', 'motivos'));
@@ -83,7 +86,7 @@ class ArmaRetencionController extends Controller
 
     public function show(ArmaRetencion $armaRetencion): View
     {
-        $armaRetencion->load(['personal', 'motivo', 'creadoPor', 'actualizadoPor']);
+        $armaRetencion->load(['personal.tipoArma', 'motivo', 'creadoPor', 'actualizadoPor']);
 
         return view('arma-retenciones.show', compact('armaRetencion'));
     }

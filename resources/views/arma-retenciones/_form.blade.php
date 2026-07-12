@@ -5,7 +5,10 @@
             <select name="personal_id" id="personal_id" class="form-control select2 @error('personal_id') is-invalid @enderror" required>
                 <option value="">Seleccione un funcionario</option>
                 @foreach ($personales as $personal)
-                    <option value="{{ $personal->id }}" {{ old('personal_id', $retencion->personal_id ?? '') == $personal->id ? 'selected' : '' }}>
+                    <option value="{{ $personal->id }}" {{ old('personal_id', $retencion->personal_id ?? '') == $personal->id ? 'selected' : '' }}
+                            data-arma="{{ $personal->numeracion_arma }}"
+                            data-tipo="{{ $personal->tipoArma?->nombre }}"
+                            data-chaleco="{{ $personal->nro_chaleco ?? '' }}">
                         {{ $personal->nombre_completo }}
                     </option>
                 @endforeach
@@ -17,27 +20,15 @@
     </div>
     <div class="col-md-6">
         <div class="form-group">
-            <label for="numeracion_arma">Numeración del Arma <span class="text-danger">*</span></label>
-            <input type="text" name="numeracion_arma" id="numeracion_arma" class="form-control @error('numeracion_arma') is-invalid @enderror"
-                   value="{{ old('numeracion_arma', $retencion->numeracion_arma ?? '') }}" required>
-            @error('numeracion_arma')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
+            <label>Arma Asignada</label>
+            <div id="arma_asignada_display" class="form-control bg-light" style="cursor: default;">
+                <span class="text-muted">Seleccione un funcionario</span>
+            </div>
         </div>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-md-6">
-        <div class="form-group">
-            <label for="nro_chaleco">Número de Chaleco</label>
-            <input type="text" name="nro_chaleco" id="nro_chaleco" class="form-control @error('nro_chaleco') is-invalid @enderror"
-                   value="{{ old('nro_chaleco', $retencion->nro_chaleco ?? '') }}">
-            @error('nro_chaleco')
-                <div class="invalid-feedback">{{ $message }}</div>
-            @enderror
-        </div>
-    </div>
     <div class="col-md-6">
         <div class="form-group">
             <label for="motivo_id">Motivo <span class="text-danger">*</span></label>
@@ -57,9 +48,6 @@
             @enderror
         </div>
     </div>
-</div>
-
-<div class="row">
     <div class="col-md-6">
         <div class="form-group">
             <label for="fecha_posesion">Fecha de Posesión <span class="text-danger">*</span></label>
@@ -70,6 +58,9 @@
             @enderror
         </div>
     </div>
+</div>
+
+<div class="row">
     <div class="col-md-6">
         <div class="form-group">
             <label>Tipo Asignado</label>
@@ -77,10 +68,7 @@
             <small class="form-text text-muted">Se asigna automáticamente según el motivo</small>
         </div>
     </div>
-</div>
-
-<div class="row">
-    <div class="col-md-12">
+    <div class="col-md-6">
         <div class="form-group">
             <label for="observaciones">Observaciones</label>
             <textarea name="observaciones" id="observaciones" class="form-control @error('observaciones') is-invalid @enderror" rows="3">{{ old('observaciones', $retencion->observaciones ?? '') }}</textarea>
@@ -93,17 +81,33 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const motivoSelect = document.getElementById('motivo_id');
-    const tipoDisplay = document.getElementById('tipo_asignado_display');
+$(document).ready(function() {
+    function actualizarArma() {
+        var selectedOption = $('#personal_id').find('option:selected');
+        var arma = selectedOption.data('arma') || 'Sin asignar';
+        var tipo = selectedOption.data('tipo') || '';
+        var chaleco = selectedOption.data('chaleco') || '';
 
-    function actualizarTipo() {
-        const selectedOption = motivoSelect.options[motivoSelect.selectedIndex];
-        const tipo = selectedOption.dataset.tipo || '';
-        tipoDisplay.value = tipo;
+        if (selectedOption.val()) {
+            var html = '<strong>N°:</strong> ' + arma;
+            if (tipo) html += ' | <strong>Tipo:</strong> ' + tipo;
+            if (chaleco) html += ' | <strong>Chaleco:</strong> ' + chaleco;
+            $('#arma_asignada_display').html(html);
+        } else {
+            $('#arma_asignada_display').html('<span class="text-muted">Seleccione un funcionario</span>');
+        }
     }
 
-    motivoSelect.addEventListener('change', actualizarTipo);
+    function actualizarTipo() {
+        var selectedOption = $('#motivo_id').find('option:selected');
+        var tipo = selectedOption.data('tipo') || '';
+        $('#tipo_asignado_display').val(tipo);
+    }
+
+    $('#personal_id').on('change', actualizarArma);
+    $('#motivo_id').on('change', actualizarTipo);
+
+    actualizarArma();
     actualizarTipo();
 });
 </script>

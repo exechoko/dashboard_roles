@@ -41,7 +41,7 @@
                         @foreach ($alertas_vencimiento as $alerta)
                             <li>
                                 <strong>{{ $alerta->personal->apellido }}, {{ $alerta->personal->nombre }}</strong>
-                                - Arma: {{ $alerta->numeracion_arma }}
+                                - Arma: {{ $alerta->personal->numeracion_arma }}
                                 - <span class="badge badge-{{ $alerta->dias_restantes <= 5 ? 'danger' : 'warning' }}">{{ $alerta->dias_restantes }} días</span>
                                 <a href="{{ route('armas.retenciones.show', $alerta) }}" class="ml-1">Ver detalle</a>
                             </li>
@@ -107,9 +107,9 @@
                                             <br><small class="text-muted">{{ $retencion->personal->jerarquia }} - LP: {{ $retencion->personal->lp }}</small>
                                         </td>
                                         <td>
-                                            {{ $retencion->numeracion_arma }}
-                                            @if($retencion->nro_chaleco)
-                                                <br><small class="text-muted">Chaleco: {{ $retencion->nro_chaleco }}</small>
+                                            {{ $retencion->personal->numeracion_arma }}
+                                            @if($retencion->personal->nro_chaleco)
+                                                <br><small class="text-muted">Chaleco: {{ $retencion->personal->nro_chaleco }}</small>
                                             @endif
                                         </td>
                                         <td>

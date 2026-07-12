@@ -43,6 +43,7 @@ use App\Http\Controllers\WebHistoriaCardController;
 use App\Http\Controllers\WebTechCardController;
 use App\Http\Controllers\ArmaRetencionController;
 use App\Http\Controllers\ArmaMotivoController;
+use App\Http\Controllers\ArmaTipoController;
 use App\Http\Controllers\ArmaPersonalController;
 
 /*
@@ -522,6 +523,9 @@ Route::group(['middleware' => ['auth']], function () {
 
         // Motivos
         Route::resource('motivos', ArmaMotivoController::class)->except(['show']);
+
+        // Tipos de arma
+        Route::resource('tipos', ArmaTipoController::class)->except(['show']);
 
         // Personal
         Route::get('personal', [ArmaPersonalController::class, 'index'])->name('personal.index');

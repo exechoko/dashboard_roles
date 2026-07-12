@@ -135,6 +135,7 @@
                                                     'Control de Armas' => [
                                                         'arma-retencion',
                                                         'arma-motivo',
+                                                        'arma-tipo',
                                                         'personal',
                                                     ],
                                                     'Incidencias 911' => [

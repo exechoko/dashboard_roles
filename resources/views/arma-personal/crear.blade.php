@@ -71,6 +71,51 @@
                             </div>
                         </div>
 
+                        <hr>
+                        <h5 class="text-primary"><i class="fas fa-gun"></i> Arma Asignada</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="numeracion_arma">Numeración del Arma <span class="text-danger">*</span></label>
+                                    <input type="text" name="numeracion_arma" id="numeracion_arma" class="form-control @error('numeracion_arma') is-invalid @enderror"
+                                           value="{{ old('numeracion_arma') }}" required>
+                                    @error('numeracion_arma')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="arma_tipo_id">Tipo de Arma <span class="text-danger">*</span></label>
+                                    <select name="arma_tipo_id" id="arma_tipo_id" class="form-control @error('arma_tipo_id') is-invalid @enderror" required>
+                                        <option value="">Seleccione un tipo</option>
+                                        @foreach ($armaTipos as $tipo)
+                                            <option value="{{ $tipo->id }}" {{ old('arma_tipo_id') == $tipo->id ? 'selected' : '' }}>
+                                                {{ $tipo->nombre }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('arma_tipo_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="nro_chaleco">Número de Chaleco</label>
+                                    <input type="text" name="nro_chaleco" id="nro_chaleco" class="form-control @error('nro_chaleco') is-invalid @enderror"
+                                           value="{{ old('nro_chaleco') }}">
+                                    @error('nro_chaleco')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="form-text text-muted">Opcional. Solo si el funcionario tiene chaleco asignado.</small>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="row mt-4">
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary">

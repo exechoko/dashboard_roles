@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\ArmaTipo;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -24,6 +25,10 @@ class SeederPermisosArmaRetencion extends Seeder
             'crear-arma-motivo',
             'editar-arma-motivo',
             'borrar-arma-motivo',
+            'ver-arma-tipo',
+            'crear-arma-tipo',
+            'editar-arma-tipo',
+            'borrar-arma-tipo',
             'ver-personal',
             'crear-personal',
             'editar-personal',
@@ -47,8 +52,29 @@ class SeederPermisosArmaRetencion extends Seeder
             }
         }
 
+        // Seed 12 weapon types
+        $tipos = [
+            'BERSA THUNDER',
+            'BROWNING',
+            'FM HI-POWER',
+            'FM HI-POWER DETECTIVE',
+            'FM HI-POWER M.90',
+            'FM HI-POWER M.95 CLASSIC',
+            'GLOCK M.17',
+            'GLOCK M.19',
+            'BALLESTER MOLINA',
+            'RUBÍ EXTRA',
+            'SISTEMA COLT',
+            'TAURUS',
+        ];
+
+        foreach ($tipos as $nombre) {
+            ArmaTipo::firstOrCreate(['nombre' => $nombre]);
+        }
+
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
         $this->command->info('Permisos de Control de Armas creados y asignados correctamente.');
+        $this->command->info('Tipos de arma creados correctamente.');
     }
 }

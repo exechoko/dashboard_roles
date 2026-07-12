@@ -25,7 +25,7 @@
             @endif
 
             <div class="row">
-                <div class="col-md-12">
+                <div class="col-md-6">
                     <div class="card">
                         <div class="card-header">
                             <h4>Información del Funcionario</h4>
@@ -33,18 +33,52 @@
                         <div class="card-body">
                             <table class="table table-borderless">
                                 <tr>
-                                    <th style="width: 25%">Apellido:</th>
+                                    <th style="width: 35%">Apellido:</th>
                                     <td><strong>{{ $personal->apellido }}</strong></td>
-                                    <th style="width: 25%">Nombre:</th>
+                                </tr>
+                                <tr>
+                                    <th>Nombre:</th>
                                     <td>{{ $personal->nombre }}</td>
                                 </tr>
                                 <tr>
                                     <th>Legajo Policial (LP):</th>
                                     <td>{{ $personal->lp }}</td>
+                                </tr>
+                                <tr>
                                     <th>Jerarquía:</th>
                                     <td>{{ $personal->jerarquia }}</td>
                                 </tr>
                             </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-gun"></i> Arma Asignada</h4>
+                        </div>
+                        <div class="card-body">
+                            @if($personal->tieneArmaAsignada())
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th style="width: 35%">Numeración:</th>
+                                        <td><strong>{{ $personal->numeracion_arma }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Tipo de Arma:</th>
+                                        <td>{{ $personal->tipoArma?->nombre ?? '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>N° Chaleco:</th>
+                                        <td>{{ $personal->nro_chaleco ?? 'No asignado' }}</td>
+                                    </tr>
+                                </table>
+                            @else
+                                <div class="text-muted py-2">
+                                    <i class="fas fa-exclamation-circle"></i> El funcionario no tiene un arma asignada.
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -80,8 +114,7 @@
                                     <table class="table table-striped align-middle">
                                         <thead>
                                             <tr>
-                                                <th>Numeración Arma</th>
-                                                <th>N° Chaleco</th>
+                                                <th>Arma</th>
                                                 <th>Tipo</th>
                                                 <th>Motivo</th>
                                                 <th>Fecha Posesión</th>
@@ -93,8 +126,7 @@
                                         <tbody>
                                             @foreach ($personal->retenciones as $retencion)
                                                 <tr>
-                                                    <td><strong>{{ $retencion->numeracion_arma }}</strong></td>
-                                                    <td>{{ $retencion->nro_chaleco ?? '-' }}</td>
+                                                    <td>{{ $personal->numeracion_arma }}</td>
                                                     <td>
                                                         <span class="badge badge-{{ $retencion->tipo == 'RETENCIÓN' ? 'warning' : ($retencion->tipo == 'REGULACIÓN' ? 'info' : 'secondary') }}">
                                                             {{ $retencion->tipo_label }}
@@ -135,6 +167,46 @@
                     </div>
                 </div>
             </div>
+
+            @if($personal->armasAnteriores->isNotEmpty())
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4><i class="fas fa-history"></i> Historial de Armas</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th>Numeración</th>
+                                                <th>Tipo</th>
+                                                <th>Chaleco</th>
+                                                <th>Fecha Cambio</th>
+                                                <th>Motivo</th>
+                                                <th>Registrado por</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($personal->armasAnteriores as $armaAnterior)
+                                                <tr>
+                                                    <td><strong>{{ $armaAnterior->numeracion_arma }}</strong></td>
+                                                    <td>{{ $armaAnterior->armaTipo->nombre }}</td>
+                                                    <td>{{ $armaAnterior->nro_chaleco ?? '-' }}</td>
+                                                    <td>{{ $armaAnterior->fecha_cambio->format('d/m/Y') }}</td>
+                                                    <td>{{ $armaAnterior->motivo_cambio ?? '-' }}</td>
+                                                    <td>{{ $armaAnterior->creadoPor?->name ?? 'Sistema' }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <div class="row mt-3">
                 <div class="col-md-12">

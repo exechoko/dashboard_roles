@@ -91,4 +91,16 @@ return [
         'api_key' => env('API_KEY_THUNDER_FOREST_MAP', ''),
     ],
 
+    'ticketera' => [
+        'url'               => env('TICKETERA_URL'),
+        'usuario'           => env('TICKETERA_USUARIO'),
+        'password'          => env('TICKETERA_PASSWORD'),
+        'timeout'           => (int) env('TICKETERA_TIMEOUT', 30),
+        'login_path'        => env('TICKETERA_LOGIN_PATH', 'login.php'),
+        'nuevo_ticket_path' => env('TICKETERA_NUEVO_TICKET_PATH', 'open.php'),
+        'tema_id'           => env('TICKETERA_TEMA_ID'),
+        'nombre'            => env('TICKETERA_NOMBRE', 'Tecnica 911'),
+        'email'             => env('TICKETERA_EMAIL', env('TICKETERA_USUARIO')),
+    ],
+
 ];

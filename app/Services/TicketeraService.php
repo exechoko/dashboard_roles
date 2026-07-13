@@ -4,8 +4,17 @@ namespace App\Services;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Cookie\CookieJar;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
+/**
+ * Integración con la ticketera HESK (lado admin).
+ *
+ * Flujo real verificado:
+ *  1. POST admin/index.php  (a=do_login, user, pass, remember_user, goto)
+ *  2. GET  admin/new_ticket.php?category=<id>  -> trae token CSRF y el form
+ *  3. POST admin/admin_submit_ticket.php (multipart) con token + campos del ticket
+ */
 class TicketeraService
 {
     private Client $clienteHttp;
@@ -28,25 +37,38 @@ class TicketeraService
     }
 
     /**
+     * @param array<string, mixed> $datosTicket
      * @return array{codigo_ticketera: string|null, url_seguimiento: string|null, html: string}
      */
     public function crearTicket(array $datosTicket): array
     {
+        if ($this->esDryRun()) {
+            return $this->simularCreacion($datosTicket);
+        }
+
         $this->validarConfiguracion();
         $this->iniciarSesion();
 
-        $rutaNuevoTicket = (string) config('services.ticketera.nuevo_ticket_path', 'open.php');
-        $respuestaFormulario = $this->clienteHttp->get($rutaNuevoTicket);
+        $categoriaId = $this->categoriaHesk($datosTicket);
+        $rutaNuevoTicket = (string) config('services.ticketera.nuevo_ticket_path', 'admin/new_ticket.php');
+
+        $respuestaFormulario = $this->clienteHttp->get($rutaNuevoTicket, [
+            'query' => ['category' => $categoriaId],
+        ]);
         $htmlFormulario = (string) $respuestaFormulario->getBody();
+
         $camposFormulario = $this->extraerCamposOcultos($htmlFormulario);
+        $camposFormulario = array_merge($camposFormulario, $this->camposTicket($datosTicket, $categoriaId));
 
-        $camposFormulario = array_merge($camposFormulario, $this->camposTicket($datosTicket));
-        $accionFormulario = $this->extraerActionFormulario($htmlFormulario, $rutaNuevoTicket);
+        $rutaSubmit = $this->extraerActionFormulario(
+            $htmlFormulario,
+            (string) config('services.ticketera.submit_path', 'admin/admin_submit_ticket.php')
+        );
 
-        $respuesta = $this->clienteHttp->post($accionFormulario, [
-            'form_params' => $camposFormulario,
-            'headers'     => [
-                'Referer' => $this->urlBase . '/' . ltrim($rutaNuevoTicket, '/'),
+        $respuesta = $this->clienteHttp->post($rutaSubmit, [
+            'multipart' => $this->comoMultipart($camposFormulario),
+            'headers'   => [
+                'Referer' => $this->urlBase . '/' . ltrim($rutaNuevoTicket, '/') . '?category=' . $categoriaId,
             ],
         ]);
 
@@ -62,44 +84,68 @@ class TicketeraService
         ];
     }
 
-    public function iniciarSesion(): void
+    public function esDryRun(): bool
     {
-        $rutaLogin = (string) config('services.ticketera.login_path', 'login.php');
-        $respuestaLogin = $this->clienteHttp->get($rutaLogin);
-        $htmlLogin = (string) $respuestaLogin->getBody();
-        $camposLogin = $this->extraerCamposOcultos($htmlLogin);
+        return (bool) config('services.ticketera.dry_run', true);
+    }
 
-        $camposLogin = array_merge($camposLogin, [
-            'luser'    => config('services.ticketera.usuario'),
-            'lemail'   => config('services.ticketera.usuario'),
-            'username' => config('services.ticketera.usuario'),
-            'email'    => config('services.ticketera.usuario'),
-            'lpasswd'  => config('services.ticketera.password'),
-            'passwd'   => config('services.ticketera.password'),
-            'password' => config('services.ticketera.password'),
+    /**
+     * Modo seguro: arma el payload y lo registra en el log SIN realizar ninguna
+     * llamada a la ticketera (ni login, ni GET, ni POST). Devuelve un código
+     * simulado con prefijo DRYRUN para que sea evidente que no se envió.
+     *
+     * @param array<string, mixed> $datosTicket
+     * @return array{codigo_ticketera: string|null, url_seguimiento: string|null, html: string}
+     */
+    private function simularCreacion(array $datosTicket): array
+    {
+        $categoriaId = $this->categoriaHesk($datosTicket);
+        $campos = $this->camposTicket($datosTicket, $categoriaId);
+        $codigoSimulado = 'DRYRUN-' . now()->format('ymd-His');
+
+        Log::warning('[Ticketera][DRY-RUN] Ticket NO enviado (TICKETERA_DRY_RUN activo).', [
+            'codigo_interno' => $datosTicket['codigo_interno'] ?? null,
+            'url_base'       => $this->urlBase,
+            'submit_path'    => config('services.ticketera.submit_path'),
+            'campos'         => $campos,
         ]);
 
-        $accionLogin = $this->extraerActionFormulario($htmlLogin, $rutaLogin);
-        $respuesta = $this->clienteHttp->post($accionLogin, [
-            'form_params' => $camposLogin,
-            'headers'     => [
-                'Referer' => $this->urlBase . '/' . ltrim($rutaLogin, '/'),
+        return [
+            'codigo_ticketera' => $codigoSimulado,
+            'url_seguimiento'  => null,
+            'html'             => '[DRY-RUN] Ticket no enviado a la ticketera. Payload registrado en el log.',
+        ];
+    }
+
+    public function iniciarSesion(): void
+    {
+        $rutaLogin = (string) config('services.ticketera.login_path', 'admin/index.php');
+        $goto = '/' . ltrim((string) config('services.ticketera.admin_path', 'admin/admin_main.php'), '/');
+
+        $respuesta = $this->clienteHttp->post($rutaLogin, [
+            'form_params' => [
+                'user'          => config('services.ticketera.usuario'),
+                'pass'          => config('services.ticketera.password'),
+                'remember_user' => 'NOTHANKS',
+                'a'             => 'do_login',
+                'goto'          => $goto,
             ],
         ]);
 
-        if ($respuesta->getStatusCode() >= 400) {
-            throw new RuntimeException("La ticketera devolvio HTTP {$respuesta->getStatusCode()} durante el login.");
+        $html = (string) $respuesta->getBody();
+        if ($respuesta->getStatusCode() >= 400 || str_contains($html, 'a=do_login')) {
+            throw new RuntimeException('No se pudo iniciar sesion en la ticketera (credenciales o formulario de login).');
         }
     }
 
     public function extraerCodigoTicketera(string $html): ?string
     {
-        if (preg_match('/#?([0-9]{2,}-[A-Z0-9]{3,}-[A-Z0-9]{3,})/i', $html, $coincidencias)) {
+        if (preg_match('/[?&]track=([A-Za-z0-9]{3,}(?:-[A-Za-z0-9]{3,})*)/', $html, $coincidencias)) {
             return strtoupper($coincidencias[1]);
         }
 
-        if (preg_match('/ticket(?:\s+number|\s+nro|\s+no\.?|#)?\s*[:#]?\s*([0-9]+)/i', $html, $coincidencias)) {
-            return $coincidencias[1];
+        if (preg_match('/ticket(?:\s+id|\s+nro|\s+n[°º]|#)?\s*[:#]?\s*([A-Z0-9]{3,}(?:-[A-Z0-9]{3,})+)/i', $html, $coincidencias)) {
+            return strtoupper($coincidencias[1]);
         }
 
         return null;
@@ -107,41 +153,90 @@ class TicketeraService
 
     public function extraerUrlSeguimiento(string $html): ?string
     {
-        if (preg_match('/https?:\/\/[^"\'\s<>]+ticket\.php\?track=[^"\'\s<>]+/i', $html, $coincidencias)) {
-            return html_entity_decode($coincidencias[0]);
-        }
-
-        if (preg_match('/href=["\']([^"\']*ticket\.php\?track=[^"\']+)["\']/i', $html, $coincidencias)) {
+        if (preg_match('/href=["\']([^"\']*(?:admin_ticket|ticket)\.php\?track=[^"\']+)["\']/i', $html, $coincidencias)) {
             $url = html_entity_decode($coincidencias[1]);
 
             if (str_starts_with($url, 'http')) {
                 return $url;
             }
 
-            return $this->urlBase . '/' . ltrim($url, '/');
+            return $this->urlBase . '/' . ltrim(preg_replace('#^\.\./#', '', $url) ?? $url, '/');
+        }
+
+        $codigo = $this->extraerCodigoTicketera($html);
+        if ($codigo !== null) {
+            return $this->urlBase . '/ticket.php?track=' . $codigo;
         }
 
         return null;
     }
 
     /**
+     * @param array<string, mixed> $datosTicket
      * @return array<string, string>
      */
-    private function camposTicket(array $datosTicket): array
+    private function camposTicket(array $datosTicket, int $categoriaId): array
     {
         $campos = [
-            'name'    => (string) config('services.ticketera.nombre', 'Tecnica 911'),
-            'email'   => (string) config('services.ticketera.email'),
-            'subject' => (string) $datosTicket['asunto'],
-            'message' => (string) $datosTicket['texto_enviado'],
+            'token'         => '',
+            'category'      => (string) $categoriaId,
+            'customer_type' => 'CUSTOMER',
+            'subject'       => (string) ($datosTicket['asunto'] ?? ''),
+            'message'       => (string) ($datosTicket['texto_enviado'] ?? ''),
+            'priority'      => (string) $this->prioridadHesk($datosTicket),
+            'notify'        => '1',
+            'show'          => '1',
         ];
 
-        $temaId = config('services.ticketera.tema_id');
-        if ($temaId !== null && $temaId !== '') {
-            $campos['topicId'] = (string) $temaId;
+        $customerId = config('services.ticketera.customer_id');
+        if ($customerId !== null && $customerId !== '') {
+            $campos['customer_id'] = (string) $customerId;
+        } else {
+            $campos['name'] = (string) config('services.ticketera.nombre', 'Tecnica 911');
+            $campos['email'] = (string) config('services.ticketera.email');
+        }
+
+        $ownerId = config('services.ticketera.owner_id');
+        if ($ownerId !== null && $ownerId !== '') {
+            $campos['owner'] = (string) $ownerId;
+        }
+
+        $status = config('services.ticketera.status');
+        if ($status !== null && $status !== '') {
+            $campos['status'] = (string) $status;
         }
 
         return $campos;
+    }
+
+    private function categoriaHesk(array $datosTicket): int
+    {
+        $categoria = (string) ($datosTicket['tipo_equipo'] ?? '');
+        $mapa = (array) config('ticketera_categorias.hesk_categorias', []);
+
+        return (int) ($mapa[$categoria] ?? 1);
+    }
+
+    private function prioridadHesk(array $datosTicket): int
+    {
+        $prioridad = (string) ($datosTicket['prioridad'] ?? '');
+        $mapa = (array) config('ticketera_categorias.hesk_prioridades', []);
+
+        return (int) ($mapa[$prioridad] ?? 3);
+    }
+
+    /**
+     * @param array<string, string> $campos
+     * @return array<int, array{name: string, contents: string}>
+     */
+    private function comoMultipart(array $campos): array
+    {
+        $multipart = [];
+        foreach ($campos as $nombre => $valor) {
+            $multipart[] = ['name' => $nombre, 'contents' => (string) $valor];
+        }
+
+        return $multipart;
     }
 
     /**
@@ -179,7 +274,9 @@ class TicketeraService
             }
 
             if (!str_starts_with($action, 'http')) {
-                return ltrim($action, '/');
+                $action = ltrim($action, '/');
+
+                return str_contains($action, '/') ? $action : 'admin/' . $action;
             }
         }
 

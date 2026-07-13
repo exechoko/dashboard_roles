@@ -54,6 +54,43 @@ return [
     ],
 
     /*
+    | Mapeo categoría (label) => id de categoría en HESK (tabla del help desk).
+    | Verificado desle /admin/new_ticket.php. Las categorías sin equivalente
+    | directo se derivan a la más cercana.
+    */
+    'hesk_categorias' => [
+        'General'                             => 1,
+        'Grabación'                           => 3,
+        'Cámara'                              => 4,
+        'Cecoco'                              => 5,
+        'Nebula'                              => 6,
+        'CCTV'                                => 7,
+        'Infraestructura'                     => 8,
+        'Tetra'                               => 9,
+        'Tetra: Instalación / Desinstalación' => 9,
+        'Dependencias'                        => 10,
+        'Telefonía'                           => 11,
+        'Prestación'                          => 12,
+        'Mantenimiento'                       => 16,
+        'Internet'                            => 17,
+        'Aire Acondicionado'                  => 18,
+        'Red'                                 => 8,
+        'Informativo'                         => 1,
+        'Solicitud de combustible'            => 12,
+    ],
+
+    /*
+    | Mapeo prioridad (label) => valor de prioridad en HESK. OJO: HESK invierte
+    | la escala (0 = Crítica ... 3 = Baja).
+    */
+    'hesk_prioridades' => [
+        'Critico' => 0,
+        'Alto'    => 1,
+        'Medio'   => 2,
+        'Bajo'    => 3,
+    ],
+
+    /*
     | Subsistema preseleccionado al elegir una categoría (editable después).
     | Debe coincidir con un valor de la lista 'subsistemas'.
     */

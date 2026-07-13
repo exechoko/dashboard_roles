@@ -27,7 +27,7 @@ class UpdateArmaMotivoRequest extends FormRequest
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('arma_motivos', 'nombre')->ignore($this->route('arma_motivo')),
+                Rule::unique('arma_motivos', 'nombre')->ignore($this->route('armaMotivo')),
             ],
             'dias'          => 'required|integer|min:0|max:365',
             'tipo_asignado' => 'required|in:RETENCIÓN,REGULACIÓN,RESGUARDO',

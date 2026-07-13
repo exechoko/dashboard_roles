@@ -34,7 +34,7 @@ class ArmaMotivoController extends Controller
     {
         ArmaMotivo::create($request->validated());
 
-        return redirect()->route('arma-motivos.index')->with('success', 'Motivo creado correctamente.');
+        return redirect()->route('armas.motivos.index')->with('success', 'Motivo creado correctamente.');
     }
 
     public function edit(ArmaMotivo $armaMotivo): View
@@ -46,17 +46,17 @@ class ArmaMotivoController extends Controller
     {
         $armaMotivo->update($request->validated());
 
-        return redirect()->route('arma-motivos.index')->with('success', 'Motivo actualizado correctamente.');
+        return redirect()->route('armas.motivos.index')->with('success', 'Motivo actualizado correctamente.');
     }
 
     public function destroy(ArmaMotivo $armaMotivo): RedirectResponse
     {
         if ($armaMotivo->retenciones()->exists()) {
-            return redirect()->route('arma-motivos.index')->with('error', 'No se puede eliminar el motivo porque tiene retenciones asociadas.');
+            return redirect()->route('armas.motivos.index')->with('error', 'No se puede eliminar el motivo porque tiene retenciones asociadas.');
         }
 
         $armaMotivo->delete();
 
-        return redirect()->route('arma-motivos.index')->with('success', 'Motivo eliminado correctamente.');
+        return redirect()->route('armas.motivos.index')->with('success', 'Motivo eliminado correctamente.');
     }
 }

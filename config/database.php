@@ -82,6 +82,26 @@ return [
             ]) : [],
         ],
 
+        'personal911' => [
+            'driver' => 'mysql',
+            'url' => env('PERSONAL911_DATABASE_URL'),
+            'host' => env('PERSONAL911_DB_HOST', '127.0.0.1'),
+            'port' => env('PERSONAL911_DB_PORT', '3306'),
+            'database' => env('PERSONAL911_DB_DATABASE', 'personal911'),
+            'username' => env('PERSONAL911_DB_USERNAME', 'forge'),
+            'password' => env('PERSONAL911_DB_PASSWORD', ''),
+            'unix_socket' => env('PERSONAL911_DB_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('PERSONAL911_MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),

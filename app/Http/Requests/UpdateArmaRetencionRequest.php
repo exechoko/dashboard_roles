@@ -29,6 +29,12 @@ class UpdateArmaRetencionRequest extends FormRequest
                     $personal = \App\Models\Personal::find($value);
                     if (!$personal) {
                         $fail('El funcionario seleccionado no es válido.');
+                        return;
+                    }
+
+                    $retencion = $this->route('armaRetencion');
+                    if ((int) $value !== (int) $retencion?->personal_id && !$personal->tieneArmaAsignada()) {
+                        $fail('El funcionario seleccionado no tiene un arma disponible para retener.');
                     }
                 },
             ],

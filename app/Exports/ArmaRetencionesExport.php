@@ -23,7 +23,7 @@ class ArmaRetencionesExport implements FromCollection, WithHeadings, ShouldAutoS
 
     public function collection()
     {
-        $query = ArmaRetencion::with(['personal', 'motivo']);
+        $query = ArmaRetencion::with(['personal', 'motivo', 'arma', 'chaleco']);
 
         if (!empty($this->filters['estado'])) {
             $query->where('estado', $this->filters['estado']);
@@ -45,7 +45,7 @@ class ArmaRetencionesExport implements FromCollection, WithHeadings, ShouldAutoS
                        ->orWhere('apellido', 'like', "%{$busqueda}%")
                        ->orWhere('lp', 'like', "%{$busqueda}%")
                        ->orWhere('numeracion_arma', 'like', "%{$busqueda}%");
-                });
+                })->orWhere('arma_numero', 'like', "%{$busqueda}%");
             });
         }
 
@@ -61,8 +61,8 @@ class ArmaRetencionesExport implements FromCollection, WithHeadings, ShouldAutoS
             $retencion->personal->nombre_completo ?? '',
             $retencion->personal->lp ?? '',
             $retencion->personal->jerarquia ?? '',
-            $retencion->personal->numeracion_arma ?? '',
-            $retencion->personal->nro_chaleco ?? '',
+            $retencion->arma_numero ?? $retencion->arma->numero ?? '',
+            $retencion->chaleco_numero ?? $retencion->chaleco->numero_serie ?? '',
             $retencion->tipo_label,
             $retencion->motivo->nombre ?? '',
             $retencion->fecha_posesion->format('d/m/Y'),

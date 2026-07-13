@@ -142,6 +142,23 @@
         line-height: 1;
     }
 
+    .inventario-conflictos-btn:not(:disabled) {
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.12);
+    }
+
+    .conflicto-funcionario {
+        padding: 0.4rem 0.55rem;
+        margin-bottom: 0.35rem;
+        border-left: 3px solid #ef4444;
+        background: #f8fafc;
+        border-radius: 0 4px 4px 0;
+    }
+
+    [data-theme="dark"] .conflicto-funcionario {
+        color: #e2e8f0;
+        background: #1e293b;
+    }
+
     /* ── Botón refresh restauraciones: animaciones por estado ───────────── */
     .btn-refresh-restauraciones {
         transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease;
@@ -1189,7 +1206,7 @@
                                                              </div>
 
                                                              {{-- Tamaño BD restauraciones CECOCO GPS --}}
-                                                             <div class="estado-procesos-bloque" title="Tamaño de la base de datos de restauraciones de históricos GPS. Se actualiza una vez por hora.">
+                                                              <div class="estado-procesos-bloque" title="Tamaño de la base de datos de restauraciones de históricos GPS. Se actualiza una vez por hora.">
                                                                  <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-database mr-1"></i><strong>Tamaño BD restauraciones GPS</strong></small>
                                                                  <div class="d-flex align-items-center flex-wrap" style="gap:0.5rem;">
                                                                      <span id="workers-restauraciones-gps-icono" class="restauraciones-icono" style="display:none;">
@@ -1202,8 +1219,29 @@
                                                                      <button type="button" class="btn btn-xs btn-outline-info btn-ver-restauradas" id="btn-ver-restauradas-gps" title="Ver ficheros restaurados GPS">
                                                                          <i class="fas fa-check-double"></i>
                                                                      </button>
-                                                                 </div>
-                                                             </div>
+                                                                  </div>
+                                                              </div>
+
+                                                             @can('ver-menu-armamento')
+                                                                 <div class="estado-procesos-bloque" title="Asignaciones duplicadas detectadas durante la última sincronización con Personal 911.">
+                                                                     <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-shield-alt mr-1"></i><strong>Conflictos de inventario</strong></small>
+                                                                     <div class="d-flex align-items-center flex-wrap" style="gap:0.5rem;">
+                                                                          <span><small>Armas:</small> <span id="inventario-conflictos-armas" class="badge badge-secondary">—</span></span>
+                                                                          <span><small>Chalecos:</small> <span id="inventario-conflictos-chalecos" class="badge badge-secondary">—</span></span>
+                                                                          <button type="button" id="btn-ver-conflictos-inventario"
+                                                                             class="btn btn-xs btn-outline-danger inventario-conflictos-btn"
+                                                                             data-toggle="modal" data-target="#modal-conflictos-inventario" disabled>
+                                                                              <i class="fas fa-users mr-1"></i>Ver detalle
+                                                                          </button>
+                                                                          <span><small>Correcciones:</small> <span id="inventario-discrepancias-total" class="badge badge-secondary">—</span></span>
+                                                                          <button type="button" id="btn-ver-discrepancias-inventario"
+                                                                              class="btn btn-xs btn-outline-warning inventario-conflictos-btn"
+                                                                              data-toggle="modal" data-target="#modal-discrepancias-inventario" disabled>
+                                                                              <i class="fas fa-lock mr-1"></i>Ver correcciones
+                                                                          </button>
+                                                                      </div>
+                                                                  </div>
+                                                              @endcan
 
                                                         </div>
 
@@ -1216,6 +1254,58 @@
                                                 </div>
                                             </div>
                                         </div>
+
+                                        @can('ver-menu-armamento')
+                                            <div class="modal fade" id="modal-conflictos-inventario" tabindex="-1" role="dialog" aria-labelledby="modalConflictosInventarioTitulo" aria-hidden="true">
+                                                <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-danger text-white">
+                                                            <h5 class="modal-title" id="modalConflictosInventarioTitulo">
+                                                                <i class="fas fa-exclamation-triangle mr-2"></i>Asignaciones duplicadas
+                                                            </h5>
+                                                            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p class="text-muted">Estos bienes aparecen asignados a más de un funcionario activo en Personal 911. No se asignan localmente hasta que se corrija la fuente.</p>
+                                                            <div id="inventario-conflictos-detalle">
+                                                                <span class="text-muted">Cargando detalle...</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <small id="inventario-conflictos-actualizado" class="text-muted mr-auto"></small>
+                                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="modal fade" id="modal-discrepancias-inventario" tabindex="-1" role="dialog" aria-labelledby="modalDiscrepanciasInventarioTitulo" aria-hidden="true">
+                                                <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-warning text-dark">
+                                                            <h5 class="modal-title" id="modalDiscrepanciasInventarioTitulo">
+                                                                <i class="fas fa-lock mr-2"></i>Correcciones locales protegidas
+                                                            </h5>
+                                                            <button type="button" class="close text-dark" data-dismiss="modal" aria-label="Cerrar">
+                                                                <span aria-hidden="true">&times;</span>
+                                                            </button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p class="text-muted">Estas correcciones fueron cargadas localmente y no se pisan con Personal 911 mientras la fuente conserve un dato distinto.</p>
+                                                            <div id="inventario-discrepancias-detalle">
+                                                                <span class="text-muted">Cargando detalle...</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <small id="inventario-discrepancias-actualizado" class="text-muted mr-auto"></small>
+                                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endcan
 
                                         
 
@@ -3271,10 +3361,131 @@
         (function workersMonitor() {
             var url = '{{ route("api.dashboard.workers-status") }}';
 
+            function escapar(texto) {
+                var div = document.createElement('div');
+                div.textContent = texto == null ? '' : String(texto);
+                return div.innerHTML;
+            }
+
+            function renderConflictosInventario(datos) {
+                var estado = datos || { total: 0, armas: 0, chalecos: 0, detalle: [] };
+                var armas = document.getElementById('inventario-conflictos-armas');
+                var chalecos = document.getElementById('inventario-conflictos-chalecos');
+                var boton = document.getElementById('btn-ver-conflictos-inventario');
+                var detalle = document.getElementById('inventario-conflictos-detalle');
+                var actualizado = document.getElementById('inventario-conflictos-actualizado');
+
+                if (armas) {
+                    armas.textContent = estado.armas || 0;
+                    armas.className = estado.armas > 0 ? 'badge badge-danger' : 'badge badge-success';
+                }
+                if (chalecos) {
+                    chalecos.textContent = estado.chalecos || 0;
+                    chalecos.className = estado.chalecos > 0 ? 'badge badge-danger' : 'badge badge-success';
+                }
+                if (boton) {
+                    boton.disabled = estado.total === 0;
+                    boton.className = estado.total > 0
+                        ? 'btn btn-xs btn-danger inventario-conflictos-btn'
+                        : 'btn btn-xs btn-outline-success inventario-conflictos-btn';
+                    boton.innerHTML = estado.total > 0
+                        ? '<i class="fas fa-users mr-1"></i>Ver ' + estado.total + ' conflicto' + (estado.total === 1 ? '' : 's')
+                        : '<i class="fas fa-check-circle mr-1"></i>Sin conflictos';
+                }
+
+                if (!detalle) return;
+
+                if (!estado.detalle || estado.detalle.length === 0) {
+                    detalle.innerHTML = '<div class="alert alert-success mb-0"><i class="fas fa-check-circle mr-2"></i>No hay asignaciones duplicadas activas.</div>';
+                    if (actualizado) actualizado.textContent = '';
+                    return;
+                }
+
+                detalle.innerHTML = estado.detalle.map(function(conflicto) {
+                    var funcionarios = (conflicto.funcionarios || []).map(function(funcionario) {
+                        return '<div class="conflicto-funcionario">'
+                            + '<strong>' + escapar(funcionario.apellido) + ', ' + escapar(funcionario.nombre) + '</strong>'
+                            + '<div class="small text-muted">' + escapar(funcionario.jerarquia || 'Sin jerarquía')
+                            + ' · L.P. ' + escapar(funcionario.lp) + '</div></div>';
+                    }).join('');
+                    var etiqueta = conflicto.tipo === 'arma' ? 'Arma' : 'Chaleco';
+                    var icono = conflicto.tipo === 'arma' ? 'fa-crosshairs' : 'fa-shield-alt';
+
+                    return '<div class="card border-danger mb-3">'
+                        + '<div class="card-header py-2 d-flex justify-content-between align-items-center">'
+                        + '<strong><i class="fas ' + icono + ' mr-2 text-danger"></i>' + etiqueta + ' N° ' + escapar(conflicto.identificador) + '</strong>'
+                        + '<span class="badge badge-danger">Duplicado</span></div>'
+                        + '<div class="card-body py-2">' + funcionarios
+                        + '<small class="text-muted">Detectado: ' + escapar(conflicto.detectado_en || '—')
+                        + ' · Última verificación: ' + escapar(conflicto.ultima_deteccion_en || '—') + '</small>'
+                        + '</div></div>';
+                }).join('');
+
+                if (actualizado) actualizado.textContent = 'Datos de la última sincronización con Personal 911';
+            }
+
+            function renderDiscrepanciasInventario(datos) {
+                var estado = datos || { total: 0, armas: 0, chalecos: 0, detalle: [] };
+                var total = document.getElementById('inventario-discrepancias-total');
+                var boton = document.getElementById('btn-ver-discrepancias-inventario');
+                var detalle = document.getElementById('inventario-discrepancias-detalle');
+                var actualizado = document.getElementById('inventario-discrepancias-actualizado');
+
+                if (total) {
+                    total.textContent = estado.total || 0;
+                    total.className = estado.total > 0 ? 'badge badge-warning' : 'badge badge-success';
+                }
+                if (boton) {
+                    boton.disabled = estado.total === 0;
+                    boton.className = estado.total > 0
+                        ? 'btn btn-xs btn-warning inventario-conflictos-btn'
+                        : 'btn btn-xs btn-outline-success inventario-conflictos-btn';
+                    boton.innerHTML = estado.total > 0
+                        ? '<i class="fas fa-lock mr-1"></i>Ver ' + estado.total + ' corrección' + (estado.total === 1 ? '' : 'es')
+                        : '<i class="fas fa-check-circle mr-1"></i>Sin correcciones';
+                }
+
+                if (!detalle) return;
+
+                if (!estado.detalle || estado.detalle.length === 0) {
+                    detalle.innerHTML = '<div class="alert alert-success mb-0"><i class="fas fa-check-circle mr-2"></i>No hay correcciones locales pendientes de resolver en Personal 911.</div>';
+                    if (actualizado) actualizado.textContent = '';
+                    return;
+                }
+
+                detalle.innerHTML = estado.detalle.map(function(discrepancia) {
+                    var funcionario = discrepancia.funcionario || {};
+                    var etiqueta = discrepancia.tipo === 'arma' ? 'Arma' : 'Chaleco';
+                    var icono = discrepancia.tipo === 'arma' ? 'fa-crosshairs' : 'fa-shield-alt';
+
+                    return '<div class="card border-warning mb-3">'
+                        + '<div class="card-header py-2 d-flex justify-content-between align-items-center">'
+                        + '<strong><i class="fas ' + icono + ' mr-2 text-warning"></i>' + etiqueta + '</strong>'
+                        + '<span class="badge badge-warning">Corrección protegida</span></div>'
+                        + '<div class="card-body py-2">'
+                        + '<strong>' + escapar(funcionario.apellido) + ', ' + escapar(funcionario.nombre) + '</strong>'
+                        + '<div class="small text-muted mb-2">' + escapar(funcionario.jerarquia || 'Sin jerarquía')
+                        + ' · L.P. ' + escapar(funcionario.lp) + '</div>'
+                        + '<div class="row">'
+                        + '<div class="col-md-6"><small class="text-muted">Dato local protegido</small><div>' + escapar(discrepancia.valor_local || 'Sin dato') + '</div></div>'
+                        + '<div class="col-md-6"><small class="text-muted">Dato Personal 911</small><div>' + escapar(discrepancia.valor_importado || 'Sin dato') + '</div></div>'
+                        + '</div>'
+                        + (discrepancia.motivo ? '<div class="small mt-2"><strong>Motivo:</strong> ' + escapar(discrepancia.motivo) + '</div>' : '')
+                        + '<small class="text-muted d-block mt-2">Detectado: ' + escapar(discrepancia.detectado_en || '—')
+                        + ' · Última verificación: ' + escapar(discrepancia.ultima_deteccion_en || '—') + '</small>'
+                        + '</div></div>';
+                }).join('');
+
+                if (actualizado) actualizado.textContent = 'Datos de la última sincronización con Personal 911';
+            }
+
             function verificar() {
                 fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                     .then(function(r) { return r.json(); })
                     .then(function(d) {
+                        renderConflictosInventario(d.inventario_conflictos);
+                        renderDiscrepanciasInventario(d.inventario_discrepancias);
+
                         // Tabla jobs no existe aún
                         if (d.error === 'tabla_jobs_inexistente') {
                             var dot = document.getElementById('workers-dot');

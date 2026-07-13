@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\Arma;
 use App\Models\ArmaMotivo;
 use App\Models\ArmaRetencion;
 use App\Models\Auditoria;
+use App\Models\Chaleco;
 use App\Models\Personal;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -64,9 +66,11 @@ class ArmaRetencionService
             $motivo = ArmaMotivo::findOrFail($datos['motivo_id']);
 
             $personal = Personal::findOrFail($datos['personal_id']);
+            $inventario = $this->obtenerInventario($personal);
 
             $retencion = ArmaRetencion::create([
                 'personal_id' => $personal->id,
+                ...$inventario,
                 'tipo' => $motivo->tipo_asignado,
                 'motivo_id' => $motivo->id,
                 'fecha_posesion' => $datos['fecha_posesion'],
@@ -82,7 +86,7 @@ class ArmaRetencionService
             $retencion->estado = $this->calcularEstado($retencion);
             $retencion->save();
 
-            $this->auditar($retencion, 'CREAR', 'Registro creado: Funcionario ' . $personal->nombre_completo . ' - Arma ' . $personal->numeracion_arma);
+            $this->auditar($retencion, 'CREAR', 'Registro creado: Funcionario ' . $personal->nombre_completo . ' - Arma ' . $retencion->arma_numero);
 
             DB::commit();
 
@@ -112,8 +116,11 @@ class ArmaRetencionService
             }
 
             if (isset($datos['personal_id']) && $datos['personal_id'] != $retencion->personal_id) {
-                $cambios[] = 'Funcionario: ' . $retencion->personal->nombre_completo . ' → ' . $retencion->personal->nombre_completo;
-                $retencion->personal_id = $datos['personal_id'];
+                $personalAnterior = $retencion->personal->nombre_completo;
+                $personalNuevo = Personal::findOrFail($datos['personal_id']);
+                $cambios[] = 'Funcionario: ' . $personalAnterior . ' → ' . $personalNuevo->nombre_completo;
+                $retencion->personal_id = $personalNuevo->id;
+                $retencion->fill($this->obtenerInventario($personalNuevo));
             }
 
             if (isset($datos['fecha_posesion']) && $datos['fecha_posesion'] !== $retencion->fecha_posesion->format('Y-m-d')) {
@@ -207,7 +214,7 @@ class ArmaRetencionService
         DB::beginTransaction();
 
         try {
-            $this->auditar($retencion, 'ELIMINAR', 'Registro eliminado: Funcionario ' . $retencion->personal->nombre_completo . ' - Arma ' . $retencion->personal->numeracion_arma);
+            $this->auditar($retencion, 'ELIMINAR', 'Registro eliminado: Funcionario ' . $retencion->personal->nombre_completo . ' - Arma ' . $retencion->arma_numero);
 
             $retencion->updated_by = Auth::id();
             $retencion->save();
@@ -233,9 +240,36 @@ class ArmaRetencionService
             'cambios' => json_encode([
                 'id' => $retencion->id,
                 'personal_id' => $retencion->personal_id,
-                'numeracion_arma' => $retencion->personal->numeracion_arma,
+                'numeracion_arma' => $retencion->arma_numero,
                 'detalle' => $cambios,
             ]),
         ]);
+    }
+
+    /**
+     * @return array{arma_id: ?int, chaleco_id: ?int, arma_numero: ?string, arma_tipo: ?string, chaleco_numero: ?string, chaleco_detalle: ?string}
+     */
+    private function obtenerInventario(Personal $personal): array
+    {
+        $personal->loadMissing(['armaAsignacionActual.arma.tipo', 'chalecoAsignacionActual.chaleco', 'tipoArma']);
+        $arma = $personal->armaAsignacionActual?->arma
+            ?? Arma::with('tipo')->where('numero', $personal->numeracion_arma)->first();
+        $chaleco = $personal->chalecoAsignacionActual?->chaleco
+            ?? Chaleco::where('numero_serie', $personal->nro_chaleco)->first();
+        $detalleChaleco = $chaleco ? collect([
+            $chaleco->marca,
+            $chaleco->modelo,
+            $chaleco->talle ? 'Talle '.$chaleco->talle : null,
+            $chaleco->nivel,
+        ])->filter()->implode(' - ') : null;
+
+        return [
+            'arma_id' => $arma?->id,
+            'chaleco_id' => $chaleco?->id,
+            'arma_numero' => $arma?->numero ?? $personal->numeracion_arma,
+            'arma_tipo' => $arma?->tipo?->nombre ?? $personal->tipoArma?->nombre,
+            'chaleco_numero' => $chaleco?->numero_serie ?? $personal->nro_chaleco,
+            'chaleco_detalle' => $detalleChaleco !== '' ? $detalleChaleco : null,
+        ];
     }
 }

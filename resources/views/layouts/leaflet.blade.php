@@ -738,11 +738,7 @@
 
 
         this.setParada = function(options) {
-            var url = "{{ route('route.edit-parada', ['index' => 'pos', 'parada' => 'stop']) }}"
-            url = url.replace('pos', options.index)
-            url = url.replace('stop', options.parada ? 1 : 0)
-
-            modalParada.openModal(url)
+            this.updatePoint(!options.parada, options.index)
         }
         this.updatePoint = function(isParada, index) {
             //console.log('UPDATE', isParada)

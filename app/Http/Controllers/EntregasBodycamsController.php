@@ -528,6 +528,31 @@ class EntregasBodycamsController extends Controller
         }
     }
 
+    public function mostrarDevolucion($entregaId, $devolucionId)
+    {
+        $entrega = EntregaBodycam::findOrFail($entregaId);
+        $devolucion = DevolucionBodycam::with(['bodycams', 'detalleDevoluciones.bodycam'])
+            ->where('entrega_id', $entregaId)
+            ->findOrFail($devolucionId);
+
+        return view('entregas.entregas-bodycams.devolucion-detalle', compact('entrega', 'devolucion'));
+    }
+
+    public function descargarArchivo($id)
+    {
+        $entrega = EntregaBodycam::findOrFail($id);
+
+        if (!$entrega->ruta_archivo) {
+            abort(404, 'Archivo no encontrado');
+        }
+
+        if (!file_exists($entrega->ruta_archivo)) {
+            return back()->with('error', 'El archivo no está disponible: '.$entrega->ruta_archivo);
+        }
+
+        return response()->download($entrega->ruta_archivo, basename($entrega->ruta_archivo));
+    }
+
     public function destroy($id)
     {
         try {

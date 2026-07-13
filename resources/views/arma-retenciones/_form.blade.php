@@ -6,9 +6,10 @@
                 <option value="">Seleccione un funcionario</option>
                 @foreach ($personales as $personal)
                     <option value="{{ $personal->id }}" {{ old('personal_id', $retencion->personal_id ?? '') == $personal->id ? 'selected' : '' }}
-                            data-arma="{{ $personal->numeracion_arma }}"
-                            data-tipo="{{ $personal->tipoArma?->nombre }}"
-                            data-chaleco="{{ $personal->nro_chaleco ?? '' }}">
+                            data-arma="{{ $personal->armaAsignacionActual?->arma?->numero ?? ((isset($retencion) && $retencion->personal_id === $personal->id) ? $retencion->arma_numero : $personal->numeracion_arma) }}"
+                            data-tipo="{{ $personal->armaAsignacionActual?->arma?->tipo?->nombre ?? ((isset($retencion) && $retencion->personal_id === $personal->id) ? $retencion->arma_tipo : $personal->tipoArma?->nombre) }}"
+                            data-chaleco="{{ $personal->chalecoAsignacionActual?->chaleco?->numero_serie ?? ((isset($retencion) && $retencion->personal_id === $personal->id) ? $retencion->chaleco_numero : $personal->nro_chaleco) ?? '' }}"
+                            data-chaleco-detalle="{{ $personal->chalecoAsignacionActual ? collect([$personal->chalecoAsignacionActual?->chaleco?->marca, $personal->chalecoAsignacionActual?->chaleco?->modelo, $personal->chalecoAsignacionActual?->chaleco?->talle ? 'Talle '.$personal->chalecoAsignacionActual->chaleco->talle : null])->filter()->implode(' - ') : ((isset($retencion) && $retencion->personal_id === $personal->id) ? $retencion->chaleco_detalle : '') }}">
                         {{ $personal->nombre_completo }}
                     </option>
                 @endforeach
@@ -87,11 +88,12 @@ $(document).ready(function() {
         var arma = selectedOption.data('arma') || 'Sin asignar';
         var tipo = selectedOption.data('tipo') || '';
         var chaleco = selectedOption.data('chaleco') || '';
+        var chalecoDetalle = selectedOption.data('chaleco-detalle') || '';
 
         if (selectedOption.val()) {
             var html = '<strong>N°:</strong> ' + arma;
             if (tipo) html += ' | <strong>Tipo:</strong> ' + tipo;
-            if (chaleco) html += ' | <strong>Chaleco:</strong> ' + chaleco;
+            if (chaleco) html += ' | <strong>Chaleco:</strong> ' + chaleco + (chalecoDetalle ? ' (' + chalecoDetalle + ')' : '');
             $('#arma_asignada_display').html(html);
         } else {
             $('#arma_asignada_display').html('<span class="text-muted">Seleccione un funcionario</span>');

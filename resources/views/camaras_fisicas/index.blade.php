@@ -18,11 +18,6 @@
                                         <button type="submit" class="btn btn-danger">Importar</button>
                                     </div>
                                 </form>
-                                <div class="text-right">
-                                    <form action="{{ route('camaras-fisicas.export') }}" method="GET" style="display: inline;">
-                                        <button type="submit" class="btn btn-primary">Exportar Listado Cámaras Físicas</button>
-                                    </form>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -65,7 +60,6 @@
                                         @else
                                             @foreach ($camaras as $camara)
                                                 @include('camaras.modal.detalle')
-                                                @include('camaras.modal.borrar')
                                                 {{-- @include('equipos.modal.editar') --}}
                                                 <tr>
                                                     <td style="display: none;">{{ $camara->id }}</td>
@@ -78,27 +72,12 @@
                                                     <td>{{ $camara->nombre }}</td>
                                                     <td>{{ $camara->observaciones }}</td>
                                                     <td>
-                                                        <form action="{{ route('camaras.destroy', $camara->id) }}"
-                                                            method="POST">
-
-                                                            {{-- <a class="btn btn-success" href="#" data-toggle="modal"
-                                                            data-target="#ModalEditar{{ $equipo->id }}">Editar</a> --}}
-
+                                                        <div>
                                                             @can('ver-camara')
                                                                 <a class="btn btn-warning" href="#" data-toggle="modal"
                                                                     data-target="#ModalDetalle{{ $camara->id }}">Detalles</a>
                                                             @endcan
-
-                                                            @can('editar-camara')
-                                                                <a class="btn btn-info"
-                                                                    href="{{ route('camaras.edit', $camara->id) }}">Editar</a>
-                                                            @endcan
-
-                                                            @can('borrar-camara')
-                                                                <a class="btn btn-danger" href="#" data-toggle="modal"
-                                                                    data-target="#ModalDelete{{ $camara->id }}">Borrar</a>
-                                                            @endcan
-                                                        </form>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             @endforeach

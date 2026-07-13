@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Control de Armas - Manual de usuario</title>
+    <style>
+        :root { --ink:#20262d; --muted:#68737c; --bg:#edf1ed; --card:#fff; --forest:#173f38; --mint:#4e927c; --lime:#b9cf71; --amber:#e4a441; --red:#b64b47; --blue:#387b9b; }
+        * { box-sizing:border-box; }
+        html { scroll-behavior:smooth; }
+        body { margin:0; color:var(--ink); background:linear-gradient(90deg,#e6ece7 1px,transparent 1px),linear-gradient(#e6ece7 1px,transparent 1px),var(--bg); background-size:24px 24px; font:16px/1.65 "Segoe UI",Arial,sans-serif; }
+        header { overflow:hidden; position:relative; padding:60px 22px 68px; color:#fff; background:var(--forest); }
+        header:after { content:""; position:absolute; right:-90px; bottom:-150px; width:420px; height:420px; border:65px solid #ffffff0b; border-radius:50%; }
+        .wrap { max-width:1020px; margin:auto; }
+        .kicker { color:var(--lime); font-weight:800; letter-spacing:.14em; text-transform:uppercase; font-size:.8rem; }
+        h1 { max-width:680px; margin:10px 0 16px; font:800 clamp(2.4rem,7vw,5.2rem)/.96 "Segoe UI",sans-serif; letter-spacing:-.055em; }
+        header p { max-width:650px; color:#d6e5df; font-size:1.1rem; }
+        .quick { display:flex; flex-wrap:wrap; gap:10px; margin-top:25px; }
+        .quick a { position:relative; z-index:2; padding:8px 13px; color:#173f38; background:var(--lime); border-radius:4px; text-decoration:none; font-weight:700; font-size:.88rem; }
+        main { max-width:1020px; margin:-30px auto 0; padding:0 22px 70px; position:relative; }
+        section { margin-bottom:22px; padding:28px; background:var(--card); border-radius:10px; box-shadow:0 8px 28px #18322914; }
+        h2 { margin:0 0 18px; color:var(--forest); font-size:1.55rem; letter-spacing:-.02em; }
+        h3 { margin:24px 0 8px; color:var(--mint); font-size:1.05rem; }
+        .steps { counter-reset:steps; display:grid; gap:12px; }
+        .step { position:relative; min-height:78px; padding:14px 15px 14px 66px; border:1px solid #dce4de; border-radius:7px; background:#fbfdfb; }
+        .step:before { counter-increment:steps; content:counter(steps); position:absolute; left:16px; top:15px; display:grid; width:34px; height:34px; place-items:center; color:#fff; background:var(--forest); border-radius:50%; font-weight:800; }
+        .step b { display:block; color:var(--forest); }
+        .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+        .card { padding:17px; border-radius:7px; color:#fff; }
+        .card b { display:block; margin-bottom:5px; font-size:1.05rem; }
+        .armory { background:var(--amber); color:#31220c; } .central { background:var(--blue); } .returned { background:var(--mint); }
+        .note { margin:16px 0; padding:14px 16px; border-left:5px solid var(--mint); background:#e9f5f0; }
+        .warning { border-color:var(--amber); background:#fff5df; }
+        .danger { border-color:var(--red); background:#fcebea; }
+        table { width:100%; border-collapse:collapse; font-size:.94rem; }
+        th,td { padding:10px; border-bottom:1px solid #dde3de; text-align:left; vertical-align:top; }
+        th { color:#fff; background:var(--forest); }
+        tbody tr:hover { background:#f4f8f5; }
+        code { padding:2px 5px; color:#235c4e; background:#e7f0eb; border-radius:3px; font-weight:700; }
+        .check { margin:0; padding:0; list-style:none; }
+        .check li { position:relative; margin:8px 0; padding-left:27px; }
+        .check li:before { content:"✓"; position:absolute; left:0; color:var(--mint); font-weight:900; }
+        details { margin:9px 0; border:1px solid #d8e0da; border-radius:6px; background:#fbfdfb; }
+        summary { padding:12px 14px; color:var(--forest); cursor:pointer; font-weight:700; }
+        details p { padding:0 14px 14px; margin:0; color:var(--muted); }
+        footer { padding:25px; color:#d6e4de; background:var(--forest); text-align:center; }
+        @media(max-width:720px) { .cards { grid-template-columns:1fr; } section { padding:22px 16px; } table { display:block; overflow:auto; white-space:nowrap; } }
+        @media print { body { background:#fff; font-size:11pt; } header { padding:25px; color:#000; background:#fff; border-bottom:3px solid #000; } header p,.kicker { color:#000; } .quick { display:none; } main { margin:0; max-width:none; padding:20px; } section { break-inside:avoid; box-shadow:none; border:1px solid #bbb; } footer { color:#000; background:#fff; } }
+    </style>
+</head>
+<body>
+<header>
+    <div class="wrap">
+        <div class="kicker">Manual práctico · C.A.R. 911</div>
+        <h1>Control de Armas</h1>
+        <p>Cómo consultar personal, registrar una retención, elevar un arma y dejar asentada su devolución.</p>
+        <div class="quick">
+            <a href="#ingreso">Cómo ingresar</a><a href="#crear">Nueva retención</a><a href="#estados">Estados</a><a href="#problemas">Ayuda</a>
+        </div>
+    </div>
+</header>
+<main>
+    <section id="objetivo">
+        <h2>¿Para qué sirve?</h2>
+        <p>El módulo permite llevar el control de armas retenidas, reguladas o recibidas en resguardo. También muestra el arma y, cuando está informado, el chaleco asignado al funcionario.</p>
+        <ul class="check">
+            <li>Consulta el personal activo del sistema Personal 911.</li>
+            <li>Evita dos retenciones abiertas para el mismo funcionario.</li>
+            <li>Calcula automáticamente los días para una elevación.</li>
+            <li>Conserva quién realizó cada operación.</li>
+        </ul>
+    </section>
+
+    <section id="ingreso">
+        <h2>Ingresar al módulo</h2>
+        <div class="steps">
+            <div class="step"><b>Inicie sesión</b>Utilice su usuario habitual del sistema.</div>
+            <div class="step"><b>Abra Control de Armas</b>En el menú lateral seleccione <code>Control de Armas</code>.</div>
+            <div class="step"><b>Elija una opción</b>Puede acceder a Retenciones, Motivos, Tipos de Arma o Personal según sus permisos.</div>
+        </div>
+        <div class="note warning">Si el menú no aparece, su rol no tiene acceso. Solicite al administrador los permisos necesarios.</div>
+    </section>
+
+    <section id="pantallas">
+        <h2>Opciones disponibles</h2>
+        <table>
+            <thead><tr><th>Opción</th><th>Uso</th></tr></thead>
+            <tbody>
+                <tr><td><b>Retenciones</b></td><td>Consultar, crear, editar, elevar, devolver o eliminar registros.</td></tr>
+                <tr><td><b>Motivos</b></td><td>Definir la causa, el tipo de operación y los días para elevación.</td></tr>
+                <tr><td><b>Tipos de Arma</b></td><td>Administrar modelos o categorías de armas.</td></tr>
+                <tr><td><b>Personal</b></td><td>Consultar funcionarios, arma, chaleco e historial.</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="crear">
+        <h2>Registrar una nueva retención</h2>
+        <div class="steps">
+            <div class="step"><b>Abra Retenciones</b>Seleccione <code>Nueva Retención</code>.</div>
+            <div class="step"><b>Seleccione al funcionario</b>Busque por apellido, nombre o L.P. Solo aparecen funcionarios con un arma activa y sin otra retención abierta.</div>
+            <div class="step"><b>Revise el equipo</b>El sistema mostrará número y tipo de arma. También mostrará serie, marca, modelo y talle del chaleco cuando estén disponibles.</div>
+            <div class="step"><b>Seleccione el motivo</b>El tipo de operación y los días se completan automáticamente según el motivo.</div>
+            <div class="step"><b>Indique la fecha</b>Confirme la fecha de posesión. Agregue observaciones si son necesarias.</div>
+            <div class="step"><b>Guarde</b>El registro quedará inicialmente en estado <code>En Armería Patrulla</code>.</div>
+        </div>
+        <div class="note">Antes de guardar, confirme especialmente el L.P. y el número del arma. El registro conservará esos datos como constancia histórica.</div>
+    </section>
+
+    <section id="estados">
+        <h2>Estados de una retención</h2>
+        <div class="cards">
+            <div class="card armory"><b>En Armería Patrulla</b>Estado inicial al recibir el arma.</div>
+            <div class="card central"><b>En Jefatura Central</b>Se utiliza cuando el arma fue elevada.</div>
+            <div class="card returned"><b>Devuelta</b>Finaliza la retención al devolver el arma.</div>
+        </div>
+        <h3>Elevar a Jefatura</h3>
+        <p>Abra el detalle de la retención, presione la acción de elevación y confirme la fecha. El estado cambiará a <code>En Jefatura Central</code>.</p>
+        <h3>Registrar devolución</h3>
+        <p>Abra el detalle, presione la acción de devolución y confirme la fecha. El estado cambiará a <code>Devuelta</code> y el funcionario podrá tener una nueva retención en el futuro.</p>
+    </section>
+
+    <section id="dias">
+        <h2>Días y alertas</h2>
+        <p>Cuando el motivo corresponde a una <code>RETENCIÓN</code> y tiene días configurados, el sistema calcula el plazo desde la fecha de posesión.</p>
+        <ul class="check">
+            <li>Las retenciones próximas a vencer aparecen destacadas.</li>
+            <li>El cálculo se actualiza a partir del motivo y la fecha.</li>
+            <li>Regulación y resguardo pueden no utilizar plazo.</li>
+        </ul>
+    </section>
+
+    <section id="buscar">
+        <h2>Buscar y filtrar</h2>
+        <p>En el listado puede buscar por funcionario, L.P. o número de arma. También puede filtrar por:</p>
+        <p><code>Estado</code> <code>Tipo</code> <code>Motivo</code></p>
+        <p>La opción de exportación genera una planilla con los resultados filtrados.</p>
+    </section>
+
+    <section id="personal">
+        <h2>Datos provenientes de Personal 911</h2>
+        <p>El sistema actualiza automáticamente el personal activo, la jerarquía, el arma y los chalecos informados. Esta actualización se realiza diariamente.</p>
+        <div class="note warning">Si Personal 911 tiene un arma o chaleco mal cargado y necesita corregirlo localmente, edite el funcionario desde Control de Armas y registre el motivo. La sincronización diaria conservará esa corrección y mostrará una discrepancia hasta que la fuente sea corregida.</div>
+        <h3>Arma duplicada</h3>
+        <p>Si una misma arma o chaleco figura asignado a dos funcionarios activos, ninguno podrá utilizar ese bien hasta que se corrija la fuente.</p>
+        <p>En el Dashboard, abra la pestaña <code>Novedades</code> y busque <code>Estado de procesos y Base de datos</code>. El bloque <code>Conflictos de inventario</code> muestra duplicados y correcciones protegidas; los botones de detalle informan funcionarios, L.P., jerarquías y diferencias entre el dato local y Personal 911.</p>
+    </section>
+
+    <section id="permisos">
+        <h2>¿Qué puede hacer cada usuario?</h2>
+        <table>
+            <thead><tr><th>Permiso</th><th>Permite</th></tr></thead>
+            <tbody>
+                <tr><td>Ver retenciones</td><td>Consultar listado y detalles.</td></tr>
+                <tr><td>Crear retenciones</td><td>Registrar nuevas operaciones.</td></tr>
+                <tr><td>Editar retenciones</td><td>Modificar, elevar y devolver.</td></tr>
+                <tr><td>Borrar retenciones</td><td>Eliminar lógicamente un registro.</td></tr>
+                <tr><td>Administrar motivos</td><td>Crear, editar o eliminar causas.</td></tr>
+                <tr><td>Administrar tipos</td><td>Crear, editar o desactivar tipos de arma.</td></tr>
+                <tr><td>Administrar personal</td><td>Consultar o gestionar asignaciones manuales.</td></tr>
+            </tbody>
+        </table>
+        <p>Los botones que el usuario no tiene autorizados se ocultan. Los permisos son asignados por un administrador mediante roles.</p>
+    </section>
+
+    <section id="problemas">
+        <h2>Problemas frecuentes</h2>
+        <details><summary>No encuentro al funcionario</summary><p>Confirme que figure como Activo Efectivo en Personal 911, que tenga un arma asignada y que no posea otra retención abierta.</p></details>
+        <details><summary>El funcionario tiene otra jerarquía</summary><p>La jerarquía se toma de Personal 911. Solicite allí la corrección y espere la próxima sincronización, o contacte al administrador para ejecutarla manualmente.</p></details>
+        <details><summary>No aparece el chaleco</summary><p>El chaleco se obtiene de las observaciones de Personal 911. Debe estar informado con un número de serie reconocible.</p></details>
+        <details><summary>No puedo seleccionar un arma</summary><p>Puede estar duplicada entre dos funcionarios activos. El administrador puede revisar el reporte de sincronización.</p></details>
+        <details><summary>Corregí un arma y volvió a aparecer una advertencia</summary><p>Es normal: la corrección local queda protegida, pero el Dashboard seguirá mostrando la discrepancia hasta que Personal 911 tenga el mismo dato.</p></details>
+        <details><summary>No puedo crear otra retención</summary><p>Debe finalizar primero la retención anterior mediante devolución.</p></details>
+        <details><summary>No veo un botón</summary><p>Su rol no tiene el permiso correspondiente. Consulte con un administrador.</p></details>
+        <details><summary>Guardé un motivo y apareció un error</summary><p>Actualice la página y verifique si el motivo fue creado. Si el problema continúa, informe el texto exacto del error al área técnica.</p></details>
+    </section>
+
+    <section id="buenas-practicas">
+        <h2>Buenas prácticas</h2>
+        <ul class="check">
+            <li>Verifique funcionario, L.P. y arma antes de confirmar.</li>
+            <li>Use observaciones claras, breves y objetivas.</li>
+            <li>Registre elevaciones y devoluciones el día en que ocurren.</li>
+            <li>No comparta su usuario; todas las acciones quedan auditadas.</li>
+            <li>Informe duplicados o datos incorrectos para corregir la fuente.</li>
+        </ul>
+    </section>
+</main>
+<footer>Manual de usuario · Control de Armas · C.A.R. 911 · Versión 2026-07-13</footer>
+</body>
+</html>

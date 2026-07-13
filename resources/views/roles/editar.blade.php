@@ -122,9 +122,6 @@
                                                     'Tareas' => [
                                                         'tarea'
                                                     ],
-                                                    'Personal Efectivo' => [
-                                                        'personal'
-                                                    ],
                                                     'Claves' => [
                                                         'clave'
                                                     ],
@@ -133,6 +130,7 @@
                                                         'tipo-bien'
                                                     ],
                                                     'Control de Armas' => [
+                                                        'menu-armamento',
                                                         'arma-retencion',
                                                         'arma-motivo',
                                                         'arma-tipo',

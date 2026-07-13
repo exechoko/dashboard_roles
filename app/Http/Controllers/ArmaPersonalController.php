@@ -8,6 +8,7 @@ use App\Models\ArmaTipo;
 use App\Models\Personal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ArmaPersonalController extends Controller
@@ -74,8 +75,21 @@ class ArmaPersonalController extends Controller
     {
         $data = $request->validated();
         $data['created_by'] = auth()->id();
+        $numeracionArma = $data['numeracion_arma'];
+        $armaTipoId = (int) $data['arma_tipo_id'];
+        $numeroChaleco = $data['nro_chaleco'] ?? null;
+        unset($data['numeracion_arma'], $data['arma_tipo_id'], $data['nro_chaleco']);
 
-        Personal::create($data);
+        DB::transaction(function () use ($data, $numeracionArma, $armaTipoId, $numeroChaleco): void {
+            $personal = Personal::create($data);
+            $personal->cambiarArma(
+                $numeracionArma,
+                $armaTipoId,
+                $numeroChaleco,
+                now()->toDateString(),
+                'Asignación inicial'
+            );
+        });
 
         return redirect()->route('armas.personal.index')->with('success', 'Funcionario creado correctamente.');
     }
@@ -92,20 +106,24 @@ class ArmaPersonalController extends Controller
         $data = $request->validated();
         $data['updated_by'] = auth()->id();
 
-        if (!empty($data['cambiar_arma']) && !empty($data['numeracion_arma']) && !empty($data['arma_tipo_id'])) {
-            $personal->cambiarArma(
-                $data['numeracion_arma'],
-                $data['arma_tipo_id'],
-                $data['nro_chaleco'] ?? null,
-                now()->toDateString(),
-                $data['motivo_cambio'] ?? 'Cambio por administración'
-            );
-        }
+        DB::transaction(function () use ($data, $personal): void {
+            if (!empty($data['cambiar_arma']) && !empty($data['numeracion_arma']) && !empty($data['arma_tipo_id'])) {
+                $personal->cambiarArma(
+                    $data['numeracion_arma'],
+                    $data['arma_tipo_id'],
+                    $data['nro_chaleco'] ?? null,
+                    now()->toDateString(),
+                    $data['motivo_cambio'] ?? 'Cambio por administración',
+                    $personal->personal911_id !== null,
+                    auth()->id()
+                );
+            }
 
-        $personal->update([
-            'jerarquia' => $data['jerarquia'],
-            'updated_by' => auth()->id(),
-        ]);
+            $personal->update([
+                'jerarquia' => $data['jerarquia'],
+                'updated_by' => auth()->id(),
+            ]);
+        });
 
         return redirect()->route('armas.personal.index')->with('success', 'Funcionario actualizado correctamente.');
     }

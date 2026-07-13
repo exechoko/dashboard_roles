@@ -3,11 +3,10 @@
 namespace App\Imports;
 
 use App\Models\ArmaMotivo;
-use App\Models\ArmaRetencion;
 use App\Models\Personal;
+use App\Services\ArmaRetencionService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
@@ -16,6 +15,10 @@ class ArmaRetencionImport implements ToCollection, WithHeadingRow, WithValidatio
 {
     private $created = 0;
     private $errors = [];
+
+    public function __construct(private ArmaRetencionService $service)
+    {
+    }
 
     public function collection(Collection $rows)
     {
@@ -39,21 +42,13 @@ class ArmaRetencionImport implements ToCollection, WithHeadingRow, WithValidatio
                     continue;
                 }
 
-                // Determinar tipo según el motivo
-                $tipo = $motivo->tipo_asignado;
-
-                // Crear retención
-                ArmaRetencion::create([
+                $this->service->crear([
                     'personal_id' => $personal->id,
-                    'tipo' => $tipo,
                     'motivo_id' => $motivo->id,
                     'fecha_posesion' => $this->parseDate($row['fecha_posesion'] ?? now()),
-                    'dias_restantes' => $row['dias_restantes'] ?? null,
                     'fecha_elevacion' => isset($row['fecha_elevacion']) ? $this->parseDate($row['fecha_elevacion']) : null,
                     'fecha_devolucion' => isset($row['fecha_devolucion']) ? $this->parseDate($row['fecha_devolucion']) : null,
                     'observaciones' => $row['observaciones'] ?? null,
-                    'estado' => $this->determinarEstado($row),
-                    'created_by' => Auth::id(),
                 ]);
 
                 $this->created++;
@@ -74,6 +69,7 @@ class ArmaRetencionImport implements ToCollection, WithHeadingRow, WithValidatio
         if ($lp) {
             $personal = Personal::where('lp', $lp)->first();
             if ($personal) {
+                $this->asegurarInventario($personal, $row, $armaTipoId);
                 return $personal;
             }
         }
@@ -84,21 +80,23 @@ class ArmaRetencionImport implements ToCollection, WithHeadingRow, WithValidatio
                 ->where('apellido', 'like', "%{$apellido}%")
                 ->first();
             if ($personal) {
+                $this->asegurarInventario($personal, $row, $armaTipoId);
                 return $personal;
             }
         }
 
         // Crear nuevo personal si no existe
         if ($nombre && $apellido && $lp) {
-            return Personal::create([
+            $personal = Personal::create([
                 'nombre' => $nombre,
                 'apellido' => $apellido,
                 'lp' => $lp,
                 'jerarquia' => $jerarquia,
-                'numeracion_arma' => $row['numeracion_arma'] ?? '',
-                'arma_tipo_id' => $armaTipoId,
-                'nro_chaleco' => $row['nro_chaleco'] ?? null,
             ]);
+
+            $this->asegurarInventario($personal, $row, $armaTipoId);
+
+            return $personal;
         }
 
         return null;
@@ -109,6 +107,23 @@ class ArmaRetencionImport implements ToCollection, WithHeadingRow, WithValidatio
         $tipo = \App\Models\ArmaTipo::where('nombre', 'like', "%{$nombre}%")->first();
 
         return $tipo?->id;
+    }
+
+    private function asegurarInventario(Personal $personal, Collection $row, ?int $armaTipoId): void
+    {
+        $numeroArma = trim((string) ($row['numeracion_arma'] ?? ''));
+
+        if ($personal->tieneArmaAsignada() || $numeroArma === '' || $armaTipoId === null) {
+            return;
+        }
+
+        $personal->cambiarArma(
+            $numeroArma,
+            $armaTipoId,
+            $row['nro_chaleco'] ?? null,
+            $this->parseDate($row['fecha_posesion'] ?? now()) ?? now()->toDateString(),
+            'Asignación creada durante importación de retenciones'
+        );
     }
 
     private function buscarMotivo(string $motivoNombre): ?ArmaMotivo
@@ -142,19 +157,6 @@ class ArmaRetencionImport implements ToCollection, WithHeadingRow, WithValidatio
         }
 
         return now()->format('Y-m-d');
-    }
-
-    private function determinarEstado($row): string
-    {
-        if (!empty($row['fecha_devolucion'])) {
-            return 'DEVUELTA';
-        }
-
-        if (!empty($row['fecha_elevacion'])) {
-            return 'EN_JEF_CENTRAL';
-        }
-
-        return 'EN_ARMERIA';
     }
 
     public function rules(): array

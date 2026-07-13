@@ -30,12 +30,12 @@ class ArmaRetencionController extends Controller
         $alertas_vencimiento = ArmaRetencion::where('estado', 'EN_ARMERIA')
             ->whereNotNull('dias_restantes')
             ->where('dias_restantes', '<=', 15)
-            ->with(['personal', 'motivo'])
+            ->with(['personal', 'motivo', 'arma.tipo', 'chaleco'])
             ->orderBy('dias_restantes')
             ->get();
 
         $query = ArmaRetencion::query()
-            ->with(['personal', 'motivo', 'creadoPor']);
+            ->with(['personal', 'motivo', 'creadoPor', 'arma.tipo', 'chaleco']);
 
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
@@ -57,7 +57,7 @@ class ArmaRetencionController extends Controller
                        ->orWhere('apellido', 'like', "%{$busqueda}%")
                        ->orWhere('lp', 'like', "%{$busqueda}%")
                        ->orWhere('numeracion_arma', 'like', "%{$busqueda}%");
-                });
+                })->orWhere('arma_numero', 'like', "%{$busqueda}%");
             });
         }
 
@@ -71,7 +71,9 @@ class ArmaRetencionController extends Controller
     {
         $personales = Personal::whereDoesntHave('retenciones', function ($query) {
             $query->whereIn('estado', ['EN_ARMERIA', 'EN_JEF_CENTRAL']);
-        })->whereNotNull('numeracion_arma')->orderBy('apellido')->orderBy('nombre')->get();
+        })->whereHas('armaAsignacionActual')
+            ->with(['armaAsignacionActual.arma.tipo', 'chalecoAsignacionActual.chaleco'])
+            ->orderBy('apellido')->orderBy('nombre')->get();
         $motivos = ArmaMotivo::activos()->orderBy('nombre')->get();
 
         return view('arma-retenciones.crear', compact('personales', 'motivos'));
@@ -86,14 +88,18 @@ class ArmaRetencionController extends Controller
 
     public function show(ArmaRetencion $armaRetencion): View
     {
-        $armaRetencion->load(['personal.tipoArma', 'motivo', 'creadoPor', 'actualizadoPor']);
+        $armaRetencion->load(['personal.tipoArma', 'arma.tipo', 'chaleco', 'motivo', 'creadoPor', 'actualizadoPor']);
 
         return view('arma-retenciones.show', compact('armaRetencion'));
     }
 
     public function edit(ArmaRetencion $armaRetencion): View
     {
-        $personales = Personal::orderBy('apellido')->orderBy('nombre')->get();
+        $personales = Personal::with(['armaAsignacionActual.arma.tipo', 'chalecoAsignacionActual.chaleco'])
+            ->where(function ($query) use ($armaRetencion) {
+                $query->whereHas('armaAsignacionActual')->orWhereKey($armaRetencion->personal_id);
+            })
+            ->orderBy('apellido')->orderBy('nombre')->get();
         $motivos = ArmaMotivo::activos()->orderBy('nombre')->get();
 
         return view('arma-retenciones.editar', compact('armaRetencion', 'personales', 'motivos'));
@@ -155,7 +161,7 @@ class ArmaRetencionController extends Controller
         ]);
 
         try {
-            $import = new ArmaRetencionImport();
+            $import = app(ArmaRetencionImport::class);
             Excel::import($import, $request->file('archivo'));
 
             $mensaje = "Importación completada. {$import->getCreated()} registros creados.";

@@ -34,6 +34,10 @@ class Kernel extends ConsoleKernel
                 app(TelegramService::class)->notificarScheduleFallido('tareas:avisar', 'El comando finalizó con error.');
             });
 
+        $schedule->command('armas:importar-personal911')->dailyAt('05:30')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/armas_personal911.log'));
+
         $schedule->command('cecoco:importar-dia-anterior')->dailyAt('06:00')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/cecoco_importacion.log'))

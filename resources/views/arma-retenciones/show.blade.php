@@ -58,15 +58,20 @@
                             <table class="table table-borderless">
                                 <tr>
                                     <th style="width: 40%">Numeración:</th>
-                                    <td>{{ $armaRetencion->personal->numeracion_arma ?? '-' }}</td>
+                                    <td>{{ $armaRetencion->arma_numero ?? $armaRetencion->arma?->numero ?? '-' }}</td>
                                 </tr>
                                 <tr>
                                     <th>Tipo:</th>
-                                    <td>{{ $armaRetencion->personal->tipoArma?->nombre ?? '-' }}</td>
+                                    <td>{{ $armaRetencion->arma_tipo ?? $armaRetencion->arma?->tipo?->nombre ?? '-' }}</td>
                                 </tr>
                                 <tr>
                                     <th>N° Chaleco:</th>
-                                    <td>{{ $armaRetencion->personal->nro_chaleco ?? '-' }}</td>
+                                    <td>
+                                        {{ $armaRetencion->chaleco_numero ?? $armaRetencion->chaleco?->numero_serie ?? '-' }}
+                                        @if($armaRetencion->chaleco_detalle)
+                                            <br><small class="text-muted">{{ $armaRetencion->chaleco_detalle }}</small>
+                                        @endif
+                                    </td>
                                 </tr>
                             </table>
                         </div>

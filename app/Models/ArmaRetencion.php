@@ -15,6 +15,12 @@ class ArmaRetencion extends Model
 
     protected $fillable = [
         'personal_id',
+        'arma_id',
+        'chaleco_id',
+        'arma_numero',
+        'arma_tipo',
+        'chaleco_numero',
+        'chaleco_detalle',
         'tipo',
         'motivo_id',
         'fecha_posesion',
@@ -36,12 +42,22 @@ class ArmaRetencion extends Model
 
     public function personal(): BelongsTo
     {
-        return $this->belongsTo(Personal::class);
+        return $this->belongsTo(Personal::class)->withTrashed();
     }
 
     public function motivo(): BelongsTo
     {
         return $this->belongsTo(ArmaMotivo::class, 'motivo_id');
+    }
+
+    public function arma(): BelongsTo
+    {
+        return $this->belongsTo(Arma::class);
+    }
+
+    public function chaleco(): BelongsTo
+    {
+        return $this->belongsTo(Chaleco::class);
     }
 
     public function creadoPor(): BelongsTo

@@ -97,7 +97,8 @@ class ArmaRetencionController extends Controller
     {
         $personales = Personal::with(['armaAsignacionActual.arma.tipo', 'chalecoAsignacionActual.chaleco'])
             ->where(function ($query) use ($armaRetencion) {
-                $query->whereHas('armaAsignacionActual')->orWhereKey($armaRetencion->personal_id);
+                $query->whereHas('armaAsignacionActual')
+                    ->orWhere('id', $armaRetencion->personal_id);
             })
             ->orderBy('apellido')->orderBy('nombre')->get();
         $motivos = ArmaMotivo::activos()->orderBy('nombre')->get();

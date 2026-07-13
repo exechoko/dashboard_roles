@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ArmaRetencion extends Model
@@ -31,6 +32,9 @@ class ArmaRetencion extends Model
         'estado',
         'created_by',
         'updated_by',
+        'motivo_eliminacion',
+        'eliminado_por',
+        'eliminado_en',
     ];
 
     protected $casts = [
@@ -38,6 +42,7 @@ class ArmaRetencion extends Model
         'fecha_elevacion' => 'date',
         'fecha_devolucion' => 'date',
         'dias_restantes' => 'integer',
+        'eliminado_en' => 'datetime',
     ];
 
     public function personal(): BelongsTo
@@ -88,6 +93,16 @@ class ArmaRetencion extends Model
     public function scopeActivas($query)
     {
         return $query->whereIn('estado', ['EN_ARMERIA', 'EN_JEF_CENTRAL']);
+    }
+
+    public function eliminadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'eliminado_por');
+    }
+
+    public function historial(): HasMany
+    {
+        return $this->hasMany(ArmaRetencionHistorial::class)->orderByDesc('created_at');
     }
 
     public function getEstadoLabelAttribute(): string

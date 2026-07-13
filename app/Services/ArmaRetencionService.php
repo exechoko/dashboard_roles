@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Arma;
 use App\Models\ArmaMotivo;
 use App\Models\ArmaRetencion;
+use App\Models\ArmaRetencionHistorial;
 use App\Models\Auditoria;
 use App\Models\Chaleco;
 use App\Models\Personal;
@@ -87,6 +88,7 @@ class ArmaRetencionService
             $retencion->save();
 
             $this->auditar($retencion, 'CREAR', 'Registro creado: Funcionario ' . $personal->nombre_completo . ' - Arma ' . $retencion->arma_numero);
+            $this->registrarHistorial($retencion, 'CREAR', $datos['comentario'] ?? null);
 
             DB::commit();
 
@@ -140,6 +142,7 @@ class ArmaRetencionService
 
             if (!empty($cambios)) {
                 $this->auditar($retencion, 'ACTUALIZAR', implode(', ', $cambios));
+                $this->registrarHistorial($retencion, 'MODIFICAR', $datos['comentario'] ?? null, ['cambios' => $cambios]);
             }
 
             DB::commit();
@@ -155,7 +158,7 @@ class ArmaRetencionService
     /**
      * Registrar elevación del arma a Jefatura Central.
      */
-    public function elevar(ArmaRetencion $retencion, ?string $fechaElevacion = null): ArmaRetencion
+    public function elevar(ArmaRetencion $retencion, ?string $fechaElevacion = null, ?string $comentario = null): ArmaRetencion
     {
         DB::beginTransaction();
 
@@ -168,6 +171,7 @@ class ArmaRetencionService
             $retencion->save();
 
             $this->auditar($retencion, 'ELEVAR', 'Arma elevada a Jefatura Central en fecha ' . $fecha->format('d/m/Y'));
+            $this->registrarHistorial($retencion, 'ELEVAR', $comentario, ['fecha_elevacion' => $fecha->format('d/m/Y')]);
 
             DB::commit();
 
@@ -182,7 +186,7 @@ class ArmaRetencionService
     /**
      * Registrar devolución del arma al funcionario.
      */
-    public function devolver(ArmaRetencion $retencion, ?string $fechaDevolucion = null): ArmaRetencion
+    public function devolver(ArmaRetencion $retencion, ?string $fechaDevolucion = null, ?string $comentario = null): ArmaRetencion
     {
         DB::beginTransaction();
 
@@ -195,6 +199,7 @@ class ArmaRetencionService
             $retencion->save();
 
             $this->auditar($retencion, 'DEVOLVER', 'Arma devuelta a funcionario en fecha ' . $fecha->format('d/m/Y'));
+            $this->registrarHistorial($retencion, 'DEVOLVER', $comentario, ['fecha_devolucion' => $fecha->format('d/m/Y')]);
 
             DB::commit();
 
@@ -209,16 +214,20 @@ class ArmaRetencionService
     /**
      * Eliminar (soft delete) un registro.
      */
-    public function eliminar(ArmaRetencion $retencion): void
+    public function eliminar(ArmaRetencion $retencion, string $motivo): void
     {
         DB::beginTransaction();
 
         try {
-            $this->auditar($retencion, 'ELIMINAR', 'Registro eliminado: Funcionario ' . $retencion->personal->nombre_completo . ' - Arma ' . $retencion->arma_numero);
-
+            $retencion->motivo_eliminacion = $motivo;
+            $retencion->eliminado_por = Auth::id();
+            $retencion->eliminado_en = now();
             $retencion->updated_by = Auth::id();
             $retencion->save();
             $retencion->delete();
+
+            $this->auditar($retencion, 'ELIMINAR', 'Registro eliminado por ' . Auth::user()->name . '. Motivo: ' . $motivo);
+            $this->registrarHistorial($retencion, 'ELIMINAR', $motivo);
 
             DB::commit();
         } catch (\Exception $e) {
@@ -244,6 +253,29 @@ class ArmaRetencionService
                 'detalle' => $cambios,
             ]),
         ]);
+    }
+
+    /**
+     * Registrar entrada en el historial de la retención.
+     */
+    private function registrarHistorial(ArmaRetencion $retencion, string $accion, ?string $comentario = null, ?array $datos = null): void
+    {
+        ArmaRetencionHistorial::create([
+            'arma_retencion_id' => $retencion->id,
+            'accion' => $accion,
+            'user_id' => Auth::id(),
+            'comentario' => $comentario,
+            'datos_adicionales' => $datos,
+            'created_at' => now(),
+        ]);
+    }
+
+    /**
+     * Agregar un comentario independiente a la retención.
+     */
+    public function agregarComentario(ArmaRetencion $retencion, string $comentario): void
+    {
+        $this->registrarHistorial($retencion, 'COMENTARIO', $comentario);
     }
 
     /**

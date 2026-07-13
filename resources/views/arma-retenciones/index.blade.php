@@ -63,7 +63,6 @@
                                     <option value="">Todos los estados</option>
                                     <option value="EN_ARMERIA" {{ request('estado') == 'EN_ARMERIA' ? 'selected' : '' }}>En Armería</option>
                                     <option value="EN_JEF_CENTRAL" {{ request('estado') == 'EN_JEF_CENTRAL' ? 'selected' : '' }}>En Jef. Central</option>
-                                    <option value="DEVUELTA" {{ request('estado') == 'DEVUELTA' ? 'selected' : '' }}>Devuelta</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -143,14 +142,13 @@
                                                 </a>
                                             @endcan
                                             @can('borrar-arma-retencion')
-                                                <form action="{{ route('armas.retenciones.destroy', $retencion) }}" method="POST" class="d-inline"
-                                                      onsubmit="return confirm('¿Está seguro de eliminar esta retención?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </form>
+                                                <button type="button" class="btn btn-sm btn-danger" title="Eliminar"
+                                                        data-toggle="modal" data-target="#eliminarModal"
+                                                        data-id="{{ $retencion->id }}"
+                                                        data-funcionario="{{ $retencion->personal->apellido }}, {{ $retencion->personal->nombre }}"
+                                                        data-arma="{{ $retencion->arma_numero ?? $retencion->arma?->numero ?? 'N/A' }}">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
                                             @endcan
                                         </td>
                                     </tr>
@@ -164,8 +162,125 @@
                     </div>
 
                     {{ $retenciones->links() }}
+
+                    @if ($ultimasDevoluciones->isNotEmpty())
+                        <div class="mt-4">
+                            <button class="btn btn-outline-secondary btn-block" type="button" data-toggle="collapse" data-target="#devolucionesCollapse" aria-expanded="false" aria-controls="devolucionesCollapse">
+                                <i class="fas fa-archive"></i> Últimas devoluciones ({{ $ultimasDevoluciones->count() }})
+                                <i class="fas fa-chevron-down ml-2 toggle-icon"></i>
+                            </button>
+                            <div class="collapse" id="devolucionesCollapse">
+                                <div class="card card-body mt-2">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0 text-muted"><i class="fas fa-check-circle text-success"></i> Armas devueltas a funcionarios</h6>
+                                        <a href="{{ route('armas.retenciones.historial') }}" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-history"></i> Ver historial completo
+                                        </a>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-hover">
+                                            <thead class="thead-light">
+                                                <tr>
+                                                    <th>Funcionario</th>
+                                                    <th>Arma</th>
+                                                    <th>Tipo</th>
+                                                    <th>Fec. Devolución</th>
+                                                    <th>Estado</th>
+                                                    <th class="text-right">Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($ultimasDevoluciones as $devuelta)
+                                                    <tr>
+                                                        <td>
+                                                            {{ $devuelta->personal->apellido }}, {{ $devuelta->personal->nombre }}
+                                                        </td>
+                                                        <td>{{ $devuelta->arma_numero ?? $devuelta->arma?->numero ?? '-' }}</td>
+                                                        <td>
+                                                            <span class="badge badge-{{ $devuelta->tipo == 'RETENCIÓN' ? 'warning' : ($devuelta->tipo == 'REGULACIÓN' ? 'info' : 'secondary') }}">
+                                                                {{ $devuelta->tipo_label }}
+                                                            </span>
+                                                        </td>
+                                                        <td>{{ optional($devuelta->fecha_devolucion)->format('d/m/Y') ?? '-' }}</td>
+                                                        <td>
+                                                            <span class="badge badge-success">{{ $devuelta->estado_label }}</span>
+                                                        </td>
+                                                        <td class="text-right">
+                                                            <a href="{{ route('armas.retenciones.show', $devuelta) }}" class="btn btn-sm btn-outline-info" title="Ver detalle">
+                                                                <i class="fas fa-eye"></i>
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
     </section>
+
+    @can('borrar-arma-retencion')
+        <div class="modal fade" id="eliminarModal" tabindex="-1" role="dialog" aria-labelledby="eliminarModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="eliminarModalLabel">
+                            <i class="fas fa-exclamation-triangle"></i> Confirmar eliminación
+                        </h5>
+                        <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <form id="eliminarForm" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <div class="modal-body">
+                            <div class="alert alert-warning">
+                                <strong>Esta acción es irreversible.</strong> Solo debe usarse en caso de registro por error operativo.
+                            </div>
+                            <p>Está por eliminar la retención de: <strong id="eliminarFuncionario"></strong></p>
+                            <p>Arma: <strong id="eliminarArma"></strong></p>
+                            <div class="form-group">
+                                <label for="motivo_eliminacion">Motivo de la eliminación <span class="text-danger">*</span></label>
+                                <textarea name="motivo_eliminacion" id="motivo_eliminacion" class="form-control" rows="3"
+                                          placeholder="Describa el motivo por el cual se elimina este registro..."
+                                          minlength="10" maxlength="500" required></textarea>
+                                <small class="form-text text-muted">Mínimo 10 caracteres. Este motivo queda registrado en la auditoría.</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Eliminar registro
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endcan
 @endsection
+
+@push('scripts')
+    <script>
+        $(function () {
+            $('#eliminarModal').on('show.bs.modal', function (event) {
+                var button = $(event.relatedTarget);
+                var retencionId = button.data('id');
+                var funcionario = button.data('funcionario');
+                var arma = button.data('arma');
+                var action = "{{ route('armas.retenciones.destroy', '__ID__') }}".replace('__ID__', retencionId);
+                var modal = $(this);
+                modal.find('#eliminarForm').attr('action', action);
+                modal.find('#eliminarFuncionario').text(funcionario);
+                modal.find('#eliminarArma').text(arma);
+                modal.find('#motivo_eliminacion').val('');
+            });
+        });
+    </script>
+@endpush

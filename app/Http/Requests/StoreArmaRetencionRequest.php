@@ -42,6 +42,7 @@ class StoreArmaRetencionRequest extends FormRequest
             'motivo_id'      => 'required|exists:arma_motivos,id',
             'fecha_posesion' => 'required|date',
             'observaciones'  => 'nullable|string|max:1000',
+            'comentario'     => 'nullable|string|max:500',
         ];
     }
 
@@ -55,6 +56,7 @@ class StoreArmaRetencionRequest extends FormRequest
             'fecha_posesion.required' => 'La fecha de posesión es obligatoria.',
             'fecha_posesion.date'    => 'La fecha de posesión debe ser una fecha válida.',
             'observaciones.max'      => 'Las observaciones no pueden superar los 1000 caracteres.',
+            'comentario.max'         => 'El comentario no debe superar los 500 caracteres.',
         ];
     }
 }

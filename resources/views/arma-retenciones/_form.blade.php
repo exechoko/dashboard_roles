@@ -80,6 +80,17 @@
     </div>
 </div>
 
+<div class="row">
+    <div class="col-md-12">
+        <div class="form-group">
+            <label for="comentario">Nota / Comentario (opcional)</label>
+            <textarea name="comentario" id="comentario" class="form-control" rows="2" maxlength="500"
+                      placeholder="Agregue una nota o comentario sobre esta retención...">{{ old('comentario') }}</textarea>
+            <small class="form-text text-muted">Este comentario quedará registrado en el historial de la retención.</small>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 $(document).ready(function() {

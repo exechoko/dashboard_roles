@@ -443,12 +443,15 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('retenciones/importar', [ArmaRetencionController::class, 'importarForm'])->name('retenciones.importar');
         Route::post('retenciones/importar', [ArmaRetencionController::class, 'importar'])->name('retenciones.importar.post');
         Route::get('retenciones/exportar', [ArmaRetencionController::class, 'exportar'])->name('retenciones.exportar');
+        Route::get('retenciones/historial', [ArmaRetencionController::class, 'historial'])->name('retenciones.historial');
         Route::get('retenciones/{armaRetencion}', [ArmaRetencionController::class, 'show'])->name('retenciones.show');
         Route::get('retenciones/{armaRetencion}/edit', [ArmaRetencionController::class, 'edit'])->name('retenciones.edit');
         Route::put('retenciones/{armaRetencion}', [ArmaRetencionController::class, 'update'])->name('retenciones.update');
         Route::delete('retenciones/{armaRetencion}', [ArmaRetencionController::class, 'destroy'])->name('retenciones.destroy');
         Route::post('retenciones/{armaRetencion}/elevar', [ArmaRetencionController::class, 'elevar'])->name('retenciones.elevar');
         Route::post('retenciones/{armaRetencion}/devolver', [ArmaRetencionController::class, 'devolver'])->name('retenciones.devolver');
+        Route::post('retenciones/{armaRetencion}/comentario', [ArmaRetencionController::class, 'agregarComentario'])->name('retenciones.comentario');
+
 
         // Motivos
         Route::resource('motivos', ArmaMotivoController::class)

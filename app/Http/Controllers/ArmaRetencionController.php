@@ -35,7 +35,8 @@ class ArmaRetencionController extends Controller
             ->get();
 
         $query = ArmaRetencion::query()
-            ->with(['personal', 'motivo', 'creadoPor', 'arma.tipo', 'chaleco']);
+            ->with(['personal', 'motivo', 'creadoPor', 'arma.tipo', 'chaleco'])
+            ->activas();
 
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
@@ -64,7 +65,14 @@ class ArmaRetencionController extends Controller
         $retenciones = $query->orderByDesc('fecha_posesion')
             ->paginate(15);
 
-        return view('arma-retenciones.index', compact('retenciones', 'alertas_vencimiento'));
+        $ultimasDevoluciones = ArmaRetencion::query()
+            ->with(['personal', 'motivo', 'arma.tipo', 'chaleco'])
+            ->devueltas()
+            ->orderByDesc('fecha_devolucion')
+            ->limit(10)
+            ->get();
+
+        return view('arma-retenciones.index', compact('retenciones', 'alertas_vencimiento', 'ultimasDevoluciones'));
     }
 
     public function create(): View
@@ -88,7 +96,7 @@ class ArmaRetencionController extends Controller
 
     public function show(ArmaRetencion $armaRetencion): View
     {
-        $armaRetencion->load(['personal.tipoArma', 'arma.tipo', 'chaleco', 'motivo', 'creadoPor', 'actualizadoPor']);
+        $armaRetencion->load(['personal.tipoArma', 'arma.tipo', 'chaleco', 'motivo', 'creadoPor', 'actualizadoPor', 'historial.usuario']);
 
         return view('arma-retenciones.show', compact('armaRetencion'));
     }
@@ -113,9 +121,17 @@ class ArmaRetencionController extends Controller
         return redirect()->route('armas.retenciones.index')->with('success', 'Retención de arma actualizada correctamente.');
     }
 
-    public function destroy(ArmaRetencion $armaRetencion): RedirectResponse
+    public function destroy(Request $request, ArmaRetencion $armaRetencion): RedirectResponse
     {
-        $this->service->eliminar($armaRetencion);
+        $request->validate([
+            'motivo_eliminacion' => 'required|string|min:10|max:500',
+        ], [
+            'motivo_eliminacion.required' => 'Debe proporcionar un motivo para la eliminación.',
+            'motivo_eliminacion.min' => 'El motivo debe tener al menos 10 caracteres.',
+            'motivo_eliminacion.max' => 'El motivo no debe superar los 500 caracteres.',
+        ]);
+
+        $this->service->eliminar($armaRetencion, $request->motivo_eliminacion);
 
         return redirect()->route('armas.retenciones.index')->with('success', 'Retención de arma eliminada correctamente.');
     }
@@ -124,11 +140,12 @@ class ArmaRetencionController extends Controller
     {
         $request->validate([
             'fecha_elevacion' => 'nullable|date',
+            'comentario' => 'nullable|string|max:500',
         ], [
             'fecha_elevacion.date' => 'La fecha de elevación debe ser una fecha válida.',
         ]);
 
-        $this->service->elevar($armaRetencion, $request->fecha_elevacion);
+        $this->service->elevar($armaRetencion, $request->fecha_elevacion, $request->comentario);
 
         return redirect()->route('armas.retenciones.show', $armaRetencion)->with('success', 'Arma elevada a Jefatura Central correctamente.');
     }
@@ -137,13 +154,55 @@ class ArmaRetencionController extends Controller
     {
         $request->validate([
             'fecha_devolucion' => 'nullable|date',
+            'comentario' => 'nullable|string|max:500',
         ], [
             'fecha_devolucion.date' => 'La fecha de devolución debe ser una fecha válida.',
         ]);
 
-        $this->service->devolver($armaRetencion, $request->fecha_devolucion);
+        $this->service->devolver($armaRetencion, $request->fecha_devolucion, $request->comentario);
 
         return redirect()->route('armas.retenciones.show', $armaRetencion)->with('success', 'Arma devuelta al funcionario correctamente.');
+    }
+
+    public function historial(Request $request): View
+    {
+        $query = ArmaRetencion::query()
+            ->with(['personal', 'motivo', 'arma.tipo', 'chaleco'])
+            ->devueltas();
+
+        if ($request->filled('busqueda')) {
+            $busqueda = $request->busqueda;
+            $query->where(function ($q) use ($busqueda) {
+                $q->whereHas('personal', function ($q2) use ($busqueda) {
+                    $q2->where('nombre', 'like', "%{$busqueda}%")
+                       ->orWhere('apellido', 'like', "%{$busqueda}%")
+                       ->orWhere('lp', 'like', "%{$busqueda}%");
+                })->orWhere('arma_numero', 'like', "%{$busqueda}%");
+            });
+        }
+
+        if ($request->filled('tipo')) {
+            $query->where('tipo', $request->tipo);
+        }
+
+        $devoluciones = $query->orderByDesc('fecha_devolucion')->paginate(15);
+
+        return view('arma-retenciones.historial', compact('devoluciones'));
+    }
+
+    public function agregarComentario(Request $request, ArmaRetencion $armaRetencion): RedirectResponse
+    {
+        $request->validate([
+            'comentario' => 'required|string|min:3|max:500',
+        ], [
+            'comentario.required' => 'El comentario es obligatorio.',
+            'comentario.min' => 'El comentario debe tener al menos 3 caracteres.',
+            'comentario.max' => 'El comentario no debe superar los 500 caracteres.',
+        ]);
+
+        $this->service->agregarComentario($armaRetencion, $request->comentario);
+
+        return redirect()->route('armas.retenciones.show', $armaRetencion)->with('success', 'Comentario agregado correctamente.');
     }
 
     public function importarForm(): View

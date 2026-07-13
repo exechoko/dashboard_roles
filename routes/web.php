@@ -578,6 +578,17 @@ Route::group(['middleware' => ['auth']], function () {
 
     // ── Análisis de Períodos 911 ──────────────────────────────────────────────
     Route::prefix('incidencias')->name('incidencias.')->group(function () {
+        Route::prefix('tickets-pg')->name('tickets-pg.')->group(function () {
+            Route::get('/', [App\Http\Controllers\TicketPgController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\TicketPgController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\TicketPgController::class, 'store'])->name('store');
+            Route::get('/{ticket}', [App\Http\Controllers\TicketPgController::class, 'show'])->name('show');
+            Route::get('/{ticket}/edit', [App\Http\Controllers\TicketPgController::class, 'edit'])->name('edit');
+            Route::put('/{ticket}', [App\Http\Controllers\TicketPgController::class, 'update'])->name('update');
+            Route::post('/{ticket}/enviar', [App\Http\Controllers\TicketPgController::class, 'enviar'])->name('enviar');
+            Route::post('/{ticket}/mejorar-redaccion', [App\Http\Controllers\TicketPgController::class, 'mejorarRedaccion'])->name('mejorar-redaccion');
+        });
+
         // Períodos
         Route::prefix('periodos')->name('periodos.')->group(function () {
             Route::get('/',                   [App\Http\Controllers\PeriodoFacturaController::class, 'index'])->name('index');

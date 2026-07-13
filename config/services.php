@@ -91,4 +91,25 @@ return [
         'api_key' => env('API_KEY_THUNDER_FOREST_MAP', ''),
     ],
 
+    // Ticketera HESK (help desk) — lado admin.
+    'ticketera' => [
+        'url'               => env('TICKETERA_URL'),
+        'usuario'           => env('TICKETERA_USUARIO'),
+        'password'          => env('TICKETERA_PASSWORD'),
+        'timeout'           => (int) env('TICKETERA_TIMEOUT', 30),
+        'login_path'        => env('TICKETERA_LOGIN_PATH', 'admin/index.php'),
+        'admin_path'        => env('TICKETERA_ADMIN_PATH', 'admin/admin_main.php'),
+        'nuevo_ticket_path' => env('TICKETERA_NUEVO_TICKET_PATH', 'admin/new_ticket.php'),
+        'submit_path'       => env('TICKETERA_SUBMIT_PATH', 'admin/admin_submit_ticket.php'),
+        // Cliente (obligatorio en HESK) y staff asignado; se obtienen una vez del panel.
+        'customer_id'       => env('TICKETERA_CUSTOMER_ID'),
+        'owner_id'          => env('TICKETERA_OWNER_ID'),
+        'status'            => env('TICKETERA_STATUS'),
+        'nombre'            => env('TICKETERA_NOMBRE', 'Tecnica 911'),
+        'email'             => env('TICKETERA_EMAIL', env('TICKETERA_USUARIO')),
+        // Seguro: en true NO se envía nada a la ticketera (solo simula y loguea).
+        // Por defecto true para evitar envíos accidentales; poner false para enviar de verdad.
+        'dry_run'           => filter_var(env('TICKETERA_DRY_RUN', true), FILTER_VALIDATE_BOOLEAN),
+    ],
+
 ];

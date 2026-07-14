@@ -151,6 +151,13 @@ class SeederTablaPermisos extends Seeder
             'editar-entrega-combustible',
             'borrar-entrega-combustible',
 
+            //Actas de Credenciales
+            'ver-menu-constancias-credenciales',
+            'ver-constancias-credenciales',
+            'crear-constancias-credenciales',
+            'editar-constancias-credenciales',
+            'borrar-constancias-credenciales',
+
             //Bodycams
             'ver-bodycam',
             'crear-bodycam',

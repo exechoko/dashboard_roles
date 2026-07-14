@@ -41,6 +41,10 @@ use App\Http\Controllers\WebDependenciaController;
 use App\Http\Controllers\WebGaleriaImagenController;
 use App\Http\Controllers\WebHistoriaCardController;
 use App\Http\Controllers\WebTechCardController;
+use App\Http\Controllers\ArmaRetencionController;
+use App\Http\Controllers\ArmaMotivoController;
+use App\Http\Controllers\ArmaTipoController;
+use App\Http\Controllers\ArmaPersonalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -109,7 +113,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('tareas/personal-efectivo', [PersonalController::class, 'index'])->name('personal.efectivo.index');
 
     // 🔹 TAREAS (CRUD)
-    Route::resource('tareas', TareaController::class);
+    Route::resource('tareas', TareaController::class)->except(['show']);
 
     // 🔹 ITEMS DE TAREAS
     Route::patch('tareas-items/{id}', [TareaController::class, 'updateItem'])->name('tareas.items.update');
@@ -136,12 +140,12 @@ Route::group(['middleware' => ['auth']], function () {
         ->names('cecoco.recursos-alias');
     Route::resource('flota', FlotaGeneralController::class);
     Route::resource('camaras', CamaraController::class);
-    Route::resource('camaras_fisicas', CamaraFisicaController::class);
+    Route::resource('camaras_fisicas', CamaraFisicaController::class)->only(['index']);
     Route::resource('mapa', MapaController::class);
     Route::resource('tipo-camara', TipoCamaraController::class);
-    Route::resource('auditoria', AuditoriaController::class);
+    Route::resource('auditoria', AuditoriaController::class)->only(['index']);
     Route::resource('sitios', SitioController::class);
-    Route::resource('plano-edificio', PlanoEdificioController::class);
+    Route::resource('plano-edificio', PlanoEdificioController::class)->only(['index']);
 
     // API endpoints para el plano del edificio
     Route::prefix('api/plano-edificio')->group(function () {
@@ -157,15 +161,6 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 
-    Route::post('dependencias/store-general', [DependenciaController::class, 'storeGeneral'])->name('dependencias.store-general');
-    Route::get('get-posibles-padres', [DependenciaController::class, 'getPosiblesPadres'])->name('getPosiblesPadres');
-    Route::get('get-dependencias-por-tipo', [DependenciaController::class, 'getDependenciasPorTipo'])->name('getDependenciasPorTipo');
-    Route::get('get-departamentales', [App\Http\Controllers\DependenciaController::class, 'getDepartamentales'])->name('getDepartamentales');
-    Route::get('get-divisiones', [App\Http\Controllers\DependenciaController::class, 'getDivisiones'])->name('getDivisiones');
-    Route::get('get-comisarias', [App\Http\Controllers\DependenciaController::class, 'getComisarias'])->name('getComisarias');
-
-    Route::get('/generate-docx/{id}', [App\Http\Controllers\FlotaGeneralController::class, 'generateDocx'])->name('generateDocx');
-    Route::get('/generate-docx/{id}', [App\Http\Controllers\FlotaGeneralController::class, 'generateDocxConTemplate'])->name('generateDocxConTemplate');
     Route::get('/generate-docx/{id}', [App\Http\Controllers\FlotaGeneralController::class, 'generateDocxConTabla'])->name('generateDocxConTabla');
     Route::get('/ver-historico/{id}', [App\Http\Controllers\FlotaGeneralController::class, 'verHistorico'])->name('verHistorico');
     Route::get('/flota/historico/{id}/imprimir', [FlotaGeneralController::class, 'imprimirHistorico'])->name('flota.historico.imprimir');
@@ -203,7 +198,6 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/export-sitios', [App\Http\Controllers\SitioController::class, 'exportExcel'])->name('sitios.export');
     Route::get('/export-equipos', [App\Http\Controllers\EquipoController::class, 'exportExcel'])->name('equipos.export');
     Route::post('/import-camaras-fisicas', [App\Http\Controllers\CamaraFisicaController::class, 'importExcel'])->name('camaras-fisicas.import');
-    Route::get('/export-camaras-fisicas', [App\Http\Controllers\CamaraFisicaController::class, 'exportExcel'])->name('camaras-fisicas.export');
 
     Route::get('/indexMoviles', [App\Http\Controllers\CecocoController::class, 'indexMoviles'])->name('indexMoviles');
     Route::get('/indexLlamadas', [App\Http\Controllers\CecocoController::class, 'indexLlamadas'])->name('indexLlamadas');
@@ -262,6 +256,10 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/get-results-by-filename', [AudioTranscriptionController::class, 'getResultsByFileName']);
     Route::get('/get-historial', [AudioTranscriptionController::class, 'getHistorial'])->name('getHistorial');
 
+    Route::get('entrega-equipos/buscar-equipos', [EntregasEquiposController::class, 'buscarEquipos'])
+        ->name('entrega-equipos.buscar-equipos')
+        ->middleware('can:crear-entrega-equipos');
+
     // Rutas principales del CRUD
     Route::resource('entrega-equipos', EntregasEquiposController::class)->names([
         'index' => 'entrega-equipos.index',
@@ -291,10 +289,6 @@ Route::group(['middleware' => ['auth']], function () {
             ->name('exportar')
             ->where('formato', 'excel|pdf')
             ->middleware('can:crear-entrega-equipos');
-        // Buscar equipos disponibles via AJAX
-        Route::get('buscar-equipos', [EntregasEquiposController::class, 'buscarEquipos'])
-            ->name('buscar-equipos')
-            ->middleware('can:crear-entrega-equipos');
         // Duplicar una entrega existente
         Route::post('{id}/duplicar', [EntregasEquiposController::class, 'duplicar'])
             ->name('duplicar')
@@ -304,18 +298,6 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('entregas/dashboard', [EntregasEquiposController::class, 'dashboard'])
         ->name('entregas.dashboard')
         ->middleware('can:ver-menu-entregas');
-    // Reportes de entregas
-    Route::prefix('entregas/reportes')->name('entregas.reportes.')->group(function () {
-        Route::get('/', [EntregasEquiposController::class, 'reportesIndex'])
-            ->name('index')
-            ->middleware('can:ver-reportes-entregas');
-        Route::get('equipos-entregados', [EntregasEquiposController::class, 'reporteEquiposEntregados'])
-            ->name('equipos-entregados')
-            ->middleware('can:ver-reportes-entregas');
-        Route::get('por-dependencia', [EntregasEquiposController::class, 'reportePorDependencia'])
-            ->name('por-dependencia')
-            ->middleware('can:ver-reportes-entregas');
-    });
     Route::get('entrega-equipos/{id}/devolver', [EntregasEquiposController::class, 'devolver'])
         ->name('entrega-equipos.devolver');
 
@@ -328,9 +310,6 @@ Route::group(['middleware' => ['auth']], function () {
     Route::delete('entrega-equipos/{entregaId}/devolucion/{devolucionId}', [EntregasEquiposController::class, 'eliminarDevolucion'])
         ->name('entrega-equipos.devolucion.eliminar');
 
-    // Ruta para generar documento de entrega
-    Route::get('entrega-equipos/{id}/documento', [EntregasEquiposController::class, 'generarDocumento'])
-        ->name('entrega-equipos.documento');
     // Ruta para descargar el archivo generado
     Route::get('entrega-equipos/{id}/descargar', [EntregasEquiposController::class, 'descargarArchivo'])
         ->name('entrega-equipos.descargar');
@@ -356,46 +335,6 @@ Route::group(['middleware' => ['auth']], function () {
             ->name('documento')
             ->middleware('can:crear-entrega-bodycams');
 
-        // Reportar bodycams como perdidas
-        Route::patch('{id}/reportar-perdido', [EntregasBodycamsController::class, 'reportarPerdido'])
-            ->name('reportar-perdido')
-            ->middleware('can:crear-entrega-bodycams');
-
-        // Exportar listado a Excel/PDF
-        Route::get('exportar/{formato}', [EntregasBodycamsController::class, 'exportar'])
-            ->name('exportar')
-            ->where('formato', 'excel|pdf')
-            ->middleware('can:crear-entrega-bodycams');
-
-        // Buscar bodycams disponibles via AJAX
-        Route::get('buscar-bodycams', [EntregasBodycamsController::class, 'buscarBodycams'])
-            ->name('buscar-bodycams')
-            ->middleware('can:crear-entrega-bodycams');
-
-        // Duplicar una entrega existente
-        Route::post('{id}/duplicar', [EntregasBodycamsController::class, 'duplicar'])
-            ->name('duplicar')
-            ->middleware('can:crear-entrega-bodycams');
-    });
-
-    // Dashboard de entregas de bodycams
-    Route::get('entregas-bodycams/dashboard', [EntregasBodycamsController::class, 'dashboard'])
-        ->name('entregas-bodycams.dashboard')
-        ->middleware('can:ver-menu-entregas-bodycams');
-
-    // Reportes de entregas de bodycams
-    Route::prefix('entregas-bodycams/reportes')->name('entregas-bodycams.reportes.')->group(function () {
-        Route::get('/', [EntregasBodycamsController::class, 'reportesIndex'])
-            ->name('index')
-            ->middleware('can:ver-reportes-entregas-bodycams');
-
-        Route::get('bodycams-entregadas', [EntregasBodycamsController::class, 'reporteBodycamsEntregadas'])
-            ->name('bodycams-entregadas')
-            ->middleware('can:ver-reportes-entregas-bodycams');
-
-        Route::get('por-dependencia', [EntregasBodycamsController::class, 'reportePorDependencia'])
-            ->name('por-dependencia')
-            ->middleware('can:ver-reportes-entregas-bodycams');
     });
 
     // Rutas para devolución de bodycams
@@ -408,16 +347,10 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('entrega-bodycams/{entregaId}/devolucion/{devolucionId}', [EntregasBodycamsController::class, 'mostrarDevolucion'])
         ->name('entrega-bodycams.devolucion.detalle');
 
-    Route::delete('entrega-bodycams/{entregaId}/devolucion/{devolucionId}', [EntregasBodycamsController::class, 'eliminarDevolucion'])
-        ->name('entrega-bodycams.devolucion.eliminar');
-
     // Ruta para descargar el archivo generado
     Route::get('entrega-bodycams/{id}/descargar', [EntregasBodycamsController::class, 'descargarArchivo'])
         ->name('entrega-bodycams.descargar');
 
-    // Ruta para previsualizar el documento generado
-    Route::get('entrega-bodycams/previsualizar/{id}', [EntregasBodycamsController::class, 'previsualizar'])
-        ->name('entrega-bodycams.previsualizar');
 
     Route::resource('entrega-combustible', EntregasCombustibleController::class)->names([
         'index' => 'entrega-combustible.index',
@@ -499,6 +432,46 @@ Route::group(['middleware' => ['auth']], function () {
         Route::resource('tipos-bien', PatrimonioTipoBienController::class)->except(['show']);
         // Bienes
         Route::resource('bienes', PatrimonioBienController::class);
+    });
+
+    // ── Control de Armas ──────────────────────────────────────────────────
+    Route::prefix('armas')->name('armas.')->group(function () {
+        // Retenciones de armas
+        Route::get('retenciones', [ArmaRetencionController::class, 'index'])->name('retenciones.index');
+        Route::get('retenciones/create', [ArmaRetencionController::class, 'create'])->name('retenciones.create');
+        Route::post('retenciones', [ArmaRetencionController::class, 'store'])->name('retenciones.store');
+        Route::get('retenciones/importar', [ArmaRetencionController::class, 'importarForm'])->name('retenciones.importar');
+        Route::post('retenciones/importar', [ArmaRetencionController::class, 'importar'])->name('retenciones.importar.post');
+        Route::get('retenciones/exportar', [ArmaRetencionController::class, 'exportar'])->name('retenciones.exportar');
+        Route::get('retenciones/historial', [ArmaRetencionController::class, 'historial'])->name('retenciones.historial');
+        Route::get('retenciones/{armaRetencion}', [ArmaRetencionController::class, 'show'])->name('retenciones.show');
+        Route::get('retenciones/{armaRetencion}/edit', [ArmaRetencionController::class, 'edit'])->name('retenciones.edit');
+        Route::put('retenciones/{armaRetencion}', [ArmaRetencionController::class, 'update'])->name('retenciones.update');
+        Route::delete('retenciones/{armaRetencion}', [ArmaRetencionController::class, 'destroy'])->name('retenciones.destroy');
+        Route::post('retenciones/{armaRetencion}/elevar', [ArmaRetencionController::class, 'elevar'])->name('retenciones.elevar');
+        Route::post('retenciones/{armaRetencion}/devolver', [ArmaRetencionController::class, 'devolver'])->name('retenciones.devolver');
+        Route::post('retenciones/{armaRetencion}/comentario', [ArmaRetencionController::class, 'agregarComentario'])->name('retenciones.comentario');
+
+
+        // Motivos
+        Route::resource('motivos', ArmaMotivoController::class)
+            ->parameters(['motivos' => 'armaMotivo'])
+            ->except(['show']);
+
+        // Tipos de arma
+        Route::resource('tipos', ArmaTipoController::class)
+            ->parameters(['tipos' => 'armaTipo'])
+            ->except(['show']);
+
+        // Personal
+        Route::get('personal', [ArmaPersonalController::class, 'index'])->name('personal.index');
+        Route::get('personal/create', [ArmaPersonalController::class, 'create'])->name('personal.create');
+        Route::post('personal', [ArmaPersonalController::class, 'store'])->name('personal.store');
+        Route::get('personal/{personal}', [ArmaPersonalController::class, 'show'])->name('personal.show');
+        Route::get('personal/{personal}/edit', [ArmaPersonalController::class, 'edit'])->name('personal.edit');
+        Route::put('personal/{personal}', [ArmaPersonalController::class, 'update'])->name('personal.update');
+        Route::delete('personal/{personal}', [ArmaPersonalController::class, 'destroy'])->name('personal.destroy');
+        Route::post('personal/{id}/restaurar', [ArmaPersonalController::class, 'restore'])->name('personal.restore');
     });
 
     Route::prefix('cecoco')->name('cecoco.')->group(function () {

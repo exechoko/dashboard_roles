@@ -64,6 +64,7 @@
                                                         'menu-ia',
                                                         'menu-gestor-claves',
                                                         'menu-patrimonio',
+                                                        'menu-armamento',
                                                         'menu-incidencias-911',
                                                         'menu-plano-edificio',
                                                         'menu-manuales',
@@ -121,15 +122,19 @@
                                                     'Tareas' => [
                                                         'tarea'
                                                     ],
-                                                    'Personal Efectivo' => [
-                                                        'personal'
-                                                    ],
                                                     'Claves' => [
                                                         'clave'
                                                     ],
                                                     'Patrimonio' => [
                                                         'bien',
                                                         'tipo-bien'
+                                                    ],
+                                                    'Control de Armas' => [
+                                                        'menu-armamento',
+                                                        'arma-retencion',
+                                                        'arma-motivo',
+                                                        'arma-tipo',
+                                                        'personal',
                                                     ],
                                                     'Incidencias 911' => [
                                                         'periodo-911',
@@ -274,7 +279,8 @@
                                                                                             'buscar' => 'fas fa-search text-info',
                                                                                             'reiniciar' => 'fas fa-sync-alt text-primary',
                                                                                             'cargar' => 'fas fa-upload text-success',
-                                                                                            'descargar' => 'fas fa-download text-primary',
+                                                                                            'restaurar' => 'fas fa-undo text-success',
+                                                            'descargar' => 'fas fa-download text-primary',
                                                                                         ];
                                                                                     @endphp
 

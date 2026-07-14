@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Control de Armas - Documentación técnica</title>
+    <style>
+        :root { --ink:#18212f; --muted:#657184; --paper:#f4f1ea; --card:#fffdf8; --line:#d8d2c5; --navy:#15324a; --blue:#276c89; --gold:#c7953e; --red:#a94442; --green:#35745a; }
+        * { box-sizing:border-box; }
+        html { scroll-behavior:smooth; }
+        body { margin:0; color:var(--ink); background:var(--paper); font:16px/1.65 "Segoe UI", Arial, sans-serif; }
+        header { padding:64px 24px 54px; color:#fff; background:linear-gradient(125deg,#0d2233,#194c65 68%,#9a7335); border-bottom:6px solid var(--gold); }
+        header .wrap, main { max-width:1120px; margin:auto; }
+        .eyebrow { margin:0 0 10px; color:#f0ce8a; font-size:.82rem; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
+        h1 { max-width:820px; margin:0; font:700 clamp(2.25rem,6vw,4.7rem)/1.02 Georgia,serif; }
+        header p { max-width:800px; margin:22px 0 0; color:#dce8ee; font-size:1.08rem; }
+        .meta { display:flex; flex-wrap:wrap; gap:10px; margin-top:28px; }
+        .meta span { padding:6px 11px; border:1px solid #ffffff50; border-radius:999px; background:#ffffff12; font-size:.85rem; }
+        main { display:grid; grid-template-columns:260px minmax(0,1fr); gap:34px; padding:34px 22px 80px; }
+        nav { position:sticky; top:18px; align-self:start; padding:18px; background:var(--navy); border-radius:8px; box-shadow:0 8px 22px #1b27321c; }
+        nav strong { display:block; margin-bottom:8px; color:#f1cc84; text-transform:uppercase; letter-spacing:.08em; font-size:.75rem; }
+        nav a { display:block; padding:7px 9px; color:#dce8ee; border-left:2px solid transparent; text-decoration:none; font-size:.91rem; }
+        nav a:hover { color:#fff; border-color:var(--gold); background:#ffffff0c; }
+        article { min-width:0; }
+        section { margin-bottom:34px; padding:28px; background:var(--card); border:1px solid var(--line); border-radius:8px; box-shadow:0 7px 18px #303b4710; }
+        h2 { margin:0 0 18px; padding-bottom:10px; color:var(--navy); border-bottom:2px solid var(--gold); font:700 1.65rem/1.2 Georgia,serif; }
+        h3 { margin:26px 0 8px; color:var(--blue); font-size:1.08rem; }
+        p { margin:9px 0 15px; }
+        code { padding:.12em .34em; color:#8b312e; background:#f0e9dc; border-radius:3px; font:600 .88em Consolas,monospace; overflow-wrap:anywhere; }
+        pre { overflow:auto; padding:16px; color:#dbe8ef; background:#122b3d; border-left:4px solid var(--gold); border-radius:5px; font:14px/1.55 Consolas,monospace; }
+        pre code { padding:0; color:inherit; background:none; }
+        table { width:100%; margin:16px 0; border-collapse:collapse; font-size:.93rem; }
+        th, td { padding:10px 11px; border:1px solid var(--line); text-align:left; vertical-align:top; }
+        th { color:#fff; background:var(--navy); }
+        tr:nth-child(even) td { background:#f8f4ec; }
+        .callout { margin:18px 0; padding:14px 16px; border-left:4px solid var(--blue); background:#eaf3f6; }
+        .callout.warn { border-color:var(--gold); background:#fff6df; }
+        .callout.danger { border-color:var(--red); background:#faeae7; }
+        .flow { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin:18px 0; }
+        .flow div { position:relative; min-height:92px; padding:13px; color:#fff; background:var(--navy); border-radius:5px; font-size:.86rem; }
+        .flow b { display:block; margin-bottom:4px; color:#f3cb7d; }
+        .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+        .mini { padding:15px; border:1px solid var(--line); border-top:4px solid var(--blue); background:#fff; }
+        .mini b { color:var(--navy); }
+        .tag { display:inline-block; margin:2px; padding:2px 7px; color:#fff; background:var(--green); border-radius:3px; font-size:.78rem; }
+        footer { padding:24px; color:#ced9df; background:#102637; text-align:center; font-size:.85rem; }
+        @media (max-width:850px) { main { grid-template-columns:1fr; } nav { position:static; } .flow { grid-template-columns:1fr 1fr; } }
+        @media (max-width:560px) { section { padding:20px 16px; } .grid,.flow { grid-template-columns:1fr; } header { padding-top:42px; } table { display:block; overflow-x:auto; white-space:nowrap; } }
+        @media print { body { background:#fff; font-size:11pt; } header { padding:28px; background:#fff; color:#000; border-bottom:3px solid #000; } header p,.eyebrow,.meta span { color:#000; } main { display:block; max-width:none; padding:20px; } nav { display:none; } section { break-inside:avoid; box-shadow:none; } a { color:#000; } footer { color:#000; background:#fff; } }
+    </style>
+</head>
+<body>
+<header>
+    <div class="wrap">
+        <p class="eyebrow">C.A.R. 911 · Documento de ingeniería</p>
+        <h1>Control de Armas e integración Personal 911</h1>
+        <p>Referencia para mantenimiento, despliegue y diagnóstico del inventario, las asignaciones históricas y el circuito de retenciones.</p>
+        <div class="meta"><span>Laravel 10</span><span>PHP 8.1</span><span>MySQL</span><span>Versión 2026-07-13</span></div>
+    </div>
+</header>
+<main>
+    <nav aria-label="Índice">
+        <strong>Contenido</strong>
+        <a href="#alcance">1. Alcance</a>
+        <a href="#arquitectura">2. Arquitectura</a>
+        <a href="#conexion">3. Conexión externa</a>
+        <a href="#importacion">4. Importación</a>
+        <a href="#parser">5. Chalecos</a>
+        <a href="#persistencia">6. Persistencia</a>
+        <a href="#retenciones">7. Retenciones</a>
+        <a href="#estados">8. Estados</a>
+        <a href="#permisos">9. Permisos</a>
+        <a href="#operacion">10. Operación</a>
+        <a href="#diagnostico">11. Diagnóstico</a>
+        <a href="#archivos">12. Mapa de archivos</a>
+    </nav>
+    <article>
+        <section id="alcance">
+            <h2>1. Alcance y principios</h2>
+            <p>El módulo sincroniza funcionarios, armas y chalecos desde la base externa <code>personal911</code>, pero registra las retenciones y su auditoría en la base principal de la aplicación.</p>
+            <div class="grid">
+                <div class="mini"><b>Fuente externa</b><br>Se consulta en modo lógico de lectura. El importador no ejecuta altas, cambios ni bajas sobre <code>personal911</code>.</div>
+                <div class="mini"><b>Persistencia local</b><br>Los datos se normalizan en inventarios y asignaciones con historial.</div>
+                <div class="mini"><b>Idempotencia</b><br>Ejecutar varias veces la sincronización no genera asignaciones activas duplicadas.</div>
+                <div class="mini"><b>Historia inmutable</b><br>Cada retención guarda una instantánea del arma y del chaleco al momento del alta.</div>
+            </div>
+        </section>
+
+        <section id="arquitectura">
+            <h2>2. Arquitectura</h2>
+            <div class="flow">
+                <div><b>personal911</b><code>funcionarios</code><br><code>tipo_armas</code><br><code>jerarquias</code></div>
+                <div><b>Importador</b><code>Personal911ImportService</code><br>normaliza y reconcilia</div>
+                <div><b>Base principal</b><code>personals</code><br><code>armas</code><br><code>chalecos</code><br>asignaciones</div>
+                <div><b>Módulo web</b>retenciones<br>motivos<br>tipos<br>personal</div>
+            </div>
+            <p>El servicio de importación abre la conexión externa para obtener datos y una transacción sobre la conexión principal para persistirlos. La lógica de retenciones está separada en <code>ArmaRetencionService</code>.</p>
+        </section>
+
+        <section id="conexion">
+            <h2>3. Conexión externa</h2>
+            <p>La conexión se declara como <code>personal911</code> en <code>config/database.php</code>. Las credenciales se proporcionan mediante variables de entorno:</p>
+            <pre><code>PERSONAL911_DB_HOST=127.0.0.1
+PERSONAL911_DB_PORT=3306
+PERSONAL911_DB_DATABASE=personal911
+PERSONAL911_DB_USERNAME=usuario
+PERSONAL911_DB_PASSWORD=contraseña</code></pre>
+            <div class="callout danger"><b>No incluir credenciales reales en Git.</b> Deben existir solamente en <code>.env</code>. Para producción se recomienda un usuario MySQL con privilegios exclusivamente <code>SELECT</code> sobre <code>personal911</code>.</div>
+        </section>
+
+        <section id="importacion">
+            <h2>4. Flujo de importación</h2>
+            <h3>Selección de origen</h3>
+            <p>Se consultan funcionarios con <code>Id_Estado = 2</code> (Activo Efectivo). La consulta incorpora el tipo de arma y la jerarquía mediante uniones a <code>tipo_armas</code> y <code>jerarquias</code>.</p>
+            <h3>Identificación</h3>
+            <p>Primero se busca por <code>personal911_id</code>, que es el identificador estable externo. En la primera vinculación puede utilizarse el L.P.; una colisión entre identificadores detiene la transacción.</p>
+            <h3>Reconciliación</h3>
+            <ol>
+                <li>Actualiza nombre, apellido, L.P. y <code>Nom_Jerarquia</code>.</li>
+                <li>Crea o actualiza el arma por número único.</li>
+                <li>Cierra asignaciones anteriores cuando cambia el funcionario o el bien.</li>
+                <li>Crea la asignación activa si no existe.</li>
+                <li>Extrae y asigna el chaleco cuando <code>Obs_Func</code> contiene información reconocible.</li>
+                <li>Cierra asignaciones de bienes que ya no aparecen.</li>
+                <li>Elimina lógicamente al personal que deja de estar en el conjunto activo.</li>
+            </ol>
+            <h3>Duplicados</h3>
+            <p>Si dos funcionarios activos informan el mismo número de arma, el arma se registra pero no se asigna. El conflicto aparece en la salida del comando. Así se evita elegir un propietario arbitrariamente.</p>
+            <div class="callout warn">Un conflicto debe corregirse en la fuente <code>personal911</code>. La siguiente sincronización resolverá automáticamente la asignación.</div>
+            <h3>Correcciones locales protegidas</h3>
+            <p>Cuando un armero edita arma o chaleco de un funcionario importado, <code>personals</code> marca el recurso como bloqueado para importación. Mientras el dato de <code>personal911</code> sea distinto, el importador no pisa el valor local y crea o actualiza una fila activa en <code>inventario_discrepancias</code>.</p>
+            <p>Si en una sincronización posterior Personal 911 coincide con el valor local, la discrepancia se marca como resuelta y se libera el bloqueo correspondiente.</p>
+        </section>
+
+        <section id="parser">
+            <h2>5. Extracción de chalecos</h2>
+            <p>La fuente no posee columnas estructuradas para chalecos. El parser inspecciona <code>funcionarios.Obs_Func</code> y reconoce variantes de texto para obtener:</p>
+            <p><span class="tag">serie</span><span class="tag">marca</span><span class="tag">modelo</span><span class="tag">talle</span><span class="tag">nivel</span><span class="tag">lote</span></p>
+            <pre><code>Chaleco Antibala ABPC Nro Serie: 16515 Talle: M
+CHALECO BALISTICO SEATLE FORCE 10 SERIE N° 6668
+CHALECO: N° 359 TALLE S-RB3 LOTE 24</code></pre>
+            <p>Si el texto menciona un chaleco pero no permite identificar su serie, el registro se informa como observación pendiente y no se crea un bien incompleto.</p>
+        </section>
+
+        <section id="persistencia">
+            <h2>6. Modelo de persistencia</h2>
+            <table>
+                <thead><tr><th>Tabla</th><th>Responsabilidad</th><th>Claves relevantes</th></tr></thead>
+                <tbody>
+                    <tr><td><code>personals</code></td><td>Funcionario local vinculado con la fuente.</td><td><code>personal911_id</code>, <code>lp</code>, bloqueos de importación</td></tr>
+                    <tr><td><code>armas</code></td><td>Inventario normalizado de armas.</td><td><code>numero</code> único, <code>arma_tipo_id</code></td></tr>
+                    <tr><td><code>chalecos</code></td><td>Inventario y metadatos de chalecos.</td><td><code>numero_serie</code> único</td></tr>
+                    <tr><td><code>personal_arma_asignaciones</code></td><td>Historial funcionario-arma.</td><td><code>fecha_desde</code>, <code>fecha_hasta</code>, <code>activa</code></td></tr>
+                    <tr><td><code>personal_chaleco_asignaciones</code></td><td>Historial funcionario-chaleco.</td><td><code>fecha_desde</code>, <code>fecha_hasta</code>, <code>activa</code></td></tr>
+                    <tr><td><code>arma_motivos</code></td><td>Reglas de negocio para una retención.</td><td><code>dias</code>, <code>tipo_asignado</code>, <code>activo</code></td></tr>
+                    <tr><td><code>arma_retenciones</code></td><td>Operación y estado de cada retención.</td><td><code>personal_id</code>, <code>motivo_id</code>, snapshots</td></tr>
+                    <tr><td><code>inventario_conflictos</code></td><td>Conflictos activos y resueltos detectados durante la sincronización.</td><td><code>tipo</code>, <code>identificador</code>, <code>estado</code>, <code>detalles</code></td></tr>
+                    <tr><td><code>inventario_discrepancias</code></td><td>Diferencias entre correcciones locales protegidas y la fuente externa.</td><td><code>personal_id</code>, <code>tipo</code>, <code>valor_local</code>, <code>valor_importado</code>, <code>estado</code></td></tr>
+                    <tr><td><code>auditoria</code></td><td>Trazabilidad de altas, cambios y acciones.</td><td><code>user_id</code>, <code>accion</code>, <code>cambios</code></td></tr>
+                </tbody>
+            </table>
+            <p>Los índices únicos compuestos sobre <code>(personal_id, activa)</code> y <code>(arma_id, activa)</code> impiden más de una asignación activa por funcionario o arma. Las filas históricas utilizan <code>activa = NULL</code>.</p>
+        </section>
+
+        <section id="retenciones">
+            <h2>7. Creación de una retención</h2>
+            <ol>
+                <li>El controlador lista personal con arma activa y sin otra retención abierta.</li>
+                <li>La petición valida funcionario, motivo, fecha y observaciones.</li>
+                <li>El servicio obtiene arma y chaleco actuales.</li>
+                <li>El motivo fija el tipo: <code>RETENCIÓN</code>, <code>REGULACIÓN</code> o <code>RESGUARDO</code>.</li>
+                <li>Se crea el registro en estado <code>EN_ARMERIA</code>.</li>
+                <li>Se calculan días restantes cuando corresponde.</li>
+                <li>Se guardan referencias y snapshots: <code>arma_numero</code>, <code>arma_tipo</code>, <code>chaleco_numero</code> y <code>chaleco_detalle</code>.</li>
+                <li>Se registra la acción y el usuario en auditoría.</li>
+            </ol>
+            <div class="callout">Los snapshots son intencionales: una retención histórica no cambia visualmente cuando el funcionario recibe posteriormente otra arma o chaleco.</div>
+        </section>
+
+        <section id="estados">
+            <h2>8. Máquina de estados</h2>
+            <table>
+                <thead><tr><th>Evento</th><th>Estado</th><th>Campo de control</th></tr></thead>
+                <tbody>
+                    <tr><td>Alta</td><td><code>EN_ARMERIA</code></td><td><code>fecha_posesion</code></td></tr>
+                    <tr><td>Elevación</td><td><code>EN_JEF_CENTRAL</code></td><td><code>fecha_elevacion</code></td></tr>
+                    <tr><td>Devolución</td><td><code>DEVUELTA</code></td><td><code>fecha_devolucion</code></td></tr>
+                </tbody>
+            </table>
+            <p>El estado se deriva dando prioridad a la devolución, luego a la elevación y finalmente al estado inicial. Para <code>RETENCIÓN</code>, la fecha límite es <code>fecha_posesion + motivo.dias</code>.</p>
+        </section>
+
+        <section id="permisos">
+            <h2>9. Autorización y permisos</h2>
+            <table>
+                <thead><tr><th>Área</th><th>Permisos</th></tr></thead>
+                <tbody>
+                    <tr><td>Menú</td><td><code>ver-menu-armamento</code></td></tr>
+                    <tr><td>Retenciones</td><td><code>ver-arma-retencion</code>, <code>crear-arma-retencion</code>, <code>editar-arma-retencion</code>, <code>borrar-arma-retencion</code></td></tr>
+                    <tr><td>Motivos</td><td><code>ver-arma-motivo</code>, <code>crear-arma-motivo</code>, <code>editar-arma-motivo</code>, <code>borrar-arma-motivo</code></td></tr>
+                    <tr><td>Tipos</td><td><code>ver-arma-tipo</code>, <code>crear-arma-tipo</code>, <code>editar-arma-tipo</code>, <code>borrar-arma-tipo</code></td></tr>
+                    <tr><td>Personal</td><td><code>ver-personal</code>, <code>crear-personal</code>, <code>editar-personal</code>, <code>borrar-personal</code>, <code>restaurar-personal</code></td></tr>
+                </tbody>
+            </table>
+            <p>El seeder entrega inicialmente estos permisos a <code>Administrador</code> y <code>Super Administrador</code>. Luego pueden distribuirse mediante los roles de Spatie Permission.</p>
+            <div class="callout danger"><b>Revisión recomendada:</b> proteger explícitamente <code>show</code> y <code>exportar</code> con <code>ver-arma-retencion</code>, y <code>importarForm</code>/<code>importar</code> con <code>crear-arma-retencion</code>. Actualmente dependen del grupo general autenticado.</div>
+        </section>
+
+        <section id="operacion">
+            <h2>10. Operación y despliegue</h2>
+            <h3>Sincronización manual</h3>
+            <pre><code>php artisan armas:importar-personal911</code></pre>
+            <h3>Sincronización programada</h3>
+            <p>Se agenda diariamente a las <b>05:30</b>, con bloqueo contra ejecuciones superpuestas. El servidor debe ejecutar el scheduler de Laravel.</p>
+            <pre><code>* * * * * php /ruta/artisan schedule:run &gt;&gt; /dev/null 2&gt;&amp;1</code></pre>
+            <h3>Salida y log</h3>
+            <p>El comando informa funcionarios procesados, armas, chalecos, conflictos y observaciones no interpretadas. La ejecución programada escribe en <code>storage/logs/armas_personal911.log</code>.</p>
+            <h3>Monitoreo en el dashboard</h3>
+            <p>El endpoint <code>api.dashboard.workers-status</code> incluye conflictos activos y discrepancias activas para usuarios con <code>ver-menu-armamento</code>. La pestaña Novedades actualiza cada minuto los contadores y ofrece el detalle en modales separados.</p>
+        </section>
+
+        <section id="diagnostico">
+            <h2>11. Diagnóstico</h2>
+            <table>
+                <thead><tr><th>Síntoma</th><th>Comprobación</th><th>Acción</th></tr></thead>
+                <tbody>
+                    <tr><td>No conecta a la fuente</td><td>Variables <code>PERSONAL911_DB_*</code>, red y permisos MySQL.</td><td><code>php artisan config:clear</code> y reintentar el comando.</td></tr>
+                    <tr><td>Funcionario no aparece</td><td>Debe tener <code>Id_Estado = 2</code>, arma activa y no tener retención abierta.</td><td>Corregir fuente y sincronizar.</td></tr>
+                    <tr><td>Arma no asignada</td><td>Buscarla en la tabla de conflictos del comando.</td><td>Resolver duplicidad en <code>personal911</code>.</td></tr>
+                    <tr><td>Chaleco ausente</td><td>Revisar el formato de <code>Obs_Func</code>.</td><td>Estructurar número de serie o ampliar parser con prueba.</td></tr>
+                    <tr><td>Jerarquía incorrecta</td><td>Se usa <code>Nom_Jerarquia</code>.</td><td>Corregir la relación externa y sincronizar.</td></tr>
+                    <tr><td>Menú invisible</td><td>Permiso <code>ver-menu-armamento</code> y permiso del submódulo.</td><td>Asignar permisos al rol y limpiar caché de permisos.</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="archivos">
+            <h2>12. Mapa de archivos</h2>
+            <table>
+                <thead><tr><th>Archivo</th><th>Responsabilidad</th></tr></thead>
+                <tbody>
+                    <tr><td><code>config/database.php</code></td><td>Conexión <code>personal911</code>.</td></tr>
+                    <tr><td><code>app/Services/Personal911ImportService.php</code></td><td>Consulta, parser y reconciliación.</td></tr>
+                    <tr><td><code>app/Console/Commands/ImportarInventarioPersonal911.php</code></td><td>Comando operativo.</td></tr>
+                    <tr><td><code>app/Console/Kernel.php</code></td><td>Agenda diaria.</td></tr>
+                    <tr><td><code>app/Services/ArmaRetencionService.php</code></td><td>Reglas, estados y auditoría.</td></tr>
+                    <tr><td><code>app/Http/Controllers/ArmaRetencionController.php</code></td><td>Flujo HTTP y consultas.</td></tr>
+                    <tr><td><code>app/Http/Requests/*Arma*.php</code></td><td>Autorización y validación.</td></tr>
+                    <tr><td><code>app/Models/Arma*.php</code>, <code>Chaleco.php</code>, <code>Personal.php</code></td><td>Dominio Eloquent.</td></tr>
+                    <tr><td><code>database/migrations/2026_07_13_*.php</code></td><td>Inventario, historia, restricciones y snapshots.</td></tr>
+                    <tr><td><code>database/seeders/SeederPermisosArmaRetencion.php</code></td><td>Permisos y tipos iniciales.</td></tr>
+                    <tr><td><code>tests/Unit/Personal911ImportServiceTest.php</code></td><td>Casos del parser de chalecos.</td></tr>
+                </tbody>
+            </table>
+        </section>
+    </article>
+</main>
+<footer>Documentación técnica · Control de Armas · C.A.R. 911</footer>
+</body>
+</html>

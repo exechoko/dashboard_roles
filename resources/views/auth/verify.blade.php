@@ -13,9 +13,7 @@
                                 your email address
                             </div>
                         @endif
-                        <p>Before proceeding, please check your email for a verification link.If you did not receive
-                            the email,</p>
-                        <a href="{{ route('verification.resend') }}">click here to request another'</a>.
+                        <p>Before proceeding, please check your email for a verification link.</p>
                     </div>
                 </div>
             </div>

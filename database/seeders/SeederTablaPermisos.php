@@ -187,6 +187,26 @@ class SeederTablaPermisos extends Seeder
             'editar-tarea',
             'borrar-tarea',
 
+            // Control de Armas
+            'ver-menu-armamento',
+            'ver-arma-retencion',
+            'crear-arma-retencion',
+            'editar-arma-retencion',
+            'borrar-arma-retencion',
+            'ver-arma-motivo',
+            'crear-arma-motivo',
+            'editar-arma-motivo',
+            'borrar-arma-motivo',
+            'ver-arma-tipo',
+            'crear-arma-tipo',
+            'editar-arma-tipo',
+            'borrar-arma-tipo',
+            'ver-personal',
+            'crear-personal',
+            'editar-personal',
+            'borrar-personal',
+            'restaurar-personal',
+
             //Acciones varias
             'reiniciar-camara',
             'herramientas-mapa',

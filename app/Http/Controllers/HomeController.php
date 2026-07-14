@@ -15,6 +15,8 @@ use App\Models\FlotaGeneral;
 use App\Models\Destino;
 use App\Models\Recurso;
 use App\Models\Historico;
+use App\Models\InventarioConflicto;
+use App\Models\InventarioDiscrepancia;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Models\EntregaEquipo;
@@ -573,12 +575,72 @@ class HomeController extends Controller
 
     public function workersStatus(): JsonResponse
     {
+        $conflictosInventario = [
+            'total' => 0,
+            'armas' => 0,
+            'chalecos' => 0,
+            'detalle' => [],
+        ];
+        $discrepanciasInventario = [
+            'total' => 0,
+            'armas' => 0,
+            'chalecos' => 0,
+            'detalle' => [],
+        ];
+
+        if (request()->user()?->can('ver-menu-armamento')) {
+            $conflictos = InventarioConflicto::where('estado', InventarioConflicto::ESTADO_ACTIVO)
+                ->orderBy('tipo')
+                ->orderBy('identificador')
+                ->get();
+            $conflictosInventario = [
+                'total' => $conflictos->count(),
+                'armas' => $conflictos->where('tipo', InventarioConflicto::TIPO_ARMA)->count(),
+                'chalecos' => $conflictos->where('tipo', InventarioConflicto::TIPO_CHALECO)->count(),
+                'detalle' => $conflictos->map(fn (InventarioConflicto $conflicto): array => [
+                    'tipo' => $conflicto->tipo,
+                    'identificador' => $conflicto->identificador,
+                    'detectado_en' => $conflicto->detectado_en?->format('d/m/Y H:i'),
+                    'ultima_deteccion_en' => $conflicto->ultima_deteccion_en?->format('d/m/Y H:i'),
+                    'funcionarios' => $conflicto->detalles['funcionarios'] ?? [],
+                ])->values(),
+            ];
+
+            $discrepancias = InventarioDiscrepancia::with(['personal', 'corregidoPor'])
+                ->where('estado', InventarioDiscrepancia::ESTADO_ACTIVA)
+                ->orderBy('tipo')
+                ->orderByDesc('ultima_deteccion_en')
+                ->get();
+            $discrepanciasInventario = [
+                'total' => $discrepancias->count(),
+                'armas' => $discrepancias->where('tipo', InventarioDiscrepancia::TIPO_ARMA)->count(),
+                'chalecos' => $discrepancias->where('tipo', InventarioDiscrepancia::TIPO_CHALECO)->count(),
+                'detalle' => $discrepancias->map(fn (InventarioDiscrepancia $discrepancia): array => [
+                    'tipo' => $discrepancia->tipo,
+                    'valor_local' => $discrepancia->valor_local,
+                    'valor_importado' => $discrepancia->valor_importado,
+                    'detectado_en' => $discrepancia->detectado_en?->format('d/m/Y H:i'),
+                    'ultima_deteccion_en' => $discrepancia->ultima_deteccion_en?->format('d/m/Y H:i'),
+                    'motivo' => $discrepancia->motivo,
+                    'corregido_por' => $discrepancia->corregidoPor?->name,
+                    'funcionario' => $discrepancia->personal ? [
+                        'lp' => $discrepancia->personal->lp,
+                        'apellido' => $discrepancia->personal->apellido,
+                        'nombre' => $discrepancia->personal->nombre,
+                        'jerarquia' => $discrepancia->personal->jerarquia,
+                    ] : ($discrepancia->detalles['funcionario'] ?? []),
+                ])->values(),
+            ];
+        }
+
         try {
             // Verificar que las tablas existen antes de consultarlas
             if (!DB::getSchemaBuilder()->hasTable('jobs')) {
                 return response()->json([
                     'error' => 'tabla_jobs_inexistente',
                     'mensaje' => 'Ejecutar: php artisan queue:table && php artisan migrate',
+                    'inventario_conflictos' => $conflictosInventario,
+                    'inventario_discrepancias' => $discrepanciasInventario,
                 ], 200);
             }
 
@@ -651,6 +713,8 @@ class HomeController extends Controller
             'restauraciones_gps_consultado_en' => $tamanoRestGps['consultado_en'] ?? null,
             'restauraciones_gps_umbral_mb' => 4000,
             'restauraciones_gps_restauradas' => Cache::get(\App\Services\CecocoExpedienteService::CACHE_KEY_FICHEROS_RESTAURADOS_GPS, []),
+            'inventario_conflictos' => $conflictosInventario,
+            'inventario_discrepancias' => $discrepanciasInventario,
         ]);
     }
 

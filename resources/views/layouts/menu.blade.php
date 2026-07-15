@@ -244,11 +244,13 @@
                     <i class="fas fa-list"></i><span>Tareas</span>
                 </a>
             </li>
-            <li class="{{ request()->is('incidencias/tickets-pg*') ? 'active' : '' }}">
-                <a class="nav-link" href="{{ route('incidencias.tickets-pg.create') }}">
-                    <i class="fas fa-ticket-alt"></i><span>Generar Ticket PG</span>
-                </a>
-            </li>
+            @canany(['ver-ticket-pg', 'crear-ticket-pg', 'editar-ticket-pg', 'enviar-ticket-pg'])
+                <li class="{{ request()->is('incidencias/tickets-pg*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('incidencias.tickets-pg.index') }}">
+                        <i class="fas fa-ticket-alt"></i><span>Tickets PG</span>
+                    </a>
+                </li>
+            @endcanany
             @can('ver-personal')
                 {{-- PERSONAL EFECTIVO --}}
                 <li class="{{ request()->is('tareas/personal-efectivo*') ? 'active' : '' }}">

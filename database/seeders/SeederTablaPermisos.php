@@ -187,6 +187,12 @@ class SeederTablaPermisos extends Seeder
             'editar-tarea',
             'borrar-tarea',
 
+            // Tickets PG
+            'ver-ticket-pg',
+            'crear-ticket-pg',
+            'editar-ticket-pg',
+            'enviar-ticket-pg',
+
             // Control de Armas
             'ver-menu-armamento',
             'ver-arma-retencion',

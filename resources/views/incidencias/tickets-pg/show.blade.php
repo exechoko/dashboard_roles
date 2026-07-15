@@ -16,11 +16,13 @@
                             <a href="{{ route('incidencias.tickets-pg.index') }}" class="btn btn-secondary btn-sm">
                                 <i class="fas fa-arrow-left"></i> Volver
                             </a>
+                            @can('editar-ticket-pg')
                             @if(!$ticket->estaEnviado())
                                 <a href="{{ route('incidencias.tickets-pg.edit', $ticket) }}" class="btn btn-warning btn-sm">
                                     <i class="fas fa-edit"></i> Editar
                                 </a>
                             @endif
+                            @endcan
                         </div>
                     </div>
                     <div class="card-body">
@@ -90,22 +92,28 @@
                             </div>
                         @endif
                     </div>
+                    @canany(['editar-ticket-pg', 'enviar-ticket-pg'])
                     @if(!$ticket->estaEnviado())
                         <div class="card-footer text-right">
+                            @can('editar-ticket-pg')
                             <form method="POST" action="{{ route('incidencias.tickets-pg.mejorar-redaccion', $ticket) }}" class="d-inline">
                                 @csrf
                                 <button type="submit" class="btn btn-outline-primary">
                                     <i class="fas fa-magic"></i> Mejorar con IA
                                 </button>
                             </form>
+                            @endcan
+                            @can('enviar-ticket-pg')
                             <form method="POST" action="{{ route('incidencias.tickets-pg.enviar', $ticket) }}" class="d-inline" onsubmit="return confirm('¿Enviar este ticket a la ticketera?');">
                                 @csrf
                                 <button type="submit" class="btn btn-success">
                                     <i class="fas fa-paper-plane"></i> Enviar a ticketera
                                 </button>
                             </form>
+                            @endcan
                         </div>
                     @endif
+                    @endcanany
                 </div>
             </div>
 

@@ -25,6 +25,10 @@ class TicketPgController extends Controller
         private SecuenciaTicketeraService $secuencias,
         private RedactorTicketPgService $redactor
     ) {
+        $this->middleware('permission:ver-ticket-pg|crear-ticket-pg|editar-ticket-pg|enviar-ticket-pg')->only(['index', 'show']);
+        $this->middleware('permission:crear-ticket-pg')->only(['create', 'store']);
+        $this->middleware('permission:editar-ticket-pg')->only(['edit', 'update', 'mejorarRedaccion']);
+        $this->middleware('permission:enviar-ticket-pg')->only('enviar');
     }
 
     public function index(): View
@@ -48,6 +52,10 @@ class TicketPgController extends Controller
 
     public function store(StoreTicketPgRequest $request, TicketeraService $ticketera): RedirectResponse
     {
+        if ($request->input('accion') === 'enviar') {
+            $this->authorize('enviar-ticket-pg');
+        }
+
         $datosTicket = $this->datosValidados($request);
         $datosTicket['codigo_interno'] = $this->secuencias->generarCodigo();
         $datosTicket = $this->completarRedaccion($datosTicket);

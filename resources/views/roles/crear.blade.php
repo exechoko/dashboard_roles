@@ -116,7 +116,8 @@
                                                         'entrega-combustible'
                                                     ],
                                                     'Tareas' => [
-                                                        'tarea'
+                                                        'tarea',
+                                                        'ticket-pg'
                                                     ],
                                                     'Claves' => [
                                                         'clave'

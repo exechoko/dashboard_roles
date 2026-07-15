@@ -23,9 +23,11 @@
                     <button type="submit" name="accion" value="guardar" class="btn btn-primary">
                         <i class="fas fa-save"></i> Guardar borrador
                     </button>
-                    <button type="submit" name="accion" value="enviar" class="btn btn-success" onclick="return confirm('¿Enviar este ticket a la ticketera?');">
-                        <i class="fas fa-paper-plane"></i> Guardar y enviar
-                    </button>
+                    @can('enviar-ticket-pg')
+                        <button type="submit" name="accion" value="enviar" class="btn btn-success" onclick="return confirm('¿Enviar este ticket a la ticketera?');">
+                            <i class="fas fa-paper-plane"></i> Guardar y enviar
+                        </button>
+                    @endcan
                 </div>
             </form>
         </div>

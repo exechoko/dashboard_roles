@@ -26,9 +26,6 @@
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h4 class="card-title mb-0">Períodos de Facturación</h4>
                         <div>
-                            <a href="{{ route('incidencias.tickets-pg.index') }}" class="btn btn-outline-success">
-                                <i class="fas fa-ticket-alt"></i> Tickets PG
-                            </a>
                             @can('crear-periodo-911')
                             <a href="{{ route('incidencias.periodos.create') }}" class="btn btn-primary">
                                 <i class="fas fa-plus"></i> Nuevo Período

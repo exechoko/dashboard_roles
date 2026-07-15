@@ -31,6 +31,12 @@
                             <dd class="col-sm-9"><strong>{{ $ticket->codigo_interno }}</strong></dd>
                             <dt class="col-sm-3">Ticketera</dt>
                             <dd class="col-sm-9">{{ $ticket->codigo_ticketera ?: '-' }}</dd>
+                            <dt class="col-sm-3">ID de Ref.</dt>
+                            <dd class="col-sm-9">{{ $ticket->referencia_ticketera ?: '-' }}</dd>
+                            <dt class="col-sm-3">Estado ticket</dt>
+                            <dd class="col-sm-9">
+                                <span class="badge badge-{{ $ticket->colorEstadoTicketera() }}">{{ $ticket->estadoTicketeraLegible() }}</span>
+                            </dd>
                             <dt class="col-sm-3">Estado envío</dt>
                             <dd class="col-sm-9">{{ strtoupper($ticket->estado_envio) }}</dd>
                             <dt class="col-sm-3">Categoría</dt>
@@ -104,12 +110,14 @@
                             </form>
                             @endcan
                             @can('enviar-ticket-pg')
+                            @if(!$ticket->yaEstaEnTicketera())
                             <form method="POST" action="{{ route('incidencias.tickets-pg.enviar', $ticket) }}" class="d-inline" onsubmit="return confirm('¿Enviar este ticket a la ticketera?');">
                                 @csrf
                                 <button type="submit" class="btn btn-success">
                                     <i class="fas fa-paper-plane"></i> Enviar a ticketera
                                 </button>
                             </form>
+                            @endif
                             @endcan
                         </div>
                     @endif
@@ -128,6 +136,7 @@
                     <div class="card-body">
                         <textarea id="datos_excel" class="form-control" rows="18" readonly>Inc.: {{ $ticket->codigo_interno }}
 Ticket (Nro.): {{ $ticket->codigo_ticketera }}
+ID de Ref.: {{ $ticket->referencia_ticketera }}
 Fecha Plat. Web: {{ optional($ticket->enviado_en ?? $ticket->created_at)->format('d/m/Y H:i') }}
 Fecha Inicio Inc./Prest.: {{ optional($ticket->fecha_inicio_falla ?? $ticket->created_at)->format('d/m/Y H:i') }}
 F. FIN falla: {{ optional($ticket->fecha_fin_falla)->format('d/m/Y H:i') }}

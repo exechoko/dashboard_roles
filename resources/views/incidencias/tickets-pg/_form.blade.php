@@ -19,6 +19,12 @@
     $movilSel = old('movil', $ticketActual?->movil);
     $fechaInicioSel = old('fecha_inicio_falla', $ticketActual?->fecha_inicio_falla?->format('Y-m-d\TH:i'));
     $fechaFinSel = old('fecha_fin_falla', $ticketActual?->fecha_fin_falla?->format('Y-m-d\TH:i'));
+
+    $estadosTicket = ['Nuevo', 'En progreso', 'Respondido', 'En espera', 'Resuelto'];
+    $estadoSel = old('estado_ticketera', $ticketActual?->estado_ticketera ?? 'Nuevo');
+    if ($estadoSel !== '' && !in_array($estadoSel, $estadosTicket, true)) {
+        array_unshift($estadosTicket, $estadoSel);
+    }
     $camarasSeleccionadas = collect(old('camaras', collect($ticketActual?->camaras_afectadas ?? [])->pluck('id')->all()))
         ->map(fn ($id) => (int) $id)->all();
 @endphp
@@ -148,20 +154,31 @@
     <input type="text" name="dependencia" id="dependencia" class="form-control" value="{{ old('dependencia', $ticketActual?->dependencia) }}" placeholder="División 911">
 </div>
 
-{{-- ── Fechas de falla (siempre visibles; fin vacío = sin resolución) ── --}}
+{{-- ── Fechas de falla y estado (fin vacío = sin resolución) ── --}}
 <div class="row" id="bloque-fechas">
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="form-group">
             <label>Inicio de la falla</label>
             <input type="datetime-local" name="fecha_inicio_falla" id="fecha_inicio_falla" class="form-control @error('fecha_inicio_falla') is-invalid @enderror" value="{{ $fechaInicioSel }}">
             @error('fecha_inicio_falla')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
     </div>
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="form-group">
             <label>Fin de la falla <small class="text-muted">(dejar vacío si no se corrigió)</small></label>
             <input type="datetime-local" name="fecha_fin_falla" id="fecha_fin_falla" class="form-control @error('fecha_fin_falla') is-invalid @enderror" value="{{ $fechaFinSel }}">
             @error('fecha_fin_falla')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="form-group">
+            <label>Estado del ticket</label>
+            <select name="estado_ticketera" id="estado_ticketera" class="form-control @error('estado_ticketera') is-invalid @enderror">
+                @foreach($estadosTicket as $estadoTicket)
+                    <option value="{{ $estadoTicket }}" @selected($estadoSel === $estadoTicket)>{{ $estadoTicket }}</option>
+                @endforeach
+            </select>
+            @error('estado_ticketera')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
     </div>
 </div>

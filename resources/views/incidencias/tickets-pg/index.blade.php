@@ -11,10 +11,33 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">Borradores y enviados</h4>
                 @can('crear-ticket-pg')
-                    <a href="{{ route('incidencias.tickets-pg.create') }}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Nuevo Ticket PG
-                    </a>
+                    <div>
+                        <a href="{{ route('incidencias.tickets-pg.importar') }}" class="btn btn-outline-info">
+                            <i class="fas fa-file-import"></i> Importar Excel
+                        </a>
+                        <a href="{{ route('incidencias.tickets-pg.create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Nuevo Ticket PG
+                        </a>
+                    </div>
                 @endcan
+            </div>
+            <div class="card-body border-bottom py-3">
+                <form method="GET" action="{{ route('incidencias.tickets-pg.index') }}">
+                    <div class="input-group" style="max-width: 480px;">
+                        <input type="text" name="q" class="form-control" value="{{ $busqueda }}"
+                               placeholder="Buscar por texto, código PG, nro. o ID de ref. de la ticketera...">
+                        <div class="input-group-append">
+                            <button type="submit" class="btn btn-primary" title="Buscar">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            @if($busqueda !== '')
+                                <a href="{{ route('incidencias.tickets-pg.index') }}" class="btn btn-light" title="Limpiar búsqueda">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                </form>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
@@ -24,7 +47,8 @@
                                 <th>Código interno</th>
                                 <th>Ticketera</th>
                                 <th>Asunto</th>
-                                <th>Estado</th>
+                                <th>Estado ticket</th>
+                                <th>Envío</th>
                                 <th>Creado</th>
                                 <th class="text-center" style="width:130px">Acciones</th>
                             </tr>
@@ -33,10 +57,27 @@
                             @forelse($tickets as $ticket)
                                 <tr>
                                     <td><strong>{{ $ticket->codigo_interno }}</strong></td>
-                                    <td>{{ $ticket->codigo_ticketera ?: '-' }}</td>
+                                    <td>
+                                        {{ $ticket->codigo_ticketera ?: '-' }}
+                                        @if($ticket->referencia_ticketera)
+                                            <small class="text-muted d-block">{{ $ticket->referencia_ticketera }}</small>
+                                        @endif
+                                    </td>
                                     <td>{{ $ticket->asunto }}</td>
                                     <td>
-                                        <span class="badge badge-{{ $ticket->estado_envio === 'enviado' ? 'success' : ($ticket->estado_envio === 'error' ? 'danger' : 'secondary') }}">
+                                        <span class="badge badge-{{ $ticket->colorEstadoTicketera() }}">
+                                            {{ $ticket->estadoTicketeraLegible() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @php
+                                            $colorEnvio = [
+                                                'enviado'   => 'success',
+                                                'error'     => 'danger',
+                                                'importado' => 'info',
+                                            ][$ticket->estado_envio] ?? 'secondary';
+                                        @endphp
+                                        <span class="badge badge-{{ $colorEnvio }}">
                                             {{ strtoupper($ticket->estado_envio) }}
                                         </span>
                                     </td>
@@ -56,7 +97,9 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center text-muted py-4">No hay tickets PG cargados.</td>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        {{ $busqueda !== '' ? 'No se encontraron tickets para "' . $busqueda . '".' : 'No hay tickets PG cargados.' }}
+                                    </td>
                                 </tr>
                             @endforelse
                         </tbody>

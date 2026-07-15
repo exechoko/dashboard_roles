@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\EnviarTicketPgRequest;
+use App\Http\Requests\ImportarTicketsPgRequest;
 use App\Http\Requests\StoreTicketPgRequest;
+use App\Imports\TicketsPgImport;
 use App\Models\Camara;
 use App\Models\DispositivoEdificio;
 use App\Models\Equipo;
@@ -16,7 +18,10 @@ use App\Services\RedactorTicketPgService;
 use App\Services\SecuenciaTicketeraService;
 use App\Services\TicketeraService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory as SpreadsheetIOFactory;
 use Throwable;
 
 class TicketPgController extends Controller
@@ -26,18 +31,30 @@ class TicketPgController extends Controller
         private RedactorTicketPgService $redactor
     ) {
         $this->middleware('permission:ver-ticket-pg|crear-ticket-pg|editar-ticket-pg|enviar-ticket-pg')->only(['index', 'show']);
-        $this->middleware('permission:crear-ticket-pg')->only(['create', 'store']);
+        $this->middleware('permission:crear-ticket-pg')->only(['create', 'store', 'importarForm', 'importar']);
         $this->middleware('permission:editar-ticket-pg')->only(['edit', 'update', 'mejorarRedaccion']);
         $this->middleware('permission:enviar-ticket-pg')->only('enviar');
     }
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        $tickets = TicketTicketera::query()
-            ->orderByDesc('created_at')
-            ->paginate(20);
+        $busqueda = trim((string) $request->input('q', ''));
 
-        return view('incidencias.tickets-pg.index', compact('tickets'));
+        $tickets = TicketTicketera::query()
+            ->when($busqueda !== '', function ($query) use ($busqueda): void {
+                $query->where(function ($condiciones) use ($busqueda): void {
+                    $condiciones->where('codigo_interno', 'like', "%{$busqueda}%")
+                        ->orWhere('codigo_ticketera', 'like', "%{$busqueda}%")
+                        ->orWhere('referencia_ticketera', 'like', "%{$busqueda}%")
+                        ->orWhere('asunto', 'like', "%{$busqueda}%")
+                        ->orWhere('texto_enviado', 'like', "%{$busqueda}%");
+                });
+            })
+            ->orderByDesc('created_at')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('incidencias.tickets-pg.index', compact('tickets', 'busqueda'));
     }
 
     public function create(): View
@@ -69,6 +86,42 @@ class TicketPgController extends Controller
         return redirect()
             ->route('incidencias.tickets-pg.show', $ticket)
             ->with('success', "Ticket {$ticket->codigo_interno} guardado como borrador.");
+    }
+
+    public function importarForm(): View
+    {
+        return view('incidencias.tickets-pg.importar');
+    }
+
+    public function importar(ImportarTicketsPgRequest $request): RedirectResponse
+    {
+        try {
+            $rutaArchivo = $request->file('archivo')->getPathname();
+            $lector      = SpreadsheetIOFactory::createReaderForFile($rutaArchivo);
+            $nombreHoja  = collect($lector->listWorksheetNames($rutaArchivo))
+                ->first(fn (string $nombre): bool => str_contains(strtolower($nombre), 'patagonia'));
+
+            if ($nombreHoja === null) {
+                return back()->with('error', 'El archivo no contiene una hoja "Patagonia".');
+            }
+
+            $import = new TicketsPgImport($nombreHoja);
+            Excel::import($import, $request->file('archivo'));
+
+            foreach ($import->maximosPorAnio as $anio => $ultimoNumero) {
+                $this->secuencias->sincronizar($anio, $ultimoNumero);
+            }
+
+            $proximoCodigo = $this->secuencias->previsualizarCodigo();
+
+            return redirect()
+                ->route('incidencias.tickets-pg.index')
+                ->with('success', "Importación completa ({$nombreHoja}): {$import->importados} tickets importados, "
+                    . "{$import->omitidosExistentes} ya existentes y {$import->omitidosPlantilla} filas plantilla omitidas. "
+                    . "Próximo código: {$proximoCodigo}.");
+        } catch (Throwable $e) {
+            return back()->with('error', 'Error al importar: ' . $e->getMessage());
+        }
     }
 
     public function show(TicketTicketera $ticket): View
@@ -143,6 +196,12 @@ class TicketPgController extends Controller
                 ->with('error', 'El ticket ya figura como enviado.');
         }
 
+        if ($ticket->yaEstaEnTicketera()) {
+            return redirect()
+                ->route('incidencias.tickets-pg.show', $ticket)
+                ->with('error', "El ticket ya existe en la ticketera con el número {$ticket->codigo_ticketera}. No se reenvía para no duplicarlo.");
+        }
+
         try {
             $respuestaTicketera = $ticketera->crearTicket($ticket->toArray());
 
@@ -209,8 +268,7 @@ class TicketPgController extends Controller
             ])->all();
             $datos['cantidad_items'] = $camaras->count();
         } else {
-            $datos['camaras_afectadas'] = null;
-            $datos['cantidad_items'] = null;
+            unset($datos['camaras_afectadas'], $datos['cantidad_items']);
         }
 
         if (!empty($datos['recurso_id'])) {

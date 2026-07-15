@@ -32,6 +32,7 @@ class StoreTicketPgRequest extends FormRequest
             'camaras.*'          => 'integer|exists:camaras,id',
             'cantidad_items'     => 'nullable|integer|min:0',
             'periodo_facturado'  => 'nullable|string|max:30',
+            'estado_ticketera'   => 'nullable|string|max:80',
             'aplica_calculo'     => 'nullable|boolean',
             'observaciones'      => 'nullable|string|max:2000',
             'asunto'             => 'nullable|string|max:200',

@@ -555,6 +555,8 @@ Route::group(['middleware' => ['auth']], function () {
             Route::get('/', [App\Http\Controllers\TicketPgController::class, 'index'])->name('index');
             Route::get('/create', [App\Http\Controllers\TicketPgController::class, 'create'])->name('create');
             Route::post('/', [App\Http\Controllers\TicketPgController::class, 'store'])->name('store');
+            Route::get('/importar', [App\Http\Controllers\TicketPgController::class, 'importarForm'])->name('importar');
+            Route::post('/importar', [App\Http\Controllers\TicketPgController::class, 'importar'])->name('importar.post');
             Route::get('/{ticket}', [App\Http\Controllers\TicketPgController::class, 'show'])->name('show');
             Route::get('/{ticket}/edit', [App\Http\Controllers\TicketPgController::class, 'edit'])->name('edit');
             Route::put('/{ticket}', [App\Http\Controllers\TicketPgController::class, 'update'])->name('update');

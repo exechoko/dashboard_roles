@@ -13,6 +13,7 @@ class TicketTicketera extends Model
         'incidencia_911_id',
         'codigo_interno',
         'codigo_ticketera',
+        'referencia_ticketera',
         'url_seguimiento',
         'asunto',
         'texto_enviado',
@@ -71,5 +72,31 @@ class TicketTicketera extends Model
     public function estaEnviado(): bool
     {
         return $this->estado_envio === 'enviado';
+    }
+
+    public function yaEstaEnTicketera(): bool
+    {
+        return !empty($this->codigo_ticketera);
+    }
+
+    public function estadoTicketeraLegible(): string
+    {
+        return $this->estado_ticketera ?: 'Nuevo';
+    }
+
+    /**
+     * Color de badge Bootstrap según el estado del ticket en la ticketera
+     * (Resuelto / En progreso / Nuevo / etc., tal como viene del Excel o HESK).
+     */
+    public function colorEstadoTicketera(): string
+    {
+        $estado = mb_strtolower($this->estadoTicketeraLegible());
+
+        return match (true) {
+            str_contains($estado, 'resuel') || str_contains($estado, 'cierre') => 'success',
+            str_contains($estado, 'progre') || str_contains($estado, 'espera') => 'warning',
+            str_contains($estado, 'respond')                                   => 'info',
+            default                                                            => 'primary',
+        };
     }
 }

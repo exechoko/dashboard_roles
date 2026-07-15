@@ -231,7 +231,7 @@
 @endcan
 
 @can('ver-menu-tareas')
-    <li class="dropdown {{ request()->is('tareas*') ? 'active' : '' }}">
+    <li class="dropdown {{ request()->is('tareas*') || request()->is('incidencias/tickets-pg*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-tasks"></i><span>Tareas</span>
         </a>
@@ -242,6 +242,11 @@
             <li class="{{ request()->is('tareas') ? 'active' : '' }}">
                 <a class="nav-link" href="{{ route('tareas.index') }}">
                     <i class="fas fa-list"></i><span>Tareas</span>
+                </a>
+            </li>
+            <li class="{{ request()->is('incidencias/tickets-pg*') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('incidencias.tickets-pg.create') }}">
+                    <i class="fas fa-ticket-alt"></i><span>Generar Ticket PG</span>
                 </a>
             </li>
             @can('ver-personal')

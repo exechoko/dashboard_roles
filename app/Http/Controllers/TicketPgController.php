@@ -38,8 +38,15 @@ class TicketPgController extends Controller
 
     public function index(Request $request): View
     {
+        $request->validate([
+            'desde' => 'nullable|date',
+            'hasta' => 'nullable|date',
+        ]);
+
         $busqueda = trim((string) $request->input('q', ''));
         $estadoFiltro = (string) $request->input('estado', '');
+        $fechaDesde = (string) $request->input('desde', '');
+        $fechaHasta = (string) $request->input('hasta', '');
 
         $consultaBase = TicketTicketera::query()
             ->when($busqueda !== '', function ($query) use ($busqueda): void {
@@ -50,7 +57,9 @@ class TicketPgController extends Controller
                         ->orWhere('asunto', 'like', "%{$busqueda}%")
                         ->orWhere('texto_enviado', 'like', "%{$busqueda}%");
                 });
-            });
+            })
+            ->when($fechaDesde !== '', fn ($query) => $query->whereDate('created_at', '>=', $fechaDesde))
+            ->when($fechaHasta !== '', fn ($query) => $query->whereDate('created_at', '<=', $fechaHasta));
 
         $conteosPorEstado = [
             ''            => (clone $consultaBase)->count(),
@@ -65,7 +74,7 @@ class TicketPgController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('incidencias.tickets-pg.index', compact('tickets', 'busqueda', 'estadoFiltro', 'conteosPorEstado'));
+        return view('incidencias.tickets-pg.index', compact('tickets', 'busqueda', 'estadoFiltro', 'conteosPorEstado', 'fechaDesde', 'fechaHasta'));
     }
 
     public function create(): View

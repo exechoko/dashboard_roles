@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 
@@ -67,6 +68,32 @@ class TicketTicketera extends Model
     public function tipoTerminal(): BelongsTo
     {
         return $this->belongsTo(TipoTerminal::class, 'tipo_terminal_id');
+    }
+
+    /**
+     * Filtra por grupo de estado de la ticketera: 'nuevos', 'en_progreso'
+     * (incluye en espera y respondido) o 'resueltos'. Agrupa las variantes
+     * que vienen del Excel/HESK con el mismo criterio que colorEstadoTicketera().
+     */
+    public function scopeGrupoEstado(Builder $query, string $grupo): Builder
+    {
+        return match ($grupo) {
+            'nuevos'      => $query->where(function (Builder $condiciones): void {
+                $condiciones->whereNull('estado_ticketera')
+                    ->orWhere('estado_ticketera', 'Nuevo')
+                    ->orWhere('estado_ticketera', 'creado');
+            }),
+            'en_progreso' => $query->where(function (Builder $condiciones): void {
+                $condiciones->where('estado_ticketera', 'like', '%progre%')
+                    ->orWhere('estado_ticketera', 'like', '%espera%')
+                    ->orWhere('estado_ticketera', 'like', '%respond%');
+            }),
+            'resueltos'   => $query->where(function (Builder $condiciones): void {
+                $condiciones->where('estado_ticketera', 'like', '%resuel%')
+                    ->orWhere('estado_ticketera', 'like', '%cierre%');
+            }),
+            default       => $query,
+        };
     }
 
     public function estaEnviado(): bool

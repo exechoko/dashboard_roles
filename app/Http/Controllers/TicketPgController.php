@@ -39,8 +39,9 @@ class TicketPgController extends Controller
     public function index(Request $request): View
     {
         $busqueda = trim((string) $request->input('q', ''));
+        $estadoFiltro = (string) $request->input('estado', '');
 
-        $tickets = TicketTicketera::query()
+        $consultaBase = TicketTicketera::query()
             ->when($busqueda !== '', function ($query) use ($busqueda): void {
                 $query->where(function ($condiciones) use ($busqueda): void {
                     $condiciones->where('codigo_interno', 'like', "%{$busqueda}%")
@@ -49,12 +50,22 @@ class TicketPgController extends Controller
                         ->orWhere('asunto', 'like', "%{$busqueda}%")
                         ->orWhere('texto_enviado', 'like', "%{$busqueda}%");
                 });
-            })
+            });
+
+        $conteosPorEstado = [
+            ''            => (clone $consultaBase)->count(),
+            'nuevos'      => (clone $consultaBase)->grupoEstado('nuevos')->count(),
+            'en_progreso' => (clone $consultaBase)->grupoEstado('en_progreso')->count(),
+            'resueltos'   => (clone $consultaBase)->grupoEstado('resueltos')->count(),
+        ];
+
+        $tickets = $consultaBase
+            ->when($estadoFiltro !== '', fn ($query) => $query->grupoEstado($estadoFiltro))
             ->orderByDesc('created_at')
             ->paginate(20)
             ->withQueryString();
 
-        return view('incidencias.tickets-pg.index', compact('tickets', 'busqueda'));
+        return view('incidencias.tickets-pg.index', compact('tickets', 'busqueda', 'estadoFiltro', 'conteosPorEstado'));
     }
 
     public function create(): View

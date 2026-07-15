@@ -22,22 +22,39 @@
                 @endcan
             </div>
             <div class="card-body border-bottom py-3">
-                <form method="GET" action="{{ route('incidencias.tickets-pg.index') }}">
-                    <div class="input-group" style="max-width: 480px;">
-                        <input type="text" name="q" class="form-control" value="{{ $busqueda }}"
-                               placeholder="Buscar por texto, código PG, nro. o ID de ref. de la ticketera...">
-                        <div class="input-group-append">
-                            <button type="submit" class="btn btn-primary" title="Buscar">
-                                <i class="fas fa-search"></i>
-                            </button>
-                            @if($busqueda !== '')
-                                <a href="{{ route('incidencias.tickets-pg.index') }}" class="btn btn-light" title="Limpiar búsqueda">
-                                    <i class="fas fa-times"></i>
-                                </a>
-                            @endif
+                <div class="d-flex justify-content-between align-items-center flex-wrap" style="gap: .5rem;">
+                    <form method="GET" action="{{ route('incidencias.tickets-pg.index') }}" class="flex-grow-1" style="max-width: 480px;">
+                        @if($estadoFiltro !== '')
+                            <input type="hidden" name="estado" value="{{ $estadoFiltro }}">
+                        @endif
+                        <div class="input-group">
+                            <input type="text" name="q" class="form-control" value="{{ $busqueda }}"
+                                   placeholder="Buscar por texto, código PG, nro. o ID de ref. de la ticketera...">
+                            <div class="input-group-append">
+                                <button type="submit" class="btn btn-primary" title="Buscar">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                @if($busqueda !== '')
+                                    <a href="{{ route('incidencias.tickets-pg.index', array_filter(['estado' => $estadoFiltro])) }}" class="btn btn-light" title="Limpiar búsqueda">
+                                        <i class="fas fa-times"></i>
+                                    </a>
+                                @endif
+                            </div>
                         </div>
+                    </form>
+                    @php
+                        $filtrosEstado = ['' => 'Todos', 'nuevos' => 'Nuevos', 'en_progreso' => 'En progreso', 'resueltos' => 'Resueltos'];
+                    @endphp
+                    <div class="btn-group">
+                        @foreach($filtrosEstado as $claveFiltro => $etiquetaFiltro)
+                            <a href="{{ route('incidencias.tickets-pg.index', array_filter(['q' => $busqueda, 'estado' => $claveFiltro])) }}"
+                               class="btn btn-sm {{ $estadoFiltro === $claveFiltro ? 'btn-primary' : 'btn-outline-primary' }}">
+                                {{ $etiquetaFiltro }}
+                                <span class="badge badge-{{ $estadoFiltro === $claveFiltro ? 'light' : 'primary' }} ml-1">{{ $conteosPorEstado[$claveFiltro] }}</span>
+                            </a>
+                        @endforeach
                     </div>
-                </form>
+                </div>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">

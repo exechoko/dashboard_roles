@@ -64,10 +64,11 @@
                 </div>
             </div>
             <div class="col-md-4">
+                @if(!isset($constancia))
                 <div class="form-group">
                     <label for="contrasena">Contraseña <span class="text-danger">*</span></label>
                     <div class="input-group">
-                        <input type="password" class="form-control @error('contrasena') is-invalid @enderror" id="contrasena" name="contrasena" value="{{ old('contrasena', isset($constancia) ? $constancia->contrasena : '') }}" maxlength="255" {{ isset($constancia) ? '' : 'required' }}>
+                        <input type="password" class="form-control @error('contrasena') is-invalid @enderror" id="contrasena" name="contrasena" maxlength="255" required>
                         <div class="input-group-append">
                             <button class="btn btn-outline-secondary toggle-password" type="button" data-target="contrasena">
                                 <i class="fas fa-eye"></i>
@@ -77,10 +78,16 @@
                     @error('contrasena')
                         <div class="invalid-feedback d-block">{{ $message }}</div>
                     @enderror
-                    @if(isset($constancia))
-                        <small class="text-muted">Dejar en blanco para mantener la contraseña actual.</small>
-                    @endif
+                    <small class="text-muted">La contraseña solo se usa para imprimir el documento. No se almacena en el sistema.</small>
                 </div>
+                @else
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle"></i> La contraseña no se almacena en el sistema. Si necesita un nuevo documento con contraseña, debe crear una nueva acta.
+                    </div>
+                </div>
+                @endif
             </div>
             <div class="col-md-4">
                 <div class="form-group">

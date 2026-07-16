@@ -15,13 +15,11 @@ class UpdateConstanciaCredencialRequest extends FormRequest
     {
         return [
             'nombre_apellido' => ['required', 'string', 'max:255'],
-            'dni' => ['required', 'string', 'max:20'],
+            'dni' => ['required', 'string', 'max:20', 'regex:/^[0-9]+$/'],
             'email' => ['required', 'email', 'max:255'],
-            'contrasena' => ['nullable', 'string', 'max:255'],
             'lugar' => ['nullable', 'string', 'max:255'],
             'fecha_entrega' => ['required', 'date'],
-            'firmada' => ['nullable', 'boolean'],
-            'observaciones' => ['nullable', 'string'],
+            'observaciones' => ['nullable', 'string', 'max:10000'],
         ];
     }
 
@@ -30,6 +28,7 @@ class UpdateConstanciaCredencialRequest extends FormRequest
         return [
             'nombre_apellido.required' => 'El nombre y apellido es obligatorio.',
             'dni.required' => 'El DNI es obligatorio.',
+            'dni.regex' => 'El DNI debe contener solo números.',
             'email.required' => 'El correo electrónico es obligatorio.',
             'email.email' => 'El correo electrónico debe tener un formato válido.',
             'fecha_entrega.required' => 'La fecha de entrega es obligatoria.',

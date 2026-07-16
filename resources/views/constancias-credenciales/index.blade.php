@@ -34,7 +34,7 @@
                         </div>
                         <div class="card-wrap">
                             <div class="card-header"><h4>Total Actas</h4></div>
-                            <div class="card-body">{{ $totalConstancias }}</div>
+                            <div class="card-body">{{ $stats->total }}</div>
                         </div>
                     </div>
                 </div>
@@ -45,7 +45,7 @@
                         </div>
                         <div class="card-wrap">
                             <div class="card-header"><h4>Firmadas</h4></div>
-                            <div class="card-body">{{ $totalFirmadas }}</div>
+                            <div class="card-body">{{ $stats->firmadas }}</div>
                         </div>
                     </div>
                 </div>
@@ -56,7 +56,7 @@
                         </div>
                         <div class="card-wrap">
                             <div class="card-header"><h4>Pendientes</h4></div>
-                            <div class="card-body">{{ $totalPendientes }}</div>
+                            <div class="card-body">{{ $stats->pendientes }}</div>
                         </div>
                     </div>
                 </div>
@@ -67,7 +67,7 @@
                         </div>
                         <div class="card-wrap">
                             <div class="card-header"><h4>Emails Enviados</h4></div>
-                            <div class="card-body">{{ $totalEmailsEnviados }}</div>
+                            <div class="card-body">{{ $stats->emails_enviados }}</div>
                         </div>
                     </div>
                 </div>

@@ -21,20 +21,6 @@
                 @method('PUT')
                 @include('constancias-credenciales._form')
 
-                <div class="card">
-                    <div class="card-header">
-                        <h4><i class="fas fa-check-circle"></i> Estado del Acta</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group">
-                            <div class="custom-control custom-checkbox">
-                                <input type="checkbox" class="custom-control-input" id="firmada" name="firmada" value="1" {{ $constancia->firmada ? 'checked' : '' }}>
-                                <label class="custom-control-label" for="firmada">Acta firmada en conformidad</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="text-right">
                     <a href="{{ route('constancias-credenciales.show', $constancia) }}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i> Cancelar

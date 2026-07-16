@@ -186,22 +186,18 @@
                             <h4>Acciones</h4>
                         </div>
                         <div class="card-body">
-                            @can('crear-constancias-credenciales')
-                                <a href="{{ route('constancias-credenciales.documento', $constancia) }}" class="btn btn-secondary btn-block mb-2">
-                                    <i class="fas fa-file-word"></i> Generar / Descargar Acta Word
-                                </a>
-                            @endcan
-
                             @if($constancia->ruta_archivo)
-                                <a href="{{ route('constancias-credenciales.descargar', $constancia) }}" class="btn btn-primary btn-block mb-2">
-                                    <i class="fas fa-download"></i> Descargar Acta Generada
+                                <a href="{{ route('constancias-credenciales.descargar', $constancia) }}" class="btn btn-secondary btn-block mb-2">
+                                    <i class="fas fa-file-word"></i> Descargar Documento Word
                                 </a>
+                            @else
+                                <div class="alert alert-warning mb-2">No se ha generado documento para esta constancia.</div>
                             @endif
 
                             @can('crear-constancias-credenciales')
                                 <form action="{{ route('constancias-credenciales.enviar-email', $constancia) }}" method="POST" class="mb-2">
                                     @csrf
-                                    <button type="submit" class="btn btn-info btn-block">
+                                    <button type="submit" class="btn btn-info btn-block" onclick="return confirm('¿Está seguro de enviar el email de notificación?')">
                                         <i class="fas fa-envelope"></i>
                                         {{ $constancia->email_enviado ? 'Reenviar Email' : 'Enviar Email' }} de Notificación
                                     </button>

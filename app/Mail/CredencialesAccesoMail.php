@@ -20,7 +20,7 @@ class CredencialesAccesoMail extends Mailable
     {
         $this->nombreUsuario = $nombreUsuario;
         $this->sistemaNombre = 'Sistema CAR911';
-        $this->sistemaURL = 'https://car911.stper.com.ar';
+        $this->sistemaURL = config('app.url');
     }
 
     public function build()

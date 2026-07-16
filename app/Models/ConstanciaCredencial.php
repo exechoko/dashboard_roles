@@ -18,7 +18,6 @@ class ConstanciaCredencial extends Model
         'nombre_apellido',
         'dni',
         'email',
-        'contrasena',
         'lugar',
         'fecha_entrega',
         'firmada',

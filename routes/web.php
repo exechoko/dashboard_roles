@@ -382,7 +382,6 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('{id}/editar', [ConstanciasCredencialesController::class, 'edit'])->name('edit');
         Route::put('{id}', [ConstanciasCredencialesController::class, 'update'])->name('update');
         Route::delete('{id}', [ConstanciasCredencialesController::class, 'destroy'])->name('destroy');
-        Route::get('{id}/documento', [ConstanciasCredencialesController::class, 'generarDocumento'])->name('documento');
         Route::get('{id}/descargar', [ConstanciasCredencialesController::class, 'descargarDocumento'])->name('descargar');
         Route::post('{id}/acta-firmada', [ConstanciasCredencialesController::class, 'uploadActaFirmada'])->name('upload-acta-firmada');
         Route::post('{id}/enviar-email', [ConstanciasCredencialesController::class, 'enviarEmail'])->name('enviar-email');

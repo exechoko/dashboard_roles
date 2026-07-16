@@ -68,6 +68,7 @@
                                                         'menu-incidencias-911',
                                                         'menu-plano-edificio',
                                                         'menu-manuales',
+                                                        'menu-constancias-credenciales',
                                                     ],
                                                     'Administración' => [
                                                         'rol',
@@ -118,6 +119,9 @@
                                                         'entrega-equipos',
                                                         'entrega-bodycams',
                                                         'entrega-combustible'
+                                                    ],
+                                                    'Actas de Credenciales' => [
+                                                        'constancias-credenciales'
                                                     ],
                                                     'Tareas' => [
                                                         'tarea'

@@ -574,6 +574,14 @@
     </li>
 @endcanany
 
+@can('ver-menu-constancias-credenciales')
+    <li class="{{ request()->is('constancias-credenciales*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('constancias-credenciales.index') }}">
+            <i class="fas fa-key"></i><span>Actas de Credenciales</span>
+        </a>
+    </li>
+@endcan
+
 @can('ver-menu-auditoria')
     <li class="{{ request()->is('auditoria*') ? 'active' : '' }}">
         <a class="nav-link" href="/auditoria">

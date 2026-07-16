@@ -4,6 +4,7 @@ use App\Http\Controllers\AudioTranscriptionController;
 use App\Http\Controllers\BodycamController;
 use App\Http\Controllers\EntregasBodycamsController;
 use App\Http\Controllers\EntregasCombustibleController;
+use App\Http\Controllers\ConstanciasCredencialesController;
 use App\Http\Controllers\EntregasEquiposController;
 use App\Http\Controllers\PasswordVaultController;
 use App\Http\Controllers\PatrimonioBienController;
@@ -371,6 +372,20 @@ Route::group(['middleware' => ['auth']], function () {
         ->name('entrega-combustible.acta-firmada')
         ->middleware('can:editar-entrega-combustible');
 
+    // Constancias de credenciales CAR911
+    Route::prefix('constancias-credenciales')->name('constancias-credenciales.')->group(function () {
+        Route::get('/', [ConstanciasCredencialesController::class, 'index'])->name('index');
+        Route::get('crear', [ConstanciasCredencialesController::class, 'create'])->name('create');
+        Route::post('/', [ConstanciasCredencialesController::class, 'store'])->name('store');
+        Route::get('buscar/usuarios', [ConstanciasCredencialesController::class, 'buscarUsuarios'])->name('buscar-usuarios');
+        Route::get('{id}', [ConstanciasCredencialesController::class, 'show'])->name('show');
+        Route::get('{id}/editar', [ConstanciasCredencialesController::class, 'edit'])->name('edit');
+        Route::put('{id}', [ConstanciasCredencialesController::class, 'update'])->name('update');
+        Route::delete('{id}', [ConstanciasCredencialesController::class, 'destroy'])->name('destroy');
+        Route::get('{id}/descargar', [ConstanciasCredencialesController::class, 'descargarDocumento'])->name('descargar');
+        Route::post('{id}/acta-firmada', [ConstanciasCredencialesController::class, 'uploadActaFirmada'])->name('upload-acta-firmada');
+        Route::post('{id}/enviar-email', [ConstanciasCredencialesController::class, 'enviarEmail'])->name('enviar-email');
+    });
 
     // Pantalla de verificación de contraseña maestra (sin el middleware para no crear loop)
     Route::get('password-vault-auth', [PasswordVaultController::class, 'masterPasswordForm'])

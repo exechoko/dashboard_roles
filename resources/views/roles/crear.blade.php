@@ -67,6 +67,7 @@
                                                         'menu-incidencias-911',
                                                         'menu-plano-edificio',
                                                         'menu-manuales',
+                                                        'menu-constancias-credenciales',
                                                     ],
                                                     'Administración' => [
                                                         'rol',
@@ -137,6 +138,9 @@
                                                         'periodo-911',
                                                         'incidencia-911',
                                                         'generar-informe-911'
+                                                    ],
+                                                    'Actas de Credenciales' => [
+                                                        'constancias-credenciales'
                                                     ],
                                                     'Plano Edificio' => [
                                                         'plano-edificio'

@@ -382,16 +382,6 @@ HTML,
                 'tipo'    => 'textarea',
                 'default' => 'Recursos, líneas de ayuda y centros de atención. SEDRONAR: línea 141 gratuita y anónima.',
             ],
-            'educacion.tarjeta7_titulo' => [
-                'label'   => 'Tarjeta 7 · título',
-                'tipo'    => 'text',
-                'default' => 'Material para Escuelas',
-            ],
-            'educacion.tarjeta7_texto' => [
-                'label'   => 'Tarjeta 7 · texto',
-                'tipo'    => 'textarea',
-                'default' => 'Programas educativos, material descargable, videos didácticos y actividades para el aula.',
-            ],
             'educacion.campanias_titulo' => [
                 'label'   => 'Título "Campañas estacionales"',
                 'tipo'    => 'text',

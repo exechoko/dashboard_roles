@@ -83,9 +83,13 @@ class ConstanciasCredencialesController extends Controller
         ));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('constancias-credenciales.crear');
+        $usuarioPreseleccionado = $request->filled('user_id')
+            ? User::query()->findOrFail($request->integer('user_id'))
+            : null;
+
+        return view('constancias-credenciales.crear', compact('usuarioPreseleccionado'));
     }
 
     public function store(StoreConstanciaCredencialRequest $request): RedirectResponse|BinaryFileResponse

@@ -383,8 +383,8 @@
     </li>
 @endcan
 
-@can('ver-menu-usuarios')
-    <li class="dropdown {{ request()->is('usuarios*') ? 'active' : '' }} {{ request()->is('roles*') ? 'active' : '' }}">
+@canany(['ver-menu-usuarios', 'ver-menu-constancias-credenciales'])
+    <li class="dropdown {{ request()->is('usuarios*') || request()->is('roles*') || request()->is('constancias-credenciales*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-users"></i><span>Usuarios</span>
         </a>
@@ -403,9 +403,16 @@
                     </a>
                 </li>
             @endcan
+            @can('ver-menu-constancias-credenciales')
+                <li class="{{ request()->is('constancias-credenciales*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('constancias-credenciales.index') }}">
+                        <i class="fas fa-key"></i><span>Actas de Credenciales</span>
+                    </a>
+                </li>
+            @endcan
         </ul>
     </li>
-@endcan
+@endcanany
 
 <!--
 @can('ver-menu-transcripcion')
@@ -573,14 +580,6 @@
         </ul>
     </li>
 @endcanany
-
-@can('ver-menu-constancias-credenciales')
-    <li class="{{ request()->is('constancias-credenciales*') ? 'active' : '' }}">
-        <a class="nav-link" href="{{ route('constancias-credenciales.index') }}">
-            <i class="fas fa-key"></i><span>Actas de Credenciales</span>
-        </a>
-    </li>
-@endcan
 
 @can('ver-menu-auditoria')
     <li class="{{ request()->is('auditoria*') ? 'active' : '' }}">

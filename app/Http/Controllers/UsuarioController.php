@@ -32,7 +32,9 @@ class UsuarioController extends Controller
         return view('usuarios.index',compact('usuarios')); */
 
         //Con paginación
-        $usuarios = User::paginate(100);
+        $usuarios = User::query()
+            ->with('ultimaConstanciaCredencial')
+            ->paginate(100);
         return view('usuarios.index', compact('usuarios'));
 
         //al usar esta paginacion, recordar poner en el el index.blade.php este codigo  {!! $usuarios->links() !!}

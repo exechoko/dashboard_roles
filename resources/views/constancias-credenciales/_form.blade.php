@@ -1,3 +1,7 @@
+@php
+    $usuarioSeleccionado = isset($constancia) ? $constancia->usuario : ($usuarioPreseleccionado ?? null);
+@endphp
+
 <div class="card">
     <div class="card-header">
         <h4><i class="fas fa-user-shield"></i> Datos del Receptor</h4>
@@ -8,9 +12,15 @@
                 <div class="form-group">
                     <label for="usuario_busqueda">Buscar Usuario del Sistema</label>
                     <select class="form-control select2-usuario" id="usuario_busqueda" style="width: 100%;">
-                        <option value="">Buscar por nombre, apellido, DNI o email...</option>
+                        @if ($usuarioSeleccionado)
+                            <option value="{{ $usuarioSeleccionado->id }}" selected>
+                                {{ $usuarioSeleccionado->name }} {{ $usuarioSeleccionado->apellido }} - DNI: {{ $usuarioSeleccionado->dni ?? 'N/A' }}
+                            </option>
+                        @else
+                            <option value="">Buscar por nombre, apellido, DNI o email...</option>
+                        @endif
                     </select>
-                    <input type="hidden" name="user_id" id="user_id" value="{{ old('user_id', isset($constancia) ? $constancia->user_id : '') }}">
+                    <input type="hidden" name="user_id" id="user_id" value="{{ old('user_id', $usuarioSeleccionado?->id) }}">
                     <small class="text-muted">Seleccione un usuario para autocompletar los datos, o complete manualmente.</small>
                 </div>
             </div>
@@ -20,7 +30,7 @@
             <div class="col-md-6">
                 <div class="form-group">
                     <label for="nombre_apellido">Nombre y Apellido <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control @error('nombre_apellido') is-invalid @enderror" id="nombre_apellido" name="nombre_apellido" value="{{ old('nombre_apellido', isset($constancia) ? $constancia->nombre_apellido : '') }}" maxlength="255" required>
+                    <input type="text" class="form-control @error('nombre_apellido') is-invalid @enderror" id="nombre_apellido" name="nombre_apellido" value="{{ old('nombre_apellido', isset($constancia) ? $constancia->nombre_apellido : trim(($usuarioSeleccionado?->name ?? '') . ' ' . ($usuarioSeleccionado?->apellido ?? ''))) }}" maxlength="255" required>
                     @error('nombre_apellido')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -29,7 +39,7 @@
             <div class="col-md-3">
                 <div class="form-group">
                     <label for="dni">DNI <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control @error('dni') is-invalid @enderror" id="dni" name="dni" value="{{ old('dni', isset($constancia) ? $constancia->dni : '') }}" maxlength="20" required>
+                    <input type="text" class="form-control @error('dni') is-invalid @enderror" id="dni" name="dni" value="{{ old('dni', isset($constancia) ? $constancia->dni : ($usuarioSeleccionado?->dni ?? '')) }}" maxlength="20" required>
                     @error('dni')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -57,7 +67,7 @@
             <div class="col-md-4">
                 <div class="form-group">
                     <label for="email">Correo Electrónico Registrado <span class="text-danger">*</span></label>
-                    <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email', isset($constancia) ? $constancia->email : '') }}" maxlength="255" required>
+                    <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email', isset($constancia) ? $constancia->email : ($usuarioSeleccionado?->email ?? '')) }}" maxlength="255" required>
                     @error('email')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror

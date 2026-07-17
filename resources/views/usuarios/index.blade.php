@@ -28,6 +28,7 @@
                                         <th style="color: #fff;">E-mail</th>
 
                                         <th style="color: #fff;">Rol</th>
+                                        <th style="color: #fff;">Acta CAR911</th>
                                         <th style="color: #fff;">Acciones</th>
                                     </thead>
                                     <tbody>
@@ -61,6 +62,31 @@
                                                                 </span>
                                                             </h5>
                                                         @endforeach
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    @if ($usuario->ultimaConstanciaCredencial)
+                                                        @if ($usuario->ultimaConstanciaCredencial->ruta_archivo)
+                                                            <span class="badge badge-success mb-1">Generada</span>
+                                                        @else
+                                                            <span class="badge badge-warning mb-1">Sin documento</span>
+                                                        @endif
+                                                        @can('ver-constancias-credenciales')
+                                                            <a class="btn btn-sm btn-outline-success"
+                                                               href="{{ route('constancias-credenciales.show', $usuario->ultimaConstanciaCredencial) }}"
+                                                               title="Ver acta N° {{ $usuario->ultimaConstanciaCredencial->id }}">
+                                                                <i class="fas fa-file-alt"></i> Ver acta
+                                                            </a>
+                                                        @endcan
+                                                    @else
+                                                        <span class="badge badge-secondary mb-1">Sin generar</span>
+                                                        @can('crear-constancias-credenciales')
+                                                            <a class="btn btn-sm btn-outline-primary"
+                                                               href="{{ route('constancias-credenciales.create', ['user_id' => $usuario->id]) }}"
+                                                               title="Generar acta para {{ $usuario->name }} {{ $usuario->apellido }}">
+                                                                <i class="fas fa-file-signature"></i> Generar
+                                                            </a>
+                                                        @endcan
                                                     @endif
                                                 </td>
                                                 <td>

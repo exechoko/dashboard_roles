@@ -341,10 +341,12 @@
 
             // Force focus on search field when Select2 opens
             $(document).on('select2:open', () => {
-                let select2Field = document.querySelector('.select2-search__field');
-                if (select2Field) {
-                    select2Field.focus();
-                }
+                setTimeout(() => {
+                    let select2Field = document.querySelector('.select2-container--open .select2-search__field');
+                    if (select2Field) {
+                        select2Field.focus();
+                    }
+                }, 0);
             });
 
             // Add image functionality

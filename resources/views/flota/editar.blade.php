@@ -221,10 +221,12 @@
             });
             // Forzar el foco en el campo de búsqueda cuando se abre el Select2
             $(document).on('select2:open', () => {
-                let select2Field = document.querySelector('.select2-search__field');
-                if (select2Field) {
-                    select2Field.focus();
-                }
+                setTimeout(() => {
+                    let select2Field = document.querySelector('.select2-container--open .select2-search__field');
+                    if (select2Field) {
+                        select2Field.focus();
+                    }
+                }, 0);
             });
             let imageCount = 0;
 

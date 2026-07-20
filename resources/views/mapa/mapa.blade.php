@@ -203,7 +203,7 @@
         }).on('select2:open', function() {
             // Forzar el foco en el campo de búsqueda
             setTimeout(function() {
-                document.querySelector('.select2-search__field').focus();
+                document.querySelector('.select2-container--open .select2-search__field').focus();
             }, 0);
         }).on('change', function() {
             var selectedOption = $(this).find(':selected');

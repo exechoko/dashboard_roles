@@ -8,8 +8,8 @@
     $subsistemaCategoria = $subsistemaPorCategoria ?? config('ticketera_categorias.subsistema_por_categoria', []);
     $subsistemasAgrupados = collect($subsistemasLista)->groupBy(fn ($item) => trim(explode(' - ', $item)[0]));
 
-    $categoriaSeleccionada = old('tipo_equipo', $ticketActual?->tipo_equipo ?? 'Tetra');
-    $subsistemaSeleccionado = old('subsistema', $ticketActual?->subsistema ?? 'Sist. TETRA - Comunicación - Por Terminales TETRA');
+    $categoriaSeleccionada = old('tipo_equipo', $ticketActual?->tipo_equipo ?? '');
+    $subsistemaSeleccionado = old('subsistema', $ticketActual?->subsistema ?? '');
 
     $recursoSel = old('recurso_id', $ticketActual?->recurso_id);
     $equipoSel = old('equipo_id', $ticketActual?->equipo_id);
@@ -41,6 +41,7 @@
         <div class="form-group">
             <label>Categoría *</label>
             <select name="tipo_equipo" id="tipo_equipo" class="form-control @error('tipo_equipo') is-invalid @enderror" required>
+                <option value="" @selected($categoriaSeleccionada === '')>— Seleccione una categoría —</option>
                 @foreach($categoriasLista as $categoria)
                     <option value="{{ $categoria }}" @selected($categoriaSeleccionada === $categoria)>{{ $categoria }}</option>
                 @endforeach
@@ -195,6 +196,7 @@
 <div class="form-group">
     <label>Subsistema * <small class="text-muted">(define el % de falla / cálculo de multa)</small></label>
     <select name="subsistema" id="subsistema" class="form-control @error('subsistema') is-invalid @enderror" required>
+        <option value="" @selected($subsistemaSeleccionado === '')>— Seleccione un subsistema —</option>
         @foreach($subsistemasAgrupados as $nivel1 => $items)
             <optgroup label="{{ $nivel1 }}">
                 @foreach($items as $subsistema)
@@ -384,10 +386,12 @@
 
         // Forzar el foco en el campo de búsqueda cuando se abre el Select2
         $(document).on('select2:open', () => {
-            let select2Field = document.querySelector('.select2-search__field');
-            if (select2Field) {
-                select2Field.focus();
-            }
+            setTimeout(() => {
+                let select2Field = document.querySelector('.select2-container--open .select2-search__field');
+                if (select2Field) {
+                    select2Field.focus();
+                }
+            }, 0);
         });
 
         actualizarBloques();

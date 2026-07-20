@@ -154,8 +154,10 @@
         $(document).ready(function () {
             $('.select2').select2({ width: '100%' });
             $(document).on('select2:open', () => {
-                let f = document.querySelector('.select2-search__field');
-                if (f) f.focus();
+                setTimeout(() => {
+                    let f = document.querySelector('.select2-container--open .select2-search__field');
+                    if (f) f.focus();
+                }, 0);
             });
             $('[data-toggle="tooltip"]').tooltip({ trigger: 'hover', delay: { show: 300, hide: 100 } });
         });

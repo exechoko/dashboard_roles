@@ -241,8 +241,10 @@
 <script>
     $('.select2').select2({ width: '100%' });
     $(document).on('select2:open', () => {
-        let field = document.querySelector('.select2-search__field');
-        if (field) field.focus();
+        setTimeout(() => {
+            let field = document.querySelector('.select2-container--open .select2-search__field');
+            if (field) field.focus();
+        }, 0);
     });
     $('.js-agrupar-cargos').on('submit', function () {
         return confirm('¿Agrupar todos los cargos pendientes de esta dependencia en un solo cargo?');

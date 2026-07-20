@@ -87,10 +87,12 @@
         $(document).ready(function () {
             $('.select2').select2({ width: '100%' });
             $(document).on('select2:open', () => {
-                let select2Field = document.querySelector('.select2-search__field');
-                if (select2Field) {
-                    select2Field.focus();
-                }
+                setTimeout(() => {
+                    let select2Field = document.querySelector('.select2-container--open .select2-search__field');
+                    if (select2Field) {
+                        select2Field.focus();
+                    }
+                }, 0);
             });
         });
     </script>

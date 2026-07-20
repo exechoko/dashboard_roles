@@ -15,6 +15,7 @@ class StoreTicketPgRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'origen'             => ['required', 'string', Rule::in(['nuestro', 'pg'])],
             'tipo_equipo'        => ['required', 'string', Rule::in(config('ticketera_categorias.categorias'))],
             'modelo_equipo'      => 'nullable|string|max:80',
             'movil'              => 'nullable|string|max:80',
@@ -34,7 +35,7 @@ class StoreTicketPgRequest extends FormRequest
             'periodo_facturado'  => 'nullable|string|max:30',
             'estado_ticketera'   => 'nullable|string|max:80',
             'aplica_calculo'     => 'nullable|boolean',
-            'observaciones'      => 'nullable|string|max:2000',
+            'observaciones'      => 'nullable|string|max:10000',
             'asunto'             => 'nullable|string|max:200',
             'texto_enviado'      => 'nullable|string|max:10000',
             'accion'             => 'nullable|in:guardar,enviar',

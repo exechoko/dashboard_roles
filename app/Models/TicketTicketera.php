@@ -13,6 +13,7 @@ class TicketTicketera extends Model
     protected $fillable = [
         'incidencia_911_id',
         'codigo_interno',
+        'origen',
         'codigo_ticketera',
         'referencia_ticketera',
         'url_seguimiento',
@@ -99,6 +100,16 @@ class TicketTicketera extends Model
     public function estaEnviado(): bool
     {
         return $this->estado_envio === 'enviado';
+    }
+
+    /**
+     * true si el ticket lo abrió Patagonia Green pidiéndonos algo a nosotros
+     * (ej. solicitud de combustible), en vez del caso normal donde nosotros
+     * le pedimos algo a PG.
+     */
+    public function esDePg(): bool
+    {
+        return $this->origen === 'pg';
     }
 
     public function yaEstaEnTicketera(): bool

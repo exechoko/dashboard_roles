@@ -30,14 +30,14 @@
 @endphp
 
 <div class="row">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="form-group">
             <label>Código interno</label>
             <input type="text" class="form-control" value="{{ $codigoActual }}" readonly id="codigo_interno_preview">
             <small class="form-text text-muted">Se confirma al guardar. No depende de la ticketera.</small>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="form-group">
             <label>Categoría *</label>
             <select name="tipo_equipo" id="tipo_equipo" class="form-control @error('tipo_equipo') is-invalid @enderror" required>
@@ -48,13 +48,22 @@
             @error('tipo_equipo')<div class="invalid-feedback">{{ $message }}</div>@enderror
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="form-group">
             <label>Prioridad *</label>
             <select name="prioridad" id="prioridad" class="form-control" required>
                 @foreach($prioridades as $prioridad)
                     <option value="{{ $prioridad }}" @selected(old('prioridad', $ticketActual?->prioridad ?? 'Alto') === $prioridad)>{{ $prioridad }}</option>
                 @endforeach
+            </select>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="form-group">
+            <label>Origen *</label>
+            <select name="origen" id="origen" class="form-control" required>
+                <option value="nuestro" @selected(old('origen', $ticketActual?->origen ?? 'nuestro') === 'nuestro')>Nuestro (le pedimos algo a PG)</option>
+                <option value="pg" @selected(old('origen', $ticketActual?->origen ?? 'nuestro') === 'pg')>De PG (nos piden algo a nosotros)</option>
             </select>
         </div>
     </div>

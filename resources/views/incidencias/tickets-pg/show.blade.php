@@ -4,6 +4,9 @@
 <section class="section">
     <div class="section-header">
         <h1 class="section-title"><i class="fas fa-ticket-alt"></i> {{ $ticket->codigo_interno }}</h1>
+        @if($ticket->esDePg())
+            <span class="badge badge-info">Solicitud de PG</span>
+        @endif
     </div>
 
     <div class="section-body">
@@ -89,8 +92,8 @@
                             </dd>
                         </dl>
 
-                        <label>Texto enviado / a enviar</label>
-                        <textarea class="form-control" rows="8" readonly>{{ $ticket->texto_enviado }}</textarea>
+                        <label>{{ $ticket->esDePg() ? 'Solicitud recibida de PG' : 'Texto enviado / a enviar' }}</label>
+                        <div class="form-control h-auto" style="white-space: pre-line;">{{ $ticket->texto_enviado }}</div>
 
                         @php($respuestas = $ticket->respuestas())
                         @if(count($respuestas) > 0)

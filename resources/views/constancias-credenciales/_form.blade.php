@@ -157,6 +157,14 @@
                 }
             });
 
+            // Forzar el foco en el campo de búsqueda cuando se abre el Select2
+            $(document).on('select2:open', () => {
+                let select2Field = document.querySelector('.select2-search__field');
+                if (select2Field) {
+                    select2Field.focus();
+                }
+            });
+
             $('.select2-usuario').on('select2:select', function (e) {
                 var data = e.params.data;
                 $('#user_id').val(data.id);

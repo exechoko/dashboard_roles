@@ -574,6 +574,14 @@
                 allowClear: true
             });
 
+            // Forzar el foco en el campo de búsqueda cuando se abre el Select2
+            $(document).on('select2:open', () => {
+                let select2Field = document.querySelector('.select2-search__field');
+                if (select2Field) {
+                    select2Field.focus();
+                }
+            });
+
             // Maneja el evento de selección en el select2
             $('#recurso').on('select2:select', function(e) {
                 console.log('texto', e.params.data.id);

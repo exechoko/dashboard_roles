@@ -402,6 +402,14 @@
     <script>
         $('.select2').select2({ width: '100%' });
 
+        // Forzar el foco en el campo de búsqueda cuando se abre el Select2
+        $(document).on('select2:open', () => {
+            let select2Field = document.querySelector('.select2-search__field');
+            if (select2Field) {
+                select2Field.focus();
+            }
+        });
+
         $('.js-rechazar-cargo').on('submit', function () {
             return confirm('¿Rechazar este cargo patrimonial?');
         });

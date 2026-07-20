@@ -482,6 +482,14 @@
                 width: '100%',
                 minimumResultsForSearch: Infinity
             });
+
+            // Forzar el foco en el campo de búsqueda cuando se abre el Select2
+            $(document).on('select2:open', () => {
+                let select2Field = document.querySelector('.select2-search__field');
+                if (select2Field) {
+                    select2Field.focus();
+                }
+            });
         });
 
         document.addEventListener('DOMContentLoaded', function () {

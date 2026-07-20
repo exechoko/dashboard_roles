@@ -18,7 +18,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <img src="{{ $message->embed(public_path('img/logo.png')) }}" alt="Sistema CAR911" style="height: 70px; margin-bottom: 10px;">
+            <div style="width: 96px; height: 96px; margin: 0 auto 12px; border-radius: 50%; border: 1px dashed rgba(0, 229, 255, 0.35); display: flex; align-items: center; justify-content: center;">
+                <div style="width: 82px; height: 82px; border-radius: 50%; border: 1px solid rgba(139, 92, 246, 0.55); display: flex; align-items: center; justify-content: center;">
+                    <div style="width: 70px; height: 70px; border-radius: 50%; background: #ffffff; border: 1px solid rgba(0, 229, 255, 0.4); box-shadow: 0 0 18px rgba(0, 229, 255, 0.3); display: flex; align-items: center; justify-content: center;">
+                        <img src="{{ $message->embed(public_path('img/logo.png')) }}" alt="Sistema CAR911" style="width: 56px; height: 56px; object-fit: contain;">
+                    </div>
+                </div>
+            </div>
             <h2>Sistema CAR911</h2>
         </div>
 

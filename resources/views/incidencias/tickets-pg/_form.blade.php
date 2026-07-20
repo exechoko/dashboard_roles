@@ -154,7 +154,10 @@
     <div class="col-md-4">
         <div class="form-group">
             <label>Periodo facturado</label>
-            <input type="text" name="periodo_facturado" class="form-control" value="{{ old('periodo_facturado', $ticketActual?->periodo_facturado) }}" placeholder="P01">
+            <input type="text" name="periodo_facturado" class="form-control" value="{{ old('periodo_facturado', $ticketActual?->periodo_facturado ?? $periodoSugerido ?? '') }}" placeholder="P01">
+            @if(!$ticketActual && ($periodoSugerido ?? null))
+                <small class="form-text text-muted">Sugerido según la fecha de hoy. Podés cambiarlo si corresponde a otro período.</small>
+            @endif
         </div>
     </div>
 </div>

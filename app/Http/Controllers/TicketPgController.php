@@ -10,6 +10,7 @@ use App\Models\Camara;
 use App\Models\DispositivoEdificio;
 use App\Models\Equipo;
 use App\Models\FlotaGeneral;
+use App\Models\PeriodoFactura;
 use App\Models\Recurso;
 use App\Models\TicketTicketera;
 use App\Models\TipoTerminal;
@@ -47,6 +48,8 @@ class TicketPgController extends Controller
         $estadoFiltro = (string) $request->input('estado', '');
         $fechaDesde = (string) $request->input('desde', '');
         $fechaHasta = (string) $request->input('hasta', '');
+        $periodoFiltro = trim((string) $request->input('periodo', ''));
+        $aplicaMultaFiltro = (string) $request->input('aplica_multa', '');
 
         $consultaBase = TicketTicketera::query()
             ->when($busqueda !== '', function ($query) use ($busqueda): void {
@@ -59,7 +62,9 @@ class TicketPgController extends Controller
                 });
             })
             ->when($fechaDesde !== '', fn ($query) => $query->whereDate('created_at', '>=', $fechaDesde))
-            ->when($fechaHasta !== '', fn ($query) => $query->whereDate('created_at', '<=', $fechaHasta));
+            ->when($fechaHasta !== '', fn ($query) => $query->whereDate('created_at', '<=', $fechaHasta))
+            ->when($periodoFiltro !== '', fn ($query) => $query->where('periodo_facturado', $periodoFiltro))
+            ->when($aplicaMultaFiltro !== '', fn ($query) => $query->where('aplica_calculo', $aplicaMultaFiltro === 'si'));
 
         $conteosPorEstado = [
             ''            => (clone $consultaBase)->count(),
@@ -74,7 +79,24 @@ class TicketPgController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('incidencias.tickets-pg.index', compact('tickets', 'busqueda', 'estadoFiltro', 'conteosPorEstado', 'fechaDesde', 'fechaHasta'));
+        $periodosDisponibles = TicketTicketera::query()
+            ->whereNotNull('periodo_facturado')
+            ->where('periodo_facturado', '!=', '')
+            ->distinct()
+            ->orderByDesc('periodo_facturado')
+            ->pluck('periodo_facturado');
+
+        return view('incidencias.tickets-pg.index', compact(
+            'tickets',
+            'busqueda',
+            'estadoFiltro',
+            'conteosPorEstado',
+            'fechaDesde',
+            'fechaHasta',
+            'periodoFiltro',
+            'aplicaMultaFiltro',
+            'periodosDisponibles'
+        ));
     }
 
     public function create(): View
@@ -362,7 +384,22 @@ class TicketPgController extends Controller
                 ->distinct()
                 ->orderBy('oficina')
                 ->pluck('oficina'),
+            'periodoSugerido'         => $this->periodoVigenteHoy(),
         ];
+    }
+
+    /**
+     * Etiqueta (P01, P28, etc.) del período de facturación cuyo rango de
+     * fechas contiene hoy, para sugerirlo al cargar un ticket nuevo.
+     */
+    private function periodoVigenteHoy(): ?string
+    {
+        $periodo = PeriodoFactura::query()
+            ->whereDate('fecha_inicio', '<=', now())
+            ->whereDate('fecha_fin', '>=', now())
+            ->first();
+
+        return $periodo?->label;
     }
 
     /**

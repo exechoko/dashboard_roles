@@ -106,7 +106,7 @@
                                 <button type="submit" class="btn btn-primary" title="Buscar">
                                     <i class="fas fa-search"></i>
                                 </button>
-                                @if($busqueda !== '' || $fechaDesde !== '' || $fechaHasta !== '')
+                                @if($busqueda !== '' || $fechaDesde !== '' || $fechaHasta !== '' || $periodoFiltro !== '' || $aplicaMultaFiltro !== '')
                                     <a href="{{ route('incidencias.tickets-pg.index', array_filter(['estado' => $estadoFiltro])) }}" class="btn btn-light" title="Limpiar búsqueda">
                                         <i class="fas fa-times"></i>
                                     </a>
@@ -115,6 +115,19 @@
                         </div>
                         @error('desde')<small class="text-danger">{{ $message }}</small>@enderror
                         @error('hasta')<small class="text-danger">{{ $message }}</small>@enderror
+                        <div class="d-flex mt-2" style="gap: .5rem;">
+                            <select name="periodo" class="form-control form-control-sm" style="max-width: 160px;" onchange="this.form.submit()">
+                                <option value="">Todos los períodos</option>
+                                @foreach($periodosDisponibles as $periodo)
+                                    <option value="{{ $periodo }}" @selected($periodoFiltro === $periodo)>{{ $periodo }}</option>
+                                @endforeach
+                            </select>
+                            <select name="aplica_multa" class="form-control form-control-sm" style="max-width: 180px;" onchange="this.form.submit()">
+                                <option value="">Aplica multa: todos</option>
+                                <option value="si" @selected($aplicaMultaFiltro === 'si')>Aplica multa: sí</option>
+                                <option value="no" @selected($aplicaMultaFiltro === 'no')>Aplica multa: no</option>
+                            </select>
+                        </div>
                     </form>
                     @php
                         $filtrosEstado = [
@@ -126,7 +139,7 @@
                     @endphp
                     <div class="btn-group filtros-estado-pg">
                         @foreach($filtrosEstado as $claveFiltro => [$etiquetaFiltro, $claseFiltro])
-                            <a href="{{ route('incidencias.tickets-pg.index', array_filter(['q' => $busqueda, 'desde' => $fechaDesde, 'hasta' => $fechaHasta, 'estado' => $claveFiltro])) }}"
+                            <a href="{{ route('incidencias.tickets-pg.index', array_filter(['q' => $busqueda, 'desde' => $fechaDesde, 'hasta' => $fechaHasta, 'periodo' => $periodoFiltro, 'aplica_multa' => $aplicaMultaFiltro, 'estado' => $claveFiltro])) }}"
                                class="btn btn-sm btn-filtro-estado {{ $claseFiltro }} {{ $estadoFiltro === $claveFiltro ? 'activo' : '' }}">
                                 {{ $etiquetaFiltro }}
                                 <span class="badge ml-1">{{ $conteosPorEstado[$claveFiltro] }}</span>
@@ -145,6 +158,8 @@
                                 <th>Asunto</th>
                                 <th>Estado ticket</th>
                                 <th>Envío</th>
+                                <th>Período</th>
+                                <th>Multa</th>
                                 <th>Creado</th>
                                 <th class="text-center" style="width:130px">Acciones</th>
                             </tr>
@@ -177,6 +192,14 @@
                                             {{ strtoupper($ticket->estado_envio) }}
                                         </span>
                                     </td>
+                                    <td>{{ $ticket->periodo_facturado ?: '-' }}</td>
+                                    <td>
+                                        @if($ticket->aplica_calculo)
+                                            <span class="badge badge-danger">Sí</span>
+                                        @else
+                                            <span class="badge badge-secondary">No</span>
+                                        @endif
+                                    </td>
                                     <td>{{ $ticket->created_at?->format('d/m/Y H:i') }}</td>
                                     <td class="text-center">
                                         <a href="{{ route('incidencias.tickets-pg.show', $ticket) }}" class="btn btn-sm btn-info" title="Ver">
@@ -193,8 +216,8 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center text-muted py-4">
-                                        {{ ($busqueda !== '' || $fechaDesde !== '' || $fechaHasta !== '' || $estadoFiltro !== '') ? 'No se encontraron tickets con los filtros aplicados.' : 'No hay tickets PG cargados.' }}
+                                    <td colspan="9" class="text-center text-muted py-4">
+                                        {{ ($busqueda !== '' || $fechaDesde !== '' || $fechaHasta !== '' || $estadoFiltro !== '' || $periodoFiltro !== '' || $aplicaMultaFiltro !== '') ? 'No se encontraron tickets con los filtros aplicados.' : 'No hay tickets PG cargados.' }}
                                     </td>
                                 </tr>
                             @endforelse

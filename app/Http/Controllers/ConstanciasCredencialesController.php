@@ -297,7 +297,8 @@ class ConstanciasCredencialesController extends Controller
 
         try {
             Mail::to($constancia->email)->send(new CredencialesAccesoMail(
-                $constancia->nombre_apellido
+                $constancia->nombre_apellido,
+                $constancia->email
             ));
 
             $constancia->update([

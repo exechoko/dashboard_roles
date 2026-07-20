@@ -16,9 +16,12 @@ class CredencialesAccesoMail extends Mailable
 
     public string $sistemaURL;
 
-    public function __construct(string $nombreUsuario)
+    public string $emailUsuario;
+
+    public function __construct(string $nombreUsuario, string $emailUsuario)
     {
         $this->nombreUsuario = $nombreUsuario;
+        $this->emailUsuario = $emailUsuario;
         $this->sistemaNombre = 'Sistema CAR911';
         $this->sistemaURL = config('app.url');
     }

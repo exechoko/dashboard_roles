@@ -577,6 +577,7 @@ Route::group(['middleware' => ['auth']], function () {
             Route::put('/{ticket}', [App\Http\Controllers\TicketPgController::class, 'update'])->name('update');
             Route::post('/{ticket}/enviar', [App\Http\Controllers\TicketPgController::class, 'enviar'])->name('enviar');
             Route::post('/{ticket}/mejorar-redaccion', [App\Http\Controllers\TicketPgController::class, 'mejorarRedaccion'])->name('mejorar-redaccion');
+            Route::post('/{ticket}/sincronizar-respuestas', [App\Http\Controllers\TicketPgController::class, 'sincronizarRespuestas'])->name('sincronizar-respuestas');
         });
 
         // Períodos

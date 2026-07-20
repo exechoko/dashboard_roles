@@ -32,7 +32,7 @@ class TicketPgController extends Controller
     ) {
         $this->middleware('permission:ver-ticket-pg|crear-ticket-pg|editar-ticket-pg|enviar-ticket-pg')->only(['index', 'show']);
         $this->middleware('permission:crear-ticket-pg')->only(['create', 'store', 'importarForm', 'importar']);
-        $this->middleware('permission:editar-ticket-pg')->only(['edit', 'update', 'mejorarRedaccion']);
+        $this->middleware('permission:editar-ticket-pg')->only(['edit', 'update', 'mejorarRedaccion', 'sincronizarRespuestas']);
         $this->middleware('permission:enviar-ticket-pg')->only('enviar');
     }
 
@@ -205,6 +205,32 @@ class TicketPgController extends Controller
             return redirect()
                 ->route('incidencias.tickets-pg.show', $ticket)
                 ->with('error', 'No se pudo mejorar con IA: ' . $e->getMessage());
+        }
+    }
+
+    public function sincronizarRespuestas(EnviarTicketPgRequest $request, TicketTicketera $ticket, TicketeraService $ticketera): RedirectResponse
+    {
+        if (!$ticket->referencia_ticketera) {
+            return redirect()
+                ->route('incidencias.tickets-pg.show', $ticket)
+                ->with('error', 'Este ticket no tiene ID de referencia de HESK para consultar.');
+        }
+
+        try {
+            $respuestasHesk = $ticketera->obtenerRespuestas($ticket->referencia_ticketera);
+            $nuevas = $ticket->fusionarRespuestas($respuestasHesk);
+
+            $mensaje = $nuevas > 0
+                ? "Se agregaron {$nuevas} respuesta(s) nueva(s) desde HESK."
+                : 'No hay respuestas nuevas en HESK.';
+
+            return redirect()
+                ->route('incidencias.tickets-pg.show', $ticket)
+                ->with('success', $mensaje);
+        } catch (Throwable $e) {
+            return redirect()
+                ->route('incidencias.tickets-pg.show', $ticket)
+                ->with('error', 'No se pudo consultar la ticketera: ' . $e->getMessage());
         }
     }
 

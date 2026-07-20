@@ -126,4 +126,93 @@ class TicketTicketera extends Model
             default                                                            => 'primary',
         };
     }
+
+    /**
+     * Parsea "observaciones" (columna "Respuestas P.G." importada del Excel)
+     * en entradas individuales, separando por las marcas de fecha/hora que
+     * HESK antepone a cada respuesta ("Y-m-d H:i:s" en su propia línea).
+     * Si el texto no tiene ese formato (dato viejo o cargado a mano), se
+     * devuelve como una única entrada sin fecha.
+     *
+     * @return array<int, array{fecha: ?\Illuminate\Support\Carbon, texto: string}>
+     */
+    public function respuestas(): array
+    {
+        $texto = trim((string) $this->observaciones);
+
+        if ($texto === '') {
+            return [];
+        }
+
+        preg_match_all(
+            '/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s*\n(.*?)(?=^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\s*\n|\z)/ms',
+            $texto,
+            $coincidencias,
+            PREG_SET_ORDER
+        );
+
+        if ($coincidencias === []) {
+            return [['fecha' => null, 'texto' => $texto]];
+        }
+
+        return array_map(
+            fn (array $match): array => [
+                'fecha' => \Illuminate\Support\Carbon::createFromFormat('Y-m-d H:i:s', $match[1]),
+                'texto' => trim($match[2]),
+            ],
+            $coincidencias
+        );
+    }
+
+    /**
+     * Combina respuestas obtenidas en vivo de HESK (TicketeraService::obtenerRespuestas)
+     * con las ya guardadas en "observaciones", evitando duplicados por fecha, y
+     * persiste el resultado con el mismo formato que usa el importador de Excel
+     * ("Y-m-d H:i:s" en su propia línea seguido del texto) para que respuestas()
+     * lo siga parseando igual.
+     *
+     * @param array<int, array{autor: ?string, fecha: ?\Illuminate\Support\Carbon, texto: string}> $respuestasHesk
+     * @return int cantidad de respuestas nuevas agregadas
+     */
+    public function fusionarRespuestas(array $respuestasHesk): int
+    {
+        $existentes = $this->respuestas();
+        $fechasExistentes = collect($existentes)
+            ->filter(fn (array $r) => $r['fecha'] !== null)
+            ->map(fn (array $r) => $r['fecha']->format('Y-m-d H:i:s'))
+            ->flip()
+            ->all();
+
+        $nuevas = [];
+        foreach ($respuestasHesk as $r) {
+            if ($r['fecha'] === null) {
+                continue;
+            }
+
+            $clave = $r['fecha']->format('Y-m-d H:i:s');
+            if (isset($fechasExistentes[$clave])) {
+                continue;
+            }
+            $fechasExistentes[$clave] = true;
+
+            $nuevas[] = [
+                'fecha' => $r['fecha'],
+                'texto' => $r['autor'] ? "{$r['autor']}:\n{$r['texto']}" : $r['texto'],
+            ];
+        }
+
+        if ($nuevas === []) {
+            return 0;
+        }
+
+        $todas = array_merge($existentes, $nuevas);
+        usort($todas, fn (array $a, array $b) => ($a['fecha']?->timestamp ?? 0) <=> ($b['fecha']?->timestamp ?? 0));
+
+        $this->observaciones = collect($todas)
+            ->map(fn (array $r) => $r['fecha'] !== null ? $r['fecha']->format('Y-m-d H:i:s') . "\n" . $r['texto'] : $r['texto'])
+            ->implode("\n");
+        $this->save();
+
+        return count($nuevas);
+    }
 }

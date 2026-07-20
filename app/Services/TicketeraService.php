@@ -25,7 +25,7 @@ class TicketeraService
 
     public function __construct()
     {
-        $this->urlBase = rtrim((string) config('services.ticketera.url'), '/');
+        $this->urlBase = $this->urlRaiz((string) config('services.ticketera.url'));
         $this->cookiesSesion = new CookieJar();
         $this->clienteHttp = new Client([
             'base_uri'        => $this->urlBase . '/',
@@ -288,5 +288,120 @@ class TicketeraService
         if ($this->urlBase === '' || !config('services.ticketera.usuario') || !config('services.ticketera.password')) {
             throw new RuntimeException('Falta configurar TICKETERA_URL, TICKETERA_USUARIO o TICKETERA_PASSWORD.');
         }
+    }
+
+    /**
+     * Se queda solo con esquema+host(+puerto) de la URL configurada, sin
+     * importar qué path le hayan puesto en .env (ej. ".../admin/index.php").
+     * Los distintos *_path de config ya incluyen su propio prefijo "admin/",
+     * así que la base debe ser la raíz del sitio para que la resolución de
+     * URLs relativas de Guzzle no duplique el path.
+     */
+    private function urlRaiz(string $url): string
+    {
+        $partes = parse_url($url);
+        if (!isset($partes['host'])) {
+            return '';
+        }
+
+        $puerto = isset($partes['port']) ? ':' . $partes['port'] : '';
+
+        return ($partes['scheme'] ?? 'https') . '://' . $partes['host'] . $puerto;
+    }
+
+    /**
+     * Consulta en HESK las respuestas de un ticket ya creado (admin_ticket.php?track=...)
+     * y devuelve solo las respuestas del staff de Patagonia Green (no el mensaje
+     * original, que ya tenemos guardado como texto_enviado).
+     *
+     * A diferencia de crearTicket(), esto SÍ se ejecuta aunque esté el dry-run
+     * activo: es una consulta de solo lectura, no crea ni modifica nada en HESK.
+     *
+     * @return array<int, array{autor: ?string, fecha: ?\Illuminate\Support\Carbon, texto: string}>
+     */
+    public function obtenerRespuestas(string $referencia): array
+    {
+        if ($referencia === '') {
+            return [];
+        }
+
+        $this->validarConfiguracion();
+        $this->iniciarSesion();
+
+        $rutaVerTicket = (string) config('services.ticketera.ver_ticket_path', 'admin/admin_ticket.php');
+
+        $respuesta = $this->clienteHttp->get($rutaVerTicket, [
+            'query' => ['track' => $referencia],
+        ]);
+
+        if ($respuesta->getStatusCode() >= 400) {
+            throw new RuntimeException("La ticketera devolvio HTTP {$respuesta->getStatusCode()} al consultar el ticket {$referencia}.");
+        }
+
+        return $this->parsearRespuestas((string) $respuesta->getBody());
+    }
+
+    /**
+     * @return array<int, array{autor: ?string, fecha: ?\Illuminate\Support\Carbon, texto: string}>
+     */
+    private function parsearRespuestas(string $html): array
+    {
+        $dom = new \DOMDocument();
+        libxml_use_internal_errors(true);
+        $dom->loadHTML('<?xml encoding="UTF-8">' . $html);
+        libxml_clear_errors();
+        $xpath = new \DOMXPath($dom);
+
+        $articulos = $xpath->query('//article[contains(concat(" ", normalize-space(@class), " "), " response ")]');
+
+        $respuestas = [];
+        foreach ($articulos as $articulo) {
+            $contacto = $xpath->query('.//div[contains(@class,"contact")]', $articulo)->item(0);
+            $autor = null;
+            $fecha = null;
+
+            if ($contacto !== null) {
+                $nodoAutor = $xpath->query('.//b', $contacto)->item(0);
+                $autor = $nodoAutor !== null ? trim($nodoAutor->textContent) : null;
+
+                $nodoFecha = $xpath->query('.//time', $contacto)->item(0);
+                $tituloFecha = $nodoFecha instanceof \DOMElement ? $nodoFecha->getAttribute('title') : '';
+                if ($tituloFecha !== '') {
+                    try {
+                        $fecha = \Illuminate\Support\Carbon::createFromFormat('Y-m-d H:i:s', $tituloFecha);
+                    } catch (\Exception $e) {
+                        $fecha = null;
+                    }
+                }
+            }
+
+            $descripcion = $xpath->query('.//div[contains(@class,"block--description")]', $articulo)->item(0);
+            $texto = $descripcion instanceof \DOMElement ? $this->textoLegible($dom, $descripcion) : '';
+
+            if ($texto === '') {
+                continue;
+            }
+
+            $respuestas[] = ['autor' => $autor, 'fecha' => $fecha, 'texto' => $texto];
+        }
+
+        usort(
+            $respuestas,
+            fn (array $a, array $b) => ($a['fecha']?->timestamp ?? 0) <=> ($b['fecha']?->timestamp ?? 0)
+        );
+
+        return $respuestas;
+    }
+
+    private function textoLegible(\DOMDocument $dom, \DOMElement $nodo): string
+    {
+        $html = $dom->saveHTML($nodo) ?: '';
+        $html = (string) preg_replace('#<br\s*/?>#i', "\n", $html);
+        $texto = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $texto = str_replace("\r\n", "\n", $texto);
+        $texto = (string) preg_replace('/[ \t]+\n/', "\n", $texto);
+        $texto = (string) preg_replace('/\n{3,}/', "\n\n", $texto);
+
+        return trim($texto);
     }
 }

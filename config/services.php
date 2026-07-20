@@ -101,6 +101,7 @@ return [
         'admin_path'        => env('TICKETERA_ADMIN_PATH', 'admin/admin_main.php'),
         'nuevo_ticket_path' => env('TICKETERA_NUEVO_TICKET_PATH', 'admin/new_ticket.php'),
         'submit_path'       => env('TICKETERA_SUBMIT_PATH', 'admin/admin_submit_ticket.php'),
+        'ver_ticket_path'   => env('TICKETERA_VER_TICKET_PATH', 'admin/admin_ticket.php'),
         // Cliente (obligatorio en HESK) y staff asignado; se obtienen una vez del panel.
         'customer_id'       => env('TICKETERA_CUSTOMER_ID'),
         'owner_id'          => env('TICKETERA_OWNER_ID'),

@@ -92,6 +92,21 @@
                         <label>Texto enviado / a enviar</label>
                         <textarea class="form-control" rows="8" readonly>{{ $ticket->texto_enviado }}</textarea>
 
+                        @php($respuestas = $ticket->respuestas())
+                        @if(count($respuestas) > 0)
+                            <label class="mt-3">Respuestas ({{ count($respuestas) }})</label>
+                            <div class="timeline-respuestas">
+                                @foreach($respuestas as $respuesta)
+                                    <div class="border-left border-primary pl-3 mb-3">
+                                        <div class="text-muted small font-weight-bold">
+                                            {{ $respuesta['fecha']?->format('d/m/Y H:i') ?? 'Sin fecha' }}
+                                        </div>
+                                        <div style="white-space: pre-line;">{{ $respuesta['texto'] }}</div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+
                         @if($ticket->ultimo_error)
                             <div class="alert alert-danger mt-3 mb-0">
                                 <strong>Último error:</strong> {{ $ticket->ultimo_error }}
@@ -122,6 +137,18 @@
                         </div>
                     @endif
                     @endcanany
+                    @can('editar-ticket-pg')
+                    @if($ticket->referencia_ticketera)
+                        <div class="card-footer text-right">
+                            <form method="POST" action="{{ route('incidencias.tickets-pg.sincronizar-respuestas', $ticket) }}" class="d-inline">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="fas fa-sync"></i> Consultar respuestas en HESK
+                                </button>
+                            </form>
+                        </div>
+                    @endif
+                    @endcan
                 </div>
             </div>
 

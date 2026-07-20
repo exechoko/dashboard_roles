@@ -116,7 +116,7 @@ class TicketsPgImport implements WithMultipleSheets, ToModel, WithStartRow, With
             'cantidad_items'        => is_numeric($cantidadItems) ? (int) $cantidadItems : null,
             'periodo_facturado'     => $this->valorTexto($row[11] ?? null, 30),
             'aplica_calculo'        => !in_array($aplicaRaw, ['no', 'false', '0'], true),
-            'observaciones'         => $respuestasPg !== '' ? mb_substr($respuestasPg, 0, 2000) : null,
+            'observaciones'         => $respuestasPg !== '' ? mb_substr($respuestasPg, 0, 10000) : null,
             'estado_envio'          => $codigoTicketera !== '' ? 'importado' : 'borrador',
             'estado_ticketera'      => $this->valorTexto($row[12] ?? null, 80),
             'enviado_en'            => $codigoTicketera !== '' ? ($fechaWeb ?? $fechaInicio) : null,

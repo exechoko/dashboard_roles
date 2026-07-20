@@ -144,7 +144,7 @@
 @endcan
 
 @can('ver-menu-incidencias-911')
-    <li class="dropdown {{ request()->is('incidencias*') ? 'active' : '' }}">
+    <li class="dropdown {{ request()->is('incidencias/periodos*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-chart-area"></i><span>Análisis 911</span>
         </a>

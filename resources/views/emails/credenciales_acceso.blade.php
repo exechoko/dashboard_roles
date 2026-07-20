@@ -2,6 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="color-scheme" content="light only">
+    <meta name="supported-color-schemes" content="light only">
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -18,13 +20,25 @@
 <body>
     <div class="container">
         <div class="header">
-            <div style="width: 96px; height: 96px; margin: 0 auto 12px; border-radius: 50%; border: 1px dashed rgba(0, 229, 255, 0.35); display: flex; align-items: center; justify-content: center;">
-                <div style="width: 82px; height: 82px; border-radius: 50%; border: 1px solid rgba(139, 92, 246, 0.55); display: flex; align-items: center; justify-content: center;">
-                    <div style="width: 70px; height: 70px; border-radius: 50%; background: #ffffff; border: 1px solid rgba(0, 229, 255, 0.4); box-shadow: 0 0 18px rgba(0, 229, 255, 0.3); display: flex; align-items: center; justify-content: center;">
-                        <img src="{{ $message->embed(public_path('img/logo.png')) }}" alt="Sistema CAR911" style="width: 56px; height: 56px; object-fit: contain;">
-                    </div>
-                </div>
-            </div>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto 12px;">
+                <tr>
+                    <td width="96" height="96" align="center" valign="middle" style="border-radius: 50%; border: 1px dashed rgba(0, 229, 255, 0.35);">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                                <td width="82" height="82" align="center" valign="middle" style="border-radius: 50%; border: 1px solid rgba(139, 92, 246, 0.55);">
+                                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                        <tr>
+                                            <td width="70" height="70" align="center" valign="middle" bgcolor="#ffffff" style="border-radius: 50%; background-color: #ffffff; border: 1px solid rgba(0, 229, 255, 0.4); box-shadow: 0 0 18px rgba(0, 229, 255, 0.3); mso-padding-alt: 0;">
+                                                <img src="{{ $message->embed(public_path('img/logo.png')) }}" alt="Sistema CAR911" width="56" height="56" style="display: block; width: 56px; height: 56px; object-fit: contain;">
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
             <h2>Sistema CAR911</h2>
         </div>
 

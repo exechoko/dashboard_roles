@@ -25,8 +25,8 @@
 
     <meta charset="UTF-8">
     <meta name="csrf-token" content="{{ csrf_token() }}" />
-    <link rel="shortcut icon" type="image/ico" href="{{ asset('/img/logo.ico') }}">
-    <link rel="shortcut icon" sizes="192x192" href="{{ asset('/img/logo.ico') }}">
+    <link rel="shortcut icon" type="image/ico" href="{{ asset('/img/logo.ico') }}?v={{ filemtime(public_path('img/logo.ico')) }}">
+    <link rel="shortcut icon" sizes="192x192" href="{{ asset('/img/logo.ico') }}?v={{ filemtime(public_path('img/logo.ico')) }}">
     <title>C.A.R. 911</title>
     <meta content='width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no' name='viewport'>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />

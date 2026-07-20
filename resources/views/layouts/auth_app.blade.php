@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
-    <link rel="shortcut icon" type="image/ico" href="{{ asset('/img/logo.ico') }}">
-    <link rel="shortcut icon" sizes="192x192" href="{{ asset('/img/logo.ico') }}">
+    <link rel="shortcut icon" type="image/ico" href="{{ asset('/img/logo.ico') }}?v={{ filemtime(public_path('img/logo.ico')) }}">
+    <link rel="shortcut icon" sizes="192x192" href="{{ asset('/img/logo.ico') }}?v={{ filemtime(public_path('img/logo.ico')) }}">
     <title>@yield('title')</title>
 
     <!-- General CSS Files -->
@@ -333,7 +333,7 @@
                     <aside class="auth-hero">
                         <div class="auth-brand">
                             <div class="auth-logo">
-                                <img src="{{ asset('img/logo.ico') }}" alt="C.A.R. 911">
+                                <img src="{{ asset('img/logo.ico') }}?v={{ filemtime(public_path('img/logo.ico')) }}" alt="C.A.R. 911">
                             </div>
                             <div>
                                 <div class="auth-kicker">Centro de monitoreo</div>

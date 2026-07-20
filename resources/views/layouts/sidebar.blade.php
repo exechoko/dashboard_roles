@@ -180,7 +180,7 @@
 <aside id="sidebar-wrapper">
     <div class="sidebar-brand">
         <div class="sidebar-logo-orbit">
-            <img class="navbar-brand-full app-header-logo" src="{{ asset('img/logo.ico') }}" width="45"
+            <img class="navbar-brand-full app-header-logo" src="{{ asset('img/logo.ico') }}?v={{ filemtime(public_path('img/logo.ico')) }}" width="45"
                  alt="Logo 911">
         </div>
         <a href="{{ url('/home') }}"></a>
@@ -188,7 +188,7 @@
     <div class="sidebar-brand sidebar-brand-sm">
         <a href="{{ url('/home') }}" class="small-sidebar-text">
             <span class="sidebar-logo-orbit">
-                <img class="navbar-brand-full" src="{{ asset('img/logo.ico') }}" width="45px" alt="Logo 911"/>
+                <img class="navbar-brand-full" src="{{ asset('img/logo.ico') }}?v={{ filemtime(public_path('img/logo.ico')) }}" width="45px" alt="Logo 911"/>
             </span>
         </a>
     </div>

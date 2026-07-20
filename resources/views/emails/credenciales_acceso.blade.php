@@ -37,8 +37,6 @@
                 </p>
             </div>
 
-            <p>Al iniciar sesión por primera vez, el sistema le solicitará que configure una nueva contraseña.</p>
-
             <div class="warn-box">
                 <p><strong>Importante:</strong> En caso de olvidar sus credenciales de acceso o tener inconvenientes para ingresar al sistema, deberá comunicarse con la <strong>Sección Técnica de la División 911 y Video Vigilancia.</strong></p>
             </div>

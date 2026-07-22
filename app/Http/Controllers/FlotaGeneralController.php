@@ -84,6 +84,7 @@ class FlotaGeneralController extends Controller
         $estados = Estado::all();
         $destinos = Destino::with('padre:id,nombre')->get();
         $tiposTerminal = TipoTerminal::select('id', 'marca', 'modelo')->orderBy('marca', 'desc')->get();
+        $tiposMovimiento = TipoMovimiento::select('id', 'nombre', 'color')->orderBy('nombre')->get();
 
         // Inicializar variables
         $flota = collect(); // Colección vacía por defecto
@@ -99,6 +100,7 @@ class FlotaGeneralController extends Controller
             'estado_id' => (array) $request->input('estado_id', []),
             'destino_actual_id' => (array) $request->input('destino_actual_id', []),
             'tipo_terminal_id' => (array) $request->input('tipo_terminal_id', []),
+            'tipo_movimiento_id' => (array) $request->input('tipo_movimiento_id', []),
             'fecha_rango' => $request->get('fecha_rango'),
             'ticket_per' => $request->get('ticket_per'),
             'observaciones' => $request->get('observaciones'),
@@ -123,6 +125,7 @@ class FlotaGeneralController extends Controller
             'destinos' => $destinos,
             'estados' => $estados,
             'tiposTerminal' => $tiposTerminal,
+            'tiposMovimiento' => $tiposMovimiento,
             'totalRegistros' => $totalRegistros,
             'hayBusqueda' => $hayBusqueda
         ]));
@@ -138,6 +141,7 @@ class FlotaGeneralController extends Controller
             'estado_id' => (array) $request->input('estado_id', []),
             'destino_actual_id' => (array) $request->input('destino_actual_id', []),
             'tipo_terminal_id' => (array) $request->input('tipo_terminal_id', []),
+            'tipo_movimiento_id' => (array) $request->input('tipo_movimiento_id', []),
             'fecha_rango' => $request->get('fecha_rango'),
             'ticket_per' => $request->get('ticket_per'),
             'observaciones' => $request->get('observaciones'),
@@ -233,6 +237,14 @@ class FlotaGeneralController extends Controller
         if (!empty($parametros['estado_id'])) {
             $query->whereHas('equipo', function ($subQuery) use ($parametros) {
                 $subQuery->whereIn('estado_id', $parametros['estado_id']);
+            });
+        }
+
+        // Filtro por tipo de movimiento (movimiento vigente en el histórico)
+        if (!empty($parametros['tipo_movimiento_id'])) {
+            $query->whereHas('equipo.historico', function ($subQuery) use ($parametros) {
+                $subQuery->whereIn('tipo_movimiento_id', $parametros['tipo_movimiento_id'])
+                    ->whereNull('fecha_desasignacion');
             });
         }
 

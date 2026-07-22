@@ -37,6 +37,7 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
             'estado_id' => (array) ($filters['estado_id'] ?? []),
             'destino_actual_id' => (array) ($filters['destino_actual_id'] ?? []),
             'tipo_terminal_id' => (array) ($filters['tipo_terminal_id'] ?? []),
+            'tipo_movimiento_id' => (array) ($filters['tipo_movimiento_id'] ?? []),
             'fecha_rango' => isset($filters['fecha_rango']) ? trim((string) $filters['fecha_rango']) : null,
             'ticket_per' => isset($filters['ticket_per']) ? trim((string) $filters['ticket_per']) : null,
             'observaciones' => isset($filters['observaciones']) ? trim((string) $filters['observaciones']) : null,
@@ -178,6 +179,18 @@ class EquiposExport implements FromCollection, WithHeadings, WithEvents, ShouldA
 
         if (!empty($filters['estado_id'])) {
             $query->whereIn('equipos.estado_id', $filters['estado_id']);
+        }
+
+        if (!empty($filters['tipo_movimiento_id'])) {
+            $tipoMovimientoIds = $filters['tipo_movimiento_id'];
+
+            $query->whereExists(function ($subQuery) use ($tipoMovimientoIds) {
+                $subQuery->select(DB::raw(1))
+                    ->from('historico as historico_movimiento')
+                    ->whereColumn('historico_movimiento.equipo_id', 'equipos.id')
+                    ->whereIn('historico_movimiento.tipo_movimiento_id', $tipoMovimientoIds)
+                    ->whereNull('historico_movimiento.fecha_desasignacion');
+            });
         }
 
         if (!empty($filters['fecha_rango'])) {

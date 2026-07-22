@@ -132,6 +132,22 @@
                                 </div>
 
                                 <div class="row mt-2">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label class="filter-label" for="tipo_movimiento_id">Tipo de movimiento</label>
+                                            <select name="tipo_movimiento_id[]" class="form-control select2" multiple="multiple">
+                                                @foreach ($tiposMovimiento as $tipoMov)
+                                                    <option value="{{ $tipoMov->id }}"
+                                                        {{ in_array($tipoMov->id, (array) $tipo_movimiento_id) ? 'selected' : '' }}>
+                                                        {{ $tipoMov->nombre }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-2">
                                     <div class="col-md-3">
                                         <div class="form-group">
                                             <label class="filter-label" for="fecha_rango">Rango de fechas</label>

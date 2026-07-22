@@ -460,6 +460,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('retenciones/exportar', [ArmaRetencionController::class, 'exportar'])->name('retenciones.exportar');
         Route::get('retenciones/historial', [ArmaRetencionController::class, 'historial'])->name('retenciones.historial');
         Route::get('retenciones/{armaRetencion}', [ArmaRetencionController::class, 'show'])->name('retenciones.show');
+        Route::get('retenciones/{armaRetencion}/documento', [ArmaRetencionController::class, 'generarDocumento'])->name('retenciones.documento');
         Route::get('retenciones/{armaRetencion}/edit', [ArmaRetencionController::class, 'edit'])->name('retenciones.edit');
         Route::put('retenciones/{armaRetencion}', [ArmaRetencionController::class, 'update'])->name('retenciones.update');
         Route::delete('retenciones/{armaRetencion}', [ArmaRetencionController::class, 'destroy'])->name('retenciones.destroy');

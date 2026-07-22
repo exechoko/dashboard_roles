@@ -12,6 +12,18 @@ class ArmaRetencion extends Model
 {
     use HasFactory, SoftDeletes;
 
+    public const CIUDADES = ['Paraná', 'Colonia Avellaneda', 'San Benito', 'Oro Verde'];
+
+    public const ESTADOS_CONSERVACION = [
+        'buen estado de conservación',
+        'regular estado de conservación',
+        'mal estado de conservación',
+    ];
+
+    public const DEPARTAMENTO = 'Paraná';
+
+    public const PROVINCIA = 'Entre Ríos';
+
     protected $table = 'arma_retenciones';
 
     protected $fillable = [
@@ -29,6 +41,12 @@ class ArmaRetencion extends Model
         'fecha_elevacion',
         'fecha_devolucion',
         'observaciones',
+        'ciudad',
+        'hora_posesion',
+        'marca_modelo',
+        'estado_conservacion',
+        'con_cargador',
+        'con_cartucheria',
         'estado',
         'created_by',
         'updated_by',
@@ -43,6 +61,8 @@ class ArmaRetencion extends Model
         'fecha_devolucion' => 'date',
         'dias_restantes' => 'integer',
         'eliminado_en' => 'datetime',
+        'con_cargador' => 'boolean',
+        'con_cartucheria' => 'boolean',
     ];
 
     public function personal(): BelongsTo

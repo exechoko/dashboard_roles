@@ -51,6 +51,22 @@
                         </div>
 
                         <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label for="texto_acta">Texto para el Acta de Retención</label>
+                                    <textarea name="texto_acta" id="texto_acta" class="form-control @error('texto_acta') is-invalid @enderror" rows="2" maxlength="500">{{ old('texto_acta') }}</textarea>
+                                    @error('texto_acta')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="form-text text-muted">
+                                        Reemplaza a "{{ '${MOTIVO_RETENCION}' }}" en el acta, en la frase "...la presente medida se lleva a cabo <strong>[este texto]</strong>."
+                                        Ej: "de la suspensión preventiva dispuesta por Resolución N° 123/26". Si se deja vacío, se usa el nombre del motivo tal cual.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="dias">Días para Elevación <span class="text-danger">*</span></label>

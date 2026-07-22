@@ -46,7 +46,7 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="lp">Legajo Policial (LP) <span class="text-danger">*</span></label>
                                     <input type="text" name="lp" id="lp" class="form-control @error('lp') is-invalid @enderror"
@@ -58,7 +58,19 @@
                                     <small class="form-text text-muted">Debe tener exactamente 5 dígitos</small>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="dni">DNI</label>
+                                    <input type="text" name="dni" id="dni" class="form-control @error('dni') is-invalid @enderror"
+                                           value="{{ old('dni') }}" maxlength="8" pattern="\d{7,8}" inputmode="numeric"
+                                           oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+                                    @error('dni')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="form-text text-muted">Opcional. Necesario para generar el acta de retención.</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="jerarquia">Jerarquía <span class="text-danger">*</span></label>
                                     <input type="text" name="jerarquia" id="jerarquia" class="form-control @error('jerarquia') is-invalid @enderror"

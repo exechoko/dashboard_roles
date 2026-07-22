@@ -30,6 +30,7 @@ class Personal911ImportService
                 'f.Ape_Func',
                 'f.Nom_Func',
                 'f.LgjP_Func',
+                'f.Doc_Func',
                 'f.Nro_Arma_Func',
                 'f.Obs_Func',
                 'ta.Nombre_TipoArma',
@@ -89,11 +90,14 @@ class Personal911ImportService
                     }
                 }
 
+                $doc = trim((string) $funcionario->Doc_Func);
+
                 $personal->fill([
                     'personal911_id' => $funcionario->Id_Func,
                     'lp' => $lp,
                     'nombre' => trim((string) $funcionario->Nom_Func),
                     'apellido' => trim((string) $funcionario->Ape_Func),
+                    'dni' => $doc !== '' ? $doc : $personal->dni,
                     'jerarquia' => trim((string) ($funcionario->Nom_Jerarquia ?: $funcionario->Nom_JerarquiaNueva ?: 'Sin jerarquía')),
                 ]);
                 $personal->deleted_at = null;

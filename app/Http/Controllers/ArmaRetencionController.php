@@ -10,17 +10,22 @@ use App\Models\Personal;
 use App\Exports\ArmaRetencionesExport;
 use App\Imports\ArmaRetencionImport;
 use App\Services\ArmaRetencionService;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpWord\TemplateProcessor;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ArmaRetencionController extends Controller
 {
     public function __construct(private ArmaRetencionService $service)
     {
         $this->middleware('permission:ver-arma-retencion|crear-arma-retencion|editar-arma-retencion|borrar-arma-retencion', ['only' => ['index']]);
-        $this->middleware('permission:crear-arma-retencion', ['only' => ['create', 'store']]);
+        $this->middleware('permission:crear-arma-retencion', ['only' => ['create', 'store', 'generarDocumento']]);
         $this->middleware('permission:editar-arma-retencion', ['only' => ['edit', 'update', 'elevar', 'devolver']]);
         $this->middleware('permission:borrar-arma-retencion', ['only' => ['destroy']]);
     }
@@ -251,5 +256,79 @@ class ArmaRetencionController extends Controller
         $filename = 'retenciones_armas_' . now()->format('Y-m-d_His') . '.xlsx';
 
         return Excel::download(new ArmaRetencionesExport($filters), $filename);
+    }
+
+    public function generarDocumento(ArmaRetencion $armaRetencion): BinaryFileResponse|RedirectResponse
+    {
+        $templatePath = storage_path('app/templates/template_acta_retencion_arma_reglamentaria.docx');
+
+        if (!file_exists($templatePath)) {
+            return redirect()->back()->with('error', 'Template del acta de retención no encontrado.');
+        }
+
+        try {
+            $armaRetencion->load(['personal', 'arma', 'motivo']);
+            $personal = $armaRetencion->personal;
+
+            $hora = $armaRetencion->hora_posesion
+                ? Carbon::parse($armaRetencion->hora_posesion)->format('H:i')
+                : now()->format('H:i');
+
+            $templateProcessor = new TemplateProcessor($templatePath);
+            $templateProcessor->setValue('CIUDAD', $armaRetencion->ciudad ?? '');
+            $templateProcessor->setValue('DEPARTAMENTO', ArmaRetencion::DEPARTAMENTO);
+            $templateProcessor->setValue('PROVINCIA', ArmaRetencion::PROVINCIA);
+            $templateProcessor->setValue('DIA', $armaRetencion->fecha_posesion->format('d'));
+            $templateProcessor->setValue('MES', $this->mesEnEspanol($armaRetencion->fecha_posesion));
+            $templateProcessor->setValue('ANIO', $armaRetencion->fecha_posesion->format('Y'));
+            $templateProcessor->setValue('HORA', $hora);
+            $templateProcessor->setValue('MARCA_MODELO', $armaRetencion->marca_modelo ?? '');
+            $templateProcessor->setValue('NRO_ARMA', $armaRetencion->arma_numero ?? $armaRetencion->arma?->numero ?? '');
+            $templateProcessor->setValue('ESTADO_CONSERVACION', $armaRetencion->estado_conservacion ?? '');
+            $templateProcessor->setValue('CON_CARGADOR', $armaRetencion->con_cargador ? 'CON' : 'SIN');
+            $templateProcessor->setValue('CON_CARTUCHERIA', $armaRetencion->con_cartucheria ? 'CON' : 'SIN');
+            $templateProcessor->setValue('JERARQUIA', $personal->jerarquia);
+            $templateProcessor->setValue('APELLIDO_NOMBRE', $personal->apellido . ', ' . $personal->nombre);
+            $templateProcessor->setValue('LP', $personal->lp);
+            $templateProcessor->setValue('DNI', $personal->dni ?? '');
+            $templateProcessor->setValue('MOTIVO_RETENCION', $armaRetencion->motivo->textoParaActa());
+
+            $nombreFuncionario = Str::slug($personal->apellido . ' ' . $personal->nombre);
+            $fileName = 'acta_retencion_' . $nombreFuncionario . '_' . now()->format('Ymd_His') . '.docx';
+            $relativePath = 'arma_retenciones/actas/' . $fileName;
+            $destinationPath = storage_path('app/' . $relativePath);
+
+            if (!file_exists(dirname($destinationPath))) {
+                mkdir(dirname($destinationPath), 0755, true);
+            }
+
+            $templateProcessor->saveAs($destinationPath);
+
+            return response()->download($destinationPath, $fileName, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ]);
+        } catch (Exception $e) {
+            return redirect()->back()->with('error', 'Error al generar el acta: ' . $e->getMessage());
+        }
+    }
+
+    private function mesEnEspanol(Carbon $fecha): string
+    {
+        $meses = [
+            1 => 'Enero',
+            2 => 'Febrero',
+            3 => 'Marzo',
+            4 => 'Abril',
+            5 => 'Mayo',
+            6 => 'Junio',
+            7 => 'Julio',
+            8 => 'Agosto',
+            9 => 'Septiembre',
+            10 => 'Octubre',
+            11 => 'Noviembre',
+            12 => 'Diciembre',
+        ];
+
+        return $meses[(int) $fecha->format('n')];
     }
 }

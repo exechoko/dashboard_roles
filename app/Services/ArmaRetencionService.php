@@ -79,6 +79,12 @@ class ArmaRetencionService
                 'fecha_elevacion' => $datos['fecha_elevacion'] ?? null,
                 'fecha_devolucion' => $datos['fecha_devolucion'] ?? null,
                 'observaciones' => $datos['observaciones'] ?? null,
+                'ciudad' => $datos['ciudad'] ?? null,
+                'hora_posesion' => $datos['hora_posesion'] ?? null,
+                'marca_modelo' => $datos['marca_modelo'] ?? null,
+                'estado_conservacion' => $datos['estado_conservacion'] ?? null,
+                'con_cargador' => $datos['con_cargador'] ?? false,
+                'con_cartucheria' => $datos['con_cartucheria'] ?? false,
                 'estado' => 'EN_ARMERIA',
                 'created_by' => Auth::id(),
             ]);
@@ -134,6 +140,15 @@ class ArmaRetencionService
                 $cambios[] = 'Observaciones modificadas';
                 $retencion->observaciones = $datos['observaciones'];
             }
+
+            $retencion->fill([
+                'ciudad' => $datos['ciudad'] ?? $retencion->ciudad,
+                'hora_posesion' => $datos['hora_posesion'] ?? $retencion->hora_posesion,
+                'marca_modelo' => $datos['marca_modelo'] ?? $retencion->marca_modelo,
+                'estado_conservacion' => $datos['estado_conservacion'] ?? $retencion->estado_conservacion,
+                'con_cargador' => $datos['con_cargador'] ?? false,
+                'con_cartucheria' => $datos['con_cartucheria'] ?? false,
+            ]);
 
             $retencion->dias_restantes = $this->calcularDiasRestantes($retencion);
             $retencion->estado = $this->calcularEstado($retencion);

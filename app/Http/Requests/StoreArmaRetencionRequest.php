@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\ArmaRetencion;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreArmaRetencionRequest extends FormRequest
@@ -43,6 +44,12 @@ class StoreArmaRetencionRequest extends FormRequest
             'fecha_posesion' => 'required|date',
             'observaciones'  => 'nullable|string|max:1000',
             'comentario'     => 'nullable|string|max:500',
+            'ciudad'         => 'nullable|string|in:' . implode(',', ArmaRetencion::CIUDADES),
+            'hora_posesion'  => 'nullable|date_format:H:i',
+            'marca_modelo'   => 'nullable|string|max:255',
+            'estado_conservacion' => 'nullable|string|in:' . implode(',', ArmaRetencion::ESTADOS_CONSERVACION),
+            'con_cargador'   => 'nullable|boolean',
+            'con_cartucheria' => 'nullable|boolean',
         ];
     }
 
@@ -57,6 +64,10 @@ class StoreArmaRetencionRequest extends FormRequest
             'fecha_posesion.date'    => 'La fecha de posesión debe ser una fecha válida.',
             'observaciones.max'      => 'Las observaciones no pueden superar los 1000 caracteres.',
             'comentario.max'         => 'El comentario no debe superar los 500 caracteres.',
+            'ciudad.in'              => 'La ciudad seleccionada no es válida.',
+            'hora_posesion.date_format' => 'La hora debe tener el formato HH:MM.',
+            'marca_modelo.max'       => 'La marca/modelo no puede superar los 255 caracteres.',
+            'estado_conservacion.in' => 'El estado de conservación seleccionado no es válido.',
         ];
     }
 }

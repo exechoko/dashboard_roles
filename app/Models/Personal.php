@@ -24,6 +24,7 @@ class Personal extends Model
         'nombre',
         'apellido',
         'lp',
+        'dni',
         'jerarquia',
         'numeracion_arma',
         'arma_tipo_id',

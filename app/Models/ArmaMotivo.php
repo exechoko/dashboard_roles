@@ -14,6 +14,7 @@ class ArmaMotivo extends Model
 
     protected $fillable = [
         'nombre',
+        'texto_acta',
         'dias',
         'tipo_asignado',
         'activo',
@@ -32,5 +33,10 @@ class ArmaMotivo extends Model
     public function scopeActivos($query)
     {
         return $query->where('activo', true);
+    }
+
+    public function textoParaActa(): string
+    {
+        return $this->texto_acta ?? $this->nombre;
     }
 }

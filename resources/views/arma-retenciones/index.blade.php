@@ -136,6 +136,11 @@
                                             <a href="{{ route('armas.retenciones.show', $retencion) }}" class="btn btn-sm btn-info" title="Ver detalle">
                                                 <i class="fas fa-eye"></i>
                                             </a>
+                                            @can('crear-arma-retencion')
+                                                <a href="{{ route('armas.retenciones.documento', $retencion) }}" class="btn btn-sm btn-secondary" title="Generar Acta Word">
+                                                    <i class="fas fa-file-word"></i>
+                                                </a>
+                                            @endcan
                                             @can('editar-arma-retencion')
                                                 <a href="{{ route('armas.retenciones.edit', $retencion) }}" class="btn btn-sm btn-primary" title="Editar">
                                                     <i class="fas fa-edit"></i>

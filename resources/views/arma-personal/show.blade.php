@@ -45,6 +45,10 @@
                                     <td>{{ $personal->lp }}</td>
                                 </tr>
                                 <tr>
+                                    <th>DNI:</th>
+                                    <td>{{ $personal->dni ?? '-' }}</td>
+                                </tr>
+                                <tr>
                                     <th>Jerarquía:</th>
                                     <td>{{ $personal->jerarquia }}</td>
                                 </tr>

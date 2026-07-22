@@ -8,6 +8,11 @@
                 <a href="{{ route('armas.retenciones.index') }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Volver
                 </a>
+                @can('crear-arma-retencion')
+                    <a href="{{ route('armas.retenciones.documento', $armaRetencion) }}" class="btn btn-secondary">
+                        <i class="fas fa-file-word"></i> Generar Acta Word
+                    </a>
+                @endcan
                 @can('editar-arma-retencion')
                     <a href="{{ route('armas.retenciones.edit', $armaRetencion) }}" class="btn btn-primary">
                         <i class="fas fa-edit"></i> Editar
@@ -44,6 +49,10 @@
                                     <th>Legajo Policial:</th>
                                     <td>{{ $armaRetencion->personal->lp }}</td>
                                 </tr>
+                                <tr>
+                                    <th>DNI:</th>
+                                    <td>{{ $armaRetencion->personal->dni ?? '-' }}</td>
+                                </tr>
                             </table>
                         </div>
                     </div>
@@ -73,6 +82,18 @@
                                         @endif
                                     </td>
                                 </tr>
+                                <tr>
+                                    <th>Marca / Modelo:</th>
+                                    <td>{{ $armaRetencion->marca_modelo ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Estado de Conservación:</th>
+                                    <td>{{ $armaRetencion->estado_conservacion ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Cargador / Cartuchería:</th>
+                                    <td>{{ $armaRetencion->con_cargador ? 'Con' : 'Sin' }} cargador, {{ $armaRetencion->con_cartucheria ? 'con' : 'sin' }} cartuchería</td>
+                                </tr>
                             </table>
                         </div>
                     </div>
@@ -99,7 +120,12 @@
                                 </tr>
                                 <tr>
                                     <th>Fecha de Posesión:</th>
-                                    <td>{{ $armaRetencion->fecha_posesion->format('d/m/Y') }}</td>
+                                    <td>
+                                        {{ $armaRetencion->fecha_posesion->format('d/m/Y') }}
+                                        @if($armaRetencion->hora_posesion)
+                                            {{ \Carbon\Carbon::parse($armaRetencion->hora_posesion)->format('H:i') }}hs
+                                        @endif
+                                    </td>
                                     <th>Días para Elevación:</th>
                                     <td>
                                         @if($armaRetencion->dias_restantes !== null)
@@ -136,6 +162,10 @@
                                             {{ $armaRetencion->estado_label }}
                                         </span>
                                     </td>
+                                </tr>
+                                <tr>
+                                    <th>Ciudad:</th>
+                                    <td colspan="3">{{ $armaRetencion->ciudad ?? '-' }}</td>
                                 </tr>
                                 <tr>
                                     <th>Observaciones:</th>

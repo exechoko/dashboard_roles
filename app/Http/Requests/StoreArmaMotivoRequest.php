@@ -23,6 +23,7 @@ class StoreArmaMotivoRequest extends FormRequest
     {
         return [
             'nombre'        => 'required|string|max:100|unique:arma_motivos,nombre',
+            'texto_acta'    => 'nullable|string|max:500',
             'dias'          => 'required|integer|min:0|max:365',
             'tipo_asignado' => 'required|in:RETENCIÓN,REGULACIÓN,RESGUARDO',
             'activo'        => 'nullable|boolean',
@@ -38,6 +39,7 @@ class StoreArmaMotivoRequest extends FormRequest
             'nombre.required'        => 'El nombre del motivo es obligatorio.',
             'nombre.max'             => 'El nombre no puede superar los 100 caracteres.',
             'nombre.unique'          => 'Ya existe un motivo con ese nombre.',
+            'texto_acta.max'         => 'El texto del acta no puede superar los 500 caracteres.',
             'dias.required'          => 'Los días son obligatorios.',
             'dias.integer'           => 'Los días deben ser un número entero.',
             'dias.min'               => 'Los días no pueden ser negativos.',

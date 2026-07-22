@@ -87,12 +87,13 @@
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
                                         <tr>
                                             <th style="color:#fff; width: 5%;">ID</th>
-                                            <th style="color:#fff; width: 12%;">Fecha</th>
-                                            <th style="color:#fff; width: 15%;">Usuario</th>
-                                            <th style="color:#fff; width: 15%;">Tabla</th>
-                                            <th style="color:#fff; width: 15%;">Item</th>
+                                            <th style="color:#fff; width: 11%;">Fecha</th>
+                                            <th style="color:#fff; width: 12%;">Usuario</th>
+                                            <th style="color:#fff; width: 10%;">IP</th>
+                                            <th style="color:#fff; width: 12%;">Tabla</th>
+                                            <th style="color:#fff; width: 12%;">Item</th>
                                             <th style="color:#fff; width: 10%;">Acción</th>
-                                            <th style="color:#fff; width: 28%;">Cambios</th>
+                                            <th style="color:#fff; width: 23%;">Cambios</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -104,8 +105,15 @@
                                                     <small class="text-muted">{{ $auditoria->created_at->format('H:i:s') }}</small>
                                                 </td>
                                                 <td>
-                                                    <strong>{{ $auditoria->user->apellido }}</strong><br>
-                                                    <small class="text-muted">{{ $auditoria->user->name }}</small>
+                                                    @if ($auditoria->user)
+                                                        <strong>{{ $auditoria->user->apellido }}</strong><br>
+                                                        <small class="text-muted">{{ $auditoria->user->name }}</small>
+                                                    @else
+                                                        <span class="text-muted">Sistema / desconocido</span>
+                                                    @endif
+                                                </td>
+                                                <td>
+                                                    <small>{{ $auditoria->ip_address ?? '-' }}</small>
                                                 </td>
                                                 <td>
                                                     <span class="badge badge-info">{{ $auditoria->nombre_tabla }}</span>
@@ -113,6 +121,7 @@
                                                 <td>
                                                     @switch($auditoria->nombre_tabla)
                                                         @case('user')
+                                                        @case('users')
                                                             @if (!is_null($auditoria->usuarioModificado))
                                                                 {{ $auditoria->usuarioModificado->name }}
                                                             @else
@@ -150,14 +159,26 @@
                                                 </td>
                                                 <td>
                                                     @switch($auditoria->accion)
-                                                        @case('create')
+                                                        @case('CREAR')
                                                             <span class="badge badge-success">Crear</span>
                                                             @break
-                                                        @case('update')
+                                                        @case('ACTUALIZAR')
                                                             <span class="badge badge-warning">Editar</span>
                                                             @break
-                                                        @case('delete')
+                                                        @case('ELIMINAR')
                                                             <span class="badge badge-danger">Eliminar</span>
+                                                            @break
+                                                        @case('LOGIN')
+                                                            <span class="badge badge-primary">Inicio sesión</span>
+                                                            @break
+                                                        @case('LOGOUT')
+                                                            <span class="badge badge-secondary">Cierre sesión</span>
+                                                            @break
+                                                        @case('LOGIN_FALLIDO')
+                                                            <span class="badge badge-danger">Login fallido</span>
+                                                            @break
+                                                        @case('MAIL_ENVIADO')
+                                                            <span class="badge badge-info">Mail enviado</span>
                                                             @break
                                                         @default
                                                             <span class="badge badge-secondary">{{ $auditoria->accion }}</span>
@@ -171,7 +192,7 @@
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="7" class="text-center text-muted">
+                                                <td colspan="8" class="text-center text-muted">
                                                     <i class="fas fa-inbox fa-3x mb-3"></i><br>
                                                     No se encontraron registros con los filtros aplicados
                                                 </td>

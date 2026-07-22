@@ -26,7 +26,9 @@ class Auditoria extends Model
         'vehiculo_modificado_id',
         'nombre_tabla',
         'cambios',
-        'accion'
+        'accion',
+        'ip_address',
+        'user_agent',
     ];
 
     public function user(){

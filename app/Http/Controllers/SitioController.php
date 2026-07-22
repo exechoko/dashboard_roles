@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\SitiosExport;
+use App\Http\Requests\SitioRequest;
 use App\Models\Destino;
 use App\Models\Sitio;
 use Carbon\Carbon;
@@ -65,7 +66,9 @@ class SitioController extends Controller
             'SI',
             'NO'
         ];
-        return view('sitio.crear', compact('dependencias', 'localidades', 'con_carteles'));
+        $energizadoPor = Sitio::ENERGIZADO_POR;
+
+        return view('sitio.crear', compact('dependencias', 'localidades', 'con_carteles', 'energizadoPor'));
     }
 
     /**
@@ -74,17 +77,8 @@ class SitioController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(SitioRequest $request)
     {
-        //dd($request->all());
-        request()->validate([
-            'nombre' => 'required',
-            'localidad' => 'required|not_in:Seleccionar localidad',
-            'destino_id' => 'required|not_in:Seleccionar la dependencia',
-            'activo' => 'required|boolean',
-        ], [
-            'required' => 'El campo :attribute es necesario completar.'
-        ]);
         try {
             DB::beginTransaction();
             $sitio = new Sitio;
@@ -94,6 +88,7 @@ class SitioController extends Controller
             $sitio->localidad = $request->localidad;
             $sitio->cartel = ($request->cartel == 'SI') ? true : false;
             $sitio->activo = $request->activo; // Asignar el valor del campo activo
+            $sitio->energizado_por = $request->energizado_por;
             $sitio->destino_id = $request->destino_id;
             $sitio->observaciones = $request->observaciones;
             $sitio->save();
@@ -140,7 +135,9 @@ class SitioController extends Controller
             'SI',
             'NO'
         ];
-        return view('sitio.editar', compact('dependencias', 'localidades', 'sitio', 'con_carteles'));
+        $energizadoPor = Sitio::ENERGIZADO_POR;
+
+        return view('sitio.editar', compact('dependencias', 'localidades', 'sitio', 'con_carteles', 'energizadoPor'));
     }
 
     /**
@@ -150,16 +147,8 @@ class SitioController extends Controller
      * @param  \App\Models\Sitio  $sitio
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Sitio $sitio)
+    public function update(SitioRequest $request, Sitio $sitio)
     {
-        request()->validate([
-            'nombre' => 'required',
-            'localidad' => 'required|not_in:Seleccionar localidad',
-            'destino_id' => 'required|not_in:Seleccionar la dependencia',
-            'activo' => 'required|boolean',
-        ], [
-            'required' => 'El campo :attribute es necesario completar.'
-        ]);
         try {
             DB::beginTransaction();
             $sitio = Sitio::find($sitio->id);
@@ -169,6 +158,7 @@ class SitioController extends Controller
             $sitio->localidad = $request->localidad;
             $sitio->cartel = ($request->cartel == 'SI') ? true : false;
             $sitio->activo = $request->activo; // Asignar el valor del campo activo
+            $sitio->energizado_por = $request->energizado_por;
             $sitio->destino_id = $request->destino_id;
             $sitio->observaciones = $request->observaciones;
             $sitio->save();

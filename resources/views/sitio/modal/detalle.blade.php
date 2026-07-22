@@ -16,6 +16,7 @@
                     <li>Dependencia: <b>@if (!is_null($sitio->destino)) {{ $sitio->destino->nombre . ' - ' . $sitio->destino->dependeDe() }} @else - @endif</b></li>
                     <li>Localidad: <b>{{ $sitio->localidad }}</b>
                     </li>Observación: <b>{{ $sitio->observaciones }}</b></li>
+                    <li>Energizado por: <b>{{ $sitio->energizado_por ?? '-' }}</b></li>
                 </ul>
             </div>
             <div class="modal-footer">

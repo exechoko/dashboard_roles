@@ -87,6 +87,20 @@
                                             </select>
                                         </div>
                                     </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-6">
+                                        <div class="form-group">
+                                            <label for="energizado_por">Energizado por</label>
+                                            <select name="energizado_por" id="energizado_por" class="form-control select2"
+                                                style="margin-bottom: 15px">
+                                                <option value="">Seleccionar proveedor</option>
+                                                @foreach ($energizadoPor as $proveedor)
+                                                    <option value="{{ $proveedor }}" {{ old('energizado_por', $sitio->energizado_por) == $proveedor ? 'selected' : '' }}>
+                                                        {{ $proveedor }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
                                     <!-- Toggle Switch para Estado Activo -->
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">

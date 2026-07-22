@@ -57,6 +57,7 @@
                                         <th style="color:#fff;">Nombre</th>
                                         <th style="color:#fff;">Activo</th>
                                         <th style="color:#fff;">Localidad</th>
+                                        <th style="color:#fff;">Energizado por</th>
                                         @can('ver-sitio')
                                             <th style="color:#fff;">Acciones</th>
                                         @endcan
@@ -78,10 +79,12 @@
                                                     <td>
                                                         @if ($sitio->activo)
                                                             <span class="badge badge-success">Activo</span>
-                                                        @else
-                                                            <span class="badge badge-danger">Inactivo</span>
-                                                        @endif
-                                                    <td>{{ $sitio->localidad }}</td>
+                                                         @else
+                                                             <span class="badge badge-danger">Inactivo</span>
+                                                         @endif
+                                                     </td>
+                                                     <td>{{ $sitio->localidad }}</td>
+                                                     <td>{{ $sitio->energizado_por ?? '-' }}</td>
                                                     <td>
                                                         <form action="{{ route('sitios.destroy', $sitio->id) }}"
                                                             method="POST">

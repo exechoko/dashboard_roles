@@ -23,6 +23,7 @@ class SitiosExport implements FromCollection, WithHeadings, WithEvents, ShouldAu
             'sitio.nombre',
             'sitio.cartel',
             'sitio.activo',
+            'sitio.energizado_por',
             'sitio.latitud',
             'sitio.longitud',
             'destino.nombre as dependencia',
@@ -38,6 +39,7 @@ class SitiosExport implements FromCollection, WithHeadings, WithEvents, ShouldAu
                 'nombre' => $sitio->nombre,
                 'cartel' => $sitio->cartel ? 'SI' : 'NO',
                 'activo' => $sitio->activo ? 'Activo' : 'Inactivo', // Convertir booleano a texto
+                'energizado_por' => $sitio->energizado_por,
                 'latitud' => $sitio->latitud,
                 'longitud' => $sitio->longitud,
                 'dependencia' => $sitio->dependencia,
@@ -55,6 +57,7 @@ class SitiosExport implements FromCollection, WithHeadings, WithEvents, ShouldAu
             'Nombre',
             'Cartel',
             'Activo',
+            'Energizado por',
             'Latitud',
             'Longitud',
             'Dependencia',

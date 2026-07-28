@@ -2,8 +2,11 @@
 
 namespace Tests\Unit;
 
+use App\Models\Personal;
+use App\Models\PersonalLicencia;
 use App\Services\Personal911ImportService;
-use PHPUnit\Framework\TestCase;
+use Carbon\Carbon;
+use Tests\TestCase;
 
 class Personal911ImportServiceTest extends TestCase
 {
@@ -40,6 +43,79 @@ class Personal911ImportServiceTest extends TestCase
         $this->assertNotNull($primero);
         $this->assertNotNull($segundo);
         $this->assertSame($primero['numero_serie'], $segundo['numero_serie']);
+    }
+
+    public function test_acumula_renovaciones_consecutivas_hasta_la_fecha_de_consulta(): void
+    {
+        $licencias = collect([
+            $this->crearLicencia([
+                'tipo_licencia' => 'Lic. Anual Ordinaria',
+                'fecha_inicio' => '2026-07-06',
+                'fecha_fin' => '2026-07-21',
+                'cantidad_dias' => 7,
+            ]),
+            $this->crearLicencia([
+                'tipo_licencia' => 'Lic. Anual Ordinaria',
+                'fecha_inicio' => '2026-07-22',
+                'fecha_fin' => '2026-08-04',
+                'cantidad_dias' => 13,
+            ]),
+        ]);
+
+        $resumen = PersonalLicencia::resumenContinuidad($licencias, Carbon::parse('2026-07-28'));
+
+        $this->assertNotNull($resumen);
+        $this->assertSame('2026-07-06', $resumen['fecha_inicio']->toDateString());
+        $this->assertSame('2026-08-04', $resumen['fecha_fin']->toDateString());
+        $this->assertSame(20, $resumen['dias_otorgados']);
+        $this->assertSame(23, $resumen['dias_transcurridos']);
+        $this->assertCount(2, $resumen['licencias']);
+    }
+
+    public function test_no_acumula_licencias_separadas_por_reincorporacion(): void
+    {
+        $licencias = collect([
+            $this->crearLicencia([
+                'tipo_licencia' => 'Licencia anterior',
+                'fecha_inicio' => '2026-07-01',
+                'fecha_fin' => '2026-07-03',
+                'cantidad_dias' => 3,
+            ]),
+            $this->crearLicencia([
+                'tipo_licencia' => 'Licencia actual',
+                'fecha_inicio' => '2026-07-05',
+                'fecha_fin' => '2026-07-10',
+                'cantidad_dias' => 6,
+            ]),
+        ]);
+
+        $resumen = PersonalLicencia::resumenContinuidad($licencias, Carbon::parse('2026-07-06'));
+
+        $this->assertNotNull($resumen);
+        $this->assertSame('2026-07-05', $resumen['fecha_inicio']->toDateString());
+        $this->assertSame(6, $resumen['dias_otorgados']);
+        $this->assertSame(2, $resumen['dias_transcurridos']);
+        $this->assertSame(['Licencia actual'], $resumen['tipos']->all());
+    }
+
+    public function test_identifica_una_licencia_informada_en_la_funcion_de_personal911(): void
+    {
+        $personal = new Personal();
+        $personal->fill(['funcion_personal911' => 'Licencia Excepcional']);
+
+        $this->assertTrue($personal->indicaLicenciaEnFuncion());
+
+        $personal->funcion_personal911 = 'SubOf Gdia. Dep. G1';
+
+        $this->assertFalse($personal->indicaLicenciaEnFuncion());
+    }
+
+    private function crearLicencia(array $atributos): PersonalLicencia
+    {
+        $licencia = new PersonalLicencia();
+        $licencia->fill($atributos);
+
+        return $licencia;
     }
 
     public static function observacionesChalecos(): array

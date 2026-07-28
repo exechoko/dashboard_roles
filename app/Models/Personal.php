@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class Personal extends Model
@@ -26,6 +27,10 @@ class Personal extends Model
         'lp',
         'dni',
         'jerarquia',
+        'situacion_personal911',
+        'fecha_situacion_personal911',
+        'funcion_personal911',
+        'observaciones_personal911',
         'numeracion_arma',
         'arma_tipo_id',
         'nro_chaleco',
@@ -35,6 +40,7 @@ class Personal extends Model
 
     protected $casts = [
         'lp' => 'string',
+        'fecha_situacion_personal911' => 'date',
         'arma_importacion_bloqueada' => 'boolean',
         'chaleco_importacion_bloqueada' => 'boolean',
         'inventario_bloqueado_en' => 'datetime',
@@ -50,6 +56,11 @@ class Personal extends Model
     public function getNombreCompletoAttribute()
     {
         return "{$this->jerarquia} {$this->apellido}, {$this->nombre}, L.P. Nº {$this->lp}";
+    }
+
+    public function indicaLicenciaEnFuncion(): bool
+    {
+        return Str::contains(Str::lower((string) $this->funcion_personal911), 'licencia');
     }
 
     public function retenciones(): HasMany
@@ -80,6 +91,25 @@ class Personal extends Model
     public function discrepanciasInventario(): HasMany
     {
         return $this->hasMany(InventarioDiscrepancia::class);
+    }
+
+    public function licencias(): HasMany
+    {
+        return $this->hasMany(PersonalLicencia::class);
+    }
+
+    public function licenciasVigentes(): HasMany
+    {
+        return $this->hasMany(PersonalLicencia::class)->vigentes();
+    }
+
+    public function getResumenLicenciaActualAttribute(): ?array
+    {
+        $licencias = $this->relationLoaded('licencias')
+            ? $this->getRelation('licencias')
+            : $this->licencias()->get();
+
+        return PersonalLicencia::resumenContinuidad($licencias);
     }
 
     public function creadoPor(): BelongsTo

@@ -19,7 +19,7 @@ class ImportarInventarioPersonal911 extends Command
      *
      * @var string
      */
-    protected $description = 'Importa armas, chalecos y asignaciones desde la base personal911';
+    protected $description = 'Importa personal, estados, funciones, observaciones, armas, chalecos y licencias desde la base personal911';
 
     /**
      * Execute the console command.
@@ -31,6 +31,9 @@ class ImportarInventarioPersonal911 extends Command
         $this->info("Funcionarios procesados: {$resultado['procesados']}");
         $this->info("Armas sincronizadas: {$resultado['armas']}");
         $this->info("Chalecos sincronizados: {$resultado['chalecos']}");
+        $this->info("Registros de licencia sincronizados: {$resultado['licencias']}");
+        $this->info("Funcionarios actualmente de licencia: {$resultado['funcionarios_de_licencia']}");
+        $this->info("Funcionarios en situación de baja: {$resultado['bajas']}");
 
         if ($resultado['conflictos_armas'] !== []) {
             $this->warn('Armas duplicadas sin asignar:');

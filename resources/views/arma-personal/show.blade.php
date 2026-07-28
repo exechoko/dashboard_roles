@@ -52,6 +52,35 @@
                                     <th>Jerarquía:</th>
                                     <td>{{ $personal->jerarquia }}</td>
                                 </tr>
+                                <tr>
+                                    <th>Situación Personal 911:</th>
+                                    <td>
+                                        @if($personal->situacion_personal911)
+                                            <span class="badge badge-{{ $personal->situacion_personal911 === 'Baja' ? 'danger' : ($personal->situacion_personal911 === 'Activo Efectivo' ? 'success' : 'secondary') }}">
+                                                {{ $personal->situacion_personal911 }}
+                                            </span>
+                                        @else
+                                            -
+                                        @endif
+                                        @if($personal->fecha_situacion_personal911)
+                                            <small class="text-muted">desde {{ $personal->fecha_situacion_personal911->format('d/m/Y') }}</small>
+                                        @endif
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Función Personal 911:</th>
+                                    <td>{{ $personal->funcion_personal911 ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Observaciones Personal 911:</th>
+                                    <td>
+                                        @if($personal->observaciones_personal911)
+                                            <div style="white-space: pre-line;">{{ $personal->observaciones_personal911 }}</div>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                </tr>
                             </table>
                         </div>
                     </div>
@@ -82,6 +111,83 @@
                                 <div class="text-muted py-2">
                                     <i class="fas fa-exclamation-circle"></i> El funcionario no tiene un arma asignada.
                                 </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @php($resumenLicencia = $personal->resumen_licencia_actual)
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4><i class="fas fa-calendar-minus"></i> Licencias de Personal 911</h4>
+                        </div>
+                        <div class="card-body">
+                            @if($resumenLicencia)
+                                <div class="alert alert-warning">
+                                    <strong><i class="fas fa-user-clock"></i> Actualmente de licencia</strong>
+                                    <div class="mt-1">Tipo(s): {{ $resumenLicencia['tipos']->implode(', ') ?: 'Sin tipo informado' }}</div>
+                                    <div>
+                                        Período continuo: {{ $resumenLicencia['fecha_inicio']->format('d/m/Y') }} al {{ $resumenLicencia['fecha_fin']->format('d/m/Y') }}
+                                    </div>
+                                    <div>
+                                        <strong>{{ $resumenLicencia['dias_transcurridos'] }} días transcurridos</strong>
+                                        ({{ $resumenLicencia['dias_otorgados'] }} días otorgados acumulados en las renovaciones).
+                                    </div>
+                                </div>
+                            @else
+                                @if($personal->indicaLicenciaEnFuncion())
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        Personal 911 informa la función <strong>{{ $personal->funcion_personal911 }}</strong>.
+                                        No hay un registro vigente en el historial de licencias; consulte las observaciones importadas.
+                                    </div>
+                                @else
+                                    <div class="alert alert-light border">
+                                        <i class="fas fa-info-circle"></i> No tiene una licencia vigente al día de hoy.
+                                    </div>
+                                @endif
+                            @endif
+
+                            @if($personal->licencias->isNotEmpty())
+                                @php($licenciasActuales = $resumenLicencia ? $resumenLicencia['licencias']->pluck('id')->map(fn ($id) => (int) $id)->all() : [])
+                                <h5 class="text-primary">Historial de licencias</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-striped align-middle mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Tipo</th>
+                                                <th>Días otorgados</th>
+                                                <th>Inicio</th>
+                                                <th>Fin</th>
+                                                <th>Motivo</th>
+                                                <th>Estado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($personal->licencias as $licencia)
+                                                <tr>
+                                                    <td>{{ $licencia->tipo_licencia ?? 'Sin tipo informado' }}</td>
+                                                    <td>{{ $licencia->cantidad_dias ?? '-' }}</td>
+                                                    <td>{{ optional($licencia->fecha_inicio)->format('d/m/Y') ?? '-' }}</td>
+                                                    <td>{{ optional($licencia->fecha_fin)->format('d/m/Y') ?? '-' }}</td>
+                                                    <td>{{ $licencia->motivo ?? '-' }}</td>
+                                                    <td>
+                                                        @if(in_array((int) $licencia->id, $licenciasActuales, true))
+                                                            <span class="badge badge-warning">En continuidad actual</span>
+                                                        @else
+                                                            <span class="text-muted">Finalizada</span>
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="text-muted">No hay historial de licencias importado.</div>
                             @endif
                         </div>
                     </div>

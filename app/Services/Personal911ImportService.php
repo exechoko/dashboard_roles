@@ -10,6 +10,9 @@ use App\Models\InventarioDiscrepancia;
 use App\Models\Personal;
 use App\Models\PersonalArmaAsignacion;
 use App\Models\PersonalChalecoAsignacion;
+use App\Models\PersonalLicencia;
+use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -17,7 +20,7 @@ use Illuminate\Support\Str;
 class Personal911ImportService
 {
     /**
-     * @return array{procesados: int, armas: int, chalecos: int, conflictos_armas: array<int, array{numero: string, funcionarios: string}>, conflictos_chalecos: array<int, array{numero: string, funcionarios: string}>, observaciones_sin_interpretar: array<int, array{lp: string, observacion: string}>}
+     * @return array{procesados: int, armas: int, chalecos: int, licencias: int, funcionarios_de_licencia: int, bajas: int, conflictos_armas: array<int, array{numero: string, funcionarios: string}>, conflictos_chalecos: array<int, array{numero: string, funcionarios: string}>, observaciones_sin_interpretar: array<int, array{lp: string, observacion: string}>}
      */
     public function importar(): array
     {
@@ -25,25 +28,37 @@ class Personal911ImportService
             ->table('funcionarios as f')
             ->leftJoin('tipo_armas as ta', 'ta.Id_TipoArma', '=', 'f.Tipo_Arma_Func')
             ->leftJoin('jerarquias as j', 'j.Id_Jerarquia', '=', 'f.IdJerarquia_Func')
+            ->leftJoin('tipo_estados as te', 'te.Id_TipoEstado', '=', 'f.Id_Estado')
+            ->leftJoin('funciones as fn', 'fn.Id_Funcion', '=', 'f.Funcion')
             ->select([
                 'f.Id_Func',
                 'f.Ape_Func',
                 'f.Nom_Func',
                 'f.LgjP_Func',
                 'f.Doc_Func',
+                'f.Id_Estado as situacion_id',
+                'te.Nom_Estado as situacion_personal911',
+                'f.Fec_Estado as fecha_situacion_personal911',
+                'fn.Nom_Funcion as funcion_personal911',
                 'f.Nro_Arma_Func',
-                'f.Obs_Func',
+                'f.Obs_Func as observaciones_personal911',
                 'ta.Nombre_TipoArma',
                 'j.Nom_JerarquiaNueva',
                 'j.Nom_Jerarquia',
             ])
-            ->where('f.Id_Estado', 2)
+            ->where(function ($query): void {
+                $query->where('f.Id_Estado', 2)
+                    ->orWhere('te.Nom_Estado', 'Baja');
+            })
             ->orderBy('f.Id_Func')
             ->get();
 
         if ($funcionarios->isEmpty()) {
             throw new \RuntimeException('personal911 no devolvió funcionarios activos; se canceló la sincronización.');
         }
+
+        $licenciasPorFuncionario = $this->obtenerLicenciasPorFuncionario($funcionarios);
+        $hoy = Carbon::today();
 
         $armasDuplicadas = $funcionarios
             ->filter(fn ($funcionario): bool => trim((string) $funcionario->Nro_Arma_Func) !== '')
@@ -52,7 +67,7 @@ class Personal911ImportService
 
         $chalecosPorFuncionario = $funcionarios->mapWithKeys(
             fn ($funcionario): array => [
-                $funcionario->Id_Func => $this->extraerChaleco((string) $funcionario->Obs_Func),
+                $funcionario->Id_Func => $this->extraerChaleco((string) $funcionario->observaciones_personal911),
             ]
         );
         $chalecosDuplicados = $funcionarios
@@ -64,12 +79,15 @@ class Personal911ImportService
             'procesados' => 0,
             'armas' => 0,
             'chalecos' => 0,
+            'licencias' => 0,
+            'funcionarios_de_licencia' => 0,
+            'bajas' => 0,
             'conflictos_armas' => [],
             'conflictos_chalecos' => [],
             'observaciones_sin_interpretar' => [],
         ];
 
-        DB::transaction(function () use ($funcionarios, $armasDuplicadas, $chalecosPorFuncionario, $chalecosDuplicados, &$resultado): void {
+        DB::transaction(function () use ($funcionarios, $licenciasPorFuncionario, $hoy, $armasDuplicadas, $chalecosPorFuncionario, $chalecosDuplicados, &$resultado): void {
             $idsPersonal911 = $funcionarios->pluck('Id_Func')->all();
             $this->desactivarPersonalFueraDeServicio($idsPersonal911);
             $this->sincronizarConflictos($armasDuplicadas, $chalecosDuplicados);
@@ -99,9 +117,26 @@ class Personal911ImportService
                     'apellido' => trim((string) $funcionario->Ape_Func),
                     'dni' => $doc !== '' ? $doc : $personal->dni,
                     'jerarquia' => trim((string) ($funcionario->Nom_Jerarquia ?: $funcionario->Nom_JerarquiaNueva ?: 'Sin jerarquía')),
+                    'situacion_personal911' => trim((string) $funcionario->situacion_personal911) ?: null,
+                    'fecha_situacion_personal911' => $funcionario->fecha_situacion_personal911 ?: null,
+                    'funcion_personal911' => trim((string) $funcionario->funcion_personal911) ?: null,
+                    'observaciones_personal911' => trim((string) $funcionario->observaciones_personal911) ?: null,
                 ]);
                 $personal->deleted_at = null;
                 $personal->save();
+
+                $licencias = $licenciasPorFuncionario->get((int) $funcionario->Id_Func, collect());
+                $resultado['licencias'] += $this->sincronizarLicencias($personal, $licencias);
+                if ($licencias->contains(fn ($licencia): bool => $this->esLicenciaVigente($licencia, $hoy))) {
+                    $resultado['funcionarios_de_licencia']++;
+                }
+
+                if ((int) $funcionario->situacion_id !== 2) {
+                    $this->limpiarAsignacionesInventario($personal);
+                    $resultado['bajas']++;
+                    $resultado['procesados']++;
+                    continue;
+                }
 
                 $numeroArma = trim((string) $funcionario->Nro_Arma_Func);
                 $omitirSincronizacionArma = false;
@@ -197,7 +232,7 @@ class Personal911ImportService
                     }
                 }
 
-                $observacion = trim((string) $funcionario->Obs_Func);
+                $observacion = trim((string) $funcionario->observaciones_personal911);
                 if (Str::contains(Str::lower($observacion), 'chaleco')) {
                     $datosChaleco = $chalecosPorFuncionario->get($funcionario->Id_Func);
 
@@ -293,6 +328,91 @@ class Personal911ImportService
         });
 
         return $resultado;
+    }
+
+    /**
+     * @return Collection<int, Collection<int, object>>
+     */
+    private function obtenerLicenciasPorFuncionario(Collection $funcionarios): Collection
+    {
+        $idsFuncionario = $funcionarios
+            ->pluck('Id_Func')
+            ->map(fn ($id): int => (int) $id)
+            ->values()
+            ->all();
+
+        return DB::connection('personal911')
+            ->table('licencias as l')
+            ->leftJoin('tipo_licencias as tl', 'tl.Id_Licencia', '=', 'l.Id_Tipo_Licencia')
+            ->select([
+                'l.Id_Licencia as personal911_licencia_id',
+                'l.Id_Funcionario as personal911_funcionario_id',
+                'l.Id_Tipo_Licencia as tipo_licencia_id',
+                'tl.Nom_Licencia as tipo_licencia',
+                'l.Fec_Licencia as fecha_inicio',
+                'l.Cant_Dias as cantidad_dias',
+                'l.Fec_Fin as fecha_fin',
+                'l.Motivo as motivo',
+            ])
+            ->whereIn('l.Id_Funcionario', $idsFuncionario)
+            ->orderBy('l.Fec_Licencia')
+            ->orderBy('l.Id_Licencia')
+            ->get()
+            ->groupBy(fn ($licencia): int => (int) $licencia->personal911_funcionario_id);
+    }
+
+    private function sincronizarLicencias(Personal $personal, Collection $licencias): int
+    {
+        $idsImportados = [];
+
+        foreach ($licencias as $licencia) {
+            $idLicencia = (int) $licencia->personal911_licencia_id;
+            if ($idLicencia <= 0) {
+                continue;
+            }
+
+            $idsImportados[] = $idLicencia;
+            $tipo = trim((string) $licencia->tipo_licencia);
+            $motivo = trim((string) $licencia->motivo);
+
+            PersonalLicencia::updateOrCreate(
+                ['personal911_licencia_id' => $idLicencia],
+                [
+                    'personal_id' => $personal->id,
+                    'personal911_funcionario_id' => (int) $licencia->personal911_funcionario_id,
+                    'tipo_licencia_id' => $licencia->tipo_licencia_id !== null ? (int) $licencia->tipo_licencia_id : null,
+                    'tipo_licencia' => $tipo !== '' ? $tipo : null,
+                    'motivo' => $motivo !== '' ? $motivo : null,
+                    'fecha_inicio' => $licencia->fecha_inicio ?: null,
+                    'cantidad_dias' => $licencia->cantidad_dias !== null ? (int) $licencia->cantidad_dias : null,
+                    'fecha_fin' => $licencia->fecha_fin ?: null,
+                ]
+            );
+        }
+
+        $idsImportados = array_values(array_unique($idsImportados));
+        $licenciasObsoletas = PersonalLicencia::where('personal_id', $personal->id);
+
+        if ($idsImportados === []) {
+            $licenciasObsoletas->delete();
+        } else {
+            $licenciasObsoletas->whereNotIn('personal911_licencia_id', $idsImportados)->delete();
+        }
+
+        return count($idsImportados);
+    }
+
+    private function esLicenciaVigente(object $licencia, CarbonInterface $fecha): bool
+    {
+        if (empty($licencia->fecha_inicio) || empty($licencia->fecha_fin)) {
+            return false;
+        }
+
+        $fechaInicio = Carbon::parse($licencia->fecha_inicio);
+        $fechaFin = Carbon::parse($licencia->fecha_fin);
+        $fecha = Carbon::parse($fecha->toDateString());
+
+        return !$fecha->lt($fechaInicio) && !$fecha->gt($fechaFin);
     }
 
     /**
@@ -562,6 +682,23 @@ class Personal911ImportService
         return $valor === null || trim($valor) === '';
     }
 
+    private function limpiarAsignacionesInventario(Personal $personal): void
+    {
+        $personal->armaAsignacionActual()->update([
+            'fecha_hasta' => now()->toDateString(),
+            'activa' => null,
+        ]);
+        $personal->chalecoAsignacionActual()->update([
+            'fecha_hasta' => now()->toDateString(),
+            'activa' => null,
+        ]);
+        $personal->forceFill([
+            'numeracion_arma' => null,
+            'arma_tipo_id' => null,
+            'nro_chaleco' => null,
+        ])->save();
+    }
+
     /**
      * @param array<int, int> $idsPersonal911
      */
@@ -571,13 +708,7 @@ class Personal911ImportService
             ->whereNotNull('personal911_id')
             ->whereNotIn('personal911_id', $idsPersonal911)
             ->each(function (Personal $personal): void {
-                $personal->armaAsignacionActual()->update(['fecha_hasta' => now()->toDateString(), 'activa' => null]);
-                $personal->chalecoAsignacionActual()->update(['fecha_hasta' => now()->toDateString(), 'activa' => null]);
-                $personal->forceFill([
-                    'numeracion_arma' => null,
-                    'arma_tipo_id' => null,
-                    'nro_chaleco' => null,
-                ])->save();
+                $this->limpiarAsignacionesInventario($personal);
                 $personal->delete();
             });
     }

@@ -30,11 +30,41 @@
                     <form method="GET" action="{{ route('armas.personal.index') }}" class="mb-3">
                         <div class="row align-items-end">
                             <div class="col-md-4">
-                                <input type="text" name="busqueda" class="form-control" placeholder="Buscar por apellido, nombre o LP..."
+                                <label for="busqueda">Buscar funcionario o licencia</label>
+                                <input type="text" name="busqueda" id="busqueda" class="form-control" placeholder="Apellido, nombre, LP, tipo de licencia..."
                                        value="{{ $busqueda }}">
                             </div>
                             <div class="col-md-3">
-                                <div class="btn-group" role="group">
+                                <label for="estado_licencia">Estado de licencia</label>
+                                <select name="estado_licencia" id="estado_licencia" class="form-control">
+                                    <option value="todos" {{ $estadoLicencia === 'todos' ? 'selected' : '' }}>Todos</option>
+                                    <option value="vigentes" {{ $estadoLicencia === 'vigentes' ? 'selected' : '' }}>Solo de licencia</option>
+                                    <option value="sin_licencia" {{ $estadoLicencia === 'sin_licencia' ? 'selected' : '' }}>Sin licencia vigente</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="tipo_licencia">Tipo de licencia vigente</label>
+                                <select name="tipo_licencia" id="tipo_licencia" class="form-control">
+                                    <option value="">Todos los tipos</option>
+                                    @foreach ($tiposLicencia as $tipo)
+                                        <option value="{{ $tipo->tipo_licencia_id }}" {{ (string) $tipoLicencia === (string) $tipo->tipo_licencia_id ? 'selected' : '' }}>
+                                            {{ $tipo->tipo_licencia }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary mb-1">
+                                    <i class="fas fa-search"></i> Buscar
+                                </button>
+                                <a href="{{ route('armas.personal.index') }}" class="btn btn-secondary mb-1">
+                                    <i class="fas fa-times"></i> Limpiar
+                                </a>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="btn-group" role="group" aria-label="Estado del funcionario">
                                     <a href="{{ route('armas.personal.index', array_merge(request()->except(['ver_eliminados', 'page']), ['ver_eliminados' => 'activos'])) }}"
                                        class="btn btn-sm {{ $ver_eliminados === 'activos' ? 'btn-primary' : 'btn-outline-primary' }}">
                                         <i class="fas fa-user-check"></i> Activos
@@ -49,14 +79,6 @@
                                     </a>
                                 </div>
                             </div>
-                            <div class="col-md-3">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-search"></i> Buscar
-                                </button>
-                                <a href="{{ route('armas.personal.index') }}" class="btn btn-secondary">
-                                    <i class="fas fa-times"></i> Limpiar
-                                </a>
-                            </div>
                         </div>
                     </form>
 
@@ -68,12 +90,16 @@
                                     <th>Nombre</th>
                                     <th>LP</th>
                                     <th>Jerarquía</th>
+                                    <th>Situación / función</th>
                                     <th>Arma</th>
+                                    <th>Licencia</th>
+                                    <th>Período y días</th>
                                     <th class="text-right">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse ($personales as $personal)
+                                    @php($resumenLicencia = $personal->resumen_licencia_actual)
                                     <tr class="{{ $personal->trashed() ? 'table-danger' : '' }}">
                                         <td>
                                             <strong>{{ $personal->apellido }}</strong>
@@ -85,8 +111,54 @@
                                         <td>{{ $personal->lp }}</td>
                                         <td>{{ $personal->jerarquia }}</td>
                                         <td>
+                                            @if($personal->situacion_personal911)
+                                                <span class="badge badge-{{ $personal->situacion_personal911 === 'Baja' ? 'danger' : ($personal->situacion_personal911 === 'Activo Efectivo' ? 'success' : 'secondary') }}">
+                                                    {{ $personal->situacion_personal911 }}
+                                                </span>
+                                            @else
+                                                <span class="text-muted">Sin informar</span>
+                                            @endif
+                                            @if($personal->funcion_personal911)
+                                                <div class="small mt-1">{{ $personal->funcion_personal911 }}</div>
+                                            @endif
+                                            @if($personal->observaciones_personal911)
+                                                <div class="small text-muted" title="{{ $personal->observaciones_personal911 }}">
+                                                    <i class="fas fa-comment-alt"></i> Observaciones disponibles
+                                                </div>
+                                            @endif
+                                        </td>
+                                        <td>
                                             @if($personal->numeracion_arma)
                                                 <span class="badge badge-secondary">{{ $personal->numeracion_arma }}</span>
+                                            @else
+                                                <span class="text-muted">-</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($resumenLicencia)
+                                                <span class="badge badge-warning">De licencia</span>
+                                                @foreach($resumenLicencia['licencias'] as $licenciaActual)
+                                                    <div class="small mt-1">
+                                                        {{ $licenciaActual->tipo_licencia ?? 'Sin tipo informado' }}:
+                                                        {{ $licenciaActual->cantidad_dias ?? '-' }} días
+                                                    </div>
+                                                @endforeach
+                                            @else
+                                                @if($personal->indicaLicenciaEnFuncion())
+                                                    <span class="badge badge-secondary">Licencia indicada en función</span>
+                                                    <div class="small text-muted mt-1">Revisar observaciones de Personal 911</div>
+                                                @else
+                                                    <span class="text-muted">Sin licencia vigente</span>
+                                                @endif
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($resumenLicencia)
+                                                <div class="small">
+                                                    {{ $resumenLicencia['fecha_inicio']->format('d/m/Y') }} al {{ $resumenLicencia['fecha_fin']->format('d/m/Y') }}
+                                                </div>
+                                                <span class="badge badge-info">{{ $resumenLicencia['dias_transcurridos'] }} días transcurridos</span>
+                                                <div class="small text-muted">{{ $resumenLicencia['dias_otorgados'] }} días otorgados acumulados</div>
                                             @else
                                                 <span class="text-muted">-</span>
                                             @endif
@@ -128,7 +200,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted py-4">
+                                        <td colspan="9" class="text-center text-muted py-4">
                                             @if($ver_eliminados === 'eliminados')
                                                 No hay funcionarios eliminados.
                                             @else

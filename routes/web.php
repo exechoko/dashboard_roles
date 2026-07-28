@@ -560,6 +560,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::prefix('herramientas')->name('herramientas.')->group(function () {
         Route::get('/hash-archivo', [ArchivoHashController::class, 'index'])->name('hash.index');
         Route::post('/hash-archivo', [ArchivoHashController::class, 'calcular'])->name('hash.calcular');
+        Route::post('/hash-archivo/historial', [ArchivoHashController::class, 'registrar'])->name('hash.historial.registrar');
     });
 
     // Manuales

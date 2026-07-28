@@ -34,6 +34,15 @@
             padding-left: 1rem;
         }
 
+        .hash-history-table {
+            min-width: 900px;
+        }
+
+        .hash-history-value {
+            font-family: Consolas, 'Courier New', monospace;
+            word-break: break-all;
+        }
+
         [data-theme="dark"] .hash-drop-zone {
             background: var(--bg-secondary, #1e293b);
         }
@@ -138,6 +147,7 @@
                                 </div>
                             </div>
                             <div id="copy-status" class="small text-success mt-2" role="status" aria-live="polite"></div>
+                            <div id="hash-history-save-status" class="small mt-2" role="status" aria-live="polite"></div>
                         </div>
                     </div>
 
@@ -160,6 +170,49 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="fas fa-history mr-2"></i>Historial de hashes</h4>
+                    <span id="hash-history-count" class="badge badge-secondary">{{ $historial->total() }}</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0 hash-history-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha/hora</th>
+                                    <th>Nombre de archivo</th>
+                                    <th>Cifrado aplicado</th>
+                                    <th>Hash</th>
+                                    <th>Usuario</th>
+                                </tr>
+                            </thead>
+                            <tbody id="hash-history-body">
+                                @forelse($historial as $registro)
+                                    <tr>
+                                        <td>{{ $registro->created_at?->format('d/m/Y H:i:s') }}</td>
+                                        <td class="text-break">{{ $registro->nombre_archivo }}</td>
+                                        <td><span class="badge badge-primary">{{ $registro->cifrado_aplicado }}</span></td>
+                                        <td><code class="hash-history-value">{{ $registro->hash }}</code></td>
+                                        <td>{{ trim(($registro->user?->name ?? '') . ' ' . ($registro->user?->apellido ?? '')) ?: 'Usuario eliminado' }}</td>
+                                    </tr>
+                                @empty
+                                    <tr id="hash-history-empty">
+                                        <td colspan="5" class="text-center text-muted py-4">Todavía no hay cálculos registrados.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if($historial->hasPages())
+                        <div class="p-3">
+                            {!! $historial->withQueryString()->links() !!}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -312,10 +365,15 @@
             const resultName = document.getElementById('hash-result-name');
             const resultSize = document.getElementById('hash-result-size');
             const hashInput = document.getElementById('hash-value');
+            const historyBody = document.getElementById('hash-history-body');
+            const historyCount = document.getElementById('hash-history-count');
+            const historySaveStatus = document.getElementById('hash-history-save-status');
+            const historyEndpoint = '{{ route('herramientas.hash.historial.registrar') }}';
 
             if (!form || !input || !dropZone || !placeholder || !selected || !submitButton || !progress
                 || !progressBar || !progressStatus || !progressPercent || !errorPanel || !resultPanel
-                || !infoPanel || !resultName || !resultSize || !hashInput) {
+                || !infoPanel || !resultName || !resultSize || !hashInput || !historyBody || !historyCount
+                || !historySaveStatus) {
                 return;
             }
 
@@ -507,6 +565,8 @@
                 infoPanel.classList.remove('d-none');
                 progress.classList.add('d-none');
                 errorPanel.classList.add('d-none');
+                historySaveStatus.textContent = '';
+                historySaveStatus.className = 'small mt-2';
                 submitButton.disabled = false;
                 submitButton.innerHTML = '<i class="fas fa-calculator mr-2"></i>Calcular SHA-256';
             };
@@ -525,6 +585,77 @@
                 progressBar.classList.add('bg-danger');
                 submitButton.disabled = false;
                 submitButton.innerHTML = '<i class="fas fa-calculator mr-2"></i>Reintentar';
+            };
+
+            const appendHistoryItem = function (item) {
+                const emptyRow = document.getElementById('hash-history-empty');
+
+                if (emptyRow) {
+                    emptyRow.remove();
+                }
+
+                const row = document.createElement('tr');
+                const values = [
+                    item.fecha_hora,
+                    item.nombre_archivo,
+                    item.cifrado_aplicado,
+                    item.hash,
+                    item.usuario
+                ];
+
+                values.forEach(function (value, index) {
+                    const cell = document.createElement('td');
+                    cell.textContent = value || '';
+
+                    if (index === 1) {
+                        cell.classList.add('text-break');
+                    }
+
+                    if (index === 2) {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge badge-primary';
+                        badge.textContent = value || '';
+                        cell.textContent = '';
+                        cell.appendChild(badge);
+                    }
+
+                    if (index === 3) {
+                        const hash = document.createElement('code');
+                        hash.className = 'hash-history-value';
+                        hash.textContent = value || '';
+                        cell.textContent = '';
+                        cell.appendChild(hash);
+                    }
+
+                    row.appendChild(cell);
+                });
+
+                historyBody.prepend(row);
+                historyCount.textContent = String(Number(historyCount.textContent || 0) + 1);
+            };
+
+            const saveHistory = async function (file, hash) {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const response = await fetch(historyEndpoint, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken || ''
+                    },
+                    body: JSON.stringify({
+                        nombre_archivo: file.name,
+                        cifrado_aplicado: 'SHA-256',
+                        hash: hash
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('No se pudo guardar el historial.');
+                }
+
+                return response.json();
             };
 
             const calculateLocally = async function (file) {
@@ -593,6 +724,17 @@
                     resultPanel.classList.remove('d-none');
                     infoPanel.classList.add('d-none');
                     updateProgress(100, 'Hash calculado localmente.');
+
+                    try {
+                        const historyResponse = await saveHistory(file, hash);
+                        appendHistoryItem(historyResponse.item);
+                        historySaveStatus.className = 'small mt-2 text-success';
+                        historySaveStatus.textContent = 'Registro guardado en el historial.';
+                    } catch (error) {
+                        historySaveStatus.className = 'small mt-2 text-warning';
+                        historySaveStatus.textContent = 'Hash calculado, pero no se pudo guardar el historial.';
+                    }
+
                     submitButton.disabled = false;
                     submitButton.innerHTML = '<i class="fas fa-check mr-2"></i>Calcular otro archivo';
                 } catch (error) {

@@ -147,6 +147,11 @@
                                 </div>
                             </div>
                             <div id="copy-status" class="small text-success mt-2" role="status" aria-live="polite"></div>
+                            <button type="button" id="copy-report" class="btn btn-outline-success btn-sm mt-2"
+                                {{ isset($resultado) ? '' : 'disabled' }}>
+                                <i class="fas fa-file-alt mr-1"></i>Copiar para informe
+                            </button>
+                            <div id="copy-report-status" class="small mt-2" role="status" aria-live="polite"></div>
                             <div id="hash-history-save-status" class="small mt-2" role="status" aria-live="polite"></div>
                         </div>
                     </div>
@@ -369,11 +374,13 @@
             const historyCount = document.getElementById('hash-history-count');
             const historySaveStatus = document.getElementById('hash-history-save-status');
             const historyEndpoint = '{{ route('herramientas.hash.historial.registrar') }}';
+            const reportCopyButton = document.getElementById('copy-report');
+            const reportCopyStatus = document.getElementById('copy-report-status');
 
             if (!form || !input || !dropZone || !placeholder || !selected || !submitButton || !progress
                 || !progressBar || !progressStatus || !progressPercent || !errorPanel || !resultPanel
                 || !infoPanel || !resultName || !resultSize || !hashInput || !historyBody || !historyCount
-                || !historySaveStatus) {
+                || !historySaveStatus || !reportCopyButton || !reportCopyStatus) {
                 return;
             }
 
@@ -567,6 +574,9 @@
                 errorPanel.classList.add('d-none');
                 historySaveStatus.textContent = '';
                 historySaveStatus.className = 'small mt-2';
+                reportCopyButton.disabled = true;
+                reportCopyStatus.textContent = '';
+                reportCopyStatus.className = 'small mt-2';
                 submitButton.disabled = false;
                 submitButton.innerHTML = '<i class="fas fa-calculator mr-2"></i>Calcular SHA-256';
             };
@@ -658,6 +668,45 @@
                 return response.json();
             };
 
+            const copyText = async function (text) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    return;
+                }
+
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                const copied = document.execCommand('copy');
+                textArea.remove();
+
+                if (!copied) {
+                    throw new Error('No se pudo copiar el texto.');
+                }
+            };
+
+            reportCopyButton.addEventListener('click', async function () {
+                const report = [
+                    'Nombre de archivo: ' + resultName.textContent,
+                    'Cifrado aplicado: SHA-256',
+                    'Hash: ' + hashInput.value
+                ].join('\n');
+
+                try {
+                    await copyText(report);
+                    reportCopyStatus.className = 'small mt-2 text-success';
+                    reportCopyStatus.textContent = 'Datos del informe copiados.';
+                } catch (error) {
+                    reportCopyStatus.className = 'small mt-2 text-danger';
+                    reportCopyStatus.textContent = 'No se pudo copiar el informe.';
+                }
+            });
+
             const calculateLocally = async function (file) {
                 const hasher = new IncrementalSha256();
                 const chunkSize = 1024 * 1024;
@@ -723,6 +772,7 @@
                     hashInput.value = hash;
                     resultPanel.classList.remove('d-none');
                     infoPanel.classList.add('d-none');
+                    reportCopyButton.disabled = false;
                     updateProgress(100, 'Hash calculado localmente.');
 
                     try {

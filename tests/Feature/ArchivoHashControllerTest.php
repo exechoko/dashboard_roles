@@ -24,7 +24,8 @@ class ArchivoHashControllerTest extends TestCase
             ->get(route('herramientas.hash.index'));
 
         $response->assertOk()
-            ->assertViewIs('herramientas.hash-archivo');
+            ->assertViewIs('herramientas.hash-archivo')
+            ->assertSee('Copiar para informe');
     }
 
     public function test_un_usuario_puede_obtener_el_hash_de_un_archivo(): void

@@ -27,8 +27,12 @@ yarn-error.log
 /.windsurf
 /.cursor
 /.qwen
-/.opencode
-/docs
+/.opencode/*
+!/.opencode/agents/
+!/.opencode/commands/
+!/.opencode/skills/
+/docs/*
+!/docs/sistema/
 /backup agents
 skills-lock.json
 

@@ -45,6 +45,18 @@ return [
         'transcription_url' => env('TRANSCRIPTION_API_URL', 'https://gvs9j8cd3a.execute-api.us-east-1.amazonaws.com/prod'),
     ],
 
+    'opencode' => [
+        'enabled' => filter_var(env('OPENCODE_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
+        'url' => env('OPENCODE_URL', 'http://193.169.1.246:4096'),
+        'username' => env('OPENCODE_USERNAME', 'chatbot'),
+        'password' => env('OPENCODE_PASSWORD'),
+        'agent' => env('OPENCODE_AGENT', 'ayuda-sistema'),
+        'model' => env('OPENCODE_MODEL', 'opencode-go/deepseek-v4-flash'),
+        'fallback_model' => env('OPENCODE_FALLBACK_MODEL', 'opencode/laguna-s-2.1-free'),
+        'connect_timeout' => (int) env('OPENCODE_CONNECT_TIMEOUT', 5),
+        'response_timeout' => (int) env('OPENCODE_RESPONSE_TIMEOUT', 180),
+    ],
+
     'tareas' => [
         'aviso_emails' => env('TAREAS_AVISO_EMAILS'),
     ],

@@ -124,6 +124,12 @@
     <!-- THEME TOGGLE BUTTON -->
     @include('themes.toggle-button')
 
+    @auth
+        @if(config('services.opencode.enabled'))
+            @include('chatbot.widget')
+        @endif
+    @endauth
+
 </body>
 <script src="{{ asset('assets/js/popper.min.js') }}"></script>
 <script src="{{ asset('assets/js/bootstrap.min.js') }}"></script>

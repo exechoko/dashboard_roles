@@ -29,6 +29,7 @@ use App\Http\Controllers\MapaController;
 use App\Http\Controllers\TipoCamaraController;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\CamaraFisicaController;
+use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\CecocoRecursoAliasController;
 use App\Http\Controllers\SitioController;
 use App\Http\Controllers\CecocoController;
@@ -67,6 +68,13 @@ Route::get('/', function () {
 Auth::routes();
 
 Route::group(['middleware' => ['auth']], function () {
+    Route::prefix('chatbot')->name('chatbot.')->group(function () {
+        Route::get('/history', [ChatbotController::class, 'history'])->name('history');
+        Route::post('/messages', [ChatbotController::class, 'ask'])->middleware('throttle:chatbot')->name('ask');
+        Route::get('/messages/{message}', [ChatbotController::class, 'status'])->name('status');
+        Route::delete('/history', [ChatbotController::class, 'clear'])->name('clear');
+    });
+
     // 🔹 ADMINISTRAR WEB (div911.stper.com.ar)
     Route::get('web-admin/contadores', [WebAdminController::class, 'editContadores'])
         ->name('web-admin.contadores.edit')

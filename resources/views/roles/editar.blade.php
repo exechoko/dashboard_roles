@@ -68,6 +68,7 @@
                                                         'menu-incidencias-911',
                                                         'menu-plano-edificio',
                                                         'menu-manuales',
+                                                        'menu-herramientas',
                                                         'menu-constancias-credenciales',
                                                     ],
                                                     'Administración' => [
@@ -156,6 +157,9 @@
                                                         'manual-usuario',
                                                         'manuales-cecoco',
                                                         'instructivos',
+                                                    ],
+                                                    'Herramientas' => [
+                                                        'hash-archivo',
                                                     ],
                                                     'Operaciones' => [
                                                         'buscar-moviles-parados',

@@ -522,6 +522,23 @@
     </li>
 @endcanany
 
+@canany(['ver-menu-herramientas', 'ver-hash-archivo'])
+    <li class="dropdown {{ request()->is('herramientas*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-tools"></i><span>Herramientas</span>
+        </a>
+        <ul class="dropdown-menu">
+            @can('ver-hash-archivo')
+                <li class="{{ request()->routeIs('herramientas.hash.*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('herramientas.hash.index') }}">
+                        <i class="fas fa-fingerprint"></i><span>Hashear Archivo</span>
+                    </a>
+                </li>
+            @endcan
+        </ul>
+    </li>
+@endcanany
+
 @canany(['ver-menu-web', 'editar-web-contadores', 'editar-web-textos', 'editar-web-historia', 'editar-web-tecnologia', 'editar-web-dependencias', 'editar-web-galeria', 'crear-noticia', 'editar-noticia', 'eliminar-noticia'])
     <li class="{{ request()->is('web-admin*') || request()->is('noticias*') || request()->is('web-dependencias*') || request()->is('web-historia*') || request()->is('web-tecnologia*') || request()->is('web-galeria*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">

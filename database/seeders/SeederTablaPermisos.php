@@ -109,6 +109,7 @@ class SeederTablaPermisos extends Seeder
             'ver-menu-tareas',
             'ver-menu-plano-edificio',
             'ver-menu-manuales',
+            'ver-menu-herramientas',
 
             //CeCoCo
             'ver-llamadas-cecoco',
@@ -255,6 +256,9 @@ class SeederTablaPermisos extends Seeder
             'cargar-instructivos',
             'descargar-instructivos',
             'borrar-instructivos',
+
+            //Herramientas
+            'ver-hash-archivo',
 
             //Administrar Web (div911.stper.com.ar)
             'ver-menu-web',

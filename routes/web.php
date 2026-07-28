@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AudioTranscriptionController;
+use App\Http\Controllers\ArchivoHashController;
 use App\Http\Controllers\BodycamController;
 use App\Http\Controllers\EntregasBodycamsController;
 use App\Http\Controllers\EntregasCombustibleController;
@@ -554,6 +555,12 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/api/dashboard/refresh-restauraciones-gps', [App\Http\Controllers\HomeController::class, 'refreshRestauracionesGpsCache'])
         ->middleware('throttle:3,1')
         ->name('api.dashboard.refresh-restauraciones-gps');
+
+    // Herramientas
+    Route::prefix('herramientas')->name('herramientas.')->group(function () {
+        Route::get('/hash-archivo', [ArchivoHashController::class, 'index'])->name('hash.index');
+        Route::post('/hash-archivo', [ArchivoHashController::class, 'calcular'])->name('hash.calcular');
+    });
 
     // Manuales
     Route::prefix('manuales')->group(function () {

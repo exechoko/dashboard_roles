@@ -138,6 +138,7 @@
                                                         'arma-motivo',
                                                         'arma-tipo',
                                                         'personal',
+                                                        'armeria',
                                                     ],
                                                     'Incidencias 911' => [
                                                         'periodo-911',

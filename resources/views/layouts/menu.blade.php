@@ -226,6 +226,20 @@
                     </a>
                 </li>
             @endcan
+            @can('ver-armeria')
+                <li class="dropdown-divider"></li>
+                <li class="dropdown-header">ARMERÍA</li>
+                <li class="{{ request()->is('armas/armeria/armas*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('armas.armeria.armas.index') }}">
+                        <i class="fas fa-bullseye"></i><span>Armas Secundarias</span>
+                    </a>
+                </li>
+                <li class="{{ request()->is('armas/armeria/chalecos*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('armas.armeria.chalecos.index') }}">
+                        <i class="fas fa-vest"></i><span>Chalecos</span>
+                    </a>
+                </li>
+            @endcan
         </ul>
     </li>
 @endcan

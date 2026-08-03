@@ -221,6 +221,12 @@ class SeederTablaPermisos extends Seeder
             'borrar-personal',
             'restaurar-personal',
 
+            // Control de Armas - Armería (armas secundarias y chalecos)
+            'ver-armeria',
+            'crear-armeria',
+            'editar-armeria',
+            'borrar-armeria',
+
             //Acciones varias
             'reiniciar-camara',
             'herramientas-mapa',

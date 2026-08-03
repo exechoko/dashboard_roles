@@ -48,6 +48,8 @@ use App\Http\Controllers\ArmaRetencionController;
 use App\Http\Controllers\ArmaMotivoController;
 use App\Http\Controllers\ArmaTipoController;
 use App\Http\Controllers\ArmaPersonalController;
+use App\Http\Controllers\ArmeriaArmaController;
+use App\Http\Controllers\ArmeriaChalecoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -497,6 +499,45 @@ Route::group(['middleware' => ['auth']], function () {
         Route::put('personal/{personal}', [ArmaPersonalController::class, 'update'])->name('personal.update');
         Route::delete('personal/{personal}', [ArmaPersonalController::class, 'destroy'])->name('personal.destroy');
         Route::post('personal/{id}/restaurar', [ArmaPersonalController::class, 'restore'])->name('personal.restore');
+
+        // Armería (armas secundarias y chalecos, movimientos entre División 911 y Jefatura Central)
+        Route::prefix('armeria')->name('armeria.')->group(function () {
+            Route::prefix('armas')->name('armas.')->group(function () {
+                Route::get('/', [ArmeriaArmaController::class, 'index'])->name('index');
+                Route::get('create', [ArmeriaArmaController::class, 'create'])->name('create');
+                Route::post('/', [ArmeriaArmaController::class, 'store'])->name('store');
+                Route::get('importar', [ArmeriaArmaController::class, 'importarForm'])->name('importar');
+                Route::post('importar', [ArmeriaArmaController::class, 'importar'])->name('importar.post');
+                Route::get('{armeriaArma}', [ArmeriaArmaController::class, 'show'])->name('show');
+                Route::get('{armeriaArma}/edit', [ArmeriaArmaController::class, 'edit'])->name('edit');
+                Route::put('{armeriaArma}', [ArmeriaArmaController::class, 'update'])->name('update');
+                Route::delete('{armeriaArma}', [ArmeriaArmaController::class, 'destroy'])->name('destroy');
+                Route::post('{armeriaArma}/estado', [ArmeriaArmaController::class, 'cambiarEstado'])->name('estado');
+                Route::post('{armeriaArma}/enviar-jefatura', [ArmeriaArmaController::class, 'enviarJefatura'])->name('enviar-jefatura');
+                Route::post('{armeriaArma}/retornar-division', [ArmeriaArmaController::class, 'retornarDivision'])->name('retornar-division');
+                Route::post('{armeriaArma}/comentario', [ArmeriaArmaController::class, 'comentario'])->name('comentario');
+                Route::post('{armeriaArma}/adjuntos', [ArmeriaArmaController::class, 'adjuntar'])->name('adjuntos.store');
+                Route::delete('{armeriaArma}/adjuntos/{adjunto}', [ArmeriaArmaController::class, 'destroyAdjunto'])->name('adjuntos.destroy');
+            });
+
+            Route::prefix('chalecos')->name('chalecos.')->group(function () {
+                Route::get('/', [ArmeriaChalecoController::class, 'index'])->name('index');
+                Route::get('create', [ArmeriaChalecoController::class, 'create'])->name('create');
+                Route::post('/', [ArmeriaChalecoController::class, 'store'])->name('store');
+                Route::get('importar', [ArmeriaChalecoController::class, 'importarForm'])->name('importar');
+                Route::post('importar', [ArmeriaChalecoController::class, 'importar'])->name('importar.post');
+                Route::get('{armeriaChaleco}', [ArmeriaChalecoController::class, 'show'])->name('show');
+                Route::get('{armeriaChaleco}/edit', [ArmeriaChalecoController::class, 'edit'])->name('edit');
+                Route::put('{armeriaChaleco}', [ArmeriaChalecoController::class, 'update'])->name('update');
+                Route::delete('{armeriaChaleco}', [ArmeriaChalecoController::class, 'destroy'])->name('destroy');
+                Route::post('{armeriaChaleco}/estado', [ArmeriaChalecoController::class, 'cambiarEstado'])->name('estado');
+                Route::post('{armeriaChaleco}/enviar-jefatura', [ArmeriaChalecoController::class, 'enviarJefatura'])->name('enviar-jefatura');
+                Route::post('{armeriaChaleco}/retornar-division', [ArmeriaChalecoController::class, 'retornarDivision'])->name('retornar-division');
+                Route::post('{armeriaChaleco}/comentario', [ArmeriaChalecoController::class, 'comentario'])->name('comentario');
+                Route::post('{armeriaChaleco}/adjuntos', [ArmeriaChalecoController::class, 'adjuntar'])->name('adjuntos.store');
+                Route::delete('{armeriaChaleco}/adjuntos/{adjunto}', [ArmeriaChalecoController::class, 'destroyAdjunto'])->name('adjuntos.destroy');
+            });
+        });
     });
 
     Route::prefix('cecoco')->name('cecoco.')->group(function () {

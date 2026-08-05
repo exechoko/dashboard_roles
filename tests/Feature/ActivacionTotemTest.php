@@ -11,6 +11,7 @@ use App\Services\DetectorActivacionesTotem;
 use App\Services\SubidaVideoTotemService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
@@ -321,11 +322,50 @@ class ActivacionTotemTest extends TestCase
         $resultado = $servicio->procesar($activacion);
 
         $this->assertFileExists($resultado['ruta_archivo']);
-        $this->assertFileDoesNotExist($rutaTemporal);
+        // El servicio ya no borra el temporal: queda a cargo de quien llama,
+        // recién después de confirmar que se guardó en la base.
+        $this->assertFileExists($rutaTemporal);
+        @unlink($rutaTemporal);
         $this->assertSame(hash_file('sha256', $resultado['ruta_archivo']), $resultado['hash_sha256']);
         // Se conserva el nombre original del video tal cual lo exporta el sistema.
         $this->assertStringEndsWith('video_prueba.mp4', $resultado['ruta_archivo']);
         $this->assertStringContainsString($totem->carpeta_red, $resultado['ruta_archivo']);
+    }
+
+    public function test_servicio_de_subida_no_duplica_si_ya_habia_copiado_el_mismo_video_antes(): void
+    {
+        // Regresión: si el proceso anterior copió el video pero se cortó
+        // antes de guardar el resultado en la base (ej. el scheduler se
+        // reinició justo en el medio), el reintento no debe duplicar el
+        // archivo ni fallar — tiene que reconocer que ya está y seguir.
+        [$totem, $rutaBase] = $this->totemDeRedTemporal();
+
+        $evento = EventoCecoco::factory()->create();
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_PENDIENTE,
+            'camara_id' => $totem->id,
+            'nombre_archivo_original' => 'video_interrumpido.mp4',
+            'subida_estado' => ActivacionTotem::SUBIDA_PROCESANDO,
+        ]);
+
+        $servicio = new SubidaVideoTotemService(app(ArchivoHashService::class), $rutaBase);
+        $rutaTemporal = $servicio->rutaTemporal($activacion);
+        File::ensureDirectoryExists(dirname($rutaTemporal));
+        File::put($rutaTemporal, 'contenido del video');
+
+        // El archivo destino ya existe con el mismo contenido: simula que un
+        // intento anterior sí llegó a copiarlo antes de cortarse.
+        File::put($rutaBase . '\\' . $totem->carpeta_red . '\\video_interrumpido.mp4', 'contenido del video');
+
+        $resultado = $servicio->procesar($activacion);
+
+        $this->assertStringEndsWith('video_interrumpido.mp4', $resultado['ruta_archivo']);
+        $this->assertFileExists($rutaTemporal);
+        @unlink($rutaTemporal);
     }
 
     public function test_servicio_de_subida_desambigua_si_ya_existe_un_archivo_con_el_mismo_nombre(): void
@@ -357,6 +397,7 @@ class ActivacionTotemTest extends TestCase
 
         $this->assertStringEndsWith('video_repetido_(2).mp4', $resultado['ruta_archivo']);
         $this->assertSame('video anterior', File::get($rutaBase . '\\' . $totem->carpeta_red . '\\video_repetido.mp4'));
+        @unlink($rutaTemporal);
     }
 
     public function test_servicio_de_subida_falla_si_el_totem_no_tiene_carpeta_configurada(): void
@@ -409,6 +450,51 @@ class ActivacionTotemTest extends TestCase
         $this->assertSame(ActivacionTotem::ESTADO_DESCARGADO, $activacion->estado);
         $this->assertNotNull($activacion->hash_sha256);
         $this->assertNotNull($activacion->ruta_archivo);
+        $this->assertFileDoesNotExist(storage_path('app/totem-uploads-temp/' . $activacion->id . '_video_comando.mp4'));
+    }
+
+    public function test_comando_retoma_un_video_cuya_copia_se_interrumpio_antes_de_guardar_en_base(): void
+    {
+        // Regresión: el proceso anterior copió el video a la carpeta de red
+        // pero se cortó antes de actualizar la base (ej. se reinició el
+        // servicio del scheduler en el medio) — quedó "procesando" trabado.
+        [$totem, $rutaBase] = $this->totemDeRedTemporal();
+
+        $evento = EventoCecoco::factory()->create();
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_PENDIENTE,
+            'camara_id' => $totem->id,
+            'nombre_archivo_original' => 'video_trabado.mp4',
+            'subida_estado' => ActivacionTotem::SUBIDA_PROCESANDO,
+        ]);
+        // create() siempre pisa updated_at con "ahora"; se fuerza aparte para
+        // simular que quedó trabado desde hace rato.
+        DB::table('activaciones_totem')->where('id', $activacion->id)->update(['updated_at' => now()->subMinutes(20)]);
+
+        $this->app->bind(SubidaVideoTotemService::class, function ($app) use ($rutaBase, $activacion) {
+            $servicio = new SubidaVideoTotemService($app->make(ArchivoHashService::class), $rutaBase);
+            $rutaTemporal = $servicio->rutaTemporal($activacion);
+            File::ensureDirectoryExists(dirname($rutaTemporal));
+            File::put($rutaTemporal, 'contenido ya copiado antes');
+
+            return $servicio;
+        });
+
+        // El video ya había llegado a la carpeta de red en el intento anterior.
+        File::put($rutaBase . '\\' . $totem->carpeta_red . '\\video_trabado.mp4', 'contenido ya copiado antes');
+
+        $this->artisan('totem:procesar-videos-pendientes')->assertSuccessful();
+
+        $activacion->refresh();
+        $this->assertSame(ActivacionTotem::SUBIDA_COMPLETADO, $activacion->subida_estado);
+        $this->assertSame(ActivacionTotem::ESTADO_DESCARGADO, $activacion->estado);
+        $this->assertStringEndsWith('video_trabado.mp4', $activacion->ruta_archivo);
+        // No duplicó el archivo con un sufijo _(2).
+        $this->assertFileDoesNotExist($rutaBase . '\\' . $totem->carpeta_red . '\\video_trabado_(2).mp4');
     }
 
     public function test_comando_deja_en_error_si_falla_el_procesamiento(): void

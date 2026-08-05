@@ -62,6 +62,11 @@ class ProcesarVideosTotemPendientes extends Command
                     'fecha_descarga' => now(),
                 ]);
 
+                // Recién ahora, con el resultado ya guardado en la base, se borra
+                // el temporal: si algo falla antes de esta línea, el archivo sigue
+                // disponible para el próximo intento.
+                @unlink($servicio->rutaTemporal($activacion));
+
                 $this->line("  ✓ {$activacion->nro_expediente}");
             } catch (\Throwable $e) {
                 $activacion->update([

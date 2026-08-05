@@ -86,7 +86,7 @@
                                                 {{ $activacion->nro_expediente }}
                                             </a>
                                         </td>
-                                        <td>{{ \Illuminate\Support\Str::limit($activacion->evento->descripcion, 90) }}</td>
+                                        <td style="min-width: 320px; white-space: normal;">{{ $activacion->evento->descripcion }}</td>
                                         <td>
                                             @php
                                                 $badge = match ($activacion->estado) {

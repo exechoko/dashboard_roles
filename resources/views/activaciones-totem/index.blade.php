@@ -135,7 +135,11 @@
                                         <td>
                                             @if ($activacion->descargadoPor)
                                                 <div>{{ $activacion->descargadoPor->name }}</div>
-                                                <small class="text-muted d-block">Descargado: {{ $activacion->fecha_descarga->format('d/m/Y H:i') }}</small>
+                                                @if ($activacion->fecha_descarga)
+                                                    <small class="text-muted d-block">Descargado: {{ $activacion->fecha_descarga->format('d/m/Y H:i') }}</small>
+                                                @elseif ($subidaEnCurso)
+                                                    <small class="text-muted d-block">Subido, esperando procesamiento…</small>
+                                                @endif
                                             @endif
                                             @if ($activacion->hash_sha256)
                                                 <small class="text-muted d-block" title="{{ $activacion->hash_sha256 }}">
@@ -183,9 +187,14 @@
                                                                 @csrf
                                                             </form>
                                                         @endif
-                                                        @if ($activacion->estado === \App\Models\ActivacionTotem::ESTADO_DESCARGADO && $vencida)
-                                                            <button type="button" class="btn btn-sm btn-danger" title="Marcar como eliminado (ya se borró el video)"
-                                                                    onclick="if(confirm('¿Confirmás que ya borraste el video descargado? Esta acción queda registrada.')) document.getElementById('eliminar-{{ $activacion->id }}').submit();">
+                                                        @if ($activacion->estado === \App\Models\ActivacionTotem::ESTADO_DESCARGADO)
+                                                            @php
+                                                                $confirmacion = $vencida
+                                                                    ? '¿Confirmás que ya borraste el video descargado? Esta acción queda registrada.'
+                                                                    : 'Vas a marcar este registro como eliminado para poder volver a subir o registrar un video (por ejemplo, si se equivocó de tótem o hubo un error). El archivo actual en la carpeta de red NO se borra solo — si corresponde, borralo a mano. ¿Confirmás?';
+                                                            @endphp
+                                                            <button type="button" class="btn btn-sm btn-danger" title="Marcar como eliminado{{ $vencida ? ' (ya se borró el video)' : ' / reiniciar registro' }}"
+                                                                    onclick="if(confirm('{{ $confirmacion }}')) document.getElementById('eliminar-{{ $activacion->id }}').submit();">
                                                                 <i class="fas fa-trash"></i>
                                                             </button>
                                                             <form id="eliminar-{{ $activacion->id }}" action="{{ route('activaciones-totem.eliminar', $activacion) }}" method="POST" class="d-none">
@@ -231,9 +240,10 @@
                                 <h5 class="modal-title"><i class="fas fa-upload"></i> Subir video — Exp. {{ $activacion->nro_expediente }}</h5>
                                 <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
                             </div>
-                            <form action="{{ route('activaciones-totem.subir-video', $activacion) }}" method="POST" enctype="multipart/form-data">
+                            <form action="{{ route('activaciones-totem.subir-video', $activacion) }}" method="POST" enctype="multipart/form-data" class="totem-subir-form">
                                 @csrf
                                 <div class="modal-body">
+                                    <div class="alert alert-danger d-none totem-subir-error" role="alert"></div>
                                     <div class="form-group">
                                         <label for="camara_id_subir-{{ $activacion->id }}">Tótem involucrado <span class="text-danger">*</span></label>
                                         <select name="camara_id" id="camara_id_subir-{{ $activacion->id }}" class="form-control" required>
@@ -258,6 +268,11 @@
                                     <div class="form-group">
                                         <label for="observaciones_subir-{{ $activacion->id }}">Observaciones</label>
                                         <textarea name="observaciones" id="observaciones_subir-{{ $activacion->id }}" class="form-control" rows="3" maxlength="1000"></textarea>
+                                    </div>
+                                    <div class="totem-progress-wrap d-none">
+                                        <div class="progress">
+                                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%;">0%</div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="modal-footer">
@@ -390,6 +405,70 @@
                         mostrarArchivo(archivos[0]);
                     }
                 });
+            });
+
+            $('.totem-subir-form').on('submit', function (e) {
+                e.preventDefault();
+
+                var $form = $(this);
+                var $boton = $form.find('button[type="submit"]');
+                var $progressWrap = $form.find('.totem-progress-wrap');
+                var $progressBar = $form.find('.progress-bar');
+                var $error = $form.find('.totem-subir-error');
+
+                $error.addClass('d-none').text('');
+                $progressWrap.removeClass('d-none');
+                $progressBar.removeClass('bg-danger bg-success').addClass('bg-primary').css('width', '0%').text('0%');
+                $boton.prop('disabled', true);
+                $form.find('.totem-dropzone').css('pointer-events', 'none');
+
+                var datos = new FormData($form[0]);
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', $form.attr('action'), true);
+                xhr.setRequestHeader('Accept', 'application/json');
+
+                xhr.upload.addEventListener('progress', function (evento) {
+                    if (evento.lengthComputable) {
+                        var porcentaje = Math.round((evento.loaded / evento.total) * 100);
+                        $progressBar.css('width', porcentaje + '%').text(porcentaje + '%');
+                    }
+                });
+
+                xhr.onload = function () {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        $progressBar.removeClass('bg-primary').addClass('bg-success').css('width', '100%').text('Listo, procesando…');
+                        setTimeout(function () {
+                            window.location.reload();
+                        }, 900);
+                        return;
+                    }
+
+                    $boton.prop('disabled', false);
+                    $progressWrap.addClass('d-none');
+                    $form.find('.totem-dropzone').css('pointer-events', '');
+
+                    var mensaje = 'No se pudo subir el video.';
+                    try {
+                        var datosRespuesta = JSON.parse(xhr.responseText);
+                        if (datosRespuesta.errors) {
+                            mensaje = Object.values(datosRespuesta.errors).flat().join(' ');
+                        } else if (datosRespuesta.message) {
+                            mensaje = datosRespuesta.message;
+                        }
+                    } catch (err) {
+                        // respuesta no era JSON, se deja el mensaje genérico
+                    }
+                    $error.removeClass('d-none').text(mensaje);
+                };
+
+                xhr.onerror = function () {
+                    $boton.prop('disabled', false);
+                    $progressWrap.addClass('d-none');
+                    $form.find('.totem-dropzone').css('pointer-events', '');
+                    $error.removeClass('d-none').text('Error de conexión al subir el video. Probá de nuevo.');
+                };
+
+                xhr.send(datos);
             });
         });
     </script>

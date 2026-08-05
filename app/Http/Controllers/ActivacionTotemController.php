@@ -7,6 +7,7 @@ use App\Http\Requests\SubirVideoActivacionTotemRequest;
 use App\Models\ActivacionTotem;
 use App\Models\Camara;
 use App\Services\DetectorActivacionesTotem;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
@@ -74,16 +75,22 @@ class ActivacionTotemController extends Controller
             ->with('success', 'Descarga registrada correctamente.');
     }
 
-    public function subirVideo(SubirVideoActivacionTotemRequest $request, ActivacionTotem $activacionTotem): RedirectResponse
+    public function subirVideo(SubirVideoActivacionTotemRequest $request, ActivacionTotem $activacionTotem): RedirectResponse|JsonResponse
     {
         if ($activacionTotem->estado === ActivacionTotem::ESTADO_DESCARGADO) {
-            return redirect()->route('activaciones-totem.index')
-                ->with('error', 'Ya hay un video cargado para esta activación. Marcala como eliminada antes de subir uno nuevo.');
+            $mensaje = 'Ya hay un video cargado para esta activación. Marcala como eliminada antes de subir uno nuevo.';
+
+            return $request->expectsJson()
+                ? response()->json(['message' => $mensaje], 422)
+                : redirect()->route('activaciones-totem.index')->with('error', $mensaje);
         }
 
         if (in_array($activacionTotem->subida_estado, [ActivacionTotem::SUBIDA_PENDIENTE, ActivacionTotem::SUBIDA_PROCESANDO], true)) {
-            return redirect()->route('activaciones-totem.index')
-                ->with('error', 'Ya hay un video en proceso para esta activación. Esperá a que termine.');
+            $mensaje = 'Ya hay un video en proceso para esta activación. Esperá a que termine.';
+
+            return $request->expectsJson()
+                ? response()->json(['message' => $mensaje], 422)
+                : redirect()->route('activaciones-totem.index')->with('error', $mensaje);
         }
 
         $archivo = $request->file('video');
@@ -104,8 +111,11 @@ class ActivacionTotemController extends Controller
             'subida_error' => null,
         ]);
 
-        return redirect()->route('activaciones-totem.index')
-            ->with('success', 'Video recibido. Se está procesando en segundo plano (puede tardar hasta 1 minuto).');
+        $mensaje = 'Video recibido. Se está procesando en segundo plano (puede tardar hasta 1 minuto).';
+
+        return $request->expectsJson()
+            ? response()->json(['message' => $mensaje], 200)
+            : redirect()->route('activaciones-totem.index')->with('success', $mensaje);
     }
 
     public function descartar(ActivacionTotem $activacionTotem): RedirectResponse

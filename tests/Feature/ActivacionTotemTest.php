@@ -156,6 +156,30 @@ class ActivacionTotemTest extends TestCase
         $this->assertFalse($activacion->fresh()->esVencida());
     }
 
+    public function test_el_listado_muestra_marcar_como_eliminado_para_un_descargado_reciente(): void
+    {
+        // Regresión: el botón "Marcar como eliminado" estaba oculto salvo que
+        // el registro estuviera vencido (+6 meses), sin forma de resetear un
+        // registro recién descargado por error (tótem equivocado, reintento).
+        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $evento = EventoCecoco::factory()->create();
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => now()->subDay(),
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_DESCARGADO,
+            'descargado_por' => $admin->id,
+            'fecha_descarga' => now(),
+        ]);
+
+        $this->assertFalse($activacion->esVencida());
+
+        $response = $this->actingAs($admin)->get(route('activaciones-totem.index'));
+
+        $response->assertOk()->assertSee(route('activaciones-totem.eliminar', $activacion), false);
+    }
+
     public function test_detecta_un_evento_con_totem_en_la_descripcion(): void
     {
         $evento = EventoCecoco::factory()->create([
@@ -403,6 +427,53 @@ class ActivacionTotemTest extends TestCase
         $this->assertNull($activacion->fresh()->subida_estado);
     }
 
+    public function test_subir_video_bloqueado_devuelve_json_para_requests_ajax(): void
+    {
+        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        [$totem] = $this->totemDeRedTemporal();
+        $evento = EventoCecoco::factory()->create();
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_DESCARGADO,
+            'descargado_por' => $admin->id,
+            'fecha_descarga' => now(),
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('activaciones-totem.subir-video', $activacion), [
+            'camara_id' => $totem->id,
+            'video' => UploadedFile::fake()->create('video.mp4', 100, 'video/mp4'),
+        ], ['Accept' => 'application/json']);
+
+        $response->assertStatus(422)->assertJsonStructure(['message']);
+    }
+
+    public function test_subir_video_exitoso_devuelve_json_para_requests_ajax(): void
+    {
+        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        [$totem] = $this->totemDeRedTemporal();
+        $evento = EventoCecoco::factory()->create();
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_PENDIENTE,
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('activaciones-totem.subir-video', $activacion), [
+            'camara_id' => $totem->id,
+            'video' => UploadedFile::fake()->create('video_ajax.mp4', 100, 'video/mp4'),
+        ], ['Accept' => 'application/json']);
+
+        $response->assertStatus(200)->assertJsonStructure(['message']);
+
+        $rutaTemporalEsperada = storage_path('app/totem-uploads-temp/' . $activacion->id . '_video_ajax.mp4');
+        @unlink($rutaTemporalEsperada);
+    }
+
     public function test_subir_video_guarda_temporal_y_marca_pendiente(): void
     {
         $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
@@ -432,6 +503,29 @@ class ActivacionTotemTest extends TestCase
         $rutaTemporalEsperada = storage_path('app/totem-uploads-temp/' . $activacion->id . '_video_subida.mp4');
         $this->assertFileExists($rutaTemporalEsperada);
         @unlink($rutaTemporalEsperada);
+    }
+
+    public function test_el_listado_renderiza_sin_error_mientras_el_video_esta_en_proceso(): void
+    {
+        // Regresión: subirVideo() setea descargado_por de inmediato pero
+        // fecha_descarga recién queda seteada cuando el comando termina de
+        // procesar. La vista no puede asumir que ambos van siempre juntos.
+        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $evento = EventoCecoco::factory()->create();
+        ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_PENDIENTE,
+            'descargado_por' => $admin->id,
+            'fecha_descarga' => null,
+            'subida_estado' => ActivacionTotem::SUBIDA_PENDIENTE,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('activaciones-totem.index'));
+
+        $response->assertOk();
     }
 
     public function test_descargar_video_devuelve_el_archivo(): void

@@ -137,6 +137,11 @@ Route::group(['middleware' => ['auth']], function () {
         Route::put('{activacionTotem}', [App\Http\Controllers\ActivacionTotemController::class, 'update'])->name('update');
         Route::post('{activacionTotem}/descartar', [App\Http\Controllers\ActivacionTotemController::class, 'descartar'])->name('descartar');
         Route::post('{activacionTotem}/eliminar', [App\Http\Controllers\ActivacionTotemController::class, 'eliminar'])->name('eliminar');
+        Route::post('{activacionTotem}/video', [App\Http\Controllers\ActivacionTotemController::class, 'subirVideo'])->name('subir-video');
+        Route::get('{activacionTotem}/video', [App\Http\Controllers\ActivacionTotemController::class, 'descargarVideo'])->name('descargar-video');
+        Route::get('{activacionTotem}/certificado', [App\Http\Controllers\ActivacionTotemController::class, 'descargarCertificado'])->name('descargar-certificado');
+        Route::get('totems', [App\Http\Controllers\ActivacionTotemController::class, 'totems'])->name('totems');
+        Route::put('totems/{camara}', [App\Http\Controllers\ActivacionTotemController::class, 'actualizarCarpetaTotem'])->name('totems.update');
     });
 
     Route::post('/profile/update', [UsuarioController::class, 'updateProfile'])->name('profile.update');

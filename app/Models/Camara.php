@@ -22,7 +22,8 @@ class Camara extends Model
         'etapa',
         'sitio',
         'latitud',
-        'longitud'
+        'longitud',
+        'carpeta_red'
     ];
 
     protected $casts = [

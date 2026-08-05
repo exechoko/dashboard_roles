@@ -135,6 +135,13 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/cecoco_resumen_ia.log'));
 
+        // Hashea y copia a la carpeta de red los videos de tótem subidos desde la
+        // pantalla, desacoplado del request HTTP que recibió la subida.
+        $schedule->command('totem:procesar-videos-pendientes')
+            ->everyMinute()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/totem_procesar_videos.log'));
+
         // Vigila en LibreNMS el uso de CPU de las PCs de los operadores de video
         // (grupo CCTV) y alerta por Telegram cuando un equipo supera el umbral.
         $schedule->command('librenms:monitorear-cpu')

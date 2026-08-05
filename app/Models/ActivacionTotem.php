@@ -29,6 +29,11 @@ class ActivacionTotem extends Model
      */
     public const MESES_RETENCION_LEGAL = 6;
 
+    public const SUBIDA_PENDIENTE = 'pendiente';
+    public const SUBIDA_PROCESANDO = 'procesando';
+    public const SUBIDA_COMPLETADO = 'completado';
+    public const SUBIDA_ERROR = 'error';
+
     protected $fillable = [
         'evento_cecoco_id',
         'nro_expediente',
@@ -41,6 +46,11 @@ class ActivacionTotem extends Model
         'observaciones',
         'eliminado_por',
         'fecha_eliminado',
+        'nombre_archivo_original',
+        'ruta_archivo',
+        'hash_sha256',
+        'subida_estado',
+        'subida_error',
     ];
 
     protected $casts = [

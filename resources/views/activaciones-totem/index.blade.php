@@ -5,12 +5,17 @@
         <div class="section-header d-flex justify-content-between align-items-center flex-wrap">
             <h3 class="page__heading"><i class="fas fa-broadcast-tower"></i> Activaciones Tótem</h3>
             @can('editar-activacion-totem')
-                <form action="{{ route('activaciones-totem.escanear') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="btn btn-info">
-                        <i class="fas fa-sync"></i> Escanear ahora
-                    </button>
-                </form>
+                <div>
+                    <a href="{{ route('activaciones-totem.totems') }}" class="btn btn-secondary">
+                        <i class="fas fa-folder-open"></i> Configurar carpetas
+                    </a>
+                    <form action="{{ route('activaciones-totem.escanear') }}" method="POST" class="d-inline">
+                        @csrf
+                        <button type="submit" class="btn btn-info">
+                            <i class="fas fa-sync"></i> Escanear ahora
+                        </button>
+                    </form>
+                </div>
             @endcan
         </div>
 
@@ -18,6 +23,12 @@
             @if (session('success'))
                 <div class="alert alert-success alert-dismissible fade show">
                     <i class="fas fa-check-circle"></i> {{ session('success') }}
+                    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+                </div>
+            @endif
+            @if (session('error'))
+                <div class="alert alert-warning alert-dismissible fade show">
+                    <i class="fas fa-exclamation-triangle"></i> {{ session('error') }}
                     <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
                 </div>
             @endif
@@ -78,6 +89,14 @@
                                 @forelse ($activaciones as $activacion)
                                     @php
                                         $vencida = $activacion->esVencida();
+                                        $subidaEnCurso = in_array($activacion->subida_estado, [
+                                            \App\Models\ActivacionTotem::SUBIDA_PENDIENTE,
+                                            \App\Models\ActivacionTotem::SUBIDA_PROCESANDO,
+                                        ], true);
+                                        $puedeRegistrar = in_array($activacion->estado, [
+                                            \App\Models\ActivacionTotem::ESTADO_PENDIENTE,
+                                            \App\Models\ActivacionTotem::ESTADO_ELIMINADO,
+                                        ], true) && !$subidaEnCurso;
                                     @endphp
                                     <tr class="{{ $vencida ? 'table-danger' : '' }}">
                                         <td>{{ $activacion->fecha_evento->format('d/m/Y H:i') }}</td>
@@ -102,12 +121,34 @@
                                                     <i class="fas fa-exclamation-triangle"></i> Vencido
                                                 </span>
                                             @endif
+                                            @if ($subidaEnCurso)
+                                                <span class="badge badge-info" title="El video se está hasheando y copiando a la carpeta de red">
+                                                    <i class="fas fa-spinner fa-spin"></i> Procesando video
+                                                </span>
+                                            @elseif ($activacion->subida_estado === \App\Models\ActivacionTotem::SUBIDA_ERROR)
+                                                <span class="badge badge-danger" title="{{ $activacion->subida_error }}">
+                                                    <i class="fas fa-exclamation-circle"></i> Error al subir
+                                                </span>
+                                            @endif
                                         </td>
                                         <td>{{ $activacion->camara->nombre ?? '-' }}</td>
                                         <td>
                                             @if ($activacion->descargadoPor)
                                                 <div>{{ $activacion->descargadoPor->name }}</div>
                                                 <small class="text-muted d-block">Descargado: {{ $activacion->fecha_descarga->format('d/m/Y H:i') }}</small>
+                                            @endif
+                                            @if ($activacion->hash_sha256)
+                                                <small class="text-muted d-block" title="{{ $activacion->hash_sha256 }}">
+                                                    <i class="fas fa-fingerprint"></i> SHA-256: {{ Str::limit($activacion->hash_sha256, 16, '…') }}
+                                                </small>
+                                                <div class="mt-1">
+                                                    <a href="{{ route('activaciones-totem.descargar-video', $activacion) }}" class="btn btn-xs btn-outline-primary" title="Descargar video">
+                                                        <i class="fas fa-video"></i> Video
+                                                    </a>
+                                                    <a href="{{ route('activaciones-totem.descargar-certificado', $activacion) }}" class="btn btn-xs btn-outline-secondary" title="Descargar certificado de integridad (hash)">
+                                                        <i class="fas fa-certificate"></i> Certificado
+                                                    </a>
+                                                </div>
                                             @endif
                                             @if ($activacion->eliminadoPor)
                                                 <div class="text-danger">{{ $activacion->eliminadoPor->name }}</div>
@@ -119,11 +160,17 @@
                                         </td>
                                         <td class="text-right">
                                             @can('editar-activacion-totem')
-                                                @if ($activacion->estado === \App\Models\ActivacionTotem::ESTADO_PENDIENTE)
-                                                    <button type="button" class="btn btn-sm btn-success" title="Registrar descarga"
+                                                @if ($puedeRegistrar)
+                                                    <button type="button" class="btn btn-sm btn-primary" title="Subir video al sistema"
+                                                            data-toggle="modal" data-target="#subirVideoModal{{ $activacion->id }}">
+                                                        <i class="fas fa-upload"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-success" title="Registrar descarga manual"
                                                             data-toggle="modal" data-target="#descargarModal{{ $activacion->id }}">
                                                         <i class="fas fa-download"></i>
                                                     </button>
+                                                @endif
+                                                @if ($activacion->estado === \App\Models\ActivacionTotem::ESTADO_PENDIENTE)
                                                     <button type="button" class="btn btn-sm btn-secondary" title="Descartar"
                                                             onclick="if(confirm('¿Descartar esta activación? Se usa cuando no corresponde a un tótem real.')) document.getElementById('descartar-{{ $activacion->id }}').submit();">
                                                         <i class="fas fa-ban"></i>
@@ -161,7 +208,55 @@
 
     @can('editar-activacion-totem')
         @foreach ($activaciones as $activacion)
-            @if ($activacion->estado === \App\Models\ActivacionTotem::ESTADO_PENDIENTE)
+            @php
+                $puedeRegistrar = in_array($activacion->estado, [
+                    \App\Models\ActivacionTotem::ESTADO_PENDIENTE,
+                    \App\Models\ActivacionTotem::ESTADO_ELIMINADO,
+                ], true) && !in_array($activacion->subida_estado, [
+                    \App\Models\ActivacionTotem::SUBIDA_PENDIENTE,
+                    \App\Models\ActivacionTotem::SUBIDA_PROCESANDO,
+                ], true);
+            @endphp
+            @if ($puedeRegistrar)
+                <div class="modal fade" id="subirVideoModal{{ $activacion->id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title"><i class="fas fa-upload"></i> Subir video — Exp. {{ $activacion->nro_expediente }}</h5>
+                                <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                            </div>
+                            <form action="{{ route('activaciones-totem.subir-video', $activacion) }}" method="POST" enctype="multipart/form-data">
+                                @csrf
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label for="camara_id_subir-{{ $activacion->id }}">Tótem involucrado <span class="text-danger">*</span></label>
+                                        <select name="camara_id" id="camara_id_subir-{{ $activacion->id }}" class="form-control" required>
+                                            <option value="">Seleccionar...</option>
+                                            @foreach ($totems as $totem)
+                                                <option value="{{ $totem->id }}" {{ !$totem->carpeta_red ? 'disabled' : '' }}>
+                                                    {{ $totem->nombre }} {{ !$totem->carpeta_red ? '(sin carpeta configurada)' : '' }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="video-{{ $activacion->id }}">Archivo de video <span class="text-danger">*</span></label>
+                                        <input type="file" name="video" id="video-{{ $activacion->id }}" class="form-control-file" accept="video/*" required>
+                                        <small class="form-text text-muted">Máximo 180 MB. Formatos: MP4, AVI, MOV, MKV, WMV, ASF, MPEG.</small>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="observaciones_subir-{{ $activacion->id }}">Observaciones</label>
+                                        <textarea name="observaciones" id="observaciones_subir-{{ $activacion->id }}" class="form-control" rows="3" maxlength="1000"></textarea>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Subir video</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
                 <div class="modal fade" id="descargarModal{{ $activacion->id }}" tabindex="-1" role="dialog" aria-hidden="true">
                     <div class="modal-dialog" role="document">
                         <div class="modal-content">

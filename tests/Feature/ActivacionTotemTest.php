@@ -3,10 +3,15 @@
 namespace Tests\Feature;
 
 use App\Models\ActivacionTotem;
+use App\Models\Camara;
 use App\Models\EventoCecoco;
 use App\Models\User;
+use App\Services\ArchivoHashService;
 use App\Services\DetectorActivacionesTotem;
+use App\Services\SubidaVideoTotemService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\File;
 use Tests\TestCase;
 
 class ActivacionTotemTest extends TestCase
@@ -252,5 +257,257 @@ class ActivacionTotemTest extends TestCase
             'observaciones' => 'Video descargado del sistema de videovigilancia',
         ]);
         $this->assertNotNull($activacion->fresh()->fecha_descarga);
+    }
+
+    private function totemDeRedTemporal(): array
+    {
+        $rutaBase = storage_path('app/testing-totems-red/' . uniqid('base_'));
+        $carpeta = 'Totem De Prueba';
+        File::ensureDirectoryExists($rutaBase . '\\' . $carpeta);
+
+        $totem = Camara::create([
+            'nombre' => 'Tótem de prueba',
+            'carpeta_red' => $carpeta,
+        ]);
+
+        return [$totem, $rutaBase];
+    }
+
+    public function test_servicio_de_subida_hashea_y_copia_a_la_carpeta_de_red(): void
+    {
+        [$totem, $rutaBase] = $this->totemDeRedTemporal();
+
+        $evento = EventoCecoco::factory()->create();
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_PENDIENTE,
+            'camara_id' => $totem->id,
+            'nombre_archivo_original' => 'video_prueba.mp4',
+            'subida_estado' => ActivacionTotem::SUBIDA_PENDIENTE,
+        ]);
+
+        $servicio = new SubidaVideoTotemService(app(ArchivoHashService::class), $rutaBase);
+        $rutaTemporal = $servicio->rutaTemporal($activacion);
+        File::ensureDirectoryExists(dirname($rutaTemporal));
+        File::put($rutaTemporal, 'contenido de prueba del video');
+
+        $resultado = $servicio->procesar($activacion);
+
+        $this->assertFileExists($resultado['ruta_archivo']);
+        $this->assertFileDoesNotExist($rutaTemporal);
+        $this->assertSame(hash_file('sha256', $resultado['ruta_archivo']), $resultado['hash_sha256']);
+        $this->assertStringContainsString($evento->nro_expediente, $resultado['ruta_archivo']);
+        $this->assertStringContainsString($totem->carpeta_red, $resultado['ruta_archivo']);
+    }
+
+    public function test_servicio_de_subida_falla_si_el_totem_no_tiene_carpeta_configurada(): void
+    {
+        $totem = Camara::create(['nombre' => 'Tótem sin carpeta']);
+        $evento = EventoCecoco::factory()->create();
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_PENDIENTE,
+            'camara_id' => $totem->id,
+            'nombre_archivo_original' => 'video.mp4',
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        (new SubidaVideoTotemService(app(ArchivoHashService::class)))->procesar($activacion);
+    }
+
+    public function test_comando_procesa_video_pendiente_y_marca_descargado(): void
+    {
+        [$totem, $rutaBase] = $this->totemDeRedTemporal();
+
+        $evento = EventoCecoco::factory()->create();
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_PENDIENTE,
+            'camara_id' => $totem->id,
+            'nombre_archivo_original' => 'video_comando.mp4',
+            'subida_estado' => ActivacionTotem::SUBIDA_PENDIENTE,
+        ]);
+
+        $this->app->bind(SubidaVideoTotemService::class, function ($app) use ($rutaBase, $activacion) {
+            $servicio = new SubidaVideoTotemService($app->make(ArchivoHashService::class), $rutaBase);
+            $rutaTemporal = $servicio->rutaTemporal($activacion);
+            File::ensureDirectoryExists(dirname($rutaTemporal));
+            File::put($rutaTemporal, 'contenido de prueba');
+
+            return $servicio;
+        });
+
+        $this->artisan('totem:procesar-videos-pendientes')->assertSuccessful();
+
+        $activacion->refresh();
+        $this->assertSame(ActivacionTotem::SUBIDA_COMPLETADO, $activacion->subida_estado);
+        $this->assertSame(ActivacionTotem::ESTADO_DESCARGADO, $activacion->estado);
+        $this->assertNotNull($activacion->hash_sha256);
+        $this->assertNotNull($activacion->ruta_archivo);
+    }
+
+    public function test_comando_deja_en_error_si_falla_el_procesamiento(): void
+    {
+        // Tótem sin carpeta_red configurada: el servicio real va a fallar al procesar.
+        $totem = Camara::create(['nombre' => 'Tótem sin carpeta para error']);
+        $evento = EventoCecoco::factory()->create();
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_PENDIENTE,
+            'camara_id' => $totem->id,
+            'nombre_archivo_original' => 'video.mp4',
+            'subida_estado' => ActivacionTotem::SUBIDA_PENDIENTE,
+        ]);
+
+        $this->artisan('totem:procesar-videos-pendientes')->assertSuccessful();
+
+        $activacion->refresh();
+        $this->assertSame(ActivacionTotem::SUBIDA_ERROR, $activacion->subida_estado);
+        $this->assertSame(ActivacionTotem::ESTADO_PENDIENTE, $activacion->estado);
+        $this->assertNotNull($activacion->subida_error);
+    }
+
+    public function test_subir_video_bloqueado_si_ya_esta_descargado(): void
+    {
+        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        [$totem] = $this->totemDeRedTemporal();
+        $evento = EventoCecoco::factory()->create();
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_DESCARGADO,
+            'descargado_por' => $admin->id,
+            'fecha_descarga' => now(),
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('activaciones-totem.subir-video', $activacion), [
+            'camara_id' => $totem->id,
+            'video' => UploadedFile::fake()->create('video.mp4', 100, 'video/mp4'),
+        ]);
+
+        $response->assertRedirect(route('activaciones-totem.index'));
+        $this->assertNull($activacion->fresh()->subida_estado);
+    }
+
+    public function test_subir_video_guarda_temporal_y_marca_pendiente(): void
+    {
+        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        [$totem] = $this->totemDeRedTemporal();
+        $evento = EventoCecoco::factory()->create();
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_PENDIENTE,
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('activaciones-totem.subir-video', $activacion), [
+            'camara_id' => $totem->id,
+            'video' => UploadedFile::fake()->create('video_subida.mp4', 100, 'video/mp4'),
+            'observaciones' => 'Subido para test',
+        ]);
+
+        $response->assertRedirect(route('activaciones-totem.index'));
+        $activacion->refresh();
+        $this->assertSame($totem->id, $activacion->camara_id);
+        $this->assertSame($admin->id, $activacion->descargado_por);
+        $this->assertSame(ActivacionTotem::SUBIDA_PENDIENTE, $activacion->subida_estado);
+        $this->assertSame('video_subida.mp4', $activacion->nombre_archivo_original);
+
+        $rutaTemporalEsperada = storage_path('app/totem-uploads-temp/' . $activacion->id . '_video_subida.mp4');
+        $this->assertFileExists($rutaTemporalEsperada);
+        @unlink($rutaTemporalEsperada);
+    }
+
+    public function test_descargar_video_devuelve_el_archivo(): void
+    {
+        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        [$totem, $rutaBase] = $this->totemDeRedTemporal();
+        $evento = EventoCecoco::factory()->create();
+
+        $rutaArchivo = $rutaBase . '\\' . $totem->carpeta_red . '\\video_final.mp4';
+        File::put($rutaArchivo, 'contenido final del video');
+
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_DESCARGADO,
+            'camara_id' => $totem->id,
+            'descargado_por' => $admin->id,
+            'fecha_descarga' => now(),
+            'nombre_archivo_original' => 'video_original.mp4',
+            'ruta_archivo' => $rutaArchivo,
+            'hash_sha256' => hash_file('sha256', $rutaArchivo),
+            'subida_estado' => ActivacionTotem::SUBIDA_COMPLETADO,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('activaciones-totem.descargar-video', $activacion));
+
+        $response->assertOk();
+        $response->assertHeader('content-disposition');
+        $this->assertStringContainsString('video_original.mp4', $response->headers->get('content-disposition'));
+    }
+
+    public function test_descargar_video_redirige_con_error_si_no_hay_archivo(): void
+    {
+        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $evento = EventoCecoco::factory()->create();
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_PENDIENTE,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('activaciones-totem.descargar-video', $activacion));
+
+        $response->assertRedirect(route('activaciones-totem.index'));
+    }
+
+    public function test_descargar_certificado_incluye_el_hash(): void
+    {
+        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        [$totem] = $this->totemDeRedTemporal();
+        $evento = EventoCecoco::factory()->create();
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_DESCARGADO,
+            'camara_id' => $totem->id,
+            'descargado_por' => $admin->id,
+            'fecha_descarga' => now(),
+            'nombre_archivo_original' => 'video_original.mp4',
+            'ruta_archivo' => 'C:\\ruta\\ficticia\\video.mp4',
+            'hash_sha256' => str_repeat('a', 64),
+            'subida_estado' => ActivacionTotem::SUBIDA_COMPLETADO,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('activaciones-totem.descargar-certificado', $activacion));
+
+        $response->assertOk();
+        $response->assertHeader('content-disposition');
+        $response->assertSee($activacion->nro_expediente);
+        $response->assertSee(str_repeat('a', 64));
+        $this->assertStringContainsString('certificado.txt', $response->headers->get('content-disposition'));
     }
 }

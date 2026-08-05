@@ -17,6 +17,11 @@ class ArchivoHashService
             throw new RuntimeException('No se pudo acceder al archivo temporal.');
         }
 
+        return $this->calcularSha256DesdeRuta($ruta);
+    }
+
+    public function calcularSha256DesdeRuta(string $ruta): string
+    {
         $stream = fopen($ruta, 'rb');
 
         if ($stream === false) {

@@ -41,21 +41,28 @@ class SubidaVideoTotemService
         try {
             $hash = $this->hashService->calcularSha256DesdeRuta($rutaTemporal);
 
-            $extension = pathinfo($activacion->nombre_archivo_original ?? '', PATHINFO_EXTENSION) ?: 'mp4';
-            // Se agrega el momento de la subida (no solo expediente+fecha del evento):
-            // si esta activación ya tuvo un video antes y se volvió a subir tras
-            // "Marcar como eliminado", el nombre anterior podría seguir físicamente
-            // en la carpeta (el borrado es manual) y no hay que arriesgarse a
-            // sobreescribirlo en silencio.
-            $nombreDestino = $activacion->nro_expediente . '_' . $activacion->fecha_evento->format('Ymd_His')
-                . '_subido' . now()->format('YmdHis') . '.' . $extension;
-
             $carpetaDestino = $this->rutaBase . '\\' . $camara->carpeta_red;
             if (!file_exists($carpetaDestino)) {
                 throw new RuntimeException("La carpeta de red no existe o no es accesible: {$carpetaDestino}");
             }
 
+            // Se conserva el nombre original tal cual lo exporta el sistema de
+            // video (trae sus propios timestamps de inicio/fin). Solo se
+            // desambigua si ya existe un archivo con ese nombre exacto en la
+            // carpeta, para no pisarlo en silencio.
+            $nombreDestino = $activacion->nombre_archivo_original ?: ($activacion->nro_expediente . '.mp4');
             $rutaDestino = $carpetaDestino . '\\' . $nombreDestino;
+
+            if (file_exists($rutaDestino)) {
+                $info = pathinfo($nombreDestino);
+                $base = $info['filename'];
+                $ext = isset($info['extension']) ? '.' . $info['extension'] : '';
+                $sufijo = 2;
+                do {
+                    $rutaDestino = $carpetaDestino . '\\' . $base . '_(' . $sufijo . ')' . $ext;
+                    $sufijo++;
+                } while (file_exists($rutaDestino));
+            }
 
             if (!@copy($rutaTemporal, $rutaDestino)) {
                 throw new RuntimeException("No se pudo copiar el video a la carpeta de red: {$rutaDestino}");

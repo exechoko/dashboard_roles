@@ -323,8 +323,40 @@ class ActivacionTotemTest extends TestCase
         $this->assertFileExists($resultado['ruta_archivo']);
         $this->assertFileDoesNotExist($rutaTemporal);
         $this->assertSame(hash_file('sha256', $resultado['ruta_archivo']), $resultado['hash_sha256']);
-        $this->assertStringContainsString($evento->nro_expediente, $resultado['ruta_archivo']);
+        // Se conserva el nombre original del video tal cual lo exporta el sistema.
+        $this->assertStringEndsWith('video_prueba.mp4', $resultado['ruta_archivo']);
         $this->assertStringContainsString($totem->carpeta_red, $resultado['ruta_archivo']);
+    }
+
+    public function test_servicio_de_subida_desambigua_si_ya_existe_un_archivo_con_el_mismo_nombre(): void
+    {
+        [$totem, $rutaBase] = $this->totemDeRedTemporal();
+
+        $evento = EventoCecoco::factory()->create();
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_PENDIENTE,
+            'camara_id' => $totem->id,
+            'nombre_archivo_original' => 'video_repetido.mp4',
+            'subida_estado' => ActivacionTotem::SUBIDA_PENDIENTE,
+        ]);
+
+        // Ya existe un archivo con ese nombre exacto en la carpeta destino
+        // (por ejemplo, de un ciclo anterior que se marcó como eliminado).
+        File::put($rutaBase . '\\' . $totem->carpeta_red . '\\video_repetido.mp4', 'video anterior');
+
+        $servicio = new SubidaVideoTotemService(app(ArchivoHashService::class), $rutaBase);
+        $rutaTemporal = $servicio->rutaTemporal($activacion);
+        File::ensureDirectoryExists(dirname($rutaTemporal));
+        File::put($rutaTemporal, 'video nuevo');
+
+        $resultado = $servicio->procesar($activacion);
+
+        $this->assertStringEndsWith('video_repetido_(2).mp4', $resultado['ruta_archivo']);
+        $this->assertSame('video anterior', File::get($rutaBase . '\\' . $totem->carpeta_red . '\\video_repetido.mp4'));
     }
 
     public function test_servicio_de_subida_falla_si_el_totem_no_tiene_carpeta_configurada(): void

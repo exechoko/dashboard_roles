@@ -381,7 +381,9 @@
                 }
 
                 $zone.on('click', function () {
-                    $input.trigger('click');
+                    // Nativo, no jQuery: .trigger('click') no abre el diálogo
+                    // del sistema de forma confiable en un <input type="file">.
+                    $input[0].click();
                 });
 
                 $input.on('change', function () {

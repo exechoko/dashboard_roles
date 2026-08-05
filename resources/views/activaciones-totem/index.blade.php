@@ -38,6 +38,7 @@
                     <form method="GET" action="{{ route('activaciones-totem.index') }}" class="mb-3">
                         <div class="row">
                             <div class="col-md-2">
+                                <label class="mb-1">Estado</label>
                                 <select name="estado" class="form-control">
                                     <option value="">Todos los estados</option>
                                     @foreach ($estados as $key => $label)

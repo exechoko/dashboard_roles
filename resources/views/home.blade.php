@@ -1069,6 +1069,57 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            @can('ver-activacion-totem')
+                                                <div class="col-md-4 col-xl-4">
+                                                    <div class="card-item bg-c-yellow order-card">
+                                                        <div class="card-block">
+                                                            <h5>Activaciones Tótem pendientes ({{ $cant_activaciones_totem_pendientes }})</h5>
+                                                            <h2 class="text-right">
+                                                                <i class="fas fa-tower-broadcast f-left"></i>
+                                                                <span>{{ $cant_activaciones_totem_pendientes }}</span>
+                                                            </h2>
+                                                            @if($activaciones_totem_pendientes->count() > 0)
+                                                                <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
+                                                                <div
+                                                                    style="font-size: 11px; line-height: 1.4; max-height: 100px; overflow-y: auto;">
+                                                                    @foreach($activaciones_totem_pendientes as $activacion)
+                                                                        <div
+                                                                            style="margin: 5px 0; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                                                                            {{ $activacion->fecha_evento->format('d/m/Y') }} -
+                                                                            Exp. {{ $activacion->nro_expediente }}
+                                                                        </div>
+                                                                    @endforeach
+                                                                </div>
+                                                            @endif
+                                                            <p class="m-b-0 text-right" style="margin-top: 10px;">
+                                                                <a href="{{ route('activaciones-totem.index') }}"
+                                                                    style="color: rgb(253, 253, 253)">Ir a Activaciones Tótem</a>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @if($cant_activaciones_totem_vencidas > 0)
+                                                    <div class="col-md-4 col-xl-4">
+                                                        <div class="card-item bg-c-red order-card">
+                                                            <div class="card-block">
+                                                                <h5>Videos Tótem vencidos (+6 meses)</h5>
+                                                                <h2 class="text-right">
+                                                                    <i class="fas fa-exclamation-triangle f-left"></i>
+                                                                    <span>{{ $cant_activaciones_totem_vencidas }}</span>
+                                                                </h2>
+                                                                <hr style="border-color: rgba(255,255,255,0.3); margin: 10px 0;">
+                                                                <div style="font-size: 11px; line-height: 1.4;">
+                                                                    Superaron el plazo legal de retención. Hay que descargarlos o borrar la copia guardada.
+                                                                </div>
+                                                                <p class="m-b-0 text-right" style="margin-top: 10px;">
+                                                                    <a href="{{ route('activaciones-totem.index', ['vencidas' => 1]) }}"
+                                                                        style="color: rgb(253, 253, 253)">Ver vencidos</a>
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endif
+                                            @endcan
                                         </div>
 
                                         {{-- Card estado servicios IA --}}

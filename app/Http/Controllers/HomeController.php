@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use App\Models\EntregaEquipo;
 use App\Models\EntregaBodycam;
+use App\Models\ActivacionTotem;
 use App\Models\TareaItem;
 use App\Services\CecocoExpedienteService;
 use App\Services\GeocodificacionService;
@@ -262,6 +263,13 @@ class HomeController extends Controller
 
         $cant_tareas_hoy = $tareas_hoy->count() + $tareas_en_proceso->count();
 
+        $activaciones_totem_pendientes = ActivacionTotem::where('estado', ActivacionTotem::ESTADO_PENDIENTE)
+            ->orderBy('fecha_evento', 'desc')
+            ->get();
+        $cant_activaciones_totem_pendientes = $activaciones_totem_pendientes->count();
+
+        $cant_activaciones_totem_vencidas = ActivacionTotem::vencidas()->count();
+
         $manana = Carbon::tomorrow();
         $tareas_manana = TareaItem::with('tarea')
             ->whereDate('fecha_programada', $manana)
@@ -459,6 +467,9 @@ class HomeController extends Controller
             'tareas_en_proceso',
             'tareas_hoy',
             'tareas_manana',
+            'cant_activaciones_totem_pendientes',
+            'activaciones_totem_pendientes',
+            'cant_activaciones_totem_vencidas',
             'entregas_equipos_activas',
             'entregas_bodycams_activas',
             'camaras_por_tipo',

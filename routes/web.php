@@ -130,6 +130,15 @@ Route::group(['middleware' => ['auth']], function () {
     // 🔹 ITEMS DE TAREAS
     Route::patch('tareas-items/{id}', [TareaController::class, 'updateItem'])->name('tareas.items.update');
 
+    // 🔹 ACTIVACIONES TOTEM
+    Route::prefix('tareas/activaciones-totem')->name('activaciones-totem.')->group(function () {
+        Route::get('/', [App\Http\Controllers\ActivacionTotemController::class, 'index'])->name('index');
+        Route::post('escanear', [App\Http\Controllers\ActivacionTotemController::class, 'escanear'])->name('escanear');
+        Route::put('{activacionTotem}', [App\Http\Controllers\ActivacionTotemController::class, 'update'])->name('update');
+        Route::post('{activacionTotem}/descartar', [App\Http\Controllers\ActivacionTotemController::class, 'descartar'])->name('descartar');
+        Route::post('{activacionTotem}/eliminar', [App\Http\Controllers\ActivacionTotemController::class, 'eliminar'])->name('eliminar');
+    });
+
     Route::post('/profile/update', [UsuarioController::class, 'updateProfile'])->name('profile.update');
     Route::post('/profile/update-password', [UsuarioController::class, 'updatePassword'])->name('profile.updatePassword');
     Route::post('/profile/update-master-password', [UsuarioController::class, 'updateMasterPassword'])->name('profile.updateMasterPassword');

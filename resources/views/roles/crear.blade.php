@@ -119,7 +119,8 @@
                                                     ],
                                                     'Tareas' => [
                                                         'tarea',
-                                                        'ticket-pg'
+                                                        'ticket-pg',
+                                                        'activacion-totem'
                                                     ],
                                                     'Claves' => [
                                                         'clave'

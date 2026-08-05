@@ -273,6 +273,14 @@
                     </a>
                 </li>
             @endcan
+            @can('ver-activacion-totem')
+                {{-- ACTIVACIONES TOTEM --}}
+                <li class="{{ request()->is('tareas/activaciones-totem*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('activaciones-totem.index') }}">
+                        <i class="fas fa-tower-broadcast"></i><span>Activaciones Tótem</span>
+                    </a>
+                </li>
+            @endcan
         </ul>
     </li>
 @endcan

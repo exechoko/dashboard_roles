@@ -82,6 +82,15 @@ class Kernel extends ConsoleKernel
                 app(TelegramService::class)->notificarScheduleFallido('cecoco:prefetch-detalles', 'El comando finalizó con error.');
             });
 
+        // Detecta activaciones de tótem BDE en los eventos CECOCO de los últimos 7 días.
+        // Corre después del import y el prefetch de detalles.
+        $schedule->command('totem:detectar-activaciones')->dailyAt('07:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/totem_activaciones.log'))
+            ->onFailure(function () {
+                app(TelegramService::class)->notificarScheduleFallido('totem:detectar-activaciones', 'El comando finalizó con error.');
+            });
+
         // Actualiza el caché diario de efemérides (Argentina / Entre Ríos) desde Wikipedia.
         $schedule->command('efemerides:actualizar')->dailyAt('00:30')
             ->withoutOverlapping()

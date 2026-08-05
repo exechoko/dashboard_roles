@@ -195,6 +195,10 @@ class SeederTablaPermisos extends Seeder
             'editar-tarea',
             'borrar-tarea',
 
+            // Activaciones Totem
+            'ver-activacion-totem',
+            'editar-activacion-totem',
+
             // Tickets PG
             'ver-ticket-pg',
             'crear-ticket-pg',

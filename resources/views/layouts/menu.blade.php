@@ -277,7 +277,7 @@
                 {{-- ACTIVACIONES TOTEM --}}
                 <li class="{{ request()->is('tareas/activaciones-totem*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('activaciones-totem.index') }}">
-                        <i class="fas fa-tower-broadcast"></i><span>Activaciones Tótem</span>
+                        <i class="fas fa-broadcast-tower"></i><span>Activaciones Tótem</span>
                     </a>
                 </li>
             @endcan

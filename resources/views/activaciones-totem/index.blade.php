@@ -3,7 +3,7 @@
 @section('content')
     <section class="section">
         <div class="section-header d-flex justify-content-between align-items-center flex-wrap">
-            <h3 class="page__heading"><i class="fas fa-tower-broadcast"></i> Activaciones Tótem</h3>
+            <h3 class="page__heading"><i class="fas fa-broadcast-tower"></i> Activaciones Tótem</h3>
             @can('editar-activacion-totem')
                 <form action="{{ route('activaciones-totem.escanear') }}" method="POST">
                     @csrf

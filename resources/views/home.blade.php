@@ -1075,7 +1075,7 @@
                                                         <div class="card-block">
                                                             <h5>Activaciones Tótem pendientes ({{ $cant_activaciones_totem_pendientes }})</h5>
                                                             <h2 class="text-right">
-                                                                <i class="fas fa-tower-broadcast f-left"></i>
+                                                                <i class="fas fa-broadcast-tower f-left"></i>
                                                                 <span>{{ $cant_activaciones_totem_pendientes }}</span>
                                                             </h2>
                                                             @if($activaciones_totem_pendientes->count() > 0)

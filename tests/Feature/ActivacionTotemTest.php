@@ -48,6 +48,37 @@ class ActivacionTotemTest extends TestCase
             ->assertSee($evento->nro_expediente);
     }
 
+    public function test_estado_subidas_devuelve_el_subida_estado_de_los_ids_pedidos(): void
+    {
+        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $evento = EventoCecoco::factory()->create();
+        $procesando = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_PENDIENTE,
+            'subida_estado' => ActivacionTotem::SUBIDA_PROCESANDO,
+        ]);
+        $completado = ActivacionTotem::create([
+            'evento_cecoco_id' => EventoCecoco::factory()->create()->id,
+            'nro_expediente' => '9999950',
+            'fecha_evento' => now(),
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_DESCARGADO,
+            'subida_estado' => ActivacionTotem::SUBIDA_COMPLETADO,
+        ]);
+
+        $response = $this->actingAs($admin)->getJson(
+            route('activaciones-totem.estado-subidas', ['ids' => "{$procesando->id},{$completado->id}"])
+        );
+
+        $response->assertOk()->assertJson([
+            (string) $procesando->id => ActivacionTotem::SUBIDA_PROCESANDO,
+            (string) $completado->id => ActivacionTotem::SUBIDA_COMPLETADO,
+        ]);
+    }
+
     public function test_el_dashboard_muestra_la_tarjeta_de_activaciones_pendientes(): void
     {
         $admin = User::where('email', 'admin@gmail.com')->firstOrFail();

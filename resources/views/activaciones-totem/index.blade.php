@@ -98,7 +98,8 @@
                                             \App\Models\ActivacionTotem::ESTADO_ELIMINADO,
                                         ], true) && !$subidaEnCurso;
                                     @endphp
-                                    <tr class="{{ $vencida ? 'table-danger' : '' }}">
+                                    <tr class="{{ $vencida ? 'table-danger' : '' }}"
+                                        @if ($subidaEnCurso) data-totem-subida-en-curso="{{ $activacion->id }}" @endif>
                                         <td>{{ $activacion->fecha_evento->format('d/m/Y H:i') }}</td>
                                         <td>
                                             <a href="{{ route('cecoco.expediente', $activacion->evento_cecoco_id) }}" target="_blank">
@@ -470,6 +471,29 @@
 
                 xhr.send(datos);
             });
+
+            // Refresco automático: mientras haya filas "Procesando video", se
+            // consulta cada 10s si ya terminaron (completado/error) y, si
+            // alguna cambió, se recarga la página sola.
+            var idsEnCurso = $('[data-totem-subida-en-curso]').map(function () {
+                return $(this).data('totem-subida-en-curso');
+            }).get();
+
+            if (idsEnCurso.length > 0) {
+                var intervaloEstadoSubidas = setInterval(function () {
+                    $.getJSON('{{ route('activaciones-totem.estado-subidas') }}', { ids: idsEnCurso.join(',') })
+                        .done(function (estados) {
+                            var terminado = idsEnCurso.some(function (id) {
+                                var estado = estados[id];
+                                return estado !== 'pendiente' && estado !== 'procesando';
+                            });
+                            if (terminado) {
+                                clearInterval(intervaloEstadoSubidas);
+                                window.location.reload();
+                            }
+                        });
+                }, 10000);
+            }
         });
     </script>
 @endpush

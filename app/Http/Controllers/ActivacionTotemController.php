@@ -17,7 +17,7 @@ class ActivacionTotemController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:ver-activacion-totem')->only(['index', 'descargarVideo', 'descargarCertificado']);
+        $this->middleware('permission:ver-activacion-totem')->only(['index', 'descargarVideo', 'descargarCertificado', 'estadoSubidas']);
         $this->middleware('permission:editar-activacion-totem')->only([
             'update', 'descartar', 'escanear', 'eliminar', 'subirVideo', 'totems', 'actualizarCarpetaTotem',
         ]);
@@ -146,6 +146,21 @@ class ActivacionTotemController extends Controller
 
         return redirect()->route('activaciones-totem.index')
             ->with('success', 'Video marcado como eliminado.');
+    }
+
+    /**
+     * Consultado por polling desde la pantalla mientras hay videos en
+     * "Procesando", para refrescar sola cuando el comando en background
+     * termina (sin depender de que el usuario recargue a mano).
+     */
+    public function estadoSubidas(Request $request): JsonResponse
+    {
+        $ids = array_filter(array_map('intval', explode(',', (string) $request->query('ids', ''))));
+
+        $estados = ActivacionTotem::whereIn('id', $ids)
+            ->pluck('subida_estado', 'id');
+
+        return response()->json($estados);
     }
 
     public function totems(): View

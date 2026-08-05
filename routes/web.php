@@ -140,6 +140,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('{activacionTotem}/video', [App\Http\Controllers\ActivacionTotemController::class, 'subirVideo'])->name('subir-video');
         Route::get('{activacionTotem}/video', [App\Http\Controllers\ActivacionTotemController::class, 'descargarVideo'])->name('descargar-video');
         Route::get('{activacionTotem}/certificado', [App\Http\Controllers\ActivacionTotemController::class, 'descargarCertificado'])->name('descargar-certificado');
+        Route::get('estado-subidas', [App\Http\Controllers\ActivacionTotemController::class, 'estadoSubidas'])->name('estado-subidas');
         Route::get('totems', [App\Http\Controllers\ActivacionTotemController::class, 'totems'])->name('totems');
         Route::put('totems/{camara}', [App\Http\Controllers\ActivacionTotemController::class, 'actualizarCarpetaTotem'])->name('totems.update');
     });

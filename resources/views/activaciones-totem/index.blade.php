@@ -73,16 +73,16 @@
                     </form>
 
                     <div class="table-responsive">
-                        <table class="table table-striped align-middle">
+                        <table class="table table-striped table-hover align-middle">
                             <thead>
                                 <tr>
-                                    <th>Fecha evento</th>
-                                    <th>N° Expediente</th>
+                                    <th style="min-width: 110px;">Fecha evento</th>
+                                    <th style="min-width: 100px;">N° Expediente</th>
                                     <th>Descripción</th>
-                                    <th>Estado</th>
-                                    <th>Tótem</th>
-                                    <th>Descarga / Eliminación</th>
-                                    <th class="text-right">Acciones</th>
+                                    <th style="min-width: 140px;">Estado</th>
+                                    <th style="min-width: 140px;">Tótem</th>
+                                    <th style="min-width: 160px;">Descarga / Eliminación</th>
+                                    <th class="text-right" style="min-width: 170px;">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -160,34 +160,40 @@
                                         </td>
                                         <td class="text-right">
                                             @can('editar-activacion-totem')
-                                                @if ($puedeRegistrar)
-                                                    <button type="button" class="btn btn-sm btn-primary" title="Subir video al sistema"
-                                                            data-toggle="modal" data-target="#subirVideoModal{{ $activacion->id }}">
-                                                        <i class="fas fa-upload"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-success" title="Registrar descarga manual"
-                                                            data-toggle="modal" data-target="#descargarModal{{ $activacion->id }}">
-                                                        <i class="fas fa-download"></i>
-                                                    </button>
-                                                @endif
-                                                @if ($activacion->estado === \App\Models\ActivacionTotem::ESTADO_PENDIENTE)
-                                                    <button type="button" class="btn btn-sm btn-secondary" title="Descartar"
-                                                            onclick="if(confirm('¿Descartar esta activación? Se usa cuando no corresponde a un tótem real.')) document.getElementById('descartar-{{ $activacion->id }}').submit();">
-                                                        <i class="fas fa-ban"></i>
-                                                    </button>
-                                                    <form id="descartar-{{ $activacion->id }}" action="{{ route('activaciones-totem.descartar', $activacion) }}" method="POST" class="d-none">
-                                                        @csrf
-                                                    </form>
-                                                @endif
-                                                @if ($activacion->estado === \App\Models\ActivacionTotem::ESTADO_DESCARGADO && $vencida)
-                                                    <button type="button" class="btn btn-sm btn-danger" title="Marcar como eliminado (ya se borró el video)"
-                                                            onclick="if(confirm('¿Confirmás que ya borraste el video descargado? Esta acción queda registrada.')) document.getElementById('eliminar-{{ $activacion->id }}').submit();">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                    <form id="eliminar-{{ $activacion->id }}" action="{{ route('activaciones-totem.eliminar', $activacion) }}" method="POST" class="d-none">
-                                                        @csrf
-                                                    </form>
-                                                @endif
+                                                <div class="totem-acciones">
+                                                    @if ($puedeRegistrar)
+                                                        <button type="button" class="btn btn-sm btn-primary btn-block" title="Subir video al sistema"
+                                                                data-toggle="modal" data-target="#subirVideoModal{{ $activacion->id }}">
+                                                            <i class="fas fa-upload"></i> Subir video
+                                                        </button>
+                                                    @endif
+                                                    <div class="totem-acciones-secundarias">
+                                                        @if ($puedeRegistrar)
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary" title="Registrar descarga manual (sin subir archivo)"
+                                                                    data-toggle="modal" data-target="#descargarModal{{ $activacion->id }}">
+                                                                <i class="fas fa-pen"></i>
+                                                            </button>
+                                                        @endif
+                                                        @if ($activacion->estado === \App\Models\ActivacionTotem::ESTADO_PENDIENTE)
+                                                            <button type="button" class="btn btn-sm btn-secondary" title="Descartar"
+                                                                    onclick="if(confirm('¿Descartar esta activación? Se usa cuando no corresponde a un tótem real.')) document.getElementById('descartar-{{ $activacion->id }}').submit();">
+                                                                <i class="fas fa-ban"></i>
+                                                            </button>
+                                                            <form id="descartar-{{ $activacion->id }}" action="{{ route('activaciones-totem.descartar', $activacion) }}" method="POST" class="d-none">
+                                                                @csrf
+                                                            </form>
+                                                        @endif
+                                                        @if ($activacion->estado === \App\Models\ActivacionTotem::ESTADO_DESCARGADO && $vencida)
+                                                            <button type="button" class="btn btn-sm btn-danger" title="Marcar como eliminado (ya se borró el video)"
+                                                                    onclick="if(confirm('¿Confirmás que ya borraste el video descargado? Esta acción queda registrada.')) document.getElementById('eliminar-{{ $activacion->id }}').submit();">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                            <form id="eliminar-{{ $activacion->id }}" action="{{ route('activaciones-totem.eliminar', $activacion) }}" method="POST" class="d-none">
+                                                                @csrf
+                                                            </form>
+                                                        @endif
+                                                    </div>
+                                                </div>
                                             @endcan
                                         </td>
                                     </tr>
@@ -240,8 +246,13 @@
                                         </select>
                                     </div>
                                     <div class="form-group">
-                                        <label for="video-{{ $activacion->id }}">Archivo de video <span class="text-danger">*</span></label>
-                                        <input type="file" name="video" id="video-{{ $activacion->id }}" class="form-control-file" accept="video/*" required>
+                                        <label>Archivo de video <span class="text-danger">*</span></label>
+                                        <div class="totem-dropzone" id="dropzone-{{ $activacion->id }}">
+                                            <i class="fas fa-cloud-upload-alt fa-2x mb-2 text-muted"></i>
+                                            <p class="mb-1">Arrastrá el video acá, o hacé clic para elegirlo</p>
+                                            <small class="text-muted totem-dropzone-filename">Ningún archivo seleccionado</small>
+                                            <input type="file" name="video" id="video-{{ $activacion->id }}" class="d-none" accept="video/*" required>
+                                        </div>
                                         <small class="form-text text-muted">Máximo 180 MB. Formatos: MP4, AVI, MOV, MKV, WMV, ASF, MPEG.</small>
                                     </div>
                                     <div class="form-group">
@@ -294,3 +305,92 @@
         @endforeach
     @endcan
 @endsection
+
+@push('styles')
+    <style>
+        .totem-acciones {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 4px;
+            min-width: 150px;
+        }
+        .totem-acciones-secundarias {
+            display: flex;
+            justify-content: flex-end;
+            gap: 4px;
+        }
+        .totem-dropzone {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 25px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all .15s ease-in-out;
+            background: #fafafa;
+        }
+        .totem-dropzone:hover {
+            border-color: #6c757d;
+            background: #f0f0f0;
+        }
+        .totem-dropzone--dragover {
+            border-color: #007bff;
+            background: #eaf4ff;
+        }
+        .totem-dropzone--filled {
+            border-color: #28a745;
+            background: #f0fff4;
+        }
+        .totem-dropzone-filename {
+            display: block;
+            word-break: break-all;
+        }
+    </style>
+@endpush
+
+@push('scripts')
+    <script>
+        $(function () {
+            $('.totem-dropzone').each(function () {
+                var $zone = $(this);
+                var $input = $zone.find('input[type="file"]');
+                var $filename = $zone.find('.totem-dropzone-filename');
+
+                function mostrarArchivo(archivo) {
+                    if (archivo) {
+                        $filename.text(archivo.name);
+                        $zone.addClass('totem-dropzone--filled');
+                    }
+                }
+
+                $zone.on('click', function () {
+                    $input.trigger('click');
+                });
+
+                $input.on('change', function () {
+                    mostrarArchivo(this.files[0]);
+                });
+
+                $zone.on('dragenter dragover', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    $zone.addClass('totem-dropzone--dragover');
+                });
+
+                $zone.on('dragleave drop', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    $zone.removeClass('totem-dropzone--dragover');
+                });
+
+                $zone.on('drop', function (e) {
+                    var archivos = e.originalEvent.dataTransfer.files;
+                    if (archivos.length > 0) {
+                        $input[0].files = archivos;
+                        mostrarArchivo(archivos[0]);
+                    }
+                });
+            });
+        });
+    </script>
+@endpush

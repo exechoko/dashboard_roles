@@ -133,6 +133,8 @@ Route::group(['middleware' => ['auth']], function () {
     // 🔹 ACTIVACIONES TOTEM
     Route::prefix('tareas/activaciones-totem')->name('activaciones-totem.')->group(function () {
         Route::get('/', [App\Http\Controllers\ActivacionTotemController::class, 'index'])->name('index');
+        Route::post('/', [App\Http\Controllers\ActivacionTotemController::class, 'store'])->name('store');
+        Route::get('buscar-eventos', [App\Http\Controllers\ActivacionTotemController::class, 'buscarEventos'])->name('buscar-eventos');
         Route::post('escanear', [App\Http\Controllers\ActivacionTotemController::class, 'escanear'])->name('escanear');
         Route::put('{activacionTotem}', [App\Http\Controllers\ActivacionTotemController::class, 'update'])->name('update');
         Route::post('{activacionTotem}/descartar', [App\Http\Controllers\ActivacionTotemController::class, 'descartar'])->name('descartar');

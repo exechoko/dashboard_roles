@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ActualizarActivacionTotemRequest;
+use App\Http\Requests\CrearActivacionTotemRequest;
 use App\Http\Requests\SubirVideoActivacionTotemRequest;
 use App\Models\ActivacionTotem;
 use App\Models\Camara;
+use App\Models\EventoCecoco;
 use App\Services\DetectorActivacionesTotem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -19,7 +21,7 @@ class ActivacionTotemController extends Controller
     {
         $this->middleware('permission:ver-activacion-totem')->only(['index', 'descargarVideo', 'descargarCertificado', 'estadoSubidas']);
         $this->middleware('permission:editar-activacion-totem')->only([
-            'update', 'descartar', 'escanear', 'eliminar', 'subirVideo', 'totems', 'actualizarCarpetaTotem',
+            'store', 'buscarEventos', 'update', 'descartar', 'escanear', 'eliminar', 'subirVideo', 'totems', 'actualizarCarpetaTotem',
         ]);
     }
 
@@ -51,6 +53,57 @@ class ActivacionTotemController extends Controller
         })->orderBy('nombre')->get();
 
         return view('activaciones-totem.index', compact('activaciones', 'estados', 'totems'));
+    }
+
+    /**
+     * Alta manual de una activación, asociada a un evento CECOCO elegido a
+     * mano. Se usa cuando el detector no la encontró (por ejemplo, porque la
+     * descripción del evento no menciona "tótem"/"BDE").
+     */
+    public function store(CrearActivacionTotemRequest $request): RedirectResponse
+    {
+        $evento = EventoCecoco::findOrFail($request->validated('evento_cecoco_id'));
+
+        ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'manual',
+            'estado' => ActivacionTotem::ESTADO_PENDIENTE,
+            'camara_id' => $request->validated('camara_id'),
+            'observaciones' => $request->validated('observaciones'),
+        ]);
+
+        return redirect()->route('activaciones-totem.index')
+            ->with('success', 'Activación agregada manualmente.');
+    }
+
+    /**
+     * Búsqueda de eventos CECOCO para el buscador del modal de alta manual.
+     * Excluye los que ya tienen una activación registrada (evento_cecoco_id
+     * es único en activaciones_totem).
+     */
+    public function buscarEventos(Request $request): JsonResponse
+    {
+        $request->validate([
+            'q' => 'required|string|min:2',
+        ]);
+
+        $eventos = EventoCecoco::query()
+            ->select(['id', 'nro_expediente', 'fecha_hora', 'descripcion'])
+            ->buscar($request->query('q'))
+            ->whereDoesntHave('activacionTotem')
+            ->orderBy('fecha_hora', 'desc')
+            ->limit(20)
+            ->get()
+            ->map(fn (EventoCecoco $evento) => [
+                'id' => $evento->id,
+                'nro_expediente' => $evento->nro_expediente,
+                'fecha_hora' => $evento->fecha_hora->format('d/m/Y H:i'),
+                'descripcion' => $evento->descripcion,
+            ]);
+
+        return response()->json($eventos);
     }
 
     public function update(ActualizarActivacionTotemRequest $request, ActivacionTotem $activacionTotem): RedirectResponse

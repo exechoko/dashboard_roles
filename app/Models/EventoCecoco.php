@@ -45,6 +45,11 @@ class EventoCecoco extends Model
         return $this->hasOne(DetalleExpedienteCecoco::class, 'evento_cecoco_id');
     }
 
+    public function activacionTotem(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(ActivacionTotem::class, 'evento_cecoco_id');
+    }
+
     public function scopeDelPeriodo($query, string $periodo)
     {
         return $query->where('periodo', $periodo);

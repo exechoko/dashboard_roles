@@ -15,6 +15,9 @@
                             <i class="fas fa-sync"></i> Escanear ahora
                         </button>
                     </form>
+                    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#agregarManualModal">
+                        <i class="fas fa-plus"></i> Agregar manualmente
+                    </button>
                 </div>
             @endcan
         </div>
@@ -224,6 +227,60 @@
     </section>
 
     @can('editar-activacion-totem')
+        <div class="modal fade" id="agregarManualModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title"><i class="fas fa-plus"></i> Agregar activación manualmente</h5>
+                        <button type="button" class="close text-white" data-dismiss="modal"><span>&times;</span></button>
+                    </div>
+                    <form action="{{ route('activaciones-totem.store') }}" method="POST" id="agregarManualForm">
+                        @csrf
+                        <div class="modal-body">
+                            <p class="text-muted">
+                                Usá esta opción cuando te avisaron que hubo una activación del tótem pero la
+                                descripción del evento CECOCO no contiene ninguna palabra que el detector automático
+                                reconozca (por ejemplo "tótem" o "BDE").
+                            </p>
+                            <div class="form-group">
+                                <label for="totem-buscar-evento">Buscar evento CECOCO (N° expediente, dirección o descripción) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="text" id="totem-buscar-evento" class="form-control" placeholder="Ej: 123456 o palabra de la descripción" minlength="2">
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-outline-primary" id="totem-buscar-evento-btn">
+                                            <i class="fas fa-search"></i> Buscar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" name="evento_cecoco_id" id="totem-evento-seleccionado">
+                            <div id="totem-resultados-evento" class="list-group mb-3" style="max-height: 260px; overflow-y: auto;"></div>
+                            <div id="totem-evento-elegido" class="alert alert-success d-none"></div>
+                            <div class="form-group">
+                                <label for="camara_id-manual">Tótem involucrado</label>
+                                <select name="camara_id" id="camara_id-manual" class="form-control">
+                                    <option value="">Sin especificar</option>
+                                    @foreach ($totems as $totem)
+                                        <option value="{{ $totem->id }}">{{ $totem->nombre }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="observaciones-manual">Observaciones</label>
+                                <textarea name="observaciones" id="observaciones-manual" class="form-control" rows="3" maxlength="1000" placeholder="Por qué se agrega a mano, quién avisó, etc."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-success" id="totem-agregar-manual-submit" disabled>
+                                <i class="fas fa-plus"></i> Agregar activación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         @foreach ($activaciones as $activacion)
             @php
                 $puedeRegistrar = in_array($activacion->estado, [
@@ -473,6 +530,76 @@
                 };
 
                 xhr.send(datos);
+            });
+
+            // Alta manual: búsqueda de eventos CECOCO y selección de uno para
+            // asociarlo a la nueva activación.
+            var $formManual = $('#agregarManualForm');
+            var $inputBuscar = $('#totem-buscar-evento');
+            var $resultados = $('#totem-resultados-evento');
+            var $eventoElegido = $('#totem-evento-elegido');
+            var $eventoIdInput = $('#totem-evento-seleccionado');
+            var $submitManual = $('#totem-agregar-manual-submit');
+
+            function buscarEventosCecoco() {
+                var texto = $.trim($inputBuscar.val());
+                if (texto.length < 2) {
+                    return;
+                }
+
+                $resultados.html('<div class="list-group-item text-muted"><i class="fas fa-spinner fa-spin"></i> Buscando...</div>');
+
+                $.getJSON('{{ route('activaciones-totem.buscar-eventos') }}', { q: texto })
+                    .done(function (eventos) {
+                        $resultados.empty();
+
+                        if (!eventos.length) {
+                            $resultados.html('<div class="list-group-item text-muted">Sin resultados (o ya tienen una activación registrada).</div>');
+                            return;
+                        }
+
+                        eventos.forEach(function (evento) {
+                            var descripcion = evento.descripcion || '(sin descripción)';
+
+                            var $item = $('<button type="button" class="list-group-item list-group-item-action"></button>');
+                            $item.append($('<strong></strong>').text(evento.nro_expediente));
+                            $item.append(document.createTextNode(' — ' + evento.fecha_hora));
+                            $item.append($('<div class="small text-muted"></div>').text(descripcion));
+
+                            $item.on('click', function () {
+                                $eventoIdInput.val(evento.id);
+                                $eventoElegido.removeClass('d-none').empty();
+                                $eventoElegido.append($('<i class="fas fa-check-circle"></i>'));
+                                $eventoElegido.append(document.createTextNode(' Evento seleccionado: '));
+                                $eventoElegido.append($('<strong></strong>').text(evento.nro_expediente));
+                                $eventoElegido.append(document.createTextNode(' — ' + evento.fecha_hora));
+                                $eventoElegido.append($('<div class="small"></div>').text(descripcion));
+                                $resultados.empty();
+                                $inputBuscar.val('');
+                                $submitManual.prop('disabled', false);
+                            });
+                            $resultados.append($item);
+                        });
+                    })
+                    .fail(function () {
+                        $resultados.html('<div class="list-group-item text-danger">Error al buscar eventos.</div>');
+                    });
+            }
+
+            $('#totem-buscar-evento-btn').on('click', buscarEventosCecoco);
+            $inputBuscar.on('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    buscarEventosCecoco();
+                }
+            });
+
+            $('#agregarManualModal').on('hidden.bs.modal', function () {
+                $formManual.trigger('reset');
+                $eventoIdInput.val('');
+                $resultados.empty();
+                $eventoElegido.addClass('d-none').empty();
+                $submitManual.prop('disabled', true);
             });
 
             // Refresco automático: mientras haya filas "Procesando video", se

@@ -33,6 +33,8 @@
 
     .btn-export-excel { background:#1d6f42; color:#fff; border:none; border-radius:8px; }
     .btn-export-excel:hover { background:#155233; color:#fff; }
+    .btn-export-pdf   { background:#c0392b; color:#fff; border:none; border-radius:8px; }
+    .btn-export-pdf:hover { background:#922b21; color:#fff; }
     .btn-export-html  { background:linear-gradient(135deg,#1a1a2e,#16213e); color:#fff; border:none; border-radius:8px; }
     .btn-export-html:hover { filter:brightness(1.12); color:#fff; }
 
@@ -253,6 +255,9 @@
                         </button>
                         <button type="button" id="btn-exportar" class="btn btn-export-excel">
                             <i class="fas fa-file-excel mr-1"></i> Exportar Excel
+                        </button>
+                        <button type="button" id="btn-export-pdf" class="btn btn-export-pdf">
+                            <i class="fas fa-file-pdf mr-1"></i> PDF
                         </button>
                     </div>
                 </div>
@@ -845,6 +850,61 @@
         if (!resultadoData) return;
         document.getElementById('export-data').value = JSON.stringify(resultadoData);
         document.getElementById('form-excel').submit();
+    });
+
+    /* ═══ EXPORT PDF ═══ */
+    document.getElementById('btn-export-pdf').addEventListener('click', function() {
+        if (!resultadoData) return;
+        const { metadata, registros: regs, velocidad_maxima } = resultadoData;
+        const tieneExceso = velocidad_maxima > 0;
+        const colorCls = { yellow:'td-y', orange:'td-o', red:'td-r' };
+
+        let html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+        <title>Histórico Móvil GIS – ${metadata.recurso}</title>
+        <style>
+            body { font-family:Arial,sans-serif; font-size:11px; color:#000; margin:20px; }
+            h2 { text-align:center; margin-bottom:4px; }
+            .meta { text-align:center; color:#555; margin-bottom:10px; font-size:10px; }
+            table { width:100%; border-collapse:collapse; }
+            th { background:#4a4a9a; color:#fff; padding:5px 7px; text-align:center; font-size:10px; }
+            td { padding:4px 7px; border:1px solid #ccc; font-size:10px; vertical-align:middle; }
+            .pill-det { background:#0070c0; color:#fff; padding:2px 8px; border-radius:10px; }
+            .pill-mov { background:#00c41c; color:#fff; padding:2px 8px; border-radius:10px; }
+            .td-y { background:#ffff00; } .td-o { background:#ffa500; } .td-r { background:#ff0000; color:#fff; }
+            .exceso { background:#ff0000; color:#fff; padding:2px 8px; border-radius:10px; font-weight:700; }
+            .ley { margin-bottom:8px; } .lb { display:inline-block; padding:2px 10px; border-radius:10px; font-size:10px; font-weight:600; }
+            @media print { .no-print { display:none } }
+        </style><\/head><body>
+        <div class="no-print" style="position:fixed;top:10px;right:10px;display:flex;gap:8px">
+            <button onclick="window.print()" style="background:#1d6f42;color:#fff;border:none;padding:7px 16px;border-radius:6px;cursor:pointer">🖨 Imprimir / PDF</button>
+            <button onclick="window.close()" style="background:#c0392b;color:#fff;border:none;padding:7px 16px;border-radius:6px;cursor:pointer">✕ Cerrar</button>
+        </div>
+        <h2>Histórico de Posiciones GPS (GIS viewer CECOCO)</h2>
+        <div class="meta">Recurso: <b>${metadata.recurso}</b> &nbsp;|&nbsp; Desde: <b>${metadata.fecha_inicio}</b> &nbsp;|&nbsp; Hasta: <b>${metadata.fecha_fin}</b> &nbsp;|&nbsp; Posiciones: <b>${metadata.posiciones||regs.length}</b>${tieneExceso?' &nbsp;|&nbsp; Vel. máx.: <b>'+velocidad_maxima+' km/h</b>':''}</div>
+        <div class="ley">
+            <span class="lb" style="background:#ffff00;color:#222">■ &lt;30 min</span>
+            <span class="lb" style="background:#ffa500;color:#222;margin-left:6px">■ 30–45 min</span>
+            <span class="lb" style="background:#ff0000;color:#fff;margin-left:6px">■ &gt;45 min</span>
+        </div>
+        <table><thead><tr>
+            <th>#</th><th>Fecha/Hora</th><th>Vel.</th><th>Dirección</th><th>Estado</th><th>Tiempo Detenido</th>${tieneExceso?'<th>Exceso</th>':''}
+        </tr></thead><tbody>`;
+
+        regs.forEach(r => {
+            html += `<tr>
+                <td style="text-align:center">${r.id??''}</td>
+                <td>${r.fecha}</td>
+                <td style="text-align:center${r.exceso_velocidad?';color:red;font-weight:700':''}">${r.velocidad} km/h</td>
+                <td>${r.direccion}</td>
+                <td style="text-align:center">${r.color_estado==='detenido'?'<span class="pill-det">Detenido</span>':'<span class="pill-mov">En movimiento</span>'}</td>
+                <td class="${r.color_tiempo?colorCls[r.color_tiempo]:''}" style="text-align:center;font-weight:${r.tiempo_detenido?700:400}">${r.tiempo_detenido??''}</td>
+                ${tieneExceso?`<td style="text-align:center">${r.exceso_velocidad?'<span class="exceso">EXCESO</span>':''}</td>`:''}
+            </tr>`;
+        });
+
+        html += '</tbody></table><\/body><\/html>';
+        const win = window.open('','_blank','width=1100,height=800');
+        win.document.write(html); win.document.close();
     });
 
     /* ═══ EXPORT RECORRIDO HTML ═══ */

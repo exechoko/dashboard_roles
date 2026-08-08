@@ -964,6 +964,7 @@ class FlotaGeneralController extends Controller
         $recurso_soporte_pg = Recurso::where('nombre', 'Soporte 1er Nivel - PG')->first();
         $recurso_lote_temporal_pg = Recurso::where('nombre', 'Lote Temporal PG')->first();
         $recurso_equipos_extraviados = Recurso::where('nombre', 'Equipos extraviados')->first();
+        $recurso_equipos_reclamados = Recurso::where('nombre', 'Equipos reclamados')->first();
         //Se obtienen los id de los tipo de movimientos
         $id_mov_patrimonial = TipoMovimiento::where('nombre', 'Movimiento patrimonial')->value('id');
         $id_desinst_completa = TipoMovimiento::where('nombre', 'Desinstalación completa')->value('id');
@@ -1091,18 +1092,21 @@ class FlotaGeneralController extends Controller
                         break;
 
                     case $id_devolucion:
-                        //Probar porque estaba comentado y no modificaba la flota
+                        //Si el equipo vuelve de un préstamo o de revisión al Stock 911 y quedó
+                        //en estado "No funciona", se deriva a Equipos reclamados en lugar de Stock 911
+                        $recursoDevolucion = (!is_null($estadoFinal) && $estadoFinal->nombre === 'No funciona')
+                            ? $recurso_equipos_reclamados
+                            : $recurso_stock;
                         if (!$soloModificaHistorico) {
-                            //$flota->recurso_id = $recurso_stock->id; //asigna al stock
-                            //$flota->destino_id = $recurso_stock->destino->id;
+                            $flota->recurso_id = $recursoDevolucion->id;
+                            $flota->destino_id = $recursoDevolucion->destino->id;
                         }
-                        //------------------------------------------------
-                        $historico->recurso_id = $recurso_stock->id; //asigna al stock
-                        $historico->recurso_asignado = $recurso_stock->nombre; //asigna al stock;
+                        $historico->recurso_id = $recursoDevolucion->id;
+                        $historico->recurso_asignado = $recursoDevolucion->nombre;
                         $historico->vehiculo_asignado = null;
                         $historico->recurso_desasignado = ($histAnt->recurso_asignado) ? $histAnt->recurso_asignado : null;
                         $historico->vehiculo_desasignado = ($histAnt->vehiculo_asignado) ? $histAnt->vehiculo_asignado : null;
-                        $historico->destino_id = $recurso_stock->destino->id;
+                        $historico->destino_id = $recursoDevolucion->destino->id;
                         break;
 
                     case $id_devolver_a_dependencia:

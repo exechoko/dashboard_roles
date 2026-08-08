@@ -91,6 +91,16 @@ class Kernel extends ConsoleKernel
                 app(TelegramService::class)->notificarScheduleFallido('totem:detectar-activaciones', 'El comando finalizó con error.');
             });
 
+        // Avisa por Telegram si quedaron activaciones de tótem pendientes de
+        // descarga o vencidas por el plazo legal de 6 meses. Corre después de
+        // la detección diaria.
+        $schedule->command('totem:avisar-pendientes')->dailyAt('07:10')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/totem_avisar_pendientes.log'))
+            ->onFailure(function () {
+                app(TelegramService::class)->notificarScheduleFallido('totem:avisar-pendientes', 'El comando finalizó con error.');
+            });
+
         // Actualiza el caché diario de efemérides (Argentina / Entre Ríos) desde Wikipedia.
         $schedule->command('efemerides:actualizar')->dailyAt('00:30')
             ->withoutOverlapping()

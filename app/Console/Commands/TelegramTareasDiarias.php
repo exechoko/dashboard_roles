@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\ActivacionTotem;
 use App\Models\EntregaBodycam;
 use App\Models\EntregaEquipo;
 use App\Models\TareaItem;
@@ -37,6 +38,15 @@ class TelegramTareasDiarias extends Command
             ->orderBy('fecha_entrega', 'desc')
             ->get()
             ->filter(fn($entrega) => $entrega->bodycamsPendientes()->count() > 0);
+
+        // Activaciones de tótem pendientes de descarga o vencidas
+        $totemPendientes = ActivacionTotem::where('estado', ActivacionTotem::ESTADO_PENDIENTE)
+            ->orderBy('fecha_evento')
+            ->get();
+
+        $totemVencidas = ActivacionTotem::vencidas()
+            ->orderBy('fecha_evento')
+            ->get();
 
         $tareasHoy = TareaItem::with('tarea')
             ->whereDate('fecha_programada', $hoy->toDateString())
@@ -97,6 +107,11 @@ class TelegramTareasDiarias extends Command
                 $dep = $e->dependencia ?? '—';
                 $mensaje .= "   • {$pendientes} bodycam(s) → <b>{$receptor}</b> ({$dep}) — {$fecha}\n";
             }
+        }
+
+        $mensaje .= "\n🎥 <b>Activaciones de Tótem pendientes:</b> {$totemPendientes->count()}\n";
+        if ($totemVencidas->isNotEmpty()) {
+            $mensaje .= "   🚨 <b>{$totemVencidas->count()} vencida(s)</b> (plazo legal de " . ActivacionTotem::MESES_RETENCION_LEGAL . " meses)\n";
         }
 
         $tamanoRest = Cache::get(CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES);

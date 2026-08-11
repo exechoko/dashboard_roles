@@ -16,7 +16,7 @@ class PlanoEdificioController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:ver-plano-edificio')->only(['index', 'show', 'getDevices', 'getDevice']);
+        $this->middleware('permission:ver-plano-edificio')->only(['index', 'vista3d', 'show', 'getDevices', 'getDevice']);
         $this->middleware('permission:crear-plano-edificio')->only(['store']);
         $this->middleware('permission:editar-plano-edificio')->only(['update']);
         $this->middleware('permission:posicionar-plano-edificio')->only(['updatePosition']);
@@ -42,6 +42,24 @@ class PlanoEdificioController extends Controller
         ];
 
         return view('plano-edificio.index', compact('stats'));
+    }
+
+    /**
+     * Muestra la vista 3D del plano del edificio
+     */
+    public function vista3d()
+    {
+        $stats = [
+            'total' => DispositivoEdificio::count(),
+            'activos' => DispositivoEdificio::activos()->count(),
+            'con_credenciales' => DispositivoEdificio::conCredenciales()->count(),
+            'por_tipo' => DispositivoEdificio::selectRaw('tipo, COUNT(*) as count')
+                ->groupBy('tipo')
+                ->pluck('count', 'tipo')
+                ->toArray(),
+        ];
+
+        return view('plano-edificio.3d', compact('stats'));
     }
 
     /**

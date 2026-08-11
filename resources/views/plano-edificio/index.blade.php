@@ -23,6 +23,9 @@
                             <i class="fas fa-map"></i> Plano del Edificio
                         </h4>
                         <div class="btn-group btn-group-sm">
+                            <a class="btn btn-outline-info" href="{{ route('plano-edificio.3d') }}" title="Vista 3D">
+                                <i class="fas fa-cube"></i> 3D
+                            </a>
                             <button class="btn btn-outline-primary" onclick="zoomIn()">
                                 <i class="fas fa-search-plus"></i>
                             </button>

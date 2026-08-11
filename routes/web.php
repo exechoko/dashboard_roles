@@ -174,6 +174,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('tipo-camara', TipoCamaraController::class);
     Route::resource('auditoria', AuditoriaController::class)->only(['index']);
     Route::resource('sitios', SitioController::class);
+    Route::get('plano-edificio/3d', [PlanoEdificioController::class, 'vista3d'])->name('plano-edificio.3d');
     Route::resource('plano-edificio', PlanoEdificioController::class)->only(['index']);
 
     // API endpoints para el plano del edificio

@@ -7,6 +7,10 @@ const MAPA3D_DATA = @json($geojson);
 const STADIA_API_KEY = @json($stadiaApiKey);
 const MAPA3D_CENTRO = [-60.47825, -31.75899];
 
+// Por debajo de este zoom, los volúmenes 3D (postes, torres, prismas) miden menos
+// de un píxel en pantalla y no se ven — se muestran como marcador circular en su lugar.
+const MARKER_MAXZOOM_3D = 17;
+
 let map3d = null;
 let esHibrido3d = false;
 
@@ -22,10 +26,10 @@ const TIPOS_CAMARA_POR_CLAVE = {
 
 // Capas de MapLibre controladas por cada switch general del control de capas
 const LAYER_IDS_3D = {
-    camaras: ['camaras-poste', 'camaras-cabeza', 'camaras-cono'],
+    camaras: ['camaras-poste', 'camaras-cabeza', 'camaras-cono', 'camaras-marcador'],
     comisarias: ['comisarias-vol', 'comisarias-num'],
-    sitios: ['sitios-vol'],
-    antenas: ['antenas-base', 'antenas-mastil'],
+    sitios: ['sitios-vol', 'sitios-marcador'],
+    antenas: ['antenas-base', 'antenas-mastil', 'antenas-marcador'],
     jurisdicciones: ['jurisdicciones-fill', 'jurisdicciones-line'],
     edificios: ['edificios-3d'],
 };
@@ -228,7 +232,7 @@ function colorPorTipoCamara(tipo) {
 // Construcción de geometrías 3D a partir del GeoJSON del servidor
 // ----------------------------------------
 function construirGeometriasCamara() {
-    const postes = [], cabezas = [], conos = [];
+    const postes = [], cabezas = [], conos = [], puntos = [];
 
     (MAPA3D_DATA.camaras.features || []).forEach(function(f) {
         const lng = f.geometry.coordinates[0];
@@ -252,12 +256,18 @@ function construirGeometriasCamara() {
             properties: Object.assign({}, props, { base: 5, altura: 7, color: color }),
             geometry: { type: 'Polygon', coordinates: [poligonoSector(lng, lat, 25, props.angulo, bearing)] },
         });
+        puntos.push({
+            type: 'Feature',
+            properties: Object.assign({}, props, { color: color }),
+            geometry: { type: 'Point', coordinates: [lng, lat] },
+        });
     });
 
     return {
         postes: { type: 'FeatureCollection', features: postes },
         cabezas: { type: 'FeatureCollection', features: cabezas },
         conos: { type: 'FeatureCollection', features: conos },
+        puntos: { type: 'FeatureCollection', features: puntos },
     };
 }
 
@@ -286,7 +296,7 @@ function construirGeometriaComisarias() {
 }
 
 function construirGeometriaAntenas() {
-    const bases = [], mastiles = [];
+    const bases = [], mastiles = [], puntos = [];
 
     (MAPA3D_DATA.antenas.features || []).forEach(function(f) {
         const lng = f.geometry.coordinates[0];
@@ -301,26 +311,42 @@ function construirGeometriaAntenas() {
             properties: Object.assign({}, f.properties, { base: 4, altura: 38, color: '#6f42c1' }),
             geometry: { type: 'Polygon', coordinates: [poligonoCuadrado(lng, lat, 1.5)] },
         });
+        puntos.push({
+            type: 'Feature',
+            properties: f.properties,
+            geometry: { type: 'Point', coordinates: [lng, lat] },
+        });
     });
 
     return {
         bases: { type: 'FeatureCollection', features: bases },
         mastiles: { type: 'FeatureCollection', features: mastiles },
+        puntos: { type: 'FeatureCollection', features: puntos },
     };
 }
 
 function construirGeometriaSitios() {
-    const volumenes = (MAPA3D_DATA.sitios.features || []).map(function(f) {
+    const volumenes = [], puntos = [];
+
+    (MAPA3D_DATA.sitios.features || []).forEach(function(f) {
         const lng = f.geometry.coordinates[0];
         const lat = f.geometry.coordinates[1];
-        return {
+        volumenes.push({
             type: 'Feature',
             properties: Object.assign({}, f.properties, { base: 0, altura: 7, color: '#dc3545' }),
             geometry: { type: 'Polygon', coordinates: [poligonoCuadrado(lng, lat, 6)] },
-        };
+        });
+        puntos.push({
+            type: 'Feature',
+            properties: f.properties,
+            geometry: { type: 'Point', coordinates: [lng, lat] },
+        });
     });
 
-    return { type: 'FeatureCollection', features: volumenes };
+    return {
+        volumenes: { type: 'FeatureCollection', features: volumenes },
+        puntos: { type: 'FeatureCollection', features: puntos },
+    };
 }
 
 function construirGeometriaJurisdicciones() {
@@ -347,12 +373,13 @@ function agregarFuente3D(id, data) {
     }
 }
 
-function agregarCapaExtrusion3D(id, sourceId, opacidad) {
+function agregarCapaExtrusion3D(id, sourceId, opacidad, minzoom) {
     if (map3d.getLayer(id)) return;
     map3d.addLayer({
         id: id,
         type: 'fill-extrusion',
         source: sourceId,
+        minzoom: minzoom || 0,
         paint: {
             'fill-extrusion-color': ['get', 'color'],
             'fill-extrusion-height': ['get', 'altura'],
@@ -362,11 +389,32 @@ function agregarCapaExtrusion3D(id, sourceId, opacidad) {
     });
 }
 
+// Marcador circular de tamaño fijo en píxeles (visible a cualquier zoom),
+// equivalente a los íconos de la vista 2D. Se oculta al acercarse, cuando
+// el volumen 3D ya se ve.
+function agregarCapaMarcador3D(id, sourceId, color, radio) {
+    if (map3d.getLayer(id)) return;
+    map3d.addLayer({
+        id: id,
+        type: 'circle',
+        source: sourceId,
+        maxzoom: MARKER_MAXZOOM_3D,
+        paint: {
+            'circle-radius': radio || 6,
+            'circle-color': color || ['get', 'color'],
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 2,
+            'circle-opacity': 0.95,
+        },
+    });
+}
+
 function agregarCapas3D() {
     const geoCamaras = construirGeometriasCamara();
     agregarFuente3D('camaras-postes-src', geoCamaras.postes);
     agregarFuente3D('camaras-cabezas-src', geoCamaras.cabezas);
     agregarFuente3D('camaras-conos-src', geoCamaras.conos);
+    agregarFuente3D('camaras-puntos-src', geoCamaras.puntos);
 
     const geoComisarias = construirGeometriaComisarias();
     agregarFuente3D('comisarias-vol-src', geoComisarias.volumenes);
@@ -375,8 +423,12 @@ function agregarCapas3D() {
     const geoAntenas = construirGeometriaAntenas();
     agregarFuente3D('antenas-bases-src', geoAntenas.bases);
     agregarFuente3D('antenas-mastiles-src', geoAntenas.mastiles);
+    agregarFuente3D('antenas-puntos-src', geoAntenas.puntos);
 
-    agregarFuente3D('sitios-vol-src', construirGeometriaSitios());
+    const geoSitios = construirGeometriaSitios();
+    agregarFuente3D('sitios-vol-src', geoSitios.volumenes);
+    agregarFuente3D('sitios-puntos-src', geoSitios.puntos);
+
     agregarFuente3D('jurisdicciones-src', construirGeometriaJurisdicciones());
 
     if (!map3d.getLayer('edificios-3d')) {
@@ -395,13 +447,17 @@ function agregarCapas3D() {
         });
     }
 
-    agregarCapaExtrusion3D('camaras-poste', 'camaras-postes-src', 0.95);
-    agregarCapaExtrusion3D('camaras-cabeza', 'camaras-cabezas-src', 0.95);
-    agregarCapaExtrusion3D('camaras-cono', 'camaras-conos-src', 0.35);
+    agregarCapaExtrusion3D('camaras-poste', 'camaras-postes-src', 0.95, MARKER_MAXZOOM_3D);
+    agregarCapaExtrusion3D('camaras-cabeza', 'camaras-cabezas-src', 0.95, MARKER_MAXZOOM_3D);
+    agregarCapaExtrusion3D('camaras-cono', 'camaras-conos-src', 0.35, MARKER_MAXZOOM_3D);
     agregarCapaExtrusion3D('comisarias-vol', 'comisarias-vol-src', 0.9);
-    agregarCapaExtrusion3D('antenas-base', 'antenas-bases-src', 0.9);
-    agregarCapaExtrusion3D('antenas-mastil', 'antenas-mastiles-src', 0.9);
-    agregarCapaExtrusion3D('sitios-vol', 'sitios-vol-src', 0.9);
+    agregarCapaExtrusion3D('antenas-base', 'antenas-bases-src', 0.9, MARKER_MAXZOOM_3D);
+    agregarCapaExtrusion3D('antenas-mastil', 'antenas-mastiles-src', 0.9, MARKER_MAXZOOM_3D);
+    agregarCapaExtrusion3D('sitios-vol', 'sitios-vol-src', 0.9, MARKER_MAXZOOM_3D);
+
+    agregarCapaMarcador3D('camaras-marcador', 'camaras-puntos-src', ['get', 'color'], 6);
+    agregarCapaMarcador3D('antenas-marcador', 'antenas-puntos-src', '#6f42c1', 7);
+    agregarCapaMarcador3D('sitios-marcador', 'sitios-puntos-src', '#dc3545', 7);
 
     if (!map3d.getLayer('comisarias-num')) {
         map3d.addLayer({
@@ -486,7 +542,7 @@ function tiposCamaraVisibles3D() {
 
 function aplicarFiltroCamaras3D() {
     const filtro = ['in', ['get', 'tipo_camara'], ['literal', tiposCamaraVisibles3D()]];
-    ['camaras-poste', 'camaras-cabeza', 'camaras-cono'].forEach(function(id) {
+    ['camaras-poste', 'camaras-cabeza', 'camaras-cono', 'camaras-marcador'].forEach(function(id) {
         if (map3d.getLayer(id)) map3d.setFilter(id, filtro);
     });
 }
@@ -516,10 +572,10 @@ function clearAllLayers3D() {
 // ----------------------------------------
 function bindInteracciones3D() {
     const capasClicables = [
-        'camaras-poste', 'camaras-cabeza', 'camaras-cono',
+        'camaras-poste', 'camaras-cabeza', 'camaras-cono', 'camaras-marcador',
         'comisarias-vol', 'comisarias-num',
-        'antenas-base', 'antenas-mastil',
-        'sitios-vol',
+        'antenas-base', 'antenas-mastil', 'antenas-marcador',
+        'sitios-vol', 'sitios-marcador',
     ];
 
     capasClicables.forEach(function(id) {
@@ -543,7 +599,7 @@ function mostrarPopup3D(layerId, props, lngLat) {
         html = popupSimple3D(props.titulo);
     } else if (layerId.indexOf('antenas') === 0) {
         html = popupSimple3D(props.titulo);
-    } else if (layerId === 'sitios-vol') {
+    } else if (layerId.indexOf('sitios') === 0) {
         html = popupSitio3D(props, lngLat.lng, lngLat.lat);
     } else {
         return;

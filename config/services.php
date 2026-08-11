@@ -103,6 +103,10 @@ return [
         'api_key' => env('API_KEY_THUNDER_FOREST_MAP', ''),
     ],
 
+    'stadia' => [
+        'api_key' => env('API_KEY_STADIA_MAPS', ''),
+    ],
+
     // Ticketera HESK (help desk) — lado admin.
     'ticketera' => [
         'url'               => env('TICKETERA_URL'),

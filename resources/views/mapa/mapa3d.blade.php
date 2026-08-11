@@ -1,10 +1,12 @@
-{{-- mapa/mapa.blade.php --}}
+{{-- mapa/mapa3d.blade.php --}}
 @extends('layouts.app')
 
 @section('css')
+<link rel="stylesheet" href="{{ asset('vendor/maplibre/maplibre-gl.css') }}">
 @include('mapa.partials.styles')
+@include('mapa.partials.styles-3d')
 <style>
-    /* Forzar pantalla completa desde el inicio */
+    /* Forzar pantalla completa, igual que en la vista 2D */
     body {
         margin: 0;
         padding: 0;
@@ -26,7 +28,6 @@
         position: relative;
     }
 
-    /* Header colapsable flotante - INICIA COLAPSADO */
     #map-header {
         position: fixed;
         top: 0;
@@ -38,7 +39,7 @@
         transition: transform 0.3s ease;
         max-height: 60vh;
         overflow-y: auto;
-        transform: translateY(-100%); /* INICIA OCULTO */
+        transform: translateY(-100%);
     }
 
     [data-theme="dark"] #map-header {
@@ -47,7 +48,7 @@
     }
 
     #map-header.show {
-        transform: translateY(0); /* MUESTRA EL HEADER */
+        transform: translateY(0);
     }
 
     #map-header .header-content {
@@ -85,25 +86,6 @@
         bottom: 10px;
     }
 
-    #btn-vista-3d {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 10000;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-    }
-
-    /* Mapa en toda la pantalla */
-    #map {
-        height: 100vh !important;
-        width: 100vw !important;
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 1;
-    }
-
-    /* Asegurar que Select2 se muestre correctamente */
     .select2-container {
         z-index: 10001 !important;
     }
@@ -112,7 +94,6 @@
         z-index: 10002 !important;
     }
 
-    /* Ajustar control de capas */
     .custom-layer-control {
         top: 70px !important;
         z-index: 10000 !important;
@@ -125,11 +106,6 @@
     <button id="header-toggle" onclick="toggleMapHeader()">
         <span id="toggle-text">Ver Información</span>
     </button>
-
-    {{-- Botón para ir a la vista 3D --}}
-    <a href="{{ route('mapa.3d') }}" id="btn-vista-3d" class="btn btn-primary" title="Vista 3D">
-        <i class="fas fa-cube"></i> Vista 3D
-    </a>
 
     {{-- Header con estadísticas y controles - INICIA OCULTO --}}
     @include('mapa.partials.header', [
@@ -170,104 +146,60 @@
     </div>
     @endcan
 
-    {{-- Mapa en pantalla completa --}}
-    <div id="map">
-        {{-- Control personalizado de capas --}}
-        @include('mapa.partials.layer-control')
+    {{-- Botón para volver a la vista 2D --}}
+    <a href="{{ route('mapa.index') }}" id="btn-vista-2d" class="btn btn-primary" title="Vista 2D">
+        <i class="fas fa-map"></i> Vista 2D
+    </a>
+
+    {{-- Mapa 3D en pantalla completa --}}
+    <div id="map3d">
+        @include('mapa.partials.layer-control-3d')
+
+        <div id="map3d-loader" class="loading-overlay">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+        </div>
     </div>
-
-    {{-- Scripts del mapa --}}
-    @include('mapa.partials.scripts')
-
-    @can('herramientas-mapa')
-        @include('mapa.partials.polygon-selection')
-        @include('mapa.partials.clustering-control')
-    @endcan
 @endsection
 
 @section('scripts')
+<script src="{{ asset('vendor/maplibre/maplibre-gl.js') }}"></script>
+@include('mapa.partials.acciones-camara')
+@include('mapa.partials.scripts-3d')
+
 <script>
-    // ========================================
-    // INICIALIZACIÓN DE SELECT2 Y HEADER
-    // ========================================
     document.addEventListener('DOMContentLoaded', function() {
-        // Inicializar Select2 con configuración mejorada
-        initSelect2();
-
-        // Inicializar estado del header (colapsado por defecto)
         initMapHeader();
-
-        // Inicializar funciones del mapa
-        initMapFunctions();
+        initHeaderToggle();
     });
-
-    function initSelect2() {
-        // Destruir Select2 si ya existe
-        if ($('#camara_select').hasClass('select2-hidden-accessible')) {
-            $('#camara_select').select2('destroy');
-        }
-
-        // Inicializar Select2
-        $('#camara_select').select2({
-            width: '100%',
-            placeholder: 'Buscar cámara...',
-            allowClear: true,
-            dropdownParent: $('#map-header') // Asegurar que el dropdown esté dentro del header
-        }).on('select2:open', function() {
-            // Forzar el foco en el campo de búsqueda
-            setTimeout(function() {
-                document.querySelector('.select2-container--open .select2-search__field').focus();
-            }, 0);
-        }).on('change', function() {
-            var selectedOption = $(this).find(':selected');
-            var lat = selectedOption.data('lat');
-            var lng = selectedOption.data('lng');
-
-            if (lat && lng && window.mymap) {
-                window.mymap.setView([lat, lng], 20);
-            }
-        });
-    }
 
     function initMapHeader() {
         const header = document.getElementById('map-header');
         const toggle = document.getElementById('header-toggle');
         const toggleText = document.getElementById('toggle-text');
 
-        // Asegurar que el header esté oculto al inicio
         header.classList.remove('show');
         toggle.classList.remove('header-visible');
         toggleText.innerHTML = '<i class="fas fa-info-circle"></i> Ver Información';
     }
 
-    function initMapFunctions() {
-        // Función para alternar el header
+    function initHeaderToggle() {
         window.toggleMapHeader = function() {
             const header = document.getElementById('map-header');
             const toggle = document.getElementById('header-toggle');
             const toggleText = document.getElementById('toggle-text');
 
             if (header.classList.contains('show')) {
-                // Ocultar header
                 header.classList.remove('show');
                 toggle.classList.remove('header-visible');
                 toggleText.innerHTML = '<i class="fas fa-info-circle"></i> Ver Información';
-
-                // Re-inicializar Select2 para evitar problemas de posición
-                setTimeout(initSelect2, 300);
             } else {
-                // Mostrar header
                 header.classList.add('show');
                 toggle.classList.add('header-visible');
                 toggleText.innerHTML = '<i class="fas fa-times"></i> Ocultar';
-
-                // Re-inicializar Select2 para asegurar funcionalidad
-                setTimeout(initSelect2, 300);
             }
         };
 
-        // Cerrar header al hacer clic fuera
-        $(document).on('click', function(e) {
+        document.addEventListener('click', function(e) {
             const header = document.getElementById('map-header');
             const toggle = document.getElementById('header-toggle');
 
@@ -277,13 +209,24 @@
                 toggleMapHeader();
             }
         });
-
-        // Ajustar mapa al cambiar tamaño de ventana
-        $(window).on('resize', function() {
-            if (window.mymap) {
-                window.mymap.invalidateSize();
-            }
-        });
     }
+
+    $(document).ready(function() {
+        $('#camara_select').select2({ width: '100%', placeholder: 'Buscar cámara...', allowClear: true, dropdownParent: $('#map-header') })
+            .on('select2:open', function() {
+                setTimeout(function() {
+                    var field = document.querySelector('.select2-container--open .select2-search__field');
+                    if (field) field.focus();
+                }, 0);
+            })
+            .on('change', function() {
+                var selected = $(this).find(':selected');
+                var lat = parseFloat(selected.data('lat'));
+                var lng = parseFloat(selected.data('lng'));
+                if (lat && lng) {
+                    volarACamara3D(lat, lng);
+                }
+            });
+    });
 </script>
 @endsection

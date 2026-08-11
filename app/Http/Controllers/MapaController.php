@@ -30,113 +30,114 @@ class MapaController extends Controller
      */
     public function index()
     {
-        $comisarias = [
-            [
-                'latitud' => -31.72978,
-                'longitud' => -60.53547,
-                'titulo' => 'Cria. 1°',
-                'numero' => 1
-            ],
-            [
-                'latitud' => -31.73735,
-                'longitud' => -60.5284,
-                'titulo' => 'Cria. 2°',
-                'numero' => 2
-            ],
-            [
-                'latitud' => -31.757298,
-                'longitud' => -60.495857,
-                'titulo' => 'Cria. 3°',
-                'numero' => 3
-            ],
-            [
-                'latitud' => -31.73771,
-                'longitud' => -60.51383,
-                'titulo' => 'Cria. 4°',
-                'numero' => 4
-            ],
-            [
-                'latitud' => -31.73001,
-                'longitud' => -60.54851,
-                'titulo' => 'Cria. 5°',
-                'numero' => 5
-            ],
-            [
-                'latitud' => -31.74674,
-                'longitud' => -60.5364,
-                'titulo' => 'Cria. 6°',
-                'numero' => 6
-            ],
-            [
-                'latitud' => -31.73711,
-                'longitud' => -60.45818,
-                'titulo' => 'Cria. 7°',
-                'numero' => 7
-            ],
-            [
-                'latitud' => -31.72208,
-                'longitud' => -60.51665,
-                'titulo' => 'Cria. 8°',
-                'numero' => 8
-            ],
-            [
-                'latitud' => -31.74051,
-                'longitud' => -60.55312,
-                'titulo' => 'Cria. 9°',
-                'numero' => 9
-            ],
-            [
-                'latitud' => -31.75655,
-                'longitud' => -60.51133,
-                'titulo' => 'Cria. 10°',
-                'numero' => 10
-            ],
-            [
-                'latitud' => -31.70670,
-                'longitud' => -60.56671,
-                'titulo' => 'Cria. 11°',
-                'numero' => 11
-            ],
-            [
-                'latitud' => -31.75109,
-                'longitud' => -60.48563,
-                'titulo' => 'Cria. 12°',
-                'numero' => 12
-            ],
-            [
-                'latitud' => -31.77106,
-                'longitud' => -60.52482,
-                'titulo' => 'Cria. 13°',
-                'numero' => 13
-            ],
-            [
-                'latitud' => -31.73017,
-                'longitud' => -60.49726,
-                'titulo' => 'Cria. 14°',
-                'numero' => 14
-            ],
-            [
-                'latitud' => -31.77032,
-                'longitud' => -60.48219,
-                'titulo' => 'Cria. 15°',
-                'numero' => 15
-            ],
-            [
-                'latitud' => -31.73434,
-                'longitud' => -60.55248,
-                'titulo' => 'Cria. 16°',
-                'numero' => 16
-            ],
-            [
-                'latitud' => -31.72189,
-                'longitud' => -60.54260,
-                'titulo' => 'Cria. 17°',
-                'numero' => 17
-            ]
+        $comisarias = $this->comisariasFijas();
+        $camaras = $this->camarasParaMapa();
+        $sitios = $this->sitiosParaMapa();
+        $antenas = $this->antenasFijas();
+        $jurisdicciones = $this->jurisdiccionesDeComisarias();
+
+        return response()->view(
+            'mapa.mapa',
+            array_merge(
+                [
+                    'comisarias' => $comisarias,
+                    'antenas' => $antenas,
+                    'camaras' => $camaras,
+                    'jurisdicciones' => $jurisdicciones,
+                    'sitios' => $sitios,
+                ],
+                $this->estadisticasCamaras()
+            )
+        );
+    }
+
+    /**
+     * Muestra la vista 3D del mapa (cámaras, comisarías, antenas y sitios
+     * como volúmenes extruidos sobre edificios reales en MapLibre GL).
+     */
+    public function vista3d()
+    {
+        $camaras = $this->camarasParaMapa();
+        $sitios = $this->sitiosParaMapa();
+        $comisarias = $this->comisariasFijas();
+        $antenas = $this->antenasFijas();
+        $jurisdicciones = $this->jurisdiccionesDeComisarias();
+
+        $geojson = [
+            'camaras' => $this->camarasGeoJson($camaras),
+            'sitios' => $this->sitiosGeoJson($sitios),
+            'comisarias' => $this->comisariasGeoJson($comisarias),
+            'antenas' => $this->antenasGeoJson($antenas),
+            'jurisdicciones' => $this->jurisdiccionesGeoJson($jurisdicciones),
         ];
 
-        //$camaras = Camara::all();
-        $camaras = Camara::select(
+        return response()->view(
+            'mapa.mapa3d',
+            array_merge(
+                [
+                    'camaras' => $camaras,
+                    'geojson' => $geojson,
+                    'stadiaApiKey' => config('services.stadia.api_key'),
+                ],
+                $this->estadisticasCamaras()
+            )
+        );
+    }
+
+    /**
+     * Comisarías con coordenadas fijas (no tienen tabla propia de ubicación).
+     *
+     * @return array<int, array{latitud: float, longitud: float, titulo: string, numero: int}>
+     */
+    private function comisariasFijas(): array
+    {
+        return [
+            ['latitud' => -31.72978, 'longitud' => -60.53547, 'titulo' => 'Cria. 1°', 'numero' => 1],
+            ['latitud' => -31.73735, 'longitud' => -60.5284, 'titulo' => 'Cria. 2°', 'numero' => 2],
+            ['latitud' => -31.757298, 'longitud' => -60.495857, 'titulo' => 'Cria. 3°', 'numero' => 3],
+            ['latitud' => -31.73771, 'longitud' => -60.51383, 'titulo' => 'Cria. 4°', 'numero' => 4],
+            ['latitud' => -31.73001, 'longitud' => -60.54851, 'titulo' => 'Cria. 5°', 'numero' => 5],
+            ['latitud' => -31.74674, 'longitud' => -60.5364, 'titulo' => 'Cria. 6°', 'numero' => 6],
+            ['latitud' => -31.73711, 'longitud' => -60.45818, 'titulo' => 'Cria. 7°', 'numero' => 7],
+            ['latitud' => -31.72208, 'longitud' => -60.51665, 'titulo' => 'Cria. 8°', 'numero' => 8],
+            ['latitud' => -31.74051, 'longitud' => -60.55312, 'titulo' => 'Cria. 9°', 'numero' => 9],
+            ['latitud' => -31.75655, 'longitud' => -60.51133, 'titulo' => 'Cria. 10°', 'numero' => 10],
+            ['latitud' => -31.70670, 'longitud' => -60.56671, 'titulo' => 'Cria. 11°', 'numero' => 11],
+            ['latitud' => -31.75109, 'longitud' => -60.48563, 'titulo' => 'Cria. 12°', 'numero' => 12],
+            ['latitud' => -31.77106, 'longitud' => -60.52482, 'titulo' => 'Cria. 13°', 'numero' => 13],
+            ['latitud' => -31.73017, 'longitud' => -60.49726, 'titulo' => 'Cria. 14°', 'numero' => 14],
+            ['latitud' => -31.77032, 'longitud' => -60.48219, 'titulo' => 'Cria. 15°', 'numero' => 15],
+            ['latitud' => -31.73434, 'longitud' => -60.55248, 'titulo' => 'Cria. 16°', 'numero' => 16],
+            ['latitud' => -31.72189, 'longitud' => -60.54260, 'titulo' => 'Cria. 17°', 'numero' => 17],
+        ];
+    }
+
+    /**
+     * Antenas con coordenadas fijas (Paraná + Concordia).
+     *
+     * @return array<int, array{latitud: float, longitud: float, titulo: string, numero: int}>
+     */
+    private function antenasFijas(): array
+    {
+        return [
+            // PARANA
+            ['latitud' => -31.72652, 'longitud' => -60.53293, 'titulo' => 'SBS 1', 'numero' => 1],
+            ['latitud' => -31.75109, 'longitud' => -60.48563, 'titulo' => 'SBS 2', 'numero' => 2],
+            ['latitud' => -31.77106, 'longitud' => -60.52482, 'titulo' => 'SBS 3', 'numero' => 3],
+            // CONCORDIA
+            ['latitud' => -31.324043, 'longitud' => -58.012072, 'titulo' => 'SBS 11', 'numero' => 11],
+            ['latitud' => -31.391542, 'longitud' => -58.032703, 'titulo' => 'SBS 12', 'numero' => 12],
+        ];
+    }
+
+    /**
+     * Cámaras activas con datos de sitio y tipo, listas para el mapa.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function camarasParaMapa(): array
+    {
+        return Camara::select(
             'camaras.*',
             'sitio.*',
             'tipo_camara.tipo as tipo_camara',
@@ -157,54 +158,37 @@ class MapaController extends Controller
             ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
             ->leftJoin('destino', 'sitio.destino_id', '=', 'destino.id')
             ->get()->toArray();
+    }
 
-        $sitios = Sitio::select(
+    /**
+     * Todos los sitios (activos e inactivos) para el mapa.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function sitiosParaMapa(): array
+    {
+        return Sitio::select(
             '*',
             DB::raw('sitio.id as numero'),
             DB::raw('sitio.nombre as titulo')
         )->get()->toArray();
+    }
 
-        //dd($sitios);
-        $antenas = [
-            //PARANA
-            [
-                'latitud' => -31.72652,
-                'longitud' => -60.53293,
-                'titulo' => 'SBS 1',
-                'numero' => 1
-            ],
-            [
-                'latitud' => -31.75109,
-                'longitud' => -60.48563,
-                'titulo' => 'SBS 2',
-                'numero' => 2
-            ],
-            [
-                'latitud' => -31.77106,
-                'longitud' => -60.52482,
-                'titulo' => 'SBS 3',
-                'numero' => 3
-            ],
-            //CONCORDIA
-            [
-                'latitud' => -31.324043,
-                'longitud' => -58.012072,
-                'titulo' => 'SBS 11',
-                'numero' => 11
-            ],
-            [
-                'latitud' => -31.391542,
-                'longitud' => -58.032703,
-                'titulo' => 'SBS 12',
-                'numero' => 12
-            ]
-        ];
+    /**
+     * Jurisdicciones (polígonos) de cada comisaría.
+     */
+    private function jurisdiccionesDeComisarias()
+    {
+        return Comisaria::select('comisarias.jurisdiccion')->get();
+    }
 
-        $jurisdicciones = Comisaria::select(
-            'comisarias.jurisdiccion'
-        )->get();
-
-        // Filtro para sitio activo
+    /**
+     * Estadísticas de cámaras y sitios usadas en el header del mapa (2D y 3D).
+     *
+     * @return array<string, mixed>
+     */
+    private function estadisticasCamaras(): array
+    {
         $activoSitio = function ($query) {
             $query->where('activo', 1);
         };
@@ -234,12 +218,7 @@ class MapaController extends Controller
             ->whereHas('sitio', $activoSitio)
             ->count();
 
-        //$totalCam = Camara::all()->count();
-        $totalCam = Camara::select(
-            'camaras.id',
-            'tipo_camara.tipo',
-            'sitio.activo'
-        )
+        $total = Camara::select('camaras.id', 'tipo_camara.tipo', 'sitio.activo')
             ->where('sitio.activo', 1)
             ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
             ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
@@ -262,54 +241,15 @@ class MapaController extends Controller
             $cantidadCanales += $camara->canales;
         }
 
-        // Contar las cámaras en Paraná
-        $camarasParana = Camara::select(
-            'camaras.id',
-            'tipo_camara.tipo',
-            'sitio.activo'
-        )
-            ->leftjoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
-            ->leftjoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
-            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
-            ->where('sitio.activo', 1)
-            ->where('sitio.localidad', 'Paraná')
-            ->count();
-        // Contar las cámaras en San Benito
-        $camarasSanBenito = Camara::select(
-            'camaras.id',
-            'tipo_camara.tipo',
-            'sitio.activo'
-        )
-            ->leftjoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
-            ->leftjoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
-            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
-            ->where('sitio.activo', 1)
-            ->where('sitio.localidad', 'San Benito')
-            ->count();
-        // Contar las cámaras en Colonia Avellaneda
-        $camarasCniaAvellaneda = Camara::select(
-            'camaras.id',
-            'tipo_camara.tipo',
-            'sitio.activo'
-        )
-            ->leftjoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
-            ->leftjoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
-            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
-            ->where('sitio.activo', 1)
-            ->where('sitio.localidad', 'Colonia Avellaneda')
-            ->count();
-        // Contar las cámaras en Oro Verde
-        $camarasOroVerde = Camara::select(
-            'camaras.id',
-            'tipo_camara.tipo',
-            'sitio.activo'
-        )
-            ->leftjoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
-            ->leftjoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
-            ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
-            ->where('sitio.activo', 1)
-            ->where('sitio.localidad', 'Oro Verde')
-            ->count();
+        $camarasPorLocalidad = function (string $localidad) {
+            return Camara::select('camaras.id', 'tipo_camara.tipo', 'sitio.activo')
+                ->leftjoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
+                ->leftjoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
+                ->where('tipo_camara.tipo', '!=', 'BDE (Totem)')
+                ->where('sitio.activo', 1)
+                ->where('sitio.localidad', $localidad)
+                ->count();
+        };
 
         $sitiosActivos = Sitio::where('activo', 1)
             ->select('localidad', DB::raw('count(*) as total'))
@@ -317,38 +257,196 @@ class MapaController extends Controller
             ->get()
             ->keyBy('localidad');
 
-        $cantidadSitios = $sitiosActivos->sum('total');
-        $sitiosParana = $sitiosActivos['Paraná']->total ?? 0;
-        $sitiosCniaAvellaneda = $sitiosActivos['Colonia Avellaneda']->total ?? 0;
-        $sitiosSanBenito = $sitiosActivos['San Benito']->total ?? 0;
-        $sitiosOroVerde = $sitiosActivos['Oro Verde']->total ?? 0;
-        return response()->view(
-            'mapa.mapa',
-            [
-                'comisarias' => $comisarias,
-                'antenas' => $antenas,
-                'camaras' => $camaras,
-                'canales' => $cantidadCanales,
-                'jurisdicciones' => $jurisdicciones,
-                'fijas' => $fijas,
-                'fijasFR' => $fijasFR,
-                'fijasLPR' => $fijasLPR,
-                'domos' => $domos,
-                'domosDuales' => $domosDuales,
-                'bde' => $bde,
-                'total' => $totalCam,
-                'sitios' => $sitios,
-                'cantidadSitios' => $cantidadSitios,
-                'sitiosParana' => $sitiosParana,
-                'sitiosCniaAvellaneda' => $sitiosCniaAvellaneda,
-                'sitiosSanBenito' => $sitiosSanBenito,
-                'sitiosOroVerde' => $sitiosOroVerde,
-                'camarasParana' => $camarasParana, // Agrega esta línea
-                'camarasSanBenito' => $camarasSanBenito, // Agrega esta línea
-                'camarasCniaAvellaneda' => $camarasCniaAvellaneda, // Agrega esta línea
-                'camarasOroVerde' => $camarasOroVerde // Agrega esta línea
-            ]
-        );
+        return [
+            'fijas' => $fijas,
+            'fijasFR' => $fijasFR,
+            'fijasLPR' => $fijasLPR,
+            'domos' => $domos,
+            'domosDuales' => $domosDuales,
+            'bde' => $bde,
+            'total' => $total,
+            'canales' => $cantidadCanales,
+            'camarasParana' => $camarasPorLocalidad('Paraná'),
+            'camarasSanBenito' => $camarasPorLocalidad('San Benito'),
+            'camarasCniaAvellaneda' => $camarasPorLocalidad('Colonia Avellaneda'),
+            'camarasOroVerde' => $camarasPorLocalidad('Oro Verde'),
+            'cantidadSitios' => $sitiosActivos->sum('total'),
+            'sitiosParana' => $sitiosActivos['Paraná']->total ?? 0,
+            'sitiosCniaAvellaneda' => $sitiosActivos['Colonia Avellaneda']->total ?? 0,
+            'sitiosSanBenito' => $sitiosActivos['San Benito']->total ?? 0,
+            'sitiosOroVerde' => $sitiosActivos['Oro Verde']->total ?? 0,
+        ];
+    }
+
+    /**
+     * GeoJSON de cámaras (Point) para la vista 3D.
+     *
+     * @param array<int, array<string, mixed>> $camaras
+     * @return array<string, mixed>
+     */
+    private function camarasGeoJson(array $camaras): array
+    {
+        $features = [];
+
+        foreach ($camaras as $camara) {
+            $lat = $camara['latitud'] ?? null;
+            $lng = $camara['longitud'] ?? null;
+            if (!is_numeric($lat) || !is_numeric($lng)) {
+                continue;
+            }
+
+            $features[] = [
+                'type' => 'Feature',
+                'geometry' => [
+                    'type' => 'Point',
+                    'coordinates' => [(float) $lng, (float) $lat],
+                ],
+                'properties' => [
+                    'id' => $camara['numero'],
+                    'titulo' => $camara['titulo'],
+                    'tipo_camara' => $camara['tipo_camara'],
+                    'imagen' => $camara['imagen'],
+                    'sitio' => $camara['sitio'],
+                    'dependencia' => $camara['dependencia'],
+                    'etapa' => $camara['etapa'] ?? null,
+                    'fecha_instalacion' => $camara['fecha_instalacion'] ?? null,
+                    'inteligencia' => $camara['inteligencia'] ?? null,
+                    'marca' => $camara['marca'] ?? null,
+                    'modelo' => $camara['modelo'] ?? null,
+                    'nro_serie' => $camara['nro_serie'] ?? null,
+                    'canales' => $camara['canales'] ?? 1,
+                    'cartel' => (bool) ($camara['cartel'] ?? false),
+                    'angulo' => $camara['angulo'] ?? 60,
+                    'orientacion' => $camara['orientacion'] ?? 'norte',
+                ],
+            ];
+        }
+
+        return ['type' => 'FeatureCollection', 'features' => $features];
+    }
+
+    /**
+     * GeoJSON de sitios inactivos (Point) para la vista 3D.
+     *
+     * @param array<int, array<string, mixed>> $sitios
+     * @return array<string, mixed>
+     */
+    private function sitiosGeoJson(array $sitios): array
+    {
+        $features = [];
+
+        foreach ($sitios as $sitio) {
+            if (($sitio['activo'] ?? 1) != 0) {
+                continue;
+            }
+            $lat = $sitio['latitud'] ?? null;
+            $lng = $sitio['longitud'] ?? null;
+            if (!is_numeric($lat) || !is_numeric($lng)) {
+                continue;
+            }
+
+            $features[] = [
+                'type' => 'Feature',
+                'geometry' => [
+                    'type' => 'Point',
+                    'coordinates' => [(float) $lng, (float) $lat],
+                ],
+                'properties' => [
+                    'id' => $sitio['numero'],
+                    'titulo' => $sitio['titulo'],
+                    'cartel' => isset($sitio['cartel']) ? (bool) $sitio['cartel'] : null,
+                    'observaciones' => $sitio['observaciones'] ?? null,
+                ],
+            ];
+        }
+
+        return ['type' => 'FeatureCollection', 'features' => $features];
+    }
+
+    /**
+     * GeoJSON de comisarías (Point) para la vista 3D.
+     *
+     * @param array<int, array{latitud: float, longitud: float, titulo: string, numero: int}> $comisarias
+     * @return array<string, mixed>
+     */
+    private function comisariasGeoJson(array $comisarias): array
+    {
+        $features = array_map(function (array $comisaria) {
+            return [
+                'type' => 'Feature',
+                'geometry' => [
+                    'type' => 'Point',
+                    'coordinates' => [(float) $comisaria['longitud'], (float) $comisaria['latitud']],
+                ],
+                'properties' => [
+                    'numero' => $comisaria['numero'],
+                    'titulo' => $comisaria['titulo'],
+                ],
+            ];
+        }, $comisarias);
+
+        return ['type' => 'FeatureCollection', 'features' => $features];
+    }
+
+    /**
+     * GeoJSON de antenas (Point) para la vista 3D.
+     *
+     * @param array<int, array{latitud: float, longitud: float, titulo: string, numero: int}> $antenas
+     * @return array<string, mixed>
+     */
+    private function antenasGeoJson(array $antenas): array
+    {
+        $features = array_map(function (array $antena) {
+            return [
+                'type' => 'Feature',
+                'geometry' => [
+                    'type' => 'Point',
+                    'coordinates' => [(float) $antena['longitud'], (float) $antena['latitud']],
+                ],
+                'properties' => [
+                    'numero' => $antena['numero'],
+                    'titulo' => $antena['titulo'],
+                ],
+            ];
+        }, $antenas);
+
+        return ['type' => 'FeatureCollection', 'features' => $features];
+    }
+
+    /**
+     * GeoJSON de jurisdicciones (Polygon) para la vista 3D.
+     *
+     * @param \Illuminate\Support\Collection $jurisdicciones
+     * @return array<string, mixed>
+     */
+    private function jurisdiccionesGeoJson($jurisdicciones): array
+    {
+        $features = [];
+
+        foreach ($jurisdicciones as $jurisdiccion) {
+            if (empty($jurisdiccion->jurisdiccion)) {
+                continue;
+            }
+
+            $puntos = json_decode($jurisdiccion->jurisdiccion, true);
+            if (!is_array($puntos) || count($puntos) < 3) {
+                continue;
+            }
+
+            $anillo = array_map(fn($p) => [(float) $p['lng'], (float) $p['lat']], $puntos);
+            $anillo[] = $anillo[0];
+
+            $features[] = [
+                'type' => 'Feature',
+                'geometry' => [
+                    'type' => 'Polygon',
+                    'coordinates' => [$anillo],
+                ],
+                'properties' => (object) [],
+            ];
+        }
+
+        return ['type' => 'FeatureCollection', 'features' => $features];
     }
 
     /**

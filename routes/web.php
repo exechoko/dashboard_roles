@@ -170,6 +170,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('flota', FlotaGeneralController::class);
     Route::resource('camaras', CamaraController::class);
     Route::resource('camaras_fisicas', CamaraFisicaController::class)->only(['index']);
+    Route::get('mapa/3d', [MapaController::class, 'vista3d'])->name('mapa.3d');
     Route::resource('mapa', MapaController::class);
     Route::resource('tipo-camara', TipoCamaraController::class);
     Route::resource('auditoria', AuditoriaController::class)->only(['index']);

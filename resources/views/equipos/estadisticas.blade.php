@@ -651,7 +651,7 @@
 
     /* Lista de valores numéricos debajo de cada gráfico (para leerlos rápido y que salgan en el PDF) */
     .chart-values-list{display:flex;flex-wrap:wrap;gap:.35rem .75rem;font-size:.78rem;color:var(--text-secondary,#6c757d);border-top:1px solid rgba(0,0,0,.08);padding-top:.5rem}
-    .chart-values-list .valor-item{white-space:nowrap}
+    .chart-values-list .valor-item{max-width:100%;overflow-wrap:break-word}
     .chart-values-list .valor-item strong{color:var(--text-primary,#111)}
     [data-theme="dark"] .chart-values-list{border-top-color:rgba(255,255,255,.1)}
 </style>
@@ -1043,12 +1043,28 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     plugins: {
                         legend: { position: 'bottom', labels: { color: textColor, padding: 8, font: { size: 10 }, usePointStyle: true, pointStyle: 'circle' } },
-                        tooltip: tooltipStyle
+                        tooltip: Object.assign({}, tooltipStyle, {
+                            callbacks: {
+                                label: function (context) {
+                                    return context.label + ': ' + context.parsed + ' equipos';
+                                },
+                                afterLabel: function (context) {
+                                    const recurso = seccionTecnicaPorRecurso[context.dataIndex].recurso;
+                                    return seccionTecnicaPorRecursoYTipo
+                                        .filter(function (f) { return f.recurso === recurso; })
+                                        .map(function (f) { return '  ' + f.marca + ' ' + f.modelo + ': ' + f.cantidad; });
+                                }
+                            }
+                        })
                     }
                 }
             });
             renderValoresChart('chartSeccionTecnicaRecursoValores', seccionTecnicaPorRecurso.map(function (f) {
-                return { label: f.recurso, value: f.cantidad };
+                const detalle = seccionTecnicaPorRecursoYTipo
+                    .filter(function (d) { return d.recurso === f.recurso; })
+                    .map(function (d) { return d.marca + ' ' + d.modelo + ' x' + d.cantidad; })
+                    .join(', ');
+                return { label: f.recurso + (detalle ? ' (' + detalle + ')' : ''), value: f.cantidad };
             }));
         }
 

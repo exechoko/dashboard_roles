@@ -34,9 +34,8 @@ class EquipamientoEstadisticasExport implements WithMultipleSheets
                 ['Asignados (Portátiles TETRA, sin HTT500 ni VX-261)', $resumen['asignados_portatiles']],
                 ['HTT500 asignados (sin accesorios, no cuentan como operativo disponible)', $resumen['htt500_asignados']],
                 ['VX-261 asignados (no es TETRA)', $resumen['vertex_asignados']],
-                ['Desinstalados (MDT400/DT410/SRG3900 en Stock 911)', $resumen['desinstalados']],
-                ['En depósito (portátiles/otros en Stock 911)', $resumen['en_deposito_otros']],
-                ['No operativos en terreno (asignados, no en Stock 911)', $resumen['no_operativos_en_terreno']],
+                ['No operativos en terreno (asignados, fuera de Sección Técnica)', $resumen['no_operativos_en_terreno']],
+                ['En Sección Técnica (Stock 911 y demás recursos, ver hoja aparte)', $resumen['seccion_tecnica_total']],
                 ['% Operativo', $resumen['pct_operativo'] . '%'],
                 ['% No operativo', $resumen['pct_no_operativo'] . '%'],
             ], ['Indicador', 'Valor']),
@@ -99,6 +98,16 @@ class EquipamientoEstadisticasExport implements WithMultipleSheets
                     $f->no_operativos,
                 ])->all(),
                 ['Dependencia', 'Tipo', 'Total Instalados', 'Operativos', 'No Operativos']
+            ),
+
+            'Sección Técnica' => $this->hoja(
+                'Sección Técnica',
+                $this->datos['seccionTecnicaPorRecursoYTipo']->map(fn ($f) => [
+                    $f->recurso,
+                    trim($f->marca . ' ' . $f->modelo),
+                    $f->cantidad,
+                ])->all(),
+                ['Recurso', 'Marca / Modelo', 'Cantidad']
             ),
 
             'Sin Movimiento Reciente' => $this->hoja(

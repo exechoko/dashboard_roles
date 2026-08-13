@@ -24,6 +24,21 @@
                 'VX-261 (no TETRA)' => ['marca' => 'Motorola/Vertex'],
             ];
 
+            // Mismos colores que la vista de Terminales/Histórico: verde = bien, rojo = no funciona
+            $estadoColores = [
+                'Nuevo'                      => ['clase' => 'estado-nuevo',    'hex' => '#28a745'],
+                'Usado'                      => ['clase' => 'estado-usado',    'hex' => '#6dbf67'],
+                'Reparado'                   => ['clase' => 'estado-reparado', 'hex' => '#007bff'],
+                'No funciona'                => ['clase' => 'estado-malo',     'hex' => '#dc3545'],
+                'Baja'                       => ['clase' => 'estado-malo',     'hex' => '#dc3545'],
+                'Perdido'                    => ['clase' => 'estado-malo',     'hex' => '#dc3545'],
+                'Degradado - Sin Accesorios' => ['clase' => 'estado-malo',     'hex' => '#dc3545'],
+                'Recambio'                   => ['clase' => 'estado-neutro',   'hex' => '#6c757d'],
+                'Temporal'                   => ['clase' => 'estado-neutro',   'hex' => '#6c757d'],
+                'En revision'                => ['clase' => 'estado-revision', 'hex' => '#17a2b8'],
+            ];
+            $estadoColorDefault = ['clase' => 'estado-neutro', 'hex' => '#6c757d'];
+
             $kpis = [
                 ['titulo' => 'Total Equipos', 'valor' => $resumen['total'], 'icono' => 'fa-microchip', 'color' => 'bg-primary',
                     'filtro' => [], 'info' => 'Todos los equipos de la base, sin importar estado ni asignación.'],
@@ -47,12 +62,6 @@
                     'filtro' => ['condicion' => 'operativo', 'situacion' => 'instalado', 'marca' => 'Motorola/Vertex'],
                     'info' => 'Motorola/Vertex VX-261 operativos, asignados fuera de Stock 911. No es un equipo TETRA, es otra red.'],
 
-                ['titulo' => 'Desinstalados', 'valor' => $resumen['desinstalados'], 'icono' => 'fa-warehouse', 'color' => 'bg-warning',
-                    'filtro' => ['situacion' => 'en_stock', 'modelos' => 'Teltronic:MDT400,Teltronic:DT410,Sepura:SRG3900'],
-                    'info' => 'MDT400, DT410 o SRG3900 (los que se instalan de forma fija en un móvil/base) que están actualmente en Stock 911.'],
-                ['titulo' => 'En Depósito (Portátiles/Otros)', 'valor' => $resumen['en_deposito_otros'], 'icono' => 'fa-box', 'color' => 'bg-secondary',
-                    'filtro' => ['situacion' => 'en_stock', 'excluir_modelos' => 'Teltronic:MDT400,Teltronic:DT410,Sepura:SRG3900'],
-                    'info' => 'El resto de los modelos (portátiles, bases nuevas, etc.) que están en Stock 911. No se los considera "desinstalados" porque nunca se "instalan".'],
                 ['titulo' => 'No Operativos en Terreno', 'valor' => $resumen['no_operativos_en_terreno'], 'icono' => 'fa-map-marker-alt', 'color' => 'bg-danger',
                     'filtro' => ['condicion' => 'no_operativo', 'situacion' => 'instalado'],
                     'info' => 'Equipos no operativos (rotos, de baja, perdidos, degradados o en recambio) que todavía figuran asignados a un recurso real, fuera de Stock 911 — habría que retirarlos del lugar.'],
@@ -62,19 +71,17 @@
             ];
         @endphp
 
-        {{-- KPIs generales: grilla de 4 columnas x 3 filas, sin huecos --}}
+        {{-- KPIs generales: grilla pareja (5 columnas en escritorio, 2 en mobile), sin huecos --}}
         <div data-dashboard-section="kpis">
-            <div class="row mb-2">
+            <div class="kpi-grid mb-2">
                 @foreach($kpis as $kpi)
-                    <div class="col-6 col-md-3 mb-3">
-                        <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="{{ $kpi['titulo'] }}" data-equipos-filtro='{{ json_encode($kpi['filtro']) }}'>
-                            <div class="card-icon {{ $kpi['color'] }}"><i class="fas {{ $kpi['icono'] }}"></i></div>
-                            <div class="card-wrap">
-                                <div class="card-header">
-                                    <h4>{{ $kpi['titulo'] }} <i class="fas fa-info-circle info-icon" tabindex="0" data-info-texto="{{ $kpi['info'] }}"></i></h4>
-                                </div>
-                                <div class="card-body">{{ $kpi['valor'] }}</div>
+                    <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="{{ $kpi['titulo'] }}" data-equipos-filtro='{{ json_encode($kpi['filtro']) }}'>
+                        <div class="card-icon {{ $kpi['color'] }}"><i class="fas {{ $kpi['icono'] }}"></i></div>
+                        <div class="card-wrap">
+                            <div class="card-header">
+                                <h4>{{ $kpi['titulo'] }} <i class="fas fa-info-circle info-icon" tabindex="0" data-info-texto="{{ $kpi['info'] }}"></i></h4>
                             </div>
+                            <div class="card-body">{{ $kpi['valor'] }}</div>
                         </div>
                     </div>
                 @endforeach
@@ -93,7 +100,7 @@
                 </small>
                 <small class="text-muted d-block">
                     <i class="fas fa-info-circle mr-1"></i>
-                    Solo se considera "instalado"/"desinstalado" a lo que se monta de forma fija en un móvil o base. Los portátiles se "asignan" a una persona o quedan "en depósito".
+                    Todo lo que está en Sección Técnica (Stock 911, equipos sin reparación, reclamados, etc.) se muestra aparte, más abajo, en "Sección Técnica".
                 </small>
             </div>
         </div>
@@ -390,6 +397,113 @@
             </div>
         </div>
 
+        {{-- Sección Técnica: todo lo que hay ahí, no solo Stock 911 --}}
+        <h3 class="mb-3 mt-2"><i class="fas fa-tools"></i> Sección Técnica</h3>
+        <div class="row mb-3">
+            <div class="col-12">
+                <small class="text-muted d-block">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Todo lo que está físicamente en Sección Técnica: no es solo Stock 911, también incluye Equipos sin
+                    reparación, Equipos reclamados, Custodia Blindados, Lote Temporal y otros recursos de esa dependencia.
+                    Total: <strong>{{ $resumen['seccion_tecnica_total'] }}</strong> equipos.
+                </small>
+            </div>
+        </div>
+
+        {{-- Cantidades por recurso: misma grilla que las tarjetas KPI generales, sin huecos --}}
+        <div data-dashboard-section="seccion-tecnica-kpis">
+            <div class="kpi-grid kpi-grid-sm mb-4">
+                @foreach($seccionTecnicaPorRecurso as $fila)
+                    <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="Sección Técnica — {{ $fila->recurso }}" data-equipos-filtro='{{ json_encode(["recurso_id" => $fila->recurso_id]) }}'>
+                        <div class="card-icon bg-secondary"><i class="fas fa-box"></i></div>
+                        <div class="card-wrap">
+                            <div class="card-header"><h4>{{ $fila->recurso }}</h4></div>
+                            <div class="card-body">{{ $fila->cantidad }}</div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12 col-lg-6 mb-4">
+                <div class="card chart-card h-100" data-dashboard-section="chart-seccion-tecnica-recurso">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="chart-title mb-0"><i class="fas fa-boxes mr-2 text-secondary"></i>Sección Técnica por Recurso</h4>
+                        <i class="fas fa-info-circle info-icon-static" data-toggle="tooltip" title="Distribución de los equipos de Sección Técnica según en qué recurso están cargados. Hacé clic en un sector para ver el detalle."></i>
+                    </div>
+                    <div class="card-body">
+                        <div style="position:relative; height:280px;">
+                            <canvas id="chartSeccionTecnicaRecurso"></canvas>
+                        </div>
+                        <div id="chartSeccionTecnicaRecursoValores" class="chart-values-list mt-2"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-lg-6 mb-4">
+                <div class="card chart-card h-100" data-dashboard-section="chart-seccion-tecnica-marca">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="chart-title mb-0"><i class="fas fa-microchip mr-2 text-primary"></i>Sección Técnica por Marca / Modelo</h4>
+                        <i class="fas fa-info-circle info-icon-static" data-toggle="tooltip" title="Cantidad de cada marca/modelo sumando todos los recursos de Sección Técnica."></i>
+                    </div>
+                    <div class="card-body">
+                        <div style="position:relative; height:280px;">
+                            <canvas id="chartSeccionTecnicaMarca"></canvas>
+                        </div>
+                        <div id="chartSeccionTecnicaMarcaValores" class="chart-values-list mt-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="card chart-card" data-dashboard-section="chart-seccion-tecnica-operativo">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="chart-title mb-0"><i class="fas fa-heartbeat mr-2 text-danger"></i>Operativo vs No Operativo, por Recurso (dentro de Sección Técnica)</h4>
+                        <i class="fas fa-info-circle info-icon-static" data-toggle="tooltip" title="De lo que hay en cada recurso de Sección Técnica, cuánto está en condición operativa (Nuevo/Usado/Reparado) y cuánto no."></i>
+                    </div>
+                    <div class="card-body">
+                        <div style="position:relative; height:320px;">
+                            <canvas id="chartSeccionTecnicaOperativo"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" data-dashboard-section="tabla-seccion-tecnica">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header"><h4><i class="fas fa-list"></i> Sección Técnica — Detalle por Recurso y Tipo de Equipo</h4></div>
+                    <div class="card-body">
+                        <div class="table-responsive" style="max-height:420px;overflow-y:auto;">
+                            <table class="table table-hover table-sm">
+                                <thead>
+                                    <tr class="bg-light">
+                                        <th>Recurso</th>
+                                        <th>Marca / Modelo</th>
+                                        <th class="text-center">Cantidad</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                @forelse($seccionTecnicaPorRecursoYTipo as $fila)
+                                    <tr class="equipos-clicable" data-equipos-titulo="{{ $fila->recurso }} — {{ $fila->marca }} {{ $fila->modelo }}" data-equipos-filtro='{{ json_encode(["recurso_id" => $fila->recurso_id, "marca" => $fila->marca, "modelo" => $fila->modelo]) }}'>
+                                        <td><small class="text-muted">{{ $fila->recurso }}</small></td>
+                                        <td>{{ $fila->marca }} {{ $fila->modelo }}</td>
+                                        <td class="text-center"><strong>{{ $fila->cantidad }}</strong></td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="3" class="text-center text-muted">Sin datos</td></tr>
+                                @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Detalle HTT-500 sin movimiento reciente --}}
         <div class="row">
             <div class="col-12">
@@ -413,7 +527,8 @@
                                     <tr>
                                         <td><a class="tei-badge" href="{{ route('verHistoricoDesdeEquipo', $eq->id) }}" target="_blank" rel="noopener" title="Ver histórico">{{ $eq->tei }}</a></td>
                                         <td><small class="text-muted">{{ $eq->issi ?? '—' }}</small></td>
-                                        <td><span class="badge badge-danger">{{ $eq->estado }}</span></td>
+                                        @php $eColor = $estadoColores[$eq->estado] ?? $estadoColorDefault; @endphp
+                                        <td><span class="estado-badge {{ $eColor['clase'] }}">{{ $eq->estado }}</span></td>
                                         <td>{{ $eq->recurso ?? '—' }} <small class="text-muted">{{ $eq->dependencia ? '('.$eq->dependencia.')' : '' }}</small></td>
                                         <td><small class="text-muted">{{ $eq->ultimo_movimiento_tipo ?? 'Sin histórico' }}</small></td>
                                         <td>{{ $eq->ultimo_movimiento_fecha ? \Carbon\Carbon::parse($eq->ultimo_movimiento_fecha)->format('d-m-Y') : '—' }}</td>
@@ -487,6 +602,16 @@
 <style>
     .card{border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
     .progress-legend{display:flex;gap:1rem;flex-wrap:wrap;font-size:.85rem;color:var(--text-secondary)}
+
+    /* Grilla de tarjetas KPI: 5 por fila en escritorio, 2 en mobile (10 tarjetas ÷
+       5 y ÷ 2 dan exacto, sin fila incompleta) — a diferencia de las columnas de
+       Bootstrap, que dejan huecos si el total no es múltiplo de las columnas. */
+    .kpi-grid{display:grid;grid-template-columns:repeat(5, 1fr);gap:1rem}
+    .kpi-grid .card{margin-bottom:0}
+    @media (max-width: 767px){.kpi-grid{grid-template-columns:repeat(2, 1fr)}}
+    /* Variante para nombres de recurso largos (Sección Técnica): título más chico */
+    .kpi-grid-sm .card-header h4{font-size:.72rem;line-height:1.15}
+    .kpi-grid-sm .card-body{font-size:1.1rem}
     .equipos-clicable{cursor:pointer}
     .equipos-clicable:hover{filter:brightness(0.92)}
     tr.equipos-clicable:hover{background-color:rgba(0,0,0,.035)}
@@ -541,7 +666,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const porEstadoData = @json($porEstado);
     const porTipoEquipoData = @json($porTipoEquipo);
     const usoFiltroBase = @json($usoFiltroBase);
+    const seccionTecnicaPorRecurso = @json($seccionTecnicaPorRecurso);
+    const seccionTecnicaPorRecursoYTipo = @json($seccionTecnicaPorRecursoYTipo);
+    const estadoColores = @json(collect($estadoColores)->map(fn ($c) => $c['hex']));
+    const estadoColorDefault = @json($estadoColorDefault['hex']);
     const detalleUrl = "{{ route('equipos.estadisticas.detalle') }}";
+
+    function colorPorEstado(nombreEstado) {
+        return estadoColores[nombreEstado] || estadoColorDefault;
+    }
 
     // ── Modal genérico de detalle ───────────────────────────────────────────
     let equiposActuales = [];
@@ -562,7 +695,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 + '<td><a href="' + urlHistorico(eq.id) + '" target="_blank" rel="noopener" title="Ver histórico">' + escapeHtml(eq.tei) + '</a></td>'
                 + '<td><small class="text-muted">' + escapeHtml(eq.issi ?? '—') + '</small></td>'
                 + '<td>' + escapeHtml(eq.marca) + ' ' + escapeHtml(eq.modelo) + '</td>'
-                + '<td><span class="badge badge-secondary">' + escapeHtml(eq.estado) + '</span></td>'
+                + '<td><span class="estado-badge" style="background-color:' + colorPorEstado(eq.estado) + '">' + escapeHtml(eq.estado) + '</span></td>'
                 + '<td>' + escapeHtml(eq.recurso ?? '—') + '</td>'
                 + '<td>' + escapeHtml(eq.dependencia ?? '—') + '</td>'
                 + '<td>' + escapeHtml(eq.fecha_estado_fmt ?? '—') + '</td>'
@@ -789,7 +922,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     labels: porEstadoData.map(function (f) { return f.estado; }),
                     datasets: [{
                         data: porEstadoData.map(function (f) { return f.cantidad; }),
-                        backgroundColor: paletteQual,
+                        backgroundColor: porEstadoData.map(function (f) { return colorPorEstado(f.estado); }),
                         borderWidth: isDark ? 0 : 2,
                         borderColor: isDark ? 'transparent' : '#ffffff',
                         hoverOffset: 6
@@ -883,6 +1016,115 @@ document.addEventListener('DOMContentLoaded', function () {
                 return { label: (f.marca + ' ' + f.modelo).trim(), value: f.operativos + ' / ' + f.no_operativos };
             }));
         }
+
+        // 5) Sección Técnica por Recurso (doughnut, clicable)
+        const canvasSecTecRecurso = document.getElementById('chartSeccionTecnicaRecurso');
+        if (canvasSecTecRecurso) {
+            chartInstances.secTecRecurso = new Chart(canvasSecTecRecurso.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: seccionTecnicaPorRecurso.map(function (f) { return f.recurso; }),
+                    datasets: [{
+                        data: seccionTecnicaPorRecurso.map(function (f) { return f.cantidad; }),
+                        backgroundColor: paletteQual,
+                        borderWidth: isDark ? 0 : 2,
+                        borderColor: isDark ? 'transparent' : '#ffffff',
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    onClick: function (evt, elements) {
+                        if (!elements.length) return;
+                        const fila = seccionTecnicaPorRecurso[elements[0].index];
+                        abrirModalConFiltro('Sección Técnica — ' + fila.recurso, { recurso_id: fila.recurso_id });
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: textColor, padding: 8, font: { size: 10 }, usePointStyle: true, pointStyle: 'circle' } },
+                        tooltip: tooltipStyle
+                    }
+                }
+            });
+            renderValoresChart('chartSeccionTecnicaRecursoValores', seccionTecnicaPorRecurso.map(function (f) {
+                return { label: f.recurso, value: f.cantidad };
+            }));
+        }
+
+        // 6) Sección Técnica por Marca / Modelo (bar, sumando todos los recursos)
+        const canvasSecTecMarca = document.getElementById('chartSeccionTecnicaMarca');
+        if (canvasSecTecMarca) {
+            const totalesPorModelo = {};
+            seccionTecnicaPorRecursoYTipo.forEach(function (f) {
+                const clave = (f.marca + ' ' + f.modelo).trim();
+                totalesPorModelo[clave] = (totalesPorModelo[clave] || 0) + f.cantidad;
+            });
+            const modelosSecTec = Object.keys(totalesPorModelo).sort(function (a, b) { return totalesPorModelo[b] - totalesPorModelo[a]; });
+
+            chartInstances.secTecMarca = new Chart(canvasSecTecMarca.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: modelosSecTec,
+                    datasets: [{
+                        label: 'Cantidad',
+                        data: modelosSecTec.map(function (m) { return totalesPorModelo[m]; }),
+                        backgroundColor: paletteQual[0]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { beginAtZero: true, grid: { color: gridColor } }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: tooltipStyle
+                    }
+                }
+            });
+            renderValoresChart('chartSeccionTecnicaMarcaValores', modelosSecTec.map(function (m) {
+                return { label: m, value: totalesPorModelo[m] };
+            }));
+        }
+
+        // 7) Sección Técnica: Operativo vs No Operativo, por recurso (horizontal apilado)
+        const canvasSecTecOperativo = document.getElementById('chartSeccionTecnicaOperativo');
+        if (canvasSecTecOperativo) {
+            chartInstances.secTecOperativo = new Chart(canvasSecTecOperativo.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: seccionTecnicaPorRecurso.map(function (f) { return f.recurso; }),
+                    datasets: [
+                        { label: 'Operativo', data: seccionTecnicaPorRecurso.map(function (f) { return f.operativos; }), backgroundColor: colorPorEstado('Nuevo') },
+                        { label: 'No Operativo', data: seccionTecnicaPorRecurso.map(function (f) { return f.no_operativos; }), backgroundColor: colorPorEstado('Baja') }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, beginAtZero: true, grid: { color: gridColor } },
+                        y: { stacked: true, grid: { display: false } }
+                    },
+                    onClick: function (evt, elements) {
+                        if (!elements.length) return;
+                        const idx = elements[0].index;
+                        const datasetIndex = elements[0].datasetIndex;
+                        const fila = seccionTecnicaPorRecurso[idx];
+                        const condicion = datasetIndex === 0 ? 'operativo' : 'no_operativo';
+                        abrirModalConFiltro(fila.recurso + ' — ' + (datasetIndex === 0 ? 'Operativo' : 'No Operativo'), { recurso_id: fila.recurso_id, condicion: condicion });
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: textColor, padding: 8, font: { size: 11 }, usePointStyle: true, pointStyle: 'circle' } },
+                        tooltip: tooltipStyle
+                    }
+                }
+            });
+        }
     }
 
     createCharts();
@@ -934,7 +1176,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const secciones = [
                 'kpis', 'condicion',
                 'chart-instalados-uso', 'chart-por-estado', 'chart-marca-uso', 'chart-operativos',
-                'tabla-reconciliacion', 'tabla-moviles-bases', 'tabla-tipo-equipo', 'tabla-dependencia'
+                'tabla-reconciliacion', 'tabla-moviles-bases', 'tabla-tipo-equipo', 'tabla-dependencia',
+                'seccion-tecnica-kpis', 'chart-seccion-tecnica-recurso', 'chart-seccion-tecnica-marca',
+                'chart-seccion-tecnica-operativo', 'tabla-seccion-tecnica'
             ];
             const etiquetas = {
                 'kpis': 'Resumen general',
@@ -946,7 +1190,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 'tabla-reconciliacion': 'Reconciliación por Tipo de Uso',
                 'tabla-moviles-bases': 'Móviles y Bases Instalados, por Marca y Modelo',
                 'tabla-tipo-equipo': 'Por Tipo de Equipo',
-                'tabla-dependencia': 'Por Dependencia (equipos actualmente instalados)'
+                'tabla-dependencia': 'Por Dependencia (equipos actualmente instalados)',
+                'seccion-tecnica-kpis': 'Sección Técnica — Cantidades por Recurso',
+                'chart-seccion-tecnica-recurso': 'Sección Técnica por Recurso',
+                'chart-seccion-tecnica-marca': 'Sección Técnica por Marca / Modelo',
+                'chart-seccion-tecnica-operativo': 'Sección Técnica — Operativo vs No Operativo por Recurso',
+                'tabla-seccion-tecnica': 'Sección Técnica — Detalle por Recurso y Tipo de Equipo'
             };
 
             // Alto máximo de imagen que entra en una página en blanco (deja lugar para el título)

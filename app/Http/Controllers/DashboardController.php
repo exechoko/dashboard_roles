@@ -157,6 +157,10 @@ class DashboardController extends Controller
             $query->where('flota_general.destino_id', $request->integer('destino_id'));
         }
 
+        if ($request->filled('recurso_id')) {
+            $query->where('flota_general.recurso_id', $request->integer('recurso_id'));
+        }
+
         if ($request->filled('situacion')) {
             match ($request->string('situacion')->toString()) {
                 'instalado' => $query->when(
@@ -462,6 +466,51 @@ class DashboardController extends Controller
             ->orderBy('ultimo.fecha_asignacion')
             ->get();
 
+        // Todo lo que hay físicamente en Sección Técnica (Stock 911, Equipos sin
+        // reparación, Equipos reclamados, Custodia Blindados, Lote Temporal, etc.):
+        // no es solo Stock 911, hay varios recursos más dentro de esa dependencia.
+        $seccionTecnica = Destino::where('nombre', 'Sección Técnica')->first();
+
+        $seccionTecnicaPorRecurso = collect();
+        $seccionTecnicaPorRecursoYTipo = collect();
+        $totalSeccionTecnica = 0;
+
+        if ($seccionTecnica) {
+            $seccionTecnicaPorRecurso = FlotaGeneral::query()
+                ->select(
+                    'recursos.id as recurso_id',
+                    'recursos.nombre as recurso',
+                    DB::raw('COUNT(DISTINCT flota_general.equipo_id) as cantidad'),
+                    DB::raw("SUM(CASE WHEN equipos.estado_id IN ({$operativoIdsSql}) THEN 1 ELSE 0 END) as operativos"),
+                    DB::raw("SUM(CASE WHEN equipos.estado_id IN ({$noOperativoIdsSql}) THEN 1 ELSE 0 END) as no_operativos")
+                )
+                ->join('recursos', 'flota_general.recurso_id', '=', 'recursos.id')
+                ->join('equipos', 'flota_general.equipo_id', '=', 'equipos.id')
+                ->where('flota_general.destino_id', $seccionTecnica->id)
+                ->groupBy('recursos.id', 'recursos.nombre')
+                ->orderByDesc('cantidad')
+                ->get();
+
+            $seccionTecnicaPorRecursoYTipo = FlotaGeneral::query()
+                ->select(
+                    'recursos.id as recurso_id',
+                    'recursos.nombre as recurso',
+                    'tipo_terminales.marca as marca',
+                    'tipo_terminales.modelo as modelo',
+                    DB::raw('COUNT(DISTINCT flota_general.equipo_id) as cantidad')
+                )
+                ->join('recursos', 'flota_general.recurso_id', '=', 'recursos.id')
+                ->join('equipos', 'flota_general.equipo_id', '=', 'equipos.id')
+                ->join('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
+                ->where('flota_general.destino_id', $seccionTecnica->id)
+                ->groupBy('recursos.id', 'recursos.nombre', 'tipo_terminales.id', 'tipo_terminales.marca', 'tipo_terminales.modelo')
+                ->orderBy('recursos.nombre')
+                ->orderByDesc('cantidad')
+                ->get();
+
+            $totalSeccionTecnica = $seccionTecnicaPorRecurso->sum('cantidad');
+        }
+
         $resumen = [
             'total' => $totalEquipos,
             'operativos' => $totalOperativos,
@@ -479,9 +528,24 @@ class DashboardController extends Controller
             'pct_no_operativo' => $totalEquipos > 0 ? round($totalNoOperativos / $totalEquipos * 100, 1) : 0,
             'pct_otros' => $totalEquipos > 0 ? round($totalOtrosEstados / $totalEquipos * 100, 1) : 0,
             'htt500_sin_movimiento' => $htt500SinMovimiento->count(),
+            'seccion_tecnica_total' => $totalSeccionTecnica,
         ];
 
-        return compact('resumen', 'porTipoUso', 'situacionPorTipoUso', 'instaladosMovilBasePorMarca', 'porDependencia', 'porTipoEquipo', 'porEstado', 'htt500SinMovimiento');
+        $seccionTecnicaId = $seccionTecnica->id ?? null;
+
+        return compact(
+            'resumen',
+            'porTipoUso',
+            'situacionPorTipoUso',
+            'instaladosMovilBasePorMarca',
+            'porDependencia',
+            'porTipoEquipo',
+            'porEstado',
+            'htt500SinMovimiento',
+            'seccionTecnicaPorRecurso',
+            'seccionTecnicaPorRecursoYTipo',
+            'seccionTecnicaId'
+        );
     }
 
     /**

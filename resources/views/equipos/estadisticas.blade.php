@@ -520,6 +520,16 @@
     .equipos-clicable{cursor:pointer}
     .equipos-clicable:hover{filter:brightness(0.92)}
     tr.equipos-clicable:hover{background-color:rgba(0,0,0,.035)}
+
+    /* El tema oscuro global le da fondo oscuro al <thead> pero no al <tfoot>;
+       sin esto, el texto queda claro (forzado por .table) sobre el bg-light
+       de Bootstrap, que sigue gris claro. */
+    [data-theme="dark"] .table tfoot tr.bg-light,
+    [data-theme="dark"] .table tfoot tr.bg-light td {
+        background-color: var(--bg-secondary) !important;
+        color: var(--text-primary) !important;
+        border-color: var(--border-color) !important;
+    }
 </style>
 @endpush
 

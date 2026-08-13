@@ -75,14 +75,10 @@ class DashboardController extends Controller
      */
     public function equipamientoEstadisticasDetalleJSON(Request $request)
     {
-        $estados = $this->getEstadosIds();
         $stock911 = Recurso::where('nombre', 'Stock 911')->first();
 
-        $operativoIds = collect(['Nuevo', 'Usado', 'Reparado'])
-            ->map(fn ($nombre) => $estados[$nombre] ?? null)->filter()->map(fn ($id) => (int) $id)->values();
-
-        $noOperativoIds = collect(['Baja', 'No funciona', 'Perdido', 'Degradado - Sin Accesorios', 'Recambio'])
-            ->map(fn ($nombre) => $estados[$nombre] ?? null)->filter()->map(fn ($id) => (int) $id)->values();
+        $operativoIds = Equipo::operativoEstadoIds();
+        $noOperativoIds = Equipo::noOperativoEstadoIds();
 
         $query = Equipo::query()
             ->select(
@@ -212,19 +208,8 @@ class DashboardController extends Controller
      */
     private function calcularEquipamientoEstadisticas(): array
     {
-        $estados = $this->getEstadosIds();
-
-        $operativoIds = collect(['Nuevo', 'Usado', 'Reparado'])
-            ->map(fn ($nombre) => $estados[$nombre] ?? null)
-            ->filter()
-            ->map(fn ($id) => (int) $id)
-            ->values();
-
-        $noOperativoIds = collect(['Baja', 'No funciona', 'Perdido', 'Degradado - Sin Accesorios', 'Recambio'])
-            ->map(fn ($nombre) => $estados[$nombre] ?? null)
-            ->filter()
-            ->map(fn ($id) => (int) $id)
-            ->values();
+        $operativoIds = Equipo::operativoEstadoIds();
+        $noOperativoIds = Equipo::noOperativoEstadoIds();
 
         $operativoIdsSql = $operativoIds->isNotEmpty() ? $operativoIds->implode(',') : '0';
         $noOperativoIdsSql = $noOperativoIds->isNotEmpty() ? $noOperativoIds->implode(',') : '0';

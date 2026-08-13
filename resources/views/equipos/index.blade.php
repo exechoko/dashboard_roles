@@ -89,6 +89,7 @@
                                                             'Recambio'    => 'estado-neutro',
                                                             'Temporal'    => 'estado-neutro',
                                                             'En revision' => 'estado-revision',
+                                                            'Degradado - Sin Accesorios' => 'estado-malo',
                                                         ];
                                                         $eClase = $estadoClases[$equipo->estado->nombre] ?? 'estado-neutro';
                                                     @endphp

@@ -24,9 +24,14 @@
                 </li>
             @endcan
             @can('ver-equipo')
-                <li class="{{ request()->is('equipos*') ? 'active' : '' }}">
+                <li class="{{ request()->is('equipos') || request()->is('equipos/*') && !request()->is('equipos/estadisticas') ? 'active' : '' }}">
                     <a class="nav-link" href="/equipos">
                         <i class="fas fa-microchip"></i><span>Terminales</span>
+                    </a>
+                </li>
+                <li class="{{ request()->is('equipos/estadisticas') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('equipos.estadisticas') }}">
+                        <i class="fas fa-chart-pie"></i><span>Estadísticas</span>
                     </a>
                 </li>
             @endcan

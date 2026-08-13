@@ -117,6 +117,15 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('roles', RolController::class);
     Route::resource('usuarios', UsuarioController::class);
     Route::resource('blogs', BlogController::class);
+    Route::get('/equipos/estadisticas', [App\Http\Controllers\DashboardController::class, 'equipamientoEstadisticas'])
+        ->name('equipos.estadisticas')
+        ->middleware('can:ver-equipo');
+    Route::get('/equipos/estadisticas/exportar', [App\Http\Controllers\DashboardController::class, 'exportEquipamientoEstadisticasExcel'])
+        ->name('equipos.estadisticas.export')
+        ->middleware('can:ver-equipo');
+    Route::get('/equipos/estadisticas/detalle', [App\Http\Controllers\DashboardController::class, 'equipamientoEstadisticasDetalleJSON'])
+        ->name('equipos.estadisticas.detalle')
+        ->middleware('can:ver-equipo');
     Route::resource('equipos', EquipoController::class);
     Route::resource('terminales', TipoTerminalController::class);
     Route::resource('bodycams', BodycamController::class);

@@ -19,7 +19,7 @@
                                     <img src="{{ asset($flota->equipo->tipo_terminal->imagen) }}" class="hist-equipo-img">
                                 @endif
                                 @php
-                                    $eClasesH = ['Nuevo'=>'estado-nuevo','Usado'=>'estado-usado','Reparado'=>'estado-reparado','No funciona'=>'estado-malo','Baja'=>'estado-malo','Perdido'=>'estado-malo','Recambio'=>'estado-neutro','Temporal'=>'estado-neutro','En revision'=>'estado-revision'];
+                                    $eClasesH = ['Nuevo'=>'estado-nuevo','Usado'=>'estado-usado','Reparado'=>'estado-reparado','No funciona'=>'estado-malo','Baja'=>'estado-malo','Perdido'=>'estado-malo','Recambio'=>'estado-neutro','Temporal'=>'estado-neutro','En revision'=>'estado-revision','Degradado - Sin Accesorios'=>'estado-malo'];
                                     if ($desdeEquipo) {
                                         $hTei    = $flota->tei;
                                         $hIssi   = $flota->issi;

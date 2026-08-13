@@ -14,6 +14,11 @@
         </a>
         <ul class="dropdown-menu">
             @can('ver-flota')
+                <li class="{{ request()->is('equipos/estadisticas') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('equipos.estadisticas') }}">
+                        <i class="fas fa-chart-pie"></i><span>Estadísticas</span>
+                    </a>
+                </li>
                 <li class="{{ request()->is('flota*') ? 'active' : '' }} {{ request()->is('*historico*') ? 'active' : '' }}">
                     <a class="nav-link" href="/flota"><i class="fas fa-wrench"></i><span>Administración</span></a>
                 </li>
@@ -28,12 +33,7 @@
                     <a class="nav-link" href="/equipos">
                         <i class="fas fa-microchip"></i><span>Terminales</span>
                     </a>
-                </li>
-                <li class="{{ request()->is('equipos/estadisticas') ? 'active' : '' }}">
-                    <a class="nav-link" href="{{ route('equipos.estadisticas') }}">
-                        <i class="fas fa-chart-pie"></i><span>Estadísticas</span>
-                    </a>
-                </li>
+                </li>                
             @endcan
             @can('ver-recurso')
                 <li class="{{ request()->is('recursos*') ? 'active' : '' }}">

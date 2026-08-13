@@ -81,7 +81,7 @@ class DashboardController extends Controller
         $operativoIds = collect(['Nuevo', 'Usado', 'Reparado'])
             ->map(fn ($nombre) => $estados[$nombre] ?? null)->filter()->map(fn ($id) => (int) $id)->values();
 
-        $noOperativoIds = collect(['Baja', 'No funciona', 'Perdido', 'Degradado - Sin Accesorios'])
+        $noOperativoIds = collect(['Baja', 'No funciona', 'Perdido', 'Degradado - Sin Accesorios', 'Recambio'])
             ->map(fn ($nombre) => $estados[$nombre] ?? null)->filter()->map(fn ($id) => (int) $id)->values();
 
         $query = Equipo::query()
@@ -220,7 +220,7 @@ class DashboardController extends Controller
             ->map(fn ($id) => (int) $id)
             ->values();
 
-        $noOperativoIds = collect(['Baja', 'No funciona', 'Perdido', 'Degradado - Sin Accesorios'])
+        $noOperativoIds = collect(['Baja', 'No funciona', 'Perdido', 'Degradado - Sin Accesorios', 'Recambio'])
             ->map(fn ($nombre) => $estados[$nombre] ?? null)
             ->filter()
             ->map(fn ($id) => (int) $id)

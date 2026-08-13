@@ -30,7 +30,7 @@
                 ['titulo' => 'Operativos', 'valor' => $resumen['operativos'], 'icono' => 'fa-check-circle', 'color' => 'bg-success',
                     'filtro' => ['condicion' => 'operativo'], 'info' => 'Equipos en estado Nuevo, Usado o Reparado, sin importar si están instalados, asignados o en stock.'],
                 ['titulo' => 'No Operativos', 'valor' => $resumen['no_operativos'], 'icono' => 'fa-times-circle', 'color' => 'bg-danger',
-                    'filtro' => ['condicion' => 'no_operativo'], 'info' => 'Equipos en estado Baja, No funciona, Perdido o Degradado - Sin Accesorios.'],
+                    'filtro' => ['condicion' => 'no_operativo'], 'info' => 'Equipos en estado Baja, No funciona, Perdido, Degradado - Sin Accesorios o Recambio (estos últimos ya no los tiene la Policía: fueron devueltos/cambiados).'],
                 ['titulo' => 'En Revisión Técnica', 'valor' => $resumen['en_revision_tecnica'], 'icono' => 'fa-tools', 'color' => 'bg-info',
                     'filtro' => ['ultimo_movimiento' => 'Revisión'], 'info' => 'Equipos cuyo último movimiento histórico registrado es "Revisión" (soporte/sección técnica), sin importar el estado actual.'],
 
@@ -55,7 +55,7 @@
                     'info' => 'El resto de los modelos (portátiles, bases nuevas, etc.) que están en Stock 911. No se los considera "desinstalados" porque nunca se "instalan".'],
                 ['titulo' => 'No Operativos en Terreno', 'valor' => $resumen['no_operativos_en_terreno'], 'icono' => 'fa-map-marker-alt', 'color' => 'bg-danger',
                     'filtro' => ['condicion' => 'no_operativo', 'situacion' => 'instalado'],
-                    'info' => 'Equipos no operativos (rotos, de baja, perdidos o degradados) que todavía figuran asignados a un recurso real, fuera de Stock 911 — habría que retirarlos del lugar.'],
+                    'info' => 'Equipos no operativos (rotos, de baja, perdidos, degradados o en recambio) que todavía figuran asignados a un recurso real, fuera de Stock 911 — habría que retirarlos del lugar.'],
                 ['titulo' => 'HTT-500 sin Movimiento 3+ Años', 'valor' => $resumen['htt500_sin_movimiento'], 'icono' => 'fa-history', 'color' => 'bg-danger',
                     'filtro' => ['marca' => 'Teltronic', 'modelo' => 'HTT500', 'estado_in' => 'Usado,Nuevo,Reparado,Degradado - Sin Accesorios', 'sin_movimiento_3y' => 1],
                     'info' => 'HTT500 en estados "vivos" (Usado/Nuevo/Reparado/Degradado) cuyo último movimiento histórico es de hace más de 3 años, o no tiene histórico registrado.'],
@@ -103,7 +103,12 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-body">
-                        <h6 class="mb-2">Condición general de la flota:
+                        <h5 class="mb-1">
+                            Total de Equipos: <strong>{{ $resumen['total'] }}</strong>
+                            <span class="text-muted mx-1">→</span>
+                            Total Operativo: <strong class="text-success">{{ $resumen['operativos'] }}</strong> ({{ $resumen['pct_operativo'] }}%)
+                        </h5>
+                        <h6 class="mb-2 text-muted" style="font-size:.85rem;">Condición general de la flota:
                             <strong class="text-success">{{ $resumen['pct_operativo'] }}% operativo</strong> /
                             <strong class="text-danger">{{ $resumen['pct_no_operativo'] }}% no operativo</strong> /
                             <strong class="text-secondary">{{ $resumen['pct_otros'] }}% otros estados</strong>
@@ -127,8 +132,8 @@
                         </div>
                         <div class="progress-legend mt-2">
                             <span><i class="fas fa-square text-success"></i> {{ $resumen['operativos'] }} operativos ({{ $resumen['pct_operativo'] }}%) — Nuevo/Usado/Reparado</span>
-                            <span><i class="fas fa-square text-danger"></i> {{ $resumen['no_operativos'] }} no operativos ({{ $resumen['pct_no_operativo'] }}%) — Baja/No funciona/Perdido/Degradado</span>
-                            <span><i class="fas fa-square text-secondary"></i> {{ $resumen['otros_estados'] }} otros estados ({{ $resumen['pct_otros'] }}%) — Recambio/Temporal/En revisión</span>
+                            <span><i class="fas fa-square text-danger"></i> {{ $resumen['no_operativos'] }} no operativos ({{ $resumen['pct_no_operativo'] }}%) — Baja/No funciona/Perdido/Degradado/Recambio</span>
+                            <span><i class="fas fa-square text-secondary"></i> {{ $resumen['otros_estados'] }} otros estados ({{ $resumen['pct_otros'] }}%) — Temporal/En revisión</span>
                         </div>
                     </div>
                 </div>
@@ -147,6 +152,7 @@
                         <div style="position:relative; height:280px;">
                             <canvas id="chartInstaladosUso"></canvas>
                         </div>
+                        <div id="chartInstaladosUsoValores" class="chart-values-list mt-2"></div>
                     </div>
                 </div>
             </div>
@@ -160,6 +166,7 @@
                         <div style="position:relative; height:280px;">
                             <canvas id="chartPorEstado"></canvas>
                         </div>
+                        <div id="chartPorEstadoValores" class="chart-values-list mt-2"></div>
                     </div>
                 </div>
             </div>
@@ -175,6 +182,7 @@
                         <div style="position:relative; height:320px;">
                             <canvas id="chartMarcaUso"></canvas>
                         </div>
+                        <div id="chartMarcaUsoValores" class="chart-values-list mt-2"></div>
                     </div>
                 </div>
             </div>
@@ -182,19 +190,20 @@
                 <div class="card chart-card h-100" data-dashboard-section="chart-operativos">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h4 class="chart-title mb-0"><i class="fas fa-balance-scale-right mr-2 text-danger"></i>Operativos vs No Operativos por Marca / Modelo</h4>
-                        <i class="fas fa-info-circle info-icon-static" data-toggle="tooltip" title="De cada marca/modelo, cuántos están operativos (Nuevo/Usado/Reparado) y cuántos no (Baja/No funciona/Perdido/Degradado)."></i>
+                        <i class="fas fa-info-circle info-icon-static" data-toggle="tooltip" title="De cada marca/modelo, cuántos están operativos (Nuevo/Usado/Reparado) y cuántos no (Baja/No funciona/Perdido/Degradado/Recambio)."></i>
                     </div>
                     <div class="card-body">
                         <div style="position:relative; height:320px;">
                             <canvas id="chartOperativos"></canvas>
                         </div>
+                        <div id="chartOperativosValores" class="chart-values-list mt-2"></div>
                     </div>
                 </div>
             </div>
         </div>
 
         {{-- Reconciliación completa por tipo de uso: siempre suma al total --}}
-        <div class="row">
+        <div class="row" data-dashboard-section="tabla-reconciliacion">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header"><h4><i class="fas fa-balance-scale"></i> Reconciliación por Tipo de Uso</h4></div>
@@ -261,7 +270,7 @@
         </div>
 
         {{-- Móviles y bases instalados, por marca y modelo --}}
-        <div class="row">
+        <div class="row" data-dashboard-section="tabla-moviles-bases">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header"><h4><i class="fas fa-truck-pickup"></i> Móviles y Bases Instalados, por Marca y Modelo</h4></div>
@@ -295,7 +304,7 @@
         </div>
 
         {{-- Por tipo de equipo --}}
-        <div class="row">
+        <div class="row" data-dashboard-section="tabla-tipo-equipo">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header"><h4><i class="fas fa-microchip"></i> Por Tipo de Equipo</h4></div>
@@ -341,7 +350,7 @@
         </div>
 
         {{-- Por dependencia --}}
-        <div class="row">
+        <div class="row" data-dashboard-section="tabla-dependencia">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header"><h4><i class="fas fa-sitemap"></i> Por Dependencia (equipos actualmente instalados)</h4></div>
@@ -514,6 +523,12 @@
     .chart-card .chart-title{color:var(--text-primary) !important;font-weight:600;font-size:1rem;margin:0}
     [data-theme="dark"] .chart-card{background-color:#1e293b !important;border-color:rgba(255,255,255,.1) !important;box-shadow:0 4px 6px rgba(0,0,0,.3)}
     [data-theme="dark"] .chart-card .chart-title{color:#e2e8f0 !important}
+
+    /* Lista de valores numéricos debajo de cada gráfico (para leerlos rápido y que salgan en el PDF) */
+    .chart-values-list{display:flex;flex-wrap:wrap;gap:.35rem .75rem;font-size:.78rem;color:var(--text-secondary,#6c757d);border-top:1px solid rgba(0,0,0,.08);padding-top:.5rem}
+    .chart-values-list .valor-item{white-space:nowrap}
+    .chart-values-list .valor-item strong{color:var(--text-primary,#111)}
+    [data-theme="dark"] .chart-values-list{border-top-color:rgba(255,255,255,.1)}
 </style>
 @endpush
 
@@ -699,6 +714,14 @@ document.addEventListener('DOMContentLoaded', function () {
         return document.documentElement.getAttribute('data-theme') === 'dark';
     }
 
+    function renderValoresChart(containerId, items) {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        el.innerHTML = items.map(function (it) {
+            return '<span class="valor-item">' + escapeHtml(it.label) + ': <strong>' + it.value + '</strong></span>';
+        }).join('');
+    }
+
     let chartInstances = {};
 
     function createCharts() {
@@ -752,6 +775,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
             });
+            renderValoresChart('chartInstaladosUsoValores', porTipoUsoData.map(function (f) {
+                return { label: f.uso, value: f.cantidad };
+            }));
         }
 
         // 2) Por Estado (doughnut, clicable)
@@ -784,6 +810,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
             });
+            renderValoresChart('chartPorEstadoValores', porEstadoData.map(function (f) {
+                return { label: f.estado, value: f.cantidad };
+            }));
         }
 
         // 3) Marca / Modelo por Tipo de Uso (barras apiladas)
@@ -819,6 +848,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
             });
+            renderValoresChart('chartMarcaUsoValores', porTipoEquipoData.map(function (f) {
+                return { label: (f.marca + ' ' + f.modelo).trim(), value: f.total };
+            }));
         }
 
         // 4) Operativos vs No Operativos por Marca / Modelo (barras horizontales apiladas)
@@ -847,6 +879,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
             });
+            renderValoresChart('chartOperativosValores', porTipoEquipoData.map(function (f) {
+                return { label: (f.marca + ' ' + f.modelo).trim(), value: f.operativos + ' / ' + f.no_operativos };
+            }));
         }
     }
 
@@ -888,7 +923,7 @@ document.addEventListener('DOMContentLoaded', function () {
             y += 7;
             pdf.setFont('helvetica', 'normal');
             pdf.setFontSize(9);
-            pdf.text('Generado: ' + new Date().toLocaleString('es-AR'), margin, y);
+            pdf.text('Generado: ' + new Date().toLocaleString('es-AR', { hour12: false }), margin, y);
             y += 5;
             pdf.text(
                 'Total: {{ $resumen["total"] }} equipos | Operativo: {{ $resumen["pct_operativo"] }}% | No operativo: {{ $resumen["pct_no_operativo"] }}% | Otros: {{ $resumen["pct_otros"] }}%',
@@ -896,35 +931,70 @@ document.addEventListener('DOMContentLoaded', function () {
             );
             y += 8;
 
-            const secciones = ['kpis', 'condicion', 'chart-instalados-uso', 'chart-por-estado', 'chart-marca-uso', 'chart-operativos'];
+            const secciones = [
+                'kpis', 'condicion',
+                'chart-instalados-uso', 'chart-por-estado', 'chart-marca-uso', 'chart-operativos',
+                'tabla-reconciliacion', 'tabla-moviles-bases', 'tabla-tipo-equipo', 'tabla-dependencia'
+            ];
             const etiquetas = {
                 'kpis': 'Resumen general',
                 'condicion': 'Condición general de la flota',
                 'chart-instalados-uso': 'Instalados por Tipo de Uso',
                 'chart-por-estado': 'Por Estado',
                 'chart-marca-uso': 'Marca / Modelo por Tipo de Uso',
-                'chart-operativos': 'Operativos vs No Operativos por Marca / Modelo'
+                'chart-operativos': 'Operativos vs No Operativos por Marca / Modelo',
+                'tabla-reconciliacion': 'Reconciliación por Tipo de Uso',
+                'tabla-moviles-bases': 'Móviles y Bases Instalados, por Marca y Modelo',
+                'tabla-tipo-equipo': 'Por Tipo de Equipo',
+                'tabla-dependencia': 'Por Dependencia (equipos actualmente instalados)'
             };
+
+            // Alto máximo de imagen que entra en una página en blanco (deja lugar para el título)
+            const maxHeightPorPagina = (pageHeight - margin * 2) - 8;
 
             for (const key of secciones) {
                 const el = document.querySelector('[data-dashboard-section="' + key + '"]');
                 if (!el) continue;
 
                 const canvas = await html2canvas(el, { backgroundColor: '#ffffff', scale: 2 });
-                const imageData = canvas.toDataURL('image/png');
-                const imageHeight = Math.min((canvas.height * contentWidth) / canvas.width, 130);
+                const pxPorMm = canvas.width / contentWidth;
+                const alturaTotalMm = canvas.height / pxPorMm;
 
-                if (y + imageHeight + 10 > pageHeight - margin) {
-                    pdf.addPage();
-                    y = margin;
+                // Si entra completa en una página, no se corta en varias imágenes
+                let slices;
+                if (alturaTotalMm <= maxHeightPorPagina) {
+                    slices = [{ dataUrl: canvas.toDataURL('image/png'), alturaMm: alturaTotalMm }];
+                } else {
+                    slices = [];
+                    const altoSlicePx = Math.floor(maxHeightPorPagina * pxPorMm);
+                    let offsetPx = 0;
+                    while (offsetPx < canvas.height) {
+                        const alturaPx = Math.min(altoSlicePx, canvas.height - offsetPx);
+                        const sliceCanvas = document.createElement('canvas');
+                        sliceCanvas.width = canvas.width;
+                        sliceCanvas.height = alturaPx;
+                        sliceCanvas.getContext('2d').drawImage(canvas, 0, offsetPx, canvas.width, alturaPx, 0, 0, canvas.width, alturaPx);
+                        slices.push({ dataUrl: sliceCanvas.toDataURL('image/png'), alturaMm: alturaPx / pxPorMm });
+                        offsetPx += alturaPx;
+                    }
                 }
 
-                pdf.setFont('helvetica', 'bold');
-                pdf.setFontSize(10);
-                pdf.text(etiquetas[key] || key, margin, y);
-                y += 5;
-                pdf.addImage(imageData, 'PNG', margin, y, contentWidth, imageHeight);
-                y += imageHeight + 8;
+                for (let i = 0; i < slices.length; i++) {
+                    const slice = slices[i];
+
+                    if (y + slice.alturaMm + 10 > pageHeight - margin) {
+                        pdf.addPage();
+                        y = margin;
+                    }
+
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.setFontSize(10);
+                    const titulo = (etiquetas[key] || key) + (slices.length > 1 ? ' (' + (i + 1) + '/' + slices.length + ')' : '');
+                    pdf.text(titulo, margin, y);
+                    y += 5;
+                    pdf.addImage(slice.dataUrl, 'PNG', margin, y, contentWidth, slice.alturaMm);
+                    y += slice.alturaMm + 8;
+                }
             }
 
             pdf.save('estadisticas-equipamiento-' + new Date().toISOString().slice(0, 10) + '.pdf');

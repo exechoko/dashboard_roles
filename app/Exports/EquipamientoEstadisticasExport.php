@@ -27,8 +27,8 @@ class EquipamientoEstadisticasExport implements WithMultipleSheets
             'Resumen' => $this->hoja('Resumen', [
                 ['Total de equipos', $resumen['total']],
                 ['Operativos (Nuevo/Usado/Reparado)', $resumen['operativos']],
-                ['No operativos (Baja/No funciona/Perdido/Degradado)', $resumen['no_operativos']],
-                ['Otros estados (Recambio/Temporal/En revisión)', $resumen['otros_estados']],
+                ['No operativos (Baja/No funciona/Perdido/Degradado/Recambio)', $resumen['no_operativos']],
+                ['Otros estados (Temporal/En revisión)', $resumen['otros_estados']],
                 ['En revisión técnica (último movimiento histórico)', $resumen['en_revision_tecnica']],
                 ['Instalados (Móvil/Base)', $resumen['instalados']],
                 ['Asignados (Portátiles TETRA, sin HTT500 ni VX-261)', $resumen['asignados_portatiles']],

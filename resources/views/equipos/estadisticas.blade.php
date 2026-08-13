@@ -698,7 +698,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 + '<td><span class="estado-badge" style="background-color:' + colorPorEstado(eq.estado) + '">' + escapeHtml(eq.estado) + '</span></td>'
                 + '<td>' + escapeHtml(eq.recurso ?? '—') + '</td>'
                 + '<td>' + escapeHtml(eq.dependencia ?? '—') + '</td>'
-                + '<td>' + escapeHtml(eq.fecha_estado_fmt ?? '—') + '</td>'
+                + '<td>' + escapeHtml(eq.fecha_estado_fmt ?? '—')
+                    + (eq.fecha_estado_es_aproximada ? ' <small class="text-muted" title="No hay fecha de estado cargada; se usa la fecha del último movimiento del histórico como aproximación">(aprox.)</small>' : '')
+                    + '</td>'
                 + '</tr>';
         }).join('');
         document.getElementById('modalDetalleEquiposContador').textContent = equipos.length;

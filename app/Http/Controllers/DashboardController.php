@@ -80,12 +80,20 @@ class DashboardController extends Controller
         $operativoIds = Equipo::operativoEstadoIds();
         $noOperativoIds = Equipo::noOperativoEstadoIds();
 
+        // Muchos equipos no tienen "fecha_estado" cargada (es un campo manual del
+        // formulario, no se completa solo). Si falta, se usa la fecha del último
+        // movimiento del histórico como aproximación, en vez de dejarlo vacío.
+        $ultimosHistoricoIdsDetalle = DB::table('historico')
+            ->selectRaw('MAX(id) as id')
+            ->groupBy('equipo_id');
+
         $query = Equipo::query()
             ->select(
                 'equipos.id',
                 'equipos.tei',
                 'equipos.issi',
-                DB::raw("DATE_FORMAT(equipos.fecha_estado, '%d/%m/%Y %H:%i') as fecha_estado_fmt"),
+                DB::raw("DATE_FORMAT(COALESCE(equipos.fecha_estado, ultimo_mov.fecha_asignacion), '%d/%m/%Y %H:%i') as fecha_estado_fmt"),
+                DB::raw('(equipos.fecha_estado IS NULL) as fecha_estado_es_aproximada'),
                 'tipo_terminales.marca as marca',
                 'tipo_terminales.modelo as modelo',
                 'tipo_uso.uso as uso',
@@ -98,7 +106,11 @@ class DashboardController extends Controller
             ->join('estados', 'equipos.estado_id', '=', 'estados.id')
             ->leftJoin('flota_general', 'flota_general.equipo_id', '=', 'equipos.id')
             ->leftJoin('recursos', 'flota_general.recurso_id', '=', 'recursos.id')
-            ->leftJoin('destino', 'flota_general.destino_id', '=', 'destino.id');
+            ->leftJoin('destino', 'flota_general.destino_id', '=', 'destino.id')
+            ->leftJoin('historico as ultimo_mov', function ($join) use ($ultimosHistoricoIdsDetalle) {
+                $join->on('ultimo_mov.equipo_id', '=', 'equipos.id')
+                    ->whereIn('ultimo_mov.id', $ultimosHistoricoIdsDetalle);
+            });
 
         if ($request->filled('estado_in')) {
             $nombres = array_filter(explode(',', $request->string('estado_in')));

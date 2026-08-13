@@ -12,6 +12,7 @@ class Historico extends Model
     protected $casts = [
         'fecha_asignacion' => 'date',
         'fecha_desasignacion' => 'date',
+        'rutas_imagenes' => 'array',
     ];
 
     public function destino(){

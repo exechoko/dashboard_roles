@@ -492,6 +492,7 @@ class DashboardController extends Controller
             'no_operativos_en_terreno' => $totalNoOperativosEnTerreno,
             'pct_operativo' => $totalEquipos > 0 ? round($totalOperativos / $totalEquipos * 100, 1) : 0,
             'pct_no_operativo' => $totalEquipos > 0 ? round($totalNoOperativos / $totalEquipos * 100, 1) : 0,
+            'pct_otros' => $totalEquipos > 0 ? round($totalOtrosEstados / $totalEquipos * 100, 1) : 0,
             'htt500_sin_movimiento' => $htt500SinMovimiento->count(),
         ];
 

@@ -2,178 +2,19 @@
 
 @section('content')
 <section class="section">
-    <div class="section-header d-flex justify-content-between align-items-center flex-wrap">
+    <div class="section-header d-flex justify-content-between align-items-center flex-wrap" style="gap:.5rem;">
         <h1 class="section-title"><i class="fas fa-chart-pie"></i> Equipamientos - Estadísticas</h1>
-        <a href="{{ route('equipos.estadisticas.export') }}" class="btn btn-success">
-            <i class="fas fa-file-excel mr-1"></i> Exportar a Excel
-        </a>
+        <div>
+            <a href="{{ route('equipos.estadisticas.export') }}" class="btn btn-success">
+                <i class="fas fa-file-excel mr-1"></i> Exportar a Excel
+            </a>
+            <button type="button" id="btnExportarPdf" class="btn btn-outline-danger">
+                <i class="fas fa-file-pdf mr-1"></i> Exportar a PDF
+            </button>
+        </div>
     </div>
     <div class="section-body">
 
-        {{-- KPIs generales --}}
-        <div class="row mb-4">
-            <div class="col-6 col-md-3">
-                <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="Total de Equipos" data-equipos-filtro="{}">
-                    <div class="card-icon bg-primary"><i class="fas fa-microchip"></i></div>
-                    <div class="card-wrap"><div class="card-header"><h4>Total Equipos</h4></div>
-                    <div class="card-body">{{ $resumen['total'] }}</div></div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="Operativos (Nuevo/Usado/Reparado)" data-equipos-filtro='{"condicion":"operativo"}'>
-                    <div class="card-icon bg-success"><i class="fas fa-check-circle"></i></div>
-                    <div class="card-wrap"><div class="card-header"><h4>Operativos</h4></div>
-                    <div class="card-body">{{ $resumen['operativos'] }}</div></div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="No Operativos (Baja/No funciona/Perdido/Degradado)" data-equipos-filtro='{"condicion":"no_operativo"}'>
-                    <div class="card-icon bg-danger"><i class="fas fa-times-circle"></i></div>
-                    <div class="card-wrap"><div class="card-header"><h4>No Operativos</h4></div>
-                    <div class="card-body">{{ $resumen['no_operativos'] }}</div></div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="En Revisión Técnica (último movimiento histórico)" data-equipos-filtro='{"ultimo_movimiento":"Revisión"}'>
-                    <div class="card-icon bg-info"><i class="fas fa-tools"></i></div>
-                    <div class="card-wrap"><div class="card-header"><h4>En Revisión Técnica</h4></div>
-                    <div class="card-body">{{ $resumen['en_revision_tecnica'] }}</div></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row mb-4">
-            <div class="col-6 col-md-3">
-                <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="Instalados (Móvil/Base)" data-equipos-filtro='{"condicion":"operativo","situacion":"instalado","excluir_portatil":1}'>
-                    <div class="card-icon bg-success"><i class="fas fa-plug"></i></div>
-                    <div class="card-wrap"><div class="card-header"><h4>Instalados (Móvil/Base)</h4></div>
-                    <div class="card-body">{{ $resumen['instalados'] }}</div></div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="Asignados (Portátiles TETRA, sin HTT500 ni VX-261)" data-equipos-filtro='{"condicion":"operativo","situacion":"instalado","uso":"Portatil","excluir_modelos":"Teltronic:HTT500","excluir_marcas":"Motorola\/Vertex"}'>
-                    <div class="card-icon bg-primary"><i class="fas fa-walkie-talkie"></i></div>
-                    <div class="card-wrap"><div class="card-header"><h4>Asignados (Portátiles TETRA)</h4></div>
-                    <div class="card-body">{{ $resumen['asignados_portatiles'] }}</div></div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="HTT500 Asignados (sin Accesorios)" data-equipos-filtro='{"condicion":"operativo","situacion":"instalado","marca":"Teltronic","modelo":"HTT500"}'>
-                    <div class="card-icon bg-danger"><i class="fas fa-battery-empty"></i></div>
-                    <div class="card-wrap"><div class="card-header"><h4>HTT500 Asignados (sin Accesorios)</h4></div>
-                    <div class="card-body">{{ $resumen['htt500_asignados'] }}</div></div>
-                </div>
-            </div>
-        </div>
-        <div class="row mb-4">
-            <div class="col-6 col-md-3">
-                <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="Desinstalados (MDT400/DT410/SRG3900 en Stock 911)" data-equipos-filtro='{"situacion":"en_stock","modelos":"Teltronic:MDT400,Teltronic:DT410,Sepura:SRG3900"}'>
-                    <div class="card-icon bg-warning"><i class="fas fa-warehouse"></i></div>
-                    <div class="card-wrap"><div class="card-header"><h4>Desinstalados</h4></div>
-                    <div class="card-body">{{ $resumen['desinstalados'] }}</div></div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="En Depósito (Portátiles/Otros en Stock 911)" data-equipos-filtro='{"situacion":"en_stock","excluir_modelos":"Teltronic:MDT400,Teltronic:DT410,Sepura:SRG3900"}'>
-                    <div class="card-icon bg-secondary"><i class="fas fa-box"></i></div>
-                    <div class="card-wrap"><div class="card-header"><h4>En Depósito (Portátiles/Otros)</h4></div>
-                    <div class="card-body">{{ $resumen['en_deposito_otros'] }}</div></div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="VX-261 Asignados (no TETRA)" data-equipos-filtro='{"condicion":"operativo","situacion":"instalado","marca":"Motorola\/Vertex"}'>
-                    <div class="card-icon bg-dark"><i class="fas fa-satellite-dish"></i></div>
-                    <div class="card-wrap"><div class="card-header"><h4>VX-261 Asignados (no TETRA)</h4></div>
-                    <div class="card-body">{{ $resumen['vertex_asignados'] }}</div></div>
-                </div>
-            </div>
-        </div>
-        <div class="row mb-4">
-            <div class="col-12">
-                <small class="text-muted">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    "Asignados (Portátiles TETRA)" excluye dos casos que se muestran aparte: el HTT500 (aunque su
-                    estado diga Usado/Nuevo/Reparado, ya no hay baterías ni antenas para equiparlos) y el VX-261 de
-                    Motorola/Vertex (no es un equipo TETRA, es otra red).
-                </small>
-            </div>
-        </div>
-        <div class="row mb-4">
-            <div class="col-6 col-md-3">
-                <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="HTT-500 sin Movimiento en los Últimos 3 Años" data-equipos-filtro='{"marca":"Teltronic","modelo":"HTT500","estado_in":"Usado,Nuevo,Reparado,Degradado - Sin Accesorios","sin_movimiento_3y":1}'>
-                    <div class="card-icon bg-danger"><i class="fas fa-history"></i></div>
-                    <div class="card-wrap"><div class="card-header"><h4>HTT-500 sin Movimiento 3+ Años</h4></div>
-                    <div class="card-body">{{ $resumen['htt500_sin_movimiento'] }}</div></div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="No Operativos en Terreno (asignados, fuera de Stock 911)" data-equipos-filtro='{"condicion":"no_operativo","situacion":"instalado"}'>
-                    <div class="card-icon bg-danger"><i class="fas fa-map-marker-alt"></i></div>
-                    <div class="card-wrap"><div class="card-header"><h4>No Operativos en Terreno</h4></div>
-                    <div class="card-body">{{ $resumen['no_operativos_en_terreno'] }}</div></div>
-                </div>
-            </div>
-        </div>
-        <div class="row mb-4">
-            <div class="col-12">
-                <small class="text-muted">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    "Instalados" y "Asignados" solo cuentan equipos operativos (Nuevo/Usado/Reparado). Los equipos no
-                    operativos (Baja/No funciona/Perdido/Degradado) que todavía figuran con un recurso o dependencia
-                    asignada —no en Stock 911— se muestran aparte en "No Operativos en Terreno": son los que habría
-                    que retirar/reemplazar en el lugar.
-                </small>
-            </div>
-        </div>
-        <div class="row mb-4">
-            <div class="col-12">
-                <small class="text-muted">
-                    <i class="fas fa-info-circle mr-1"></i>
-                    Solo se considera "instalado" o "desinstalado" a lo que se monta de forma fija en un móvil o base
-                    (uso Móvil/Base, p. ej. MDT400, DT410, SRG3900). Los portátiles no se "instalan": se "asignan" a
-                    una persona, o quedan "en depósito" si no tienen asignación.
-                </small>
-            </div>
-        </div>
-
-        {{-- Barra de progreso operativo / no operativo --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <h6>Condición general de la flota:
-                            <strong class="text-success">{{ $resumen['pct_operativo'] }}% operativo</strong> /
-                            <strong class="text-danger">{{ $resumen['pct_no_operativo'] }}% no operativo</strong>
-                        </h6>
-                        <div class="progress" style="height: 25px;">
-                            <div class="progress-bar bg-success" style="width: {{ $resumen['pct_operativo'] }}%">
-                                @if($resumen['pct_operativo'] >= 12)
-                                    {{ $resumen['pct_operativo'] }}%
-                                @endif
-                            </div>
-                            <div class="progress-bar bg-danger" style="width: {{ $resumen['pct_no_operativo'] }}%">
-                                @if($resumen['pct_no_operativo'] >= 12)
-                                    {{ $resumen['pct_no_operativo'] }}%
-                                @endif
-                            </div>
-                            @php $pctOtros = $resumen['total'] > 0 ? round($resumen['otros_estados'] / $resumen['total'] * 100, 1) : 0; @endphp
-                            <div class="progress-bar bg-secondary" style="width: {{ $pctOtros }}%">
-                                @if($pctOtros >= 12)
-                                    {{ $pctOtros }}%
-                                @endif
-                            </div>
-                        </div>
-                        <div class="progress-legend mt-2">
-                            <span><i class="fas fa-square text-success"></i> {{ $resumen['operativos'] }} operativos (Nuevo/Usado/Reparado)</span>
-                            <span><i class="fas fa-square text-danger"></i> {{ $resumen['no_operativos'] }} no operativos (Baja/No funciona/Perdido/Degradado)</span>
-                            <span><i class="fas fa-square text-secondary"></i> {{ $resumen['otros_estados'] }} otros estados (Recambio/Temporal/En revisión)</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Reconciliación completa por tipo de uso: siempre suma al total --}}
         @php
             $usoFiltroBase = [
                 'Base' => ['uso' => 'Base'],
@@ -182,7 +23,177 @@
                 'HTT500 (sin accesorios)' => ['marca' => 'Teltronic', 'modelo' => 'HTT500'],
                 'VX-261 (no TETRA)' => ['marca' => 'Motorola/Vertex'],
             ];
+
+            $kpis = [
+                ['titulo' => 'Total Equipos', 'valor' => $resumen['total'], 'icono' => 'fa-microchip', 'color' => 'bg-primary',
+                    'filtro' => [], 'info' => 'Todos los equipos de la base, sin importar estado ni asignación.'],
+                ['titulo' => 'Operativos', 'valor' => $resumen['operativos'], 'icono' => 'fa-check-circle', 'color' => 'bg-success',
+                    'filtro' => ['condicion' => 'operativo'], 'info' => 'Equipos en estado Nuevo, Usado o Reparado, sin importar si están instalados, asignados o en stock.'],
+                ['titulo' => 'No Operativos', 'valor' => $resumen['no_operativos'], 'icono' => 'fa-times-circle', 'color' => 'bg-danger',
+                    'filtro' => ['condicion' => 'no_operativo'], 'info' => 'Equipos en estado Baja, No funciona, Perdido o Degradado - Sin Accesorios.'],
+                ['titulo' => 'En Revisión Técnica', 'valor' => $resumen['en_revision_tecnica'], 'icono' => 'fa-tools', 'color' => 'bg-info',
+                    'filtro' => ['ultimo_movimiento' => 'Revisión'], 'info' => 'Equipos cuyo último movimiento histórico registrado es "Revisión" (soporte/sección técnica), sin importar el estado actual.'],
+
+                ['titulo' => 'Instalados (Móvil/Base)', 'valor' => $resumen['instalados'], 'icono' => 'fa-plug', 'color' => 'bg-success',
+                    'filtro' => ['condicion' => 'operativo', 'situacion' => 'instalado', 'excluir_portatil' => 1],
+                    'info' => 'Equipos operativos con uso Móvil o Base (MDT400, DT410, SRG3900, etc.), asignados a un recurso real fuera de Stock 911.'],
+                ['titulo' => 'Asignados (Portátiles TETRA)', 'valor' => $resumen['asignados_portatiles'], 'icono' => 'fa-walkie-talkie', 'color' => 'bg-primary',
+                    'filtro' => ['condicion' => 'operativo', 'situacion' => 'instalado', 'uso' => 'Portatil', 'excluir_modelos' => 'Teltronic:HTT500', 'excluir_marcas' => 'Motorola/Vertex'],
+                    'info' => 'Portátiles TETRA operativos (excluye HTT500 y VX-261), asignados a una persona/recurso real fuera de Stock 911.'],
+                ['titulo' => 'HTT500 Asignados (sin Accesorios)', 'valor' => $resumen['htt500_asignados'], 'icono' => 'fa-battery-empty', 'color' => 'bg-danger',
+                    'filtro' => ['condicion' => 'operativo', 'situacion' => 'instalado', 'marca' => 'Teltronic', 'modelo' => 'HTT500'],
+                    'info' => 'HTT500 en estado Nuevo/Usado/Reparado, asignados fuera de Stock 911. Aunque el estado diga que están bien, no hay baterías ni antenas disponibles para equiparlos.'],
+                ['titulo' => 'VX-261 Asignados (no TETRA)', 'valor' => $resumen['vertex_asignados'], 'icono' => 'fa-satellite-dish', 'color' => 'bg-dark',
+                    'filtro' => ['condicion' => 'operativo', 'situacion' => 'instalado', 'marca' => 'Motorola/Vertex'],
+                    'info' => 'Motorola/Vertex VX-261 operativos, asignados fuera de Stock 911. No es un equipo TETRA, es otra red.'],
+
+                ['titulo' => 'Desinstalados', 'valor' => $resumen['desinstalados'], 'icono' => 'fa-warehouse', 'color' => 'bg-warning',
+                    'filtro' => ['situacion' => 'en_stock', 'modelos' => 'Teltronic:MDT400,Teltronic:DT410,Sepura:SRG3900'],
+                    'info' => 'MDT400, DT410 o SRG3900 (los que se instalan de forma fija en un móvil/base) que están actualmente en Stock 911.'],
+                ['titulo' => 'En Depósito (Portátiles/Otros)', 'valor' => $resumen['en_deposito_otros'], 'icono' => 'fa-box', 'color' => 'bg-secondary',
+                    'filtro' => ['situacion' => 'en_stock', 'excluir_modelos' => 'Teltronic:MDT400,Teltronic:DT410,Sepura:SRG3900'],
+                    'info' => 'El resto de los modelos (portátiles, bases nuevas, etc.) que están en Stock 911. No se los considera "desinstalados" porque nunca se "instalan".'],
+                ['titulo' => 'No Operativos en Terreno', 'valor' => $resumen['no_operativos_en_terreno'], 'icono' => 'fa-map-marker-alt', 'color' => 'bg-danger',
+                    'filtro' => ['condicion' => 'no_operativo', 'situacion' => 'instalado'],
+                    'info' => 'Equipos no operativos (rotos, de baja, perdidos o degradados) que todavía figuran asignados a un recurso real, fuera de Stock 911 — habría que retirarlos del lugar.'],
+                ['titulo' => 'HTT-500 sin Movimiento 3+ Años', 'valor' => $resumen['htt500_sin_movimiento'], 'icono' => 'fa-history', 'color' => 'bg-danger',
+                    'filtro' => ['marca' => 'Teltronic', 'modelo' => 'HTT500', 'estado_in' => 'Usado,Nuevo,Reparado,Degradado - Sin Accesorios', 'sin_movimiento_3y' => 1],
+                    'info' => 'HTT500 en estados "vivos" (Usado/Nuevo/Reparado/Degradado) cuyo último movimiento histórico es de hace más de 3 años, o no tiene histórico registrado.'],
+            ];
         @endphp
+
+        {{-- KPIs generales: grilla de 4 columnas x 3 filas, sin huecos --}}
+        <div data-dashboard-section="kpis">
+            <div class="row mb-2">
+                @foreach($kpis as $kpi)
+                    <div class="col-6 col-md-3 mb-3">
+                        <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="{{ $kpi['titulo'] }}" data-equipos-filtro='{{ json_encode($kpi['filtro']) }}'>
+                            <div class="card-icon {{ $kpi['color'] }}"><i class="fas {{ $kpi['icono'] }}"></i></div>
+                            <div class="card-wrap">
+                                <div class="card-header">
+                                    <h4>{{ $kpi['titulo'] }} <i class="fas fa-info-circle info-icon" tabindex="0" data-info-texto="{{ $kpi['info'] }}"></i></h4>
+                                </div>
+                                <div class="card-body">{{ $kpi['valor'] }}</div>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <small class="text-muted d-block mb-1">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    "Asignados (Portátiles TETRA)" excluye el HTT500 (sin accesorios) y el VX-261 (no TETRA), que se muestran aparte.
+                </small>
+                <small class="text-muted d-block mb-1">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    "Instalados"/"Asignados" solo cuentan equipos operativos. Los no operativos que siguen con un recurso asignado (fuera de Stock 911) están en "No Operativos en Terreno".
+                </small>
+                <small class="text-muted d-block">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Solo se considera "instalado"/"desinstalado" a lo que se monta de forma fija en un móvil o base. Los portátiles se "asignan" a una persona o quedan "en depósito".
+                </small>
+            </div>
+        </div>
+
+        {{-- Barra de progreso operativo / no operativo / otros --}}
+        <div class="row mb-4" data-dashboard-section="condicion">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="mb-2">Condición general de la flota:
+                            <strong class="text-success">{{ $resumen['pct_operativo'] }}% operativo</strong> /
+                            <strong class="text-danger">{{ $resumen['pct_no_operativo'] }}% no operativo</strong> /
+                            <strong class="text-secondary">{{ $resumen['pct_otros'] }}% otros estados</strong>
+                        </h6>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar bg-success" style="width: {{ $resumen['pct_operativo'] }}%">
+                                @if($resumen['pct_operativo'] >= 8)
+                                    {{ $resumen['pct_operativo'] }}%
+                                @endif
+                            </div>
+                            <div class="progress-bar bg-danger" style="width: {{ $resumen['pct_no_operativo'] }}%">
+                                @if($resumen['pct_no_operativo'] >= 8)
+                                    {{ $resumen['pct_no_operativo'] }}%
+                                @endif
+                            </div>
+                            <div class="progress-bar bg-secondary" style="width: {{ $resumen['pct_otros'] }}%">
+                                @if($resumen['pct_otros'] >= 8)
+                                    {{ $resumen['pct_otros'] }}%
+                                @endif
+                            </div>
+                        </div>
+                        <div class="progress-legend mt-2">
+                            <span><i class="fas fa-square text-success"></i> {{ $resumen['operativos'] }} operativos ({{ $resumen['pct_operativo'] }}%) — Nuevo/Usado/Reparado</span>
+                            <span><i class="fas fa-square text-danger"></i> {{ $resumen['no_operativos'] }} no operativos ({{ $resumen['pct_no_operativo'] }}%) — Baja/No funciona/Perdido/Degradado</span>
+                            <span><i class="fas fa-square text-secondary"></i> {{ $resumen['otros_estados'] }} otros estados ({{ $resumen['pct_otros'] }}%) — Recambio/Temporal/En revisión</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Gráficos: vista rápida por tipo de uso, por estado, por marca/modelo y operativo vs no operativo --}}
+        <div class="row">
+            <div class="col-12 col-lg-6 mb-4">
+                <div class="card chart-card h-100" data-dashboard-section="chart-instalados-uso">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="chart-title mb-0"><i class="fas fa-broadcast-tower mr-2 text-success"></i>Instalados por Tipo de Uso</h4>
+                        <i class="fas fa-info-circle info-icon-static" data-toggle="tooltip" title="Equipos operativos con asignación activa fuera de Stock 911, agrupados por tipo de uso. Hacé clic en un sector para ver el detalle."></i>
+                    </div>
+                    <div class="card-body">
+                        <div style="position:relative; height:280px;">
+                            <canvas id="chartInstaladosUso"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-lg-6 mb-4">
+                <div class="card chart-card h-100" data-dashboard-section="chart-por-estado">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="chart-title mb-0"><i class="fas fa-list mr-2 text-info"></i>Por Estado</h4>
+                        <i class="fas fa-info-circle info-icon-static" data-toggle="tooltip" title="Todos los equipos agrupados por su estado actual. Hacé clic en un sector para ver el detalle."></i>
+                    </div>
+                    <div class="card-body">
+                        <div style="position:relative; height:280px;">
+                            <canvas id="chartPorEstado"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12 col-lg-6 mb-4">
+                <div class="card chart-card h-100" data-dashboard-section="chart-marca-uso">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="chart-title mb-0"><i class="fas fa-truck-pickup mr-2 text-primary"></i>Marca / Modelo por Tipo de Uso</h4>
+                        <i class="fas fa-info-circle info-icon-static" data-toggle="tooltip" title="Cantidad total de cada marca/modelo, agrupada por tipo de uso (todos los estados, instalados o no)."></i>
+                    </div>
+                    <div class="card-body">
+                        <div style="position:relative; height:320px;">
+                            <canvas id="chartMarcaUso"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-lg-6 mb-4">
+                <div class="card chart-card h-100" data-dashboard-section="chart-operativos">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h4 class="chart-title mb-0"><i class="fas fa-balance-scale-right mr-2 text-danger"></i>Operativos vs No Operativos por Marca / Modelo</h4>
+                        <i class="fas fa-info-circle info-icon-static" data-toggle="tooltip" title="De cada marca/modelo, cuántos están operativos (Nuevo/Usado/Reparado) y cuántos no (Baja/No funciona/Perdido/Degradado)."></i>
+                    </div>
+                    <div class="card-body">
+                        <div style="position:relative; height:320px;">
+                            <canvas id="chartOperativos"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Reconciliación completa por tipo de uso: siempre suma al total --}}
         <div class="row">
             <div class="col-12">
                 <div class="card">
@@ -244,56 +255,6 @@
                             </table>
                         </div>
                         <small class="text-muted">Cada fila suma exactamente el total de esa categoría (Instalados + No Operativo + Otros + En Stock = Total): no hay equipos "perdidos" entre categorías.</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            {{-- Instalados por tipo de uso --}}
-            <div class="col-12 col-lg-5">
-                <div class="card">
-                    <div class="card-header"><h4><i class="fas fa-broadcast-tower"></i> Instalados por Tipo de Uso</h4></div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead><tr class="bg-light"><th>Uso</th><th class="text-center">Cantidad</th></tr></thead>
-                                <tbody>
-                                @forelse($porTipoUso as $fila)
-                                    @php $baseUso = $usoFiltroBase[$fila->uso] ?? []; @endphp
-                                    <tr class="equipos-clicable" data-equipos-titulo="{{ $fila->uso }} — Instalados (operativo, en terreno)" data-equipos-filtro='{{ json_encode($baseUso + ["condicion" => "operativo", "situacion" => "instalado"]) }}'>
-                                        <td>{{ $fila->uso }}</td>
-                                        <td class="text-center"><span class="badge badge-primary">{{ $fila->cantidad }}</span></td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="2" class="text-center text-muted">Sin datos</td></tr>
-                                @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                        <small class="text-muted">Solo equipos operativos con asignación activa fuera de Stock 911 (móviles/patrulleros, bases y portátiles).</small>
-                    </div>
-                </div>
-            </div>
-
-            {{-- Por estado --}}
-            <div class="col-12 col-lg-7">
-                <div class="card">
-                    <div class="card-header"><h4><i class="fas fa-list"></i> Por Estado</h4></div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead><tr class="bg-light"><th>Estado</th><th class="text-center">Cantidad</th></tr></thead>
-                                <tbody>
-                                @foreach($porEstado as $fila)
-                                    <tr class="equipos-clicable" data-equipos-titulo="Estado: {{ $fila->estado }}" data-equipos-filtro='{{ json_encode(["estado_in" => $fila->estado]) }}'>
-                                        <td>{{ $fila->estado }}</td>
-                                        <td class="text-center"><span class="badge badge-secondary">{{ $fila->cantidad }}</span></td>
-                                    </tr>
-                                @endforeach
-                                </tbody>
-                            </table>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -441,7 +402,7 @@
                                 <tbody>
                                 @forelse($htt500SinMovimiento as $eq)
                                     <tr>
-                                        <td><span class="tei-badge">{{ $eq->tei }}</span></td>
+                                        <td><a class="tei-badge" href="{{ route('verHistoricoDesdeEquipo', $eq->id) }}" target="_blank" rel="noopener" title="Ver histórico">{{ $eq->tei }}</a></td>
                                         <td><small class="text-muted">{{ $eq->issi ?? '—' }}</small></td>
                                         <td><span class="badge badge-danger">{{ $eq->estado }}</span></td>
                                         <td>{{ $eq->recurso ?? '—' }} <small class="text-muted">{{ $eq->dependencia ? '('.$eq->dependencia.')' : '' }}</small></td>
@@ -463,7 +424,7 @@
     </div>
 </section>
 
-{{-- Modal genérico de detalle: se reutiliza para cualquier contador/fila clicable --}}
+{{-- Modal genérico de detalle: se reutiliza para cualquier contador/fila/gráfico clicable --}}
 <div class="modal fade" id="modalDetalleEquipos" tabindex="-1" role="dialog" aria-labelledby="modalDetalleEquiposTitulo" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
         <div class="modal-content">
@@ -530,12 +491,44 @@
         color: var(--text-primary) !important;
         border-color: var(--border-color) !important;
     }
+
+    /* Tarjetas KPI: el icono flotado (.card-icon) necesita que el card lo "contenga" */
+    .card-statistic-1.equipos-clicable::after{content:"";display:table;clear:both}
+    .info-icon, .info-icon-static{
+        font-size:.8rem;
+        color:rgba(0,0,0,.35);
+        cursor:pointer;
+        margin-left:4px;
+        vertical-align:middle;
+    }
+    .info-icon:hover, .info-icon-static:hover{color:#007bff}
+    [data-theme="dark"] .info-icon, [data-theme="dark"] .info-icon-static{color:rgba(255,255,255,.45)}
+    [data-theme="dark"] .info-icon:hover, [data-theme="dark"] .info-icon-static:hover{color:#63b3ed}
+
+    .popover{max-width:320px}
+    .popover-body{max-height:260px;overflow-y:auto}
+
+    /* Tarjetas de gráficos: mismo estilo visual que chart-card del resto del sistema */
+    .chart-card{border-radius:12px;box-shadow:0 4px 6px rgba(0,0,0,.05);border:1px solid rgba(0,0,0,.1);overflow:hidden}
+    .chart-card .card-header{border-bottom:none;background:transparent}
+    .chart-card .chart-title{color:var(--text-primary) !important;font-weight:600;font-size:1rem;margin:0}
+    [data-theme="dark"] .chart-card{background-color:#1e293b !important;border-color:rgba(255,255,255,.1) !important;box-shadow:0 4px 6px rgba(0,0,0,.3)}
+    [data-theme="dark"] .chart-card .chart-title{color:#e2e8f0 !important}
 </style>
 @endpush
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // ── Datos para los gráficos (ya calculados por el backend) ─────────────
+    const porTipoUsoData = @json($porTipoUso);
+    const porEstadoData = @json($porEstado);
+    const porTipoEquipoData = @json($porTipoEquipo);
+    const usoFiltroBase = @json($usoFiltroBase);
+    const detalleUrl = "{{ route('equipos.estadisticas.detalle') }}";
+
+    // ── Modal genérico de detalle ───────────────────────────────────────────
     let equiposActuales = [];
 
     function escapeHtml(valor) {
@@ -543,11 +536,15 @@ document.addEventListener('DOMContentLoaded', function () {
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
+    function urlHistorico(equipoId) {
+        return "{{ route('verHistoricoDesdeEquipo', ['id' => '__ID__']) }}".replace('__ID__', equipoId);
+    }
+
     function renderTabla(equipos) {
         const tbody = document.querySelector('#modalDetalleEquiposTabla tbody');
         tbody.innerHTML = equipos.map(function (eq) {
             return '<tr>'
-                + '<td>' + escapeHtml(eq.tei) + '</td>'
+                + '<td><a href="' + urlHistorico(eq.id) + '" target="_blank" rel="noopener" title="Ver histórico">' + escapeHtml(eq.tei) + '</a></td>'
                 + '<td><small class="text-muted">' + escapeHtml(eq.issi ?? '—') + '</small></td>'
                 + '<td>' + escapeHtml(eq.marca) + ' ' + escapeHtml(eq.modelo) + '</td>'
                 + '<td><span class="badge badge-secondary">' + escapeHtml(eq.estado) + '</span></td>'
@@ -586,35 +583,358 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('modalDetalleEquiposBuscar').addEventListener('input', aplicarFiltros);
     document.getElementById('modalDetalleEquiposFiltroEstado').addEventListener('change', aplicarFiltros);
 
+    function abrirModalConFiltro(titulo, filtro) {
+        document.getElementById('modalDetalleEquiposTitulo').textContent = titulo;
+        document.getElementById('modalDetalleEquiposBuscar').value = '';
+        equiposActuales = [];
+        renderTabla([]);
+        document.getElementById('modalDetalleEquiposLoading').style.display = 'block';
+        $('#modalDetalleEquipos').modal('show');
+
+        const params = new URLSearchParams(filtro).toString();
+        return fetch(detalleUrl + (params ? '?' + params : ''))
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                equiposActuales = Array.isArray(data) ? data : [];
+                poblarFiltroEstado(equiposActuales);
+                renderTabla(equiposActuales);
+                return equiposActuales;
+            })
+            .catch(function () {
+                equiposActuales = [];
+                renderTabla([]);
+                return [];
+            })
+            .finally(function () {
+                document.getElementById('modalDetalleEquiposLoading').style.display = 'none';
+            });
+    }
+
     document.querySelectorAll('[data-equipos-filtro]').forEach(function (el) {
         el.addEventListener('click', function () {
             let filtro = {};
             try { filtro = JSON.parse(el.getAttribute('data-equipos-filtro') || '{}'); } catch (e) { filtro = {}; }
             const titulo = el.getAttribute('data-equipos-titulo') || 'Detalle de equipos';
+            abrirModalConFiltro(titulo, filtro);
+        });
+    });
 
-            document.getElementById('modalDetalleEquiposTitulo').textContent = titulo;
-            document.getElementById('modalDetalleEquiposBuscar').value = '';
-            equiposActuales = [];
-            renderTabla([]);
-            document.getElementById('modalDetalleEquiposLoading').style.display = 'block';
-            $('#modalDetalleEquipos').modal('show');
+    // ── Icono de info por tarjeta: explicación + desglose por marca/modelo ──
+    document.querySelectorAll('.info-icon').forEach(function (icon) {
+        icon.addEventListener('click', function (e) {
+            e.stopPropagation();
+            e.preventDefault();
+
+            const yaAbierto = $(icon).data('popover-abierto');
+            $('.info-icon').each(function () {
+                $(this).popover('dispose');
+                $(this).data('popover-abierto', false);
+            });
+            if (yaAbierto) {
+                return;
+            }
+
+            const parentCard = icon.closest('[data-equipos-filtro]');
+            let filtro = {};
+            try { filtro = parentCard ? JSON.parse(parentCard.getAttribute('data-equipos-filtro') || '{}') : {}; } catch (err) { filtro = {}; }
+            const texto = icon.getAttribute('data-info-texto') || '';
+
+            $(icon).popover({
+                html: true,
+                trigger: 'manual',
+                placement: 'bottom',
+                title: 'Qué se cuenta acá',
+                content: '<div>' + escapeHtml(texto) + '</div><div class="text-center py-2"><i class="fas fa-spinner fa-spin text-muted"></i></div>',
+                container: 'body'
+            }).popover('show');
+            $(icon).data('popover-abierto', true);
 
             const params = new URLSearchParams(filtro).toString();
-            fetch("{{ route('equipos.estadisticas.detalle') }}" + (params ? '?' + params : ''))
+            fetch(detalleUrl + (params ? '?' + params : ''))
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
-                    equiposActuales = Array.isArray(data) ? data : [];
-                    poblarFiltroEstado(equiposActuales);
-                    renderTabla(equiposActuales);
+                    const conteo = {};
+                    (Array.isArray(data) ? data : []).forEach(function (eq) {
+                        const clave = ((eq.marca || '') + ' ' + (eq.modelo || '')).trim() || 'Sin modelo';
+                        conteo[clave] = (conteo[clave] || 0) + 1;
+                    });
+                    const claves = Object.keys(conteo).sort();
+                    const filas = claves.length
+                        ? claves.map(function (k) {
+                            return '<div class="d-flex justify-content-between" style="gap:1rem;"><span>' + escapeHtml(k) + '</span><strong>' + conteo[k] + '</strong></div>';
+                        }).join('')
+                        : '<div class="text-muted">Sin equipos</div>';
+                    const total = Array.isArray(data) ? data.length : 0;
+
+                    const contenido = '<div class="mb-2">' + escapeHtml(texto) + '</div>'
+                        + '<hr class="my-2">'
+                        + '<div class="small text-muted mb-1">Por marca / modelo (' + total + ' en total):</div>'
+                        + filas;
+
+                    $(icon).popover('dispose').popover({
+                        html: true, trigger: 'manual', placement: 'bottom',
+                        title: 'Qué se cuenta acá', content: contenido, container: 'body'
+                    }).popover('show');
+                    $(icon).data('popover-abierto', true);
                 })
-                .catch(function () {
-                    equiposActuales = [];
-                    renderTabla([]);
-                })
-                .finally(function () {
-                    document.getElementById('modalDetalleEquiposLoading').style.display = 'none';
-                });
+                .catch(function () {});
         });
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!e.target.classList.contains('info-icon')) {
+            $('.info-icon').each(function () {
+                $(this).popover('dispose');
+                $(this).data('popover-abierto', false);
+            });
+        }
+    });
+
+    $('[data-toggle="tooltip"]').tooltip({ trigger: 'hover', delay: { show: 300, hide: 100 } });
+
+    // ── Gráficos ─────────────────────────────────────────────────────────
+    const paletteQual = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#a855f7', '#14b8a6', '#f43f5e', '#6366f1', '#84cc16', '#eab308'];
+
+    function detectTheme() {
+        return document.documentElement.getAttribute('data-theme') === 'dark';
+    }
+
+    let chartInstances = {};
+
+    function createCharts() {
+        Object.values(chartInstances).forEach(function (chart) { if (chart) chart.destroy(); });
+        chartInstances = {};
+
+        const isDark = detectTheme();
+        const textColor = isDark ? '#e2e8f0' : '#111827';
+        const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(17,24,39,0.12)';
+        Chart.defaults.color = textColor;
+        Chart.defaults.borderColor = gridColor;
+
+        const tooltipStyle = {
+            backgroundColor: isDark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
+            titleColor: isDark ? '#f1f5f9' : '#1e293b',
+            bodyColor: isDark ? '#cbd5e1' : '#374151',
+            borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
+            borderWidth: 1,
+            padding: 10,
+            cornerRadius: 8
+        };
+
+        // 1) Instalados por Tipo de Uso (doughnut, clicable)
+        const canvasInstaladosUso = document.getElementById('chartInstaladosUso');
+        if (canvasInstaladosUso) {
+            chartInstances.instaladosUso = new Chart(canvasInstaladosUso.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: porTipoUsoData.map(function (f) { return f.uso; }),
+                    datasets: [{
+                        data: porTipoUsoData.map(function (f) { return f.cantidad; }),
+                        backgroundColor: paletteQual,
+                        borderWidth: isDark ? 0 : 2,
+                        borderColor: isDark ? 'transparent' : '#ffffff',
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    onClick: function (evt, elements) {
+                        if (!elements.length) return;
+                        const uso = porTipoUsoData[elements[0].index].uso;
+                        const base = usoFiltroBase[uso] || {};
+                        abrirModalConFiltro(uso + ' — Instalados', Object.assign({}, base, { condicion: 'operativo', situacion: 'instalado' }));
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: textColor, padding: 10, font: { size: 11 }, usePointStyle: true, pointStyle: 'circle' } },
+                        tooltip: tooltipStyle
+                    }
+                }
+            });
+        }
+
+        // 2) Por Estado (doughnut, clicable)
+        const canvasPorEstado = document.getElementById('chartPorEstado');
+        if (canvasPorEstado) {
+            chartInstances.porEstado = new Chart(canvasPorEstado.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: porEstadoData.map(function (f) { return f.estado; }),
+                    datasets: [{
+                        data: porEstadoData.map(function (f) { return f.cantidad; }),
+                        backgroundColor: paletteQual,
+                        borderWidth: isDark ? 0 : 2,
+                        borderColor: isDark ? 'transparent' : '#ffffff',
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    onClick: function (evt, elements) {
+                        if (!elements.length) return;
+                        const estado = porEstadoData[elements[0].index].estado;
+                        abrirModalConFiltro('Estado: ' + estado, { estado_in: estado });
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: textColor, padding: 10, font: { size: 11 }, usePointStyle: true, pointStyle: 'circle' } },
+                        tooltip: tooltipStyle
+                    }
+                }
+            });
+        }
+
+        // 3) Marca / Modelo por Tipo de Uso (barras apiladas)
+        const canvasMarcaUso = document.getElementById('chartMarcaUso');
+        if (canvasMarcaUso) {
+            const usos = [...new Set(porTipoEquipoData.map(function (f) { return f.uso || 'Sin uso'; }))];
+            const modelos = [...new Set(porTipoEquipoData.map(function (f) { return f.marca + ' ' + f.modelo; }))];
+            const datasets = modelos.map(function (modelo, idx) {
+                return {
+                    label: modelo,
+                    data: usos.map(function (uso) {
+                        const fila = porTipoEquipoData.find(function (f) {
+                            return (f.marca + ' ' + f.modelo) === modelo && (f.uso || 'Sin uso') === uso;
+                        });
+                        return fila ? fila.total : 0;
+                    }),
+                    backgroundColor: paletteQual[idx % paletteQual.length]
+                };
+            });
+            chartInstances.marcaUso = new Chart(canvasMarcaUso.getContext('2d'), {
+                type: 'bar',
+                data: { labels: usos, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, beginAtZero: true, grid: { color: gridColor } }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: textColor, padding: 8, font: { size: 10 }, usePointStyle: true, pointStyle: 'circle' } },
+                        tooltip: tooltipStyle
+                    }
+                }
+            });
+        }
+
+        // 4) Operativos vs No Operativos por Marca / Modelo (barras horizontales apiladas)
+        const canvasOperativos = document.getElementById('chartOperativos');
+        if (canvasOperativos) {
+            chartInstances.operativos = new Chart(canvasOperativos.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: porTipoEquipoData.map(function (f) { return f.marca + ' ' + f.modelo; }),
+                    datasets: [
+                        { label: 'Operativos', data: porTipoEquipoData.map(function (f) { return f.operativos; }), backgroundColor: '#10b981' },
+                        { label: 'No Operativos', data: porTipoEquipoData.map(function (f) { return f.no_operativos; }), backgroundColor: '#ef4444' }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { stacked: true, beginAtZero: true, grid: { color: gridColor } },
+                        y: { stacked: true, grid: { display: false } }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: textColor, padding: 8, font: { size: 11 }, usePointStyle: true, pointStyle: 'circle' } },
+                        tooltip: tooltipStyle
+                    }
+                }
+            });
+        }
+    }
+
+    createCharts();
+
+    const themeObserver = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
+                createCharts();
+            }
+        });
+    });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+    // ── Exportar a PDF (título + KPIs + condición general + gráficos) ──────
+    document.getElementById('btnExportarPdf').addEventListener('click', async function () {
+        if (!window.jspdf || typeof html2canvas === 'undefined') {
+            alert('No se encontraron las librerías necesarias para generar el PDF.');
+            return;
+        }
+
+        const btn = this;
+        const original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm mr-1"></span>Generando...';
+
+        try {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin = 12;
+            const contentWidth = pageWidth - margin * 2;
+            let y = 14;
+
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(15);
+            pdf.text('Equipamientos - Estadísticas', margin, y);
+            y += 7;
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(9);
+            pdf.text('Generado: ' + new Date().toLocaleString('es-AR'), margin, y);
+            y += 5;
+            pdf.text(
+                'Total: {{ $resumen["total"] }} equipos | Operativo: {{ $resumen["pct_operativo"] }}% | No operativo: {{ $resumen["pct_no_operativo"] }}% | Otros: {{ $resumen["pct_otros"] }}%',
+                margin, y
+            );
+            y += 8;
+
+            const secciones = ['kpis', 'condicion', 'chart-instalados-uso', 'chart-por-estado', 'chart-marca-uso', 'chart-operativos'];
+            const etiquetas = {
+                'kpis': 'Resumen general',
+                'condicion': 'Condición general de la flota',
+                'chart-instalados-uso': 'Instalados por Tipo de Uso',
+                'chart-por-estado': 'Por Estado',
+                'chart-marca-uso': 'Marca / Modelo por Tipo de Uso',
+                'chart-operativos': 'Operativos vs No Operativos por Marca / Modelo'
+            };
+
+            for (const key of secciones) {
+                const el = document.querySelector('[data-dashboard-section="' + key + '"]');
+                if (!el) continue;
+
+                const canvas = await html2canvas(el, { backgroundColor: '#ffffff', scale: 2 });
+                const imageData = canvas.toDataURL('image/png');
+                const imageHeight = Math.min((canvas.height * contentWidth) / canvas.width, 130);
+
+                if (y + imageHeight + 10 > pageHeight - margin) {
+                    pdf.addPage();
+                    y = margin;
+                }
+
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(10);
+                pdf.text(etiquetas[key] || key, margin, y);
+                y += 5;
+                pdf.addImage(imageData, 'PNG', margin, y, contentWidth, imageHeight);
+                y += imageHeight + 8;
+            }
+
+            pdf.save('estadisticas-equipamiento-' + new Date().toISOString().slice(0, 10) + '.pdf');
+        } catch (error) {
+            console.error(error);
+            alert('No se pudo generar el PDF. Revisá la consola.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = original;
+        }
     });
 });
 </script>

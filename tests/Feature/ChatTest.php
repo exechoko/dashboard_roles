@@ -148,7 +148,10 @@ class ChatTest extends TestCase
             $primera->json('conversacion.id'),
             $segunda->json('conversacion.id')
         );
-        $this->assertSame(1, ChatConversacion::query()->where('tipo', 'privada')->count());
+        $this->assertSame(1, ChatConversacion::query()
+            ->where('tipo', 'privada')
+            ->where('creado_por', $user->id)
+            ->count());
     }
 
     public function test_un_mensaje_sin_cuerpo_y_sin_adjunto_no_es_valido(): void

@@ -2,34 +2,38 @@
 
 @section('content')
 <div class="section">
-    <div class="section-header">
-        <h1>Chat</h1>
-    </div>
-
     <div class="section-body">
-        <div class="card chat-app">
-            <div class="chat-sidebar">
+        <div class="chat-shell">
+            <aside class="chat-sidebar">
                 <div class="chat-sidebar-header">
-                    <h5 class="mb-0">Conversaciones</h5>
-                    <button type="button" id="chat-nuevo-btn" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus"></i> Nuevo
+                    <h5 class="chat-sidebar-title"><i class="fas fa-comments"></i> Chat</h5>
+                    <button type="button" id="chat-nuevo-btn" class="chat-icon-btn" title="Nueva conversación">
+                        <i class="fas fa-plus"></i>
                     </button>
+                </div>
+                <div class="chat-search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="chat-buscar" class="chat-search-input" placeholder="Buscar conversación...">
                 </div>
                 <div id="chat-lista-conversaciones" class="chat-lista-conversaciones">
                     <div class="chat-lista-vacia text-muted">Todavía no tenés conversaciones.</div>
                 </div>
-            </div>
+            </aside>
 
             <div class="chat-panel">
                 <div id="chat-panel-vacio" class="chat-panel-vacio">
                     <i class="fas fa-comments"></i>
-                    <p>Elegí una conversación o iniciá una nueva.</p>
+                    <p>Seleccioná una conversación para ver los mensajes</p>
+                    <small>Los mensajes se sincronizan automáticamente</small>
                 </div>
 
                 <div id="chat-panel-activo" class="chat-panel-activo" style="display:none;">
                     <div class="chat-panel-header">
-                        <strong id="chat-panel-titulo"></strong>
-                        <small id="chat-panel-escribiendo" class="text-muted"></small>
+                        <div id="chat-panel-avatar"></div>
+                        <div class="chat-panel-header-info">
+                            <strong id="chat-panel-titulo"></strong>
+                            <small id="chat-panel-escribiendo"></small>
+                        </div>
                     </div>
 
                     <div id="chat-mensajes" class="chat-mensajes"></div>
@@ -84,27 +88,92 @@
 
 @push('styles')
 <style>
-    .chat-app {
+    .chat-shell {
+        --chat-accent: #25D366;
+        --chat-accent-dark: #128C7E;
         display: flex;
-        height: calc(100vh - 220px);
-        min-height: 480px;
+        height: calc(100vh - 170px);
+        min-height: 520px;
+        border-radius: 16px;
         overflow: hidden;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 10px 30px var(--shadow, rgba(10, 35, 47, .15));
     }
 
     .chat-sidebar {
         display: flex;
         flex-direction: column;
-        width: 320px;
+        width: 340px;
         flex-shrink: 0;
-        border-right: 1px solid var(--border-color, #dce3e8);
+        background: var(--sidebar-bg);
+        border-right: 1px solid var(--border-color);
     }
 
     .chat-sidebar-header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 14px 16px;
-        border-bottom: 1px solid var(--border-color, #dce3e8);
+        padding: 16px 18px;
+        background: var(--chat-accent-dark);
+    }
+
+    .chat-sidebar-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: #fff;
+    }
+
+    .chat-icon-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, .18);
+        color: #fff;
+        cursor: pointer;
+        transition: background .15s;
+    }
+
+    .chat-icon-btn:hover {
+        background: rgba(255, 255, 255, .3);
+    }
+
+    .chat-search-wrapper {
+        position: relative;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--sidebar-bg);
+    }
+
+    .chat-search-wrapper i {
+        position: absolute;
+        left: 26px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-secondary);
+        font-size: .8rem;
+    }
+
+    .chat-search-input {
+        width: 100%;
+        padding: 8px 12px 8px 34px;
+        border-radius: 20px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-size: .85rem;
+    }
+
+    .chat-search-input:focus {
+        outline: none;
+        border-color: var(--chat-accent);
     }
 
     .chat-lista-conversaciones {
@@ -113,66 +182,114 @@
     }
 
     .chat-lista-vacia {
-        padding: 20px 16px;
+        padding: 24px 18px;
         font-size: .85rem;
+        text-align: center;
     }
 
     .chat-conversacion-item {
         display: flex;
-        flex-direction: column;
-        gap: 2px;
+        align-items: center;
+        gap: 12px;
         padding: 12px 16px;
         cursor: pointer;
-        border-bottom: 1px solid var(--border-color, #eef1f4);
+        border-bottom: 1px solid var(--border-color);
     }
 
     .chat-conversacion-item:hover {
-        background: var(--body-bg, #f5f7fa);
+        background: var(--bg-primary);
     }
 
     .chat-conversacion-item.activa {
-        background: var(--body-bg, #f5f7fa);
-        box-shadow: inset 3px 0 0 #176b87;
+        background: var(--bg-tertiary, var(--bg-primary));
+        box-shadow: inset 3px 0 0 var(--chat-accent-dark);
+    }
+
+    .chat-avatar {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        color: #fff;
+        font-weight: 700;
+        font-size: 1.05rem;
+    }
+
+    .chat-avatar-sm {
+        width: 34px;
+        height: 34px;
+        font-size: .9rem;
+    }
+
+    .chat-avatar-dot {
+        position: absolute;
+        right: -1px;
+        bottom: -1px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--chat-accent);
+        border: 2px solid var(--sidebar-bg);
+    }
+
+    .chat-conversacion-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .chat-conversacion-top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
     }
 
     .chat-conversacion-nombre {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
         font-weight: 600;
-        color: var(--text-primary, #263238);
-    }
-
-    .chat-conversacion-preview {
-        font-size: .8rem;
-        color: var(--text-secondary, #6c757d);
+        color: var(--text-primary);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
-    .chat-punto-online {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        margin-right: 6px;
-        border-radius: 50%;
-        background: #28a745;
-        box-shadow: 0 0 0 2px var(--card-bg, #fff);
+    .chat-conversacion-hora {
+        flex-shrink: 0;
+        font-size: .7rem;
+        color: var(--text-secondary);
     }
 
-    #chat-panel-escribiendo {
-        color: #28a745;
+    .chat-conversacion-bottom {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 2px;
+    }
+
+    .chat-conversacion-preview {
+        font-size: .8rem;
+        color: var(--text-secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .chat-conversacion-badge {
+        flex-shrink: 0;
         min-width: 20px;
-        padding: 2px 6px;
+        height: 20px;
+        padding: 0 6px;
         border-radius: 10px;
         font-size: .7rem;
+        font-weight: 700;
+        line-height: 20px;
         text-align: center;
         color: #fff;
-        background: #dc3545;
+        background: var(--chat-accent);
     }
 
     .chat-panel {
@@ -180,6 +297,7 @@
         display: flex;
         flex-direction: column;
         min-width: 0;
+        background: var(--bg-primary);
     }
 
     .chat-panel-vacio {
@@ -188,13 +306,27 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        color: var(--text-secondary, #6c757d);
+        text-align: center;
+        padding: 20px;
+        color: var(--text-secondary);
     }
 
     .chat-panel-vacio i {
-        font-size: 40px;
-        margin-bottom: 10px;
-        color: #176b87;
+        font-size: 56px;
+        margin-bottom: 16px;
+        color: var(--chat-accent);
+        opacity: .75;
+    }
+
+    .chat-panel-vacio p {
+        margin: 0 0 4px;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .chat-panel-vacio small {
+        font-size: .8rem;
     }
 
     .chat-panel-activo {
@@ -205,15 +337,29 @@
     }
 
     .chat-panel-header {
-        padding: 14px 18px;
-        border-bottom: 1px solid var(--border-color, #dce3e8);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 18px;
+        background: var(--card-bg);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .chat-panel-header-info strong {
+        display: block;
+        color: var(--text-primary);
+    }
+
+    .chat-panel-header-info small {
+        color: var(--chat-accent-dark);
+        font-weight: 500;
     }
 
     .chat-mensajes {
         flex: 1;
         overflow-y: auto;
         padding: 18px;
-        background: var(--body-bg, #f5f7fa);
+        background: var(--bg-primary);
     }
 
     .chat-mensaje {
@@ -232,7 +378,7 @@
     .chat-mensaje-autor {
         margin-bottom: 2px;
         font-size: .72rem;
-        color: var(--text-secondary, #6c757d);
+        color: var(--text-secondary);
     }
 
     .chat-mensaje-bubble {
@@ -246,14 +392,22 @@
     .chat-mensaje.propio .chat-mensaje-bubble {
         border-bottom-right-radius: 4px;
         color: #fff;
-        background: #176b87;
+        background: var(--chat-accent-dark, #128C7E);
     }
 
     .chat-mensaje:not(.propio) .chat-mensaje-bubble {
-        border: 1px solid var(--border-color, #dce3e8);
+        border: 1px solid var(--border-color);
         border-bottom-left-radius: 4px;
-        color: var(--text-primary, #263238);
-        background: var(--card-bg, #fff);
+        color: var(--text-primary);
+        background: var(--card-bg);
+    }
+
+    .chat-mensaje-hora {
+        display: block;
+        margin-top: 4px;
+        font-size: .65rem;
+        opacity: .75;
+        text-align: right;
     }
 
     .chat-mensaje-adjunto {
@@ -271,12 +425,12 @@
         margin-top: 3px;
         text-align: right;
         font-size: .7rem;
-        color: var(--text-secondary, #6c757d);
+        color: var(--text-secondary);
     }
 
     .chat-composer {
-        border-top: 1px solid var(--border-color, #dce3e8);
-        background: var(--card-bg, #fff);
+        border-top: 1px solid var(--border-color);
+        background: var(--card-bg);
         padding: 10px 14px;
     }
 
@@ -294,12 +448,12 @@
         height: 40px;
         margin: 0;
         border-radius: 10px;
-        color: var(--text-secondary, #6c757d);
+        color: var(--text-secondary);
         cursor: pointer;
     }
 
     .chat-adjuntar-btn:hover {
-        background: var(--body-bg, #f5f7fa);
+        background: var(--bg-primary);
     }
 
     .chat-composer textarea {
@@ -307,6 +461,9 @@
         max-height: 105px;
         resize: none;
         border-radius: 12px;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        border: 1px solid var(--border-color);
     }
 
     .chat-enviar-btn {
@@ -315,7 +472,7 @@
         border: 0;
         border-radius: 10px;
         color: #fff;
-        background: #176b87;
+        background: var(--chat-accent);
     }
 
     .chat-adjuntos-preview:not(:empty) {
@@ -332,24 +489,47 @@
     }
 
     .chat-lista-contactos {
-        max-height: 260px;
+        max-height: 280px;
         overflow-y: auto;
-        border: 1px solid var(--border-color, #dce3e8);
+        border: 1px solid var(--border-color);
         border-radius: 8px;
-        padding: 8px 12px;
+        padding: 6px 10px;
+    }
+
+    .chat-contacto-fila {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 4px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .chat-contacto-fila:last-child {
+        border-bottom: 0;
+    }
+
+    .chat-contacto-fila label {
+        margin: 0;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        color: var(--text-primary);
     }
 
     @media (max-width: 767.98px) {
-        .chat-app {
+        .chat-shell {
             flex-direction: column;
             height: auto;
+            border-radius: 12px;
         }
 
         .chat-sidebar {
             width: 100%;
-            max-height: 260px;
+            max-height: 300px;
             border-right: 0;
-            border-bottom: 1px solid var(--border-color, #dce3e8);
+            border-bottom: 1px solid var(--border-color);
         }
     }
 </style>
@@ -369,10 +549,13 @@ $(function () {
     };
     const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const usuarioActualId = {{ (int) auth()->id() }};
+    const paletaAvatares = ['#0099ff', '#6a5cff', '#00a86b', '#f6a500', '#e53957', '#00bcd4', '#8b5cf6', '#ff7043', '#26a69a', '#7e57c2'];
 
     const lista = $('#chat-lista-conversaciones');
+    const buscar = $('#chat-buscar');
     const panelVacio = $('#chat-panel-vacio');
     const panelActivo = $('#chat-panel-activo');
+    const panelAvatar = $('#chat-panel-avatar');
     const panelTitulo = $('#chat-panel-titulo');
     const panelEscribiendo = $('#chat-panel-escribiendo');
     const mensajesEl = $('#chat-mensajes');
@@ -386,6 +569,7 @@ $(function () {
     let ultimoMensajeId = 0;
     let lecturas = {};
     let ultimoAviso = 0;
+    let filtroTexto = '';
 
     /**
      * Costura de transporte: todo el polling vive acá. El día que se pueda migrar a
@@ -442,6 +626,11 @@ $(function () {
         $('#chat-modal-nuevo').modal('show');
     });
 
+    buscar.on('input', function () {
+        filtroTexto = buscar.val().trim().toLowerCase();
+        renderizarListaConversaciones();
+    });
+
     $('#chat-lista-contactos').on('change', 'input[type=checkbox]', function () {
         const seleccionados = $('#chat-lista-contactos input:checked').length;
         $('#chat-nombre-grupo-wrapper').toggle(seleccionados >= 2);
@@ -477,11 +666,15 @@ $(function () {
         $.get(urls.contactos).done(function (respuesta) {
             const contenedor = $('#chat-lista-contactos').empty();
             (respuesta.usuarios || []).forEach(function (usuario) {
-                const punto = usuario.en_linea ? '<span class="chat-punto-online" title="En línea"></span>' : '';
+                const color = colorDesdeId(usuario.id);
+                const punto = usuario.en_linea ? '<span class="chat-avatar-dot"></span>' : '';
                 contenedor.append(
-                    '<div class="custom-control custom-checkbox">' +
-                    '<input type="checkbox" class="custom-control-input" id="chat-contacto-' + usuario.id + '" value="' + usuario.id + '">' +
-                    '<label class="custom-control-label" for="chat-contacto-' + usuario.id + '">' + punto + escapeHtml(usuario.nombre) + '</label>' +
+                    '<div class="chat-contacto-fila">' +
+                    '<input type="checkbox" id="chat-contacto-' + usuario.id + '" value="' + usuario.id + '">' +
+                    '<label for="chat-contacto-' + usuario.id + '">' +
+                    '<span class="chat-avatar chat-avatar-sm" style="background:' + color + '">' + inicialDe(usuario.nombre) + punto + '</span>' +
+                    escapeHtml(usuario.nombre) +
+                    '</label>' +
                     '</div>'
                 );
             });
@@ -535,6 +728,7 @@ $(function () {
 
         const conversacion = conversaciones.find(function (c) { return c.id === id; });
         panelTitulo.text(conversacion ? conversacion.nombre : '');
+        panelAvatar.html(conversacion ? avatarHtml(conversacion) : '');
         mostrarEstadoConexion();
 
         $.get(urls.conversacion.replace('__ID__', id)).done(function (respuesta) {
@@ -565,6 +759,11 @@ $(function () {
                 abrirConversacion(idInicial);
                 return;
             }
+        }
+
+        if (conversacionActivaId) {
+            const activa = conversaciones.find(function (c) { return c.id === conversacionActivaId; });
+            if (activa) panelAvatar.html(avatarHtml(activa));
         }
 
         if (!conversacionActivaId) return;
@@ -602,12 +801,13 @@ $(function () {
         }).join('');
 
         const cuerpoHtml = mensaje.cuerpo ? '<div>' + escapeHtml(mensaje.cuerpo).replace(/\n/g, '<br>') + '</div>' : '';
+        const horaHtml = '<span class="chat-mensaje-hora">' + horaSolo(mensaje.creado_en) + '</span>';
 
         const html =
             '<div class="chat-mensaje ' + (propio ? 'propio' : '') + '" data-id="' + mensaje.id + '">' +
             '<div class="chat-mensaje-bloque">' +
             (propio ? '' : '<div class="chat-mensaje-autor">' + escapeHtml(mensaje.usuario) + '</div>') +
-            '<div class="chat-mensaje-bubble">' + cuerpoHtml + adjuntosHtml + '</div>' +
+            '<div class="chat-mensaje-bubble">' + cuerpoHtml + adjuntosHtml + horaHtml + '</div>' +
             (propio ? '<div class="chat-mensaje-estado"></div>' : '') +
             '</div>' +
             '</div>';
@@ -721,27 +921,37 @@ $(function () {
     }
 
     function renderizarListaConversaciones() {
-        if (!conversaciones.length) {
-            lista.html('<div class="chat-lista-vacia text-muted">Todavía no tenés conversaciones.</div>');
+        const visibles = conversaciones.filter(function (c) {
+            return !filtroTexto || (c.nombre || '').toLowerCase().includes(filtroTexto);
+        });
+
+        if (!visibles.length) {
+            lista.html('<div class="chat-lista-vacia text-muted">' +
+                (conversaciones.length ? 'No hay conversaciones que coincidan.' : 'Todavía no tenés conversaciones.') +
+                '</div>');
             return;
         }
 
         lista.empty();
-        conversaciones.forEach(function (conversacion) {
+        visibles.forEach(function (conversacion) {
             const activa = conversacion.id === conversacionActivaId;
             const badge = conversacion.no_leidos > 0
                 ? '<span class="chat-conversacion-badge">' + (conversacion.no_leidos > 99 ? '99+' : conversacion.no_leidos) + '</span>'
                 : '';
-            const punto = conversacion.tipo === 'privada' && conversacion.en_linea
-                ? '<span class="chat-punto-online" title="En línea"></span>'
-                : '';
 
             const item = $(
                 '<div class="chat-conversacion-item ' + (activa ? 'activa' : '') + '" data-id="' + conversacion.id + '">' +
-                '<div class="chat-conversacion-nombre">' +
-                '<span>' + punto + escapeHtml(conversacion.nombre) + '</span>' + badge +
+                avatarHtml(conversacion) +
+                '<div class="chat-conversacion-info">' +
+                '<div class="chat-conversacion-top">' +
+                '<span class="chat-conversacion-nombre">' + escapeHtml(conversacion.nombre) + '</span>' +
+                '<span class="chat-conversacion-hora">' + formatearHora(conversacion.actualizado_en) + '</span>' +
                 '</div>' +
-                '<div class="chat-conversacion-preview">' + escapeHtml(conversacion.ultimo_mensaje || 'Sin mensajes todavía') + '</div>' +
+                '<div class="chat-conversacion-bottom">' +
+                '<span class="chat-conversacion-preview">' + escapeHtml(conversacion.ultimo_mensaje || 'Sin mensajes todavía') + '</span>' +
+                badge +
+                '</div>' +
+                '</div>' +
                 '</div>'
             );
             item.on('click', function () { abrirConversacion(conversacion.id); });
@@ -769,6 +979,38 @@ $(function () {
 
     function avisar(tipo, mensaje) {
         iziToast[tipo]({ title: tipo === 'error' ? 'Error' : 'Chat', message: mensaje, position: 'topRight', timeout: 3500 });
+    }
+
+    function colorDesdeId(id) {
+        return paletaAvatares[Math.abs(id) % paletaAvatares.length];
+    }
+
+    function inicialDe(nombre) {
+        return (nombre || '?').trim().charAt(0).toUpperCase() || '?';
+    }
+
+    function avatarHtml(conversacion) {
+        const color = colorDesdeId(conversacion.id);
+        const contenido = conversacion.tipo === 'grupo' ? '<i class="fas fa-users"></i>' : inicialDe(conversacion.nombre);
+        const punto = conversacion.tipo === 'privada' && conversacion.en_linea
+            ? '<span class="chat-avatar-dot" title="En línea"></span>'
+            : '';
+        return '<div class="chat-avatar" style="background:' + color + '">' + contenido + punto + '</div>';
+    }
+
+    function formatearHora(iso) {
+        if (!iso) return '';
+        const fecha = new Date(iso);
+        const hoy = new Date();
+        if (fecha.toDateString() === hoy.toDateString()) {
+            return fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+        }
+        return fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+    }
+
+    function horaSolo(iso) {
+        if (!iso) return '';
+        return new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
     }
 
     function escapeHtml(text) {

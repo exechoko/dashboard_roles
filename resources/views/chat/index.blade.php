@@ -47,7 +47,7 @@
                                 <i class="fas fa-paperclip"></i>
                             </label>
                             <input type="file" id="chat-input-adjuntos" multiple hidden
-                                accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt">
+                                accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.mp4,.mov,.webm,.mp3,.wav,.ogg,.m4a">
                             <textarea id="chat-input-cuerpo" class="form-control" rows="1" maxlength="4000"
                                 placeholder="Escribí un mensaje..."></textarea>
                             <button type="submit" id="chat-enviar-btn" class="chat-enviar-btn" aria-label="Enviar">
@@ -421,6 +421,30 @@
 
     .chat-mensaje.propio .chat-mensaje-adjunto {
         color: #eaf6fb;
+    }
+
+    .chat-adjunto-imagen-link {
+        display: block;
+        margin-top: 6px;
+    }
+
+    .chat-adjunto-imagen {
+        display: block;
+        max-width: 260px;
+        max-height: 260px;
+        border-radius: 10px;
+        object-fit: cover;
+    }
+
+    .chat-adjunto-media {
+        display: block;
+        margin-top: 6px;
+        max-width: 280px;
+        border-radius: 10px;
+    }
+
+    audio.chat-adjunto-media {
+        width: 260px;
     }
 
     .chat-mensaje-estado {
@@ -822,10 +846,7 @@ $(function () {
         ultimoMensajeId = mensaje.id;
 
         const propio = mensaje.usuario_id === usuarioActualId;
-        const adjuntosHtml = (mensaje.adjuntos || []).map(function (adjunto) {
-            return '<a class="chat-mensaje-adjunto" href="' + adjunto.url + '" target="_blank" rel="noopener">' +
-                '<i class="fas fa-paperclip"></i> ' + escapeHtml(adjunto.nombre) + '</a>';
-        }).join('');
+        const adjuntosHtml = (mensaje.adjuntos || []).map(adjuntoHtml).join('');
 
         const cuerpoHtml = mensaje.cuerpo ? '<div>' + escapeHtml(mensaje.cuerpo).replace(/\n/g, '<br>') + '</div>' : '';
         const horaHtml = '<span class="chat-mensaje-hora">' + horaSolo(mensaje.creado_en) + '</span>';
@@ -1023,6 +1044,32 @@ $(function () {
             ? '<span class="chat-avatar-dot" title="En línea"></span>'
             : '';
         return '<div class="chat-avatar" style="background:' + color + '">' + contenido + punto + '</div>';
+    }
+
+    function adjuntoHtml(adjunto) {
+        const mime = adjunto.mime || '';
+        const nombre = escapeHtml(adjunto.nombre);
+        const url = adjunto.url;
+
+        if (mime.indexOf('image/') === 0) {
+            return '<a class="chat-adjunto-imagen-link" href="' + url + '" target="_blank" rel="noopener">' +
+                '<img class="chat-adjunto-imagen" src="' + url + '" alt="' + nombre + '" loading="lazy"></a>';
+        }
+
+        if (mime.indexOf('video/') === 0) {
+            return '<video class="chat-adjunto-media" controls preload="metadata">' +
+                '<source src="' + url + '" type="' + escapeHtml(mime) + '">' +
+                '</video>';
+        }
+
+        if (mime.indexOf('audio/') === 0) {
+            return '<audio class="chat-adjunto-media" controls preload="metadata">' +
+                '<source src="' + url + '" type="' + escapeHtml(mime) + '">' +
+                '</audio>';
+        }
+
+        return '<a class="chat-mensaje-adjunto" href="' + url + '" target="_blank" rel="noopener">' +
+            '<i class="fas fa-paperclip"></i> ' + nombre + '</a>';
     }
 
     function formatearHora(iso) {

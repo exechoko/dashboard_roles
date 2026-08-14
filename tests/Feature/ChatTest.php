@@ -196,6 +196,51 @@ class ChatTest extends TestCase
             ->assertCreated();
     }
 
+    public function test_un_adjunto_de_video_es_aceptado(): void
+    {
+        $user = $this->usuarioConAccesoAlChat();
+        $otro = User::factory()->create();
+        $conversacion = $this->crearConversacionPrivada($user, $otro);
+
+        $respuesta = $this->actingAs($user)
+            ->post(route('chat.mensajes.store', $conversacion), [
+                'cuerpo' => 'Mirá este video',
+                'adjuntos' => [UploadedFile::fake()->create('clip.mp4', 5000)],
+            ], ['Accept' => 'application/json'])
+            ->assertCreated();
+
+        $respuesta->assertJsonPath('mensaje.adjuntos.0.nombre', 'clip.mp4');
+    }
+
+    public function test_un_adjunto_de_audio_es_aceptado(): void
+    {
+        $user = $this->usuarioConAccesoAlChat();
+        $otro = User::factory()->create();
+        $conversacion = $this->crearConversacionPrivada($user, $otro);
+
+        $respuesta = $this->actingAs($user)
+            ->post(route('chat.mensajes.store', $conversacion), [
+                'adjuntos' => [UploadedFile::fake()->create('nota-de-voz.mp3', 800)],
+            ], ['Accept' => 'application/json'])
+            ->assertCreated();
+
+        $respuesta->assertJsonPath('mensaje.adjuntos.0.nombre', 'nota-de-voz.mp3');
+    }
+
+    public function test_un_adjunto_mayor_a_25mb_es_rechazado(): void
+    {
+        $user = $this->usuarioConAccesoAlChat();
+        $otro = User::factory()->create();
+        $conversacion = $this->crearConversacionPrivada($user, $otro);
+
+        $this->actingAs($user)
+            ->post(route('chat.mensajes.store', $conversacion), [
+                'adjuntos' => [UploadedFile::fake()->create('video-largo.mp4', 30000)],
+            ], ['Accept' => 'application/json'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['adjuntos.0']);
+    }
+
     public function test_una_extension_fuera_de_la_whitelist_es_rechazada(): void
     {
         $user = $this->usuarioConAccesoAlChat();

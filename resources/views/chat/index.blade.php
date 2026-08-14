@@ -13,7 +13,9 @@
                 </div>
                 <div class="chat-search-wrapper">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="chat-buscar" class="chat-search-input" placeholder="Buscar conversación...">
+                    <input type="search" id="chat-buscar" class="chat-search-input" placeholder="Buscar conversación..."
+                        autocomplete="off" autocapitalize="off" spellcheck="false" inputmode="search"
+                        readonly data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-form-type="other">
                 </div>
                 <div id="chat-lista-conversaciones" class="chat-lista-conversaciones">
                     <div class="chat-lista-vacia text-muted">Todavía no tenés conversaciones.</div>
@@ -626,6 +628,31 @@ $(function () {
         $('#chat-modal-nuevo').modal('show');
     });
 
+    // Algunos gestores de contraseñas del navegador (LastPass, 1Password, Bitwarden)
+    // inyectan texto en inputs tipo "buscar" apenas se pintan. El input arranca
+    // readonly y se limpia por unos segundos hasta que el usuario interactúa de verdad
+    // (mismo workaround que #sidebar-filter-input en layouts/sidebar.blade.php).
+    let buscarInteractuado = false;
+
+    function limpiarAutocompletadoBuscar() {
+        if (!buscarInteractuado && buscar.val()) {
+            buscar.val('');
+            filtroTexto = '';
+            renderizarListaConversaciones();
+        }
+    }
+
+    function habilitarBuscar() {
+        buscarInteractuado = true;
+        buscar.removeAttr('readonly');
+    }
+
+    limpiarAutocompletadoBuscar();
+    [100, 300, 800, 1500, 2500].forEach(function (delay) {
+        setTimeout(limpiarAutocompletadoBuscar, delay);
+    });
+
+    buscar.on('focus pointerdown keydown', habilitarBuscar);
     buscar.on('input', function () {
         filtroTexto = buscar.val().trim().toLowerCase();
         renderizarListaConversaciones();

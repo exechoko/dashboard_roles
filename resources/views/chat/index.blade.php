@@ -438,6 +438,7 @@ $(function () {
     ChatTransport.forzar();
 
     $('#chat-nuevo-btn').on('click', function () {
+        cargarContactos();
         $('#chat-modal-nuevo').modal('show');
     });
 

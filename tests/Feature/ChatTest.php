@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -271,5 +272,33 @@ class ChatTest extends TestCase
             'tipo' => 'grupo',
             'usuarios' => [$miembro1->id, $miembro2->id],
         ])->assertUnprocessable()->assertJsonValidationErrors(['nombre']);
+    }
+
+    public function test_sync_marca_al_usuario_como_en_linea_para_el_otro_participante(): void
+    {
+        $user = $this->usuarioConAccesoAlChat();
+        $otro = $this->usuarioConAccesoAlChat();
+        $conversacion = $this->crearConversacionPrivada($user, $otro);
+
+        $this->actingAs($user)->getJson(route('chat.sync'))->assertOk();
+
+        $respuesta = $this->actingAs($otro)->getJson(route('chat.sync'))->assertOk();
+
+        $datos = collect($respuesta->json('conversaciones'))->firstWhere('id', $conversacion->id);
+        $this->assertTrue($datos['en_linea']);
+    }
+
+    public function test_un_usuario_sin_actividad_reciente_aparece_offline(): void
+    {
+        $user = $this->usuarioConAccesoAlChat();
+        $otro = $this->usuarioConAccesoAlChat();
+        $conversacion = $this->crearConversacionPrivada($user, $otro);
+
+        Cache::forget("chat.online.{$otro->id}");
+
+        $respuesta = $this->actingAs($user)->getJson(route('chat.sync'))->assertOk();
+
+        $datos = collect($respuesta->json('conversaciones'))->firstWhere('id', $conversacion->id);
+        $this->assertFalse($datos['en_linea']);
     }
 }

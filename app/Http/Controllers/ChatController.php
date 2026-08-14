@@ -35,6 +35,8 @@ class ChatController extends Controller
         $conversacionActivaId = $request->integer('conversacion') ?: null;
         $desde = $request->integer('desde') ?: 0;
 
+        Cache::put("chat.online.{$user->id}", true, now()->addSeconds(90));
+
         $conversaciones = $user->chatConversaciones()
             ->with([
                 'ultimoMensaje',
@@ -132,6 +134,7 @@ class ChatController extends Controller
             ->map(fn (User $usuario): array => [
                 'id' => $usuario->id,
                 'nombre' => trim($usuario->name . ' ' . $usuario->apellido),
+                'en_linea' => $this->estaEnLinea($usuario->id),
             ])
             ->values();
 
@@ -282,12 +285,18 @@ class ChatController extends Controller
         );
     }
 
+    protected function estaEnLinea(int $userId): bool
+    {
+        return Cache::has("chat.online.{$userId}");
+    }
+
     /**
-     * @return array{id: int, tipo: string, nombre: string, ultimo_mensaje: string|null, actualizado_en: string|null, no_leidos: int}
+     * @return array{id: int, tipo: string, nombre: string, ultimo_mensaje: string|null, actualizado_en: string|null, no_leidos: int, en_linea: bool, en_linea_count: int, participantes_count: int}
      */
     protected function conversacionData(ChatConversacion $conversacion, int $noLeidos = 0): array
     {
         $otro = $conversacion->tipo === 'privada' ? $conversacion->usuarios->first() : null;
+        $enLineaCount = $conversacion->usuarios->filter(fn (User $u): bool => $this->estaEnLinea($u->id))->count();
 
         return [
             'id' => $conversacion->id,
@@ -298,6 +307,9 @@ class ChatController extends Controller
             'ultimo_mensaje' => $conversacion->ultimoMensaje?->cuerpo,
             'actualizado_en' => ($conversacion->ultimoMensaje->created_at ?? $conversacion->updated_at)?->toIso8601String(),
             'no_leidos' => $noLeidos,
+            'en_linea' => $otro !== null ? $this->estaEnLinea($otro->id) : false,
+            'en_linea_count' => $enLineaCount,
+            'participantes_count' => $conversacion->usuarios->count() + 1,
         ];
     }
 

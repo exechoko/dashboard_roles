@@ -151,6 +151,20 @@
         white-space: nowrap;
     }
 
+    .chat-punto-online {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        margin-right: 6px;
+        border-radius: 50%;
+        background: #28a745;
+        box-shadow: 0 0 0 2px var(--card-bg, #fff);
+    }
+
+    #chat-panel-escribiendo {
+        color: #28a745;
+    }
+
     .chat-conversacion-badge {
         min-width: 20px;
         padding: 2px 6px;
@@ -462,10 +476,11 @@ $(function () {
         $.get(urls.contactos).done(function (respuesta) {
             const contenedor = $('#chat-lista-contactos').empty();
             (respuesta.usuarios || []).forEach(function (usuario) {
+                const punto = usuario.en_linea ? '<span class="chat-punto-online" title="En línea"></span>' : '';
                 contenedor.append(
                     '<div class="custom-control custom-checkbox">' +
                     '<input type="checkbox" class="custom-control-input" id="chat-contacto-' + usuario.id + '" value="' + usuario.id + '">' +
-                    '<label class="custom-control-label" for="chat-contacto-' + usuario.id + '">' + escapeHtml(usuario.nombre) + '</label>' +
+                    '<label class="custom-control-label" for="chat-contacto-' + usuario.id + '">' + punto + escapeHtml(usuario.nombre) + '</label>' +
                     '</div>'
                 );
             });
@@ -519,6 +534,7 @@ $(function () {
 
         const conversacion = conversaciones.find(function (c) { return c.id === id; });
         panelTitulo.text(conversacion ? conversacion.nombre : '');
+        mostrarEstadoConexion();
 
         $.get(urls.conversacion.replace('__ID__', id)).done(function (respuesta) {
             lecturas = respuesta.lecturas || {};
@@ -612,11 +628,25 @@ $(function () {
     }
 
     function mostrarEscribiendo(idsEscribiendo) {
-        if (!idsEscribiendo.length) {
+        if (idsEscribiendo.length) {
+            panelEscribiendo.text('Escribiendo...');
+            return;
+        }
+        mostrarEstadoConexion();
+    }
+
+    function mostrarEstadoConexion() {
+        const conversacion = conversaciones.find(function (c) { return c.id === conversacionActivaId; });
+        if (!conversacion) {
             panelEscribiendo.text('');
             return;
         }
-        panelEscribiendo.text('Escribiendo...');
+
+        if (conversacion.tipo === 'grupo') {
+            panelEscribiendo.text(conversacion.en_linea_count > 0 ? conversacion.en_linea_count + ' en línea' : '');
+        } else {
+            panelEscribiendo.text(conversacion.en_linea ? 'En línea' : '');
+        }
     }
 
     function avisarEscribiendo() {
@@ -701,10 +731,15 @@ $(function () {
             const badge = conversacion.no_leidos > 0
                 ? '<span class="chat-conversacion-badge">' + (conversacion.no_leidos > 99 ? '99+' : conversacion.no_leidos) + '</span>'
                 : '';
+            const punto = conversacion.tipo === 'privada' && conversacion.en_linea
+                ? '<span class="chat-punto-online" title="En línea"></span>'
+                : '';
 
             const item = $(
                 '<div class="chat-conversacion-item ' + (activa ? 'activa' : '') + '" data-id="' + conversacion.id + '">' +
-                '<div class="chat-conversacion-nombre"><span>' + escapeHtml(conversacion.nombre) + '</span>' + badge + '</div>' +
+                '<div class="chat-conversacion-nombre">' +
+                '<span>' + punto + escapeHtml(conversacion.nombre) + '</span>' + badge +
+                '</div>' +
                 '<div class="chat-conversacion-preview">' + escapeHtml(conversacion.ultimo_mensaje || 'Sin mensajes todavía') + '</div>' +
                 '</div>'
             );

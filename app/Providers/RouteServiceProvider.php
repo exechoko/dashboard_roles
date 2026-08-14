@@ -63,5 +63,13 @@ class RouteServiceProvider extends ServiceProvider
         RateLimiter::for('chatbot', function (Request $request) {
             return Limit::perMinute(10)->by((string) ($request->user()?->id ?: $request->ip()));
         });
+
+        RateLimiter::for('chat-sync', function (Request $request) {
+            return Limit::perMinute(120)->by((string) ($request->user()?->id ?: $request->ip()));
+        });
+
+        RateLimiter::for('chat-envio', function (Request $request) {
+            return Limit::perMinute(30)->by((string) ($request->user()?->id ?: $request->ip()));
+        });
     }
 }

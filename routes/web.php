@@ -30,6 +30,7 @@ use App\Http\Controllers\TipoCamaraController;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\CamaraFisicaController;
 use App\Http\Controllers\ChatbotController;
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\CecocoRecursoAliasController;
 use App\Http\Controllers\SitioController;
 use App\Http\Controllers\CecocoController;
@@ -75,6 +76,18 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/messages', [ChatbotController::class, 'ask'])->middleware('throttle:chatbot')->name('ask');
         Route::get('/messages/{message}', [ChatbotController::class, 'status'])->name('status');
         Route::delete('/history', [ChatbotController::class, 'clear'])->name('clear');
+    });
+
+    Route::prefix('chat')->name('chat.')->group(function () {
+        Route::get('/', [ChatController::class, 'index'])->name('index');
+        Route::get('/sync', [ChatController::class, 'sync'])->middleware('throttle:chat-sync')->name('sync');
+        Route::get('/contactos', [ChatController::class, 'contactos'])->name('contactos');
+        Route::post('/conversaciones', [ChatController::class, 'iniciar'])->middleware('throttle:chat-envio')->name('conversaciones.store');
+        Route::get('/conversaciones/{conversacion}', [ChatController::class, 'conversacion'])->name('conversaciones.show');
+        Route::post('/conversaciones/{conversacion}/mensajes', [ChatController::class, 'enviar'])->middleware('throttle:chat-envio')->name('mensajes.store');
+        Route::post('/conversaciones/{conversacion}/leido', [ChatController::class, 'marcarLeido'])->name('conversaciones.leido');
+        Route::post('/conversaciones/{conversacion}/escribiendo', [ChatController::class, 'escribiendo'])->name('conversaciones.escribiendo');
+        Route::get('/adjuntos/{adjunto}', [ChatController::class, 'adjunto'])->name('adjuntos.show');
     });
 
     // 🔹 ADMINISTRAR WEB (div911.stper.com.ar)

@@ -433,6 +433,16 @@
 
 <ul class="navbar-nav navbar-right">
 
+    @can('ver-chat')
+        <li class="nav-item" style="position: relative;">
+            <a href="{{ route('chat.index') }}" class="nav-link nav-link-lg" title="Chat interno">
+                <i class="fas fa-comments"></i>
+                <span id="chat-nav-badge" class="badge badge-danger badge-sm ml-1"
+                    style="display:none; position:absolute; top:6px; right:2px; font-size:9px;"></span>
+            </a>
+        </li>
+    @endcan
+
     @if(\Illuminate\Support\Facades\Auth::user())
         <li class="dropdown">
             <a href="#" data-toggle="dropdown" class="nav-link dropdown-toggle nav-link-lg nav-link-user">

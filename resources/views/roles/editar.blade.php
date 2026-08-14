@@ -70,6 +70,7 @@
                                                         'menu-manuales',
                                                         'menu-herramientas',
                                                         'menu-constancias-credenciales',
+                                                        'menu-chat',
                                                     ],
                                                     'Administración' => [
                                                         'rol',
@@ -154,6 +155,9 @@
                                                     ],
                                                     'IA' => [
                                                         'rag'
+                                                    ],
+                                                    'Chat' => [
+                                                        'chat'
                                                     ],
                                                     'Manuales' => [
                                                         'manual-usuario',

@@ -507,6 +507,15 @@
     </li>
 @endcan
 
+@can('ver-menu-chat')
+    <li class="{{ request()->is('chat*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('chat.index') }}">
+            <i class="fas fa-comments"></i>
+            <span>Chat</span>
+        </a>
+    </li>
+@endcan
+
 @can('ver-menu-gestor-claves')
     <li class="{{ request()->is('password-vault*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('password-vault.index') }}">

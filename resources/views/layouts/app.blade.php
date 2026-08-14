@@ -128,6 +128,13 @@
         @if(config('services.opencode.enabled'))
             @include('chatbot.widget')
         @endif
+
+        @can('ver-chat')
+            @include('chat.notificaciones')
+            @unless(request()->is('chat*'))
+                @include('chat.badge')
+            @endunless
+        @endcan
     @endauth
 
 </body>

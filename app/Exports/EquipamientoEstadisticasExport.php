@@ -30,7 +30,7 @@ class EquipamientoEstadisticasExport implements WithMultipleSheets
                 ['No operativos (Baja/No funciona/Perdido/Degradado/Recambio, sin HTT500)', $resumen['no_operativos']],
                 ['Operativos HTT500 (aparte: sin baterías/antenas disponibles)', $resumen['operativos_htt500']],
                 ['No operativos HTT500', $resumen['no_operativos_htt500']],
-                ['Otros estados (Temporal/En revisión)', $resumen['otros_estados']],
+                ['Otros estados (En revisión)', $resumen['otros_estados']],
                 ['En revisión técnica (último movimiento histórico)', $resumen['en_revision_tecnica']],
                 ['Instalados (Móvil/Base)', $resumen['instalados']],
                 ['Asignados (Portátiles TETRA, sin HTT500 ni VX-261)', $resumen['asignados_portatiles']],

@@ -44,7 +44,7 @@
                     'filtro' => [], 'info' => 'Todos los equipos de la base, sin importar estado ni asignación.'],
                 ['titulo' => 'Operativos', 'valor' => $resumen['operativos'], 'icono' => 'fa-check-circle', 'color' => 'bg-success',
                     'filtro' => ['condicion' => 'operativo', 'excluir_modelos' => 'Teltronic:HTT500'],
-                    'info' => 'Equipos en estado Nuevo, Usado o Reparado, sin importar si están instalados, asignados o en stock. No incluye HTT500 (se cuentan aparte, porque aunque el estado diga que están bien no hay baterías ni antenas disponibles para equiparlos).'],
+                    'info' => 'Equipos en estado Nuevo, Usado, Reparado o Temporal, sin importar si están instalados, asignados o en stock. No incluye HTT500 (se cuentan aparte, porque aunque el estado diga que están bien no hay baterías ni antenas disponibles para equiparlos).'],
                 ['titulo' => 'Operativos HTT500', 'valor' => $resumen['operativos_htt500'], 'icono' => 'fa-battery-empty', 'color' => 'bg-warning',
                     'filtro' => ['condicion' => 'operativo', 'marca' => 'Teltronic', 'modelo' => 'HTT500'],
                     'info' => 'HTT500 en estado Nuevo, Usado o Reparado, sin importar si están instalados, asignados o en stock. Se muestran aparte del resto de los Operativos porque no hay baterías ni antenas disponibles para equiparlos.'],
@@ -65,7 +65,7 @@
                     'info' => 'Portátiles TETRA operativos (excluye HTT500 y VX-261), asignados a una persona/recurso real fuera de Stock 911.'],
                 ['titulo' => 'HTT500 Asignados (sin Accesorios)', 'valor' => $resumen['htt500_asignados'], 'icono' => 'fa-battery-empty', 'color' => 'bg-danger',
                     'filtro' => ['condicion' => 'operativo', 'situacion' => 'instalado', 'marca' => 'Teltronic', 'modelo' => 'HTT500'],
-                    'info' => 'HTT500 en estado Nuevo/Usado/Reparado, asignados fuera de Stock 911. Aunque el estado diga que están bien, no hay baterías ni antenas disponibles para equiparlos.'],
+                    'info' => 'HTT500 en estado Nuevo/Usado/Reparado/Temporal, asignados fuera de Stock 911. Aunque el estado diga que están bien, no hay baterías ni antenas disponibles para equiparlos.'],
                 ['titulo' => 'VX-261 Asignados (no TETRA)', 'valor' => $resumen['vertex_asignados'], 'icono' => 'fa-satellite-dish', 'color' => 'bg-dark',
                     'filtro' => ['condicion' => 'operativo', 'situacion' => 'instalado', 'marca' => 'Motorola/Vertex'],
                     'info' => 'Motorola/Vertex VX-261 operativos, asignados fuera de Stock 911. No es un equipo TETRA, es otra red.'],
@@ -152,10 +152,10 @@
                             </div>
                         </div>
                         <div class="progress-legend mt-2">
-                            <span><i class="fas fa-square text-success"></i> {{ $resumen['operativos'] }} operativos ({{ $resumen['pct_operativo'] }}%) — Nuevo/Usado/Reparado</span>
+                            <span><i class="fas fa-square text-success"></i> {{ $resumen['operativos'] }} operativos ({{ $resumen['pct_operativo'] }}%) — Nuevo/Usado/Reparado/Temporal</span>
                             <span><i class="fas fa-square text-danger"></i> {{ $resumen['no_operativos'] }} no operativos ({{ $resumen['pct_no_operativo'] }}%) — Baja/No funciona/Perdido/Degradado/Recambio</span>
                             <span><i class="fas fa-square text-warning"></i> {{ $resumen['htt500_total'] }} HTT500 ({{ $resumen['pct_htt500'] }}%) — se cuentan aparte, no hay baterías/antenas disponibles</span>
-                            <span><i class="fas fa-square text-secondary"></i> {{ $resumen['otros_estados'] }} otros estados ({{ $resumen['pct_otros'] }}%) — Temporal/En revisión</span>
+                            <span><i class="fas fa-square text-secondary"></i> {{ $resumen['otros_estados'] }} otros estados ({{ $resumen['pct_otros'] }}%) — En revisión</span>
                         </div>
                     </div>
                 </div>
@@ -212,7 +212,7 @@
                 <div class="card chart-card h-100" data-dashboard-section="chart-operativos">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h4 class="chart-title mb-0"><i class="fas fa-balance-scale-right mr-2 text-danger"></i>Operativos vs No Operativos por Marca / Modelo</h4>
-                        <i class="fas fa-info-circle info-icon-static" data-toggle="tooltip" title="De cada marca/modelo, cuántos están operativos (Nuevo/Usado/Reparado) y cuántos no (Baja/No funciona/Perdido/Degradado/Recambio)."></i>
+                        <i class="fas fa-info-circle info-icon-static" data-toggle="tooltip" title="De cada marca/modelo, cuántos están operativos (Nuevo/Usado/Reparado/Temporal) y cuántos no (Baja/No funciona/Perdido/Degradado/Recambio)."></i>
                     </div>
                     <div class="card-body">
                         <div style="position:relative; height:320px;">
@@ -476,7 +476,7 @@
                 <div class="card chart-card" data-dashboard-section="chart-seccion-tecnica-operativo">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h4 class="chart-title mb-0"><i class="fas fa-heartbeat mr-2 text-danger"></i>Operativo vs No Operativo, por Recurso (dentro de Sección Técnica)</h4>
-                        <i class="fas fa-info-circle info-icon-static" data-toggle="tooltip" title="De lo que hay en cada recurso de Sección Técnica, cuánto está en condición operativa (Nuevo/Usado/Reparado) y cuánto no."></i>
+                        <i class="fas fa-info-circle info-icon-static" data-toggle="tooltip" title="De lo que hay en cada recurso de Sección Técnica, cuánto está en condición operativa (Nuevo/Usado/Reparado/Temporal) y cuánto no."></i>
                     </div>
                     <div class="card-body">
                         <div style="position:relative; height:320px;">

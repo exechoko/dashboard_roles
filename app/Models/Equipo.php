@@ -10,8 +10,11 @@ class Equipo extends Model
 {
     /**
      * Nombres de estado que se consideran "operativo".
+     *
+     * "Temporal" cuenta como operativo: es un equipo prestado/provisorio en uso
+     * real, no un equipo roto ni fuera de servicio.
      */
-    public const ESTADOS_OPERATIVOS = ['Nuevo', 'Usado', 'Reparado'];
+    public const ESTADOS_OPERATIVOS = ['Nuevo', 'Usado', 'Reparado', 'Temporal'];
 
     /**
      * Nombres de estado que se consideran "no operativo".

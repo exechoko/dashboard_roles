@@ -43,9 +43,17 @@
                 ['titulo' => 'Total Equipos', 'valor' => $resumen['total'], 'icono' => 'fa-microchip', 'color' => 'bg-primary',
                     'filtro' => [], 'info' => 'Todos los equipos de la base, sin importar estado ni asignación.'],
                 ['titulo' => 'Operativos', 'valor' => $resumen['operativos'], 'icono' => 'fa-check-circle', 'color' => 'bg-success',
-                    'filtro' => ['condicion' => 'operativo'], 'info' => 'Equipos en estado Nuevo, Usado o Reparado, sin importar si están instalados, asignados o en stock.'],
+                    'filtro' => ['condicion' => 'operativo', 'excluir_modelos' => 'Teltronic:HTT500'],
+                    'info' => 'Equipos en estado Nuevo, Usado o Reparado, sin importar si están instalados, asignados o en stock. No incluye HTT500 (se cuentan aparte, porque aunque el estado diga que están bien no hay baterías ni antenas disponibles para equiparlos).'],
+                ['titulo' => 'Operativos HTT500', 'valor' => $resumen['operativos_htt500'], 'icono' => 'fa-battery-empty', 'color' => 'bg-warning',
+                    'filtro' => ['condicion' => 'operativo', 'marca' => 'Teltronic', 'modelo' => 'HTT500'],
+                    'info' => 'HTT500 en estado Nuevo, Usado o Reparado, sin importar si están instalados, asignados o en stock. Se muestran aparte del resto de los Operativos porque no hay baterías ni antenas disponibles para equiparlos.'],
                 ['titulo' => 'No Operativos', 'valor' => $resumen['no_operativos'], 'icono' => 'fa-times-circle', 'color' => 'bg-danger',
-                    'filtro' => ['condicion' => 'no_operativo'], 'info' => 'Equipos en estado Baja, No funciona, Perdido, Degradado - Sin Accesorios o Recambio (estos últimos ya no los tiene la Policía: fueron devueltos/cambiados).'],
+                    'filtro' => ['condicion' => 'no_operativo', 'excluir_modelos' => 'Teltronic:HTT500'],
+                    'info' => 'Equipos en estado Baja, No funciona, Perdido, Degradado - Sin Accesorios o Recambio (estos últimos ya no los tiene la Policía: fueron devueltos/cambiados). No incluye HTT500 (se cuentan aparte).'],
+                ['titulo' => 'No Operativos HTT500', 'valor' => $resumen['no_operativos_htt500'], 'icono' => 'fa-times-circle', 'color' => 'bg-dark',
+                    'filtro' => ['condicion' => 'no_operativo', 'marca' => 'Teltronic', 'modelo' => 'HTT500'],
+                    'info' => 'HTT500 en estado Baja, No funciona, Perdido, Degradado - Sin Accesorios o Recambio.'],
                 ['titulo' => 'En Revisión Técnica', 'valor' => $resumen['en_revision_tecnica'], 'icono' => 'fa-tools', 'color' => 'bg-info',
                     'filtro' => ['ultimo_movimiento' => 'Revisión'], 'info' => 'Equipos cuyo último movimiento histórico registrado es "Revisión" (soporte/sección técnica), sin importar el estado actual.'],
 
@@ -63,8 +71,8 @@
                     'info' => 'Motorola/Vertex VX-261 operativos, asignados fuera de Stock 911. No es un equipo TETRA, es otra red.'],
 
                 ['titulo' => 'No Operativos en Terreno', 'valor' => $resumen['no_operativos_en_terreno'], 'icono' => 'fa-map-marker-alt', 'color' => 'bg-danger',
-                    'filtro' => ['condicion' => 'no_operativo', 'situacion' => 'instalado'],
-                    'info' => 'Equipos no operativos (rotos, de baja, perdidos, degradados o en recambio) que todavía figuran asignados a un recurso real, fuera de Stock 911 — habría que retirarlos del lugar.'],
+                    'filtro' => ['condicion' => 'no_operativo', 'situacion' => 'instalado', 'excluir_destinos' => 'Sección Técnica,Telecom'],
+                    'info' => 'Equipos no operativos (rotos, de baja, perdidos, degradados o en recambio) que todavía figuran asignados a un recurso real, fuera de Stock 911, Sección Técnica y Telecom — habría que retirarlos del lugar. Lo que ya está en Sección Técnica o Telecom (Equipos sin reparación, reclamados, recambiados, etc.) no cuenta acá porque ya fue retirado.'],
                 ['titulo' => 'HTT-500 sin Movimiento 3+ Años', 'valor' => $resumen['htt500_sin_movimiento'], 'icono' => 'fa-history', 'color' => 'bg-danger',
                     'filtro' => ['marca' => 'Teltronic', 'modelo' => 'HTT500', 'estado_in' => 'Usado,Nuevo,Reparado,Degradado - Sin Accesorios', 'sin_movimiento_3y' => 1],
                     'info' => 'HTT500 en estados "vivos" (Usado/Nuevo/Reparado/Degradado) cuyo último movimiento histórico es de hace más de 3 años, o no tiene histórico registrado.'],
@@ -118,6 +126,7 @@
                         <h6 class="mb-2 text-muted" style="font-size:.85rem;">Condición general de la flota:
                             <strong class="text-success">{{ $resumen['pct_operativo'] }}% operativo</strong> /
                             <strong class="text-danger">{{ $resumen['pct_no_operativo'] }}% no operativo</strong> /
+                            <strong class="text-warning">{{ $resumen['pct_htt500'] }}% HTT500</strong> /
                             <strong class="text-secondary">{{ $resumen['pct_otros'] }}% otros estados</strong>
                         </h6>
                         <div class="progress" style="height: 25px;">
@@ -131,6 +140,11 @@
                                     {{ $resumen['pct_no_operativo'] }}%
                                 @endif
                             </div>
+                            <div class="progress-bar bg-warning" style="width: {{ $resumen['pct_htt500'] }}%">
+                                @if($resumen['pct_htt500'] >= 8)
+                                    {{ $resumen['pct_htt500'] }}%
+                                @endif
+                            </div>
                             <div class="progress-bar bg-secondary" style="width: {{ $resumen['pct_otros'] }}%">
                                 @if($resumen['pct_otros'] >= 8)
                                     {{ $resumen['pct_otros'] }}%
@@ -140,6 +154,7 @@
                         <div class="progress-legend mt-2">
                             <span><i class="fas fa-square text-success"></i> {{ $resumen['operativos'] }} operativos ({{ $resumen['pct_operativo'] }}%) — Nuevo/Usado/Reparado</span>
                             <span><i class="fas fa-square text-danger"></i> {{ $resumen['no_operativos'] }} no operativos ({{ $resumen['pct_no_operativo'] }}%) — Baja/No funciona/Perdido/Degradado/Recambio</span>
+                            <span><i class="fas fa-square text-warning"></i> {{ $resumen['htt500_total'] }} HTT500 ({{ $resumen['pct_htt500'] }}%) — se cuentan aparte, no hay baterías/antenas disponibles</span>
                             <span><i class="fas fa-square text-secondary"></i> {{ $resumen['otros_estados'] }} otros estados ({{ $resumen['pct_otros'] }}%) — Temporal/En revisión</span>
                         </div>
                     </div>
@@ -376,13 +391,13 @@
                                 @forelse($porDependencia as $fila)
                                     <tr>
                                         <td>{{ $fila->destino_nombre }} <small class="text-muted">({{ $fila->destino_tipo }})</small></td>
-                                        <td class="text-center equipos-clicable" data-equipos-titulo="{{ $fila->destino_nombre }} — Todos" data-equipos-filtro='{{ json_encode(["destino_id" => $fila->destino_id, "situacion" => "instalado"]) }}'>
+                                        <td class="text-center equipos-clicable" data-equipos-titulo="{{ $fila->destino_nombre }} — Todos" data-equipos-filtro='{{ json_encode(["destino_id" => $fila->destino_id]) }}'>
                                             <strong>{{ $fila->total }}</strong>
                                         </td>
-                                        <td class="text-center equipos-clicable" data-equipos-titulo="{{ $fila->destino_nombre }} — Operativos" data-equipos-filtro='{{ json_encode(["destino_id" => $fila->destino_id, "situacion" => "instalado", "condicion" => "operativo"]) }}'>
+                                        <td class="text-center equipos-clicable" data-equipos-titulo="{{ $fila->destino_nombre }} — Operativos" data-equipos-filtro='{{ json_encode(["destino_id" => $fila->destino_id, "condicion" => "operativo"]) }}'>
                                             <span class="badge badge-success">{{ $fila->operativos }}</span>
                                         </td>
-                                        <td class="text-center equipos-clicable" data-equipos-titulo="{{ $fila->destino_nombre }} — No Operativos" data-equipos-filtro='{{ json_encode(["destino_id" => $fila->destino_id, "situacion" => "instalado", "condicion" => "no_operativo"]) }}'>
+                                        <td class="text-center equipos-clicable" data-equipos-titulo="{{ $fila->destino_nombre }} — No Operativos" data-equipos-filtro='{{ json_encode(["destino_id" => $fila->destino_id, "condicion" => "no_operativo"]) }}'>
                                             <span class="badge badge-danger">{{ $fila->no_operativos }}</span>
                                         </td>
                                     </tr>
@@ -414,7 +429,7 @@
         <div data-dashboard-section="seccion-tecnica-kpis">
             <div class="kpi-grid kpi-grid-sm mb-4">
                 @foreach($seccionTecnicaPorRecurso as $fila)
-                    <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="Sección Técnica — {{ $fila->recurso }}" data-equipos-filtro='{{ json_encode(["recurso_id" => $fila->recurso_id]) }}'>
+                    <div class="card card-statistic-1 equipos-clicable" data-equipos-titulo="Sección Técnica — {{ $fila->recurso }}" data-equipos-filtro='{{ json_encode(["destino_id" => $seccionTecnicaId, "recurso_id" => $fila->recurso_id]) }}'>
                         <div class="card-icon bg-secondary"><i class="fas fa-box"></i></div>
                         <div class="card-wrap">
                             <div class="card-header"><h4>{{ $fila->recurso }}</h4></div>
@@ -488,7 +503,7 @@
                                 </thead>
                                 <tbody>
                                 @forelse($seccionTecnicaPorRecursoYTipo as $fila)
-                                    <tr class="equipos-clicable" data-equipos-titulo="{{ $fila->recurso }} — {{ $fila->marca }} {{ $fila->modelo }}" data-equipos-filtro='{{ json_encode(["recurso_id" => $fila->recurso_id, "marca" => $fila->marca, "modelo" => $fila->modelo]) }}'>
+                                    <tr class="equipos-clicable" data-equipos-titulo="{{ $fila->recurso }} — {{ $fila->marca }} {{ $fila->modelo }}" data-equipos-filtro='{{ json_encode(["destino_id" => $seccionTecnicaId, "recurso_id" => $fila->recurso_id, "marca" => $fila->marca, "modelo" => $fila->modelo]) }}'>
                                         <td><small class="text-muted">{{ $fila->recurso }}</small></td>
                                         <td>{{ $fila->marca }} {{ $fila->modelo }}</td>
                                         <td class="text-center"><strong>{{ $fila->cantidad }}</strong></td>
@@ -603,10 +618,10 @@
     .card{border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
     .progress-legend{display:flex;gap:1rem;flex-wrap:wrap;font-size:.85rem;color:var(--text-secondary)}
 
-    /* Grilla de tarjetas KPI: 5 por fila en escritorio, 2 en mobile (10 tarjetas ÷
-       5 y ÷ 2 dan exacto, sin fila incompleta) — a diferencia de las columnas de
+    /* Grilla de tarjetas KPI: 4 por fila en escritorio, 2 en mobile (12 tarjetas ÷
+       4 y ÷ 2 dan exacto, sin fila incompleta) — a diferencia de las columnas de
        Bootstrap, que dejan huecos si el total no es múltiplo de las columnas. */
-    .kpi-grid{display:grid;grid-template-columns:repeat(5, 1fr);gap:1rem}
+    .kpi-grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:1rem}
     .kpi-grid .card{margin-bottom:0}
     @media (max-width: 767px){.kpi-grid{grid-template-columns:repeat(2, 1fr)}}
     /* Variante para nombres de recurso largos (Sección Técnica): título más chico */
@@ -668,6 +683,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const usoFiltroBase = @json($usoFiltroBase);
     const seccionTecnicaPorRecurso = @json($seccionTecnicaPorRecurso);
     const seccionTecnicaPorRecursoYTipo = @json($seccionTecnicaPorRecursoYTipo);
+    const seccionTecnicaId = @json($seccionTecnicaId);
     const estadoColores = @json(collect($estadoColores)->map(fn ($c) => $c['hex']));
     const estadoColorDefault = @json($estadoColorDefault['hex']);
     const detalleUrl = "{{ route('equipos.estadisticas.detalle') }}";
@@ -1041,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     onClick: function (evt, elements) {
                         if (!elements.length) return;
                         const fila = seccionTecnicaPorRecurso[elements[0].index];
-                        abrirModalConFiltro('Sección Técnica — ' + fila.recurso, { recurso_id: fila.recurso_id });
+                        abrirModalConFiltro('Sección Técnica — ' + fila.recurso, { destino_id: seccionTecnicaId, recurso_id: fila.recurso_id });
                     },
                     plugins: {
                         legend: { position: 'bottom', labels: { color: textColor, padding: 8, font: { size: 10 }, usePointStyle: true, pointStyle: 'circle' } },
@@ -1134,7 +1150,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         const datasetIndex = elements[0].datasetIndex;
                         const fila = seccionTecnicaPorRecurso[idx];
                         const condicion = datasetIndex === 0 ? 'operativo' : 'no_operativo';
-                        abrirModalConFiltro(fila.recurso + ' — ' + (datasetIndex === 0 ? 'Operativo' : 'No Operativo'), { recurso_id: fila.recurso_id, condicion: condicion });
+                        abrirModalConFiltro(fila.recurso + ' — ' + (datasetIndex === 0 ? 'Operativo' : 'No Operativo'), { destino_id: seccionTecnicaId, recurso_id: fila.recurso_id, condicion: condicion });
                     },
                     plugins: {
                         legend: { position: 'bottom', labels: { color: textColor, padding: 8, font: { size: 11 }, usePointStyle: true, pointStyle: 'circle' } },
@@ -1186,7 +1202,7 @@ document.addEventListener('DOMContentLoaded', function () {
             pdf.text('Generado: ' + new Date().toLocaleString('es-AR', { hour12: false }), margin, y);
             y += 5;
             pdf.text(
-                'Total: {{ $resumen["total"] }} equipos | Operativo: {{ $resumen["pct_operativo"] }}% | No operativo: {{ $resumen["pct_no_operativo"] }}% | Otros: {{ $resumen["pct_otros"] }}%',
+                'Total: {{ $resumen["total"] }} equipos | Operativo: {{ $resumen["pct_operativo"] }}% | No operativo: {{ $resumen["pct_no_operativo"] }}% | HTT500: {{ $resumen["pct_htt500"] }}% | Otros: {{ $resumen["pct_otros"] }}%',
                 margin, y
             );
             y += 8;

@@ -26,18 +26,21 @@ class EquipamientoEstadisticasExport implements WithMultipleSheets
         return [
             'Resumen' => $this->hoja('Resumen', [
                 ['Total de equipos', $resumen['total']],
-                ['Operativos (Nuevo/Usado/Reparado)', $resumen['operativos']],
-                ['No operativos (Baja/No funciona/Perdido/Degradado/Recambio)', $resumen['no_operativos']],
+                ['Operativos (Nuevo/Usado/Reparado, sin HTT500)', $resumen['operativos']],
+                ['No operativos (Baja/No funciona/Perdido/Degradado/Recambio, sin HTT500)', $resumen['no_operativos']],
+                ['Operativos HTT500 (aparte: sin baterías/antenas disponibles)', $resumen['operativos_htt500']],
+                ['No operativos HTT500', $resumen['no_operativos_htt500']],
                 ['Otros estados (Temporal/En revisión)', $resumen['otros_estados']],
                 ['En revisión técnica (último movimiento histórico)', $resumen['en_revision_tecnica']],
                 ['Instalados (Móvil/Base)', $resumen['instalados']],
                 ['Asignados (Portátiles TETRA, sin HTT500 ni VX-261)', $resumen['asignados_portatiles']],
                 ['HTT500 asignados (sin accesorios, no cuentan como operativo disponible)', $resumen['htt500_asignados']],
                 ['VX-261 asignados (no es TETRA)', $resumen['vertex_asignados']],
-                ['No operativos en terreno (asignados, fuera de Sección Técnica)', $resumen['no_operativos_en_terreno']],
+                ['No operativos en terreno (asignados, fuera de Stock 911, Sección Técnica y Telecom)', $resumen['no_operativos_en_terreno']],
                 ['En Sección Técnica (Stock 911 y demás recursos, ver hoja aparte)', $resumen['seccion_tecnica_total']],
                 ['% Operativo', $resumen['pct_operativo'] . '%'],
                 ['% No operativo', $resumen['pct_no_operativo'] . '%'],
+                ['% HTT500', $resumen['pct_htt500'] . '%'],
             ], ['Indicador', 'Valor']),
 
             'Reconciliación' => $this->hoja(

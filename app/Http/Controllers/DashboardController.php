@@ -169,6 +169,11 @@ class DashboardController extends Controller
             $query->where('flota_general.destino_id', $request->integer('destino_id'));
         }
 
+        if ($request->filled('excluir_destinos')) {
+            $nombres = array_filter(explode(',', $request->string('excluir_destinos')));
+            $query->whereNotIn('destino.nombre', $nombres);
+        }
+
         if ($request->filled('recurso_id')) {
             $query->where('flota_general.recurso_id', $request->integer('recurso_id'));
         }
@@ -230,10 +235,19 @@ class DashboardController extends Controller
         $operativoIdsSql = $operativoIds->isNotEmpty() ? $operativoIds->implode(',') : '0';
         $noOperativoIdsSql = $noOperativoIds->isNotEmpty() ? $noOperativoIds->implode(',') : '0';
 
+        // El HTT500 se trata aparte en los contadores de Operativos/No Operativos:
+        // aunque su estado diga que está bien, no hay baterías ni antenas disponibles
+        // para equiparlo, así que mezclarlo con el resto de la flota operativa da una
+        // idea equivocada de cuánto hay realmente disponible.
+        $esHtt500 = fn ($q) => $q->where('marca', 'Teltronic')->where('modelo', 'HTT500');
+
         $totalEquipos = Equipo::count();
-        $totalOperativos = Equipo::whereIn('estado_id', $operativoIds)->count();
-        $totalNoOperativos = Equipo::whereIn('estado_id', $noOperativoIds)->count();
-        $totalOtrosEstados = $totalEquipos - $totalOperativos - $totalNoOperativos;
+        $totalOperativos = Equipo::whereIn('estado_id', $operativoIds)->whereDoesntHave('tipo_terminal', $esHtt500)->count();
+        $totalNoOperativos = Equipo::whereIn('estado_id', $noOperativoIds)->whereDoesntHave('tipo_terminal', $esHtt500)->count();
+        $totalOperativosHtt500 = Equipo::whereIn('estado_id', $operativoIds)->whereHas('tipo_terminal', $esHtt500)->count();
+        $totalNoOperativosHtt500 = Equipo::whereIn('estado_id', $noOperativoIds)->whereHas('tipo_terminal', $esHtt500)->count();
+        $totalHtt500 = Equipo::whereHas('tipo_terminal', $esHtt500)->count();
+        $totalOtrosEstados = $totalEquipos - $totalOperativos - $totalNoOperativos - $totalHtt500;
 
         // "En revisión técnica" según el último movimiento histórico de cada equipo
         // (no según el estado, tal como se releva la revisión de soporte/sección técnica).
@@ -299,10 +313,16 @@ class DashboardController extends Controller
 
         // No operativos (rotos/degradados/perdidos/baja) que todavía figuran asignados a un
         // recurso real (no en Stock 911): equipos que habría que retirar de la calle.
+        // Se excluyen Sección Técnica y Telecom: ahí el equipo roto ya está en el depósito
+        // técnico (Equipos sin reparación, Equipos reclamados, Equipos recambiados, etc.),
+        // no hay que "retirarlo de la calle", ya lo tiene la propia Sección Técnica.
+        $destinosExcluidosEnTerrenoIds = Destino::whereIn('nombre', ['Sección Técnica', 'Telecom'])->pluck('id');
+
         $totalNoOperativosEnTerreno = FlotaGeneral::query()
             ->join('equipos', 'flota_general.equipo_id', '=', 'equipos.id')
             ->whereIn('equipos.estado_id', $noOperativoIds)
             ->when($stock911, fn ($q) => $q->where('flota_general.recurso_id', '!=', $stock911->id))
+            ->whereNotIn('flota_general.destino_id', $destinosExcluidosEnTerrenoIds)
             ->distinct('flota_general.equipo_id')
             ->count('flota_general.equipo_id');
 
@@ -527,6 +547,9 @@ class DashboardController extends Controller
             'total' => $totalEquipos,
             'operativos' => $totalOperativos,
             'no_operativos' => $totalNoOperativos,
+            'operativos_htt500' => $totalOperativosHtt500,
+            'no_operativos_htt500' => $totalNoOperativosHtt500,
+            'htt500_total' => $totalHtt500,
             'otros_estados' => $totalOtrosEstados,
             'en_revision_tecnica' => $totalEnRevisionTecnica,
             'instalados' => $totalInstalados,
@@ -538,6 +561,7 @@ class DashboardController extends Controller
             'no_operativos_en_terreno' => $totalNoOperativosEnTerreno,
             'pct_operativo' => $totalEquipos > 0 ? round($totalOperativos / $totalEquipos * 100, 1) : 0,
             'pct_no_operativo' => $totalEquipos > 0 ? round($totalNoOperativos / $totalEquipos * 100, 1) : 0,
+            'pct_htt500' => $totalEquipos > 0 ? round($totalHtt500 / $totalEquipos * 100, 1) : 0,
             'pct_otros' => $totalEquipos > 0 ? round($totalOtrosEstados / $totalEquipos * 100, 1) : 0,
             'htt500_sin_movimiento' => $htt500SinMovimiento->count(),
             'seccion_tecnica_total' => $totalSeccionTecnica,

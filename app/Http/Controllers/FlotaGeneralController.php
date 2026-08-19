@@ -694,13 +694,6 @@ class FlotaGeneralController extends Controller
             ->orderBy('fecha_asignacion', 'desc')
             ->get();
 
-        // Decodificar las rutas de las imágenes si están en formato JSON
-        foreach ($hist as $h) {
-            if ($h->rutas_imagenes) {
-                $h->rutas_imagenes = json_decode($h->rutas_imagenes);
-            }
-        }
-
         return view('flota.historico', compact('hist', 'flota', 'desdeEquipo'));
     }
 
@@ -768,13 +761,6 @@ class FlotaGeneralController extends Controller
         $hist = Historico::where('equipo_id', $flota->equipo->id)
             ->orderBy('fecha_asignacion', 'desc')
             ->get();
-
-        // Decodificar las rutas de las imágenes si están en formato JSON
-        foreach ($hist as $h) {
-            if ($h->rutas_imagenes) {
-                $h->rutas_imagenes = json_decode($h->rutas_imagenes);
-            }
-        }
 
         return view('flota.historico', compact('hist', 'flota', 'desdeEquipo'));
     }

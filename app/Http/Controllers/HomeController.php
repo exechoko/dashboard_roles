@@ -667,6 +667,7 @@ class HomeController extends Controller
                     CASE
                         WHEN payload LIKE '%ProcesarArchivoEventoCecoco%' THEN 'Importación Excel'
                         WHEN payload LIKE '%GeocodificarLoteEventosCecoco%' THEN 'Geocodificación'
+                        WHEN payload LIKE '%IndexarArchivoMbox%' THEN 'Indexación de Correos'
                         ELSE 'Otro'
                     END AS tipo,
                     COUNT(*) as total,
@@ -676,6 +677,7 @@ class HomeController extends Controller
                     CASE
                         WHEN payload LIKE '%ProcesarArchivoEventoCecoco%' THEN 'Importación Excel'
                         WHEN payload LIKE '%GeocodificarLoteEventosCecoco%' THEN 'Geocodificación'
+                        WHEN payload LIKE '%IndexarArchivoMbox%' THEN 'Indexación de Correos'
                         ELSE 'Otro'
                     END
                 ")
@@ -699,6 +701,16 @@ class HomeController extends Controller
                 ->where('reserved_at', '>=', now()->subMinutes(10)->timestamp)
                 ->exists();
 
+            // Cola 'mbox' (indexación de backups de correo): se mide aparte porque corre en
+            // un worker propio (queue:work --queue=mbox) y puede estar caído sin que el
+            // indicador general de arriba lo note, si el worker de 'default' sigue activo.
+            $pendientesMbox = DB::table('jobs')->where('queue', 'mbox')->whereNull('reserved_at')->count();
+            $procesandoMbox = DB::table('jobs')->where('queue', 'mbox')->whereNotNull('reserved_at')->count();
+            $workerActivoMbox = $procesandoMbox > 0 || DB::table('jobs')
+                ->where('queue', 'mbox')
+                ->where('reserved_at', '>=', now()->subMinutes(10)->timestamp)
+                ->exists();
+
             // Tamaño BD restauraciones CECOCO: caché que refresca el schedule horario.
             $tamanoRest = Cache::get(\App\Services\CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES);
             $tamanoRestGps = Cache::get(\App\Services\CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES_GPS);
@@ -712,6 +724,9 @@ class HomeController extends Controller
             'procesando' => $procesando,
             'fallidos' => $fallidos,
             'jobs_por_tipo' => $jobsPorTipo,
+            'mbox_worker_activo' => $workerActivoMbox,
+            'mbox_pendientes' => $pendientesMbox,
+            'mbox_procesando' => $procesandoMbox,
             'geo_total_dir' => $totalDirecciones,
             'geo_cacheadas' => $geocodeadas,
             'geo_pendientes' => ($totalDirecciones !== null && $geocodeadas !== null) ? max(0, $totalDirecciones - $geocodeadas) : null,

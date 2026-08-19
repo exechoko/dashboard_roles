@@ -1232,6 +1232,25 @@
                                                                 <span><strong>Fallidos:</strong> <span id="workers-fallidos" class="badge badge-danger">—</span></span>
                                                             </div>
 
+                                                            @can('administrar-visor-mails')
+                                                                {{-- Cola de indexación de correos (mbox) --}}
+                                                                <div class="estado-procesos-bloque" title="Worker dedicado a indexar los backups .mbox del Visor de Correos (php artisan queue:work --queue=mbox).">
+                                                                    <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-envelope-open-text mr-1"></i><strong>Cola de Correos (mbox)</strong></small>
+                                                                    <div class="d-flex align-items-center flex-wrap" style="gap:0.75rem;">
+                                                                        <span class="d-flex align-items-center">
+                                                                            <span id="mbox-worker-dot" class="mr-2"
+                                                                                style="width:10px;height:10px;border-radius:50%;display:inline-block;background:#aaa;"></span>
+                                                                            <span id="mbox-worker-label" class="badge badge-secondary">Verificando...</span>
+                                                                        </span>
+                                                                        <span><small>Pendientes:</small> <span id="mbox-pendientes" class="badge badge-secondary">—</span></span>
+                                                                        <span><small>Procesando:</small> <span id="mbox-procesando" class="badge badge-secondary">—</span></span>
+                                                                        <a href="{{ route('herramientas.mails.buzones.index') }}" class="btn btn-xs btn-outline-primary" title="Ver buzones">
+                                                                            <i class="fas fa-inbox"></i>
+                                                                        </a>
+                                                                    </div>
+                                                                </div>
+                                                            @endcan
+
                                                             {{-- Geocodificación --}}
                                                             <div class="estado-procesos-bloque">
                                                                 <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-map-marker-alt mr-1"></i><strong>Geocodificación</strong></small>
@@ -3568,6 +3587,31 @@
 
                         var elFall = document.getElementById('workers-fallidos');
                         if (elFall) { elFall.textContent = d.fallidos; elFall.className = d.fallidos > 0 ? 'badge badge-danger' : 'badge badge-secondary'; }
+
+                        // Cola de correos (mbox)
+                        var mboxDot = document.getElementById('mbox-worker-dot');
+                        var mboxLabel = document.getElementById('mbox-worker-label');
+                        if (mboxDot && mboxLabel) {
+                            if (d.mbox_worker_activo) {
+                                mboxDot.style.background = '#22c55e';
+                                mboxLabel.className = 'badge badge-success';
+                                mboxLabel.textContent = 'Activo';
+                            } else if (d.mbox_pendientes > 0) {
+                                // Hay archivos esperando ser indexados pero nadie los está tomando:
+                                // o no se levantó "queue:work --queue=mbox", o se cayó.
+                                mboxDot.style.background = '#ef4444';
+                                mboxLabel.className = 'badge badge-danger';
+                                mboxLabel.textContent = 'Detenido';
+                            } else {
+                                mboxDot.style.background = '#6b7280';
+                                mboxLabel.className = 'badge badge-secondary';
+                                mboxLabel.textContent = 'Sin trabajos';
+                            }
+                        }
+                        var mboxPend = document.getElementById('mbox-pendientes');
+                        if (mboxPend) { mboxPend.textContent = d.mbox_pendientes; mboxPend.className = d.mbox_pendientes > 0 ? 'badge badge-warning' : 'badge badge-secondary'; }
+                        var mboxProc = document.getElementById('mbox-procesando');
+                        if (mboxProc) { mboxProc.textContent = d.mbox_procesando; mboxProc.className = d.mbox_procesando > 0 ? 'badge badge-info' : 'badge badge-secondary'; }
 
                         // Geocodificación
                         var elGeoServicio = document.getElementById('workers-geo-servicio');

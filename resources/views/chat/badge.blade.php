@@ -1,3 +1,25 @@
+<style>
+    @keyframes chatBadgePop {
+        0%   { transform: scale(1); }
+        30%  { transform: scale(1.7); }
+        55%  { transform: scale(0.85); }
+        75%  { transform: scale(1.2); }
+        100% { transform: scale(1); }
+    }
+
+    @keyframes chatBadgePulso {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, .55); }
+        50%      { box-shadow: 0 0 0 5px rgba(220, 53, 69, 0); }
+    }
+
+    #chat-nav-badge.chat-badge-pulso {
+        animation: chatBadgePulso 1.6s ease-in-out infinite;
+    }
+
+    #chat-nav-badge.chat-badge-pop {
+        animation: chatBadgePop .6s ease, chatBadgePulso 1.6s ease-in-out infinite .6s;
+    }
+</style>
 <script>
 $(function () {
     const badge = $('#chat-nav-badge');
@@ -7,17 +29,23 @@ $(function () {
     const usuarioActualId = {{ (int) auth()->id() }};
     let conversaciones = {};
 
-    function pintar(total) {
+    function pintar(total, esNuevo) {
         if (total > 0) {
-            badge.text(total > 99 ? '99+' : total).show();
+            badge.text(total > 99 ? '99+' : total).show().addClass('chat-badge-pulso');
+
+            if (esNuevo) {
+                badge.removeClass('chat-badge-pop');
+                void badge[0].offsetWidth;
+                badge.addClass('chat-badge-pop');
+            }
         } else {
-            badge.hide();
+            badge.hide().removeClass('chat-badge-pulso chat-badge-pop');
         }
     }
 
     $.get(syncUrl).done(function (respuesta) {
         (respuesta.conversaciones || []).forEach(function (c) { conversaciones[c.id] = c; });
-        pintar(respuesta.no_leidos_total || 0);
+        pintar(respuesta.no_leidos_total || 0, false);
     });
 
     if (window.ChatRealtime) {
@@ -38,7 +66,7 @@ $(function () {
             const total = Object.values(conversaciones).reduce(function (acc, c) {
                 return acc + (c.no_leidos || 0);
             }, 0);
-            pintar(total);
+            pintar(total, true);
 
             if (window.ChatNotificador) {
                 window.ChatNotificador.notificarMensaje(conversacion);

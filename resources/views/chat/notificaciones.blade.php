@@ -1,7 +1,6 @@
 <script>
 window.ChatNotificador = (function () {
     const urlChat = @json(route('chat.index'));
-    let previo = null;
 
     if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
@@ -42,24 +41,6 @@ window.ChatNotificador = (function () {
         };
     }
 
-    function procesar(conversaciones) {
-        conversaciones = conversaciones || [];
-
-        if (previo === null) {
-            previo = {};
-            conversaciones.forEach(function (c) { previo[c.id] = c.no_leidos; });
-            return;
-        }
-
-        conversaciones.forEach(function (c) {
-            const antes = previo[c.id] || 0;
-            if (c.no_leidos > antes) {
-                notificar(c);
-            }
-            previo[c.id] = c.no_leidos;
-        });
-    }
-
-    return { procesar: procesar };
+    return { notificarMensaje: notificar };
 })();
 </script>

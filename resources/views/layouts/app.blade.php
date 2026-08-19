@@ -130,6 +130,9 @@
         @endif
 
         @can('ver-chat')
+            <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.4.0/dist/web/pusher.min.js" crossorigin="anonymous"></script>
+            <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js" crossorigin="anonymous"></script>
+            @include('chat.echo')
             @include('chat.notificaciones')
             @unless(request()->is('chat*'))
                 @include('chat.badge')

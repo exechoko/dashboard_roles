@@ -596,56 +596,106 @@ $(function () {
     let lecturas = {};
     let ultimoAviso = 0;
     let filtroTexto = '';
-
-    /**
-     * Costura de transporte: todo el polling vive acá. El día que se pueda migrar a
-     * WebSocket (Reverb, tras subir a PHP 8.2), sólo hay que reescribir este objeto —
-     * el resto de la interfaz sólo consume el callback de `iniciar`.
-     */
-    const ChatTransport = (function () {
-        let timer = null;
-        let callback = null;
-
-        function intervaloMs() {
-            if (document.hidden) return 20000;
-            return conversacionActivaId ? 3000 : 8000;
-        }
-
-        function tick() {
-            const params = {};
-            if (conversacionActivaId) {
-                params.conversacion = conversacionActivaId;
-                params.desde = ultimoMensajeId;
-            }
-            $.get(urls.sync, params).done(function (respuesta) {
-                if (callback) callback(respuesta);
-            });
-        }
-
-        function reprogramar() {
-            if (timer) clearInterval(timer);
-            timer = setInterval(tick, intervaloMs());
-        }
-
-        return {
-            iniciar(alRecibir) {
-                callback = alRecibir;
-                reprogramar();
-                document.addEventListener('visibilitychange', function () {
-                    reprogramar();
-                    if (!document.hidden) tick();
-                });
-            },
-            forzar: tick,
-            reprogramar,
-        };
-    })();
+    let escribiendoTimeout = null;
 
     let conversacionInicial = new URLSearchParams(window.location.search).get('conversacion');
 
     cargarContactos();
-    ChatTransport.iniciar(alRecibirSync);
-    ChatTransport.forzar();
+    cargarSnapshotInicial();
+    suscribirRealtime();
+
+    function cargarSnapshotInicial() {
+        $.get(urls.sync).done(function (respuesta) {
+            conversaciones = respuesta.conversaciones || [];
+            renderizarListaConversaciones();
+            actualizarBadgeNavbar(respuesta.no_leidos_total || 0);
+
+            if (conversacionInicial) {
+                const idInicial = parseInt(conversacionInicial, 10);
+                conversacionInicial = null;
+                if (conversaciones.some(function (c) { return c.id === idInicial; })) {
+                    abrirConversacion(idInicial);
+                }
+            }
+        });
+    }
+
+    function suscribirRealtime() {
+        if (!window.ChatRealtime) return;
+
+        window.ChatRealtime.onMensaje(function (evento, conversacionCreada) {
+            if (conversacionCreada) {
+                upsertConversacion(normalizarConversacionCreada(conversacionCreada));
+                return;
+            }
+            manejarMensajeEntrante(evento);
+        });
+
+        window.ChatRealtime.onPresencia(recalcularPresencia);
+    }
+
+    function manejarMensajeEntrante(evento) {
+        const mensaje = evento.mensaje;
+        const esPropio = mensaje.usuario_id === usuarioActualId;
+        const esActiva = evento.conversacion_id === conversacionActivaId;
+        const conversacion = conversaciones.find(function (c) { return c.id === evento.conversacion_id; });
+
+        if (conversacion) {
+            conversacion.ultimo_mensaje = mensaje.cuerpo || ((mensaje.adjuntos || []).length ? 'Adjunto' : null);
+            conversacion.actualizado_en = mensaje.creado_en;
+            if (!esPropio && !esActiva) {
+                conversacion.no_leidos = (conversacion.no_leidos || 0) + 1;
+            }
+        }
+
+        renderizarListaConversaciones();
+        actualizarBadgeNavbar(conversaciones.reduce(function (acc, c) { return acc + (c.no_leidos || 0); }, 0));
+
+        if (esActiva) {
+            agregarMensaje(mensaje);
+            desplazarAlFinal();
+            actualizarEstadoLectura();
+            if (!esPropio && !document.hidden) marcarLeido(conversacionActivaId);
+        }
+
+        if (!esPropio && conversacion && window.ChatNotificador) {
+            window.ChatNotificador.notificarMensaje(conversacion);
+        }
+    }
+
+    function normalizarConversacionCreada(payload) {
+        const otros = (payload.participantes || []).filter(function (p) { return p.id !== usuarioActualId; });
+        const ids = otros.map(function (p) { return p.id; });
+
+        return {
+            id: payload.id,
+            tipo: payload.tipo,
+            nombre: payload.tipo === 'grupo' ? payload.nombre : (otros[0] ? otros[0].nombre : 'Usuario eliminado'),
+            ultimo_mensaje: null,
+            actualizado_en: payload.actualizado_en,
+            no_leidos: 0,
+            en_linea: ids.some(function (id) { return window.ChatRealtime.estaEnLinea(id); }),
+            en_linea_count: ids.filter(function (id) { return window.ChatRealtime.estaEnLinea(id); }).length,
+            participantes_count: (payload.participantes || []).length,
+            participantes_ids: ids,
+        };
+    }
+
+    function recalcularPresencia() {
+        conversaciones.forEach(function (c) {
+            const ids = c.participantes_ids || [];
+            c.en_linea = ids.some(function (id) { return window.ChatRealtime.estaEnLinea(id); });
+            c.en_linea_count = ids.filter(function (id) { return window.ChatRealtime.estaEnLinea(id); }).length;
+        });
+        renderizarListaConversaciones();
+        mostrarEstadoConexion();
+    }
+
+    function marcarEscribiendo() {
+        panelEscribiendo.text('Escribiendo...');
+        clearTimeout(escribiendoTimeout);
+        escribiendoTimeout = setTimeout(mostrarEstadoConexion, 4000);
+    }
 
     $('#chat-nuevo-btn').on('click', function () {
         cargarContactos();
@@ -718,7 +768,8 @@ $(function () {
             const contenedor = $('#chat-lista-contactos').empty();
             (respuesta.usuarios || []).forEach(function (usuario) {
                 const color = colorDesdeId(usuario.id);
-                const punto = usuario.en_linea ? '<span class="chat-avatar-dot"></span>' : '';
+                const enLinea = window.ChatRealtime ? window.ChatRealtime.estaEnLinea(usuario.id) : usuario.en_linea;
+                const punto = enLinea ? '<span class="chat-avatar-dot"></span>' : '';
                 contenedor.append(
                     '<div class="chat-contacto-fila">' +
                     '<input type="checkbox" id="chat-contacto-' + usuario.id + '" value="' + usuario.id + '">' +
@@ -769,6 +820,10 @@ $(function () {
     }
 
     function abrirConversacion(id) {
+        if (conversacionActivaId && conversacionActivaId !== id && window.ChatRealtime) {
+            window.ChatRealtime.salirDe(conversacionActivaId);
+        }
+
         conversacionActivaId = id;
         ultimoMensajeId = 0;
         lecturas = {};
@@ -788,56 +843,24 @@ $(function () {
             desplazarAlFinal();
             actualizarEstadoLectura();
             marcarLeido(id);
-        });
 
-        ChatTransport.reprogramar();
-        ChatTransport.forzar();
-    }
-
-    function alRecibirSync(respuesta) {
-        conversaciones = respuesta.conversaciones || [];
-        renderizarListaConversaciones();
-        actualizarBadgeNavbar(respuesta.no_leidos_total || 0);
-
-        if (window.ChatNotificador) {
-            window.ChatNotificador.procesar(respuesta.conversaciones);
-        }
-
-        if (conversacionInicial) {
-            const idInicial = parseInt(conversacionInicial, 10);
-            conversacionInicial = null;
-            if (conversaciones.some(function (c) { return c.id === idInicial; })) {
-                abrirConversacion(idInicial);
-                return;
+            if (conversacion) {
+                conversacion.no_leidos = 0;
+                renderizarListaConversaciones();
+                actualizarBadgeNavbar(conversaciones.reduce(function (acc, c) { return acc + (c.no_leidos || 0); }, 0));
             }
-        }
-
-        if (conversacionActivaId) {
-            const activa = conversaciones.find(function (c) { return c.id === conversacionActivaId; });
-            if (activa) panelAvatar.html(avatarHtml(activa));
-        }
-
-        if (!conversacionActivaId) return;
-
-        if (respuesta.lecturas) {
-            lecturas = respuesta.lecturas;
-        }
-
-        let llegoAjeno = false;
-        (respuesta.mensajes || []).forEach(function (mensaje) {
-            agregarMensaje(mensaje);
-            if (mensaje.usuario_id !== usuarioActualId) llegoAjeno = true;
         });
 
-        if (respuesta.mensajes && respuesta.mensajes.length) {
-            desplazarAlFinal();
-        }
-
-        actualizarEstadoLectura();
-        mostrarEscribiendo(respuesta.escribiendo || []);
-
-        if (llegoAjeno && !document.hidden) {
-            marcarLeido(conversacionActivaId);
+        if (window.ChatRealtime) {
+            window.ChatRealtime.conversacion(id)
+                .listen('.chat.escribiendo', function (evento) {
+                    if (evento.usuario_id === usuarioActualId) return;
+                    marcarEscribiendo();
+                })
+                .listen('.chat.leido', function (evento) {
+                    lecturas[evento.usuario_id] = evento.ultimo_leido_id;
+                    actualizarEstadoLectura();
+                });
         }
     }
 
@@ -860,7 +883,27 @@ $(function () {
             '</div>' +
             '</div>';
 
-        mensajesEl.append(html);
+        const elemento = $(html).appendTo(mensajesEl);
+        elemento.find('.chat-adjunto-imagen').each(function () { activarReintentoImagen(this); });
+    }
+
+    /**
+     * Blinda la carga de imágenes recibidas en vivo: si la imagen llega justo cuando
+     * el servidor (típicamente el dev server, mono-hilo) está ocupado con el propio
+     * POST de envío, el primer pedido puede fallar. Reintenta con backoff en vez de
+     * dejarla rota hasta que el usuario recargue la página.
+     */
+    function activarReintentoImagen(img) {
+        const original = img.src;
+        let intentos = 0;
+
+        img.addEventListener('error', function () {
+            if (intentos >= 5) return;
+            intentos += 1;
+            setTimeout(function () {
+                img.src = original + (original.indexOf('?') === -1 ? '?' : '&') + 'r=' + Date.now();
+            }, 400 * intentos);
+        });
     }
 
     function actualizarEstadoLectura() {
@@ -874,14 +917,6 @@ $(function () {
 
         propios.find('.chat-mensaje-estado').text('');
         ultimoPropio.find('.chat-mensaje-estado').text(vistoPorTodos ? 'Visto' : 'Enviado');
-    }
-
-    function mostrarEscribiendo(idsEscribiendo) {
-        if (idsEscribiendo.length) {
-            panelEscribiendo.text('Escribiendo...');
-            return;
-        }
-        mostrarEstadoConexion();
     }
 
     function mostrarEstadoConexion() {
@@ -950,7 +985,6 @@ $(function () {
             agregarMensaje(respuesta.mensaje);
             desplazarAlFinal();
             actualizarEstadoLectura();
-            ChatTransport.forzar();
         }).fail(function (xhr) {
             avisar('error', xhr.responseJSON?.message || 'No se pudo enviar el mensaje.');
         }).always(function () {

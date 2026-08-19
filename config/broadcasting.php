@@ -44,6 +44,7 @@ return [
         'ably' => [
             'driver' => 'ably',
             'key' => env('ABLY_KEY'),
+            'public_key' => Illuminate\Support\Str::before(env('ABLY_KEY', ''), ':'),
         ],
 
         'redis' => [

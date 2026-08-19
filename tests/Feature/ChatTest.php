@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Events\ChatEscribiendo;
+use App\Events\ChatLeido;
+use App\Events\ChatMensajeEnviado;
 use App\Models\ChatAdjunto;
 use App\Models\ChatConversacion;
 use App\Models\User;
@@ -9,6 +12,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -348,5 +352,99 @@ class ChatTest extends TestCase
 
         $datos = collect($respuesta->json('conversaciones'))->firstWhere('id', $conversacion->id);
         $this->assertFalse($datos['en_linea']);
+    }
+
+    public function test_sync_muestra_adjunto_como_preview_cuando_el_ultimo_mensaje_no_tiene_texto(): void
+    {
+        $user = $this->usuarioConAccesoAlChat();
+        $otro = User::factory()->create();
+        $conversacion = $this->crearConversacionPrivada($user, $otro);
+
+        $mensaje = $conversacion->mensajes()->create(['user_id' => $otro->id, 'cuerpo' => null]);
+        $mensaje->adjuntos()->create([
+            'nombre_original' => 'foto.webp',
+            'ruta' => 'chat/1/foto.webp',
+            'mime' => 'image/webp',
+            'tamano' => 1000,
+        ]);
+
+        $respuesta = $this->actingAs($user)->getJson(route('chat.sync'))->assertOk();
+
+        $datos = collect($respuesta->json('conversaciones'))->firstWhere('id', $conversacion->id);
+        $this->assertSame('Adjunto', $datos['ultimo_mensaje']);
+    }
+
+    public function test_enviar_un_mensaje_despacha_el_evento_al_canal_de_cada_participante(): void
+    {
+        Event::fake([ChatMensajeEnviado::class]);
+
+        $user = $this->usuarioConAccesoAlChat();
+        $otro = $this->usuarioConAccesoAlChat();
+        $conversacion = $this->crearConversacionPrivada($user, $otro);
+
+        $this->actingAs($user)
+            ->postJson(route('chat.mensajes.store', $conversacion), ['cuerpo' => 'Hola'])
+            ->assertCreated();
+
+        Event::assertDispatched(ChatMensajeEnviado::class, function (ChatMensajeEnviado $event) use ($user, $otro): bool {
+            $canales = collect($event->broadcastOn())->map(fn ($canal) => $canal->name);
+
+            return $canales->count() === 2
+                && $canales->contains("private-chat.usuario.{$user->id}")
+                && $canales->contains("private-chat.usuario.{$otro->id}");
+        });
+    }
+
+    public function test_escribir_despacha_el_evento_en_el_canal_de_la_conversacion(): void
+    {
+        Event::fake([ChatEscribiendo::class]);
+
+        $user = $this->usuarioConAccesoAlChat();
+        $otro = User::factory()->create();
+        $conversacion = $this->crearConversacionPrivada($user, $otro);
+
+        $this->actingAs($user)
+            ->postJson(route('chat.conversaciones.escribiendo', $conversacion))
+            ->assertOk();
+
+        Event::assertDispatched(ChatEscribiendo::class, function (ChatEscribiendo $event) use ($conversacion, $user): bool {
+            return $event->conversacionId === $conversacion->id
+                && $event->usuarioId === $user->id
+                && collect($event->broadcastOn())->first()->name === "private-chat.conversacion.{$conversacion->id}";
+        });
+    }
+
+    public function test_marcar_leido_despacha_el_evento_en_el_canal_de_la_conversacion(): void
+    {
+        Event::fake([ChatLeido::class]);
+
+        $user = $this->usuarioConAccesoAlChat();
+        $otro = User::factory()->create();
+        $conversacion = $this->crearConversacionPrivada($user, $otro);
+        $mensaje = $conversacion->mensajes()->create(['user_id' => $otro->id, 'cuerpo' => 'Hola']);
+
+        $this->actingAs($user)
+            ->postJson(route('chat.conversaciones.leido', $conversacion))
+            ->assertOk();
+
+        Event::assertDispatched(ChatLeido::class, function (ChatLeido $event) use ($conversacion, $user, $mensaje): bool {
+            return $event->conversacionId === $conversacion->id
+                && $event->usuarioId === $user->id
+                && $event->ultimoLeidoId === $mensaje->id;
+        });
+    }
+
+    public function test_un_usuario_ajeno_no_puede_autorizarse_en_el_canal_privado_de_la_conversacion(): void
+    {
+        $ajeno = $this->usuarioConAccesoAlChat();
+        $propietario = User::factory()->create();
+        $otro = User::factory()->create();
+        $conversacion = $this->crearConversacionPrivada($propietario, $otro);
+
+        $this->actingAs($ajeno)
+            ->postJson('/broadcasting/auth', [
+                'channel_name' => "private-chat.conversacion.{$conversacion->id}",
+            ])
+            ->assertForbidden();
     }
 }

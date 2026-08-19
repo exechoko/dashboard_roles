@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\ChatConversacionCreada;
+use App\Events\ChatEscribiendo;
+use App\Events\ChatLeido;
+use App\Events\ChatMensajeEnviado;
 use App\Http\Requests\CrearConversacionChatRequest;
 use App\Http\Requests\EnviarMensajeChatRequest;
 use App\Models\ChatAdjunto;
@@ -39,7 +43,7 @@ class ChatController extends Controller
 
         $conversaciones = $user->chatConversaciones()
             ->with([
-                'ultimoMensaje',
+                'ultimoMensaje.adjuntos',
                 'usuarios' => fn ($query) => $query->where('users.id', '!=', $user->id)
                     ->select('users.id', 'users.name', 'users.apellido'),
             ])
@@ -78,7 +82,7 @@ class ChatController extends Controller
                 ->with(['usuario:id,name,apellido', 'adjuntos'])
                 ->orderBy('id')
                 ->get()
-                ->map(fn (ChatMensaje $mensaje): array => $this->mensajeData($mensaje))
+                ->map(fn (ChatMensaje $mensaje): array => $mensaje->paraChat())
                 ->values();
 
             $escribiendo = $conversacionActiva->participantes()
@@ -115,7 +119,7 @@ class ChatController extends Controller
             ->get()
             ->sortBy('id')
             ->values()
-            ->map(fn (ChatMensaje $mensaje): array => $this->mensajeData($mensaje))
+            ->map(fn (ChatMensaje $mensaje): array => $mensaje->paraChat())
             ->values();
 
         $lecturas = $conversacion->participantes()
@@ -194,11 +198,17 @@ class ChatController extends Controller
             });
         }
 
+        $conversacionCreada = $conversacion->wasRecentlyCreated;
+
         $conversacion->load([
             'ultimoMensaje',
             'usuarios' => fn ($query) => $query->where('users.id', '!=', $user->id)
                 ->select('users.id', 'users.name', 'users.apellido'),
         ]);
+
+        if ($conversacionCreada) {
+            ChatConversacionCreada::dispatch($conversacion);
+        }
 
         return response()->json(['conversacion' => $this->conversacionData($conversacion)], 201);
     }
@@ -239,9 +249,11 @@ class ChatController extends Controller
 
         Cache::forget("chat.escribiendo.{$conversacion->id}.{$request->user()->id}");
 
-        return response()->json([
-            'mensaje' => $this->mensajeData($mensaje->load(['usuario:id,name,apellido', 'adjuntos'])),
-        ], 201);
+        $mensaje->load(['usuario:id,name,apellido', 'adjuntos']);
+
+        ChatMensajeEnviado::dispatch($mensaje, $conversacion);
+
+        return response()->json(['mensaje' => $mensaje->paraChat()], 201);
     }
 
     public function marcarLeido(Request $request, ChatConversacion $conversacion): JsonResponse
@@ -254,6 +266,8 @@ class ChatController extends Controller
             ->where('user_id', $request->user()->id)
             ->update(['ultimo_leido_id' => $ultimoMensajeId, 'ultimo_leido_at' => now()]);
 
+        ChatLeido::dispatch($conversacion->id, $request->user()->id, (int) $ultimoMensajeId);
+
         return response()->json(['success' => true]);
     }
 
@@ -262,6 +276,8 @@ class ChatController extends Controller
         $this->autorizarParticipante($request, $conversacion);
 
         Cache::put("chat.escribiendo.{$conversacion->id}.{$request->user()->id}", true, now()->addSeconds(6));
+
+        ChatEscribiendo::dispatch($conversacion->id, $request->user()->id);
 
         return response()->json(['success' => true]);
     }
@@ -291,7 +307,7 @@ class ChatController extends Controller
     }
 
     /**
-     * @return array{id: int, tipo: string, nombre: string, ultimo_mensaje: string|null, actualizado_en: string|null, no_leidos: int, en_linea: bool, en_linea_count: int, participantes_count: int}
+     * @return array{id: int, tipo: string, nombre: string, ultimo_mensaje: string|null, actualizado_en: string|null, no_leidos: int, en_linea: bool, en_linea_count: int, participantes_count: int, participantes_ids: array<int, int>}
      */
     protected function conversacionData(ChatConversacion $conversacion, int $noLeidos = 0): array
     {
@@ -304,34 +320,16 @@ class ChatController extends Controller
             'nombre' => $conversacion->tipo === 'grupo'
                 ? $conversacion->nombre
                 : ($otro !== null ? trim($otro->name . ' ' . $otro->apellido) : 'Usuario eliminado'),
-            'ultimo_mensaje' => $conversacion->ultimoMensaje?->cuerpo,
+            'ultimo_mensaje' => $conversacion->ultimoMensaje?->cuerpo
+                ?? ($conversacion->ultimoMensaje?->adjuntos->isNotEmpty() ? 'Adjunto' : null),
             'actualizado_en' => ($conversacion->ultimoMensaje->created_at ?? $conversacion->updated_at)?->toIso8601String(),
             'no_leidos' => $noLeidos,
             'en_linea' => $otro !== null ? $this->estaEnLinea($otro->id) : false,
             'en_linea_count' => $enLineaCount,
             'participantes_count' => $conversacion->usuarios->count() + 1,
-        ];
-    }
-
-    /**
-     * @return array{id: int, conversacion_id: int, usuario_id: int, usuario: string, cuerpo: string|null, adjuntos: array<int, array{id: int, nombre: string, mime: string, tamano: int, url: string}>, creado_en: string|null}
-     */
-    protected function mensajeData(ChatMensaje $mensaje): array
-    {
-        return [
-            'id' => $mensaje->id,
-            'conversacion_id' => $mensaje->chat_conversacion_id,
-            'usuario_id' => $mensaje->user_id,
-            'usuario' => trim($mensaje->usuario->name . ' ' . $mensaje->usuario->apellido),
-            'cuerpo' => $mensaje->cuerpo,
-            'adjuntos' => $mensaje->adjuntos->map(fn (ChatAdjunto $adjunto): array => [
-                'id' => $adjunto->id,
-                'nombre' => $adjunto->nombre_original,
-                'mime' => $adjunto->mime,
-                'tamano' => $adjunto->tamano,
-                'url' => route('chat.adjuntos.show', $adjunto),
-            ])->values()->all(),
-            'creado_en' => $mensaje->created_at?->toIso8601String(),
+            // Ids de los demás participantes (sin incluirme). El frontend los usa para
+            // recalcular "en línea" en vivo con la presencia de Ably, sin volver a pedir al servidor.
+            'participantes_ids' => $conversacion->usuarios->pluck('id')->values()->all(),
         ];
     }
 }

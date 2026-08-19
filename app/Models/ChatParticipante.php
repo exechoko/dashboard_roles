@@ -16,11 +16,13 @@ class ChatParticipante extends Model
         'es_admin',
         'ultimo_leido_id',
         'ultimo_leido_at',
+        'aviso_no_leido_enviado_at',
     ];
 
     protected $casts = [
         'es_admin' => 'boolean',
         'ultimo_leido_at' => 'datetime',
+        'aviso_no_leido_enviado_at' => 'datetime',
     ];
 
     public function conversacion(): BelongsTo

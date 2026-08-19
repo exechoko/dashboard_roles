@@ -265,7 +265,13 @@ class ChatController extends Controller
 
         $conversacion->participantes()
             ->where('user_id', $request->user()->id)
-            ->update(['ultimo_leido_id' => $ultimoMensajeId, 'ultimo_leido_at' => now()]);
+            ->update([
+                'ultimo_leido_id' => $ultimoMensajeId,
+                'ultimo_leido_at' => now(),
+                // Libera el aviso por mail de "mensajes sin leer": si vuelve a quedar
+                // pendiente más adelante, tiene que poder avisar de nuevo.
+                'aviso_no_leido_enviado_at' => null,
+            ]);
 
         ChatLeido::dispatch($conversacion->id, $request->user()->id, (int) $ultimoMensajeId);
 

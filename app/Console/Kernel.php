@@ -166,6 +166,13 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/librenms_camaras.log'));
 
+        // Avisa por mail si quedaron mensajes de chat sin leer hace más de 30 minutos.
+        // No repite el aviso hasta que el usuario vuelva a leer esa conversación.
+        $schedule->command('chat:avisar-no-leidos')
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/chat_avisar_no_leidos.log'));
+
         // Pre-calienta el caché de conteos de geocodificación para el dashboard.
         // Se corre en background cada 5 min para que el endpoint nunca haga la query pesada en el request.
         $schedule->call(function () {

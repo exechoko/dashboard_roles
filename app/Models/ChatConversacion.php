@@ -47,4 +47,15 @@ class ChatConversacion extends Model
     {
         return $this->hasOne(ChatMensaje::class)->latestOfMany();
     }
+
+    public function nombrePara(User $viewer): string
+    {
+        if ($this->tipo === 'grupo') {
+            return $this->nombre;
+        }
+
+        $otro = $this->usuarios()->where('users.id', '!=', $viewer->id)->first();
+
+        return $otro !== null ? trim($otro->name . ' ' . $otro->apellido) : 'Usuario eliminado';
+    }
 }

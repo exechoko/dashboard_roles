@@ -50,6 +50,7 @@ class ChatConversacionCreada implements ShouldBroadcastNow
                 ->map(fn (User $usuario): array => [
                     'id' => $usuario->id,
                     'nombre' => trim($usuario->name . ' ' . $usuario->apellido),
+                    'foto' => $usuario->photo ? asset($usuario->photo) : null,
                 ])
                 ->values()
                 ->all(),

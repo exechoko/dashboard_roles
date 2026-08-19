@@ -45,7 +45,7 @@ class ChatController extends Controller
             ->with([
                 'ultimoMensaje.adjuntos',
                 'usuarios' => fn ($query) => $query->where('users.id', '!=', $user->id)
-                    ->select('users.id', 'users.name', 'users.apellido'),
+                    ->select('users.id', 'users.name', 'users.apellido', 'users.photo'),
             ])
             ->get();
 
@@ -134,10 +134,11 @@ class ChatController extends Controller
         $usuarios = User::query()
             ->where('id', '!=', $request->user()->id)
             ->orderBy('name')
-            ->get(['id', 'name', 'apellido'])
+            ->get(['id', 'name', 'apellido', 'photo'])
             ->map(fn (User $usuario): array => [
                 'id' => $usuario->id,
                 'nombre' => trim($usuario->name . ' ' . $usuario->apellido),
+                'foto' => $usuario->photo ? asset($usuario->photo) : null,
                 'en_linea' => $this->estaEnLinea($usuario->id),
             ])
             ->values();
@@ -203,7 +204,7 @@ class ChatController extends Controller
         $conversacion->load([
             'ultimoMensaje',
             'usuarios' => fn ($query) => $query->where('users.id', '!=', $user->id)
-                ->select('users.id', 'users.name', 'users.apellido'),
+                ->select('users.id', 'users.name', 'users.apellido', 'users.photo'),
         ]);
 
         if ($conversacionCreada) {
@@ -307,7 +308,7 @@ class ChatController extends Controller
     }
 
     /**
-     * @return array{id: int, tipo: string, nombre: string, ultimo_mensaje: string|null, actualizado_en: string|null, no_leidos: int, en_linea: bool, en_linea_count: int, participantes_count: int, participantes_ids: array<int, int>}
+     * @return array{id: int, tipo: string, nombre: string, foto: string|null, ultimo_mensaje: string|null, actualizado_en: string|null, no_leidos: int, en_linea: bool, en_linea_count: int, participantes_count: int, participantes_ids: array<int, int>}
      */
     protected function conversacionData(ChatConversacion $conversacion, int $noLeidos = 0): array
     {
@@ -320,6 +321,7 @@ class ChatController extends Controller
             'nombre' => $conversacion->tipo === 'grupo'
                 ? $conversacion->nombre
                 : ($otro !== null ? trim($otro->name . ' ' . $otro->apellido) : 'Usuario eliminado'),
+            'foto' => ($otro !== null && $otro->photo) ? asset($otro->photo) : null,
             'ultimo_mensaje' => $conversacion->ultimoMensaje?->cuerpo
                 ?? ($conversacion->ultimoMensaje?->adjuntos->isNotEmpty() ? 'Adjunto' : null),
             'actualizado_en' => ($conversacion->ultimoMensaje->created_at ?? $conversacion->updated_at)?->toIso8601String(),

@@ -219,6 +219,14 @@
         color: #fff;
         font-weight: 700;
         font-size: 1.05rem;
+        overflow: hidden;
+    }
+
+    .chat-avatar-foto {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
     }
 
     .chat-avatar-sm {
@@ -671,6 +679,7 @@ $(function () {
             id: payload.id,
             tipo: payload.tipo,
             nombre: payload.tipo === 'grupo' ? payload.nombre : (otros[0] ? otros[0].nombre : 'Usuario eliminado'),
+            foto: payload.tipo === 'privada' && otros[0] ? otros[0].foto : null,
             ultimo_mensaje: null,
             actualizado_en: payload.actualizado_en,
             no_leidos: 0,
@@ -770,11 +779,14 @@ $(function () {
                 const color = colorDesdeId(usuario.id);
                 const enLinea = window.ChatRealtime ? window.ChatRealtime.estaEnLinea(usuario.id) : usuario.en_linea;
                 const punto = enLinea ? '<span class="chat-avatar-dot"></span>' : '';
+                const contenidoAvatar = usuario.foto
+                    ? '<img class="chat-avatar-foto" src="' + usuario.foto + '" alt="' + escapeHtml(usuario.nombre) + '">'
+                    : inicialDe(usuario.nombre);
                 contenedor.append(
                     '<div class="chat-contacto-fila">' +
                     '<input type="checkbox" id="chat-contacto-' + usuario.id + '" value="' + usuario.id + '">' +
                     '<label for="chat-contacto-' + usuario.id + '">' +
-                    '<span class="chat-avatar chat-avatar-sm" style="background:' + color + '">' + inicialDe(usuario.nombre) + punto + '</span>' +
+                    '<span class="chat-avatar chat-avatar-sm" style="background:' + color + '">' + contenidoAvatar + punto + '</span>' +
                     escapeHtml(usuario.nombre) +
                     '</label>' +
                     '</div>'
@@ -1073,10 +1085,17 @@ $(function () {
 
     function avatarHtml(conversacion) {
         const color = colorDesdeId(conversacion.id);
-        const contenido = conversacion.tipo === 'grupo' ? '<i class="fas fa-users"></i>' : inicialDe(conversacion.nombre);
         const punto = conversacion.tipo === 'privada' && conversacion.en_linea
             ? '<span class="chat-avatar-dot" title="En línea"></span>'
             : '';
+
+        if (conversacion.tipo === 'privada' && conversacion.foto) {
+            return '<div class="chat-avatar" style="background:' + color + '">' +
+                '<img class="chat-avatar-foto" src="' + conversacion.foto + '" alt="' + escapeHtml(conversacion.nombre) + '">' +
+                punto + '</div>';
+        }
+
+        const contenido = conversacion.tipo === 'grupo' ? '<i class="fas fa-users"></i>' : inicialDe(conversacion.nombre);
         return '<div class="chat-avatar" style="background:' + color + '">' + contenido + punto + '</div>';
     }
 

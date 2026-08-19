@@ -23,8 +23,6 @@ class IndexarArchivoMbox implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $connection = 'mbox';
-    public $queue = 'mbox';
     public $timeout = 0;
     public $tries = 1;
     public $uniqueFor = 86400;
@@ -33,6 +31,14 @@ class IndexarArchivoMbox implements ShouldQueue, ShouldBeUnique
         public int $archivoId,
         public bool $reiniciar = false
     ) {
+        // No se redeclaran $connection/$queue como propiedades de la clase: el trait
+        // Queueable ya las declara, y según la versión de illuminate/bus instalada
+        // puede tiparlas (public ?string $connection = null;) — si la clase las
+        // vuelve a declarar con un tipo distinto (o sin tipo), PHP tira un fatal
+        // de "propiedad incompatible" al componer el trait. Asignarlas acá evita
+        // el choque de declaraciones sin importar cómo las tipe el trait.
+        $this->connection = 'mbox';
+        $this->queue = 'mbox';
     }
 
     public function uniqueId(): string

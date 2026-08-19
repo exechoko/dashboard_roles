@@ -270,6 +270,8 @@ class SeederTablaPermisos extends Seeder
 
             //Herramientas
             'ver-hash-archivo',
+            'ver-visor-mails',
+            'administrar-visor-mails',
 
             //Chat interno
             'ver-chat',

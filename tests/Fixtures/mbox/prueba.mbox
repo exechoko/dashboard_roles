@@ -1,0 +1,79 @@
+From juan.perez@example.com Mon Jan 01 09:00:00 2024
+From: =?UTF-8?B?SnVhbiBQw6lyZXo=?= <juan.perez@example.com>
+To: mesa@example.com
+Subject: =?UTF-8?B?UHJ1ZWJhIGNvbiBhY2VudG9zOiDDocOpw63Ds8O6IMOx?=
+Date: Mon, 01 Jan 2024 09:00:00 -0300
+Message-ID: <msg1@example.com>
+X-Gmail-Labels: Inbox
+Content-Type: text/plain; charset=UTF-8
+
+Hola, este es un mensaje de prueba con acentos: áéíóú.
+>From este punto la reunión sigue en otra sala.
+Saludos.
+
+From secretaria@example.com Tue Jan 02 10:00:00 2024
+From: Secretaría <secretaria@example.com>
+To: destinatario@example.com
+Cc: copia@example.com
+Subject: Notificacion con HTML
+Date: Tue, 02 Jan 2024 10:00:00 -0300
+Message-ID: <msg2@example.com>
+X-Gmail-Labels: Inbox
+Content-Type: multipart/alternative; boundary="boundary-2-alt"
+
+--boundary-2-alt
+Content-Type: text/plain; charset=UTF-8
+
+Version en texto plano del aviso.
+
+--boundary-2-alt
+Content-Type: text/html; charset=UTF-8
+
+<html><body><p>Version en <b>HTML</b> del aviso.</p></body></html>
+
+--boundary-2-alt--
+
+From otro@example.com Wed Jan 03 11:00:00 2024
+From: Otro Remitente <otro@example.com>
+To: destinatario@example.com
+Subject: Mensaje con adjunto
+Date: Wed, 03 Jan 2024 11:00:00 -0300
+Message-ID: <msg3@example.com>
+X-Gmail-Labels: Inbox
+Content-Type: multipart/mixed; boundary="boundary-3-mixed"
+
+--boundary-3-mixed
+Content-Type: text/plain; charset=UTF-8
+
+Te mando el documento adjunto.
+
+--boundary-3-mixed
+Content-Type: application/pdf; name="documento.pdf"
+Content-Disposition: attachment; filename="documento.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQgY29udGVuaWRvIGRlIHBydWViYSwgbm8gZXMgdW4gUERGIHZhbGlkbywgc29sbyBi
+eXRlcyBwYXJhIGVsIHRlc3Qu
+
+--boundary-3-mixed--
+
+From yo@example.com Thu Jan 04 12:00:00 2024
+From: Yo <yo@example.com>
+To: destinatario2@example.com
+Subject: Mensaje enviado de prueba
+Date: Thu, 04 Jan 2024 12:00:00 -0300
+Message-ID: <msg4@example.com>
+X-Gmail-Labels: Sent
+X-GM-THRID: 1111111111111111111
+Content-Type: text/plain; charset=UTF-8
+
+Este mensaje deberia quedar clasificado como enviado.
+
+From minimo@example.com Fri Jan 05 13:00:00 2024
+From: minimo@example.com
+To: destinatario@example.com
+Date: Fri, 05 Jan 2024 13:00:00 -0300
+Message-ID: <msg5@example.com>
+Content-Type: text/plain; charset=UTF-8
+
+Mensaje minimo sin asunto.

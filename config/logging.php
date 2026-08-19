@@ -134,6 +134,13 @@ return [
             'level'  => 'debug',
             'days'   => 30,
         ],
+
+        'mbox' => [
+            'driver' => 'daily',
+            'path'   => storage_path('logs/mbox.log'),
+            'level'  => 'debug',
+            'days'   => 30,
+        ],
     ],
 
 ];

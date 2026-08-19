@@ -162,6 +162,7 @@
                                                     ],
                                                     'Herramientas' => [
                                                         'hash-archivo',
+                                                        'visor-mails',
                                                     ],
                                                     'Operaciones' => [
                                                         'buscar-moviles-parados',

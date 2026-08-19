@@ -70,6 +70,16 @@ class Kernel extends ConsoleKernel
                 app(TelegramService::class)->notificarScheduleFallido('cecoco:reintentar-geocodificacion-fallida', 'El comando finalizó con error.');
             });
 
+        // Detecta .mbox nuevos o modificados en las carpetas de los buzones de correo
+        // (Herramientas > Visor de Correos) y encola su indexación. No hace nada mientras
+        // MBOX_AUTO_INDEXAR esté apagado (ver config/mbox.php).
+        $schedule->command('mbox:detectar-nuevos')->dailyAt('03:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/mbox.log'))
+            ->onFailure(function () {
+                app(TelegramService::class)->notificarScheduleFallido('mbox:detectar-nuevos', 'El comando finalizó con error.');
+            });
+
         // Pre-trae y guarda el detalle completo (acciones/recursos/cierre) de los eventos
         // del día anterior. Corre después del import (06:00) reutilizando una sola sesión.
         $schedule->command('cecoco:prefetch-detalles')->dailyAt('06:45')

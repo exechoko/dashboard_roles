@@ -558,7 +558,7 @@
     </li>
 @endcanany
 
-@canany(['ver-menu-herramientas', 'ver-hash-archivo'])
+@canany(['ver-menu-herramientas', 'ver-hash-archivo', 'ver-visor-mails', 'administrar-visor-mails'])
     <li class="dropdown {{ request()->is('herramientas*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-tools"></i><span>Herramientas</span>
@@ -568,6 +568,20 @@
                 <li class="{{ request()->routeIs('herramientas.hash.*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('herramientas.hash.index') }}">
                         <i class="fas fa-fingerprint"></i><span>Hashear Archivo</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-visor-mails')
+                <li class="{{ request()->routeIs('herramientas.mails.index') || request()->routeIs('herramientas.mails.show') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('herramientas.mails.index') }}">
+                        <i class="fas fa-envelope-open-text"></i><span>Visor de Correos</span>
+                    </a>
+                </li>
+            @endcan
+            @can('administrar-visor-mails')
+                <li class="{{ request()->routeIs('herramientas.mails.buzones.*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('herramientas.mails.buzones.index') }}">
+                        <i class="fas fa-inbox"></i><span>Buzones de Correo</span>
                     </a>
                 </li>
             @endcan

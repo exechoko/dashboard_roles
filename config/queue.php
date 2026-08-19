@@ -42,6 +42,18 @@ return [
             'after_commit' => false,
         ],
 
+        // Cola dedicada a la indexación de backups .mbox: son jobs que pueden
+        // tardar horas, así que necesitan un retry_after propio (si usaran el
+        // de 'database' de 90s, el worker los re-entregaría en paralelo antes
+        // de que terminen) y no deben competir con los jobs cortos de 'default'.
+        'mbox' => [
+            'driver' => 'database',
+            'table' => 'jobs',
+            'queue' => 'mbox',
+            'retry_after' => 86400,
+            'after_commit' => false,
+        ],
+
         'beanstalkd' => [
             'driver' => 'beanstalkd',
             'host' => 'localhost',

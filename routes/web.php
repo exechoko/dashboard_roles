@@ -651,6 +651,34 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/hash-archivo', [ArchivoHashController::class, 'index'])->name('hash.index');
         Route::post('/hash-archivo', [ArchivoHashController::class, 'calcular'])->name('hash.calcular');
         Route::post('/hash-archivo/historial', [ArchivoHashController::class, 'registrar'])->name('hash.historial.registrar');
+
+        // Visor de Correos (backups .mbox por oficina). El grupo "buzones" va
+        // primero para que rutas literales como /mails/buzones no caigan en
+        // /mails/{mensaje} (Laravel matchea por orden de registro).
+        Route::prefix('mails')->name('mails.')->group(function () {
+            Route::prefix('buzones')->name('buzones.')->group(function () {
+                Route::get('/', [App\Http\Controllers\MailBuzonController::class, 'index'])->name('index');
+                Route::get('/detectar-oficinas', [App\Http\Controllers\MailBuzonController::class, 'detectarOficinas'])->name('detectar-oficinas');
+                Route::post('/detectar-oficinas', [App\Http\Controllers\MailBuzonController::class, 'registrarOficinas'])->name('registrar-oficinas');
+                Route::get('/create', [App\Http\Controllers\MailBuzonController::class, 'create'])->name('create');
+                Route::post('/', [App\Http\Controllers\MailBuzonController::class, 'store'])->name('store');
+                Route::get('/{buzon}/edit', [App\Http\Controllers\MailBuzonController::class, 'edit'])->name('edit');
+                Route::put('/{buzon}', [App\Http\Controllers\MailBuzonController::class, 'update'])->name('update');
+                Route::delete('/{buzon}', [App\Http\Controllers\MailBuzonController::class, 'destroy'])->name('destroy');
+                Route::get('/{buzon}/archivos', [App\Http\Controllers\MailBuzonController::class, 'archivos'])->name('archivos');
+                Route::post('/{buzon}/archivos', [App\Http\Controllers\MailBuzonController::class, 'registrarArchivo'])->name('archivos.registrar');
+                Route::post('/archivos/{archivo}/indexar', [App\Http\Controllers\MailBuzonController::class, 'indexar'])->name('archivos.indexar');
+                Route::get('/archivos/{archivo}/estado', [App\Http\Controllers\MailBuzonController::class, 'estado'])->name('archivos.estado');
+                Route::delete('/archivos/{archivo}', [App\Http\Controllers\MailBuzonController::class, 'destroyArchivo'])->name('archivos.destroy');
+            });
+
+            Route::get('/', [App\Http\Controllers\MailController::class, 'index'])->name('index');
+            Route::get('/exportar', [App\Http\Controllers\MailController::class, 'exportar'])->name('exportar');
+            Route::get('/{mensaje}', [App\Http\Controllers\MailController::class, 'show'])->whereNumber('mensaje')->name('show');
+            Route::get('/{mensaje}/cuerpo', [App\Http\Controllers\MailController::class, 'cuerpo'])->whereNumber('mensaje')->name('cuerpo');
+            Route::get('/{mensaje}/adjunto/{parte}', [App\Http\Controllers\MailController::class, 'adjunto'])->whereNumber('mensaje')->name('adjunto');
+            Route::get('/{mensaje}/eml', [App\Http\Controllers\MailController::class, 'eml'])->whereNumber('mensaje')->name('eml');
+        });
     });
 
     // Manuales

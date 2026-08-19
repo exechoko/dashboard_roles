@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalId = '{{ $h->id }}';
 
     // Inicializar arrays para este modal
-    window.imagenesActualesMap[modalId] = @json($h->rutas_imagenes ?? []);
+    window.imagenesActualesMap[modalId] = @json(is_array($h->rutas_imagenes) ? $h->rutas_imagenes : []);
     initializeNuevasImagenes(modalId);
 
     console.log('Modal inicializado:', modalId);

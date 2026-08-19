@@ -725,7 +725,10 @@ class FlotaGeneralController extends Controller
             $historico->observaciones = $request->observaciones;
 
             // Decodificar rutas existentes (true = array asociativo)
-            $rutasImagenes = json_decode($request->input('imagenes_actuales', '[]'), true) ?? [];
+            $rutasImagenes = json_decode($request->input('imagenes_actuales', '[]'), true);
+            if (!is_array($rutasImagenes)) {
+                $rutasImagenes = [];
+            }
 
             // Subir nuevas imágenes (ignorar entradas vacías/inválidas del formulario)
             if ($request->hasFile('nuevas_imagenes')) {

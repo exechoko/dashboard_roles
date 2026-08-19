@@ -130,7 +130,7 @@
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    @if (!empty($h->rutas_imagenes))
+                                                    @if (is_array($h->rutas_imagenes) && !empty($h->rutas_imagenes))
                                                         <div class="d-flex flex-wrap align-items-center" style="gap:.3rem;">
                                                             @foreach ($h->rutas_imagenes as $ruta)
                                                                 @if (preg_match('/\.(jpg|jpeg|png)$/i', $ruta))

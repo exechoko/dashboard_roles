@@ -10,6 +10,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -167,11 +168,15 @@ class MailController extends Controller
         }
 
         if ($request->filled('fecha_desde')) {
-            $query->whereDate('fecha', '>=', $request->fecha_desde);
+            // where('fecha', ...) en vez de whereDate(): envolver la columna en
+            // DATE() le impide a MySQL usar el índice para saltar directo al
+            // rango, y obliga a recorrer fila por fila en el orden del índice
+            // (carísimo si se pide una fecha vieja con orden descendente).
+            $query->where('fecha', '>=', Carbon::parse($request->fecha_desde)->startOfDay());
         }
 
         if ($request->filled('fecha_hasta')) {
-            $query->whereDate('fecha', '<=', $request->fecha_hasta);
+            $query->where('fecha', '<=', Carbon::parse($request->fecha_hasta)->endOfDay());
         }
 
         if ($request->filled('adjuntos')) {

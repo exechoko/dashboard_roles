@@ -90,4 +90,23 @@ class MailControllerIntegrationTest extends TestCase
         $respuesta->assertHeader('Content-Type', 'message/rfc822');
         $this->assertStringContainsString('Message-ID: <msg1@example.com>', $respuesta->getContent());
     }
+
+    public function test_el_rango_de_fechas_incluye_todo_el_dia_hasta_del_filtro(): void
+    {
+        [$usuario, $buzon] = $this->indexarFixtureYUsuario();
+
+        // msg2 tiene fecha 2024-01-02 10:00:00: un filtro fecha_desde=fecha_hasta='2024-01-02'
+        // debe incluirlo igual (antes se resolvía con whereDate(), ahora con
+        // comparaciones directas de datetime + startOfDay()/endOfDay()).
+        $respuesta = $this->actingAs($usuario)->get(route('herramientas.mails.index', [
+            'buzon_id' => $buzon->id,
+            'fecha_desde' => '2024-01-02',
+            'fecha_hasta' => '2024-01-02',
+        ]));
+
+        $respuesta->assertOk();
+        $respuesta->assertSee('Notificacion con HTML');
+        $respuesta->assertDontSee('Prueba con acentos');
+        $respuesta->assertDontSee('Mensaje con adjunto');
+    }
 }

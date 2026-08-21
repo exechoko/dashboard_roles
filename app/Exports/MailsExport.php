@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\MailMensaje;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -42,11 +43,11 @@ class MailsExport implements FromCollection, WithHeadings, WithEvents, ShouldAut
         }
 
         if (!empty($this->filtros['fecha_desde'])) {
-            $query->whereDate('fecha', '>=', $this->filtros['fecha_desde']);
+            $query->where('fecha', '>=', Carbon::parse($this->filtros['fecha_desde'])->startOfDay());
         }
 
         if (!empty($this->filtros['fecha_hasta'])) {
-            $query->whereDate('fecha', '<=', $this->filtros['fecha_hasta']);
+            $query->where('fecha', '<=', Carbon::parse($this->filtros['fecha_hasta'])->endOfDay());
         }
 
         if (!empty($this->filtros['adjuntos'])) {

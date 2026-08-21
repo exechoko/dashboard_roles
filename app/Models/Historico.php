@@ -10,8 +10,8 @@ class Historico extends Model
     protected $table = 'historico';
 
     protected $casts = [
-        'fecha_asignacion' => 'date',
-        'fecha_desasignacion' => 'date',
+        'fecha_asignacion' => 'datetime',
+        'fecha_desasignacion' => 'datetime',
         'rutas_imagenes' => 'array',
     ];
 

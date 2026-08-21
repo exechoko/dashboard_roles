@@ -39,7 +39,11 @@ class MailController extends Controller
         $orden = in_array($request->input('orden'), $ordenables, true) ? $request->input('orden') : 'fecha';
         $direccion = $request->input('direccion') === 'asc' ? 'asc' : 'desc';
 
-        $mensajes = $query->orderBy($orden, $direccion)->paginate(25)->withQueryString();
+        $mensajes = $query
+            ->select(['id', 'buzon_id', 'fecha', 'de_nombre', 'de_email', 'asunto', 'tiene_adjuntos', 'cantidad_adjuntos', 'tamano_bytes'])
+            ->orderBy($orden, $direccion)
+            ->paginate(25)
+            ->withQueryString();
 
         return view('herramientas.mails.index', [
             'mensajes' => $mensajes,

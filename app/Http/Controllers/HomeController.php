@@ -702,7 +702,7 @@ class HomeController extends Controller
                 ->exists();
 
             // Cola 'mbox' (indexación de backups de correo): se mide aparte porque corre en
-            // un worker propio (queue:work --queue=mbox) y puede estar caído sin que el
+            // un worker propio (queue:work mbox --queue=mbox) y puede estar caído sin que el
             // indicador general de arriba lo note, si el worker de 'default' sigue activo.
             $pendientesMbox = DB::table('jobs')->where('queue', 'mbox')->whereNull('reserved_at')->count();
             $procesandoMbox = DB::table('jobs')->where('queue', 'mbox')->whereNotNull('reserved_at')->count();

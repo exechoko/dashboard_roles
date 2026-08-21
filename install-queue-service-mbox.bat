@@ -96,13 +96,22 @@ echo Instalando servicio %SERVICE_NAME%...
 echo.
 
 REM Instalar el servicio con NSSM
+REM --connection=mbox: sin esto, queue:work usa la conexion default de
+REM                    config/queue.php (retry_after=90s) aunque se le diga
+REM                    --queue=mbox: el job queda "reservado" con esa conexion
+REM                    y a los 90s MySQL lo vuelve a ofrecer como disponible
+REM                    aunque siga indexando, así que un segundo intento lo
+REM                    encuentra con attempts=1 (=tries) y lo marca failed
+REM                    con MaxAttemptsExceededException sin llegar a correr.
+REM                    La conexion 'mbox' (config/queue.php) tiene su propio
+REM                    retry_after=86400 para evitar justo esto.
 REM --queue=mbox     : SOLO procesa la cola dedicada a indexacion de correos
 REM --tries=1        : un archivo de varios GB no tiene sentido reintentarlo solo
 REM --timeout=0      : sin limite (puede tardar horas); el job ya lo fija igual
 REM --sleep=5        : espera 5 segundos entre polls cuando la cola está vacía
 REM --max-time=3600  : reinicia el proceso cada 1 hora para liberar memoria
 REM                    (no interrumpe un job en curso, solo el loop ocioso)
-"%NSSM_PATH%" install "%SERVICE_NAME%" "%PHP_PATH%" "artisan" "queue:work" "--queue=mbox" "--sleep=5" "--tries=1" "--timeout=0" "--max-time=3600"
+"%NSSM_PATH%" install "%SERVICE_NAME%" "%PHP_PATH%" "artisan" "queue:work" "mbox" "--queue=mbox" "--sleep=5" "--tries=1" "--timeout=0" "--max-time=3600"
 if !errorlevel! neq 0 (
     echo [ERROR] Fallo al instalar el servicio con NSSM. Codigo: !errorlevel!
     pause

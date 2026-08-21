@@ -1234,7 +1234,7 @@
 
                                                             @can('administrar-visor-mails')
                                                                 {{-- Cola de indexación de correos (mbox) --}}
-                                                                <div class="estado-procesos-bloque" title="Worker dedicado a indexar los backups .mbox del Visor de Correos (php artisan queue:work --queue=mbox).">
+                                                                <div class="estado-procesos-bloque" title="Worker dedicado a indexar los backups .mbox del Visor de Correos (php artisan queue:work mbox --queue=mbox).">
                                                                     <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-envelope-open-text mr-1"></i><strong>Cola de Correos (mbox)</strong></small>
                                                                     <div class="d-flex align-items-center flex-wrap" style="gap:0.75rem;">
                                                                         <span class="d-flex align-items-center">
@@ -3598,7 +3598,7 @@
                                 mboxLabel.textContent = 'Activo';
                             } else if (d.mbox_pendientes > 0) {
                                 // Hay archivos esperando ser indexados pero nadie los está tomando:
-                                // o no se levantó "queue:work --queue=mbox", o se cayó.
+                                // o no se levantó "queue:work mbox --queue=mbox", o se cayó.
                                 mboxDot.style.background = '#ef4444';
                                 mboxLabel.className = 'badge badge-danger';
                                 mboxLabel.textContent = 'Detenido';

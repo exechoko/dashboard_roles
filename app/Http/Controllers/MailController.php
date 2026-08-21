@@ -73,25 +73,61 @@ class MailController extends Controller
     {
         $this->autorizarBuzon($mensaje);
 
+        $html = $this->cuerpoSanitizado($mensaje, $lector);
+
+        return response($html, 200)
+            ->header('Content-Type', 'text/html; charset=UTF-8')
+            ->header('Content-Security-Policy', "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-ancestors 'self'");
+    }
+
+    /**
+     * Página standalone (sin el layout de la app) con la cabecera del mensaje
+     * y el cuerpo embebido directamente (no en un iframe): así el navegador
+     * puede paginarlo bien al imprimir/exportar a PDF con Ctrl+P. Como el
+     * cuerpo ya no queda aislado por el sandbox del iframe de cuerpo(), esta
+     * respuesta lleva su propia CSP estricta con un script-src de un solo
+     * nonce (generado acá, no controlable por el mensaje) para que cualquier
+     * <script> u on*= que se haya colado en el sanitizado siga sin poder
+     * ejecutar.
+     */
+    public function imprimir(MailMensaje $mensaje, MboxLector $lector): Response
+    {
+        $this->autorizarBuzon($mensaje);
+
+        $cuerpoHtml = $this->cuerpoSanitizado($mensaje, $lector);
+        $nonce = base64_encode(random_bytes(16));
+
+        $html = view('herramientas.mails.imprimir', [
+            'mensaje' => $mensaje,
+            'adjuntos' => $mensaje->adjuntos_json ?? [],
+            'cuerpoHtml' => $cuerpoHtml,
+            'nonce' => $nonce,
+        ])->render();
+
+        return response($html, 200)
+            ->header('Content-Type', 'text/html; charset=UTF-8')
+            ->header('Content-Security-Policy', "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; script-src 'nonce-{$nonce}'; frame-ancestors 'self'");
+    }
+
+    private function cuerpoSanitizado(MailMensaje $mensaje, MboxLector $lector): string
+    {
         $mimeMensaje = $lector->parsear($mensaje);
         $html = $mimeMensaje->getHtmlContent();
 
         if ($html === null) {
             $texto = $mimeMensaje->getTextContent() ?? '(mensaje sin contenido)';
-            $html = '<pre style="white-space:pre-wrap;font-family:inherit;margin:0;">'.e($texto).'</pre>';
-        } else {
-            $mapaCid = [];
-            foreach ($mensaje->adjuntos_json ?? [] as $adjunto) {
-                if (!empty($adjunto['cid'])) {
-                    $mapaCid[trim($adjunto['cid'], '<>')] = route('herramientas.mails.adjunto', [$mensaje, $adjunto['parte']]);
-                }
-            }
-            $html = $lector->sanitizarHtml($html, $mapaCid);
+
+            return '<pre style="white-space:pre-wrap;font-family:inherit;margin:0;">'.e($texto).'</pre>';
         }
 
-        return response($html, 200)
-            ->header('Content-Type', 'text/html; charset=UTF-8')
-            ->header('Content-Security-Policy', "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; frame-ancestors 'self'");
+        $mapaCid = [];
+        foreach ($mensaje->adjuntos_json ?? [] as $adjunto) {
+            if (!empty($adjunto['cid'])) {
+                $mapaCid[trim($adjunto['cid'], '<>')] = route('herramientas.mails.adjunto', [$mensaje, $adjunto['parte']]);
+            }
+        }
+
+        return $lector->sanitizarHtml($html, $mapaCid);
     }
 
     public function adjunto(MailMensaje $mensaje, int $parte, MboxLector $lector): StreamedResponse

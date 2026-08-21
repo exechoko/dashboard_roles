@@ -8,6 +8,9 @@
                 <a href="{{ route('herramientas.mails.index', ['buzon_id' => $mensaje->buzon_id]) }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Volver
                 </a>
+                <a href="{{ route('herramientas.mails.imprimir', $mensaje) }}" target="_blank" class="btn btn-outline-primary">
+                    <i class="fas fa-print"></i> Imprimir / PDF
+                </a>
                 <a href="{{ route('herramientas.mails.eml', $mensaje) }}" class="btn btn-outline-primary">
                     <i class="fas fa-download"></i> Descargar .eml
                 </a>

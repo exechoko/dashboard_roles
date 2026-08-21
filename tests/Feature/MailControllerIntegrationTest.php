@@ -109,4 +109,30 @@ class MailControllerIntegrationTest extends TestCase
         $respuesta->assertDontSee('Prueba con acentos');
         $respuesta->assertDontSee('Mensaje con adjunto');
     }
+
+    public function test_la_vista_de_imprimir_incluye_cabecera_cuerpo_saneado_y_csp(): void
+    {
+        [$usuario] = $this->indexarFixtureYUsuario();
+        $mensaje = MailMensaje::where('message_id', 'msg2@example.com')->firstOrFail();
+
+        $respuesta = $this->actingAs($usuario)->get(route('herramientas.mails.imprimir', $mensaje));
+
+        $respuesta->assertOk();
+        $respuesta->assertSee('Notificacion con HTML');
+        $respuesta->assertSee('secretaria@example.com', false);
+        $respuesta->assertSee('copia@example.com', false);
+        $respuesta->assertSee('Version en', false);
+        $respuesta->assertDontSee('<script>', false);
+
+        $csp = $respuesta->headers->get('Content-Security-Policy');
+        $this->assertStringContainsString("script-src 'nonce-", $csp);
+
+        // El nonce del header CSP tiene que ser el mismo que el del <script> del
+        // print automático: si no coinciden, el navegador bloquea el window.print().
+        preg_match("/script-src 'nonce-([^']+)'/", $csp, $matchCsp);
+        preg_match('/<script nonce="([^"]+)">/', $respuesta->getContent(), $matchScript);
+        $this->assertNotEmpty($matchCsp);
+        $this->assertNotEmpty($matchScript);
+        $this->assertSame($matchCsp[1], $matchScript[1]);
+    }
 }

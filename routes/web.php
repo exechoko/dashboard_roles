@@ -676,6 +676,7 @@ Route::group(['middleware' => ['auth']], function () {
             Route::get('/exportar', [App\Http\Controllers\MailController::class, 'exportar'])->name('exportar');
             Route::get('/{mensaje}', [App\Http\Controllers\MailController::class, 'show'])->whereNumber('mensaje')->name('show');
             Route::get('/{mensaje}/cuerpo', [App\Http\Controllers\MailController::class, 'cuerpo'])->whereNumber('mensaje')->name('cuerpo');
+            Route::get('/{mensaje}/imprimir', [App\Http\Controllers\MailController::class, 'imprimir'])->whereNumber('mensaje')->name('imprimir');
             Route::get('/{mensaje}/adjunto/{parte}', [App\Http\Controllers\MailController::class, 'adjunto'])->whereNumber('mensaje')->name('adjunto');
             Route::get('/{mensaje}/eml', [App\Http\Controllers\MailController::class, 'eml'])->whereNumber('mensaje')->name('eml');
         });

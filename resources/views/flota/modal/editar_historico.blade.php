@@ -1,8 +1,8 @@
-<form id="form-historico-{{ $h->id }}" action="{{ route('flota.update_historico', $h->id) }}" method="post" enctype="multipart/form-data">
-    @csrf
-    <div class="modal fade" id="ModalEditar{{ $h->id }}" tabindex="-1" data-backdrop="false" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-lg" role="document">
-            <div class="modal-content">
+<div class="modal fade" id="ModalEditar{{ $h->id }}" tabindex="-1" data-backdrop="false" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <form id="form-historico-{{ $h->id }}" action="{{ route('flota.update_historico', $h->id) }}" method="post" enctype="multipart/form-data" style="display: contents;">
+                @csrf
                 <div class="modal-header">
                     <h4 class="modal-title">Editar Histórico</h4>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
@@ -65,10 +65,10 @@
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                     </div>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
-</form>
+</div>
 
 <script>
 // Script específico para este modal

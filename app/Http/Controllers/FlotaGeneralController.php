@@ -747,7 +747,7 @@ class FlotaGeneralController extends Controller
             }
 
             // Actualizar rutas en la base de datos
-            $historico->rutas_imagenes = json_encode(array_values($rutasImagenes));
+            $historico->rutas_imagenes = array_values($rutasImagenes);
             $historico->save();
 
             DB::commit();
@@ -861,7 +861,7 @@ class FlotaGeneralController extends Controller
             $historico->fecha_asignacion = $request->fecha_asignacion;
             $historico->tipo_movimiento_id = $request->tipo_movimiento;
             $historico->ticket_per = $request->ticket_per;
-            $historico->rutas_imagenes = json_encode($rutasImagenes);
+            $historico->rutas_imagenes = $rutasImagenes;
             $historico->observaciones = $request->observaciones;
             $historico->save();
 
@@ -1009,7 +1009,7 @@ class FlotaGeneralController extends Controller
                 $historico->observaciones = $request->observaciones;
                 $historico->tipo_movimiento_id = $tipo_de_mov->id;
                 $historico->fecha_asignacion = $request->fecha_asignacion;
-                $historico->rutas_imagenes = json_encode($rutasImagenes);
+                $historico->rutas_imagenes = $rutasImagenes;
                 if ($tipo_de_mov->id != $id_reemplazo) {
                     $historico->destino_id = $request->dependencia;
                 }

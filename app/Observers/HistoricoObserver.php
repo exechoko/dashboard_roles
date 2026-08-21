@@ -67,7 +67,10 @@ class HistoricoObserver
                             $changes[] = "$campo: " . $old . ' => ' . $new;
                             break;
                         default:
-                            $changes[] = "$key: " . $historico->getOriginal($key) . ' => ' . $value;
+                            $old = $historico->getOriginal($key);
+                            $old = is_array($old) ? json_encode($old) : $old;
+                            $new = is_array($value) ? json_encode($value) : $value;
+                            $changes[] = "$key: " . $old . ' => ' . $new;
                             break;
                     }
                 }

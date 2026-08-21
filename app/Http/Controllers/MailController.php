@@ -146,17 +146,24 @@ class MailController extends Controller
         }
 
         if ($request->filled('de')) {
-            $de = $request->de;
-            $query->where(fn (Builder $q) => $q->where('de_email', 'like', "%{$de}%")->orWhere('de_nombre', 'like', "%{$de}%"));
+            $query->whereRaw(
+                'MATCH(de_nombre, de_email) AGAINST (? IN BOOLEAN MODE)',
+                [$this->prepararModoBooleano($request->string('de')->toString())]
+            );
         }
 
         if ($request->filled('para')) {
-            $para = $request->para;
-            $query->where(fn (Builder $q) => $q->where('para', 'like', "%{$para}%")->orWhere('cc', 'like', "%{$para}%"));
+            $query->whereRaw(
+                'MATCH(para, cc) AGAINST (? IN BOOLEAN MODE)',
+                [$this->prepararModoBooleano($request->string('para')->toString())]
+            );
         }
 
         if ($request->filled('asunto')) {
-            $query->where('asunto', 'like', "%{$request->asunto}%");
+            $query->whereRaw(
+                'MATCH(asunto) AGAINST (? IN BOOLEAN MODE)',
+                [$this->prepararModoBooleano($request->string('asunto')->toString())]
+            );
         }
 
         if ($request->filled('fecha_desde')) {
@@ -194,14 +201,16 @@ class MailController extends Controller
         return $query;
     }
 
+    /**
+     * Separa por cualquier caracter no alfanumérico (no solo espacios) para
+     * que buscar un email completo ("nombre@dominio.com") arme un término
+     * por cada parte en vez de pegotearlas al sacarle el "@" y el ".".
+     */
     private function prepararModoBooleano(string $texto): string
     {
-        $palabras = array_filter(preg_split('/\s+/', trim($texto)) ?: []);
+        $palabras = array_filter(preg_split('/[^\p{L}\p{N}]+/u', trim($texto)) ?: []);
 
-        $terminos = array_map(
-            fn (string $palabra) => '+'.preg_replace('/[+\-><()~*"@]+/', '', $palabra).'*',
-            $palabras
-        );
+        $terminos = array_map(fn (string $palabra) => '+'.$palabra.'*', $palabras);
 
         return implode(' ', array_filter($terminos)) ?: $texto;
     }

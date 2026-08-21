@@ -23,26 +23,22 @@ class MailsExport implements FromCollection, WithHeadings, WithEvents, ShouldAut
         $query = MailMensaje::query()->where('buzon_id', $this->buzonId);
 
         if (!empty($this->filtros['texto'])) {
-            $palabras = array_filter(preg_split('/\s+/', trim($this->filtros['texto'])) ?: []);
-            $terminos = implode(' ', array_map(
-                fn (string $p) => '+'.preg_replace('/[+\-><()~*"@]+/', '', $p).'*',
-                $palabras
-            ));
-            $query->whereRaw('MATCH(asunto, cuerpo_texto, adjuntos_nombres) AGAINST (? IN BOOLEAN MODE)', [$terminos ?: $this->filtros['texto']]);
+            $query->whereRaw(
+                'MATCH(asunto, cuerpo_texto, adjuntos_nombres) AGAINST (? IN BOOLEAN MODE)',
+                [$this->prepararModoBooleano($this->filtros['texto'])]
+            );
         }
 
         if (!empty($this->filtros['de'])) {
-            $de = $this->filtros['de'];
-            $query->where(fn ($q) => $q->where('de_email', 'like', "%{$de}%")->orWhere('de_nombre', 'like', "%{$de}%"));
+            $query->whereRaw('MATCH(de_nombre, de_email) AGAINST (? IN BOOLEAN MODE)', [$this->prepararModoBooleano($this->filtros['de'])]);
         }
 
         if (!empty($this->filtros['para'])) {
-            $para = $this->filtros['para'];
-            $query->where(fn ($q) => $q->where('para', 'like', "%{$para}%")->orWhere('cc', 'like', "%{$para}%"));
+            $query->whereRaw('MATCH(para, cc) AGAINST (? IN BOOLEAN MODE)', [$this->prepararModoBooleano($this->filtros['para'])]);
         }
 
         if (!empty($this->filtros['asunto'])) {
-            $query->where('asunto', 'like', '%'.$this->filtros['asunto'].'%');
+            $query->whereRaw('MATCH(asunto) AGAINST (? IN BOOLEAN MODE)', [$this->prepararModoBooleano($this->filtros['asunto'])]);
         }
 
         if (!empty($this->filtros['fecha_desde'])) {
@@ -91,5 +87,19 @@ class MailsExport implements FromCollection, WithHeadings, WithEvents, ShouldAut
                 $sheet->freezePane('A2');
             },
         ];
+    }
+
+    /**
+     * Separa por cualquier caracter no alfanumérico (no solo espacios) para
+     * que buscar un email completo ("nombre@dominio.com") arme un término
+     * por cada parte en vez de pegotearlas al sacarle el "@" y el ".".
+     */
+    private function prepararModoBooleano(string $texto): string
+    {
+        $palabras = array_filter(preg_split('/[^\p{L}\p{N}]+/u', trim($texto)) ?: []);
+
+        $terminos = array_map(fn (string $palabra) => '+'.$palabra.'*', $palabras);
+
+        return implode(' ', array_filter($terminos)) ?: $texto;
     }
 }

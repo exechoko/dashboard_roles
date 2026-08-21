@@ -23,6 +23,13 @@
                                         <option value="{{ $b->id }}" {{ $buzon->id === $b->id ? 'selected' : '' }}>{{ $b->nombre }}</option>
                                     @endforeach
                                 </select>
+                                <small class="form-text text-muted mb-0">
+                                    @if ($ultimoMensajeFecha)
+                                        Backup hasta el <strong>{{ $ultimoMensajeFecha->format('d/m/Y H:i') }}</strong>
+                                    @else
+                                        Este buzón todavía no tiene mensajes indexados.
+                                    @endif
+                                </small>
                             </div>
                             <div class="col-md-8 mb-2">
                                 <label class="mb-1">Buscar en asunto, cuerpo y adjuntos</label>

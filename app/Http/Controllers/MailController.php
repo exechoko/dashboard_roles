@@ -34,6 +34,10 @@ class MailController extends Controller
         $buzon = $buzones->firstWhere('id', (int) $request->input('buzon_id', $buzones->first()->id));
         abort_unless($buzon, 403, 'No tenés acceso a ese buzón.');
 
+        // Fecha del mensaje más nuevo indexado en el buzón (sin los filtros de
+        // búsqueda aplicados): le dice al usuario hasta cuándo tiene backup.
+        $ultimoMensajeFecha = MailMensaje::where('buzon_id', $buzon->id)->max('fecha');
+
         $query = $this->filtrar(MailMensaje::query()->where('buzon_id', $buzon->id), $request);
 
         $ordenables = ['fecha', 'de_email', 'asunto', 'tamano_bytes'];
@@ -51,6 +55,7 @@ class MailController extends Controller
             'buzones' => $buzones,
             'buzon' => $buzon,
             'carpetas' => MailMensaje::CARPETAS,
+            'ultimoMensajeFecha' => $ultimoMensajeFecha ? Carbon::parse($ultimoMensajeFecha) : null,
         ]);
     }
 

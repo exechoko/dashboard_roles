@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -73,6 +74,15 @@ class IndexarArchivoMbox implements ShouldQueue, ShouldBeUnique
                 'mensajes_nuevos' => $resultado['mensajes_nuevos'],
                 'indexado_at' => now(),
             ]);
+
+            // Un .mbox grande inserta de golpe decenas de miles de filas: sin esto,
+            // las estadísticas de InnoDB quedan desactualizadas hasta la próxima
+            // vez que el motor decida refrescarlas solo, y mientras tanto el
+            // optimizador puede elegir mal qué índice usar (búsquedas lentas en
+            // el visor de correos justo después de indexar).
+            if ($resultado['mensajes_nuevos'] > 0) {
+                DB::statement('ANALYZE TABLE mail_mensajes');
+            }
 
             Log::channel('mbox')->info('Indexación de mbox completada.', [
                 'archivo_id' => $archivo->id,

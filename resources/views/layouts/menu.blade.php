@@ -33,7 +33,7 @@
                     <a class="nav-link" href="/equipos">
                         <i class="fas fa-microchip"></i><span>Terminales</span>
                     </a>
-                </li>                
+                </li>
             @endcan
             @can('ver-recurso')
                 <li class="{{ request()->is('recursos*') ? 'active' : '' }}">
@@ -257,12 +257,13 @@
 
         <ul class="dropdown-menu">
 
-            {{-- TAREAS --}}
-            <li class="{{ request()->is('tareas') ? 'active' : '' }}">
-                <a class="nav-link" href="{{ route('tareas.index') }}">
-                    <i class="fas fa-list"></i><span>Tareas</span>
-                </a>
-            </li>
+            @can('ver-tarea')
+                <li class="{{ request()->is('tareas') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('tareas.index') }}">
+                        <i class="fas fa-list"></i><span>Tareas</span>
+                    </a>
+                </li>
+            @endcan
             @canany(['ver-ticket-pg', 'crear-ticket-pg', 'editar-ticket-pg', 'enviar-ticket-pg'])
                 <li class="{{ request()->is('incidencias/tickets-pg*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('incidencias.tickets-pg.index') }}">

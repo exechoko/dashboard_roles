@@ -226,6 +226,12 @@
     }
     function guardar(id) {
         let form = document.getElementById(`form-historico-${id}`);
+        let textarea = document.getElementById(`observaciones${id}`);
+        if (textarea && textarea.dataset.original && textarea.value.trim() === '') {
+            if (!confirm('La observación quedará vacía (antes tenía texto). ¿Seguro que querés guardar así? Si abriste esta página hace rato, cerrala y volvé a abrirla para ver el texto más reciente.')) {
+                return;
+            }
+        }
         let formData = new FormData(form);
         // Quitar entradas vacías de file inputs para no interferir en el servidor
         for (let [key, val] of [...formData.entries()]) {

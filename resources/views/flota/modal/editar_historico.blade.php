@@ -56,7 +56,7 @@
                         <div class="col-xs-12 mt-3">
                             <div class="form-group">
                                 <strong>Observaciones</strong>
-                                <textarea name="observaciones" id="observaciones{{ $h->id }}" class="form-control" style="min-height: 200px;">{{ $h->observaciones }}</textarea>
+                                <textarea name="observaciones" id="observaciones{{ $h->id }}" class="form-control" style="min-height: 200px;" data-original="{{ $h->observaciones }}">{{ $h->observaciones }}</textarea>
                             </div>
                         </div>
                     </div>

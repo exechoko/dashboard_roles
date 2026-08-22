@@ -202,7 +202,7 @@
     <div id="car-chatbot-messages" class="car-chatbot-messages">
         <div class="car-chatbot-empty">
             <i class="fas fa-compass"></i>
-            <p>Consultá cómo realizar una tarea o dónde encontrar una función del sistema.</p>
+            <p>Consultá cómo realizar una tarea, dónde encontrar una función o pedime datos del sistema: cuántos equipos hay operativos, cuántas cámaras hay en una localidad, los movimientos de un equipo.</p>
         </div>
     </div>
 
@@ -362,7 +362,7 @@ $(function () {
     function messageHtml(item) {
         const id = item.id ? ` id="car-chatbot-message-${item.id}"` : '';
         if (item.status === 'pending' || item.status === 'processing') {
-            return `<div class="car-chatbot-message assistant"${id}><div class="car-chatbot-bubble"><i class="fas fa-circle-notch fa-spin mr-2"></i>Consultando documentación...</div></div>`;
+            return `<div class="car-chatbot-message assistant"${id}><div class="car-chatbot-bubble"><i class="fas fa-circle-notch fa-spin mr-2"></i>Buscando la respuesta...</div></div>`;
         }
 
         const isError = item.status === 'failed';
@@ -393,7 +393,7 @@ $(function () {
     }
 
     function emptyState() {
-        return '<div class="car-chatbot-empty"><i class="fas fa-compass"></i><p>Consultá cómo realizar una tarea o dónde encontrar una función del sistema.</p></div>';
+        return '<div class="car-chatbot-empty"><i class="fas fa-compass"></i><p>Consultá cómo realizar una tarea, dónde encontrar una función o pedime datos del sistema: cuántos equipos hay operativos, cuántas cámaras hay en una localidad, los movimientos de un equipo.</p></div>';
     }
 
     function scrollToBottom() {

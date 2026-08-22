@@ -6,6 +6,8 @@ use App\Jobs\ProcessChatbotMessage;
 use App\Models\ChatbotConversation;
 use App\Models\ChatbotMessage;
 use App\Models\User;
+use App\Services\Chatbot\CatalogoConsultas;
+use App\Services\ChatbotContentSanitizer;
 use App\Services\OpenCodeService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Queue;
@@ -137,11 +139,15 @@ class ChatbotTest extends TestCase
         $openCode->expects('createSession')->once()->andReturn(['id' => 'ses_test']);
         $openCode->expects('sendMessage')
             ->once()
-            ->withArgs(fn (string $sessionId, string $prompt): bool => $sessionId === 'ses_test'
+            ->withArgs(fn (string $sessionId, string $prompt, string $catalogo): bool => $sessionId === 'ses_test'
                 && str_contains($prompt, '¿Dónde están los equipos?'))
             ->andReturn('Ingresá al módulo Equipos.');
 
-        (new ProcessChatbotMessage($assistantMessage->id))->handle($openCode);
+        (new ProcessChatbotMessage($assistantMessage->id))->handle(
+            $openCode,
+            new CatalogoConsultas(),
+            new ChatbotContentSanitizer()
+        );
 
         $this->assertSame('ses_test', $conversation->fresh()->remote_session_id);
         $this->assertSame('completed', $assistantMessage->fresh()->status);

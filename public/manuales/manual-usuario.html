@@ -1673,7 +1673,8 @@
                     <span>abajo a la derecha, en cualquier pantalla</span></p>
 
                 <p class="intro">Responde cómo hacer una tarea o dónde está una función, usando únicamente la
-                    documentación aprobada del sistema — la misma de la que salió este manual.</p>
+                    documentación aprobada del sistema — la misma de la que salió este manual. También responde
+                    consultas de datos sobre los módulos que tenés habilitados.</p>
 
                 <h3>Cómo usarlo</h3>
                 <ol>
@@ -1684,12 +1685,53 @@
                 </ol>
                 <p>Con <strong>Iniciar conversación nueva</strong> borrás el historial y empezás de cero.</p>
 
+                <h3>Qué datos podés consultarle</h3>
+                <p>Cada consulta exige el permiso del módulo correspondiente. Si no lo tenés, el asistente avisa
+                    que esa información no está disponible para tu usuario.</p>
+                <ul>
+                    <li><strong>Equipos:</strong> cuántos equipos de comunicación hay en el parque, cuántos
+                        operativos o no operativos, cuántos en un estado puntual y cuántos por modelo de
+                        terminal o tipo de uso.</li>
+                    <li><strong>Flota general:</strong> cuántos equipos tiene asignados una dependencia o un
+                        recurso puntual, qué dependencias tienen más equipos, y los movimientos de un equipo
+                        indicando su ISSI o su TEI.</li>
+                    <li><strong>Dependencias:</strong> el panorama de una dependencia — de quién depende,
+                        cuántas tiene a cargo y con cuánto equipamiento cuenta.</li>
+                    <li><strong>Recursos:</strong> qué móviles, motos y bases tiene asignados una
+                        dependencia.</li>
+                    <li><strong>Cámaras:</strong> cuántas hay en una localidad o a cargo de una dependencia,
+                        cuántas por tipo y cuántos tótems BDE hay instalados.</li>
+                    <li><strong>Activaciones de tótem:</strong> cuántas hay por estado y cuántas están vencidas
+                        o por vencer según el plazo legal de retención.</li>
+                    <li><strong>Buzones de correo:</strong> qué buzones podés consultar, cuántos mensajes tiene
+                        cada uno y la fecha del último correo. Solo los buzones asignados a tus roles.</li>
+                    <li><strong>Bodycams:</strong> cuántas hay disponibles, entregadas, perdidas, en
+                        mantenimiento o dadas de baja.</li>
+                </ul>
+                <p>Preguntá en lenguaje normal: <em>«¿cuántas cámaras hay en Oro Verde?»</em>,
+                    <em>«¿cuántos equipos tiene la Comisaría Segunda?»</em> o
+                    <em>«¿qué equipos tiene el Móvil 802?»</em>.</p>
+                <p>No hace falta el nombre completo ni exacto de la dependencia: entiende las abreviaturas de
+                    uso corriente y los ordinales en números, así que <em>«Cria. 6ta»</em> encuentra a la
+                    Comisaría Sexta (6ª) y <em>«Sección Técnica del 911»</em> a la Sección Técnica. Si hay
+                    varias que coinciden te devuelve la lista para que elijas. Los conteos por dependencia
+                    incluyen las que dependen de ella; pedile que no las sume si querés el dato de la
+                    dependencia sola.</p>
+
+                <div class="note">
+                    <span class="note-label">Los datos no salen del sistema</span>
+                    <p>Las cantidades y fechas las calcula el propio sistema contra su base de datos. El
+                        asistente solo decide qué consulta corresponde: nunca recibe ni redacta los resultados.</p>
+                </div>
+
                 <h3>Qué no hace</h3>
                 <ul>
                     <li>No ejecuta acciones ni modifica datos por vos: te dice cómo hacerlo.</li>
-                    <li>No conoce datos operativos concretos, como un evento, un equipo o una persona.</li>
+                    <li>No responde por un registro individual, como un evento o una persona: solo los datos
+                        de la lista anterior.</li>
                     <li>Solo menciona módulos compatibles con tus permisos.</li>
-                    <li>Si la documentación no cubre algo, te lo dice en vez de inventar una respuesta.</li>
+                    <li>Si la documentación o las consultas disponibles no cubren algo, te lo dice en vez de
+                        inventar una respuesta.</li>
                 </ul>
 
                 <div class="note warn">

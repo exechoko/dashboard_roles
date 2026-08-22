@@ -2,7 +2,6 @@
 
 namespace Tests\Unit;
 
-use App\Services\ChatbotContentSanitizer;
 use App\Services\OpenCodeService;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -136,6 +135,6 @@ class OpenCodeServiceTest extends TestCase
 
     protected function service(): OpenCodeService
     {
-        return new OpenCodeService(new ChatbotContentSanitizer());
+        return new OpenCodeService();
     }
 }

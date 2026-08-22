@@ -247,6 +247,14 @@
                                                         <span class="modelo-text">
                                                             {{ $f->equipo->tipo_terminal->tipo_uso->uso }}<br>
                                                             <small>{{ $f->equipo->tipo_terminal->modelo }}</small>
+                                                            @php($faltantes = $f->equipo->accesoriosFaltantes())
+                                                            @if($faltantes)
+                                                                <br>
+                                                                <span class="badge-sin-accesorio"
+                                                                    title="No sale a la calle hasta conseguir el repuesto">
+                                                                    <i class="fas fa-unlink mr-1"></i>Falta {{ implode(' y ', $faltantes) }}
+                                                                </span>
+                                                            @endif
                                                         </span>
                                                     </div>
                                                 </td>

@@ -46,7 +46,7 @@ class FlotaGeneralController extends Controller
         $texto = trim($request->get('texto')); //trim quita espacios vacios
 
         //Busqueda por ISSI, TEI, Movil o Destino
-        $flota = FlotaGeneral::with(['recurso.vehiculo', 'cargo:id,estado', 'destinoPatrimonial:id,nombre'])
+        $flota = FlotaGeneral::with(['equipo.tipo_terminal.tipo_uso', 'recurso.vehiculo', 'cargo:id,estado', 'destinoPatrimonial:id,nombre'])
             ->whereHas('equipo', function ($query) use ($texto) {
                 $query->where('issi', 'like', '%' . $texto . '%')
                     ->orWhere('tei', 'like', '%' . $texto . '%')

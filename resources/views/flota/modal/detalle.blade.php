@@ -31,6 +31,16 @@
                                     <li><strong>ID ISSI:</strong> {{ $f->equipo->nombre_issi ?? '-' }}</li>
                                     <li><strong>Tipo:</strong> {{ $f->equipo->tipo_terminal->tipo_uso->uso ?? '-' }}</li>
                                     <li><strong>Estado:</strong> {{ $f->equipo->estado->nombre ?? '-' }}</li>
+                                    <li><strong>Accesorios:</strong>
+                                        @php($faltantes = $f->equipo?->accesoriosFaltantes() ?? [])
+                                        @if($faltantes)
+                                            <span class="badge-sin-accesorio">
+                                                <i class="fas fa-unlink mr-1"></i>Falta {{ implode(' y ', $faltantes) }}
+                                            </span>
+                                        @else
+                                            Sin faltantes relevados
+                                        @endif
+                                    </li>
                                 </ul>
                             </div>
 

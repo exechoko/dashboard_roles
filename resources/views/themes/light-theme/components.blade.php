@@ -452,6 +452,15 @@
     }
     .tei-badge:hover { background: #1a202c; color: #fff; text-decoration: none; }
 
+    /* Aviso de accesorio faltante: el equipo funciona, pero no sale a la calle */
+    .badge-sin-accesorio {
+        display: inline-flex; align-items: center;
+        background: #fd7e14; color: #fff;
+        border-radius: 20px; padding: .1rem .5rem;
+        font-size: .7rem; font-weight: 600;
+        white-space: nowrap; margin-top: .2rem;
+    }
+
     /* Modelo cell */
     .modelo-cell { display: flex; align-items: center; gap: .6rem; }
     .modelo-img { border-radius: 6px; border: 1px solid var(--border-color); object-fit: contain; }

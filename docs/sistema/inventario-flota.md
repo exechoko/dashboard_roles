@@ -85,6 +85,16 @@ La opción **solo modificar histórico** registra el evento sin cambiar la situa
 4. Agregá chasis, color, propiedad y observaciones cuando correspondan.
 5. Guardá. Luego podrá asociarse a un recurso.
 
+## Dónde se ve que a un equipo le falta un accesorio
+
+Un equipo con algún accesorio faltante muestra un aviso naranja **"Falta …"** en:
+
+- el listado de **Flota**, debajo del modelo;
+- el **detalle** del equipo, en la línea *Accesorios*;
+- la cabecera de su **histórico**, al lado del estado.
+
+Además, cada movimiento donde se relevó deja la constancia en sus observaciones.
+
 ## Relevar accesorios en un movimiento
 
 Cuando el equipo se revisa físicamente, el formulario de movimiento muestra el bloque **Accesorios relevados**. Aparece en desinstalación completa y parcial, revisión, relevamiento, devolución, devolución a dependencia y devolver equipo temporal.

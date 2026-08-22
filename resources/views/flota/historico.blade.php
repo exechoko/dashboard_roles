@@ -34,11 +34,20 @@
                                         $hEstado = $flota->equipo->estado->nombre;
                                     }
                                     $eClaseH = $eClasesH[$hEstado] ?? 'estado-neutro';
+                                    // Segun de donde se entre, $flota es el equipo o la fila de flota.
+                                    $hEquipo = $desdeEquipo ? $flota : $flota->equipo;
+                                    $hFaltantes = $hEquipo?->accesoriosFaltantes() ?? [];
                                 @endphp
                                 <div class="hist-info">
                                     <div class="hist-info-row1">
                                         <span class="tei-badge">{{ $hTei }}</span>
                                         <span class="estado-badge {{ $eClaseH }}">{{ $hEstado }}</span>
+                                        @if($hFaltantes)
+                                            <span class="badge-sin-accesorio"
+                                                title="No sale a la calle hasta conseguir el repuesto">
+                                                <i class="fas fa-unlink mr-1"></i>Falta {{ implode(' y ', $hFaltantes) }}
+                                            </span>
+                                        @endif
                                     </div>
                                     <div class="hist-info-row2">
                                         <span>{{ $hMarca }} {{ $hModelo }}</span>

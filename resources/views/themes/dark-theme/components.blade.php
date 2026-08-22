@@ -511,6 +511,7 @@
     [data-theme="dark"] .search-input::placeholder {
         color: var(--text-secondary) !important; opacity: 1;
     }
+    [data-theme="dark"] .badge-sin-accesorio { background: #c2620f !important; color: #fff !important; }
     [data-theme="dark"] .tei-badge { background: #4a5568 !important; }
     [data-theme="dark"] .tei-badge:hover { background: #2d3748 !important; }
     [data-theme="dark"] .table-modern tbody tr:hover { background: var(--bg-secondary) !important; }

@@ -116,12 +116,15 @@
                             <h6 class="mb-3 text-muted" style="font-size:.85rem;">
                                 Equipos cuyo estado dice que funcionan pero que no salen a la calle por falta de un accesorio.
                                 Cada fila es cuántos volverían a servicio si se consigue ese repuesto.
+                                Hacé clic en una fila para ver cuáles son.
                             </h6>
                             <table class="table table-sm mb-0" style="max-width: 420px;">
                                 <thead><tr><th>Accesorio faltante</th><th class="text-right">Equipos</th></tr></thead>
                                 <tbody>
                                     @foreach ($resumen['degradados_por_accesorio'] as $fila)
-                                        <tr>
+                                        <tr class="equipos-clicable"
+                                            data-equipos-titulo="Equipos sin {{ $fila['accesorio'] }}"
+                                            data-equipos-filtro='{{ json_encode(['condicion' => 'degradado', 'falta_accesorio' => $fila['campo']]) }}'>
                                             <td>{{ $fila['accesorio'] }}</td>
                                             <td class="text-right"><strong>{{ $fila['cantidad'] }}</strong></td>
                                         </tr>

@@ -97,6 +97,18 @@ Si el movimiento es **Revisión**, el equipo pasa a estado "En revisión" y qued
 
 Lo que se releva queda escrito en las observaciones de ese movimiento, con el formato `Accesorios relevados: Antena R.F.: FALTA | Kit de instalación: presente.` Esa línea del histórico no se vuelve a tocar nunca: el equipo guarda cómo está hoy, el histórico guarda lo que se constató en cada momento.
 
+## Carga inicial del relevamiento
+
+La primera vez, en vez de marcar equipo por equipo, se corre:
+
+```
+php artisan equipos:relevar-accesorios-inicial
+```
+
+Marca los MDT400 relevados sin antena R.F. y toda la flota HTT500 en estado operativo, que no tiene antenas disponibles. Con `--dry-run` muestra qué haría sin escribir nada.
+
+Solo toca los equipos que todavía están **Sin relevar**, así que se puede correr más de una vez sin pisar lo que ya se cargó a mano. Si algún TEI de la lista no existe en la base, lo avisa.
+
 ## Reponer un accesorio
 
 Cuando se consigue el repuesto, se carga como un movimiento más — normalmente **Instalación completa** o **Re instalación Parcial** — marcando el accesorio en **Lo tiene**.
@@ -131,7 +143,7 @@ La flota se reparte en indicadores que no se solapan y suman el total:
 - **No Operativos**: baja, no funciona, perdido, degradado sin accesorios o recambio.
 - **Otros estados**: en revisión.
 
-El bloque **Equipos a recuperar por repuesto** indica cuántos equipos volverían a servicio por cada accesorio que se consiga. Un equipo al que le falta más de un accesorio aparece en cada fila, así que esa suma puede superar el total de degradados.
+El bloque **Equipos a recuperar por repuesto** indica cuántos equipos volverían a servicio por cada accesorio que se consiga. Haciendo clic en una fila se abre la lista de cuáles son. Un equipo al que le falta más de un accesorio aparece en cada fila, así que esa suma puede superar el total de degradados.
 
 ## Tipos de terminales
 

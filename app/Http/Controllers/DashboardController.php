@@ -125,6 +125,16 @@ class DashboardController extends Controller
             };
         }
 
+        // Equipos a los que les falta un accesorio puntual, para poder abrir desde
+        // "Equipos a recuperar por repuesto" la lista de cuáles son.
+        if ($request->filled('falta_accesorio')) {
+            $accesorio = $request->string('falta_accesorio')->toString();
+
+            if (array_key_exists($accesorio, Equipo::ACCESORIOS)) {
+                $query->where("equipos.{$accesorio}", false);
+            }
+        }
+
         if ($request->filled('marca')) {
             $query->where('tipo_terminales.marca', $request->string('marca'));
         }
@@ -257,6 +267,7 @@ class DashboardController extends Controller
         $degradadosPorAccesorio = collect(Equipo::ACCESORIOS)
             ->map(fn ($etiqueta, $campo) => [
                 'accesorio' => $etiqueta,
+                'campo' => $campo,
                 'cantidad' => Equipo::whereIn('estado_id', $operativoIds)
                     ->where("equipos.{$campo}", false)
                     ->count(),

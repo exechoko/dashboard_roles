@@ -14,6 +14,7 @@ Usá las palabras de la consulta para seleccionar un documento.
 | arma, retención, devolución de arma, personal, chaleco, licencia | `armas-personal.md` |
 | período, incidencia 911, informe, ticket PG, ticketera | `incidencias-tickets.md` |
 | web pública, noticia, galería, hash, plano del edificio | `sitio-publico-herramientas.md` |
+| correo, email, mbox, buzón, visor de correos, backup de correo, Gmail, Takeout | `correos-buzones.md` |
 
 ## Reglas para responder
 

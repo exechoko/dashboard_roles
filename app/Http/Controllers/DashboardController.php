@@ -236,30 +236,22 @@ class DashboardController extends Controller
         $operativoIdsSql = $operativoIds->isNotEmpty() ? $operativoIds->implode(',') : '0';
         $noOperativoIdsSql = $noOperativoIds->isNotEmpty() ? $noOperativoIds->implode(',') : '0';
 
-        // El HTT500 se trata aparte en los contadores de Operativos/No Operativos:
-        // aunque su estado diga que está bien, no hay baterías ni antenas disponibles
-        // para equiparlo, así que mezclarlo con el resto de la flota operativa da una
-        // idea equivocada de cuánto hay realmente disponible.
-        $esHtt500 = fn ($q) => $q->where('marca', 'Teltronic')->where('modelo', 'HTT500');
-
         $totalEquipos = Equipo::count();
 
-        // "Operativo" ahora exige además que no le falte ningún accesorio relevado:
-        // un MDT400 sin antena RF tiene el transceptor sano (estado "Usado") pero no
-        // puede salir a la calle, así que se cuenta aparte como degradado.
+        // "Operativo" exige que el estado diga que funciona y que no le falte ningún
+        // accesorio relevado: un MDT400 sin antena RF tiene el transceptor sano
+        // (estado "Usado") pero no puede salir a la calle, así que cuenta como
+        // degradado. El HTT500 entra por la misma puerta: no hay antenas ni baterías
+        // para equiparlos, y eso está relevado equipo por equipo, no cableado por
+        // marca y modelo como antes.
         $totalOperativos = Equipo::whereIn('estado_id', $operativoIds)
             ->conAccesoriosCompletos()
-            ->whereDoesntHave('tipo_terminal', $esHtt500)
             ->count();
         $totalDegradados = Equipo::whereIn('estado_id', $operativoIds)
             ->sinAccesorios()
-            ->whereDoesntHave('tipo_terminal', $esHtt500)
             ->count();
-        $totalNoOperativos = Equipo::whereIn('estado_id', $noOperativoIds)->whereDoesntHave('tipo_terminal', $esHtt500)->count();
-        $totalOperativosHtt500 = Equipo::whereIn('estado_id', $operativoIds)->whereHas('tipo_terminal', $esHtt500)->count();
-        $totalNoOperativosHtt500 = Equipo::whereIn('estado_id', $noOperativoIds)->whereHas('tipo_terminal', $esHtt500)->count();
-        $totalHtt500 = Equipo::whereHas('tipo_terminal', $esHtt500)->count();
-        $totalOtrosEstados = $totalEquipos - $totalOperativos - $totalDegradados - $totalNoOperativos - $totalHtt500;
+        $totalNoOperativos = Equipo::whereIn('estado_id', $noOperativoIds)->count();
+        $totalOtrosEstados = $totalEquipos - $totalOperativos - $totalDegradados - $totalNoOperativos;
 
         // Cuántos equipos volverían a servicio por cada accesorio que se compre.
         $degradadosPorAccesorio = collect(Equipo::ACCESORIOS)
@@ -267,7 +259,6 @@ class DashboardController extends Controller
                 'accesorio' => $etiqueta,
                 'cantidad' => Equipo::whereIn('estado_id', $operativoIds)
                     ->where("equipos.{$campo}", false)
-                    ->whereDoesntHave('tipo_terminal', $esHtt500)
                     ->count(),
             ])
             ->filter(fn ($fila) => $fila['cantidad'] > 0)
@@ -312,24 +303,15 @@ class DashboardController extends Controller
             ->distinct('flota_general.equipo_id')
             ->count('flota_general.equipo_id');
 
-        // El HTT500 se separa del resto de los portátiles: ya no quedan baterías ni antenas
-        // para equiparlos, así que aunque el estado diga "Usado"/"Nuevo"/"Reparado" no se
-        // cuentan como portátil operativo disponible, se muestran aparte. El VX-261
-        // (Motorola/Vertex) tampoco cuenta con los portátiles TETRA porque no es TETRA
-        // (es analógico/DMR, otra red), así que también se separa.
-        $esHtt500 = fn ($q) => $q->where('tipo_terminales.marca', 'Teltronic')->where('tipo_terminales.modelo', 'HTT500');
+        // El VX-261 (Motorola/Vertex) no cuenta con los portátiles TETRA porque no es
+        // TETRA (es analógico/DMR, otra red), así que se muestra aparte. El HTT500 ya
+        // no necesita excepción: sale por el filtro de accesorios de
+        // $asignadosActivosQuery(), porque está relevado como sin antena.
         $esVertex = fn ($q) => $q->where('tipo_terminales.marca', 'Motorola/Vertex');
 
         $totalAsignadosPortatiles = $asignadosActivosQuery()
             ->where('tipo_uso.uso', 'Portatil')
-            ->where(fn ($q) => $q->where('tipo_terminales.marca', '!=', 'Teltronic')->orWhere('tipo_terminales.modelo', '!=', 'HTT500'))
             ->where('tipo_terminales.marca', '!=', 'Motorola/Vertex')
-            ->distinct('flota_general.equipo_id')
-            ->count('flota_general.equipo_id');
-
-        $totalHtt500Asignados = $asignadosActivosQuery()
-            ->where('tipo_uso.uso', 'Portatil')
-            ->where($esHtt500)
             ->distinct('flota_general.equipo_id')
             ->count('flota_general.equipo_id');
 
@@ -577,14 +559,10 @@ class DashboardController extends Controller
             'degradados' => $totalDegradados,
             'degradados_por_accesorio' => $degradadosPorAccesorio,
             'no_operativos' => $totalNoOperativos,
-            'operativos_htt500' => $totalOperativosHtt500,
-            'no_operativos_htt500' => $totalNoOperativosHtt500,
-            'htt500_total' => $totalHtt500,
             'otros_estados' => $totalOtrosEstados,
             'en_revision_tecnica' => $totalEnRevisionTecnica,
             'instalados' => $totalInstalados,
             'asignados_portatiles' => $totalAsignadosPortatiles,
-            'htt500_asignados' => $totalHtt500Asignados,
             'vertex_asignados' => $totalVertexAsignados,
             'desinstalados' => $totalDesinstalados,
             'en_deposito_otros' => $totalEnDepositoOtros,
@@ -592,7 +570,6 @@ class DashboardController extends Controller
             'pct_operativo' => $totalEquipos > 0 ? round($totalOperativos / $totalEquipos * 100, 1) : 0,
             'pct_degradado' => $totalEquipos > 0 ? round($totalDegradados / $totalEquipos * 100, 1) : 0,
             'pct_no_operativo' => $totalEquipos > 0 ? round($totalNoOperativos / $totalEquipos * 100, 1) : 0,
-            'pct_htt500' => $totalEquipos > 0 ? round($totalHtt500 / $totalEquipos * 100, 1) : 0,
             'pct_otros' => $totalEquipos > 0 ? round($totalOtrosEstados / $totalEquipos * 100, 1) : 0,
             'htt500_sin_movimiento' => $htt500SinMovimiento->count(),
             'seccion_tecnica_total' => $totalSeccionTecnica,

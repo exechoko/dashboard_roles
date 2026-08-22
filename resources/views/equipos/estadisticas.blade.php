@@ -19,8 +19,7 @@
             $usoFiltroBase = [
                 'Base' => ['uso' => 'Base'],
                 'Movil' => ['uso' => 'Movil'],
-                'Portatil' => ['uso' => 'Portatil', 'excluir_modelos' => 'Teltronic:HTT500', 'excluir_marcas' => 'Motorola/Vertex'],
-                'HTT500 (sin accesorios)' => ['marca' => 'Teltronic', 'modelo' => 'HTT500'],
+                'Portatil' => ['uso' => 'Portatil', 'excluir_marcas' => 'Motorola/Vertex'],
                 'VX-261 (no TETRA)' => ['marca' => 'Motorola/Vertex'],
             ];
 
@@ -43,20 +42,14 @@
                 ['titulo' => 'Total Equipos', 'valor' => $resumen['total'], 'icono' => 'fa-microchip', 'color' => 'bg-primary',
                     'filtro' => [], 'info' => 'Todos los equipos de la base, sin importar estado ni asignación.'],
                 ['titulo' => 'Operativos', 'valor' => $resumen['operativos'], 'icono' => 'fa-check-circle', 'color' => 'bg-success',
-                    'filtro' => ['condicion' => 'operativo', 'excluir_modelos' => 'Teltronic:HTT500'],
-                    'info' => 'Equipos en estado Nuevo, Usado, Reparado o Temporal a los que no les falta ningún accesorio relevado, sin importar si están instalados, asignados o en stock. No incluye HTT500 (se cuentan aparte, porque aunque el estado diga que están bien no hay baterías ni antenas disponibles para equiparlos).'],
+                    'filtro' => ['condicion' => 'operativo'],
+                    'info' => 'Equipos en estado Nuevo, Usado, Reparado o Temporal a los que no les falta ningún accesorio relevado, sin importar si están instalados, asignados o en stock.'],
                 ['titulo' => 'Degradados (falta accesorio)', 'valor' => $resumen['degradados'], 'icono' => 'fa-unlink', 'color' => 'bg-orange',
-                    'filtro' => ['condicion' => 'degradado', 'excluir_modelos' => 'Teltronic:HTT500'],
-                    'info' => 'Equipos cuyo estado dice que funcionan (Nuevo/Usado/Reparado/Temporal) pero que tienen algún accesorio relevado como faltante (antena R.F., frente remoto, GPS o kit de instalación). No prestan servicio hoy, pero se recuperan comprando el repuesto: no son equipos rotos. No incluye HTT500.'],
-                ['titulo' => 'Operativos HTT500', 'valor' => $resumen['operativos_htt500'], 'icono' => 'fa-battery-empty', 'color' => 'bg-warning',
-                    'filtro' => ['condicion' => 'operativo', 'marca' => 'Teltronic', 'modelo' => 'HTT500'],
-                    'info' => 'HTT500 en estado Nuevo, Usado o Reparado, sin importar si están instalados, asignados o en stock. Se muestran aparte del resto de los Operativos porque no hay baterías ni antenas disponibles para equiparlos.'],
+                    'filtro' => ['condicion' => 'degradado'],
+                    'info' => 'Equipos cuyo estado dice que funcionan (Nuevo/Usado/Reparado/Temporal) pero que tienen algún accesorio relevado como faltante (antena R.F., frente remoto, GPS o kit de instalación). No prestan servicio hoy, pero se recuperan comprando el repuesto: no son equipos rotos. Acá entran los HTT500: están relevados sin antena.'],
                 ['titulo' => 'No Operativos', 'valor' => $resumen['no_operativos'], 'icono' => 'fa-times-circle', 'color' => 'bg-danger',
-                    'filtro' => ['condicion' => 'no_operativo', 'excluir_modelos' => 'Teltronic:HTT500'],
-                    'info' => 'Equipos en estado Baja, No funciona, Perdido, Degradado - Sin Accesorios o Recambio (estos últimos ya no los tiene la Policía: fueron devueltos/cambiados). No incluye HTT500 (se cuentan aparte).'],
-                ['titulo' => 'No Operativos HTT500', 'valor' => $resumen['no_operativos_htt500'], 'icono' => 'fa-times-circle', 'color' => 'bg-dark',
-                    'filtro' => ['condicion' => 'no_operativo', 'marca' => 'Teltronic', 'modelo' => 'HTT500'],
-                    'info' => 'HTT500 en estado Baja, No funciona, Perdido, Degradado - Sin Accesorios o Recambio.'],
+                    'filtro' => ['condicion' => 'no_operativo'],
+                    'info' => 'Equipos en estado Baja, No funciona, Perdido, Degradado - Sin Accesorios o Recambio (estos últimos ya no los tiene la Policía: fueron devueltos/cambiados).'],
                 ['titulo' => 'En Revisión Técnica', 'valor' => $resumen['en_revision_tecnica'], 'icono' => 'fa-tools', 'color' => 'bg-info',
                     'filtro' => ['ultimo_movimiento' => 'Revisión'], 'info' => 'Equipos cuyo último movimiento histórico registrado es "Revisión" (soporte/sección técnica), sin importar el estado actual.'],
 
@@ -64,11 +57,8 @@
                     'filtro' => ['condicion' => 'operativo', 'situacion' => 'instalado', 'excluir_portatil' => 1],
                     'info' => 'Equipos operativos con uso Móvil o Base (MDT400, DT410, SRG3900, etc.), asignados a un recurso real fuera de Stock 911.'],
                 ['titulo' => 'Asignados (Portátiles TETRA)', 'valor' => $resumen['asignados_portatiles'], 'icono' => 'fa-walkie-talkie', 'color' => 'bg-primary',
-                    'filtro' => ['condicion' => 'operativo', 'situacion' => 'instalado', 'uso' => 'Portatil', 'excluir_modelos' => 'Teltronic:HTT500', 'excluir_marcas' => 'Motorola/Vertex'],
-                    'info' => 'Portátiles TETRA operativos (excluye HTT500 y VX-261), asignados a una persona/recurso real fuera de Stock 911.'],
-                ['titulo' => 'HTT500 Asignados (sin Accesorios)', 'valor' => $resumen['htt500_asignados'], 'icono' => 'fa-battery-empty', 'color' => 'bg-danger',
-                    'filtro' => ['condicion' => 'operativo', 'situacion' => 'instalado', 'marca' => 'Teltronic', 'modelo' => 'HTT500'],
-                    'info' => 'HTT500 en estado Nuevo/Usado/Reparado/Temporal, asignados fuera de Stock 911. Aunque el estado diga que están bien, no hay baterías ni antenas disponibles para equiparlos.'],
+                    'filtro' => ['condicion' => 'operativo', 'situacion' => 'instalado', 'uso' => 'Portatil', 'excluir_marcas' => 'Motorola/Vertex'],
+                    'info' => 'Portátiles TETRA operativos (excluye el VX-261, que no es TETRA), asignados a una persona/recurso real fuera de Stock 911. Los que tienen un accesorio faltante no cuentan acá: están en Degradados.'],
                 ['titulo' => 'VX-261 Asignados (no TETRA)', 'valor' => $resumen['vertex_asignados'], 'icono' => 'fa-satellite-dish', 'color' => 'bg-dark',
                     'filtro' => ['condicion' => 'operativo', 'situacion' => 'instalado', 'marca' => 'Motorola/Vertex'],
                     'info' => 'Motorola/Vertex VX-261 operativos, asignados fuera de Stock 911. No es un equipo TETRA, es otra red.'],
@@ -103,7 +93,7 @@
             <div class="col-12">
                 <small class="text-muted d-block mb-1">
                     <i class="fas fa-info-circle mr-1"></i>
-                    "Asignados (Portátiles TETRA)" excluye el HTT500 (sin accesorios) y el VX-261 (no TETRA), que se muestran aparte.
+                    "Asignados (Portátiles TETRA)" excluye el VX-261 (no es TETRA) y los equipos con algún accesorio faltante, que están en Degradados.
                 </small>
                 <small class="text-muted d-block mb-1">
                     <i class="fas fa-info-circle mr-1"></i>
@@ -162,7 +152,6 @@
                             <strong class="text-success">{{ $resumen['pct_operativo'] }}% operativo</strong> /
                             <strong class="text-orange">{{ $resumen['pct_degradado'] }}% degradado</strong> /
                             <strong class="text-danger">{{ $resumen['pct_no_operativo'] }}% no operativo</strong> /
-                            <strong class="text-warning">{{ $resumen['pct_htt500'] }}% HTT500</strong> /
                             <strong class="text-secondary">{{ $resumen['pct_otros'] }}% otros estados</strong>
                         </h6>
                         <div class="progress" style="height: 25px;">
@@ -181,11 +170,6 @@
                                     {{ $resumen['pct_no_operativo'] }}%
                                 @endif
                             </div>
-                            <div class="progress-bar bg-warning" style="width: {{ $resumen['pct_htt500'] }}%">
-                                @if($resumen['pct_htt500'] >= 8)
-                                    {{ $resumen['pct_htt500'] }}%
-                                @endif
-                            </div>
                             <div class="progress-bar bg-secondary" style="width: {{ $resumen['pct_otros'] }}%">
                                 @if($resumen['pct_otros'] >= 8)
                                     {{ $resumen['pct_otros'] }}%
@@ -196,7 +180,6 @@
                             <span><i class="fas fa-square text-success"></i> {{ $resumen['operativos'] }} operativos ({{ $resumen['pct_operativo'] }}%) — Nuevo/Usado/Reparado/Temporal</span>
                             <span><i class="fas fa-square text-orange"></i> {{ $resumen['degradados'] }} degradados ({{ $resumen['pct_degradado'] }}%) — funcionan, pero les falta un accesorio</span>
                             <span><i class="fas fa-square text-danger"></i> {{ $resumen['no_operativos'] }} no operativos ({{ $resumen['pct_no_operativo'] }}%) — Baja/No funciona/Perdido/Degradado/Recambio</span>
-                            <span><i class="fas fa-square text-warning"></i> {{ $resumen['htt500_total'] }} HTT500 ({{ $resumen['pct_htt500'] }}%) — se cuentan aparte, no hay baterías/antenas disponibles</span>
                             <span><i class="fas fa-square text-secondary"></i> {{ $resumen['otros_estados'] }} otros estados ({{ $resumen['pct_otros'] }}%) — En revisión</span>
                         </div>
                     </div>
@@ -658,7 +641,7 @@
 @push('styles')
 <style>
     /* Degradado: funciona pero le falta un accesorio. Naranja para no confundirlo
-       ni con el verde de operativo ni con el amarillo que ya usa el HTT500. */
+       ni con el verde de operativo ni con el rojo de no operativo. */
     .bg-orange { background-color: #fd7e14 !important; color: #fff !important; }
     .text-orange { color: #fd7e14 !important; }
 
@@ -1249,7 +1232,7 @@ document.addEventListener('DOMContentLoaded', function () {
             pdf.text('Generado: ' + new Date().toLocaleString('es-AR', { hour12: false }), margin, y);
             y += 5;
             pdf.text(
-                'Total: {{ $resumen["total"] }} equipos | Operativo: {{ $resumen["pct_operativo"] }}% | No operativo: {{ $resumen["pct_no_operativo"] }}% | HTT500: {{ $resumen["pct_htt500"] }}% | Otros: {{ $resumen["pct_otros"] }}%',
+                'Total: {{ $resumen["total"] }} equipos | Operativo: {{ $resumen["pct_operativo"] }}% | No operativo: {{ $resumen["pct_no_operativo"] }}% | Degradado: {{ $resumen["pct_degradado"] }}% | Otros: {{ $resumen["pct_otros"] }}%',
                 margin, y
             );
             y += 8;

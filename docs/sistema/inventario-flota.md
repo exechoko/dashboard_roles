@@ -127,8 +127,8 @@ La flota se reparte en indicadores que no se solapan y suman el total:
 
 - **Operativos**: el estado dice que funcionan y no les falta ningún accesorio relevado.
 - **Degradados (falta accesorio)**: el estado dice que funcionan pero les falta antena R.F., frente remoto, GPS o kit de instalación. Se recuperan comprando el repuesto.
+  Acá entra toda la flota HTT500: está relevada sin antena, así que ya no necesita contarse aparte como antes.
 - **No Operativos**: baja, no funciona, perdido, degradado sin accesorios o recambio.
-- **Operativos / No Operativos HTT500**: se cuentan aparte porque no hay baterías ni antenas disponibles para equiparlos.
 - **Otros estados**: en revisión.
 
 El bloque **Equipos a recuperar por repuesto** indica cuántos equipos volverían a servicio por cada accesorio que se consiga. Un equipo al que le falta más de un accesorio aparece en cada fila, así que esa suma puede superar el total de degradados.

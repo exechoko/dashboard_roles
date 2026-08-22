@@ -684,7 +684,68 @@
 
                 <h3>Estadísticas</h3>
                 <p>Tablero con los indicadores del parque y el detalle por recurso. Es de solo consulta:
-                    sirve para ver totales y distribución antes de entrar a los listados.</p>
+                    sirve para ver totales y distribución antes de entrar a los listados. Pulsando cualquier
+                    indicador se abre la lista de equipos que lo componen.</p>
+
+                <p>La flota se reparte en indicadores que no se solapan y suman el total:</p>
+                <ul>
+                    <li><strong>Operativos</strong>: el estado dice que funcionan y no les falta ningún
+                        accesorio relevado.</li>
+                    <li><strong>Degradados (falta accesorio)</strong>: el estado dice que funcionan, pero les
+                        falta antena R.F., frente remoto, GPS o kit de instalación. No es lo mismo que un
+                        equipo roto: se recuperan comprando el repuesto.</li>
+                    <li><strong>No Operativos</strong>: baja, no funciona, perdido, degradado sin accesorios
+                        o recambio.</li>
+                    <li><strong>Operativos / No Operativos HTT500</strong>: se cuentan aparte porque no hay
+                        baterías ni antenas disponibles para equiparlos.</li>
+                    <li><strong>Otros estados</strong>: en revisión.</li>
+                </ul>
+
+                <p>El bloque <strong>Equipos a recuperar por repuesto</strong> muestra cuántos equipos
+                    volverían a servicio por cada accesorio que se consiga. Un equipo al que le falta más de
+                    un accesorio aparece en cada fila, así que esa suma puede superar el total de degradados.</p>
+
+                <h3>Relevar accesorios en un movimiento</h3>
+                <p>Cuando el equipo se revisa físicamente, el formulario de movimiento muestra el bloque
+                    <strong>Accesorios relevados</strong>: desinstalación completa y parcial, revisión,
+                    relevamiento, devolución, devolución a dependencia y devolver equipo temporal.</p>
+                <p>Es el caso habitual: la empresa de soporte hace una desinstalación completa y encuentra
+                    que el equipo no tiene la antena R.F. Se marca ahí mismo, sin tener que entrar después
+                    a editar el equipo.</p>
+                <p>Cada accesorio queda en <strong>Sin cambios</strong> salvo que se toque, así que un
+                    movimiento común no pisa lo que ya se sabía del equipo. Marcar <strong>Le falta</strong>
+                    lo deja como degradado.</p>
+                <p>Lo que se releva queda escrito en las <strong>observaciones de ese movimiento</strong>,
+                    con el formato <span class="path">Accesorios relevados: Antena R.F.: FALTA | Kit de
+                    instalación: presente.</span> Esa línea del histórico no se vuelve a tocar nunca: el
+                    equipo guarda cómo está hoy, el histórico guarda lo que se constató en cada momento.</p>
+
+                <div class="note">
+                    <span class="note-label">Movimiento de Revisión</span>
+                    <p>El equipo pasa a estado "En revisión" y queda fuera tanto de operativos como de
+                        degradados, hasta que se le cargue un estado definitivo.</p>
+                </div>
+
+                <h3>Reponer un accesorio</h3>
+                <p>Cuando se consigue el repuesto, se carga como un movimiento más —normalmente
+                    <strong>Instalación completa</strong> o <strong>Re instalación Parcial</strong>—
+                    marcando el accesorio en <strong>Lo tiene</strong>.</p>
+                <p>No hay que corregir ni borrar nada anterior: el movimiento donde se detectó la falta
+                    queda como está, y el nuevo movimiento deja asentado cuándo se repuso. El equipo sale
+                    de Degradados y vuelve a Operativos solo.</p>
+
+                <h3>Accesorios de un equipo</h3>
+                <p>Al editar un equipo, el bloque <strong>Accesorios</strong> releva antena R.F., frente
+                    remoto, GPS y kit de instalación. Cada uno tiene tres valores:</p>
+                <ul>
+                    <li><strong>Sin relevar</strong>: todavía no se revisó. No afecta las estadísticas.</li>
+                    <li><strong>Lo tiene</strong>: el accesorio está.</li>
+                    <li><strong>Le falta</strong>: el equipo queda marcado como <strong>degradado</strong>,
+                        deja de contar como operativo y como instalado/asignado, y pasa al indicador
+                        Degradados hasta que se consiga el repuesto.</li>
+                </ul>
+                <p>El campo de observación al lado de cada accesorio sirve para anotar el detalle (por
+                    ejemplo, de qué equipo se sacó la antena).</p>
 
                 <h3>Administración</h3>
                 <p>Es la pantalla de flota, en <span class="path">/flota</span>. Acá se da de alta la situación

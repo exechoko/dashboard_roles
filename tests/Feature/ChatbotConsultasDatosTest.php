@@ -62,12 +62,40 @@ class ChatbotConsultasDatosTest extends TestCase
         $usuario = $this->usuarioCon(['ver-equipo']);
         $consulta = (new CatalogoConsultas())->resolver($usuario, 'equipos_por_estado');
 
-        $esperado = number_format(Equipo::query()->operativo()->count(), 0, ',', '.');
+        $esperado = number_format(Equipo::query()->disponible()->count(), 0, ',', '.');
         $respuesta = $consulta->ejecutar($usuario, ['estado' => 'en funcionamiento']);
 
         $this->assertStringContainsString($esperado, $respuesta);
         $this->assertStringContainsString('operativos', $respuesta);
         $this->assertStringContainsString('(/equipos)', $respuesta);
+    }
+
+    public function test_equipos_por_estado_informa_los_degradados_por_falta_de_accesorios(): void
+    {
+        $usuario = $this->usuarioCon(['ver-equipo']);
+        $consulta = (new CatalogoConsultas())->resolver($usuario, 'equipos_por_estado');
+
+        $degradados = Equipo::query()->degradado()->count();
+        $respuesta = $consulta->ejecutar($usuario, ['estado' => 'degradados']);
+
+        if ($degradados === 0) {
+            $this->assertStringContainsString('No hay equipos degradados', $respuesta);
+
+            return;
+        }
+
+        $this->assertStringContainsString(number_format($degradados, 0, ',', '.'), $respuesta);
+        $this->assertStringContainsString('Equipos a recuperar por repuesto', $respuesta);
+        $this->assertStringContainsString('(/equipos)', $respuesta);
+    }
+
+    public function test_equipos_por_estado_no_cuenta_como_operativo_al_que_le_falta_un_accesorio(): void
+    {
+        $disponibles = Equipo::query()->disponible()->count();
+        $operativosSinMirarAccesorios = Equipo::query()->operativo()->count();
+        $degradados = Equipo::query()->degradado()->count();
+
+        $this->assertSame($operativosSinMirarAccesorios, $disponibles + $degradados);
     }
 
     public function test_equipos_por_estado_avisa_cuando_el_estado_no_existe(): void

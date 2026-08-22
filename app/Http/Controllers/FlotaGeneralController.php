@@ -1278,6 +1278,7 @@ class FlotaGeneralController extends Controller
 
                 //Cambiar estado al equipo e issi
                 $this->cambiarEstadoAlEquipo($request->equipo, $tipo_de_mov->id, $soloModificaHistorico, $estadoFinal);
+                $this->relevarAccesoriosDelEquipo($request, $request->equipo, $soloModificaHistorico, $historico);
                 if ($request->nuevoIssi) {
                     $this->cambiarIssiAlEquipo($request, $flota, $soloModificaHistorico, $tipo_de_mov->id);
                 }
@@ -1343,6 +1344,62 @@ class FlotaGeneralController extends Controller
                 'result' => 'ERROR',
                 'message' => $e->getMessage()
             ]);
+        }
+    }
+
+    /**
+     * Guarda en el equipo los accesorios constatados durante el movimiento.
+     *
+     * Es habitual que la falta se descubra recién acá: la empresa de soporte hace
+     * una desinstalación completa y encuentra que el equipo no tiene la antena R.F.
+     *
+     * Solo se tocan los accesorios que vengan con un valor explícito ('1' o '0').
+     * Un select en "Sin cambios" llega vacío y deja el relevamiento anterior como
+     * estaba, así que un movimiento común nunca pisa lo que ya se sabía del equipo.
+     */
+    private function relevarAccesoriosDelEquipo(Request $request, $equipoId, bool $soloModificaHistorico, ?Historico $historico = null): void
+    {
+        if ($soloModificaHistorico) {
+            return;
+        }
+
+        $equipo = Equipo::find($equipoId);
+
+        if (is_null($equipo)) {
+            return;
+        }
+
+        $relevado = [];
+
+        foreach (Equipo::ACCESORIOS as $accesorio => $etiqueta) {
+            $valor = $request->input("accesorio_{$accesorio}");
+
+            if ($valor === null || $valor === '') {
+                continue;
+            }
+
+            $equipo->{$accesorio} = (bool) $valor;
+            $relevado[] = $etiqueta . ': ' . ((bool) $valor ? 'presente' : 'FALTA');
+        }
+
+        if (empty($relevado)) {
+            return;
+        }
+
+        $equipo->save();
+
+        // El relevamiento queda escrito en el histórico del movimiento, para que
+        // dentro de dos años se pueda ver en qué desinstalación se detectó que
+        // faltaba la antena y en qué instalación se repuso. La fila del histórico
+        // no se vuelve a tocar: el equipo guarda el estado de hoy, el histórico
+        // guarda lo que se constató en ese momento.
+        if (!is_null($historico)) {
+            $linea = 'Accesorios relevados: ' . implode(' | ', $relevado) . '.';
+
+            $historico->observaciones = trim(
+                ($historico->observaciones ? $historico->observaciones . "\n" : '') . $linea
+            );
+            $historico->save();
         }
     }
 

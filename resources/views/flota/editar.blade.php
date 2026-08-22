@@ -175,6 +175,32 @@
                                             </select>
                                         </div>
                                     </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-12" id="accesoriosEquipo" style="display: none;">
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <label class="mb-0">Accesorios relevados</label>
+                                                <p class="text-muted" style="font-size:.8rem;">
+                                                    Completá solo lo que se haya constatado en este movimiento.
+                                                    "Le falta" marca el equipo como degradado y lo saca de los
+                                                    operativos hasta conseguir el repuesto. Lo que quede en
+                                                    "Sin cambios" no se toca.
+                                                </p>
+                                            </div>
+@foreach (\App\Models\Equipo::ACCESORIOS as $campoAccesorio => $etiquetaAccesorio)
+                                            <div class="col-xs-12 col-sm-12 col-md-3">
+                                                <div class="form-group">
+                                                    <label for="accesorio_{{ $campoAccesorio }}">{{ $etiquetaAccesorio }}</label>
+                                                    <select name="accesorio_{{ $campoAccesorio }}"
+                                                        id="accesorio_{{ $campoAccesorio }}" class="form-control">
+                                                        <option value="">Sin cambios</option>
+                                                        <option value="1">Lo tiene</option>
+                                                        <option value="0">Le falta</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+@endforeach
+                                        </div>
+                                    </div>
                                     <div class="container col-xs-12 col-sm-12 col-md-12">
                                         <div class="row">
                                             <div class="col-xs-12 col-sm-12 col-md-6">
@@ -340,6 +366,28 @@
             var equipoReemplazoSelect = $("#equipoReemplazo");
             var tipoMovimientoSelect = $("#tipoMovimiento");
             var estadoEquipoSelect = $("#estadoEquipo");
+            var accesoriosEquipoDiv = $("#accesoriosEquipo");
+
+            // Movimientos en los que la empresa de soporte tiene el equipo en la mano
+            // y puede constatar si le falta un accesorio (por ejemplo, encontrar que
+            // en una desinstalación completa no está la antena R.F.).
+            // Se detecta la falta (desinstalación, revisión, devolución) y también se
+            // repone (instalación, reinstalación): en los dos sentidos el técnico tiene
+            // el equipo delante, y así queda asentado en el histórico cuándo se
+            // encontró que faltaba la antena y cuándo se le puso una.
+            var movimientosConRelevamientoAccesorios = [
+                "Desinstalación completa",
+                "Desinstalación Parcial",
+                "Revisión",
+                "Relevamiento",
+                "Devolución",
+                "Devolución a dependencia",
+                "Devolver equipo temporal",
+                "Instalación completa",
+                "Re instalación Parcial",
+                "Alta",
+                "Provisorio"
+            ];
 
             console.log("tipo_movimiento", dependenciaSelect);
 
@@ -351,6 +399,13 @@
                     estadoEquipoSelect.show();
                 } else {
                     estadoEquipoSelect.hide();
+                }
+
+                if (movimientosConRelevamientoAccesorios.indexOf(tipoMovimiento.nombre) !== -1) {
+                    accesoriosEquipoDiv.show();
+                } else {
+                    accesoriosEquipoDiv.hide();
+                    accesoriosEquipoDiv.find("select").val("");
                 }
 
                 if (tipoMovimiento.nombre === "Reemplazo" || tipoMovimiento.nombre === "Recambio") {

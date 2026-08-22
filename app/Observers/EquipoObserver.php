@@ -104,7 +104,13 @@ class EquipoObserver
                     $oldEstado = $oldEstadoObj ? $oldEstadoObj->nombre : 'N/A';
                     $newEstado = $newEstadoObj ? $newEstadoObj->nombre : 'N/A';
                     $changes[] = sprintf('%s: "%s" → "%s"', $fieldLabel, $oldEstado, $newEstado);
-                } elseif (in_array($field, ['gps', 'frente_remoto', 'rf', 'kit_inst', 'operativo', 'con_garantia'])) {
+                } elseif (in_array($field, array_keys(\App\Models\Equipo::ACCESORIOS))) {
+                    // Accesorios: son de tres estados, así que NULL no es lo mismo que
+                    // false. Sin esto, pasar un accesorio de "sin relevar" a "le falta"
+                    // se auditaba como 'RF: "No" → "No"'.
+                    $textoAccesorio = fn ($valor) => is_null($valor) ? 'Sin relevar' : ($valor ? 'Lo tiene' : 'Le falta');
+                    $changes[] = sprintf('%s: "%s" → "%s"', $fieldLabel, $textoAccesorio($oldValue), $textoAccesorio($newValue));
+                } elseif (in_array($field, ['operativo', 'con_garantia'])) {
                     // Campos booleanos - convertir a texto legible
                     $oldText = $oldValue ? 'Sí' : 'No';
                     $newText = $newValue ? 'Sí' : 'No';

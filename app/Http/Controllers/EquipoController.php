@@ -160,6 +160,15 @@ class EquipoController extends Controller
             $equipo->fecha_venc_garantia = $request->fecha_venc_garantia;
             $equipo->observaciones = $request->observaciones;
 
+            // Accesorios: el select manda '' (sin relevar), '1' (lo tiene) o '0'
+            // (le falta). Se guarda NULL para el sin relevar, así un equipo que
+            // nunca se revisó no cuenta como degradado.
+            foreach (array_keys(Equipo::ACCESORIOS) as $accesorio) {
+                $valor = $request->input($accesorio);
+                $equipo->{$accesorio} = ($valor === null || $valor === '') ? null : (bool) $valor;
+                $equipo->{Equipo::descripcionCampo($accesorio)} = $request->input(Equipo::descripcionCampo($accesorio));
+            }
+
             $equipo->save();
         //} else {
         //    return redirect()->back()->with('error', 'Debe seleccionar un estado.');

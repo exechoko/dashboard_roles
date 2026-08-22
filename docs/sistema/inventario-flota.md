@@ -85,12 +85,53 @@ La opción **solo modificar histórico** registra el evento sin cambiar la situa
 4. Agregá chasis, color, propiedad y observaciones cuando correspondan.
 5. Guardá. Luego podrá asociarse a un recurso.
 
+## Relevar accesorios en un movimiento
+
+Cuando el equipo se revisa físicamente, el formulario de movimiento muestra el bloque **Accesorios relevados**. Aparece en desinstalación completa y parcial, revisión, relevamiento, devolución, devolución a dependencia y devolver equipo temporal.
+
+Es el caso habitual: la empresa de soporte hace una desinstalación completa y encuentra que el equipo no tiene la antena R.F. Se marca ahí mismo, sin tener que entrar después a editar el equipo.
+
+Cada accesorio queda en **Sin cambios** salvo que se toque, así que un movimiento común no pisa lo que ya se sabía. Marcar **Le falta** deja el equipo como degradado.
+
+Si el movimiento es **Revisión**, el equipo pasa a estado "En revisión" y queda fuera tanto de operativos como de degradados, hasta que se le cargue un estado definitivo.
+
+Lo que se releva queda escrito en las observaciones de ese movimiento, con el formato `Accesorios relevados: Antena R.F.: FALTA | Kit de instalación: presente.` Esa línea del histórico no se vuelve a tocar nunca: el equipo guarda cómo está hoy, el histórico guarda lo que se constató en cada momento.
+
+## Reponer un accesorio
+
+Cuando se consigue el repuesto, se carga como un movimiento más — normalmente **Instalación completa** o **Re instalación Parcial** — marcando el accesorio en **Lo tiene**.
+
+No hay que corregir ni borrar nada anterior: el movimiento donde se detectó la falta queda como está, y el nuevo movimiento deja asentado cuándo se repuso. El equipo sale de Degradados y vuelve a Operativos solo.
+
+## Accesorios de un equipo
+
+Al editar un equipo, el bloque **Accesorios** releva antena R.F., frente remoto, GPS y kit de instalación. Cada uno tiene tres valores:
+
+- **Sin relevar**: todavía no se revisó. No afecta las estadísticas.
+- **Lo tiene**: el accesorio está.
+- **Le falta**: el equipo queda marcado como **degradado**.
+
+Un equipo degradado es distinto de uno roto: el transceptor funciona, pero sin ese accesorio no puede salir a la calle. Deja de contar como operativo y como instalado/asignado, y pasa al indicador **Degradados** hasta que se consiga el repuesto.
+
+El campo de observación al lado de cada accesorio sirve para anotar el detalle (por ejemplo, de qué equipo se sacó la antena).
+
 ## Estadísticas
 
 1. Abrí [Estadísticas](/equipos/estadisticas).
 2. Consultá los indicadores del parque y el detalle por recurso.
+3. Pulsá cualquier indicador para ver la lista de equipos que lo componen.
 
 Es una pantalla de solo consulta. Sirve para ver totales y distribución antes de entrar a los listados.
+
+La flota se reparte en indicadores que no se solapan y suman el total:
+
+- **Operativos**: el estado dice que funcionan y no les falta ningún accesorio relevado.
+- **Degradados (falta accesorio)**: el estado dice que funcionan pero les falta antena R.F., frente remoto, GPS o kit de instalación. Se recuperan comprando el repuesto.
+- **No Operativos**: baja, no funciona, perdido, degradado sin accesorios o recambio.
+- **Operativos / No Operativos HTT500**: se cuentan aparte porque no hay baterías ni antenas disponibles para equiparlos.
+- **Otros estados**: en revisión.
+
+El bloque **Equipos a recuperar por repuesto** indica cuántos equipos volverían a servicio por cada accesorio que se consiga. Un equipo al que le falta más de un accesorio aparece en cada fila, así que esa suma puede superar el total de degradados.
 
 ## Tipos de terminales
 

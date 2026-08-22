@@ -28,7 +28,7 @@ class EquiposPorTipoTerminalConsulta extends ConsultaDatos
     {
         return [
             'uso' => 'opcional. "Portatil", "Movil", "Base" o "Base - Movil" para limitar el conteo a ese tipo de uso.',
-            'estado' => 'opcional. "operativos" o "no operativos" para contar sólo los equipos en esa condición.',
+            'estado' => 'opcional. "operativos", "degradados" (funcionan pero les falta un accesorio) o "no operativos" para contar sólo los equipos en esa condición.',
         ];
     }
 
@@ -45,6 +45,7 @@ class EquiposPorTipoTerminalConsulta extends ConsultaDatos
 
         $filtroEstado = match (true) {
             str_starts_with($estado, 'no ') => 'noOperativo',
+            str_starts_with($estado, 'degradado') || str_contains($estado, 'accesorio') => 'degradado',
             $estado !== '' => 'operativo',
             default => null,
         };
@@ -62,7 +63,9 @@ class EquiposPorTipoTerminalConsulta extends ConsultaDatos
             $query = Equipo::query()->where('tipo_terminal_id', $terminal->id);
 
             if ($filtroEstado === 'operativo') {
-                $query->operativo();
+                $query->disponible();
+            } elseif ($filtroEstado === 'degradado') {
+                $query->degradado();
             } elseif ($filtroEstado === 'noOperativo') {
                 $query->noOperativo();
             }
@@ -91,7 +94,11 @@ class EquiposPorTipoTerminalConsulta extends ConsultaDatos
             $encabezado .= ' con uso ' . $uso;
         }
         if ($filtroEstado !== null) {
-            $encabezado .= $filtroEstado === 'operativo' ? ', sólo operativos' : ', sólo no operativos';
+            $encabezado .= match ($filtroEstado) {
+                'operativo' => ', sólo operativos',
+                'degradado' => ', sólo degradados por falta de accesorios',
+                default => ', sólo no operativos',
+            };
         }
 
         return $encabezado . ' (total ' . $this->numero(array_sum($conteos)) . "):\n"

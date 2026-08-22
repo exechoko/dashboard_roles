@@ -117,7 +117,8 @@ class DashboardController extends Controller
             $query->whereIn('estados.nombre', $nombres);
         } elseif ($request->filled('condicion')) {
             match ($request->string('condicion')->toString()) {
-                'operativo' => $query->whereIn('equipos.estado_id', $operativoIds),
+                'operativo' => Equipo::filtrarConAccesoriosCompletos($query->whereIn('equipos.estado_id', $operativoIds)),
+                'degradado' => Equipo::filtrarSinAccesorios($query->whereIn('equipos.estado_id', $operativoIds)),
                 'no_operativo' => $query->whereIn('equipos.estado_id', $noOperativoIds),
                 'otros' => $query->whereNotIn('equipos.estado_id', $operativoIds->merge($noOperativoIds)),
                 default => null,
@@ -242,12 +243,36 @@ class DashboardController extends Controller
         $esHtt500 = fn ($q) => $q->where('marca', 'Teltronic')->where('modelo', 'HTT500');
 
         $totalEquipos = Equipo::count();
-        $totalOperativos = Equipo::whereIn('estado_id', $operativoIds)->whereDoesntHave('tipo_terminal', $esHtt500)->count();
+
+        // "Operativo" ahora exige además que no le falte ningún accesorio relevado:
+        // un MDT400 sin antena RF tiene el transceptor sano (estado "Usado") pero no
+        // puede salir a la calle, así que se cuenta aparte como degradado.
+        $totalOperativos = Equipo::whereIn('estado_id', $operativoIds)
+            ->conAccesoriosCompletos()
+            ->whereDoesntHave('tipo_terminal', $esHtt500)
+            ->count();
+        $totalDegradados = Equipo::whereIn('estado_id', $operativoIds)
+            ->sinAccesorios()
+            ->whereDoesntHave('tipo_terminal', $esHtt500)
+            ->count();
         $totalNoOperativos = Equipo::whereIn('estado_id', $noOperativoIds)->whereDoesntHave('tipo_terminal', $esHtt500)->count();
         $totalOperativosHtt500 = Equipo::whereIn('estado_id', $operativoIds)->whereHas('tipo_terminal', $esHtt500)->count();
         $totalNoOperativosHtt500 = Equipo::whereIn('estado_id', $noOperativoIds)->whereHas('tipo_terminal', $esHtt500)->count();
         $totalHtt500 = Equipo::whereHas('tipo_terminal', $esHtt500)->count();
-        $totalOtrosEstados = $totalEquipos - $totalOperativos - $totalNoOperativos - $totalHtt500;
+        $totalOtrosEstados = $totalEquipos - $totalOperativos - $totalDegradados - $totalNoOperativos - $totalHtt500;
+
+        // Cuántos equipos volverían a servicio por cada accesorio que se compre.
+        $degradadosPorAccesorio = collect(Equipo::ACCESORIOS)
+            ->map(fn ($etiqueta, $campo) => [
+                'accesorio' => $etiqueta,
+                'cantidad' => Equipo::whereIn('estado_id', $operativoIds)
+                    ->where("equipos.{$campo}", false)
+                    ->whereDoesntHave('tipo_terminal', $esHtt500)
+                    ->count(),
+            ])
+            ->filter(fn ($fila) => $fila['cantidad'] > 0)
+            ->sortByDesc('cantidad')
+            ->values();
 
         // "En revisión técnica" según el último movimiento histórico de cada equipo
         // (no según el estado, tal como se releva la revisión de soporte/sección técnica).
@@ -272,11 +297,14 @@ class DashboardController extends Controller
         // (u otro no operativo) puede seguir figurando con un recurso/destino asignado en
         // flota_general porque todavía no se retiró del lugar, pero no está prestando
         // servicio, así que no debe sumar acá.
+        // Tampoco cuenta como "en servicio" un equipo al que le falta un accesorio:
+        // puede seguir físicamente montado en el móvil, pero sin antena no modula.
         $asignadosActivosQuery = fn () => FlotaGeneral::query()
             ->join('equipos', 'flota_general.equipo_id', '=', 'equipos.id')
             ->join('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
             ->join('tipo_uso', 'tipo_terminales.tipo_uso_id', '=', 'tipo_uso.id')
             ->whereIn('equipos.estado_id', $operativoIds)
+            ->tap(fn ($q) => Equipo::filtrarConAccesoriosCompletos($q))
             ->when($stock911, fn ($q) => $q->where('flota_general.recurso_id', '!=', $stock911->id));
 
         $totalInstalados = $asignadosActivosQuery()
@@ -546,6 +574,8 @@ class DashboardController extends Controller
         $resumen = [
             'total' => $totalEquipos,
             'operativos' => $totalOperativos,
+            'degradados' => $totalDegradados,
+            'degradados_por_accesorio' => $degradadosPorAccesorio,
             'no_operativos' => $totalNoOperativos,
             'operativos_htt500' => $totalOperativosHtt500,
             'no_operativos_htt500' => $totalNoOperativosHtt500,
@@ -560,6 +590,7 @@ class DashboardController extends Controller
             'en_deposito_otros' => $totalEnDepositoOtros,
             'no_operativos_en_terreno' => $totalNoOperativosEnTerreno,
             'pct_operativo' => $totalEquipos > 0 ? round($totalOperativos / $totalEquipos * 100, 1) : 0,
+            'pct_degradado' => $totalEquipos > 0 ? round($totalDegradados / $totalEquipos * 100, 1) : 0,
             'pct_no_operativo' => $totalEquipos > 0 ? round($totalNoOperativos / $totalEquipos * 100, 1) : 0,
             'pct_htt500' => $totalEquipos > 0 ? round($totalHtt500 / $totalEquipos * 100, 1) : 0,
             'pct_otros' => $totalEquipos > 0 ? round($totalOtrosEstados / $totalEquipos * 100, 1) : 0,

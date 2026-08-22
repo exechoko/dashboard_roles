@@ -44,7 +44,10 @@
                     'filtro' => [], 'info' => 'Todos los equipos de la base, sin importar estado ni asignación.'],
                 ['titulo' => 'Operativos', 'valor' => $resumen['operativos'], 'icono' => 'fa-check-circle', 'color' => 'bg-success',
                     'filtro' => ['condicion' => 'operativo', 'excluir_modelos' => 'Teltronic:HTT500'],
-                    'info' => 'Equipos en estado Nuevo, Usado, Reparado o Temporal, sin importar si están instalados, asignados o en stock. No incluye HTT500 (se cuentan aparte, porque aunque el estado diga que están bien no hay baterías ni antenas disponibles para equiparlos).'],
+                    'info' => 'Equipos en estado Nuevo, Usado, Reparado o Temporal a los que no les falta ningún accesorio relevado, sin importar si están instalados, asignados o en stock. No incluye HTT500 (se cuentan aparte, porque aunque el estado diga que están bien no hay baterías ni antenas disponibles para equiparlos).'],
+                ['titulo' => 'Degradados (falta accesorio)', 'valor' => $resumen['degradados'], 'icono' => 'fa-unlink', 'color' => 'bg-orange',
+                    'filtro' => ['condicion' => 'degradado', 'excluir_modelos' => 'Teltronic:HTT500'],
+                    'info' => 'Equipos cuyo estado dice que funcionan (Nuevo/Usado/Reparado/Temporal) pero que tienen algún accesorio relevado como faltante (antena R.F., frente remoto, GPS o kit de instalación). No prestan servicio hoy, pero se recuperan comprando el repuesto: no son equipos rotos. No incluye HTT500.'],
                 ['titulo' => 'Operativos HTT500', 'valor' => $resumen['operativos_htt500'], 'icono' => 'fa-battery-empty', 'color' => 'bg-warning',
                     'filtro' => ['condicion' => 'operativo', 'marca' => 'Teltronic', 'modelo' => 'HTT500'],
                     'info' => 'HTT500 en estado Nuevo, Usado o Reparado, sin importar si están instalados, asignados o en stock. Se muestran aparte del resto de los Operativos porque no hay baterías ni antenas disponibles para equiparlos.'],
@@ -113,6 +116,37 @@
             </div>
         </div>
 
+        {{-- Cuántos equipos se recuperan por cada repuesto que se compre --}}
+        @if ($resumen['degradados_por_accesorio']->isNotEmpty())
+            <div class="row mb-4" data-dashboard-section="degradados">
+                <div class="col-12">
+                    <div class="card border-warning">
+                        <div class="card-body">
+                            <h5 class="mb-1"><i class="fas fa-unlink text-orange mr-1"></i> Equipos a recuperar por repuesto</h5>
+                            <h6 class="mb-3 text-muted" style="font-size:.85rem;">
+                                Equipos cuyo estado dice que funcionan pero que no salen a la calle por falta de un accesorio.
+                                Cada fila es cuántos volverían a servicio si se consigue ese repuesto.
+                            </h6>
+                            <table class="table table-sm mb-0" style="max-width: 420px;">
+                                <thead><tr><th>Accesorio faltante</th><th class="text-right">Equipos</th></tr></thead>
+                                <tbody>
+                                    @foreach ($resumen['degradados_por_accesorio'] as $fila)
+                                        <tr>
+                                            <td>{{ $fila['accesorio'] }}</td>
+                                            <td class="text-right"><strong>{{ $fila['cantidad'] }}</strong></td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                            <small class="text-muted">
+                                Un equipo al que le falta más de un accesorio aparece en cada fila que corresponda,
+                                así que la suma puede ser mayor que los {{ $resumen['degradados'] }} equipos degradados.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         {{-- Barra de progreso operativo / no operativo / otros --}}
         <div class="row mb-4" data-dashboard-section="condicion">
             <div class="col-12">
@@ -125,6 +159,7 @@
                         </h5>
                         <h6 class="mb-2 text-muted" style="font-size:.85rem;">Condición general de la flota:
                             <strong class="text-success">{{ $resumen['pct_operativo'] }}% operativo</strong> /
+                            <strong class="text-orange">{{ $resumen['pct_degradado'] }}% degradado</strong> /
                             <strong class="text-danger">{{ $resumen['pct_no_operativo'] }}% no operativo</strong> /
                             <strong class="text-warning">{{ $resumen['pct_htt500'] }}% HTT500</strong> /
                             <strong class="text-secondary">{{ $resumen['pct_otros'] }}% otros estados</strong>
@@ -133,6 +168,11 @@
                             <div class="progress-bar bg-success" style="width: {{ $resumen['pct_operativo'] }}%">
                                 @if($resumen['pct_operativo'] >= 8)
                                     {{ $resumen['pct_operativo'] }}%
+                                @endif
+                            </div>
+                            <div class="progress-bar bg-orange" style="width: {{ $resumen['pct_degradado'] }}%">
+                                @if($resumen['pct_degradado'] >= 8)
+                                    {{ $resumen['pct_degradado'] }}%
                                 @endif
                             </div>
                             <div class="progress-bar bg-danger" style="width: {{ $resumen['pct_no_operativo'] }}%">
@@ -153,6 +193,7 @@
                         </div>
                         <div class="progress-legend mt-2">
                             <span><i class="fas fa-square text-success"></i> {{ $resumen['operativos'] }} operativos ({{ $resumen['pct_operativo'] }}%) — Nuevo/Usado/Reparado/Temporal</span>
+                            <span><i class="fas fa-square text-orange"></i> {{ $resumen['degradados'] }} degradados ({{ $resumen['pct_degradado'] }}%) — funcionan, pero les falta un accesorio</span>
                             <span><i class="fas fa-square text-danger"></i> {{ $resumen['no_operativos'] }} no operativos ({{ $resumen['pct_no_operativo'] }}%) — Baja/No funciona/Perdido/Degradado/Recambio</span>
                             <span><i class="fas fa-square text-warning"></i> {{ $resumen['htt500_total'] }} HTT500 ({{ $resumen['pct_htt500'] }}%) — se cuentan aparte, no hay baterías/antenas disponibles</span>
                             <span><i class="fas fa-square text-secondary"></i> {{ $resumen['otros_estados'] }} otros estados ({{ $resumen['pct_otros'] }}%) — En revisión</span>
@@ -615,6 +656,11 @@
 
 @push('styles')
 <style>
+    /* Degradado: funciona pero le falta un accesorio. Naranja para no confundirlo
+       ni con el verde de operativo ni con el amarillo que ya usa el HTT500. */
+    .bg-orange { background-color: #fd7e14 !important; color: #fff !important; }
+    .text-orange { color: #fd7e14 !important; }
+
     .card{border-radius:12px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
     .progress-legend{display:flex;gap:1rem;flex-wrap:wrap;font-size:.85rem;color:var(--text-secondary)}
 

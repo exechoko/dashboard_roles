@@ -2,7 +2,7 @@
 
 @section('title', 'Acceso al Gestor de Contraseñas')
 
-@push('style')
+@push('styles')
 <style>
     .vault-lock-page {
         min-height: calc(100vh - 120px);

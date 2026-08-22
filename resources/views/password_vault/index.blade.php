@@ -2,7 +2,7 @@
 
 @section('title', 'Gestor de Contraseñas')
 
-@push('style')
+@push('styles')
 <style>
     /* Hacer que las columnas tengan la misma altura */
     .password-cards-row {

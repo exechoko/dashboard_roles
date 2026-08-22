@@ -55,3 +55,26 @@ Disponible con permiso `editar-arma-personal`.
 5. Guardá.
 
 Una misma arma o chaleco no puede estar asignado activamente a más de una persona. Las correcciones manuales pueden quedar protegidas frente a sincronizaciones posteriores.
+
+## Motivos de retención
+
+1. Abrí [Motivos](/armas/motivos).
+2. Consultá o cargá los motivos disponibles.
+
+Cada motivo define el plazo con el que el sistema calcula los días restantes de una retención. Modificarlo afecta el cálculo de las retenciones que se creen después.
+
+## Tipos de arma
+
+1. Abrí [Tipos de arma](/armas/tipos).
+2. Consultá o cargá los tipos disponibles.
+
+Es el catálogo que alimenta las retenciones y el inventario de armería.
+
+## Armería
+
+Disponible con permiso `ver-armeria`.
+
+1. Abrí [Armas secundarias](/armas/armeria/armas) o [Chalecos](/armas/armeria/chalecos).
+2. Consultá numeración, tipo y estado de cada elemento.
+
+Es el inventario del que salen los elementos al asignar o cambiar el equipamiento de una persona.

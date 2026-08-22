@@ -57,6 +57,21 @@ Los archivos se procesan en segundo plano y pueden demorar.
 4. Consultá el mapa.
 5. Si una dirección no fue localizada y tenés autorización, corregí el texto o indicá manualmente la ubicación.
 
+## Mapas de situación
+
+- [Mapa CECOCO](/indexMapaCecocoEnVivo) muestra móviles y eventos en vivo sobre el mapa.
+- [Mapa GIS CECOCO](/cecoco/mapa-gis) muestra la misma situación tomada de la fuente GIS, con el posicionamiento que reporta ese sistema.
+- [GIS histórico CECOCO](/cecoco/mapa-gis-historico) permite revisar posiciones ya registradas en lugar de la situación en vivo.
+
+Son pantallas de consulta y no guardan información.
+
+## Listado de eventos
+
+1. Abrí [Eventos](/get-eventos).
+2. Consultá los eventos traídos de CECOCO.
+
+Sirve para la consulta directa cuando no alcanza con los filtros del analizador.
+
 ## Histórico móvil desde Excel
 
 1. Abrí [Histórico móvil](/cecoco/historico-movil).

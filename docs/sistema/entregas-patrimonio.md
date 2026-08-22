@@ -39,6 +39,12 @@ Las entregas normales admiten devolución. Los recambios tecnológicos no requie
 5. Guardá y generá el acta.
 6. Desde el detalle podés cargar posteriormente el acta firmada.
 
+## Panel de patrimonio
+
+1. Abrí [Panel de patrimonio](/patrimonio/dashboard).
+2. Consultá los totales por estado y destino.
+3. Usá los accesos directos a cargos y bienes.
+
 ## Cargos patrimoniales
 
 1. Abrí [Cargos patrimoniales](/patrimonio/cargos).
@@ -73,3 +79,12 @@ Para baja:
 2. Elegí desuso, transferencia o rotura.
 3. Si es transferencia, indicá el destino.
 4. Completá observaciones, adjuntá respaldo y confirmá.
+
+La baja cambia el estado patrimonial del bien y queda asentada con el usuario que la realizó. Hay que verificar que sea el registro correcto antes de confirmar.
+
+## Tipos de bien
+
+1. Abrí [Tipos de bien](/patrimonio/tipos-bien).
+2. Consultá o cargá los tipos disponibles.
+
+Cada tipo define qué campos pide el alta y si el bien se vincula con otro inventario del sistema, por ejemplo con un equipo o una cámara.

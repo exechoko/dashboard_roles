@@ -31,6 +31,37 @@ El sistema registra automáticamente quién la completó y en qué fecha.
 4. Si regenerás, revisá la fecha de corte.
 5. Guardá.
 
+## Personal efectivo
+
+Disponible con permiso `ver-personal`.
+
+1. Abrí [Personal efectivo](/tareas/personal-efectivo).
+2. Consultá o cargá nombre, apellido, LP y jerarquía.
+3. El LP tiene cinco dígitos y no puede repetirse.
+
+Es el padrón del que salen las personas al completar entregas, actas y retenciones. Conviene dar de alta a la persona acá antes de necesitarla en un acta.
+
+## Activaciones de tótem
+
+Disponible con permiso `ver-activacion-totem`.
+
+1. Abrí [Activaciones Tótem](/tareas/activaciones-totem).
+2. Revisá las activaciones de botón de emergencia detectadas en los eventos de CECOCO.
+3. Registrá si el video ya fue descargado.
+4. Atendé los avisos de vencimiento.
+
+El plazo legal de conservación es de seis meses. Pasado el vencimiento la grabación ya no está disponible, así que los avisos deben atenderse antes de que llegue la fecha.
+
+## Actas de credenciales
+
+Disponible con permiso `ver-menu-constancias-credenciales`.
+
+1. Abrí [Actas de credenciales](/constancias-credenciales).
+2. Creá el acta con los datos del destinatario.
+3. Descargá el documento generado.
+4. Cargá el acta firmada cuando la recibas.
+5. Enviala por correo al destinatario si corresponde.
+
 ## Administrar usuarios
 
 Disponible según `ver-usuario`, `crear-usuario` y `editar-usuario`.

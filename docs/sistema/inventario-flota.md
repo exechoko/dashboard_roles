@@ -85,6 +85,20 @@ La opción **solo modificar histórico** registra el evento sin cambiar la situa
 4. Agregá chasis, color, propiedad y observaciones cuando correspondan.
 5. Guardá. Luego podrá asociarse a un recurso.
 
+## Estadísticas
+
+1. Abrí [Estadísticas](/equipos/estadisticas).
+2. Consultá los indicadores del parque y el detalle por recurso.
+
+Es una pantalla de solo consulta. Sirve para ver totales y distribución antes de entrar a los listados.
+
+## Tipos de terminales
+
+1. Abrí [Tipos de terminales](/terminales).
+2. Consultá o cargá los tipos disponibles: portátil, móvil, base y base-móvil.
+
+Es el catálogo que alimenta el desplegable al crear un equipo. Solo se modifica al incorporar una clase de equipo nueva.
+
 ## Recursos
 
 1. Abrí [Recursos](/recursos).

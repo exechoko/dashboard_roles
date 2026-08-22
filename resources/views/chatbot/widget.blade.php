@@ -228,18 +228,25 @@ $(function () {
     };
     const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     const safePaths = [
-        '/home', '/equipos', '/flota', '/busqueda-avanzada', '/vehiculos', '/recursos',
-        '/camaras', '/sitios', '/dependencias', '/bodycams', '/mapa',
+        '/home', '/equipos', '/equipos/estadisticas', '/flota', '/busqueda-avanzada',
+        '/vehiculos', '/recursos', '/terminales',
+        '/camaras', '/tipo-camara', '/camaras_fisicas', '/sitios', '/dependencias',
+        '/bodycams', '/mapa',
         '/entrega-equipos', '/entrega-bodycams', '/entrega-combustible',
         '/patrimonio/dashboard', '/patrimonio/cargos', '/patrimonio/bienes',
-        '/tareas', '/usuarios', '/roles', '/auditoria',
+        '/patrimonio/tipos-bien',
+        '/tareas', '/tareas/personal-efectivo', '/tareas/activaciones-totem',
+        '/usuarios', '/roles', '/auditoria', '/constancias-credenciales', '/chat',
         '/manuales/instructivos', '/manuales/cecoco',
         '/cecoco', '/cecoco/analitica', '/cecoco/mapa-calor', '/cecoco/historico-movil',
-        '/cecoco/historico-movil-gis', '/cecoco/recursos-alias',
+        '/cecoco/historico-movil-gis', '/cecoco/recursos-alias', '/cecoco/mapa-gis',
+        '/cecoco/mapa-gis-historico', '/indexMapaCecocoEnVivo', '/get-eventos',
         '/transcribir', '/rag', '/armas/retenciones', '/armas/personal',
+        '/armas/motivos', '/armas/tipos', '/armas/armeria/armas', '/armas/armeria/chalecos',
         '/incidencias/periodos', '/incidencias/tickets-pg',
         '/web-admin/contadores', '/web-admin/textos', '/noticias',
-        '/herramientas/hash-archivo', '/plano-edificio'
+        '/herramientas/hash-archivo', '/herramientas/mails', '/herramientas/mails/buzones',
+        '/plano-edificio', '/password-vault'
     ];
     const panel = $('#car-chatbot-panel');
     const launcher = $('#car-chatbot-launcher');

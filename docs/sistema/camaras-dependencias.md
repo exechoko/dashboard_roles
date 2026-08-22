@@ -18,6 +18,20 @@ Según los permisos, el listado permite ver imágenes, probar conectividad, rein
 4. Revisá los mensajes de filas omitidas o incorrectas.
 5. Confirmá los registros en el listado.
 
+## Tipos de cámaras
+
+1. Abrí [Tipos de cámaras](/tipo-camara).
+2. Consultá o cargá los tipos: fija, domo PTZ, lectora de patentes o multicanal.
+
+Es el catálogo que alimenta el alta de cámaras y define cuántos canales ocupa cada una.
+
+## Cámaras físicas
+
+1. Abrí [Cámaras físicas](/camaras_fisicas).
+2. Consultá el inventario por número de serie, estado, remito y fecha de remito.
+
+Es el stock de cámaras como bien físico, independiente de si el equipo ya está instalado. Un equipo en depósito figura acá y no en el listado de cámaras instaladas, que responde qué cámara funciona en qué sitio.
+
 ## Sitios
 
 1. Abrí [Sitios](/sitios).

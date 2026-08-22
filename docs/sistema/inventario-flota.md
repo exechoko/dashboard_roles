@@ -107,6 +107,14 @@ Si el movimiento es **Revisión**, el equipo pasa a estado "En revisión" y qued
 
 Lo que se releva queda escrito en las observaciones de ese movimiento, con el formato `Accesorios relevados: Antena R.F.: FALTA | Kit de instalación: presente.` Esa línea del histórico no se vuelve a tocar nunca: el equipo guarda cómo está hoy, el histórico guarda lo que se constató en cada momento.
 
+## Preguntarle al asistente
+
+El asistente responde tanto el número como el listado. "¿Cuántos equipos degradados hay?" devuelve el total y cuántos se recuperan por repuesto; "¿cuáles son los equipos degradados?" devuelve la lista con TEI, modelo y qué accesorio le falta a cada uno.
+
+Funciona igual con los tótems BDE: "cuántos tótems hay" contra "cuáles son los tótems".
+
+Los listados se cortan en 25 ítems para no inundar el chat, y avisan cuántos quedan y dónde verlos.
+
 ## Carga inicial del relevamiento
 
 La primera vez, en vez de marcar equipo por equipo, se corre:

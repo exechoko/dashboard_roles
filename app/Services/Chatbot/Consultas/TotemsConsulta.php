@@ -17,7 +17,7 @@ class TotemsConsulta extends ConsultaDatos
 
     public function descripcion(): string
     {
-        return 'Cantidad de tótems BDE (botones de emergencia) instalados, con su desglose por localidad.';
+        return 'Tótems BDE (botones de emergencia): cuántos hay y su desglose por localidad, o el listado de cuáles son con nombre, sitio y localidad si el usuario pregunta cuáles son.';
     }
 
     public function permisos(): array
@@ -29,6 +29,7 @@ class TotemsConsulta extends ConsultaDatos
     {
         return [
             'localidad' => 'opcional. Limita el conteo a los tótems de esa localidad.',
+            'listar' => 'opcional. "si" cuando el usuario pide cuáles son y no sólo cuántos hay.',
         ];
     }
 
@@ -63,6 +64,10 @@ class TotemsConsulta extends ConsultaDatos
                 : 'No hay tótems BDE registrados en el sistema.';
         }
 
+        if ($this->pidioListado($parametros)) {
+            return $this->listar($base(), $total, $localidadReal);
+        }
+
         $instalados = $base()->whereNull('fecha_desintalacion')->count();
 
         $respuesta = 'Hay ' . $this->pluralizar($total, 'tótem BDE registrado', 'tótems BDE registrados')
@@ -85,5 +90,34 @@ class TotemsConsulta extends ConsultaDatos
         }
 
         return $respuesta . "\n\nDetalle en [Cámaras](/camaras).";
+    }
+
+    /**
+     * Listado de tótems, uno por línea, con dónde está cada uno.
+     */
+    private function listar(Builder $consulta, int $total, ?string $localidad): string
+    {
+        $items = $consulta
+            ->with('sitio:id,nombre,localidad')
+            ->orderBy('nombre')
+            ->get()
+            ->map(function (Camara $totem): string {
+                $partes = array_filter([
+                    $totem->nombre ?: 'Sin nombre',
+                    $totem->sitio->nombre ?? null,
+                    $totem->sitio->localidad ?? null,
+                ]);
+
+                $linea = implode(' — ', $partes);
+
+                return $totem->fecha_desintalacion !== null ? $linea . ' (desinstalado)' : $linea;
+            })
+            ->all();
+
+        $encabezado = $this->pluralizar($total, 'tótem BDE', 'tótems BDE')
+            . ($localidad !== null ? ' en ' . $localidad : '') . ':';
+
+        return $encabezado . "\n" . $this->listaDeItems($items, '[Cámaras](/camaras)')
+            . "\n\nDetalle en [Cámaras](/camaras).";
     }
 }

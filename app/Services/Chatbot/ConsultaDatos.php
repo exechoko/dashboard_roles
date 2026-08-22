@@ -87,6 +87,52 @@ abstract class ConsultaDatos
         return implode("\n", $lineas);
     }
 
+    /**
+     * Cuántos ítems se listan como máximo antes de cortar.
+     *
+     * Un listado sin tope inunda el chat (hay consultas que devuelven cientos de
+     * filas) y no se lee. Se muestran los primeros y se manda a la pantalla.
+     */
+    protected const MAXIMO_ITEMS_LISTADOS = 25;
+
+    /**
+     * ¿El usuario pidió el listado y no sólo el número?
+     *
+     * @param  array<string, mixed>  $parametros
+     */
+    protected function pidioListado(array $parametros, string $clave = 'listar'): bool
+    {
+        $valor = $parametros[$clave] ?? null;
+
+        if (is_bool($valor)) {
+            return $valor;
+        }
+
+        return in_array(mb_strtolower(trim((string) $valor)), ['1', 'si', 'sí', 'true', 'yes'], true);
+    }
+
+    /**
+     * Arma una lista Markdown de ítems, cortando en MAXIMO_ITEMS_LISTADOS.
+     *
+     * @param  array<int, string>  $items
+     */
+    protected function listaDeItems(array $items, string $dondeVerElResto = ''): string
+    {
+        $total = count($items);
+        $mostrados = array_slice($items, 0, self::MAXIMO_ITEMS_LISTADOS);
+
+        $texto = implode("\n", array_map(fn (string $item): string => '- ' . $item, $mostrados));
+
+        if ($total > self::MAXIMO_ITEMS_LISTADOS) {
+            $restantes = $total - self::MAXIMO_ITEMS_LISTADOS;
+            $texto .= "\n\n" . 'Son ' . $this->numero($total) . ' en total; te muestro los primeros '
+                . self::MAXIMO_ITEMS_LISTADOS . '. Los ' . $this->numero($restantes) . ' restantes'
+                . ($dondeVerElResto !== '' ? ' los podés ver en ' . $dondeVerElResto . '.' : '.');
+        }
+
+        return $texto;
+    }
+
     protected function numero(int $cantidad): string
     {
         return number_format($cantidad, 0, ',', '.');

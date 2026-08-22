@@ -530,6 +530,53 @@ class ChatbotConsultasDatosTest extends TestCase
     /**
      * @param  array<int, string>  $permisos
      */
+    public function test_equipos_por_estado_lista_los_degradados_con_lo_que_les_falta(): void
+    {
+        $usuario = $this->usuarioCon(['ver-equipo']);
+        $consulta = (new CatalogoConsultas())->resolver($usuario, 'equipos_por_estado');
+
+        $degradados = Equipo::query()->degradado()->count();
+        $respuesta = $consulta->ejecutar($usuario, ['estado' => 'degradados', 'listar' => 'si']);
+
+        if ($degradados === 0) {
+            $this->assertStringContainsString('No hay equipos degradados', $respuesta);
+
+            return;
+        }
+
+        $primero = Equipo::query()->degradado()->orderBy('tei')->first();
+
+        $this->assertStringContainsString('TEI ' . $primero->tei, $respuesta);
+        $this->assertStringContainsString('falta ' . $primero->accesoriosFaltantes()[0], $respuesta);
+    }
+
+    public function test_el_listado_se_corta_para_no_inundar_el_chat(): void
+    {
+        $usuario = $this->usuarioCon(['ver-equipo']);
+        $consulta = (new CatalogoConsultas())->resolver($usuario, 'equipos_por_estado');
+
+        $degradados = Equipo::query()->degradado()->count();
+        $respuesta = $consulta->ejecutar($usuario, ['estado' => 'degradados', 'listar' => 'si']);
+
+        $lineasDeItem = substr_count($respuesta, "\n- ");
+
+        $this->assertLessThanOrEqual(25, $lineasDeItem);
+
+        if ($degradados > 25) {
+            $this->assertStringContainsString('te muestro los primeros 25', $respuesta);
+        }
+    }
+
+    public function test_sin_pedir_listado_devuelve_el_conteo_y_no_la_lista(): void
+    {
+        $usuario = $this->usuarioCon(['ver-equipo']);
+        $consulta = (new CatalogoConsultas())->resolver($usuario, 'equipos_por_estado');
+
+        $respuesta = $consulta->ejecutar($usuario, ['estado' => 'degradados']);
+
+        $this->assertStringNotContainsString('TEI ', $respuesta);
+    }
+
     private function usuarioCon(array $permisos): User
     {
         $usuario = User::factory()->create();

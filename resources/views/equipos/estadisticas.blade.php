@@ -146,6 +146,7 @@
                     </div>
                 </div>
             </div>
+        @endif
 
         {{-- Barra de progreso operativo / no operativo / otros --}}
         <div class="row mb-4" data-dashboard-section="condicion">

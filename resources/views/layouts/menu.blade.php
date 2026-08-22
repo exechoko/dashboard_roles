@@ -535,8 +535,8 @@
             @can('ver-manual-usuario')
                 <li>
                     <a class="nav-link"
-                        href="https://docs.google.com/document/d/1QSVj5kHVp7UL5eUn2zTJeg1Dsn_KmTCtThKPMHXrf2I/edit?usp=sharing"
-                        target="_blank">
+                        href="{{ asset('manuales/manual-usuario.html') }}?v={{ filemtime(public_path('manuales/manual-usuario.html')) }}"
+                        target="_blank" rel="noopener">
                         <i class="fas fa-book mr-1"></i><span>Manual de Usuario</span>
                     </a>
                 </li>

@@ -1,0 +1,1466 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual C.A.R. 911</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+
+<style>
+    :root {
+        --ground: #F1F3F6;
+        --surface: #FFFFFF;
+        --surface-sunk: #E9ECF0;
+        --ink: #111820;
+        --ink-soft: #38434F;
+        --muted: #5F6B78;
+        --rule: #D5DBE2;
+        --rule-strong: #B9C2CC;
+        --accent: #9A5A11;
+        --accent-soft: #F5EADB;
+        --danger: #8F332B;
+        --danger-soft: #F7E7E4;
+        --chrome: #16202B;
+        --chrome-ink: #E4E9EE;
+        --chrome-muted: #8C9AA8;
+        --chrome-rule: #2A3846;
+
+        --f-display: "IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
+        --f-body: "IBM Plex Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+        --f-mono: "IBM Plex Mono", "Consolas", "Courier New", monospace;
+
+        --measure: 68ch;
+        --rail: 20rem;
+    }
+
+    :root:not([data-theme="light"]) {
+        color-scheme: light;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+            color-scheme: dark;
+            --ground: #0D141B;
+            --surface: #151E27;
+            --surface-sunk: #1C2732;
+            --ink: #E7ECF1;
+            --ink-soft: #C2CCD6;
+            --muted: #93A0AD;
+            --rule: #2A3742;
+            --rule-strong: #3D4C59;
+            --accent: #E8A247;
+            --accent-soft: #2B2112;
+            --danger: #E39189;
+            --danger-soft: #2E1A17;
+            --chrome: #0A1015;
+            --chrome-ink: #DCE3EA;
+            --chrome-muted: #7E8C9A;
+            --chrome-rule: #1F2C38;
+        }
+    }
+
+    :root[data-theme="dark"] {
+        color-scheme: dark;
+        --ground: #0D141B;
+        --surface: #151E27;
+        --surface-sunk: #1C2732;
+        --ink: #E7ECF1;
+        --ink-soft: #C2CCD6;
+        --muted: #93A0AD;
+        --rule: #2A3742;
+        --rule-strong: #3D4C59;
+        --accent: #E8A247;
+        --accent-soft: #2B2112;
+        --danger: #E39189;
+        --danger-soft: #2E1A17;
+        --chrome: #0A1015;
+        --chrome-ink: #DCE3EA;
+        --chrome-muted: #7E8C9A;
+        --chrome-rule: #1F2C38;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        background: var(--ground);
+        color: var(--ink);
+        font-family: var(--f-body);
+        font-size: 16px;
+        line-height: 1.65;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    .skip {
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        background: var(--accent);
+        color: #fff;
+        padding: .6rem 1rem;
+        z-index: 50;
+    }
+    .skip:focus { left: 0; }
+
+    a { color: inherit; }
+
+    :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+    }
+
+    /* ── Estructura ─────────────────────────────────────────── */
+
+    .shell {
+        display: grid;
+        grid-template-columns: var(--rail) minmax(0, 1fr);
+        min-height: 100vh;
+        align-items: start;
+    }
+
+    .rail {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background: var(--chrome);
+        color: var(--chrome-ink);
+        border-right: 1px solid var(--chrome-rule);
+    }
+
+    .rail-head {
+        padding: 1.5rem 1.5rem 1rem;
+        border-bottom: 1px solid var(--chrome-rule);
+        display: flex;
+        flex-direction: column;
+        gap: .75rem;
+    }
+
+    .sigil {
+        font-family: var(--f-display);
+        font-weight: 700;
+        font-size: 1.15rem;
+        letter-spacing: .06em;
+        line-height: 1.1;
+        margin: 0;
+    }
+
+    .sigil span { color: var(--accent); }
+
+    .rail-sub {
+        margin: 0;
+        font-size: .74rem;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+        color: var(--chrome-muted);
+    }
+
+    .filter {
+        width: 100%;
+        font: 400 .85rem/1.4 var(--f-body);
+        color: var(--chrome-ink);
+        background: rgba(255,255,255,.06);
+        border: 1px solid var(--chrome-rule);
+        border-radius: 3px;
+        padding: .5rem .65rem;
+    }
+    .filter::placeholder { color: var(--chrome-muted); }
+
+    .rail-nav {
+        overflow-y: auto;
+        padding: 1rem 0 2rem;
+        flex: 1;
+    }
+
+    .nav-group {
+        font-family: var(--f-display);
+        font-size: .7rem;
+        font-weight: 600;
+        letter-spacing: .13em;
+        text-transform: uppercase;
+        color: var(--chrome-muted);
+        padding: 1.1rem 1.5rem .4rem;
+    }
+
+    .rail-nav a {
+        display: flex;
+        gap: .7rem;
+        align-items: baseline;
+        padding: .38rem 1.5rem;
+        font-size: .88rem;
+        text-decoration: none;
+        color: var(--chrome-ink);
+        border-left: 3px solid transparent;
+    }
+
+    .rail-nav a:hover { background: rgba(255,255,255,.05); }
+
+    .rail-nav a.on {
+        border-left-color: var(--accent);
+        background: rgba(255,255,255,.07);
+        color: #fff;
+    }
+
+    .nav-num {
+        font-family: var(--f-mono);
+        font-size: .72rem;
+        color: var(--chrome-muted);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .rail-nav a.on .nav-num { color: var(--accent); }
+
+    .no-hits {
+        display: none;
+        padding: .5rem 1.5rem;
+        font-size: .82rem;
+        color: var(--chrome-muted);
+    }
+
+    main {
+        min-width: 0;
+        padding: 0 2.5rem 6rem;
+    }
+
+    .wrap { max-width: var(--measure); margin: 0 auto; }
+
+    /* ── Masthead ───────────────────────────────────────────── */
+
+    .masthead {
+        padding: 4.5rem 0 2.5rem;
+        border-bottom: 2px solid var(--ink);
+        margin-bottom: 2.5rem;
+    }
+
+    .eyebrow {
+        font-family: var(--f-display);
+        font-size: .74rem;
+        font-weight: 600;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin: 0 0 1rem;
+    }
+
+    h1 {
+        font-family: var(--f-display);
+        font-size: clamp(2.4rem, 5vw, 3.4rem);
+        font-weight: 700;
+        line-height: 1.03;
+        letter-spacing: -.01em;
+        margin: 0 0 1rem;
+        text-wrap: balance;
+    }
+
+    .lede {
+        font-size: 1.08rem;
+        color: var(--ink-soft);
+        margin: 0 0 1.75rem;
+        max-width: 60ch;
+    }
+
+    .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem 2rem;
+        font-family: var(--f-mono);
+        font-size: .78rem;
+        color: var(--muted);
+    }
+
+    /* ── Secciones ──────────────────────────────────────────── */
+
+    section { padding-top: 3.5rem; }
+
+    .sec-head {
+        display: flex;
+        gap: 1rem;
+        align-items: baseline;
+        border-bottom: 1px solid var(--rule-strong);
+        padding-bottom: .6rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .sec-num {
+        font-family: var(--f-mono);
+        font-size: .95rem;
+        color: var(--accent);
+        font-variant-numeric: tabular-nums;
+        flex-shrink: 0;
+    }
+
+    h2 {
+        font-family: var(--f-display);
+        font-size: 1.85rem;
+        font-weight: 700;
+        letter-spacing: -.005em;
+        line-height: 1.15;
+        margin: 0;
+        text-wrap: balance;
+    }
+
+    h3 {
+        font-family: var(--f-display);
+        font-size: 1.18rem;
+        font-weight: 600;
+        margin: 2.25rem 0 .3rem;
+        text-wrap: balance;
+    }
+
+    p { margin: 0 0 1rem; }
+
+    .intro { color: var(--ink-soft); }
+
+    ol, ul { margin: 0 0 1rem; padding-left: 1.4rem; }
+    li { margin-bottom: .35rem; }
+
+    ol { counter-reset: step; list-style: none; padding-left: 0; }
+
+    ol > li {
+        counter-increment: step;
+        position: relative;
+        padding-left: 2.1rem;
+    }
+
+    ol > li::before {
+        content: counter(step);
+        position: absolute;
+        left: 0;
+        top: .1rem;
+        font-family: var(--f-mono);
+        font-size: .78rem;
+        color: var(--accent);
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Piezas de datos ────────────────────────────────────── */
+
+    .path, .perm {
+        font-family: var(--f-mono);
+        font-size: .84em;
+        padding: .08em .38em;
+        border-radius: 2px;
+        white-space: nowrap;
+    }
+
+    .path {
+        background: var(--surface-sunk);
+        color: var(--ink-soft);
+        border: 1px solid var(--rule);
+    }
+
+    .perm {
+        background: var(--accent-soft);
+        color: var(--accent);
+        border: 1px solid transparent;
+    }
+
+    .gate {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: .5rem;
+        font-size: .86rem;
+        color: var(--muted);
+        margin: 0 0 1rem;
+    }
+
+    .gate-label {
+        font-family: var(--f-display);
+        font-size: .7rem;
+        font-weight: 600;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+    }
+
+    .note {
+        border-left: 3px solid var(--accent);
+        background: var(--surface);
+        padding: .85rem 1.1rem;
+        margin: 1.25rem 0;
+        font-size: .93rem;
+        color: var(--ink-soft);
+    }
+
+    .note.warn { border-left-color: var(--danger); background: var(--danger-soft); }
+    .note p:last-child { margin-bottom: 0; }
+
+    .note-label {
+        display: block;
+        font-family: var(--f-display);
+        font-size: .7rem;
+        font-weight: 700;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: .25rem;
+    }
+
+    .note.warn .note-label { color: var(--danger); }
+
+    .changes {
+        background: var(--surface);
+        border: 1px solid var(--rule);
+        border-top: 3px solid var(--accent);
+        padding: 1.5rem 1.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .changes h2 {
+        font-size: 1.1rem;
+        margin-bottom: .9rem;
+    }
+
+    .changes ul { margin-bottom: 0; }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .92rem;
+        margin: 0 0 1rem;
+    }
+
+    .scroller { overflow-x: auto; margin-bottom: 1rem; }
+
+    th, td {
+        text-align: left;
+        padding: .55rem .8rem;
+        border-bottom: 1px solid var(--rule);
+        vertical-align: top;
+    }
+
+    th {
+        font-family: var(--f-display);
+        font-size: .74rem;
+        font-weight: 600;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        border-bottom-color: var(--rule-strong);
+    }
+
+    .colophon {
+        margin-top: 5rem;
+        padding-top: 1.5rem;
+        border-top: 2px solid var(--ink);
+        font-size: .86rem;
+        color: var(--muted);
+    }
+
+    /* ── Índice móvil ───────────────────────────────────────── */
+
+    .mobile-index { display: none; }
+
+    @media (max-width: 900px) {
+        .shell { grid-template-columns: 1fr; }
+        .rail { display: none; }
+        main { padding: 0 1.25rem 4rem; }
+        .masthead { padding-top: 2.5rem; }
+
+        .mobile-index {
+            display: block;
+            background: var(--surface);
+            border: 1px solid var(--rule);
+            margin-bottom: 2rem;
+        }
+        .mobile-index summary {
+            padding: .85rem 1rem;
+            font-family: var(--f-display);
+            font-weight: 600;
+            letter-spacing: .04em;
+            cursor: pointer;
+        }
+        .mobile-index ol {
+            padding: 0 1rem 1rem;
+            counter-reset: mstep;
+        }
+        .mobile-index li { padding-left: 2.1rem; }
+        .mobile-index a { text-decoration: none; color: var(--ink-soft); }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        html { scroll-behavior: smooth; }
+    }
+
+    html { scroll-padding-top: 1.5rem; }
+
+    @media print {
+        .rail, .mobile-index, .skip { display: none; }
+        .shell { display: block; }
+        body { background: #fff; color: #000; font-size: 11pt; }
+        main { padding: 0; }
+        section { page-break-inside: avoid; padding-top: 2rem; }
+        .note { border: 1px solid #999; }
+    }
+</style>
+</head>
+<body>
+<a class="skip" href="#contenido">Ir al contenido</a>
+
+<div class="shell">
+    <aside class="rail">
+        <div class="rail-head">
+            <p class="sigil">C.A.R. <span>911</span></p>
+            <p class="rail-sub">Manual de uso</p>
+            <label class="skip" for="filtro">Filtrar módulos</label>
+            <input class="filter" id="filtro" type="search" placeholder="Filtrar módulos…" autocomplete="off">
+        </div>
+        <nav class="rail-nav" id="indice" aria-label="Índice de módulos">
+            <p class="nav-group">Empezar</p>
+            <a href="#acceso"><span class="nav-num">01</span><span>Acceso y navegación</span></a>
+            <a href="#panel"><span class="nav-num">02</span><span>Panel principal</span></a>
+
+            <p class="nav-group">Inventario</p>
+            <a href="#equipos"><span class="nav-num">03</span><span>Equipos y flota</span></a>
+            <a href="#camaras"><span class="nav-num">04</span><span>Cámaras y dependencias</span></a>
+            <a href="#entregas"><span class="nav-num">05</span><span>Entregas</span></a>
+            <a href="#patrimonio"><span class="nav-num">06</span><span>Patrimonio</span></a>
+            <a href="#armas"><span class="nav-num">07</span><span>Armas y personal</span></a>
+
+            <p class="nav-group">Operaciones</p>
+            <a href="#cecoco"><span class="nav-num">08</span><span>CECOCO y recorridos</span></a>
+            <a href="#incidencias"><span class="nav-num">09</span><span>Incidencias y tickets PG</span></a>
+            <a href="#correos"><span class="nav-num">10</span><span>Visor de correos</span></a>
+
+            <p class="nav-group">Herramientas</p>
+            <a href="#claves"><span class="nav-num">11</span><span>Gestor de contraseñas</span></a>
+            <a href="#ia"><span class="nav-num">12</span><span>IA y transcripción</span></a>
+            <a href="#utiles"><span class="nav-num">13</span><span>Hash y plano</span></a>
+            <a href="#web"><span class="nav-num">14</span><span>Sitio público</span></a>
+
+            <p class="nav-group">Administración</p>
+            <a href="#tareas"><span class="nav-num">15</span><span>Tareas y usuarios</span></a>
+            <a href="#asistente"><span class="nav-num">16</span><span>Asistente de ayuda</span></a>
+            <p class="no-hits" id="sin-resultados">Ningún módulo coincide.</p>
+        </nav>
+    </aside>
+
+    <main id="contenido">
+        <div class="wrap">
+
+            <header class="masthead">
+                <p class="eyebrow">Documento interno · Uso operativo</p>
+                <h1>Manual de uso del sistema C.A.R. 911</h1>
+                <p class="lede">Control y Administración de Recursos 911: equipamiento de comunicaciones,
+                    videovigilancia, patrimonio y las herramientas de trabajo diario del centro.</p>
+                <div class="meta">
+                    <span>16 módulos</span>
+                    <span>Edición 2026</span>
+                    <span>Acceso según permisos</span>
+                </div>
+            </header>
+
+            <details class="mobile-index">
+                <summary>Índice de módulos</summary>
+                <ol>
+                    <li><a href="#acceso">Acceso y navegación</a></li>
+                    <li><a href="#panel">Panel principal</a></li>
+                    <li><a href="#equipos">Equipos y flota</a></li>
+                    <li><a href="#camaras">Cámaras y dependencias</a></li>
+                    <li><a href="#entregas">Entregas</a></li>
+                    <li><a href="#patrimonio">Patrimonio</a></li>
+                    <li><a href="#armas">Armas y personal</a></li>
+                    <li><a href="#cecoco">CECOCO y recorridos</a></li>
+                    <li><a href="#incidencias">Incidencias y tickets PG</a></li>
+                    <li><a href="#correos">Visor de correos</a></li>
+                    <li><a href="#claves">Gestor de contraseñas</a></li>
+                    <li><a href="#ia">IA y transcripción</a></li>
+                    <li><a href="#utiles">Hash y plano</a></li>
+                    <li><a href="#web">Sitio público</a></li>
+                    <li><a href="#tareas">Tareas y usuarios</a></li>
+                    <li><a href="#asistente">Asistente de ayuda</a></li>
+                </ol>
+            </details>
+
+            <div class="changes">
+                <h2>Novedades de esta edición</h2>
+                <ul>
+                    <li><strong>Visor de correos y buzones</strong> (módulo 10): consulta de los backups
+                        <span class="path">.mbox</span> por oficina, con búsqueda, impresión y exportación.</li>
+                    <li><strong>Gestor de contraseñas</strong> (módulo 11): la clave maestra ahora desbloquea
+                        el gestor por 30 minutos desde el último uso, en vez de pedirse en cada acción.</li>
+                    <li>Se documentan por primera vez los módulos de patrimonio, armas y personal, entregas,
+                        incidencias, tickets PG, IA, sitio público y auditoría.</li>
+                </ul>
+            </div>
+
+            <p class="intro">Lo que ves en el menú lateral depende de tu rol. Si un módulo o un botón
+                descrito acá no te aparece, es porque tu usuario no tiene ese permiso: pedilo al
+                administrador, no lo busques por otra ruta. A lo largo del manual, los permisos se
+                muestran así — <span class="perm">crear-equipo</span> — y las pantallas así —
+                <span class="path">/equipos</span>.</p>
+
+            <!-- 01 -->
+            <section id="acceso">
+                <div class="sec-head"><span class="sec-num">01</span><h2>Acceso y navegación</h2></div>
+
+                <h3>Ingresar al sistema</h3>
+                <ol>
+                    <li>Abrí la pantalla de inicio de sesión.</li>
+                    <li>Ingresá el correo y la contraseña asignados.</li>
+                    <li>Al autenticarte se abre el panel principal.</li>
+                </ol>
+
+                <h3>Encontrar un módulo</h3>
+                <p>Los módulos habilitados aparecen en el menú lateral y varían según tu rol. Si sabés qué
+                    necesitás hacer pero no dónde se hace, preguntale al asistente de ayuda (módulo 16).</p>
+
+                <h3>Cambiar el tema</h3>
+                <p>El botón de tema, abajo a la derecha, alterna entre claro y oscuro. La preferencia queda
+                    guardada en tu usuario y te sigue en cualquier equipo.</p>
+
+                <h3>Perfil y contraseñas</h3>
+                <p>Desde la barra superior podés actualizar tu perfil, cambiar tu contraseña de acceso y
+                    configurar la <strong>contraseña maestra</strong> del gestor de contraseñas (módulo 11).
+                    Son dos claves distintas y conviene que no coincidan.</p>
+
+                <div class="note warn">
+                    <span class="note-label">Nunca compartas tu contraseña</span>
+                    <p>Ni con otros usuarios, ni con el asistente de ayuda, ni por chat interno. Si sospechás
+                        que alguien la conoce, cambiala desde tu perfil en el momento.</p>
+                </div>
+            </section>
+
+            <!-- 02 -->
+            <section id="panel">
+                <div class="sec-head"><span class="sec-num">02</span><h2>Panel principal</h2></div>
+                <p class="intro">El panel resume el estado del parque y de los servicios del centro. Los
+                    indicadores se refrescan solos mientras la pantalla está abierta.</p>
+
+                <h3>Qué muestra</h3>
+                <ul>
+                    <li><strong>Resumen de inventario:</strong> totales de terminales, recursos y cámaras,
+                        con acceso directo a cada listado.</li>
+                    <li><strong>Monitor CCTV:</strong> carga de CPU de los puestos y estado de las cámaras.
+                        La lectura la toma el monitor cada cinco minutos, así que un dato recién cambiado
+                        puede tardar en reflejarse.</li>
+                    <li><strong>Servicios de IA:</strong> disponibilidad de transcripción, resumen y base de
+                        conocimiento.</li>
+                    <li><strong>Workers de cola:</strong> si los procesos en segundo plano (indexación de
+                        correos, importaciones, actas) están corriendo. Si figuran caídos, avisá al área
+                        técnica: los trabajos quedan encolados sin procesarse.</li>
+                    <li><strong>Mapa CECOCO:</strong> eventos recientes ubicados en el mapa, filtrables por
+                        tipificación.</li>
+                </ul>
+            </section>
+
+            <!-- 03 -->
+            <section id="equipos">
+                <div class="sec-head"><span class="sec-num">03</span><h2>Equipos y flota</h2></div>
+                <p class="intro">El equipo es el aparato físico. La flota es dónde está ese aparato: en qué
+                    dependencia, sobre qué recurso y en qué vehículo. Se cargan por separado y en ese orden.</p>
+
+                <h3>Consultar equipos</h3>
+                <ol>
+                    <li>Abrí <span class="path">/equipos</span>.</li>
+                    <li>Buscá por TEI, ISSI, procedencia o propietario.</li>
+                    <li>Revisá tipo, marca, modelo, estado y observaciones.</li>
+                    <li>Pulsá el TEI para ver todos los movimientos históricos del equipo.</li>
+                </ol>
+
+                <h3>Crear un equipo</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">crear-equipo</span></p>
+                <ol>
+                    <li>En Equipos, pulsá <strong>Nuevo</strong>.</li>
+                    <li>Elegí tipo de terminal y estado.</li>
+                    <li>Ingresá el TEI: es obligatorio y no puede repetirse.</li>
+                    <li>Completá ISSI, nombre ISSI, procedencia, propietario, garantía, baterías y observaciones.</li>
+                    <li>Guardá y verificá que aparezca en el listado.</li>
+                </ol>
+                <div class="note">
+                    <span class="note-label">Crear no es asignar</span>
+                    <p>Un equipo recién creado no queda asignado a ninguna dependencia ni móvil. Esa
+                        asignación se hace desde Flota, en el paso siguiente.</p>
+                </div>
+
+                <h3>Alta inicial en flota</h3>
+                <ol>
+                    <li>Abrí <span class="path">/flota</span> y pulsá <strong>Nuevo equipo</strong>.</li>
+                    <li>Elegí un equipo que todavía no tenga situación de flota.</li>
+                    <li>Seleccioná tipo de movimiento, dependencia y recurso.</li>
+                    <li>Completá fecha, ticket y observaciones.</li>
+                    <li>Adjuntá imágenes o documento de respaldo.</li>
+                    <li>Guardá: se crea la situación actual y el primer registro histórico.</li>
+                </ol>
+
+                <h3>Registrar un movimiento</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">editar-flota</span></p>
+                <ol>
+                    <li>En Flota, buscá el registro por TEI, ISSI, recurso o dependencia.</li>
+                    <li>Pulsá <strong>Editar</strong> en la fila correcta.</li>
+                    <li>Elegí el tipo de movimiento y su fecha.</li>
+                    <li>Completá lo que pida ese movimiento: dependencia, recurso, equipo sustituto, estado
+                        final o nuevo ISSI.</li>
+                    <li>Agregá ticket, observaciones y anexos.</li>
+                    <li>Revisá el resumen y guardá.</li>
+                </ol>
+                <p>Movimientos habituales: instalación o movimiento patrimonial; desinstalación completa;
+                    entrega provisoria, revisión o reprogramación; devolución o devolución a dependencia;
+                    reemplazo y recambio; baja, extravío y recuperación.</p>
+                <div class="note">
+                    <span class="note-label">Solo modificar histórico</span>
+                    <p>Esta opción registra el evento sin cambiar dónde está hoy el equipo. Usala únicamente
+                        para corregir o completar la trazabilidad de algo ya ocurrido.</p>
+                </div>
+
+                <h3>Histórico de un equipo</h3>
+                <ol>
+                    <li>Desde Flota, pulsá el TEI.</li>
+                    <li>Revisá movimientos, destinos, recursos, fechas, tickets y anexos.</li>
+                    <li>Usá la opción de impresión si necesitás una copia.</li>
+                </ol>
+                <p>Editar observaciones o anexos del histórico requiere <span class="perm">editar-historico</span>.</p>
+
+                <h3>Búsqueda avanzada</h3>
+                <ol>
+                    <li>Abrí <span class="path">/busqueda-avanzada</span>.</li>
+                    <li>Combiná filtros de texto, terminal, equipo, recurso, destino, estado, movimiento,
+                        fechas, ticket o patrimonio.</li>
+                    <li>Pulsá <strong>Buscar</strong>.</li>
+                    <li>Exportá a Excel si necesitás trabajar con ese mismo conjunto.</li>
+                </ol>
+
+                <h3>Vehículos y recursos</h3>
+                <p>En <span class="path">/vehiculos</span> cargás tipo, marca, modelo y dominio (el dominio no
+                    puede repetirse), más chasis, color y propiedad. En <span class="path">/recursos</span>
+                    elegís dependencia y, opcionalmente, un vehículo, y le ponés nombre al recurso.</p>
+                <div class="note">
+                    <span class="note-label">Múltiples equipos</span>
+                    <p>Activá esa opción solo si el recurso admite más de un equipo a la vez. Un recurso
+                        configurado para uno solo deja de ofrecerse apenas queda ocupado.</p>
+                </div>
+            </section>
+
+            <!-- 04 -->
+            <section id="camaras">
+                <div class="sec-head"><span class="sec-num">04</span><h2>Cámaras, sitios y dependencias</h2></div>
+
+                <h3>Cámaras instaladas</h3>
+                <ol>
+                    <li>Abrí <span class="path">/camaras</span> y buscá por identificador, nombre, sitio o tipo.</li>
+                    <li>Para crear, seleccioná sitio activo, tipo y orientación.</li>
+                    <li>Completá nombre, datos de red, serie, fecha de instalación, etapa y observaciones.</li>
+                    <li>Guardá. La ubicación se toma del sitio elegido, no se carga a mano.</li>
+                </ol>
+                <p>Según tus permisos vas a ver además opciones de ver imagen, probar conectividad, reiniciar
+                    o exportar.</p>
+                <div class="note warn">
+                    <span class="note-label">Reinicio de cámara</span>
+                    <p>Interrumpe la grabación mientras el equipo arranca. Confirmalo solo siguiendo el
+                        procedimiento operativo y avisando al puesto que la esté usando.</p>
+                </div>
+
+                <h3>Importar cámaras desde Excel</h3>
+                <ol>
+                    <li>En Cámaras, elegí el archivo Excel.</li>
+                    <li>Verificá que la primera fila tenga los encabezados.</li>
+                    <li>Pulsá <strong>Importar</strong>.</li>
+                    <li>Leé los mensajes de filas omitidas o incorrectas antes de darlo por hecho.</li>
+                </ol>
+
+                <h3>Sitios</h3>
+                <p>Un sitio es la ubicación física: la columna con su caja estanca y UPS. En
+                    <span class="path">/sitios</span> cargás nombre, coordenadas, localidad y dependencia, más
+                    cartelería, responsable de energización y estado activo.</p>
+
+                <h3>Dependencias y jurisdicción</h3>
+                <ol>
+                    <li>Abrí <span class="path">/dependencias</span> y filtrá por tipo o buscá por nombre,
+                        teléfono o ubicación.</li>
+                    <li>Para crear, seleccioná tipo y dependencia padre válida.</li>
+                    <li>Completá nombre, contacto, ubicación y observaciones.</li>
+                </ol>
+                <p>Para cargar la jurisdicción de una comisaría, abrí la herramienta de polígono, agregá o
+                    mové vértices en el mapa hasta formar un polígono de al menos tres puntos y guardá.</p>
+                <p>Al editar, el sistema valida la jerarquía para impedir referencias circulares. Solo pueden
+                    eliminarse dependencias sin subordinadas.</p>
+
+                <h3>Bodycams</h3>
+                <p>En <span class="path">/bodycams</span> está el inventario maestro: código y serie únicos,
+                    marca, modelo, estado, IMEI, memoria, batería y adquisición. Filtrá por disponible,
+                    entregada, perdida, mantenimiento o baja.</p>
+                <div class="note">
+                    <span class="note-label">Dónde se registran las entregas</span>
+                    <p>Las entregas y devoluciones de bodycams van en el módulo Entregas (módulo 05), no acá.
+                        Este listado es el inventario, no el movimiento.</p>
+                </div>
+
+                <h3>Mapa general</h3>
+                <ol>
+                    <li>Abrí <span class="path">/mapa</span>.</li>
+                    <li>Activá las capas autorizadas de cámaras, dependencias, antenas o sitios.</li>
+                    <li>Usá búsqueda y filtros para ubicar elementos.</li>
+                    <li>Activá o desactivá el agrupamiento de marcadores según el detalle que necesites.</li>
+                    <li>Con la herramienta de área podés dibujar un polígono y listar lo que quede adentro.</li>
+                </ol>
+            </section>
+
+            <!-- 05 -->
+            <section id="entregas">
+                <div class="sec-head"><span class="sec-num">05</span><h2>Entregas</h2></div>
+
+                <h3>Entregar equipos de mano</h3>
+                <ol>
+                    <li>Abrí <span class="path">/entrega-equipos</span> y pulsá <strong>Nueva Entrega</strong>.</li>
+                    <li>Completá fecha, hora, dependencia, personal, legajos y motivo.</li>
+                    <li>Seleccioná al menos un equipo portátil disponible.</li>
+                    <li>Indicá segunda batería, cunas y transformadores si corresponden.</li>
+                    <li>Adjuntá imágenes o documento de respaldo.</li>
+                    <li>Guardá: los equipos quedan marcados como entregados.</li>
+                    <li>Generá el acta Word desde el detalle.</li>
+                </ol>
+
+                <h3>Registrar la devolución</h3>
+                <ol>
+                    <li>Abrí el detalle de la entrega y pulsá <strong>Devolver</strong>.</li>
+                    <li>Seleccioná solo los equipos pendientes de esa entrega.</li>
+                    <li>Completá fecha, hora, persona, legajo y observaciones.</li>
+                    <li>Guardá. La devolución puede ser parcial: los equipos no seleccionados siguen entregados.</li>
+                </ol>
+
+                <h3>Bodycams</h3>
+                <p>En <span class="path">/entrega-bodycams</span> creás una entrega normal o un recambio
+                    tecnológico, completás los datos del acta, personal y motivo, y seleccionás las bodycams
+                    habilitadas para ese tipo de entrega.</p>
+                <p>Las entregas normales admiten devolución; los recambios tecnológicos no la requieren.</p>
+
+                <h3>Combustible</h3>
+                <ol>
+                    <li>Abrí <span class="path">/entrega-combustible</span>.</li>
+                    <li>Completá fecha, hora, ticket, empresa, receptor y quién entrega.</li>
+                    <li>Informá litros, bidones, litros por bidón y tipo de combustible.</li>
+                    <li>Agregá remito, estación y observaciones.</li>
+                    <li>Guardá y generá el acta.</li>
+                    <li>Más adelante podés volver al detalle y cargar el acta firmada.</li>
+                </ol>
+            </section>
+
+            <!-- 06 -->
+            <section id="patrimonio">
+                <div class="sec-head"><span class="sec-num">06</span><h2>Patrimonio</h2></div>
+
+                <h3>Cargos patrimoniales</h3>
+                <ol>
+                    <li>Abrí <span class="path">/patrimonio/cargos</span> y filtrá por estado, dependencia,
+                        texto o fechas.</li>
+                    <li>Abrí un cargo para revisar equipos, historial, firma y acta.</li>
+                    <li>En cargos pendientes, agregá o quitá equipos disponibles según autorización.</li>
+                    <li>Generá el acta.</li>
+                    <li>Para firmar, completá los datos del firmante y adjuntá el acta.</li>
+                </ol>
+                <p>Para rechazar un cargo es obligatorio dejar el motivo u observación.</p>
+
+                <h3>Alta de un bien</h3>
+                <ol>
+                    <li>Abrí <span class="path">/patrimonio/bienes</span> y pulsá <strong>Nuevo Bien</strong>.</li>
+                    <li>Elegí el tipo de bien.</li>
+                    <li>Completá destino, ubicación, descripción, identificadores y fecha de alta.</li>
+                    <li>Si el tipo se vincula con otro inventario, seleccioná un elemento disponible.</li>
+                    <li>Adjuntá documentación o imágenes y guardá.</li>
+                </ol>
+
+                <h3>Trasladar un bien</h3>
+                <ol>
+                    <li>Abrí el bien activo y seleccioná <strong>Traslado</strong>.</li>
+                    <li>Elegí nuevo destino y ubicación.</li>
+                    <li>Agregá observaciones y respaldo, y confirmá.</li>
+                </ol>
+
+                <h3>Dar de baja un bien</h3>
+                <ol>
+                    <li>Abrí el bien y seleccioná <strong>Baja</strong>.</li>
+                    <li>Elegí el motivo: desuso, transferencia o rotura.</li>
+                    <li>Si es transferencia, indicá el destino.</li>
+                    <li>Completá observaciones, adjuntá respaldo y confirmá.</li>
+                </ol>
+                <div class="note warn">
+                    <span class="note-label">Verificá antes de confirmar</span>
+                    <p>La baja cambia el estado patrimonial del bien y queda asentada con tu usuario.
+                        Confirmá que estás sobre el registro correcto antes del último paso.</p>
+                </div>
+            </section>
+
+            <!-- 07 -->
+            <section id="armas">
+                <div class="sec-head"><span class="sec-num">07</span><h2>Armas y personal</h2></div>
+
+                <h3>Crear una retención</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">crear-arma-retencion</span></p>
+                <ol>
+                    <li>Abrí <span class="path">/armas/retenciones</span> y pulsá <strong>Nueva retención</strong>.</li>
+                    <li>Seleccioná un funcionario con arma asignada y sin otra retención activa.</li>
+                    <li>Elegí el motivo.</li>
+                    <li>Completá fecha y datos complementarios.</li>
+                    <li>Revisá la información del arma y el chaleco que toma el sistema.</li>
+                    <li>Guardá y generá el acta cuando corresponda.</li>
+                </ol>
+                <p>El estado inicial es <strong>En armería</strong> y el sistema calcula los días restantes
+                    según el motivo.</p>
+
+                <h3>Elevar y devolver</h3>
+                <p>Para elevar: abrí el detalle, revisá funcionario, arma, motivo, fecha e historial, pulsá
+                    <strong>Elevar</strong> y confirmá. Para devolver: abrí la retención activa, pulsá
+                    <strong>Devolver</strong>, completá la información y verificá que el estado quede como
+                    <strong>Devuelta</strong>.</p>
+
+                <h3>Buscar retenciones</h3>
+                <p>Usá búsqueda y filtros de estado, tipo o motivo. Revisá las alertas de vencimiento y las
+                    devoluciones recientes; desde el detalle llegás al acta, comentarios e historial.</p>
+
+                <h3>Personal e inventario</h3>
+                <p>En <span class="path">/armas/personal</span> buscás por identidad funcional, situación,
+                    función, observaciones o licencia, y filtrás por licencias, estado o tipo. El detalle
+                    muestra arma, chaleco, licencias, asignaciones anteriores y retenciones.</p>
+
+                <h3>Cambiar arma o chaleco</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">editar-arma-personal</span></p>
+                <ol>
+                    <li>Abrí el personal correspondiente y pulsá <strong>Editar</strong>.</li>
+                    <li>Verificá que sea la persona correcta.</li>
+                    <li>Seleccioná la opción de cambio de inventario.</li>
+                    <li>Completá numeración, tipo y motivo, y guardá.</li>
+                </ol>
+                <div class="note">
+                    <span class="note-label">Una asignación por elemento</span>
+                    <p>Un arma o chaleco no puede estar asignado activamente a más de una persona. Las
+                        correcciones manuales pueden quedar protegidas frente a sincronizaciones posteriores.</p>
+                </div>
+            </section>
+
+            <!-- 08 -->
+            <section id="cecoco">
+                <div class="sec-head"><span class="sec-num">08</span><h2>CECOCO, eventos y recorridos</h2></div>
+
+                <h3>Buscar eventos</h3>
+                <ol>
+                    <li>Abrí <span class="path">/cecoco</span>.</li>
+                    <li>Aplicá al menos un filtro: texto, año/mes, operador, tipificación o rango de fecha y hora.</li>
+                    <li>Pulsá <strong>Buscar</strong>: los resultados salen del más reciente al más viejo.</li>
+                    <li>Abrí <strong>Ver detalle</strong> en el evento que buscabas.</li>
+                </ol>
+                <p>Los filtros se conservan al volver al listado, y la exportación TXT usa esos mismos criterios.</p>
+
+                <h3>Consultar un expediente</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">ver-expediente-cecoco</span></p>
+                <ol>
+                    <li>Buscá y abrí el evento, y pulsá <strong>Ver expediente</strong>.</li>
+                    <li>Revisá el detalle almacenado localmente.</li>
+                    <li>Usá <strong>Actualizar desde CECOCO</strong> solo si necesitás refrescar desde el
+                        sistema fuente.</li>
+                    <li>Si el resumen con IA está habilitado, esperá a que pase de pendiente o procesando a
+                        completado.</li>
+                </ol>
+
+                <h3>Grabaciones y modulaciones</h3>
+                <p>Desde el detalle del evento, si tenés el permiso correspondiente, entrás a Grabaciones o
+                    Modulaciones. Revisá la fecha y el contexto antes de reproducir.</p>
+                <div class="note warn">
+                    <span class="note-label">Material sensible</span>
+                    <p>No compartas ni descargues audio fuera de los procedimientos autorizados.</p>
+                </div>
+
+                <h3>Importar eventos</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">importar-eventos</span></p>
+                <ol>
+                    <li>Desde CECOCO, abrí la opción de importación.</li>
+                    <li>Seleccioná uno o varios archivos XLS, XLSX o XML.</li>
+                    <li>Verificá que cada archivo tenga el formato esperado.</li>
+                    <li>Enviá la importación.</li>
+                    <li>Revisá el historial: pendiente, completado, duplicado, omitido o fallido.</li>
+                </ol>
+                <p>Los archivos se procesan en segundo plano y pueden demorar; no hace falta esperar en la pantalla.</p>
+
+                <h3>Analítica y mapa de calor</h3>
+                <p>En <span class="path">/cecoco/analitica</span> elegís rango de fechas y tipificaciones,
+                    seleccionás comparación semanal, mensual o anual y consultás total, promedio diario,
+                    distribución y tendencias. Desde los resultados podés volver al analizador con filtros
+                    equivalentes.</p>
+                <p>En <span class="path">/cecoco/mapa-calor</span> definís fecha desde y hasta y, si hace
+                    falta, tipificación. Si una dirección no fue localizada y tenés autorización, podés
+                    corregir el texto o marcar la ubicación a mano.</p>
+
+                <h3>Histórico de un móvil</h3>
+                <p>Desde Excel, en <span class="path">/cecoco/historico-movil</span>: cargás el XLS o XLSX,
+                    definís velocidad máxima y umbrales de detención, procesás y revisás recorrido,
+                    animación, detenciones y excesos.</p>
+                <p>Desde GIS, en <span class="path">/cecoco/historico-movil-gis</span>: indicás fecha y hora
+                    inicial y final, buscás y validás el recurso, ejecutás la consulta y revisás recorrido,
+                    velocidades y detenciones.</p>
+
+                <h3>Alias de recursos</h3>
+                <p>En <span class="path">/cecoco/recursos-alias</span> vinculás el alias con que CECOCO nombra
+                    un recurso con el recurso o equipo interno. El alias debe ser único.</p>
+            </section>
+
+            <!-- 09 -->
+            <section id="incidencias">
+                <div class="sec-head"><span class="sec-num">09</span><h2>Incidencias 911 y tickets PG</h2></div>
+
+                <h3>Crear un período de análisis</h3>
+                <ol>
+                    <li>Abrí <span class="path">/incidencias/periodos</span> y pulsá <strong>Nuevo período</strong>.</li>
+                    <li>Ingresá un número de período único.</li>
+                    <li>Definí fecha inicial y final.</li>
+                    <li>Completá totales de unidades por sistema y las referencias administrativas autorizadas.</li>
+                    <li>Guardá: el sistema calcula solo la duración en días y minutos.</li>
+                </ol>
+
+                <h3>Agregar una incidencia</h3>
+                <ol>
+                    <li>Abrí el detalle del período y pulsá <strong>Agregar incidencia</strong>.</li>
+                    <li>Elegí tipo, origen, prioridad, sistema y módulo.</li>
+                    <li>Completá unidades afectadas y minutos.</li>
+                    <li>Revisá ponderaciones y valores calculados, y guardá.</li>
+                </ol>
+                <p>Las incidencias deben pertenecer al período abierto. <strong>Arrastrar persistentes</strong>
+                    copia las incidencias aplicables del período anterior evitando códigos duplicados.</p>
+
+                <h3>Importar incidencias</h3>
+                <ol>
+                    <li>Abrí el período y seleccioná <strong>Importar Excel</strong>.</li>
+                    <li>Cargá un XLSX, XLSM o XLS y elegí el tipo de hoja.</li>
+                    <li>Indicá si deben limpiarse los datos anteriores.</li>
+                    <li>Importá y revisá qué se agregó y qué se omitió.</li>
+                </ol>
+                <div class="note warn">
+                    <span class="note-label">Limpiar datos anteriores</span>
+                    <p>Esa opción borra lo ya cargado en el período antes de importar. Revisá su alcance antes
+                        de tildarla.</p>
+                </div>
+
+                <h3>Crear y enviar un ticket PG</h3>
+                <ol>
+                    <li>Abrí <span class="path">/incidencias/tickets-pg</span> y pulsá <strong>Nuevo Ticket PG</strong>.</li>
+                    <li>Indicá origen, categoría, problema, prioridad y subsistema.</li>
+                    <li>Asociá cámara, móvil, equipo u oficina cuando la categoría lo pida.</li>
+                    <li>Completá fechas, período y aplicación de multa si corresponde.</li>
+                    <li>Revisá el asunto y el texto sugeridos, y guardá como borrador.</li>
+                </ol>
+                <p class="gate"><span class="gate-label">Enviar requiere</span> <span class="perm">enviar-ticket-pg</span></p>
+                <p>Desde el detalle del borrador, revisá todos los datos y la redacción, usá la mejora de
+                    redacción solo si está habilitada (y volvé a verificar el texto), pulsá
+                    <strong>Enviar a ticketera</strong> y confirmá.</p>
+                <div class="note">
+                    <span class="note-label">Un ticket enviado no vuelve a borrador</span>
+                    <p>No lo reenvíes ni intentes editarlo. Las respuestas posteriores se sincronizan desde el
+                        detalle del ticket.</p>
+                </div>
+            </section>
+
+            <!-- 10 -->
+            <section id="correos">
+                <div class="sec-head"><span class="sec-num">10</span><h2>Visor de correos y buzones</h2></div>
+                <p class="intro">Permite consultar los backups de correo <span class="path">.mbox</span> de
+                    cada oficina — por ejemplo, exportaciones de Google Takeout. Cada oficina es un
+                    <strong>buzón</strong>, y quién puede leer sus mensajes depende del rol asignado a ese buzón.</p>
+
+                <h3>Consultar correos</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">ver-visor-mails</span></p>
+                <ol>
+                    <li>Abrí <span class="path">/herramientas/mails</span>.</li>
+                    <li>Elegí el buzón. Solo vas a ver los habilitados para tus roles, y debajo del selector
+                        figura hasta qué fecha hay backup indexado.</li>
+                    <li>Filtrá por texto (busca en asunto, cuerpo y nombres de adjuntos), remitente,
+                        destinatario o CC, asunto, nombre de adjunto, rango de fechas, carpeta, presencia de
+                        adjuntos o etiqueta de Gmail.</li>
+                    <li>Pulsá <strong>Buscar</strong>.</li>
+                    <li>Abrí un mensaje para ver encabezados, adjuntos y el cuerpo completo.</li>
+                </ol>
+                <p>Las carpetas disponibles son Recibidos, Enviados, Borradores, Spam, Papelera y Archivados.</p>
+
+                <h3>Trabajar con un mensaje</h3>
+                <ul>
+                    <li><strong>Imprimir / PDF:</strong> abre una vista lista para imprimir o guardar con Ctrl+P.</li>
+                    <li><strong>Descargar .eml:</strong> baja el mensaje original completo.</li>
+                    <li><strong>Adjuntos:</strong> se descargan uno por uno desde el detalle.</li>
+                    <li><strong>Exportar:</strong> baja a Excel el listado tal como lo filtraste.</li>
+                </ul>
+                <div class="note">
+                    <span class="note-label">Mensajes muy grandes</span>
+                    <p>Si el cuerpo supera el tamaño previsto se muestra recortado y aparece un aviso.
+                        Descargá el <span class="path">.eml</span> para verlo completo.</p>
+                </div>
+
+                <h3>Administrar buzones</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">administrar-visor-mails</span></p>
+                <p>Quien tiene este permiso ve todos los buzones, sin importar el rol.</p>
+                <ol>
+                    <li>Abrí <span class="path">/herramientas/mails/buzones</span>, o el botón
+                        <strong>Administrar Buzones</strong> del visor.</li>
+                    <li>Para dar de alta varios de una vez, usá <strong>Detectar Oficinas</strong>: el sistema
+                        lista las subcarpetas de la ruta de backups y marca cuáles ya son buzón. Tildá las
+                        nuevas y confirmá.</li>
+                    <li>Para crear uno a mano, pulsá <strong>Nuevo Buzón</strong> y completá nombre, carpeta,
+                        email real de la casilla, rol con acceso y descripción.</li>
+                    <li>Asigná siempre un rol: sin rol, solo lo ven los administradores del visor. Si el rol
+                        que necesitás no existe, creálo primero en Roles.</li>
+                </ol>
+                <div class="note">
+                    <span class="note-label">Eliminar un buzón no borra los correos</span>
+                    <p>Se borra el índice de mensajes del sistema; los archivos
+                        <span class="path">.mbox</span> del disco quedan intactos.</p>
+                </div>
+
+                <h3>Indexar los archivos de un buzón</h3>
+                <ol>
+                    <li>Desde el listado de buzones, abrí <strong>Archivos</strong> del buzón.</li>
+                    <li>El sistema busca de forma recursiva los <span class="path">.mbox</span> de esa carpeta
+                        y muestra el estado de cada uno: pendiente, indexando, indexado o error.</li>
+                    <li>Pulsá <strong>Registrar e indexar</strong> en un archivo nuevo.</li>
+                    <li>Pulsá <strong>Reindexar</strong> si un archivo ya indexado cambió de tamaño o fecha:
+                        aparece marcado como <em>Modificado</em>.</li>
+                    <li>Mientras se indexa, la fila muestra una barra de progreso que se actualiza sola.</li>
+                </ol>
+                <p>La indexación corre en segundo plano: podés cerrar la pantalla y volver más tarde a ver
+                    cómo terminó.</p>
+            </section>
+
+            <!-- 11 -->
+            <section id="claves">
+                <div class="sec-head"><span class="sec-num">11</span><h2>Gestor de contraseñas</h2></div>
+                <p class="intro">Guarda las credenciales de sistemas, VPN, cámaras y equipos, y permite
+                    compartirlas con otros usuarios de forma controlada. Está protegido por una segunda clave,
+                    la <strong>contraseña maestra</strong>, distinta de la de acceso al sistema.</p>
+
+                <h3>Configurar tu contraseña maestra</h3>
+                <ol>
+                    <li>Abrí las opciones de perfil en la barra superior.</li>
+                    <li>Entrá a <strong>Contraseña Maestra del Gestor</strong>.</li>
+                    <li>Ingresá la nueva clave (mínimo 4 caracteres) y repetila.</li>
+                    <li>Guardá.</li>
+                </ol>
+                <p>Desde esa misma pantalla podés cambiarla, o eliminarla para que el gestor deje de pedir una
+                    segunda clave.</p>
+
+                <h3>Entrar al gestor</h3>
+                <ol>
+                    <li>Abrí <span class="path">/password-vault</span>.</li>
+                    <li>Ingresá la contraseña maestra cuando el sistema te la pida.</li>
+                    <li>El gestor queda desbloqueado y podés trabajar normalmente.</li>
+                </ol>
+                <div class="note">
+                    <span class="note-label">El desbloqueo dura 30 minutos</span>
+                    <p>Se cuentan desde tu última acción dentro del gestor, así que mientras lo estés usando
+                        no vuelve a pedirte la clave. Pasados 30 minutos sin actividad, se bloquea de nuevo.
+                        Si estabas con la pantalla abierta y venció, vas a ver un aviso al intentar una
+                        acción: volvé a ingresar la clave maestra y seguí.</p>
+                </div>
+
+                <h3>Buscar una contraseña</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">ver-clave</span></p>
+                <ol>
+                    <li>Escribí en el buscador: busca por nombre del sistema, usuario o URL.</li>
+                    <li>Filtrá por tipo de sistema o marcá <strong>Solo Favoritos</strong>.</li>
+                    <li>Pulsá <strong>Buscar</strong>.</li>
+                </ol>
+                <p>En cada tarjeta tenés el botón de ojo para mostrar u ocultar la clave, el de copiar para
+                    llevarla al portapapeles, y la estrella para marcarla como favorita.</p>
+
+                <h3>Guardar una contraseña nueva</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">crear-clave</span></p>
+                <ol>
+                    <li>Pulsá <strong>Nueva Contraseña</strong>.</li>
+                    <li>Completá nombre del sistema, tipo, usuario y contraseña. Nombre, tipo y usuario son
+                        obligatorios.</li>
+                    <li>Si es una VPN, cargá además host, tipo de VPN y clave precompartida.</li>
+                    <li>Agregá URL, notas y marcá favorito si corresponde.</li>
+                    <li>Guardá.</li>
+                </ol>
+                <p>El generador crea una contraseña aleatoria de 16 caracteres con mayúsculas, minúsculas,
+                    números y símbolos: usalo en vez de inventar una a mano.</p>
+
+                <h3>Editar y eliminar</h3>
+                <p>Editar requiere <span class="perm">editar-clave</span>, y podés hacerlo si sos el dueño o
+                    si te la compartieron con permiso de edición. Si dejás el campo de contraseña vacío al
+                    editar, se conserva la que ya estaba.</p>
+                <p>Eliminar requiere <span class="perm">borrar-clave</span> y solo puede hacerlo el dueño.</p>
+
+                <h3>Compartir con otros usuarios</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">compartir-clave</span></p>
+                <ol>
+                    <li>En la tarjeta, pulsá el botón de compartir. Solo aparece en tus propias contraseñas.</li>
+                    <li>Seleccioná uno o varios usuarios; podés buscarlos por nombre o correo.</li>
+                    <li>Tildá <strong>Permitir edición</strong> solo si además necesitan modificarla.</li>
+                    <li>Confirmá.</li>
+                </ol>
+                <p>Para compartir varias de una vez, tildá las contraseñas propias en el listado y usá
+                    <strong>Compartir seleccionadas</strong>.</p>
+                <p>En la misma ventana ves quién tiene acceso hoy, podés pasar a alguien de solo lectura a
+                    edición con el interruptor, o revocarle el acceso.</p>
+                <div class="note warn">
+                    <span class="note-label">Revocar es inmediato, pero la clave ya se vio</span>
+                    <p>Quien tuvo acceso pudo haberla copiado. Si el acceso se revoca por un motivo de
+                        seguridad, cambiá también la contraseña en el sistema de origen.</p>
+                </div>
+            </section>
+
+            <!-- 12 -->
+            <section id="ia">
+                <div class="sec-head"><span class="sec-num">12</span><h2>IA, transcripción y base de conocimiento</h2></div>
+
+                <h3>Analizar una llamada</h3>
+                <ol>
+                    <li>Abrí <span class="path">/transcribir</span>.</li>
+                    <li>Seleccioná o arrastrá un archivo MP3, WAV, M4A u OGG.</li>
+                    <li>Reproducí la vista previa para confirmar que sea el audio correcto.</li>
+                    <li>Pulsá <strong>Analizar llamada</strong> y esperá el procesamiento.</li>
+                    <li>Revisá el diálogo por hablantes, el resumen y los datos extraídos.</li>
+                    <li>Corregí el diálogo si hace falta y guardá.</li>
+                    <li>Exportá a TXT cuando corresponda.</li>
+                </ol>
+                <div class="note">
+                    <span class="note-label">No cierres la pantalla durante la carga</span>
+                    <p>El procesamiento posterior sí corre en segundo plano y puede demorar según la duración
+                        del audio, pero la carga inicial necesita la pantalla abierta.</p>
+                </div>
+
+                <h3>Historial de transcripciones</h3>
+                <p>En la pestaña <strong>Historial</strong> filtrás por nombre de archivo o teléfono, abrís el
+                    registro y revisás transcripción, resumen y datos asociados. Guardá únicamente
+                    correcciones verificadas.</p>
+
+                <h3>Base de conocimiento (RAG)</h3>
+                <p>El panel <span class="path">/rag</span> es administrativo y está separado del asistente de
+                    ayuda.</p>
+                <ol>
+                    <li>Creá una temática con nombre y descripción, y seleccionala.</li>
+                    <li>Cargá hasta cinco documentos TXT, PDF, CSV o Markdown.</li>
+                    <li>Elegí si necesitás resumen con IA.</li>
+                    <li>Esperá el estado de carga y revisá el historial documental.</li>
+                    <li>Escribí una pregunta sobre la temática y esperá la respuesta.</li>
+                </ol>
+                <div class="note">
+                    <span class="note-label">Eliminar una temática</span>
+                    <p>Borrarla localmente no necesariamente elimina sus documentos del servidor remoto.
+                        Reindexá solo cuando cambió el contenido de origen.</p>
+                </div>
+            </section>
+
+            <!-- 13 -->
+            <section id="utiles">
+                <div class="sec-head"><span class="sec-num">13</span><h2>Hash de archivos y plano del edificio</h2></div>
+
+                <h3>Calcular un hash SHA-256</h3>
+                <ol>
+                    <li>Abrí <span class="path">/herramientas/hash-archivo</span>.</li>
+                    <li>Seleccioná o arrastrá el archivo.</li>
+                    <li>Pulsá <strong>Calcular SHA-256</strong>.</li>
+                    <li>Copiá el hash o el reporte resumido.</li>
+                    <li>Consultá el historial si necesitás confirmar un cálculo anterior.</li>
+                </ol>
+                <p>El archivo se procesa en tu navegador: el historial guarda los metadatos y el resultado, no
+                    el archivo.</p>
+
+                <h3>Plano del edificio</h3>
+                <ol>
+                    <li>Abrí <span class="path">/plano-edificio</span>.</li>
+                    <li>Activá capas y filtrá por tipo, oficina, piso o estado.</li>
+                    <li>Seleccioná un dispositivo para ver su ficha.</li>
+                    <li>Con permiso de edición, actualizá nombre, tipo, oficina, piso y datos técnicos.</li>
+                    <li>Con permiso de posición, arrastrá el dispositivo hasta su ubicación real.</li>
+                </ol>
+                <p>La información de acceso asociada a los dispositivos requiere un permiso específico y no
+                    debe compartirse con el asistente.</p>
+            </section>
+
+            <!-- 14 -->
+            <section id="web">
+                <div class="sec-head"><span class="sec-num">14</span><h2>Sitio público y noticias</h2></div>
+                <p class="intro">Desde <strong>Administrar Web</strong> se edita el contenido del sitio
+                    público. Todo lo que guardes acá regenera los datos publicados y queda registrado en
+                    auditoría.</p>
+
+                <h3>Contadores y textos</h3>
+                <p>En <span class="path">/web-admin/contadores</span> actualizás cifras generales o series
+                    mensuales; revisá bien los valores antes de guardar, porque salen publicados. En
+                    <span class="path">/web-admin/textos</span> localizás el bloque por página o sección,
+                    modificás el contenido y usás la vista previa antes de guardar.</p>
+
+                <h3>Publicar una noticia</h3>
+                <ol>
+                    <li>Abrí <span class="path">/noticias</span> y pulsá <strong>Nueva noticia</strong>.</li>
+                    <li>Completá título, bajada, cuerpo y fecha.</li>
+                    <li>Elegí si queda como borrador o publicada.</li>
+                    <li>Cargá imágenes y seleccioná la miniatura.</li>
+                    <li>Guardá y revisá cómo quedó en la vista pública.</li>
+                </ol>
+                <p>Al editar podés agregar imágenes, cambiar la miniatura o marcar imágenes para eliminar.</p>
+
+                <h3>Historia, tecnología, galería y dependencias</h3>
+                <p>Cada uno se administra desde su módulo en <strong>Administrar Web</strong>: creás, editás,
+                    ordenás o eliminás elementos según tus permisos, adjuntás imágenes y usás la vista previa
+                    general antes de guardar.</p>
+            </section>
+
+            <!-- 15 -->
+            <section id="tareas">
+                <div class="sec-head"><span class="sec-num">15</span><h2>Tareas, usuarios, roles y auditoría</h2></div>
+
+                <h3>Crear una tarea</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">crear-tarea</span></p>
+                <ol>
+                    <li>Abrí <span class="path">/tareas</span> y pulsá <strong>Nueva Tarea</strong>.</li>
+                    <li>Completá nombre y descripción.</li>
+                    <li>Elegí si será única, diaria, semanal o mensual.</li>
+                    <li>Definí intervalo y día semanal o mensual cuando corresponda.</li>
+                    <li>Indicá fechas de inicio y fin.</li>
+                    <li>Marcala como activa y guardá.</li>
+                </ol>
+                <p>El sistema genera solo las instancias futuras de las tareas recurrentes.</p>
+
+                <h3>Completar una tarea</h3>
+                <p>Filtrá por nombre, estado, fecha, usuario u observaciones, localizá la instancia, cambiá el
+                    estado a <strong>Realizada</strong> y agregá observaciones. El sistema registra quién la
+                    completó y cuándo.</p>
+
+                <h3>Cambiar una recurrencia</h3>
+                <ol>
+                    <li>Abrí <strong>Editar</strong> en la definición de la tarea.</li>
+                    <li>Modificá recurrencia, intervalo o fechas.</li>
+                    <li>Elegí si cambia solo la definición o si deben regenerarse las instancias futuras
+                        pendientes.</li>
+                    <li>Si regenerás, revisá la fecha de corte antes de guardar.</li>
+                </ol>
+
+                <h3>Usuarios</h3>
+                <ol>
+                    <li>Abrí <span class="path">/usuarios</span> y creá o editá una cuenta.</li>
+                    <li>Completá nombre, apellido, identificadores institucionales y correo.</li>
+                    <li>Definí contraseña solo cuando corresponda.</li>
+                    <li>Asigná uno o varios roles.</li>
+                    <li>Habilitá acceso externo únicamente si está autorizado.</li>
+                </ol>
+                <p>No podés eliminar el usuario con el que estás trabajando.</p>
+
+                <h3>Roles y permisos</h3>
+                <ol>
+                    <li>Abrí <span class="path">/roles</span> y creá o editá un rol.</li>
+                    <li>Poné un nombre claro.</li>
+                    <li>Seleccioná los permisos necesarios por módulo.</li>
+                    <li>No asignes permisos de creación, edición o borrado a un rol que solo necesita consultar.</li>
+                </ol>
+                <div class="note warn">
+                    <span class="note-label">Se reemplaza toda la selección</span>
+                    <p>Al guardar, el conjunto de permisos del rol pasa a ser exactamente lo que quedó tildado.
+                        Lo que destildaste se pierde para todos los usuarios de ese rol.</p>
+                </div>
+
+                <h3>Manuales e instructivos</h3>
+                <p>En <span class="path">/manuales/instructivos</span> y
+                    <span class="path">/manuales/cecoco</span> buscás por título, temática o archivo, y abrís
+                    el visor con <strong>Ver</strong>. La carga admite PDF, DOCX, Markdown y HTML; los
+                    instructivos piden título y temática. Descargar requiere permiso.</p>
+
+                <h3>Auditoría</h3>
+                <p>En <span class="path">/auditoria</span> filtrás por acción, tabla, usuario o rango de
+                    fechas, y revisás fecha, usuario, entidad, acción y resumen del cambio. Sirve para
+                    verificar trazabilidad: no permite editar ni borrar eventos, y los campos sensibles
+                    aparecen ocultos.</p>
+            </section>
+
+            <!-- 16 -->
+            <section id="asistente">
+                <div class="sec-head"><span class="sec-num">16</span><h2>Asistente de ayuda</h2></div>
+                <p class="intro">El asistente responde cómo hacer una tarea o dónde está una función,
+                    usando únicamente la documentación aprobada del sistema. Está disponible en el botón
+                    flotante, abajo a la derecha, en cualquier pantalla.</p>
+
+                <h3>Cómo usarlo</h3>
+                <ol>
+                    <li>Abrí el asistente con el botón flotante.</li>
+                    <li>Escribí qué necesitás hacer, en lenguaje normal.</li>
+                    <li>Esperá la respuesta: puede tardar unos segundos mientras consulta la documentación.</li>
+                    <li>Seguí los pasos que te indica, o el enlace a la pantalla si te lo ofrece.</li>
+                </ol>
+                <p>Con <strong>Iniciar conversación nueva</strong> borrás el historial y empezás de cero.</p>
+
+                <h3>Qué no hace</h3>
+                <ul>
+                    <li>No ejecuta acciones ni modifica datos por vos: te dice cómo hacerlo.</li>
+                    <li>No conoce datos operativos concretos (un evento, un equipo, una persona).</li>
+                    <li>Solo menciona módulos compatibles con tus permisos.</li>
+                    <li>Si la documentación no cubre algo, te lo dice en vez de inventar una respuesta.</li>
+                </ul>
+                <div class="note warn">
+                    <span class="note-label">No le pases datos sensibles</span>
+                    <p>Nunca escribas contraseñas, tokens, DNI ni datos personales en el asistente. Si por
+                        error incluís una credencial, cambiala.</p>
+                </div>
+            </section>
+
+            <footer class="colophon">
+                <p>Manual de uso del sistema C.A.R. 911 — documento interno. La disponibilidad de cada módulo
+                    y de cada botón depende de los permisos asignados a tu usuario.</p>
+                <p>Ante una diferencia entre este manual y lo que ves en pantalla, consultá al área técnica:
+                    puede tratarse de una función nueva todavía no documentada.</p>
+            </footer>
+
+        </div>
+    </main>
+</div>
+
+<script>
+(function () {
+    var nav = document.getElementById('indice');
+    var enlaces = Array.prototype.slice.call(nav.querySelectorAll('a'));
+    var grupos = Array.prototype.slice.call(nav.querySelectorAll('.nav-group'));
+    var filtro = document.getElementById('filtro');
+    var vacio = document.getElementById('sin-resultados');
+
+    /* Resaltado de la sección visible */
+    var secciones = enlaces.map(function (a) {
+        return document.getElementById(a.getAttribute('href').slice(1));
+    }).filter(Boolean);
+
+    if ('IntersectionObserver' in window) {
+        var visibles = new Map();
+        var observer = new IntersectionObserver(function (entradas) {
+            entradas.forEach(function (e) {
+                visibles.set(e.target.id, e.isIntersecting ? e.intersectionRatio : 0);
+            });
+
+            var mejorId = null;
+            var mejorValor = 0;
+            visibles.forEach(function (valor, id) {
+                if (valor > mejorValor) { mejorValor = valor; mejorId = id; }
+            });
+
+            if (mejorId) {
+                enlaces.forEach(function (a) {
+                    a.classList.toggle('on', a.getAttribute('href') === '#' + mejorId);
+                });
+            }
+        }, { rootMargin: '-10% 0px -70% 0px', threshold: [0, 0.25, 0.5, 1] });
+
+        secciones.forEach(function (s) { observer.observe(s); });
+    }
+
+    /* Filtro del índice */
+    function normalizar(texto) {
+        /* Saca los acentos para que "camaras" encuentre "Cámaras". */
+        return texto.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+
+    filtro.addEventListener('input', function () {
+        var q = normalizar(filtro.value.trim());
+        var hits = 0;
+
+        enlaces.forEach(function (a) {
+            var coincide = q === '' || normalizar(a.textContent).indexOf(q) !== -1;
+            a.style.display = coincide ? '' : 'none';
+            if (coincide) { hits++; }
+        });
+
+        grupos.forEach(function (g) {
+            g.style.display = q === '' ? '' : 'none';
+        });
+
+        vacio.style.display = hits === 0 ? 'block' : 'none';
+    });
+})();
+</script>
+</body>
+</html>

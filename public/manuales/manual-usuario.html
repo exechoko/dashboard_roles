@@ -35,9 +35,7 @@
         --rail: 20rem;
     }
 
-    :root:not([data-theme="light"]) {
-        color-scheme: light;
-    }
+    :root:not([data-theme="light"]) { color-scheme: light; }
 
     @media (prefers-color-scheme: dark) {
         :root:not([data-theme="light"]) {
@@ -106,10 +104,7 @@
 
     a { color: inherit; }
 
-    :focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: 2px;
-    }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
     /* ── Estructura ─────────────────────────────────────────── */
 
@@ -171,7 +166,7 @@
 
     .rail-nav {
         overflow-y: auto;
-        padding: 1rem 0 2rem;
+        padding: .75rem 0 2rem;
         flex: 1;
     }
 
@@ -182,14 +177,15 @@
         letter-spacing: .13em;
         text-transform: uppercase;
         color: var(--chrome-muted);
-        padding: 1.1rem 1.5rem .4rem;
+        padding: 1rem 1.5rem .35rem;
+        margin: 0;
     }
 
     .rail-nav a {
         display: flex;
         gap: .7rem;
         align-items: baseline;
-        padding: .38rem 1.5rem;
+        padding: .34rem 1.5rem;
         font-size: .88rem;
         text-decoration: none;
         color: var(--chrome-ink);
@@ -220,10 +216,7 @@
         color: var(--chrome-muted);
     }
 
-    main {
-        min-width: 0;
-        padding: 0 2.5rem 6rem;
-    }
+    main { min-width: 0; padding: 0 2.5rem 6rem; }
 
     .wrap { max-width: var(--measure); margin: 0 auto; }
 
@@ -281,7 +274,7 @@
         align-items: baseline;
         border-bottom: 1px solid var(--rule-strong);
         padding-bottom: .6rem;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1rem;
     }
 
     .sec-num {
@@ -314,10 +307,15 @@
 
     .intro { color: var(--ink-soft); }
 
-    ol, ul { margin: 0 0 1rem; padding-left: 1.4rem; }
+    ul { margin: 0 0 1rem; padding-left: 1.4rem; }
     li { margin-bottom: .35rem; }
 
-    ol { counter-reset: step; list-style: none; padding-left: 0; }
+    ol {
+        counter-reset: step;
+        list-style: none;
+        padding-left: 0;
+        margin: 0 0 1rem;
+    }
 
     ol > li {
         counter-increment: step;
@@ -336,7 +334,26 @@
         font-variant-numeric: tabular-nums;
     }
 
-    /* ── Piezas de datos ────────────────────────────────────── */
+    /* ── Ruta de menú y permisos ────────────────────────────── */
+
+    .menu-path {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: .45rem;
+        font-family: var(--f-display);
+        font-size: .82rem;
+        letter-spacing: .02em;
+        color: var(--muted);
+        background: var(--surface);
+        border: 1px solid var(--rule);
+        border-left: 3px solid var(--accent);
+        padding: .5rem .8rem;
+        margin: 0 0 1.5rem;
+    }
+
+    .menu-path b { color: var(--ink); font-weight: 600; }
+    .menu-path .sep { color: var(--rule-strong); }
 
     .path, .perm {
         font-family: var(--f-mono);
@@ -376,6 +393,24 @@
         text-transform: uppercase;
     }
 
+    /* ── Listas de sub-ítems del menú ───────────────────────── */
+
+    .items { margin: 0 0 1rem; }
+
+    .items dt {
+        font-family: var(--f-display);
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 1rem;
+        color: var(--ink);
+    }
+
+    .items dd {
+        margin: .15rem 0 0;
+        color: var(--ink-soft);
+        font-size: .95rem;
+    }
+
     .note {
         border-left: 3px solid var(--accent);
         background: var(--surface);
@@ -406,41 +441,11 @@
         border: 1px solid var(--rule);
         border-top: 3px solid var(--accent);
         padding: 1.5rem 1.75rem;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
     }
 
-    .changes h2 {
-        font-size: 1.1rem;
-        margin-bottom: .9rem;
-    }
-
+    .changes h2 { font-size: 1.1rem; margin-bottom: .9rem; }
     .changes ul { margin-bottom: 0; }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: .92rem;
-        margin: 0 0 1rem;
-    }
-
-    .scroller { overflow-x: auto; margin-bottom: 1rem; }
-
-    th, td {
-        text-align: left;
-        padding: .55rem .8rem;
-        border-bottom: 1px solid var(--rule);
-        vertical-align: top;
-    }
-
-    th {
-        font-family: var(--f-display);
-        font-size: .74rem;
-        font-weight: 600;
-        letter-spacing: .1em;
-        text-transform: uppercase;
-        color: var(--muted);
-        border-bottom-color: var(--rule-strong);
-    }
 
     .colophon {
         margin-top: 5rem;
@@ -449,8 +454,6 @@
         font-size: .86rem;
         color: var(--muted);
     }
-
-    /* ── Índice móvil ───────────────────────────────────────── */
 
     .mobile-index { display: none; }
 
@@ -473,10 +476,7 @@
             letter-spacing: .04em;
             cursor: pointer;
         }
-        .mobile-index ol {
-            padding: 0 1rem 1rem;
-            counter-reset: mstep;
-        }
+        .mobile-index ol { padding: 0 1rem 1rem; }
         .mobile-index li { padding-left: 2.1rem; }
         .mobile-index a { text-decoration: none; color: var(--ink-soft); }
     }
@@ -493,7 +493,7 @@
         body { background: #fff; color: #000; font-size: 11pt; }
         main { padding: 0; }
         section { page-break-inside: avoid; padding-top: 2rem; }
-        .note { border: 1px solid #999; }
+        .note, .menu-path { border: 1px solid #999; }
     }
 </style>
 </head>
@@ -509,31 +509,34 @@
             <input class="filter" id="filtro" type="search" placeholder="Filtrar módulos…" autocomplete="off">
         </div>
         <nav class="rail-nav" id="indice" aria-label="Índice de módulos">
-            <p class="nav-group">Empezar</p>
-            <a href="#acceso"><span class="nav-num">01</span><span>Acceso y navegación</span></a>
-            <a href="#panel"><span class="nav-num">02</span><span>Panel principal</span></a>
+            <p class="nav-group">Antes de empezar</p>
+            <a href="#primeros-pasos"><span class="nav-num">··</span><span>Primeros pasos</span></a>
 
-            <p class="nav-group">Inventario</p>
-            <a href="#equipos"><span class="nav-num">03</span><span>Equipos y flota</span></a>
-            <a href="#camaras"><span class="nav-num">04</span><span>Cámaras y dependencias</span></a>
+            <p class="nav-group">Menú del sistema</p>
+            <a href="#dashboard"><span class="nav-num">01</span><span>Dashboard</span></a>
+            <a href="#equipamientos"><span class="nav-num">02</span><span>Equipamientos</span></a>
+            <a href="#camaras"><span class="nav-num">03</span><span>Cámaras</span></a>
+            <a href="#bodycams"><span class="nav-num">04</span><span>Bodycams</span></a>
             <a href="#entregas"><span class="nav-num">05</span><span>Entregas</span></a>
-            <a href="#patrimonio"><span class="nav-num">06</span><span>Patrimonio</span></a>
-            <a href="#armas"><span class="nav-num">07</span><span>Armas y personal</span></a>
+            <a href="#analisis-911"><span class="nav-num">06</span><span>Análisis 911</span></a>
+            <a href="#patrimonio"><span class="nav-num">07</span><span>Patrimonio</span></a>
+            <a href="#control-armas"><span class="nav-num">08</span><span>Control de Armas</span></a>
+            <a href="#tareas"><span class="nav-num">09</span><span>Tareas</span></a>
+            <a href="#dependencias"><span class="nav-num">10</span><span>Dependencias</span></a>
+            <a href="#cecoco"><span class="nav-num">11</span><span>CeCoCo</span></a>
+            <a href="#mapa"><span class="nav-num">12</span><span>Mapa</span></a>
+            <a href="#usuarios"><span class="nav-num">13</span><span>Usuarios</span></a>
+            <a href="#ia"><span class="nav-num">14</span><span>IA</span></a>
+            <a href="#plano-911"><span class="nav-num">15</span><span>Plano 911</span></a>
+            <a href="#chat"><span class="nav-num">16</span><span>Chat</span></a>
+            <a href="#gestor-contrasenas"><span class="nav-num">17</span><span>Gestor de Contraseñas</span></a>
+            <a href="#manuales"><span class="nav-num">18</span><span>Manuales</span></a>
+            <a href="#herramientas"><span class="nav-num">19</span><span>Herramientas</span></a>
+            <a href="#administrar-web"><span class="nav-num">20</span><span>Administrar Web</span></a>
+            <a href="#auditoria"><span class="nav-num">21</span><span>Auditoría</span></a>
 
-            <p class="nav-group">Operaciones</p>
-            <a href="#cecoco"><span class="nav-num">08</span><span>CECOCO y recorridos</span></a>
-            <a href="#incidencias"><span class="nav-num">09</span><span>Incidencias y tickets PG</span></a>
-            <a href="#correos"><span class="nav-num">10</span><span>Visor de correos</span></a>
-
-            <p class="nav-group">Herramientas</p>
-            <a href="#claves"><span class="nav-num">11</span><span>Gestor de contraseñas</span></a>
-            <a href="#ia"><span class="nav-num">12</span><span>IA y transcripción</span></a>
-            <a href="#utiles"><span class="nav-num">13</span><span>Hash y plano</span></a>
-            <a href="#web"><span class="nav-num">14</span><span>Sitio público</span></a>
-
-            <p class="nav-group">Administración</p>
-            <a href="#tareas"><span class="nav-num">15</span><span>Tareas y usuarios</span></a>
-            <a href="#asistente"><span class="nav-num">16</span><span>Asistente de ayuda</span></a>
+            <p class="nav-group">Apéndice</p>
+            <a href="#asistente"><span class="nav-num">··</span><span>Asistente de ayuda</span></a>
             <p class="no-hits" id="sin-resultados">Ningún módulo coincide.</p>
         </nav>
     </aside>
@@ -547,30 +550,37 @@
                 <p class="lede">Control y Administración de Recursos 911: equipamiento de comunicaciones,
                     videovigilancia, patrimonio y las herramientas de trabajo diario del centro.</p>
                 <div class="meta">
-                    <span>16 módulos</span>
+                    <span>21 módulos</span>
                     <span>Edición 2026</span>
-                    <span>Acceso según permisos</span>
+                    <span>Ordenado como el menú</span>
                 </div>
             </header>
 
             <details class="mobile-index">
-                <summary>Índice de módulos</summary>
+                <summary>Índice</summary>
                 <ol>
-                    <li><a href="#acceso">Acceso y navegación</a></li>
-                    <li><a href="#panel">Panel principal</a></li>
-                    <li><a href="#equipos">Equipos y flota</a></li>
-                    <li><a href="#camaras">Cámaras y dependencias</a></li>
+                    <li><a href="#primeros-pasos">Primeros pasos</a></li>
+                    <li><a href="#dashboard">Dashboard</a></li>
+                    <li><a href="#equipamientos">Equipamientos</a></li>
+                    <li><a href="#camaras">Cámaras</a></li>
+                    <li><a href="#bodycams">Bodycams</a></li>
                     <li><a href="#entregas">Entregas</a></li>
+                    <li><a href="#analisis-911">Análisis 911</a></li>
                     <li><a href="#patrimonio">Patrimonio</a></li>
-                    <li><a href="#armas">Armas y personal</a></li>
-                    <li><a href="#cecoco">CECOCO y recorridos</a></li>
-                    <li><a href="#incidencias">Incidencias y tickets PG</a></li>
-                    <li><a href="#correos">Visor de correos</a></li>
-                    <li><a href="#claves">Gestor de contraseñas</a></li>
-                    <li><a href="#ia">IA y transcripción</a></li>
-                    <li><a href="#utiles">Hash y plano</a></li>
-                    <li><a href="#web">Sitio público</a></li>
-                    <li><a href="#tareas">Tareas y usuarios</a></li>
+                    <li><a href="#control-armas">Control de Armas</a></li>
+                    <li><a href="#tareas">Tareas</a></li>
+                    <li><a href="#dependencias">Dependencias</a></li>
+                    <li><a href="#cecoco">CeCoCo</a></li>
+                    <li><a href="#mapa">Mapa</a></li>
+                    <li><a href="#usuarios">Usuarios</a></li>
+                    <li><a href="#ia">IA</a></li>
+                    <li><a href="#plano-911">Plano 911</a></li>
+                    <li><a href="#chat">Chat</a></li>
+                    <li><a href="#gestor-contrasenas">Gestor de Contraseñas</a></li>
+                    <li><a href="#manuales">Manuales</a></li>
+                    <li><a href="#herramientas">Herramientas</a></li>
+                    <li><a href="#administrar-web">Administrar Web</a></li>
+                    <li><a href="#auditoria">Auditoría</a></li>
                     <li><a href="#asistente">Asistente de ayuda</a></li>
                 </ol>
             </details>
@@ -578,107 +588,111 @@
             <div class="changes">
                 <h2>Novedades de esta edición</h2>
                 <ul>
-                    <li><strong>Visor de correos y buzones</strong> (módulo 10): consulta de los backups
-                        <span class="path">.mbox</span> por oficina, con búsqueda, impresión y exportación.</li>
-                    <li><strong>Gestor de contraseñas</strong> (módulo 11): la clave maestra ahora desbloquea
-                        el gestor por 30 minutos desde el último uso, en vez de pedirse en cada acción.</li>
-                    <li>Se documentan por primera vez los módulos de patrimonio, armas y personal, entregas,
-                        incidencias, tickets PG, IA, sitio público y auditoría.</li>
+                    <li>El manual sigue el <strong>mismo orden y los mismos nombres del menú lateral</strong>:
+                        cada capítulo es un ítem del menú y cada subtítulo, una de sus opciones.</li>
+                    <li><strong>Herramientas → Visor de Correos y Buzones de Correo:</strong> consulta de los
+                        backups <span class="path">.mbox</span> por oficina.</li>
+                    <li><strong>Gestor de Contraseñas:</strong> la clave maestra ahora desbloquea el gestor por
+                        30 minutos desde el último uso, en vez de pedirse en cada acción.</li>
+                    <li>Se documentan por primera vez Patrimonio, Control de Armas, Entregas, Análisis 911,
+                        Tickets PG, IA, Administrar Web, Chat y Auditoría.</li>
                 </ul>
             </div>
 
-            <p class="intro">Lo que ves en el menú lateral depende de tu rol. Si un módulo o un botón
-                descrito acá no te aparece, es porque tu usuario no tiene ese permiso: pedilo al
-                administrador, no lo busques por otra ruta. A lo largo del manual, los permisos se
-                muestran así — <span class="perm">crear-equipo</span> — y las pantallas así —
-                <span class="path">/equipos</span>.</p>
+            <p class="intro">Lo que ves en el menú depende de tu rol. Si un módulo descrito acá no te aparece,
+                es porque tu usuario no tiene ese permiso: pedilo al administrador. En cada capítulo figura
+                la ruta del menú y el permiso que lo habilita — <span class="perm">ver-menu-equipamientos</span> —
+                y las pantallas se citan así: <span class="path">/equipos</span>.</p>
 
-            <!-- 01 -->
-            <section id="acceso">
-                <div class="sec-head"><span class="sec-num">01</span><h2>Acceso y navegación</h2></div>
+            <!-- Primeros pasos -->
+            <section id="primeros-pasos">
+                <div class="sec-head"><span class="sec-num">··</span><h2>Primeros pasos</h2></div>
 
                 <h3>Ingresar al sistema</h3>
                 <ol>
                     <li>Abrí la pantalla de inicio de sesión.</li>
                     <li>Ingresá el correo y la contraseña asignados.</li>
-                    <li>Al autenticarte se abre el panel principal.</li>
+                    <li>Al autenticarte se abre el Dashboard.</li>
                 </ol>
 
-                <h3>Encontrar un módulo</h3>
-                <p>Los módulos habilitados aparecen en el menú lateral y varían según tu rol. Si sabés qué
-                    necesitás hacer pero no dónde se hace, preguntale al asistente de ayuda (módulo 16).</p>
+                <h3>Moverte por el menú</h3>
+                <p>Todos los módulos están en el menú lateral, en el mismo orden que este manual. Los que
+                    tienen flecha despliegan sub-opciones al hacer clic.</p>
 
                 <h3>Cambiar el tema</h3>
                 <p>El botón de tema, abajo a la derecha, alterna entre claro y oscuro. La preferencia queda
                     guardada en tu usuario y te sigue en cualquier equipo.</p>
 
                 <h3>Perfil y contraseñas</h3>
-                <p>Desde la barra superior podés actualizar tu perfil, cambiar tu contraseña de acceso y
-                    configurar la <strong>contraseña maestra</strong> del gestor de contraseñas (módulo 11).
-                    Son dos claves distintas y conviene que no coincidan.</p>
+                <p>Desde la barra superior actualizás tu perfil, cambiás tu contraseña de acceso y configurás
+                    la <strong>contraseña maestra</strong> del gestor de contraseñas (capítulo 17). Son dos
+                    claves distintas y conviene que no coincidan.</p>
 
                 <div class="note warn">
                     <span class="note-label">Nunca compartas tu contraseña</span>
-                    <p>Ni con otros usuarios, ni con el asistente de ayuda, ni por chat interno. Si sospechás
-                        que alguien la conoce, cambiala desde tu perfil en el momento.</p>
+                    <p>Ni con otros usuarios, ni con el asistente de ayuda, ni por el chat interno. Si
+                        sospechás que alguien la conoce, cambiala desde tu perfil en el momento.</p>
+                </div>
+            </section>
+
+            <!-- 01 -->
+            <section id="dashboard">
+                <div class="sec-head"><span class="sec-num">01</span><h2>Dashboard</h2></div>
+                <p class="menu-path"><b>Dashboard</b><span class="sep">·</span>
+                    <span class="path">/home</span><span class="sep">·</span>
+                    <span class="perm">ver-menu-dashboard</span></p>
+
+                <p class="intro">Resume el estado del parque y de los servicios del centro. Los indicadores se
+                    refrescan solos mientras la pantalla está abierta.</p>
+
+                <dl class="items">
+                    <dt>Resumen de inventario</dt>
+                    <dd>Totales de terminales, recursos y cámaras, con acceso directo a cada listado.</dd>
+
+                    <dt>Monitor CCTV</dt>
+                    <dd>Carga de CPU de los puestos y estado de las cámaras. La lectura la toma el monitor
+                        cada cinco minutos, así que un cambio reciente puede tardar en reflejarse.</dd>
+
+                    <dt>Servicios de IA</dt>
+                    <dd>Disponibilidad de transcripción, resumen y base de conocimiento.</dd>
+
+                    <dt>Workers de cola</dt>
+                    <dd>Si los procesos en segundo plano están corriendo: indexación de correos,
+                        importaciones, generación de actas.</dd>
+
+                    <dt>Mapa CeCoCo</dt>
+                    <dd>Eventos recientes ubicados en el mapa, filtrables por tipificación.</dd>
+                </dl>
+
+                <div class="note warn">
+                    <span class="note-label">Si los workers figuran caídos</span>
+                    <p>Avisá al área técnica. Los trabajos no se pierden, quedan encolados, pero nada se
+                        procesa hasta que vuelvan a levantarse: una indexación o una importación va a parecer
+                        trabada sin motivo.</p>
                 </div>
             </section>
 
             <!-- 02 -->
-            <section id="panel">
-                <div class="sec-head"><span class="sec-num">02</span><h2>Panel principal</h2></div>
-                <p class="intro">El panel resume el estado del parque y de los servicios del centro. Los
-                    indicadores se refrescan solos mientras la pantalla está abierta.</p>
+            <section id="equipamientos">
+                <div class="sec-head"><span class="sec-num">02</span><h2>Equipamientos</h2></div>
+                <p class="menu-path"><b>Equipamientos</b><span class="sep">·</span>
+                    <span class="perm">ver-menu-equipamientos</span></p>
 
-                <h3>Qué muestra</h3>
-                <ul>
-                    <li><strong>Resumen de inventario:</strong> totales de terminales, recursos y cámaras,
-                        con acceso directo a cada listado.</li>
-                    <li><strong>Monitor CCTV:</strong> carga de CPU de los puestos y estado de las cámaras.
-                        La lectura la toma el monitor cada cinco minutos, así que un dato recién cambiado
-                        puede tardar en reflejarse.</li>
-                    <li><strong>Servicios de IA:</strong> disponibilidad de transcripción, resumen y base de
-                        conocimiento.</li>
-                    <li><strong>Workers de cola:</strong> si los procesos en segundo plano (indexación de
-                        correos, importaciones, actas) están corriendo. Si figuran caídos, avisá al área
-                        técnica: los trabajos quedan encolados sin procesarse.</li>
-                    <li><strong>Mapa CECOCO:</strong> eventos recientes ubicados en el mapa, filtrables por
-                        tipificación.</li>
-                </ul>
-            </section>
+                <p class="intro">El <strong>terminal</strong> es el aparato físico. La <strong>flota</strong> es
+                    dónde está ese aparato: en qué dependencia, sobre qué recurso y en qué vehículo. Se cargan
+                    por separado y en ese orden.</p>
 
-            <!-- 03 -->
-            <section id="equipos">
-                <div class="sec-head"><span class="sec-num">03</span><h2>Equipos y flota</h2></div>
-                <p class="intro">El equipo es el aparato físico. La flota es dónde está ese aparato: en qué
-                    dependencia, sobre qué recurso y en qué vehículo. Se cargan por separado y en ese orden.</p>
+                <h3>Estadísticas</h3>
+                <p>Tablero con los indicadores del parque y el detalle por recurso. Es de solo consulta:
+                    sirve para ver totales y distribución antes de entrar a los listados.</p>
 
-                <h3>Consultar equipos</h3>
+                <h3>Administración</h3>
+                <p>Es la pantalla de flota, en <span class="path">/flota</span>. Acá se da de alta la situación
+                    de un equipo y se registran todos sus movimientos.</p>
+
+                <p><strong>Alta inicial en flota</strong></p>
                 <ol>
-                    <li>Abrí <span class="path">/equipos</span>.</li>
-                    <li>Buscá por TEI, ISSI, procedencia o propietario.</li>
-                    <li>Revisá tipo, marca, modelo, estado y observaciones.</li>
-                    <li>Pulsá el TEI para ver todos los movimientos históricos del equipo.</li>
-                </ol>
-
-                <h3>Crear un equipo</h3>
-                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">crear-equipo</span></p>
-                <ol>
-                    <li>En Equipos, pulsá <strong>Nuevo</strong>.</li>
-                    <li>Elegí tipo de terminal y estado.</li>
-                    <li>Ingresá el TEI: es obligatorio y no puede repetirse.</li>
-                    <li>Completá ISSI, nombre ISSI, procedencia, propietario, garantía, baterías y observaciones.</li>
-                    <li>Guardá y verificá que aparezca en el listado.</li>
-                </ol>
-                <div class="note">
-                    <span class="note-label">Crear no es asignar</span>
-                    <p>Un equipo recién creado no queda asignado a ninguna dependencia ni móvil. Esa
-                        asignación se hace desde Flota, en el paso siguiente.</p>
-                </div>
-
-                <h3>Alta inicial en flota</h3>
-                <ol>
-                    <li>Abrí <span class="path">/flota</span> y pulsá <strong>Nuevo equipo</strong>.</li>
+                    <li>Pulsá <strong>Nuevo equipo</strong>.</li>
                     <li>Elegí un equipo que todavía no tenga situación de flota.</li>
                     <li>Seleccioná tipo de movimiento, dependencia y recurso.</li>
                     <li>Completá fecha, ticket y observaciones.</li>
@@ -686,10 +700,10 @@
                     <li>Guardá: se crea la situación actual y el primer registro histórico.</li>
                 </ol>
 
-                <h3>Registrar un movimiento</h3>
+                <p><strong>Registrar un movimiento</strong></p>
                 <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">editar-flota</span></p>
                 <ol>
-                    <li>En Flota, buscá el registro por TEI, ISSI, recurso o dependencia.</li>
+                    <li>Buscá el registro por TEI, ISSI, recurso o dependencia.</li>
                     <li>Pulsá <strong>Editar</strong> en la fila correcta.</li>
                     <li>Elegí el tipo de movimiento y su fecha.</li>
                     <li>Completá lo que pida ese movimiento: dependencia, recurso, equipo sustituto, estado
@@ -700,21 +714,19 @@
                 <p>Movimientos habituales: instalación o movimiento patrimonial; desinstalación completa;
                     entrega provisoria, revisión o reprogramación; devolución o devolución a dependencia;
                     reemplazo y recambio; baja, extravío y recuperación.</p>
+
                 <div class="note">
                     <span class="note-label">Solo modificar histórico</span>
-                    <p>Esta opción registra el evento sin cambiar dónde está hoy el equipo. Usala únicamente
-                        para corregir o completar la trazabilidad de algo ya ocurrido.</p>
+                    <p>Registra el evento sin cambiar dónde está hoy el equipo. Usalo únicamente para corregir
+                        o completar la trazabilidad de algo ya ocurrido.</p>
                 </div>
 
-                <h3>Histórico de un equipo</h3>
-                <ol>
-                    <li>Desde Flota, pulsá el TEI.</li>
-                    <li>Revisá movimientos, destinos, recursos, fechas, tickets y anexos.</li>
-                    <li>Usá la opción de impresión si necesitás una copia.</li>
-                </ol>
-                <p>Editar observaciones o anexos del histórico requiere <span class="perm">editar-historico</span>.</p>
+                <p><strong>Ver el histórico</strong></p>
+                <p>Pulsá el TEI para ver movimientos, destinos, recursos, fechas, tickets y anexos, con opción
+                    de impresión. Editar observaciones o anexos del histórico requiere
+                    <span class="perm">editar-historico</span>.</p>
 
-                <h3>Búsqueda avanzada</h3>
+                <h3>Búsq. Avanzada</h3>
                 <ol>
                     <li>Abrí <span class="path">/busqueda-avanzada</span>.</li>
                     <li>Combiná filtros de texto, terminal, equipo, recurso, destino, estado, movimiento,
@@ -723,86 +735,129 @@
                     <li>Exportá a Excel si necesitás trabajar con ese mismo conjunto.</li>
                 </ol>
 
-                <h3>Vehículos y recursos</h3>
-                <p>En <span class="path">/vehiculos</span> cargás tipo, marca, modelo y dominio (el dominio no
-                    puede repetirse), más chasis, color y propiedad. En <span class="path">/recursos</span>
-                    elegís dependencia y, opcionalmente, un vehículo, y le ponés nombre al recurso.</p>
+                <h3>Terminales</h3>
+                <p>Es el listado de equipos, en <span class="path">/equipos</span>. Buscá por TEI, ISSI,
+                    procedencia o propietario, y pulsá el TEI para ver sus movimientos.</p>
+
+                <p><strong>Crear un equipo</strong></p>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">crear-equipo</span></p>
+                <ol>
+                    <li>Pulsá <strong>Nuevo</strong>.</li>
+                    <li>Elegí tipo de terminal y estado.</li>
+                    <li>Ingresá el TEI: es obligatorio y no puede repetirse.</li>
+                    <li>Completá ISSI, nombre ISSI, procedencia, propietario, garantía, baterías y
+                        observaciones.</li>
+                    <li>Guardá y verificá que aparezca en el listado.</li>
+                </ol>
+
                 <div class="note">
-                    <span class="note-label">Múltiples equipos</span>
-                    <p>Activá esa opción solo si el recurso admite más de un equipo a la vez. Un recurso
-                        configurado para uno solo deja de ofrecerse apenas queda ocupado.</p>
+                    <span class="note-label">Crear no es asignar</span>
+                    <p>Un equipo recién creado no queda asignado a ninguna dependencia ni móvil. Esa asignación
+                        se hace desde <strong>Administración</strong> (flota).</p>
                 </div>
+
+                <h3>Recursos</h3>
+                <ol>
+                    <li>Abrí <span class="path">/recursos</span>.</li>
+                    <li>Seleccioná dependencia y, opcionalmente, un vehículo.</li>
+                    <li>Ingresá el nombre del recurso.</li>
+                    <li>Activá <strong>múltiples equipos</strong> solo si ese recurso admite más de una
+                        asignación simultánea.</li>
+                </ol>
+                <p>Un recurso configurado para un único equipo deja de ofrecerse apenas queda ocupado.</p>
+
+                <h3>Tipos de Term.</h3>
+                <p>Catálogo de tipos de terminal — portátil, móvil, base, base-móvil — que alimenta el
+                    desplegable al crear un equipo. Se toca poco: solo al incorporar una clase de equipo nueva.</p>
+
+                <h3>Vehículos</h3>
+                <p>En <span class="path">/vehiculos</span> cargás tipo, marca, modelo y dominio (el dominio no
+                    puede repetirse), más chasis, color, propiedad y observaciones. Después el vehículo puede
+                    asociarse a un recurso.</p>
             </section>
 
-            <!-- 04 -->
+            <!-- 03 -->
             <section id="camaras">
-                <div class="sec-head"><span class="sec-num">04</span><h2>Cámaras, sitios y dependencias</h2></div>
+                <div class="sec-head"><span class="sec-num">03</span><h2>Cámaras</h2></div>
+                <p class="menu-path"><b>Cámaras</b><span class="sep">·</span>
+                    <span class="perm">ver-menu-camaras</span></p>
 
-                <h3>Cámaras instaladas</h3>
+                <h3>Administración</h3>
+                <p>Listado de cámaras instaladas, en <span class="path">/camaras</span>.</p>
                 <ol>
-                    <li>Abrí <span class="path">/camaras</span> y buscá por identificador, nombre, sitio o tipo.</li>
+                    <li>Buscá por identificador, nombre, sitio o tipo.</li>
                     <li>Para crear, seleccioná sitio activo, tipo y orientación.</li>
                     <li>Completá nombre, datos de red, serie, fecha de instalación, etapa y observaciones.</li>
                     <li>Guardá. La ubicación se toma del sitio elegido, no se carga a mano.</li>
                 </ol>
                 <p>Según tus permisos vas a ver además opciones de ver imagen, probar conectividad, reiniciar
                     o exportar.</p>
+
                 <div class="note warn">
                     <span class="note-label">Reinicio de cámara</span>
                     <p>Interrumpe la grabación mientras el equipo arranca. Confirmalo solo siguiendo el
                         procedimiento operativo y avisando al puesto que la esté usando.</p>
                 </div>
 
-                <h3>Importar cámaras desde Excel</h3>
+                <p><strong>Importar desde Excel</strong></p>
                 <ol>
-                    <li>En Cámaras, elegí el archivo Excel.</li>
+                    <li>Elegí el archivo Excel.</li>
                     <li>Verificá que la primera fila tenga los encabezados.</li>
                     <li>Pulsá <strong>Importar</strong>.</li>
                     <li>Leé los mensajes de filas omitidas o incorrectas antes de darlo por hecho.</li>
                 </ol>
+
+                <h3>Tipos de Cámaras</h3>
+                <p>Catálogo de tipos — fija, domo PTZ, lectora de patentes, multicanal — que alimenta el alta
+                    de cámaras y define cuántos canales ocupa cada una.</p>
 
                 <h3>Sitios</h3>
                 <p>Un sitio es la ubicación física: la columna con su caja estanca y UPS. En
                     <span class="path">/sitios</span> cargás nombre, coordenadas, localidad y dependencia, más
                     cartelería, responsable de energización y estado activo.</p>
 
-                <h3>Dependencias y jurisdicción</h3>
-                <ol>
-                    <li>Abrí <span class="path">/dependencias</span> y filtrá por tipo o buscá por nombre,
-                        teléfono o ubicación.</li>
-                    <li>Para crear, seleccioná tipo y dependencia padre válida.</li>
-                    <li>Completá nombre, contacto, ubicación y observaciones.</li>
-                </ol>
-                <p>Para cargar la jurisdicción de una comisaría, abrí la herramienta de polígono, agregá o
-                    mové vértices en el mapa hasta formar un polígono de al menos tres puntos y guardá.</p>
-                <p>Al editar, el sistema valida la jerarquía para impedir referencias circulares. Solo pueden
-                    eliminarse dependencias sin subordinadas.</p>
+                <h3>Cámaras Físicas</h3>
+                <p>Inventario de las cámaras como bien físico, por número de serie: estado, remito y fecha de
+                    remito. Es el stock, independiente de si el equipo ya está instalado en un sitio.</p>
 
-                <h3>Bodycams</h3>
-                <p>En <span class="path">/bodycams</span> está el inventario maestro: código y serie únicos,
-                    marca, modelo, estado, IMEI, memoria, batería y adquisición. Filtrá por disponible,
-                    entregada, perdida, mantenimiento o baja.</p>
+                <div class="note">
+                    <span class="note-label">Físicas frente a instaladas</span>
+                    <p><strong>Cámaras Físicas</strong> responde «qué equipos tenemos y de qué remito
+                        entraron». <strong>Administración</strong> responde «qué cámara está funcionando en
+                        qué sitio». Un equipo en depósito figura en la primera y no en la segunda.</p>
+                </div>
+            </section>
+
+            <!-- 04 -->
+            <section id="bodycams">
+                <div class="sec-head"><span class="sec-num">04</span><h2>Bodycams</h2></div>
+                <p class="menu-path"><b>Bodycams → Administración</b><span class="sep">·</span>
+                    <span class="path">/bodycams</span><span class="sep">·</span>
+                    <span class="perm">ver-menu-bodycams</span></p>
+
+                <p class="intro">Inventario maestro de bodycams.</p>
+                <ol>
+                    <li>Buscá por código, serie, IMEI, marca o modelo.</li>
+                    <li>Filtrá por disponible, entregada, perdida, mantenimiento o baja.</li>
+                    <li>Para crear, completá código y serie (ambos únicos), marca, modelo y estado.</li>
+                    <li>Agregá IMEI, memoria, batería, adquisición y observaciones.</li>
+                </ol>
+
                 <div class="note">
                     <span class="note-label">Dónde se registran las entregas</span>
-                    <p>Las entregas y devoluciones de bodycams van en el módulo Entregas (módulo 05), no acá.
-                        Este listado es el inventario, no el movimiento.</p>
+                    <p>Las entregas y devoluciones van en <strong>Entregas → Bodycams</strong> (capítulo 05),
+                        no acá. Este listado es el inventario, no el movimiento.</p>
                 </div>
-
-                <h3>Mapa general</h3>
-                <ol>
-                    <li>Abrí <span class="path">/mapa</span>.</li>
-                    <li>Activá las capas autorizadas de cámaras, dependencias, antenas o sitios.</li>
-                    <li>Usá búsqueda y filtros para ubicar elementos.</li>
-                    <li>Activá o desactivá el agrupamiento de marcadores según el detalle que necesites.</li>
-                    <li>Con la herramienta de área podés dibujar un polígono y listar lo que quede adentro.</li>
-                </ol>
             </section>
 
             <!-- 05 -->
             <section id="entregas">
                 <div class="sec-head"><span class="sec-num">05</span><h2>Entregas</h2></div>
+                <p class="menu-path"><b>Entregas</b><span class="sep">·</span>
+                    <span class="perm">ver-menu-entregas</span></p>
 
-                <h3>Entregar equipos de mano</h3>
+                <h3>Equipos de mano</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">ver-entrega-equipos</span></p>
                 <ol>
                     <li>Abrí <span class="path">/entrega-equipos</span> y pulsá <strong>Nueva Entrega</strong>.</li>
                     <li>Completá fecha, hora, dependencia, personal, legajos y motivo.</li>
@@ -813,12 +868,13 @@
                     <li>Generá el acta Word desde el detalle.</li>
                 </ol>
 
-                <h3>Registrar la devolución</h3>
+                <p><strong>Registrar la devolución</strong></p>
                 <ol>
                     <li>Abrí el detalle de la entrega y pulsá <strong>Devolver</strong>.</li>
                     <li>Seleccioná solo los equipos pendientes de esa entrega.</li>
                     <li>Completá fecha, hora, persona, legajo y observaciones.</li>
-                    <li>Guardá. La devolución puede ser parcial: los equipos no seleccionados siguen entregados.</li>
+                    <li>Guardá. La devolución puede ser parcial: los equipos no seleccionados siguen
+                        entregados.</li>
                 </ol>
 
                 <h3>Bodycams</h3>
@@ -839,172 +895,19 @@
             </section>
 
             <!-- 06 -->
-            <section id="patrimonio">
-                <div class="sec-head"><span class="sec-num">06</span><h2>Patrimonio</h2></div>
+            <section id="analisis-911">
+                <div class="sec-head"><span class="sec-num">06</span><h2>Análisis 911</h2></div>
+                <p class="menu-path"><b>Análisis 911 → Períodos</b><span class="sep">·</span>
+                    <span class="path">/incidencias/periodos</span><span class="sep">·</span>
+                    <span class="perm">ver-periodo-911</span></p>
 
-                <h3>Cargos patrimoniales</h3>
+                <h3>Crear un período</h3>
                 <ol>
-                    <li>Abrí <span class="path">/patrimonio/cargos</span> y filtrá por estado, dependencia,
-                        texto o fechas.</li>
-                    <li>Abrí un cargo para revisar equipos, historial, firma y acta.</li>
-                    <li>En cargos pendientes, agregá o quitá equipos disponibles según autorización.</li>
-                    <li>Generá el acta.</li>
-                    <li>Para firmar, completá los datos del firmante y adjuntá el acta.</li>
-                </ol>
-                <p>Para rechazar un cargo es obligatorio dejar el motivo u observación.</p>
-
-                <h3>Alta de un bien</h3>
-                <ol>
-                    <li>Abrí <span class="path">/patrimonio/bienes</span> y pulsá <strong>Nuevo Bien</strong>.</li>
-                    <li>Elegí el tipo de bien.</li>
-                    <li>Completá destino, ubicación, descripción, identificadores y fecha de alta.</li>
-                    <li>Si el tipo se vincula con otro inventario, seleccioná un elemento disponible.</li>
-                    <li>Adjuntá documentación o imágenes y guardá.</li>
-                </ol>
-
-                <h3>Trasladar un bien</h3>
-                <ol>
-                    <li>Abrí el bien activo y seleccioná <strong>Traslado</strong>.</li>
-                    <li>Elegí nuevo destino y ubicación.</li>
-                    <li>Agregá observaciones y respaldo, y confirmá.</li>
-                </ol>
-
-                <h3>Dar de baja un bien</h3>
-                <ol>
-                    <li>Abrí el bien y seleccioná <strong>Baja</strong>.</li>
-                    <li>Elegí el motivo: desuso, transferencia o rotura.</li>
-                    <li>Si es transferencia, indicá el destino.</li>
-                    <li>Completá observaciones, adjuntá respaldo y confirmá.</li>
-                </ol>
-                <div class="note warn">
-                    <span class="note-label">Verificá antes de confirmar</span>
-                    <p>La baja cambia el estado patrimonial del bien y queda asentada con tu usuario.
-                        Confirmá que estás sobre el registro correcto antes del último paso.</p>
-                </div>
-            </section>
-
-            <!-- 07 -->
-            <section id="armas">
-                <div class="sec-head"><span class="sec-num">07</span><h2>Armas y personal</h2></div>
-
-                <h3>Crear una retención</h3>
-                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">crear-arma-retencion</span></p>
-                <ol>
-                    <li>Abrí <span class="path">/armas/retenciones</span> y pulsá <strong>Nueva retención</strong>.</li>
-                    <li>Seleccioná un funcionario con arma asignada y sin otra retención activa.</li>
-                    <li>Elegí el motivo.</li>
-                    <li>Completá fecha y datos complementarios.</li>
-                    <li>Revisá la información del arma y el chaleco que toma el sistema.</li>
-                    <li>Guardá y generá el acta cuando corresponda.</li>
-                </ol>
-                <p>El estado inicial es <strong>En armería</strong> y el sistema calcula los días restantes
-                    según el motivo.</p>
-
-                <h3>Elevar y devolver</h3>
-                <p>Para elevar: abrí el detalle, revisá funcionario, arma, motivo, fecha e historial, pulsá
-                    <strong>Elevar</strong> y confirmá. Para devolver: abrí la retención activa, pulsá
-                    <strong>Devolver</strong>, completá la información y verificá que el estado quede como
-                    <strong>Devuelta</strong>.</p>
-
-                <h3>Buscar retenciones</h3>
-                <p>Usá búsqueda y filtros de estado, tipo o motivo. Revisá las alertas de vencimiento y las
-                    devoluciones recientes; desde el detalle llegás al acta, comentarios e historial.</p>
-
-                <h3>Personal e inventario</h3>
-                <p>En <span class="path">/armas/personal</span> buscás por identidad funcional, situación,
-                    función, observaciones o licencia, y filtrás por licencias, estado o tipo. El detalle
-                    muestra arma, chaleco, licencias, asignaciones anteriores y retenciones.</p>
-
-                <h3>Cambiar arma o chaleco</h3>
-                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">editar-arma-personal</span></p>
-                <ol>
-                    <li>Abrí el personal correspondiente y pulsá <strong>Editar</strong>.</li>
-                    <li>Verificá que sea la persona correcta.</li>
-                    <li>Seleccioná la opción de cambio de inventario.</li>
-                    <li>Completá numeración, tipo y motivo, y guardá.</li>
-                </ol>
-                <div class="note">
-                    <span class="note-label">Una asignación por elemento</span>
-                    <p>Un arma o chaleco no puede estar asignado activamente a más de una persona. Las
-                        correcciones manuales pueden quedar protegidas frente a sincronizaciones posteriores.</p>
-                </div>
-            </section>
-
-            <!-- 08 -->
-            <section id="cecoco">
-                <div class="sec-head"><span class="sec-num">08</span><h2>CECOCO, eventos y recorridos</h2></div>
-
-                <h3>Buscar eventos</h3>
-                <ol>
-                    <li>Abrí <span class="path">/cecoco</span>.</li>
-                    <li>Aplicá al menos un filtro: texto, año/mes, operador, tipificación o rango de fecha y hora.</li>
-                    <li>Pulsá <strong>Buscar</strong>: los resultados salen del más reciente al más viejo.</li>
-                    <li>Abrí <strong>Ver detalle</strong> en el evento que buscabas.</li>
-                </ol>
-                <p>Los filtros se conservan al volver al listado, y la exportación TXT usa esos mismos criterios.</p>
-
-                <h3>Consultar un expediente</h3>
-                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">ver-expediente-cecoco</span></p>
-                <ol>
-                    <li>Buscá y abrí el evento, y pulsá <strong>Ver expediente</strong>.</li>
-                    <li>Revisá el detalle almacenado localmente.</li>
-                    <li>Usá <strong>Actualizar desde CECOCO</strong> solo si necesitás refrescar desde el
-                        sistema fuente.</li>
-                    <li>Si el resumen con IA está habilitado, esperá a que pase de pendiente o procesando a
-                        completado.</li>
-                </ol>
-
-                <h3>Grabaciones y modulaciones</h3>
-                <p>Desde el detalle del evento, si tenés el permiso correspondiente, entrás a Grabaciones o
-                    Modulaciones. Revisá la fecha y el contexto antes de reproducir.</p>
-                <div class="note warn">
-                    <span class="note-label">Material sensible</span>
-                    <p>No compartas ni descargues audio fuera de los procedimientos autorizados.</p>
-                </div>
-
-                <h3>Importar eventos</h3>
-                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">importar-eventos</span></p>
-                <ol>
-                    <li>Desde CECOCO, abrí la opción de importación.</li>
-                    <li>Seleccioná uno o varios archivos XLS, XLSX o XML.</li>
-                    <li>Verificá que cada archivo tenga el formato esperado.</li>
-                    <li>Enviá la importación.</li>
-                    <li>Revisá el historial: pendiente, completado, duplicado, omitido o fallido.</li>
-                </ol>
-                <p>Los archivos se procesan en segundo plano y pueden demorar; no hace falta esperar en la pantalla.</p>
-
-                <h3>Analítica y mapa de calor</h3>
-                <p>En <span class="path">/cecoco/analitica</span> elegís rango de fechas y tipificaciones,
-                    seleccionás comparación semanal, mensual o anual y consultás total, promedio diario,
-                    distribución y tendencias. Desde los resultados podés volver al analizador con filtros
-                    equivalentes.</p>
-                <p>En <span class="path">/cecoco/mapa-calor</span> definís fecha desde y hasta y, si hace
-                    falta, tipificación. Si una dirección no fue localizada y tenés autorización, podés
-                    corregir el texto o marcar la ubicación a mano.</p>
-
-                <h3>Histórico de un móvil</h3>
-                <p>Desde Excel, en <span class="path">/cecoco/historico-movil</span>: cargás el XLS o XLSX,
-                    definís velocidad máxima y umbrales de detención, procesás y revisás recorrido,
-                    animación, detenciones y excesos.</p>
-                <p>Desde GIS, en <span class="path">/cecoco/historico-movil-gis</span>: indicás fecha y hora
-                    inicial y final, buscás y validás el recurso, ejecutás la consulta y revisás recorrido,
-                    velocidades y detenciones.</p>
-
-                <h3>Alias de recursos</h3>
-                <p>En <span class="path">/cecoco/recursos-alias</span> vinculás el alias con que CECOCO nombra
-                    un recurso con el recurso o equipo interno. El alias debe ser único.</p>
-            </section>
-
-            <!-- 09 -->
-            <section id="incidencias">
-                <div class="sec-head"><span class="sec-num">09</span><h2>Incidencias 911 y tickets PG</h2></div>
-
-                <h3>Crear un período de análisis</h3>
-                <ol>
-                    <li>Abrí <span class="path">/incidencias/periodos</span> y pulsá <strong>Nuevo período</strong>.</li>
+                    <li>Pulsá <strong>Nuevo período</strong>.</li>
                     <li>Ingresá un número de período único.</li>
                     <li>Definí fecha inicial y final.</li>
-                    <li>Completá totales de unidades por sistema y las referencias administrativas autorizadas.</li>
+                    <li>Completá totales de unidades por sistema y las referencias administrativas
+                        autorizadas.</li>
                     <li>Guardá: el sistema calcula solo la duración en días y minutos.</li>
                 </ol>
 
@@ -1025,105 +928,512 @@
                     <li>Indicá si deben limpiarse los datos anteriores.</li>
                     <li>Importá y revisá qué se agregó y qué se omitió.</li>
                 </ol>
+
                 <div class="note warn">
                     <span class="note-label">Limpiar datos anteriores</span>
                     <p>Esa opción borra lo ya cargado en el período antes de importar. Revisá su alcance antes
                         de tildarla.</p>
                 </div>
 
-                <h3>Crear y enviar un ticket PG</h3>
+                <h3>Generar el informe</h3>
                 <ol>
-                    <li>Abrí <span class="path">/incidencias/tickets-pg</span> y pulsá <strong>Nuevo Ticket PG</strong>.</li>
+                    <li>Abrí el detalle del período.</li>
+                    <li>Verificá incidencias, exclusiones, ponderaciones y resultado global.</li>
+                    <li>Pulsá la opción de informe autorizada.</li>
+                    <li>Descargá y revisá el documento generado.</li>
+                </ol>
+            </section>
+
+            <!-- 07 -->
+            <section id="patrimonio">
+                <div class="sec-head"><span class="sec-num">07</span><h2>Patrimonio</h2></div>
+                <p class="menu-path"><b>Patrimonio</b><span class="sep">·</span>
+                    <span class="perm">ver-menu-patrimonio</span></p>
+
+                <h3>Dashboard</h3>
+                <p>Tablero de patrimonio: totales por estado y destino, y accesos directos a cargos y bienes.</p>
+
+                <h3>Cargos</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">ver-patrimonio-cargos</span></p>
+                <ol>
+                    <li>Abrí <span class="path">/patrimonio/cargos</span> y filtrá por estado, dependencia,
+                        texto o fechas.</li>
+                    <li>Abrí un cargo para revisar equipos, historial, firma y acta.</li>
+                    <li>En cargos pendientes, agregá o quitá equipos disponibles según autorización.</li>
+                    <li>Generá el acta.</li>
+                    <li>Para firmar, completá los datos del firmante y adjuntá el acta.</li>
+                </ol>
+                <p>Para rechazar un cargo es obligatorio dejar el motivo u observación.</p>
+
+                <h3>Bienes</h3>
+                <p><strong>Alta de un bien</strong></p>
+                <ol>
+                    <li>Abrí <span class="path">/patrimonio/bienes</span> y pulsá <strong>Nuevo Bien</strong>.</li>
+                    <li>Elegí el tipo de bien.</li>
+                    <li>Completá destino, ubicación, descripción, identificadores y fecha de alta.</li>
+                    <li>Si el tipo se vincula con otro inventario, seleccioná un elemento disponible.</li>
+                    <li>Adjuntá documentación o imágenes y guardá.</li>
+                </ol>
+
+                <p><strong>Trasladar</strong></p>
+                <ol>
+                    <li>Abrí el bien activo y seleccioná <strong>Traslado</strong>.</li>
+                    <li>Elegí nuevo destino y ubicación.</li>
+                    <li>Agregá observaciones y respaldo, y confirmá.</li>
+                </ol>
+
+                <p><strong>Dar de baja</strong></p>
+                <ol>
+                    <li>Abrí el bien y seleccioná <strong>Baja</strong>.</li>
+                    <li>Elegí el motivo: desuso, transferencia o rotura.</li>
+                    <li>Si es transferencia, indicá el destino.</li>
+                    <li>Completá observaciones, adjuntá respaldo y confirmá.</li>
+                </ol>
+
+                <div class="note warn">
+                    <span class="note-label">Verificá antes de confirmar</span>
+                    <p>La baja cambia el estado patrimonial del bien y queda asentada con tu usuario.
+                        Confirmá que estás sobre el registro correcto antes del último paso.</p>
+                </div>
+
+                <h3>Tipos de Bien</h3>
+                <p>Catálogo de tipos de bien patrimonial. Cada tipo define qué campos pide el alta y si el bien
+                    se vincula con otro inventario del sistema — por ejemplo, con un equipo o una cámara.</p>
+            </section>
+
+            <!-- 08 -->
+            <section id="control-armas">
+                <div class="sec-head"><span class="sec-num">08</span><h2>Control de Armas</h2></div>
+                <p class="menu-path"><b>Control de Armas</b><span class="sep">·</span>
+                    <span class="perm">ver-menu-armamento</span></p>
+
+                <h3>Retenciones</h3>
+                <p><strong>Crear una retención</strong></p>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">crear-arma-retencion</span></p>
+                <ol>
+                    <li>Abrí <span class="path">/armas/retenciones</span> y pulsá <strong>Nueva retención</strong>.</li>
+                    <li>Seleccioná un funcionario con arma asignada y sin otra retención activa.</li>
+                    <li>Elegí el motivo.</li>
+                    <li>Completá fecha y datos complementarios.</li>
+                    <li>Revisá la información del arma y el chaleco que toma el sistema.</li>
+                    <li>Guardá y generá el acta cuando corresponda.</li>
+                </ol>
+                <p>El estado inicial es <strong>En armería</strong> y el sistema calcula los días restantes
+                    según el motivo.</p>
+
+                <p><strong>Elevar y devolver</strong></p>
+                <p>Para elevar: abrí el detalle, revisá funcionario, arma, motivo, fecha e historial, pulsá
+                    <strong>Elevar</strong> y confirmá. Para devolver: abrí la retención activa, pulsá
+                    <strong>Devolver</strong>, completá la información y verificá que el estado quede como
+                    <strong>Devuelta</strong>.</p>
+
+                <p><strong>Buscar</strong></p>
+                <p>Usá búsqueda y filtros de estado, tipo o motivo. Revisá las alertas de vencimiento y las
+                    devoluciones recientes; desde el detalle llegás al acta, comentarios e historial.</p>
+
+                <h3>Motivos</h3>
+                <p>Catálogo de motivos de retención. Cada motivo define el plazo con el que el sistema calcula
+                    los días restantes, así que cambiarlo afecta el cálculo de las retenciones nuevas.</p>
+
+                <h3>Tipos de Arma</h3>
+                <p>Catálogo de tipos de arma que alimenta las retenciones y el inventario de armería.</p>
+
+                <h3>Personal</h3>
+                <p>En <span class="path">/armas/personal</span> buscás por identidad funcional, situación,
+                    función, observaciones o licencia, y filtrás por licencias, estado o tipo. El detalle
+                    muestra arma, chaleco, licencias, asignaciones anteriores y retenciones.</p>
+
+                <p><strong>Cambiar arma o chaleco</strong></p>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">editar-arma-personal</span></p>
+                <ol>
+                    <li>Abrí el personal correspondiente y pulsá <strong>Editar</strong>.</li>
+                    <li>Verificá que sea la persona correcta.</li>
+                    <li>Seleccioná la opción de cambio de inventario.</li>
+                    <li>Completá numeración, tipo y motivo, y guardá.</li>
+                </ol>
+
+                <div class="note">
+                    <span class="note-label">Una asignación por elemento</span>
+                    <p>Un arma o chaleco no puede estar asignado activamente a más de una persona. Las
+                        correcciones manuales pueden quedar protegidas frente a sincronizaciones posteriores.</p>
+                </div>
+
+                <h3>Armería: Armas Secundarias y Chalecos</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">ver-armeria</span></p>
+                <p>Inventario de las armas secundarias y los chalecos disponibles en armería, con su
+                    numeración, tipo y estado. Es el listado del que salen los elementos al asignar o cambiar
+                    el equipamiento de una persona.</p>
+            </section>
+
+            <!-- 09 -->
+            <section id="tareas">
+                <div class="sec-head"><span class="sec-num">09</span><h2>Tareas</h2></div>
+                <p class="menu-path"><b>Tareas</b><span class="sep">·</span>
+                    <span class="perm">ver-menu-tareas</span></p>
+
+                <h3>Tareas</h3>
+                <p><strong>Crear una tarea</strong></p>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">crear-tarea</span></p>
+                <ol>
+                    <li>Abrí <span class="path">/tareas</span> y pulsá <strong>Nueva Tarea</strong>.</li>
+                    <li>Completá nombre y descripción.</li>
+                    <li>Elegí si será única, diaria, semanal o mensual.</li>
+                    <li>Definí intervalo y día semanal o mensual cuando corresponda.</li>
+                    <li>Indicá fechas de inicio y fin.</li>
+                    <li>Marcala como activa y guardá.</li>
+                </ol>
+                <p>El sistema genera solo las instancias futuras de las tareas recurrentes.</p>
+
+                <p><strong>Completar una tarea</strong></p>
+                <p>Filtrá por nombre, estado, fecha, usuario u observaciones, localizá la instancia, cambiá el
+                    estado a <strong>Realizada</strong> y agregá observaciones. El sistema registra quién la
+                    completó y cuándo.</p>
+
+                <p><strong>Cambiar una recurrencia</strong></p>
+                <ol>
+                    <li>Abrí <strong>Editar</strong> en la definición de la tarea.</li>
+                    <li>Modificá recurrencia, intervalo o fechas.</li>
+                    <li>Elegí si cambia solo la definición o si deben regenerarse las instancias futuras
+                        pendientes.</li>
+                    <li>Si regenerás, revisá la fecha de corte antes de guardar.</li>
+                </ol>
+
+                <h3>Tickets PG</h3>
+                <p><strong>Crear un ticket</strong></p>
+                <ol>
+                    <li>Abrí <span class="path">/incidencias/tickets-pg</span> y pulsá
+                        <strong>Nuevo Ticket PG</strong>.</li>
                     <li>Indicá origen, categoría, problema, prioridad y subsistema.</li>
                     <li>Asociá cámara, móvil, equipo u oficina cuando la categoría lo pida.</li>
                     <li>Completá fechas, período y aplicación de multa si corresponde.</li>
                     <li>Revisá el asunto y el texto sugeridos, y guardá como borrador.</li>
                 </ol>
-                <p class="gate"><span class="gate-label">Enviar requiere</span> <span class="perm">enviar-ticket-pg</span></p>
-                <p>Desde el detalle del borrador, revisá todos los datos y la redacción, usá la mejora de
-                    redacción solo si está habilitada (y volvé a verificar el texto), pulsá
-                    <strong>Enviar a ticketera</strong> y confirmá.</p>
+
+                <p><strong>Enviar el ticket</strong></p>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">enviar-ticket-pg</span></p>
+                <ol>
+                    <li>Abrí el detalle del borrador y revisá todos los datos y la redacción.</li>
+                    <li>Usá la mejora de redacción solo si está habilitada, y volvé a verificar el texto.</li>
+                    <li>Pulsá <strong>Enviar a ticketera</strong> y confirmá.</li>
+                    <li>Revisá el código y el estado resultantes.</li>
+                </ol>
+
                 <div class="note">
                     <span class="note-label">Un ticket enviado no vuelve a borrador</span>
                     <p>No lo reenvíes ni intentes editarlo. Las respuestas posteriores se sincronizan desde el
                         detalle del ticket.</p>
                 </div>
+
+                <h3>Personal Efectivo</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">ver-personal</span></p>
+                <p>Padrón del personal: nombre, apellido, LP y jerarquía. El LP es de cinco dígitos y no puede
+                    repetirse. Es la fuente de la que salen las personas al completar entregas, actas y
+                    retenciones, así que conviene darlas de alta acá antes de necesitarlas en un acta.</p>
+
+                <h3>Activaciones Tótem</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">ver-activacion-totem</span></p>
+                <p>Detecta en los eventos de CeCoCo las activaciones de botón de emergencia de tótem, lleva el
+                    registro de si el video ya fue descargado y avisa cuándo se acerca el vencimiento del plazo
+                    legal de conservación, a los seis meses.</p>
+                <div class="note warn">
+                    <span class="note-label">El plazo no se puede recuperar</span>
+                    <p>Pasado el vencimiento, la grabación ya no está disponible. Atendé los avisos de
+                        vencimiento antes de que la fecha llegue, no después.</p>
+                </div>
             </section>
 
             <!-- 10 -->
-            <section id="correos">
-                <div class="sec-head"><span class="sec-num">10</span><h2>Visor de correos y buzones</h2></div>
-                <p class="intro">Permite consultar los backups de correo <span class="path">.mbox</span> de
-                    cada oficina — por ejemplo, exportaciones de Google Takeout. Cada oficina es un
-                    <strong>buzón</strong>, y quién puede leer sus mensajes depende del rol asignado a ese buzón.</p>
+            <section id="dependencias">
+                <div class="sec-head"><span class="sec-num">10</span><h2>Dependencias</h2></div>
+                <p class="menu-path"><b>Dependencias</b><span class="sep">·</span>
+                    <span class="path">/dependencias</span><span class="sep">·</span>
+                    <span class="perm">ver-menu-dependencias</span></p>
 
-                <h3>Consultar correos</h3>
-                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">ver-visor-mails</span></p>
                 <ol>
-                    <li>Abrí <span class="path">/herramientas/mails</span>.</li>
-                    <li>Elegí el buzón. Solo vas a ver los habilitados para tus roles, y debajo del selector
-                        figura hasta qué fecha hay backup indexado.</li>
-                    <li>Filtrá por texto (busca en asunto, cuerpo y nombres de adjuntos), remitente,
-                        destinatario o CC, asunto, nombre de adjunto, rango de fechas, carpeta, presencia de
-                        adjuntos o etiqueta de Gmail.</li>
-                    <li>Pulsá <strong>Buscar</strong>.</li>
-                    <li>Abrí un mensaje para ver encabezados, adjuntos y el cuerpo completo.</li>
+                    <li>Filtrá por tipo o buscá por nombre, teléfono o ubicación.</li>
+                    <li>Para crear, seleccioná tipo y dependencia padre válida.</li>
+                    <li>Completá nombre, contacto, ubicación y observaciones.</li>
                 </ol>
-                <p>Las carpetas disponibles son Recibidos, Enviados, Borradores, Spam, Papelera y Archivados.</p>
+                <p>Al editar, el sistema valida la jerarquía para impedir referencias circulares. Solo pueden
+                    eliminarse dependencias sin subordinadas.</p>
 
-                <h3>Trabajar con un mensaje</h3>
-                <ul>
-                    <li><strong>Imprimir / PDF:</strong> abre una vista lista para imprimir o guardar con Ctrl+P.</li>
-                    <li><strong>Descargar .eml:</strong> baja el mensaje original completo.</li>
-                    <li><strong>Adjuntos:</strong> se descargan uno por uno desde el detalle.</li>
-                    <li><strong>Exportar:</strong> baja a Excel el listado tal como lo filtraste.</li>
-                </ul>
-                <div class="note">
-                    <span class="note-label">Mensajes muy grandes</span>
-                    <p>Si el cuerpo supera el tamaño previsto se muestra recortado y aparece un aviso.
-                        Descargá el <span class="path">.eml</span> para verlo completo.</p>
-                </div>
-
-                <h3>Administrar buzones</h3>
-                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">administrar-visor-mails</span></p>
-                <p>Quien tiene este permiso ve todos los buzones, sin importar el rol.</p>
+                <h3>Jurisdicción de una comisaría</h3>
                 <ol>
-                    <li>Abrí <span class="path">/herramientas/mails/buzones</span>, o el botón
-                        <strong>Administrar Buzones</strong> del visor.</li>
-                    <li>Para dar de alta varios de una vez, usá <strong>Detectar Oficinas</strong>: el sistema
-                        lista las subcarpetas de la ruta de backups y marca cuáles ya son buzón. Tildá las
-                        nuevas y confirmá.</li>
-                    <li>Para crear uno a mano, pulsá <strong>Nuevo Buzón</strong> y completá nombre, carpeta,
-                        email real de la casilla, rol con acceso y descripción.</li>
-                    <li>Asigná siempre un rol: sin rol, solo lo ven los administradores del visor. Si el rol
-                        que necesitás no existe, creálo primero en Roles.</li>
+                    <li>Localizá la comisaría y abrí la herramienta de polígono.</li>
+                    <li>Agregá, mové o eliminá vértices en el mapa.</li>
+                    <li>Formá un polígono de al menos tres puntos.</li>
+                    <li>Guardá la jurisdicción.</li>
                 </ol>
-                <div class="note">
-                    <span class="note-label">Eliminar un buzón no borra los correos</span>
-                    <p>Se borra el índice de mensajes del sistema; los archivos
-                        <span class="path">.mbox</span> del disco quedan intactos.</p>
-                </div>
-
-                <h3>Indexar los archivos de un buzón</h3>
-                <ol>
-                    <li>Desde el listado de buzones, abrí <strong>Archivos</strong> del buzón.</li>
-                    <li>El sistema busca de forma recursiva los <span class="path">.mbox</span> de esa carpeta
-                        y muestra el estado de cada uno: pendiente, indexando, indexado o error.</li>
-                    <li>Pulsá <strong>Registrar e indexar</strong> en un archivo nuevo.</li>
-                    <li>Pulsá <strong>Reindexar</strong> si un archivo ya indexado cambió de tamaño o fecha:
-                        aparece marcado como <em>Modificado</em>.</li>
-                    <li>Mientras se indexa, la fila muestra una barra de progreso que se actualiza sola.</li>
-                </ol>
-                <p>La indexación corre en segundo plano: podés cerrar la pantalla y volver más tarde a ver
-                    cómo terminó.</p>
             </section>
 
             <!-- 11 -->
-            <section id="claves">
-                <div class="sec-head"><span class="sec-num">11</span><h2>Gestor de contraseñas</h2></div>
+            <section id="cecoco">
+                <div class="sec-head"><span class="sec-num">11</span><h2>CeCoCo</h2></div>
+                <p class="menu-path"><b>CeCoCo</b><span class="sep">·</span>
+                    <span class="perm">ver-menu-cecoco</span></p>
+
+                <h3>Analítica de Delitos</h3>
+                <ol>
+                    <li>Abrí <span class="path">/cecoco/analitica</span>.</li>
+                    <li>Elegí rango de fechas y tipificaciones.</li>
+                    <li>Seleccioná comparación semanal, mensual o anual.</li>
+                    <li>Consultá total, promedio diario, distribución y tendencias.</li>
+                </ol>
+                <p>Desde los resultados podés volver al analizador con filtros equivalentes.</p>
+
+                <h3>Analizador de Eventos</h3>
+                <ol>
+                    <li>Abrí <span class="path">/cecoco</span>.</li>
+                    <li>Aplicá al menos un filtro: texto, año/mes, operador, tipificación o rango de fecha y
+                        hora.</li>
+                    <li>Pulsá <strong>Buscar</strong>: los resultados salen del más reciente al más viejo.</li>
+                    <li>Abrí <strong>Ver detalle</strong> en el evento que buscabas.</li>
+                </ol>
+                <p>Los filtros se conservan al volver al listado, y la exportación TXT usa esos mismos
+                    criterios.</p>
+
+                <p><strong>Consultar un expediente</strong></p>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">ver-expediente-cecoco</span></p>
+                <ol>
+                    <li>Abrí el evento y pulsá <strong>Ver expediente</strong>.</li>
+                    <li>Revisá el detalle almacenado localmente.</li>
+                    <li>Usá <strong>Actualizar desde CeCoCo</strong> solo si necesitás refrescar desde el
+                        sistema fuente.</li>
+                    <li>Si el resumen con IA está habilitado, esperá a que pase de pendiente o procesando a
+                        completado.</li>
+                </ol>
+
+                <p><strong>Grabaciones y modulaciones</strong></p>
+                <p>Desde el detalle del evento, si tenés el permiso correspondiente, entrás a Grabaciones o
+                    Modulaciones. Revisá la fecha y el contexto antes de reproducir.</p>
+                <div class="note warn">
+                    <span class="note-label">Material sensible</span>
+                    <p>No compartas ni descargues audio fuera de los procedimientos autorizados.</p>
+                </div>
+
+                <h3>Mapeo de Recursos</h3>
+                <p>Vincula el alias con que CeCoCo nombra un recurso con el recurso o equipo interno. El alias
+                    debe ser único. Sin este mapeo, los recorridos y los eventos de ese móvil no se asocian al
+                    recurso del sistema.</p>
+
+                <h3>Mapa de Calor Analizador</h3>
+                <ol>
+                    <li>Abrí <span class="path">/cecoco/mapa-calor</span>.</li>
+                    <li>Definí fecha desde y hasta.</li>
+                    <li>Elegí tipificación si necesitás limitar el conjunto.</li>
+                    <li>Consultá el mapa.</li>
+                </ol>
+                <p>Si una dirección no fue localizada y tenés autorización, podés corregir el texto o marcar la
+                    ubicación a mano.</p>
+
+                <h3>Mapa CeCoCo</h3>
+                <p>Vista en vivo de los móviles y eventos sobre el mapa. Es de consulta: sirve para ver la
+                    situación del momento, no guarda nada.</p>
+
+                <h3>Mapa GIS CeCoCo</h3>
+                <p>La misma vista de situación tomada de la fuente GIS, con el posicionamiento que reporta ese
+                    sistema.</p>
+
+                <h3>GIS Histórico CeCoCo</h3>
+                <p>Consulta histórica sobre la fuente GIS para revisar posiciones ya registradas, en lugar de
+                    la situación en vivo.</p>
+
+                <h3>Procesar Histórico Excel</h3>
+                <ol>
+                    <li>Abrí <span class="path">/cecoco/historico-movil</span>.</li>
+                    <li>Cargá un archivo XLS o XLSX.</li>
+                    <li>Definí velocidad máxima y umbrales de detención.</li>
+                    <li>Procesá el archivo.</li>
+                    <li>Revisá recorrido, animación, detenciones y excesos, y exportá si corresponde.</li>
+                </ol>
+
+                <h3>Procesar Histórico GIS</h3>
+                <ol>
+                    <li>Abrí <span class="path">/cecoco/historico-movil-gis</span>.</li>
+                    <li>Indicá fecha y hora inicial y final.</li>
+                    <li>Buscá y validá el recurso.</li>
+                    <li>Ejecutá la consulta.</li>
+                    <li>Revisá recorrido, velocidades y detenciones, y guardá o exportá cuando corresponda.</li>
+                </ol>
+
+                <h3>Eventos</h3>
+                <p>Listado crudo de eventos traídos de CeCoCo, para consulta directa cuando no alcanza con los
+                    filtros del analizador.</p>
+
+                <h3>Importar eventos</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">importar-eventos</span></p>
+                <ol>
+                    <li>Desde CeCoCo, abrí la opción de importación.</li>
+                    <li>Seleccioná uno o varios archivos XLS, XLSX o XML.</li>
+                    <li>Verificá que cada archivo tenga el formato esperado.</li>
+                    <li>Enviá la importación.</li>
+                    <li>Revisá el historial: pendiente, completado, duplicado, omitido o fallido.</li>
+                </ol>
+                <p>Los archivos se procesan en segundo plano y pueden demorar; no hace falta esperar en la
+                    pantalla.</p>
+            </section>
+
+            <!-- 12 -->
+            <section id="mapa">
+                <div class="sec-head"><span class="sec-num">12</span><h2>Mapa</h2></div>
+                <p class="menu-path"><b>Mapa</b><span class="sep">·</span>
+                    <span class="path">/mapa</span><span class="sep">·</span>
+                    <span class="perm">ver-menu-mapa</span></p>
+
+                <ol>
+                    <li>Activá las capas autorizadas de cámaras, dependencias, antenas o sitios.</li>
+                    <li>Usá búsqueda y filtros para ubicar elementos.</li>
+                    <li>Activá o desactivá el agrupamiento de marcadores según el detalle que necesites.</li>
+                    <li>Con la herramienta de área, dibujá un polígono para listar lo que quede adentro.</li>
+                </ol>
+            </section>
+
+            <!-- 13 -->
+            <section id="usuarios">
+                <div class="sec-head"><span class="sec-num">13</span><h2>Usuarios</h2></div>
+                <p class="menu-path"><b>Usuarios</b><span class="sep">·</span>
+                    <span class="perm">ver-menu-usuarios</span></p>
+
+                <h3>Administración</h3>
+                <ol>
+                    <li>Abrí <span class="path">/usuarios</span> y creá o editá una cuenta.</li>
+                    <li>Completá nombre, apellido, identificadores institucionales y correo.</li>
+                    <li>Definí contraseña solo cuando corresponda.</li>
+                    <li>Asigná uno o varios roles.</li>
+                    <li>Habilitá acceso externo únicamente si está autorizado.</li>
+                </ol>
+                <p>No podés eliminar el usuario con el que estás trabajando.</p>
+
+                <h3>Roles</h3>
+                <ol>
+                    <li>Abrí <span class="path">/roles</span> y creá o editá un rol.</li>
+                    <li>Poné un nombre claro.</li>
+                    <li>Seleccioná los permisos necesarios por módulo.</li>
+                    <li>No asignes permisos de creación, edición o borrado a un rol que solo necesita
+                        consultar.</li>
+                </ol>
+
+                <div class="note warn">
+                    <span class="note-label">Se reemplaza toda la selección</span>
+                    <p>Al guardar, el conjunto de permisos del rol pasa a ser exactamente lo que quedó tildado.
+                        Lo que destildaste se pierde para todos los usuarios de ese rol.</p>
+                </div>
+
+                <div class="note">
+                    <span class="note-label">Los permisos <span class="perm">ver-menu-…</span></span>
+                    <p>Cada capítulo de este manual indica cuál es el suyo. Si un usuario no ve un módulo en el
+                        menú, empezá por revisar ese permiso antes que los demás.</p>
+                </div>
+
+                <h3>Actas de Credenciales</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">ver-menu-constancias-credenciales</span></p>
+                <p>Emisión de las actas de entrega de credenciales. Desde el detalle se descarga el documento
+                    generado, se carga después el acta firmada y se la envía por correo al destinatario.</p>
+            </section>
+
+            <!-- 14 -->
+            <section id="ia">
+                <div class="sec-head"><span class="sec-num">14</span><h2>IA</h2></div>
+                <p class="menu-path"><b>IA</b><span class="sep">·</span>
+                    <span class="perm">ver-menu-ia</span></p>
+
+                <h3>Base de Conocimiento</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">ver-rag</span></p>
+                <ol>
+                    <li>Abrí <span class="path">/rag</span>.</li>
+                    <li>Creá una temática con nombre y descripción, y seleccionala.</li>
+                    <li>Cargá hasta cinco documentos TXT, PDF, CSV o Markdown.</li>
+                    <li>Elegí si necesitás resumen con IA.</li>
+                    <li>Esperá el estado de carga y revisá el historial documental.</li>
+                    <li>Escribí una pregunta sobre la temática y esperá la respuesta.</li>
+                </ol>
+
+                <div class="note">
+                    <span class="note-label">No confundir con el asistente</span>
+                    <p>Esta base es administrativa: la cargan y consultan quienes tienen el permiso. El
+                        asistente de ayuda del apéndice es otra cosa y usa la documentación del sistema.</p>
+                </div>
+
+                <div class="note">
+                    <span class="note-label">Eliminar una temática</span>
+                    <p>Borrarla localmente no necesariamente elimina sus documentos del servidor remoto.
+                        Reindexá solo cuando cambió el contenido de origen.</p>
+                </div>
+
+                <h3>Transcribir audio</h3>
+                <ol>
+                    <li>Abrí <span class="path">/transcribir</span>.</li>
+                    <li>Seleccioná o arrastrá un archivo MP3, WAV, M4A u OGG.</li>
+                    <li>Reproducí la vista previa para confirmar que sea el audio correcto.</li>
+                    <li>Pulsá <strong>Analizar llamada</strong> y esperá el procesamiento.</li>
+                    <li>Revisá el diálogo por hablantes, el resumen y los datos extraídos.</li>
+                    <li>Corregí el diálogo si hace falta y guardá.</li>
+                    <li>Exportá a TXT cuando corresponda.</li>
+                </ol>
+
+                <div class="note">
+                    <span class="note-label">No cierres la pantalla durante la carga</span>
+                    <p>El procesamiento posterior sí corre en segundo plano y puede demorar según la duración
+                        del audio, pero la carga inicial necesita la pantalla abierta.</p>
+                </div>
+
+                <p><strong>Historial</strong></p>
+                <p>En esa pestaña filtrás por nombre de archivo o teléfono, abrís el registro y revisás
+                    transcripción, resumen y datos asociados. Guardá únicamente correcciones verificadas.</p>
+            </section>
+
+            <!-- 15 -->
+            <section id="plano-911">
+                <div class="sec-head"><span class="sec-num">15</span><h2>Plano 911</h2></div>
+                <p class="menu-path"><b>Plano 911</b><span class="sep">·</span>
+                    <span class="path">/plano-edificio</span><span class="sep">·</span>
+                    <span class="perm">ver-menu-plano-edificio</span></p>
+
+                <ol>
+                    <li>Activá capas y filtrá por tipo, oficina, piso o estado.</li>
+                    <li>Seleccioná un dispositivo para ver su ficha.</li>
+                    <li>Con permiso de edición, actualizá nombre, tipo, oficina, piso y datos técnicos.</li>
+                    <li>Con permiso de posición, arrastrá el dispositivo hasta su ubicación real.</li>
+                    <li>Exportá el listado cuando esté habilitado.</li>
+                </ol>
+                <p>La información de acceso asociada a los dispositivos requiere un permiso específico y no
+                    debe compartirse con el asistente.</p>
+            </section>
+
+            <!-- 16 -->
+            <section id="chat">
+                <div class="sec-head"><span class="sec-num">16</span><h2>Chat</h2></div>
+                <p class="menu-path"><b>Chat</b><span class="sep">·</span>
+                    <span class="path">/chat</span><span class="sep">·</span>
+                    <span class="perm">ver-menu-chat</span></p>
+
+                <p class="intro">Mensajería interna entre usuarios del sistema.</p>
+                <ol>
+                    <li>Abrí <strong>Nueva conversación</strong> y elegí con quién hablar.</li>
+                    <li>Escribí el mensaje y envialo.</li>
+                    <li>Usá el buscador de conversaciones para volver a una anterior.</li>
+                </ol>
+                <p>Los mensajes que no leíste se avisan en la pantalla; si quedan sin leer, el sistema puede
+                    mandarte un correo de aviso.</p>
+
+                <div class="note warn">
+                    <span class="note-label">No es un canal seguro</span>
+                    <p>No envíes contraseñas por el chat. Para compartir una credencial con un compañero, usá
+                        el Gestor de Contraseñas (capítulo 17), que registra quién tiene acceso y permite
+                        revocarlo.</p>
+                </div>
+            </section>
+
+            <!-- 17 -->
+            <section id="gestor-contrasenas">
+                <div class="sec-head"><span class="sec-num">17</span><h2>Gestor de Contraseñas</h2></div>
+                <p class="menu-path"><b>Gestor de Contraseñas</b><span class="sep">·</span>
+                    <span class="path">/password-vault</span><span class="sep">·</span>
+                    <span class="perm">ver-menu-gestor-claves</span></p>
+
                 <p class="intro">Guarda las credenciales de sistemas, VPN, cámaras y equipos, y permite
-                    compartirlas con otros usuarios de forma controlada. Está protegido por una segunda clave,
-                    la <strong>contraseña maestra</strong>, distinta de la de acceso al sistema.</p>
+                    compartirlas de forma controlada. Está protegido por una segunda clave, la
+                    <strong>contraseña maestra</strong>, distinta de la de acceso al sistema.</p>
 
                 <h3>Configurar tu contraseña maestra</h3>
                 <ol>
@@ -1137,16 +1447,17 @@
 
                 <h3>Entrar al gestor</h3>
                 <ol>
-                    <li>Abrí <span class="path">/password-vault</span>.</li>
+                    <li>Abrí el módulo desde el menú.</li>
                     <li>Ingresá la contraseña maestra cuando el sistema te la pida.</li>
                     <li>El gestor queda desbloqueado y podés trabajar normalmente.</li>
                 </ol>
+
                 <div class="note">
                     <span class="note-label">El desbloqueo dura 30 minutos</span>
-                    <p>Se cuentan desde tu última acción dentro del gestor, así que mientras lo estés usando
-                        no vuelve a pedirte la clave. Pasados 30 minutos sin actividad, se bloquea de nuevo.
-                        Si estabas con la pantalla abierta y venció, vas a ver un aviso al intentar una
-                        acción: volvé a ingresar la clave maestra y seguí.</p>
+                    <p>Se cuentan desde tu última acción dentro del gestor, así que mientras lo estés usando no
+                        vuelve a pedirte la clave. Pasados 30 minutos sin actividad, se bloquea de nuevo. Si
+                        tenías la pantalla abierta y venció, vas a ver un aviso al intentar una acción: volvé a
+                        ingresar la clave maestra y seguí.</p>
                 </div>
 
                 <h3>Buscar una contraseña</h3>
@@ -1173,9 +1484,9 @@
                     números y símbolos: usalo en vez de inventar una a mano.</p>
 
                 <h3>Editar y eliminar</h3>
-                <p>Editar requiere <span class="perm">editar-clave</span>, y podés hacerlo si sos el dueño o
-                    si te la compartieron con permiso de edición. Si dejás el campo de contraseña vacío al
-                    editar, se conserva la que ya estaba.</p>
+                <p>Editar requiere <span class="perm">editar-clave</span>, y podés hacerlo si sos el dueño o si
+                    te la compartieron con permiso de edición. Si dejás el campo de contraseña vacío al editar,
+                    se conserva la que ya estaba.</p>
                 <p>Eliminar requiere <span class="perm">borrar-clave</span> y solo puede hacerlo el dueño.</p>
 
                 <h3>Compartir con otros usuarios</h3>
@@ -1187,9 +1498,9 @@
                     <li>Confirmá.</li>
                 </ol>
                 <p>Para compartir varias de una vez, tildá las contraseñas propias en el listado y usá
-                    <strong>Compartir seleccionadas</strong>.</p>
-                <p>En la misma ventana ves quién tiene acceso hoy, podés pasar a alguien de solo lectura a
-                    edición con el interruptor, o revocarle el acceso.</p>
+                    <strong>Compartir seleccionadas</strong>. En la misma ventana ves quién tiene acceso hoy,
+                    podés pasar a alguien de solo lectura a edición, o revocarle el acceso.</p>
+
                 <div class="note warn">
                     <span class="note-label">Revocar es inmediato, pero la clave ya se vio</span>
                     <p>Quien tuvo acceso pudo haberla copiado. Si el acceso se revoca por un motivo de
@@ -1197,53 +1508,35 @@
                 </div>
             </section>
 
-            <!-- 12 -->
-            <section id="ia">
-                <div class="sec-head"><span class="sec-num">12</span><h2>IA, transcripción y base de conocimiento</h2></div>
+            <!-- 18 -->
+            <section id="manuales">
+                <div class="sec-head"><span class="sec-num">18</span><h2>Manuales</h2></div>
+                <p class="menu-path"><b>Manuales</b><span class="sep">·</span>
+                    <span class="perm">ver-menu-manuales</span></p>
 
-                <h3>Analizar una llamada</h3>
+                <h3>Manual de Usuario</h3>
+                <p>Es este documento. Se abre en una pestaña nueva y cubre todos los módulos del sistema.</p>
+
+                <h3>Manuales CeCoCo e Instructivos</h3>
                 <ol>
-                    <li>Abrí <span class="path">/transcribir</span>.</li>
-                    <li>Seleccioná o arrastrá un archivo MP3, WAV, M4A u OGG.</li>
-                    <li>Reproducí la vista previa para confirmar que sea el audio correcto.</li>
-                    <li>Pulsá <strong>Analizar llamada</strong> y esperá el procesamiento.</li>
-                    <li>Revisá el diálogo por hablantes, el resumen y los datos extraídos.</li>
-                    <li>Corregí el diálogo si hace falta y guardá.</li>
-                    <li>Exportá a TXT cuando corresponda.</li>
+                    <li>Abrí <span class="path">/manuales/cecoco</span> o
+                        <span class="path">/manuales/instructivos</span>.</li>
+                    <li>Buscá por título, temática o archivo.</li>
+                    <li>Pulsá <strong>Ver</strong> para abrir el visor.</li>
+                    <li>Descargá el documento solo si tenés el permiso correspondiente.</li>
                 </ol>
-                <div class="note">
-                    <span class="note-label">No cierres la pantalla durante la carga</span>
-                    <p>El procesamiento posterior sí corre en segundo plano y puede demorar según la duración
-                        del audio, pero la carga inicial necesita la pantalla abierta.</p>
-                </div>
-
-                <h3>Historial de transcripciones</h3>
-                <p>En la pestaña <strong>Historial</strong> filtrás por nombre de archivo o teléfono, abrís el
-                    registro y revisás transcripción, resumen y datos asociados. Guardá únicamente
-                    correcciones verificadas.</p>
-
-                <h3>Base de conocimiento (RAG)</h3>
-                <p>El panel <span class="path">/rag</span> es administrativo y está separado del asistente de
-                    ayuda.</p>
-                <ol>
-                    <li>Creá una temática con nombre y descripción, y seleccionala.</li>
-                    <li>Cargá hasta cinco documentos TXT, PDF, CSV o Markdown.</li>
-                    <li>Elegí si necesitás resumen con IA.</li>
-                    <li>Esperá el estado de carga y revisá el historial documental.</li>
-                    <li>Escribí una pregunta sobre la temática y esperá la respuesta.</li>
-                </ol>
-                <div class="note">
-                    <span class="note-label">Eliminar una temática</span>
-                    <p>Borrarla localmente no necesariamente elimina sus documentos del servidor remoto.
-                        Reindexá solo cuando cambió el contenido de origen.</p>
-                </div>
+                <p>La carga admite PDF, DOCX, Markdown y HTML. Para los instructivos se piden título y
+                    temática.</p>
             </section>
 
-            <!-- 13 -->
-            <section id="utiles">
-                <div class="sec-head"><span class="sec-num">13</span><h2>Hash de archivos y plano del edificio</h2></div>
+            <!-- 19 -->
+            <section id="herramientas">
+                <div class="sec-head"><span class="sec-num">19</span><h2>Herramientas</h2></div>
+                <p class="menu-path"><b>Herramientas</b><span class="sep">·</span>
+                    <span class="perm">ver-menu-herramientas</span></p>
 
-                <h3>Calcular un hash SHA-256</h3>
+                <h3>Hashear Archivo</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">ver-hash-archivo</span></p>
                 <ol>
                     <li>Abrí <span class="path">/herramientas/hash-archivo</span>.</li>
                     <li>Seleccioná o arrastrá el archivo.</li>
@@ -1254,32 +1547,100 @@
                 <p>El archivo se procesa en tu navegador: el historial guarda los metadatos y el resultado, no
                     el archivo.</p>
 
-                <h3>Plano del edificio</h3>
+                <h3>Visor de Correos</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">ver-visor-mails</span></p>
+                <p>Permite consultar los backups de correo <span class="path">.mbox</span> de cada oficina —
+                    por ejemplo, exportaciones de Google Takeout. Cada oficina es un <strong>buzón</strong>, y
+                    quién puede leer sus mensajes depende del rol asignado a ese buzón.</p>
                 <ol>
-                    <li>Abrí <span class="path">/plano-edificio</span>.</li>
-                    <li>Activá capas y filtrá por tipo, oficina, piso o estado.</li>
-                    <li>Seleccioná un dispositivo para ver su ficha.</li>
-                    <li>Con permiso de edición, actualizá nombre, tipo, oficina, piso y datos técnicos.</li>
-                    <li>Con permiso de posición, arrastrá el dispositivo hasta su ubicación real.</li>
+                    <li>Abrí <span class="path">/herramientas/mails</span>.</li>
+                    <li>Elegí el buzón. Solo vas a ver los habilitados para tus roles, y debajo del selector
+                        figura hasta qué fecha hay backup indexado.</li>
+                    <li>Filtrá por texto (busca en asunto, cuerpo y nombres de adjuntos), remitente,
+                        destinatario o CC, asunto, nombre de adjunto, rango de fechas, carpeta, presencia de
+                        adjuntos o etiqueta de Gmail.</li>
+                    <li>Pulsá <strong>Buscar</strong>.</li>
+                    <li>Abrí un mensaje para ver encabezados, adjuntos y el cuerpo completo.</li>
                 </ol>
-                <p>La información de acceso asociada a los dispositivos requiere un permiso específico y no
-                    debe compartirse con el asistente.</p>
+                <p>Las carpetas disponibles son Recibidos, Enviados, Borradores, Spam, Papelera y Archivados.</p>
+
+                <p><strong>Trabajar con un mensaje</strong></p>
+                <ul>
+                    <li><strong>Imprimir / PDF:</strong> abre una vista lista para imprimir o guardar con
+                        Ctrl+P.</li>
+                    <li><strong>Descargar .eml:</strong> baja el mensaje original completo.</li>
+                    <li><strong>Adjuntos:</strong> se descargan uno por uno desde el detalle.</li>
+                    <li><strong>Exportar:</strong> baja a Excel el listado tal como lo filtraste.</li>
+                </ul>
+
+                <div class="note">
+                    <span class="note-label">Mensajes muy grandes</span>
+                    <p>Si el cuerpo supera el tamaño previsto se muestra recortado y aparece un aviso.
+                        Descargá el <span class="path">.eml</span> para verlo completo.</p>
+                </div>
+
+                <h3>Buzones de Correo</h3>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">administrar-visor-mails</span></p>
+                <p>Quien tiene este permiso ve todos los buzones, sin importar el rol.</p>
+                <ol>
+                    <li>Abrí <span class="path">/herramientas/mails/buzones</span>.</li>
+                    <li>Para dar de alta varios de una vez, usá <strong>Detectar Oficinas</strong>: el sistema
+                        lista las subcarpetas de la ruta de backups y marca cuáles ya son buzón. Tildá las
+                        nuevas y confirmá.</li>
+                    <li>Para crear uno a mano, pulsá <strong>Nuevo Buzón</strong> y completá nombre, carpeta,
+                        email real de la casilla, rol con acceso y descripción.</li>
+                    <li>Asigná siempre un rol: sin rol, solo lo ven los administradores del visor. Si el rol
+                        que necesitás no existe, creálo primero en Roles.</li>
+                </ol>
+
+                <p><strong>Indexar los archivos de un buzón</strong></p>
+                <ol>
+                    <li>Abrí <strong>Archivos</strong> del buzón.</li>
+                    <li>El sistema busca de forma recursiva los <span class="path">.mbox</span> de esa carpeta
+                        y muestra el estado de cada uno: pendiente, indexando, indexado o error.</li>
+                    <li>Pulsá <strong>Registrar e indexar</strong> en un archivo nuevo.</li>
+                    <li>Pulsá <strong>Reindexar</strong> si un archivo ya indexado cambió de tamaño o fecha:
+                        aparece marcado como <em>Modificado</em>.</li>
+                    <li>Mientras se indexa, la fila muestra una barra de progreso que se actualiza sola.</li>
+                </ol>
+                <p>La indexación corre en segundo plano: podés cerrar la pantalla y volver más tarde.</p>
+
+                <div class="note">
+                    <span class="note-label">Eliminar no borra los correos</span>
+                    <p>Al eliminar un buzón o el índice de un archivo se borra lo que el sistema tiene
+                        indexado; los archivos <span class="path">.mbox</span> del disco quedan intactos.</p>
+                </div>
             </section>
 
-            <!-- 14 -->
-            <section id="web">
-                <div class="sec-head"><span class="sec-num">14</span><h2>Sitio público y noticias</h2></div>
-                <p class="intro">Desde <strong>Administrar Web</strong> se edita el contenido del sitio
-                    público. Todo lo que guardes acá regenera los datos publicados y queda registrado en
-                    auditoría.</p>
+            <!-- 20 -->
+            <section id="administrar-web">
+                <div class="sec-head"><span class="sec-num">20</span><h2>Administrar Web</h2></div>
+                <p class="menu-path"><b>Administrar Web</b><span class="sep">·</span>
+                    <span class="perm">ver-menu-web</span></p>
 
-                <h3>Contadores y textos</h3>
-                <p>En <span class="path">/web-admin/contadores</span> actualizás cifras generales o series
-                    mensuales; revisá bien los valores antes de guardar, porque salen publicados. En
-                    <span class="path">/web-admin/textos</span> localizás el bloque por página o sección,
-                    modificás el contenido y usás la vista previa antes de guardar.</p>
+                <p class="intro">Edita el contenido del sitio público. Todo lo que guardes acá regenera los
+                    datos publicados y queda registrado en auditoría.</p>
 
-                <h3>Publicar una noticia</h3>
+                <div class="note warn">
+                    <span class="note-label">Sale publicado</span>
+                    <p>Lo que se edita en este módulo es visible para cualquier persona que entre al sitio
+                        público. Revisá cifras y textos antes de guardar.</p>
+                </div>
+
+                <h3>Contadores</h3>
+                <p>Actualizá cifras generales o series mensuales en
+                    <span class="path">/web-admin/contadores</span> y guardá. El sistema regenera la
+                    configuración pública.</p>
+
+                <h3>Textos</h3>
+                <p>En <span class="path">/web-admin/textos</span> localizás el bloque por página o sección,
+                    modificás el contenido, usás la vista previa y guardás cuando el resultado sea correcto.</p>
+
+                <h3>Historia, Tecnología, Galería y Dependencias</h3>
+                <p>Cada uno se administra desde su opción del menú: creás, editás, ordenás o eliminás elementos
+                    según tus permisos, adjuntás imágenes y usás la vista previa general antes de guardar.</p>
+
+                <h3>Noticias</h3>
                 <ol>
                     <li>Abrí <span class="path">/noticias</span> y pulsá <strong>Nueva noticia</strong>.</li>
                     <li>Completá título, bajada, cuerpo y fecha.</li>
@@ -1288,91 +1649,37 @@
                     <li>Guardá y revisá cómo quedó en la vista pública.</li>
                 </ol>
                 <p>Al editar podés agregar imágenes, cambiar la miniatura o marcar imágenes para eliminar.</p>
-
-                <h3>Historia, tecnología, galería y dependencias</h3>
-                <p>Cada uno se administra desde su módulo en <strong>Administrar Web</strong>: creás, editás,
-                    ordenás o eliminás elementos según tus permisos, adjuntás imágenes y usás la vista previa
-                    general antes de guardar.</p>
             </section>
 
-            <!-- 15 -->
-            <section id="tareas">
-                <div class="sec-head"><span class="sec-num">15</span><h2>Tareas, usuarios, roles y auditoría</h2></div>
+            <!-- 21 -->
+            <section id="auditoria">
+                <div class="sec-head"><span class="sec-num">21</span><h2>Auditoría</h2></div>
+                <p class="menu-path"><b>Auditoría</b><span class="sep">·</span>
+                    <span class="path">/auditoria</span><span class="sep">·</span>
+                    <span class="perm">ver-menu-auditoria</span></p>
 
-                <h3>Crear una tarea</h3>
-                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">crear-tarea</span></p>
                 <ol>
-                    <li>Abrí <span class="path">/tareas</span> y pulsá <strong>Nueva Tarea</strong>.</li>
-                    <li>Completá nombre y descripción.</li>
-                    <li>Elegí si será única, diaria, semanal o mensual.</li>
-                    <li>Definí intervalo y día semanal o mensual cuando corresponda.</li>
-                    <li>Indicá fechas de inicio y fin.</li>
-                    <li>Marcala como activa y guardá.</li>
+                    <li>Filtrá por acción, tabla, usuario o rango de fechas.</li>
+                    <li>Revisá fecha, usuario, entidad, acción y resumen del cambio.</li>
                 </ol>
-                <p>El sistema genera solo las instancias futuras de las tareas recurrentes.</p>
-
-                <h3>Completar una tarea</h3>
-                <p>Filtrá por nombre, estado, fecha, usuario u observaciones, localizá la instancia, cambiá el
-                    estado a <strong>Realizada</strong> y agregá observaciones. El sistema registra quién la
-                    completó y cuándo.</p>
-
-                <h3>Cambiar una recurrencia</h3>
-                <ol>
-                    <li>Abrí <strong>Editar</strong> en la definición de la tarea.</li>
-                    <li>Modificá recurrencia, intervalo o fechas.</li>
-                    <li>Elegí si cambia solo la definición o si deben regenerarse las instancias futuras
-                        pendientes.</li>
-                    <li>Si regenerás, revisá la fecha de corte antes de guardar.</li>
-                </ol>
-
-                <h3>Usuarios</h3>
-                <ol>
-                    <li>Abrí <span class="path">/usuarios</span> y creá o editá una cuenta.</li>
-                    <li>Completá nombre, apellido, identificadores institucionales y correo.</li>
-                    <li>Definí contraseña solo cuando corresponda.</li>
-                    <li>Asigná uno o varios roles.</li>
-                    <li>Habilitá acceso externo únicamente si está autorizado.</li>
-                </ol>
-                <p>No podés eliminar el usuario con el que estás trabajando.</p>
-
-                <h3>Roles y permisos</h3>
-                <ol>
-                    <li>Abrí <span class="path">/roles</span> y creá o editá un rol.</li>
-                    <li>Poné un nombre claro.</li>
-                    <li>Seleccioná los permisos necesarios por módulo.</li>
-                    <li>No asignes permisos de creación, edición o borrado a un rol que solo necesita consultar.</li>
-                </ol>
-                <div class="note warn">
-                    <span class="note-label">Se reemplaza toda la selección</span>
-                    <p>Al guardar, el conjunto de permisos del rol pasa a ser exactamente lo que quedó tildado.
-                        Lo que destildaste se pierde para todos los usuarios de ese rol.</p>
-                </div>
-
-                <h3>Manuales e instructivos</h3>
-                <p>En <span class="path">/manuales/instructivos</span> y
-                    <span class="path">/manuales/cecoco</span> buscás por título, temática o archivo, y abrís
-                    el visor con <strong>Ver</strong>. La carga admite PDF, DOCX, Markdown y HTML; los
-                    instructivos piden título y temática. Descargar requiere permiso.</p>
-
-                <h3>Auditoría</h3>
-                <p>En <span class="path">/auditoria</span> filtrás por acción, tabla, usuario o rango de
-                    fechas, y revisás fecha, usuario, entidad, acción y resumen del cambio. Sirve para
-                    verificar trazabilidad: no permite editar ni borrar eventos, y los campos sensibles
-                    aparecen ocultos.</p>
+                <p>Sirve para verificar trazabilidad: no permite editar ni borrar eventos, y los campos
+                    sensibles aparecen ocultos.</p>
             </section>
 
-            <!-- 16 -->
+            <!-- Apéndice -->
             <section id="asistente">
-                <div class="sec-head"><span class="sec-num">16</span><h2>Asistente de ayuda</h2></div>
-                <p class="intro">El asistente responde cómo hacer una tarea o dónde está una función,
-                    usando únicamente la documentación aprobada del sistema. Está disponible en el botón
-                    flotante, abajo a la derecha, en cualquier pantalla.</p>
+                <div class="sec-head"><span class="sec-num">··</span><h2>Asistente de ayuda</h2></div>
+                <p class="menu-path"><b>Botón flotante</b><span class="sep">·</span>
+                    <span>abajo a la derecha, en cualquier pantalla</span></p>
+
+                <p class="intro">Responde cómo hacer una tarea o dónde está una función, usando únicamente la
+                    documentación aprobada del sistema — la misma de la que salió este manual.</p>
 
                 <h3>Cómo usarlo</h3>
                 <ol>
                     <li>Abrí el asistente con el botón flotante.</li>
                     <li>Escribí qué necesitás hacer, en lenguaje normal.</li>
-                    <li>Esperá la respuesta: puede tardar unos segundos mientras consulta la documentación.</li>
+                    <li>Esperá la respuesta: puede tardar unos segundos.</li>
                     <li>Seguí los pasos que te indica, o el enlace a la pantalla si te lo ofrece.</li>
                 </ol>
                 <p>Con <strong>Iniciar conversación nueva</strong> borrás el historial y empezás de cero.</p>
@@ -1380,10 +1687,11 @@
                 <h3>Qué no hace</h3>
                 <ul>
                     <li>No ejecuta acciones ni modifica datos por vos: te dice cómo hacerlo.</li>
-                    <li>No conoce datos operativos concretos (un evento, un equipo, una persona).</li>
+                    <li>No conoce datos operativos concretos, como un evento, un equipo o una persona.</li>
                     <li>Solo menciona módulos compatibles con tus permisos.</li>
                     <li>Si la documentación no cubre algo, te lo dice en vez de inventar una respuesta.</li>
                 </ul>
+
                 <div class="note warn">
                     <span class="note-label">No le pases datos sensibles</span>
                     <p>Nunca escribas contraseñas, tokens, DNI ni datos personales en el asistente. Si por
@@ -1392,8 +1700,9 @@
             </section>
 
             <footer class="colophon">
-                <p>Manual de uso del sistema C.A.R. 911 — documento interno. La disponibilidad de cada módulo
-                    y de cada botón depende de los permisos asignados a tu usuario.</p>
+                <p>Manual de uso del sistema C.A.R. 911 — documento interno. Los capítulos siguen el orden del
+                    menú lateral. La disponibilidad de cada módulo y de cada botón depende de los permisos
+                    asignados a tu usuario.</p>
                 <p>Ante una diferencia entre este manual y lo que ves en pantalla, consultá al área técnica:
                     puede tratarse de una función nueva todavía no documentada.</p>
             </footer>

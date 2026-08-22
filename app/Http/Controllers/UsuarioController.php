@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
+use App\Http\Middleware\VerifyMasterPassword;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\DB;
@@ -260,7 +261,7 @@ class UsuarioController extends Controller
         if ($request->boolean('clear_master_password')) {
             $user->master_password = null;
             $user->save();
-            session()->forget('master_password_verified');
+            VerifyMasterPassword::olvidarDesbloqueo();
             return response()->json([
                 'success' => true,
                 'message' => 'Contraseña maestra eliminada. El gestor de contraseñas ya no tiene protección adicional.',
@@ -276,7 +277,7 @@ class UsuarioController extends Controller
 
         $user->master_password = Hash::make($request->master_password);
         $user->save();
-        session()->forget('master_password_verified');
+        VerifyMasterPassword::olvidarDesbloqueo();
 
         return response()->json([
             'success' => true,

@@ -108,4 +108,17 @@ return [
 
     'password_timeout' => 10800,
 
+    /*
+    |--------------------------------------------------------------------------
+    | Master Password Timeout
+    |--------------------------------------------------------------------------
+    |
+    | Minutos que el gestor de contraseñas queda desbloqueado desde el último
+    | uso. Pasado ese tiempo sin actividad dentro del gestor, se vuelve a pedir
+    | la contraseña maestra.
+    |
+    */
+
+    'master_password_timeout' => (int) env('VAULT_MASTER_PASSWORD_TIMEOUT', 30),
+
 ];

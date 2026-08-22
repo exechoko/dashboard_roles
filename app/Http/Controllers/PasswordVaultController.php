@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\BulkSharePasswordVaultRequest;
 use App\Http\Requests\SharePasswordVaultRequest;
+use App\Http\Middleware\VerifyMasterPassword;
 use App\Models\PasswordVault;
 use App\Models\PasswordVaultShare;
 use App\Models\User;
@@ -412,8 +413,9 @@ class PasswordVaultController extends Controller
             abort(403, 'No tienes permiso para ver las contraseñas.');
         }
 
-        // Si no tiene contraseña maestra configurada, redirigir al index directamente
-        if (empty(Auth::user()->master_password)) {
+        // Si no tiene contraseña maestra configurada, o el gestor ya está
+        // desbloqueado, no tiene sentido volver a pedirla.
+        if (empty(Auth::user()->master_password) || VerifyMasterPassword::desbloqueoVigente()) {
             return redirect()->route('password-vault.index');
         }
 
@@ -436,7 +438,7 @@ class PasswordVaultController extends Controller
             return back()->withErrors(['master_password' => 'Contraseña maestra incorrecta.']);
         }
 
-        session(['master_password_verified' => true]);
+        VerifyMasterPassword::marcarDesbloqueado();
 
         $intended = session()->pull('master_password_intended', route('password-vault.index'));
 

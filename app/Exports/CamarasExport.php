@@ -38,14 +38,27 @@ class CamarasExport implements FromCollection, WithHeadings, WithEvents, ShouldA
         ->leftJoin('destino', 'sitio.destino_id', '=', 'destino.id')
         ->get();
 
-        // Mapear la colección para cambiar los valores booleanos
-        $camaras->map(function ($sitio) {
-            $sitio->cartel = $sitio->cartel ? 'SI' : 'NO';
-            return $sitio;
+        // Mapear a objetos planos para cambiar los valores booleanos y formatear fechas
+        // sin pasar por los casts del modelo (el cast 'date' no acepta reasignar un string d/m/Y).
+        return $camaras->map(function ($sitio) {
+            return (object) [
+                'id' => $sitio->id,
+                'ip' => $sitio->ip,
+                'nombre' => $sitio->nombre,
+                'sitio' => $sitio->sitio,
+                'inteligencia' => $sitio->inteligencia,
+                'tipo_camara' => $sitio->tipo_camara,
+                'marca' => $sitio->marca,
+                'modelo' => $sitio->modelo,
+                'etapa' => $sitio->etapa,
+                'latitud' => $sitio->latitud,
+                'longitud' => $sitio->longitud,
+                'fecha_instalacion' => $sitio->fecha_instalacion ? $sitio->fecha_instalacion->format('d/m/Y') : null,
+                'dependencia' => $sitio->dependencia,
+                'localidad' => $sitio->localidad,
+                'cartel' => $sitio->cartel ? 'SI' : 'NO',
+            ];
         });
-
-        return $camaras;
-        //return Camara::all();
     }
 
     public function headings(): array

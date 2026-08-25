@@ -229,6 +229,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('/get-equipos-baja-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposBajaJSON'])->name('get-equipos-baja-json');
     Route::post('/get-equipos-en-revision-json', [App\Http\Controllers\DashboardController::class, 'getEquiposEnRevisionJSON'])->name('get-equipos-en-revision-json');
     Route::post('/get-equipos-funcionales-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposFuncionalesJSON'])->name('get-equipos-funcionales-json');
+    Route::post('/get-equipos-no-operativos-accesorio-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposNoOperativosAccesorioJSON'])->name('get-equipos-no-operativos-accesorio-json');
     Route::post('/get-equipos-provistos-por-pg-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposProvistosPorPGJSON'])->name('get-equipos-provistos-por-pg-json');
     Route::post('/get-equipos-provistos-por-telecom-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposProvistosPorTELECOMJSON'])->name('get-equipos-provistos-por-telecom-json');
     Route::post('/get-equipos-provistos-por-per-json', [App\Http\Controllers\DashboardController::class, 'getCantidadEquiposProvistosPorPERJSON'])->name('get-equipos-provistos-por-per-json');

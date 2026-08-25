@@ -320,18 +320,42 @@
                                                 <div class="card-item bg-c-violet order-card">
                                                     <div class="card-block">
                                                         <h5>
-                                                            Funcionales
+                                                            Operativos
                                                             <i class="fas fa-info-circle ml-1" data-toggle="tooltip"
                                                                 data-placement="top"
-                                                                title="Equipos con estado Nuevo, Usado y Reparado"></i>
+                                                                title="Equipos con estado Nuevo, Usado o Reparado, y sin ningún accesorio relevado como faltante"></i>
                                                         </h5>
                                                         <h2 class="text-right"><i
-                                                                class="fas fa-check f-left"></i><span>{{ $cant_equipos_funcionales }}</span>
+                                                                class="fas fa-check f-left"></i><span>{{ $cant_equipos_operativos }}</span>
                                                         </h2>
                                                         @can('ver-equipo')
                                                             <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
                                                                     data-target="#modal-equipos-funcionales"
                                                                     id="btn-buscar-equipos-funcionales"
+                                                                    style="color: rgb(253, 253, 253)">Ver
+                                                                    más</a>
+                                                            </p>
+                                                        @endcan
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 col-xl-3">
+                                                <div class="card-item bg-c-orange order-card">
+                                                    <div class="card-block">
+                                                        <h5>
+                                                            No Operativos (falta accesorio)
+                                                            <i class="fas fa-info-circle ml-1" data-toggle="tooltip"
+                                                                data-placement="top"
+                                                                title="Equipos con estado Nuevo, Usado o Reparado (el transceptor funciona), pero a los que les falta algún accesorio relevado (antena, frente remoto, GPS o kit de instalación)"></i>
+                                                        </h5>
+                                                        <h2 class="text-right">
+                                                            <i class="fas fa-unlink f-left"></i>
+                                                            <span>{{ $cant_equipos_no_operativos_accesorio }}</span>
+                                                        </h2>
+                                                        @can('ver-equipo')
+                                                            <p class="m-b-0 text-right"><a href="#" data-toggle="modal"
+                                                                    data-target="#modal-equipos-no-operativos-accesorio"
+                                                                    id="btn-buscar-equipos-no-operativos-accesorio"
                                                                     style="color: rgb(253, 253, 253)">Ver
                                                                     más</a>
                                                             </p>
@@ -1418,7 +1442,7 @@
             <div id="dialog" class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header bg-c-violet">
-                        <h4 class="modal-title text-white">Equipos Funcionales</h4>
+                        <h4 class="modal-title text-white">Equipos Operativos</h4>
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
@@ -1442,6 +1466,31 @@
                             <!-- Lista de equipos -->
                         </ul>
                         <hr>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-danger" data-dismiss="modal">
+                            <i class="fa fa-times"></i>
+                            <span> Cerrar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-equipos-no-operativos-accesorio" class="modal fade " data-backdrop="false"
+            style="background-color: rgba(0, 0, 0, 0.5);" role="dialog" aria-hidden="true">
+            <div id="dialog" class="modal-dialog modal-xs">
+                <div class="modal-content">
+                    <div class="modal-header bg-c-orange">
+                        <h4 class="modal-title text-white">Equipos No Operativos (falta accesorio)</h4>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body" style="min-height: 500px">
+                        <ul id="equiposNoOperativosAccesorioList" class="mt-3">
+                            <!-- La lista de equipos se agregará aquí dinámicamente -->
+                        </ul>
                     </div>
                     <div class="modal-footer">
                         <button class="btn btn-danger" data-dismiss="modal">
@@ -1928,6 +1977,7 @@
             handleClickEvent('#btn-buscar-equipos-sin-funcionar', consultarEquiposSinFuncionar);
             handleClickEvent('#btn-buscar-equipos-baja', consultarEquiposBaja);
             handleClickEvent('#btn-buscar-equipos-funcionales', consultarEquiposFuncionales);
+            handleClickEvent('#btn-buscar-equipos-no-operativos-accesorio', consultarEquiposNoOperativosAccesorio);
             handleClickEvent('#btn-buscar-equipos-provistos-por-pg', consultarEquiposProvistosPorPG);
             handleClickEvent('#btn-buscar-equipos-provistos-por-telecom', consultarEquiposProvistosPorTELECOM);
             handleClickEvent('#btn-buscar-equipos-provistos-por-per', consultarEquiposProvistosPorPer);
@@ -2066,6 +2116,31 @@
             ).fail(function (data) {
                 swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');
             });
+        }
+
+        function consultarEquiposNoOperativosAccesorio(id) {
+            $.post(
+                "{{ route('get-equipos-no-operativos-accesorio-json') }}", {
+                _token: "{{ csrf_token() }}",
+            },
+                function (data, textStatus, xhr) {
+                    console.log('data', data);
+                    $("#equiposNoOperativosAccesorioList").empty();
+                    data.forEach(function (equipo) {
+                        var listItem = $("<li>");
+                        listItem.append(
+                            $("<span>").text(equipo.marca + " " + equipo.modelo + " (" + equipo.provisto +
+                                "): "),
+                            $("<span>").css({
+                                'font-weight': 'bold', // Hace que el texto sea negrita
+                                'font-size': 'larger' // Ajusta el tamaño de la letra
+                            }).text(equipo.cantidad)
+                        );
+                        $("#equiposNoOperativosAccesorioList").append(listItem);
+                    });
+                }).fail(function (data) {
+                    swal('Error', 'Ocurrió un error al obtener los datos: ' + data.responseJSON.message, 'error');
+                });
         }
 
         function consultarEquiposSinFuncionar(id) {
@@ -2947,16 +3022,17 @@
                     chartInstances.estado = new Chart(canvasEstado.getContext('2d'), {
                         type: 'doughnut',
                         data: {
-                            labels: ['Funcionales', 'Sin Funcionar', 'Baja', 'En Revisión', 'Temporales'],
+                            labels: ['Operativos', 'No Operativos (falta accesorio)', 'Sin Funcionar', 'Baja', 'En Revisión', 'Temporales'],
                             datasets: [{
                                 data: [
-                                                                {{ $cant_equipos_funcionales ?? 0 }},
-                                                                {{ $cant_equipos_sin_funcionar ?? 0 }},
-                                                                {{ $cant_equipos_baja ?? 0 }},
-                                                                {{ $cant_equipos_en_revision ?? 0 }},
+                                    {{ $cant_equipos_operativos ?? 0 }},
+                                    {{ $cant_equipos_no_operativos_accesorio ?? 0 }},
+                                    {{ $cant_equipos_sin_funcionar ?? 0 }},
+                                    {{ $cant_equipos_baja ?? 0 }},
+                                    {{ $cant_equipos_en_revision ?? 0 }},
                                     {{ $cant_equipos_temporales ?? 0 }}
                                 ],
-                                backgroundColor: isDark ? ['#a855f7', '#f43f5e', '#38bdf8', '#818cf8', '#34d399'] : ['#8b5cf6', '#ef4444', '#3b82f6', '#6366f1', '#10b981'],
+                                backgroundColor: isDark ? ['#a855f7', '#fb923c', '#f43f5e', '#38bdf8', '#818cf8', '#34d399'] : ['#8b5cf6', '#fd7e14', '#ef4444', '#3b82f6', '#6366f1', '#10b981'],
                                 borderWidth: isDark ? 0 : 2,
                                 borderColor: isDark ? 'transparent' : '#ffffff',
                                 hoverOffset: 6

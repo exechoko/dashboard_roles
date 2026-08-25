@@ -19,9 +19,16 @@
             $usoFiltroBase = [
                 'Base' => ['uso' => 'Base'],
                 'Movil' => ['uso' => 'Movil'],
-                'Portatil' => ['uso' => 'Portatil', 'excluir_marcas' => 'Motorola/Vertex'],
+                'Base - Movil' => ['uso' => 'Base - Movil'],
+                'Portatil' => ['uso' => 'Portatil', 'excluir_marcas' => 'Motorola/Vertex', 'excluir_modelos' => 'Teltronic:HTT500'],
                 'VX-261 (no TETRA)' => ['marca' => 'Motorola/Vertex'],
+                'HTT500 (sin accesorios)' => ['marca' => 'Teltronic', 'modelo' => 'HTT500'],
             ];
+
+            // La columna "Instalados" de la reconciliación cuenta por estado únicamente
+            // (sin exigir accesorios completos, a diferencia de "condicion=operativo"),
+            // para que las 4 columnas sigan sumando siempre el total de cada fila.
+            $estadoInOperativos = implode(',', \App\Models\Equipo::ESTADOS_OPERATIVOS);
 
             // Mismos colores que la vista de Terminales/Histórico: verde = bien, rojo = no funciona
             $estadoColores = [
@@ -239,8 +246,8 @@
             <div class="col-12 col-lg-6 mb-4">
                 <div class="card chart-card h-100" data-dashboard-section="chart-operativos">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="chart-title mb-0"><i class="fas fa-balance-scale-right mr-2 text-danger"></i>Operativos vs No Operativos por Marca / Modelo</h4>
-                        <i class="fas fa-info-circle info-icon-static" data-toggle="tooltip" title="De cada marca/modelo, cuántos están operativos (Nuevo/Usado/Reparado/Temporal) y cuántos no (Baja/No funciona/Perdido/Degradado/Recambio)."></i>
+                        <h4 class="chart-title mb-0"><i class="fas fa-balance-scale-right mr-2 text-danger"></i>Operativos / Degradados / No Operativos por Marca / Modelo</h4>
+                        <i class="fas fa-info-circle info-icon-static" data-toggle="tooltip" title="De cada marca/modelo, cuántos están operativos sin accesorios faltantes, cuántos funcionan pero les falta un accesorio (Degradados) y cuántos no operativos (Baja/No funciona/Perdido/Degradado - Sin Accesorios/Recambio)."></i>
                     </div>
                     <div class="card-body">
                         <div style="position:relative; height:320px;">
@@ -274,7 +281,7 @@
                                 @forelse($situacionPorTipoUso as $fila)
                                     @php
                                         $base = $usoFiltroBase[$fila->uso] ?? [];
-                                        $filtroInstalados = $base + ['condicion' => 'operativo', 'situacion' => 'instalado'];
+                                        $filtroInstalados = $base + ['estado_in' => $estadoInOperativos, 'situacion' => 'instalado'];
                                         $filtroNoOperativo = $base + ['condicion' => 'no_operativo', 'situacion' => 'instalado'];
                                         $filtroOtros = $base + ['condicion' => 'otros', 'situacion' => 'instalado'];
                                         $filtroStock = $base + ['situacion' => 'en_stock'];
@@ -336,7 +343,7 @@
                                 </thead>
                                 <tbody>
                                 @forelse($instaladosMovilBasePorMarca as $fila)
-                                    <tr class="equipos-clicable" data-equipos-titulo="{{ $fila->marca }} {{ $fila->modelo }} — Instalados" data-equipos-filtro='{{ json_encode(["condicion" => "operativo", "situacion" => "instalado", "marca" => $fila->marca, "modelo" => $fila->modelo]) }}'>
+                                    <tr class="equipos-clicable" data-equipos-titulo="{{ $fila->marca }} {{ $fila->modelo }} — Instalados" data-equipos-filtro='{{ json_encode(["estado_in" => $estadoInOperativos, "situacion" => "instalado", "marca" => $fila->marca, "modelo" => $fila->modelo]) }}'>
                                         <td><span class="badge badge-info">{{ $fila->uso }}</span></td>
                                         <td>{{ $fila->marca }} {{ $fila->modelo }}</td>
                                         <td class="text-center"><strong>{{ $fila->cantidad }}</strong></td>
@@ -367,6 +374,7 @@
                                         <th>Uso</th>
                                         <th class="text-center">Total</th>
                                         <th class="text-center">Operativos</th>
+                                        <th class="text-center">Degradados</th>
                                         <th class="text-center">No Operativos</th>
                                         <th class="text-center">% Operativo</th>
                                     </tr>
@@ -383,13 +391,16 @@
                                         <td class="text-center equipos-clicable" data-equipos-titulo="{{ $fila->marca }} {{ $fila->modelo }} — Operativos" data-equipos-filtro='{{ json_encode(["marca" => $fila->marca, "modelo" => $fila->modelo, "condicion" => "operativo"]) }}'>
                                             <span class="badge badge-success">{{ $fila->operativos }}</span>
                                         </td>
+                                        <td class="text-center equipos-clicable" data-equipos-titulo="{{ $fila->marca }} {{ $fila->modelo }} — Degradados (falta accesorio)" data-equipos-filtro='{{ json_encode(["marca" => $fila->marca, "modelo" => $fila->modelo, "condicion" => "degradado"]) }}'>
+                                            <span class="badge bg-orange">{{ $fila->degradados }}</span>
+                                        </td>
                                         <td class="text-center equipos-clicable" data-equipos-titulo="{{ $fila->marca }} {{ $fila->modelo }} — No Operativos" data-equipos-filtro='{{ json_encode(["marca" => $fila->marca, "modelo" => $fila->modelo, "condicion" => "no_operativo"]) }}'>
                                             <span class="badge badge-danger">{{ $fila->no_operativos }}</span>
                                         </td>
                                         <td class="text-center">{{ $pctOp }}%</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="6" class="text-center text-muted">Sin datos</td></tr>
+                                    <tr><td colspan="7" class="text-center text-muted">Sin datos</td></tr>
                                 @endforelse
                                 </tbody>
                             </table>
@@ -412,6 +423,7 @@
                                         <th>Dependencia</th>
                                         <th class="text-center">Total</th>
                                         <th class="text-center">Operativos</th>
+                                        <th class="text-center">Degradados</th>
                                         <th class="text-center">No Operativos</th>
                                     </tr>
                                 </thead>
@@ -425,12 +437,15 @@
                                         <td class="text-center equipos-clicable" data-equipos-titulo="{{ $fila->destino_nombre }} — Operativos" data-equipos-filtro='{{ json_encode(["destino_id" => $fila->destino_id, "condicion" => "operativo"]) }}'>
                                             <span class="badge badge-success">{{ $fila->operativos }}</span>
                                         </td>
+                                        <td class="text-center equipos-clicable" data-equipos-titulo="{{ $fila->destino_nombre }} — Degradados (falta accesorio)" data-equipos-filtro='{{ json_encode(["destino_id" => $fila->destino_id, "condicion" => "degradado"]) }}'>
+                                            <span class="badge bg-orange">{{ $fila->degradados }}</span>
+                                        </td>
                                         <td class="text-center equipos-clicable" data-equipos-titulo="{{ $fila->destino_nombre }} — No Operativos" data-equipos-filtro='{{ json_encode(["destino_id" => $fila->destino_id, "condicion" => "no_operativo"]) }}'>
                                             <span class="badge badge-danger">{{ $fila->no_operativos }}</span>
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="4" class="text-center text-muted">Sin datos</td></tr>
+                                    <tr><td colspan="5" class="text-center text-muted">Sin datos</td></tr>
                                 @endforelse
                                 </tbody>
                             </table>
@@ -714,6 +729,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const porEstadoData = @json($porEstado);
     const porTipoEquipoData = @json($porTipoEquipo);
     const usoFiltroBase = @json($usoFiltroBase);
+    const estadoInOperativos = @json($estadoInOperativos);
     const seccionTecnicaPorRecurso = @json($seccionTecnicaPorRecurso);
     const seccionTecnicaPorRecursoYTipo = @json($seccionTecnicaPorRecursoYTipo);
     const seccionTecnicaId = @json($seccionTecnicaId);
@@ -951,7 +967,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (!elements.length) return;
                         const uso = porTipoUsoData[elements[0].index].uso;
                         const base = usoFiltroBase[uso] || {};
-                        abrirModalConFiltro(uso + ' — Instalados', Object.assign({}, base, { condicion: 'operativo', situacion: 'instalado' }));
+                        abrirModalConFiltro(uso + ' — Instalados', Object.assign({}, base, { estado_in: estadoInOperativos, situacion: 'instalado' }));
                     },
                     plugins: {
                         legend: { position: 'bottom', labels: { color: textColor, padding: 10, font: { size: 11 }, usePointStyle: true, pointStyle: 'circle' } },
@@ -1046,6 +1062,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     labels: porTipoEquipoData.map(function (f) { return f.marca + ' ' + f.modelo; }),
                     datasets: [
                         { label: 'Operativos', data: porTipoEquipoData.map(function (f) { return f.operativos; }), backgroundColor: '#10b981' },
+                        { label: 'Degradados', data: porTipoEquipoData.map(function (f) { return f.degradados; }), backgroundColor: '#fd7e14' },
                         { label: 'No Operativos', data: porTipoEquipoData.map(function (f) { return f.no_operativos; }), backgroundColor: '#ef4444' }
                     ]
                 },
@@ -1064,7 +1081,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
             renderValoresChart('chartOperativosValores', porTipoEquipoData.map(function (f) {
-                return { label: (f.marca + ' ' + f.modelo).trim(), value: f.operativos + ' / ' + f.no_operativos };
+                return { label: (f.marca + ' ' + f.modelo).trim(), value: f.operativos + ' / ' + f.degradados + ' / ' + f.no_operativos };
             }));
         }
 

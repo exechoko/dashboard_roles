@@ -61,7 +61,8 @@ class HomeController extends Controller
             'Perdido',
             'Recambio',
             'Temporal',
-            'En revision'
+            'En revision',
+            'Degradado - Sin Accesorios'
         ])->pluck('id', 'nombre');
 
         // Agregados que cambian lentamente: se cachean para que el GET /home
@@ -92,11 +93,26 @@ class HomeController extends Controller
             $estados['Recambio'],
             $estados['Perdido']
         ])->count();
-        $cant_equipos_funcionales = Equipo::whereIn('estado_id', [
+        // "Operativos" exige además que no le falte ningún accesorio relevado
+        // (ver Equipo::ACCESORIOS): un equipo con estado Usado pero sin antena
+        // no puede salir a la calle, así que cuenta aparte como "no operativo
+        // por falta de accesorios", igual que en Equipamientos > Estadísticas.
+        $funcionalesEstadoIds = [
             $estados['Nuevo'],
             $estados['Usado'],
             $estados['Reparado']
-        ])->count();
+        ];
+        $cant_equipos_operativos = Equipo::whereIn('estado_id', $funcionalesEstadoIds)
+            ->conAccesoriosCompletos()
+            ->count();
+        // Suma los Nuevo/Usado/Reparado a los que les falta un accesorio puntual
+        // (flags rf/frente_remoto/gps/kit_inst) con los que ya tienen el estado
+        // dedicado "Degradado - Sin Accesorios", para que las 6 tarjetas sumen
+        // siempre el total de equipos, igual que en Equipamientos > Estadísticas.
+        $cant_equipos_no_operativos_accesorio = Equipo::whereIn('estado_id', $funcionalesEstadoIds)
+            ->sinAccesorios()
+            ->count()
+            + Equipo::where('estado_id', $estados['Degradado - Sin Accesorios'])->count();
 
         // Equipos por proveedor
         $cant_equipos_provisto_por_pg = Equipo::where('provisto', 'Patagonia Green')->count();
@@ -199,7 +215,8 @@ class HomeController extends Controller
             'cant_equipos_temporales',
             'cant_equipos_en_revision',
             'cant_equipos_baja',
-            'cant_equipos_funcionales',
+            'cant_equipos_operativos',
+            'cant_equipos_no_operativos_accesorio',
             'cant_equipos_provisto_por_pg',
             'cant_equipos_provisto_por_telecom',
             'cant_equipos_provisto_por_per',
@@ -455,7 +472,8 @@ class HomeController extends Controller
             'cant_desinstalaciones',
             'cant_equipos_en_div_911',
             'cant_equipos_sin_funcionar',
-            'cant_equipos_funcionales',
+            'cant_equipos_operativos',
+            'cant_equipos_no_operativos_accesorio',
             'cant_equipos_temporales',
             'cant_equipos_baja',
             'cant_equipos_en_revision',

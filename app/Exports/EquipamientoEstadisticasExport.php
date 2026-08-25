@@ -83,10 +83,11 @@ class EquipamientoEstadisticasExport implements WithMultipleSheets
                     $f->uso,
                     $f->total,
                     $f->operativos,
+                    $f->degradados,
                     $f->no_operativos,
                     $f->total > 0 ? round($f->operativos / $f->total * 100, 1) . '%' : '0%',
                 ])->all(),
-                ['Marca / Modelo', 'Uso', 'Total', 'Operativos', 'No Operativos', '% Operativo']
+                ['Marca / Modelo', 'Uso', 'Total', 'Operativos', 'Degradados', 'No Operativos', '% Operativo']
             ),
 
             'Por Dependencia' => $this->hoja(
@@ -96,9 +97,10 @@ class EquipamientoEstadisticasExport implements WithMultipleSheets
                     $f->destino_tipo,
                     $f->total,
                     $f->operativos,
+                    $f->degradados,
                     $f->no_operativos,
                 ])->all(),
-                ['Dependencia', 'Tipo', 'Total Instalados', 'Operativos', 'No Operativos']
+                ['Dependencia', 'Tipo', 'Total Instalados', 'Operativos', 'Degradados', 'No Operativos']
             ),
 
             'Sección Técnica' => $this->hoja(

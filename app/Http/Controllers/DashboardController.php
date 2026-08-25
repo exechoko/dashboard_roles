@@ -246,6 +246,12 @@ class DashboardController extends Controller
         $operativoIdsSql = $operativoIds->isNotEmpty() ? $operativoIds->implode(',') : '0';
         $noOperativoIdsSql = $noOperativoIds->isNotEmpty() ? $noOperativoIds->implode(',') : '0';
 
+        // Fragmento SQL: el equipo no tiene relevado ningún accesorio faltante
+        // (NULL = no relevado/no aplica, no penaliza; solo el false degrada).
+        $accesoriosCompletosSql = collect(array_keys(Equipo::ACCESORIOS))
+            ->map(fn ($campo) => "(equipos.{$campo} IS NULL OR equipos.{$campo} = 1)")
+            ->implode(' AND ');
+
         $totalEquipos = Equipo::count();
 
         // "Operativo" exige que el estado diga que funciona y que no le falte ningún
@@ -437,14 +443,17 @@ class DashboardController extends Controller
             ->orderBy('tipo_terminales.modelo')
             ->get();
 
-        // Cantidades por dependencia (destino) de los equipos actualmente instalados
+        // Cantidades por dependencia (destino) de los equipos actualmente instalados.
+        // "Operativos" exige además accesorios completos (ver nota más arriba), así que
+        // un equipo degradado se ve aparte y no queda escondido dentro de "Operativos".
         $porDependencia = FlotaGeneral::query()
             ->select(
                 'destino.id as destino_id',
                 'destino.nombre as destino_nombre',
                 'destino.tipo as destino_tipo',
                 DB::raw('COUNT(DISTINCT flota_general.equipo_id) as total'),
-                DB::raw("SUM(CASE WHEN equipos.estado_id IN ({$operativoIdsSql}) THEN 1 ELSE 0 END) as operativos"),
+                DB::raw("SUM(CASE WHEN equipos.estado_id IN ({$operativoIdsSql}) AND {$accesoriosCompletosSql} THEN 1 ELSE 0 END) as operativos"),
+                DB::raw("SUM(CASE WHEN equipos.estado_id IN ({$operativoIdsSql}) AND NOT ({$accesoriosCompletosSql}) THEN 1 ELSE 0 END) as degradados"),
                 DB::raw("SUM(CASE WHEN equipos.estado_id IN ({$noOperativoIdsSql}) THEN 1 ELSE 0 END) as no_operativos")
             )
             ->join('equipos', 'flota_general.equipo_id', '=', 'equipos.id')
@@ -454,7 +463,10 @@ class DashboardController extends Controller
             ->orderByDesc('total')
             ->get();
 
-        // Cantidades por tipo de equipo (marca / modelo)
+        // Cantidades por tipo de equipo (marca / modelo). "Operativos" acá exige
+        // además que no le falte ningún accesorio relevado (ver nota más arriba
+        // sobre MDT400/HTT500), así que un equipo degradado no queda escondido
+        // dentro de "Operativos": se ve aparte, desagregado por marca/modelo.
         $porTipoEquipo = Equipo::query()
             ->select(
                 'tipo_terminales.id as tipo_terminal_id',
@@ -462,7 +474,8 @@ class DashboardController extends Controller
                 'tipo_terminales.modelo as modelo',
                 'tipo_uso.uso as uso',
                 DB::raw('COUNT(equipos.id) as total'),
-                DB::raw("SUM(CASE WHEN equipos.estado_id IN ({$operativoIdsSql}) THEN 1 ELSE 0 END) as operativos"),
+                DB::raw("SUM(CASE WHEN equipos.estado_id IN ({$operativoIdsSql}) AND {$accesoriosCompletosSql} THEN 1 ELSE 0 END) as operativos"),
+                DB::raw("SUM(CASE WHEN equipos.estado_id IN ({$operativoIdsSql}) AND NOT ({$accesoriosCompletosSql}) THEN 1 ELSE 0 END) as degradados"),
                 DB::raw("SUM(CASE WHEN equipos.estado_id IN ({$noOperativoIdsSql}) THEN 1 ELSE 0 END) as no_operativos")
             )
             ->join('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
@@ -604,7 +617,8 @@ class DashboardController extends Controller
     }
 
     /**
-     * Query base para equipos funcionales
+     * Query base para equipos operativos: estado Nuevo/Usado/Reparado y sin
+     * ningún accesorio relevado como faltante (ver Equipo::ACCESORIOS).
      */
     private function equiposFuncionalesQuery()
     {
@@ -622,7 +636,8 @@ class DashboardController extends Controller
                 $estados['Nuevo'],
                 $estados['Usado'],
                 $estados['Reparado']
-            ]);
+            ])
+            ->conAccesoriosCompletos();
     }
 
     public function getEquiposEnRevisionJSON(Request $request)
@@ -718,6 +733,38 @@ class DashboardController extends Controller
         )
             ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
             ->where('equipos.estado_id', $estados['No funciona'])
+            ->groupBy('tipo_terminales.id', 'tipo_terminales.marca', 'tipo_terminales.modelo', 'equipos.provisto')
+            ->get();
+
+        return response()->json($records);
+    }
+
+    /**
+     * Equipos "no operativos por falta de accesorio": estado Nuevo/Usado/Reparado
+     * al que le falta algún accesorio relevado (flags rf/frente_remoto/gps/kit_inst),
+     * más los que ya tienen el estado dedicado "Degradado - Sin Accesorios".
+     */
+    public function getCantidadEquiposNoOperativosAccesorioJSON(Request $request)
+    {
+        $estados = $this->getEstadosIds();
+
+        $records = Equipo::select(
+            'tipo_terminales.marca as marca',
+            'tipo_terminales.modelo as modelo',
+            'equipos.provisto as provisto',
+            DB::raw('COUNT(equipos.id) as cantidad')
+        )
+            ->leftJoin('tipo_terminales', 'equipos.tipo_terminal_id', '=', 'tipo_terminales.id')
+            ->where(function ($q) use ($estados) {
+                $q->where(function ($q2) use ($estados) {
+                    $q2->whereIn('equipos.estado_id', [
+                        $estados['Nuevo'],
+                        $estados['Usado'],
+                        $estados['Reparado'],
+                    ]);
+                    Equipo::filtrarSinAccesorios($q2);
+                })->orWhere('equipos.estado_id', $estados['Degradado - Sin Accesorios']);
+            })
             ->groupBy('tipo_terminales.id', 'tipo_terminales.marca', 'tipo_terminales.modelo', 'equipos.provisto')
             ->get();
 

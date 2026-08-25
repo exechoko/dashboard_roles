@@ -116,6 +116,8 @@
                                                         'ver-historico-movil-cecoco',
                                                         'ver-historico-movil-gis-cecoco',
                                                         'recurso-alias-cecoco',
+                                                        'ver-reporte-llamadas-central-telefonica',
+                                                        'importar-llamadas-central-telefonica',
                                                     ],
                                                     'Entregas' => [
                                                         'entrega-equipos',

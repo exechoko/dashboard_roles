@@ -327,6 +327,13 @@
                     </a>
                 </li>
             @endcan
+            @can('ver-reporte-llamadas-central-telefonica')
+                <li class="{{ request()->routeIs('cecoco.llamadas-central-telefonica*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('cecoco.llamadas-central-telefonica') }}">
+                        <i class="fas fa-phone-alt"></i><span>Reporte Central Telefónica</span>
+                    </a>
+                </li>
+            @endcan
             @can('ver-mapa-calor-servicios-cecoco')
                 <li class="{{ request()->routeIs('cecoco.mapa-calor') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('cecoco.mapa-calor') }}">

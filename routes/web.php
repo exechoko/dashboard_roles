@@ -609,6 +609,12 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/mapa-calor/geocodificar-manual', [App\Http\Controllers\EventoCecocoController::class, 'geocodificarManual'])->name('mapa-calor.geocodificar-manual');
         Route::post('/mapa-calor/geocodificar-coordenadas', [App\Http\Controllers\EventoCecocoController::class, 'geocodificarCoordenadas'])->name('mapa-calor.geocodificar-coordenadas');
         Route::get('/analitica', [App\Http\Controllers\EventoCecocoController::class, 'analitica'])->name('analitica');
+        Route::get('/llamadas-central-telefonica', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'index'])->name('llamadas-central-telefonica');
+        Route::get('/llamadas-central-telefonica/datos', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'datos'])->name('llamadas-central-telefonica.datos');
+        Route::get('/llamadas-central-telefonica/exportar-docx', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'exportarDocx'])->name('llamadas-central-telefonica.exportar-docx');
+        Route::get('/llamadas-central-telefonica/buscar', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'buscar'])->name('llamadas-central-telefonica.buscar');
+        Route::get('/llamadas-central-telefonica/importar', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'importarForm'])->name('llamadas-central-telefonica.importar');
+        Route::post('/llamadas-central-telefonica/importar', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'importarProcesar'])->name('llamadas-central-telefonica.importar.post');
         Route::get('/{eventoCecoco}/expediente', [App\Http\Controllers\EventoCecocoController::class, 'verExpediente'])->name('expediente');
         Route::get('/{eventoCecoco}', [App\Http\Controllers\EventoCecocoController::class, 'show'])->name('show');
     });

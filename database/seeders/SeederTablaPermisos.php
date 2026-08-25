@@ -134,6 +134,8 @@ class SeederTablaPermisos extends Seeder
             'crear-recurso-alias-cecoco',
             'editar-recurso-alias-cecoco',
             'borrar-recurso-alias-cecoco',
+            'ver-reporte-llamadas-central-telefonica',
+            'importar-llamadas-central-telefonica',
 
             //ENTREGAS – Equipos
             'ver-entrega-equipos',

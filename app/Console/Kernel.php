@@ -162,6 +162,20 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/totem_procesar_videos.log'));
 
+        // Trae los CDR del dia anterior directamente del panel de la central telefonica
+        // (SSW), sin depender de la exportacion/carga manual de CSV. Mismo mecanismo que
+        // cecoco:importar-dia-anterior. El dia en curso se trae a demanda con el boton
+        // "Importar hoy" en Importar > Llamadas central telefonica.
+        $schedule->command('cecoco:sincronizar-llamadas-central-telefonica')->dailyAt('06:15')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/central_telefonica_sincronizacion.log'))
+            ->onSuccess(function () {
+                app(TelegramService::class)->notificarScheduleCompletado('cecoco:sincronizar-llamadas-central-telefonica');
+            })
+            ->onFailure(function () {
+                app(TelegramService::class)->notificarScheduleFallido('cecoco:sincronizar-llamadas-central-telefonica', 'El comando finalizó con error.');
+            });
+
         // Vigila en LibreNMS el uso de CPU de las PCs de los operadores de video
         // (grupo CCTV) y alerta por Telegram cuando un equipo supera el umbral.
         $schedule->command('librenms:monitorear-cpu')
@@ -175,6 +189,14 @@ class Kernel extends ConsoleKernel
             ->everyFiveMinutes()
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/librenms_camaras.log'));
+
+        // Estado de los troncales SIP de la central telefonica (panel SSW): cachea
+        // para la card del dashboard y avisa por Telegram si alguno cae o se
+        // recupera (riesgo de corte de comunicaciones del 911).
+        $schedule->command('central-telefonica:monitorear-troncales')
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/central_telefonica_troncales.log'));
 
         // Avisa por mail si quedaron mensajes de chat sin leer hace más de 30 minutos.
         // No repite el aviso hasta que el usuario vuelva a leer esa conversación.

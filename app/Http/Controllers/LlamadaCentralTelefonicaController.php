@@ -7,6 +7,7 @@ use App\Http\Requests\ImportarLlamadasCentralTelefonicaRequest;
 use App\Http\Requests\ReporteLlamadasCentralTelefonicaRequest;
 use App\Models\ImportacionLlamadaCentralTelefonica;
 use App\Models\LlamadaCentralTelefonica;
+use App\Services\CentralTelefonicaSincronizacionService;
 use App\Services\LlamadaCentralTelefonicaImportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -109,6 +110,43 @@ class LlamadaCentralTelefonicaController extends Controller
         return redirect()
             ->route('cecoco.llamadas-central-telefonica.importar')
             ->with('success', implode(' | ', $resumen));
+    }
+
+    public function importarHoy(CentralTelefonicaSincronizacionService $service): RedirectResponse
+    {
+        $desde = Carbon::today();
+        $hasta = Carbon::now();
+        $inicio = microtime(true);
+
+        try {
+            $resultado = $service->sincronizar($desde, $hasta);
+        } catch (\Throwable $e) {
+            ImportacionLlamadaCentralTelefonica::create([
+                'nombre_archivo' => 'hoy_' . $desde->format('Y_m_d'),
+                'estado' => 'error',
+                'error_mensaje' => $e->getMessage(),
+                'tiempo_procesamiento' => (int) round((microtime(true) - $inicio) * 1000),
+                'usuario_id' => auth()->id(),
+            ]);
+
+            return redirect()
+                ->route('cecoco.llamadas-central-telefonica.importar')
+                ->with('success', 'Error al traer las llamadas de hoy: ' . $e->getMessage());
+        }
+
+        ImportacionLlamadaCentralTelefonica::create([
+            'nombre_archivo' => $resultado['archivo'],
+            'total_registros' => $resultado['total'] + $resultado['omitidos'],
+            'registros_importados' => $resultado['total'],
+            'registros_omitidos' => $resultado['omitidos'],
+            'estado' => 'completado',
+            'tiempo_procesamiento' => (int) round((microtime(true) - $inicio) * 1000),
+            'usuario_id' => auth()->id(),
+        ]);
+
+        return redirect()
+            ->route('cecoco.llamadas-central-telefonica.importar')
+            ->with('success', "Llamadas de hoy actualizadas: {$resultado['total']} procesadas" . ($resultado['omitidos'] > 0 ? ", {$resultado['omitidos']} omitidas" : '') . '.');
     }
 
     public function datos(ReporteLlamadasCentralTelefonicaRequest $request): JsonResponse

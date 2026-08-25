@@ -21,6 +21,23 @@
 
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-body">
+                    <h5 class="mb-3"><i class="fas fa-sync-alt mr-1 text-primary"></i>Sincronización automática</h5>
+                    <p class="text-muted" style="font-size:.85rem;">
+                        Todas las noches (06:15) se trae automáticamente el día anterior completo directamente desde el panel
+                        de la central telefónica, sin necesidad de exportar ni cargar ningún CSV. Para actualizar las llamadas
+                        de hoy antes de esa hora (por ejemplo, para ver el reporte al momento), usá este botón.
+                    </p>
+                    <form method="POST" action="{{ route('cecoco.llamadas-central-telefonica.importar-hoy') }}">
+                        @csrf
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-cloud-download-alt mr-1"></i> Importar llamadas de hoy
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
                     <h5 class="mb-3"><i class="fas fa-file-csv mr-1 text-primary"></i>Cargar CSV de la central telefónica</h5>
                     <p class="text-muted" style="font-size:.85rem;">
                         Formato esperado: <code>Unique ID, Calldate, ANI, Dialed number, Final DNIS, Forwarded to, Duration, Bill duration</code>.

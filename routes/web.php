@@ -616,6 +616,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/llamadas-central-telefonica/buscar', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'buscar'])->name('llamadas-central-telefonica.buscar');
         Route::get('/llamadas-central-telefonica/importar', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'importarForm'])->name('llamadas-central-telefonica.importar');
         Route::post('/llamadas-central-telefonica/importar', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'importarProcesar'])->name('llamadas-central-telefonica.importar.post');
+        Route::post('/llamadas-central-telefonica/importar-hoy', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'importarHoy'])->name('llamadas-central-telefonica.importar-hoy');
         Route::get('/{eventoCecoco}/expediente', [App\Http\Controllers\EventoCecocoController::class, 'verExpediente'])->name('expediente');
         Route::get('/{eventoCecoco}', [App\Http\Controllers\EventoCecocoController::class, 'show'])->name('show');
     });
@@ -644,6 +645,9 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::get('/api/dashboard/estado-cctv', [App\Http\Controllers\HomeController::class, 'estadoCctv'])
         ->name('api.dashboard.estado-cctv');
+
+    Route::get('/api/dashboard/estado-troncales-central-telefonica', [App\Http\Controllers\HomeController::class, 'estadoTroncalesCentralTelefonica'])
+        ->name('api.dashboard.estado-troncales-central-telefonica');
 
     Route::post('/api/dashboard/refresh-restauraciones', [App\Http\Controllers\HomeController::class, 'refreshRestauracionesCache'])
         ->middleware('throttle:3,1')

@@ -25,6 +25,7 @@ use App\Models\ActivacionTotem;
 use App\Models\TareaItem;
 use App\Services\CecocoExpedienteService;
 use App\Services\GeocodificacionService;
+use App\Services\CentralTelefonicaTroncalesService;
 use App\Services\LibreNmsService;
 use App\Jobs\ConsultarTamanoRestauracionesCecoco;
 use Carbon\Carbon;
@@ -599,6 +600,26 @@ class HomeController extends Controller
             // Compatibilidad con el poller del dashboard: claves de CPU al nivel raíz.
             ...$respuestaCpu,
             'camaras' => $respuestaCamaras,
+        ]);
+    }
+
+    /**
+     * Estado de los troncales SIP de la central telefonica 911 (panel SSW):
+     * última lectura cacheada por central-telefonica:monitorear-troncales.
+     */
+    public function estadoTroncalesCentralTelefonica(): JsonResponse
+    {
+        $datos = Cache::get(CentralTelefonicaTroncalesService::CACHE_KEY);
+
+        if (empty($datos['troncales'])) {
+            return response()->json(['disponible' => false]);
+        }
+
+        return response()->json([
+            'disponible' => true,
+            'troncales' => $datos['troncales'],
+            'caidos' => count(array_filter($datos['troncales'], fn (array $t) => $t['estado'] !== 'online')),
+            'consultado_en' => $datos['consultado_en'] ?? null,
         ]);
     }
 

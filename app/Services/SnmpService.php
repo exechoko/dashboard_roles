@@ -9,7 +9,13 @@ class SnmpService
     public const CACHE_KEY_ESTADO = 'infraestructura.dispositivos.estado';
 
     private const OID_SYS_DESCR = '.1.3.6.1.2.1.1.1.0';
-    private const OID_SYS_UPTIME = '.1.3.6.1.2.1.1.3.0';
+
+    // hrSystemUptime (host-resources-mib), NO sysUpTime (.1.3.6.1.2.1.1.3.0):
+    // sysUpTime mide desde que arrancó el AGENTE SNMP, no el sistema — si se
+    // reinicia el servicio SNMP sin reiniciar la PC (p.ej. al correr
+    // habilitar-snmp.bat de nuevo) ese valor se resetea y queda mintiendo.
+    // hrSystemUptime es el que coincide con lo que muestra "systeminfo".
+    private const OID_SYS_UPTIME = '.1.3.6.1.2.1.25.1.1.0';
     private const OID_PROCESSOR_LOAD = '.1.3.6.1.2.1.25.3.3.1.2';
     private const OID_STORAGE_DESCR = '.1.3.6.1.2.1.25.2.3.1.3';
     private const OID_STORAGE_ALLOC_UNITS = '.1.3.6.1.2.1.25.2.3.1.4';
@@ -76,8 +82,9 @@ class SnmpService
         $sistemaOperativo = self::parsearSistemaOperativo($sysDescr);
         usleep($this->pausaEntreOidsMs * 1000);
 
-        // sysUpTime es parte del núcleo SNMPv2-MIB (a diferencia de host-resources-mib),
-        // lo exponen tanto PCs/servidores como routers/switches.
+        // hrSystemUptime: en equipos que no implementan host-resources-mib
+        // (routers/switches) simplemente no responde y queda null, igual que
+        // el resto de las métricas de esta función.
         $sysUpTime = $this->getSeguro($ip, self::OID_SYS_UPTIME);
         $uptimeSegundos = self::parsearUptimeSegundos($sysUpTime);
         usleep($this->pausaEntreOidsMs * 1000);
@@ -236,9 +243,8 @@ class SnmpService
     }
 
     /**
-     * De sysUpTime (TimeTicks, centésimas de segundo desde el último arranque
-     * del agente SNMP — en la práctica, desde que prendió el equipo) obtiene
-     * los segundos. net-snmp devuelve algo como
+     * De hrSystemUptime (TimeTicks, centésimas de segundo desde que arrancó
+     * el sistema operativo) obtiene los segundos. net-snmp devuelve algo como
      * "Timeticks: (233366396) 27 days, 0:47:43.96"; toma el número entre
      * paréntesis, que es el valor crudo.
      */

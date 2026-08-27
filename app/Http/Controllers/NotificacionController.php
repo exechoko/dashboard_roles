@@ -20,6 +20,7 @@ class NotificacionController extends Controller
         'camara_cctv' => 'fas fa-video',
         'pc_video' => 'fas fa-desktop',
         'troncal_telefonica' => 'fas fa-phone-volume',
+        'bd_restauraciones' => 'fas fa-database',
     ];
 
     public function __construct()

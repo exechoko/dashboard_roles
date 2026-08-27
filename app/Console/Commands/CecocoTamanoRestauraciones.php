@@ -48,6 +48,7 @@ class CecocoTamanoRestauraciones extends Command
         $this->info('🌐 Consultando CECOCO en vivo (login JSF completo)...');
         try {
             $resultado = $service->actualizarCacheTamanoBaseRestauraciones();
+            $umbral = (int) config('cecoco.umbral_restauraciones_mb');
             $this->newLine();
             $this->info('✅ Consulta exitosa');
             $this->table(
@@ -55,8 +56,8 @@ class CecocoTamanoRestauraciones extends Command
                 [
                     ['Tamaño',        $resultado['mb'] . ' MB'],
                     ['Consultado en', $resultado['consultado_en']],
-                    ['Umbral alerta', '4000 MB'],
-                    ['Estado',        $resultado['mb'] > 4000 ? '⚠️  SUPERA EL UMBRAL' : '✅ OK'],
+                    ['Umbral alerta', $umbral . ' MB'],
+                    ['Estado',        $resultado['mb'] > $umbral ? '⚠️  SUPERA EL UMBRAL' : '✅ OK'],
                 ]
             );
             return Command::SUCCESS;

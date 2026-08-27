@@ -421,10 +421,10 @@ class InfraestructuraController extends Controller
             'geo_servicio_motor' => config('services.google.geocoding_enabled', false) ? 'Google' : 'Nominatim',
             'restauraciones_mb' => $tamanoRest['mb'] ?? null,
             'restauraciones_consultado_en' => $tamanoRest['consultado_en'] ?? null,
-            'restauraciones_umbral_mb' => 4000,
+            'restauraciones_umbral_mb' => config('cecoco.umbral_restauraciones_mb'),
             'restauraciones_gps_mb' => $tamanoRestGps['mb'] ?? null,
             'restauraciones_gps_consultado_en' => $tamanoRestGps['consultado_en'] ?? null,
-            'restauraciones_gps_umbral_mb' => 4000,
+            'restauraciones_gps_umbral_mb' => config('cecoco.umbral_restauraciones_mb'),
             'restauraciones_gps_restauradas' => Cache::get(CecocoExpedienteService::CACHE_KEY_FICHEROS_RESTAURADOS_GPS, []),
             'inventario_conflictos' => $conflictosInventario,
             'inventario_discrepancias' => $discrepanciasInventario,
@@ -451,7 +451,7 @@ class InfraestructuraController extends Controller
         return response()->json([
             'ok' => true,
             'consultado_en_anterior' => $consultadoEnAnterior,
-            'umbral' => 4000,
+            'umbral' => config('cecoco.umbral_restauraciones_mb'),
             'mensaje' => 'Consulta encolada. El valor se actualizará en breve.',
         ]);
     }
@@ -476,7 +476,7 @@ class InfraestructuraController extends Controller
         return response()->json([
             'ok' => true,
             'consultado_en_anterior' => $consultadoEnAnterior,
-            'umbral' => 4000,
+            'umbral' => config('cecoco.umbral_restauraciones_mb'),
             'mensaje' => 'Consulta encolada. El valor se actualizará en breve.',
         ]);
     }

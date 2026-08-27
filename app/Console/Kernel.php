@@ -228,26 +228,15 @@ class Kernel extends ConsoleKernel
 
         // Tamaño de la BD de restauraciones de CECOCO: se consulta una vez por hora
         // y se cachea para que el dashboard nunca pegue al servidor remoto en cada poll.
+        // Se dispara vía el Job (no llamando al servicio directo) para que la
+        // alerta de "supera el umbral" corra también acá, igual que cuando se
+        // dispara desde el botón "refrescar ahora" de la pantalla Workers.
         $schedule->call(function () {
-            try {
-                app(\App\Services\CecocoExpedienteService::class)
-                    ->actualizarCacheTamanoBaseRestauraciones();
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('No se pudo actualizar tamaño BD restauraciones', [
-                    'error' => $e->getMessage(),
-                ]);
-            }
+            \App\Jobs\ConsultarTamanoRestauracionesCecoco::dispatchSync();
         })->name('cache-cecoco-tamano-restauraciones')->hourly()->withoutOverlapping();
 
         $schedule->call(function () {
-            try {
-                app(\App\Services\CecocoExpedienteService::class)
-                    ->actualizarCacheTamanoBaseRestauracionesGps();
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('No se pudo actualizar tamaño BD restauraciones GPS', [
-                    'error' => $e->getMessage(),
-                ]);
-            }
+            \App\Jobs\ConsultarTamanoRestauracionesCecoco::dispatchSync(true);
         })->name('cache-cecoco-gps-tamano-restauraciones')->hourly()->withoutOverlapping();
     }
 

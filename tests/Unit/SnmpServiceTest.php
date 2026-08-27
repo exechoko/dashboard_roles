@@ -34,6 +34,52 @@ class SnmpServiceTest extends TestCase
         $this->assertFalse(SnmpService::esIpMonitoreable('no-es-una-ip'));
     }
 
+    // ── parsearModeloCpu ─────────────────────────────────────────────────
+
+    public function test_extrae_el_modelo_de_cpu_del_sysdescr_de_windows(): void
+    {
+        $sysDescr = 'STRING: "Hardware: Intel64 Family 6 Model 62 Stepping 4 AT/AT COMPATIBLE'
+            . ' - Software: Windows Version 6.3 (Build 17763 Multiprocessor Free)"';
+
+        $this->assertSame(
+            'Intel64 Family 6 Model 62 Stepping 4 AT/AT COMPATIBLE',
+            SnmpService::parsearModeloCpu($sysDescr)
+        );
+    }
+
+    public function test_sysdescr_sin_formato_hardware_software_se_devuelve_tal_cual(): void
+    {
+        $this->assertSame('Linux servidor 5.15.0', SnmpService::parsearModeloCpu('STRING: "Linux servidor 5.15.0"'));
+    }
+
+    public function test_sysdescr_vacio_devuelve_null(): void
+    {
+        $this->assertNull(SnmpService::parsearModeloCpu(''));
+    }
+
+    // ── parsearSistemaOperativo ──────────────────────────────────────────
+
+    public function test_extrae_el_sistema_operativo_del_sysdescr_de_windows(): void
+    {
+        $sysDescr = 'STRING: "Hardware: Intel64 Family 6 Model 62 Stepping 4 AT/AT COMPATIBLE'
+            . ' - Software: Windows Version 6.3 (Build 17763 Multiprocessor Free)"';
+
+        $this->assertSame(
+            'Windows Version 6.3 (Build 17763 Multiprocessor Free)',
+            SnmpService::parsearSistemaOperativo($sysDescr)
+        );
+    }
+
+    public function test_sysdescr_sin_formato_hardware_software_no_da_sistema_operativo(): void
+    {
+        $this->assertNull(SnmpService::parsearSistemaOperativo('STRING: "Linux servidor 5.15.0"'));
+    }
+
+    public function test_sysdescr_vacio_no_da_sistema_operativo(): void
+    {
+        $this->assertNull(SnmpService::parsearSistemaOperativo(''));
+    }
+
     // ── parsearCargaProcesadores ────────────────────────────────────────
 
     public function test_promedia_la_carga_de_varios_nucleos(): void

@@ -129,11 +129,19 @@ class InfraestructuraController extends Controller
                     'icono' => $dispositivo->icono,
                     'oficina' => $dispositivo->oficina,
                     'piso' => $dispositivo->piso,
+                    // Preferir el dato en vivo por SNMP (sysDescr) sobre el cargado
+                    // a mano en dispositivos_edificio, que puede haber quedado viejo.
+                    'sistema_operativo' => $lectura['sistema_operativo'] ?? $dispositivo->sistema_operativo,
                     'estado' => $lectura['estado'] ?? SnmpService::estadoSinLectura($dispositivo->ip),
                     'latencia_ms' => $lectura['latencia_ms'] ?? null,
                     'cpu_pct' => $lectura['cpu_pct'] ?? null,
+                    'cpu_modelo' => $lectura['cpu_modelo'] ?? null,
                     'ram_pct' => $lectura['ram_pct'] ?? null,
+                    'ram_total_gb' => $lectura['ram_total_gb'] ?? null,
+                    'ram_usado_gb' => $lectura['ram_usado_gb'] ?? null,
                     'disco_pct' => $lectura['disco_pct'] ?? null,
+                    'disco_total_gb' => $lectura['disco_total_gb'] ?? null,
+                    'disco_usado_gb' => $lectura['disco_usado_gb'] ?? null,
                 ];
             })
             ->values();

@@ -8,6 +8,7 @@ class SnmpService
 {
     public const CACHE_KEY_ESTADO = 'infraestructura.dispositivos.estado';
 
+    private const OID_SYS_DESCR = '.1.3.6.1.2.1.1.1.0';
     private const OID_PROCESSOR_LOAD = '.1.3.6.1.2.1.25.3.3.1.2';
     private const OID_STORAGE_DESCR = '.1.3.6.1.2.1.25.2.3.1.3';
     private const OID_STORAGE_ALLOC_UNITS = '.1.3.6.1.2.1.25.2.3.1.4';
@@ -58,13 +59,21 @@ class SnmpService
      * Consulta CPU/RAM/disco por SNMP (host-resources-mib). Devuelve null si el
      * equipo no responde SNMP (agente no habilitado, community incorrecto, etc.).
      *
-     * @return array{cpu_pct: float|null, ram_pct: float|null, ram_total_gb: float|null, ram_usado_gb: float|null, disco_pct: float|null, disco_total_gb: float|null, disco_usado_gb: float|null}|null
+     * @return array{cpu_pct: float|null, cpu_modelo: string|null, sistema_operativo: string|null, ram_pct: float|null, ram_total_gb: float|null, ram_usado_gb: float|null, disco_pct: float|null, disco_total_gb: float|null, disco_usado_gb: float|null}|null
      */
     public function consultarMetricas(string $ip): ?array
     {
         if (!self::esIpMonitoreable($ip)) {
             return null;
         }
+
+        // sysDescr es un GET puntual (no walk), confiable incluso encadenado
+        // con otras consultas — trae modelo de CPU y sistema operativo en la
+        // misma respuesta, sin gastar presupuesto de rate-limit en otro walk.
+        $sysDescr = $this->getSeguro($ip, self::OID_SYS_DESCR);
+        $cpuModelo = self::parsearModeloCpu($sysDescr);
+        $sistemaOperativo = self::parsearSistemaOperativo($sysDescr);
+        usleep($this->pausaEntreOidsMs * 1000);
 
         $cargas = @snmp2_real_walk($ip, $this->community, self::OID_PROCESSOR_LOAD, $this->snmpTimeoutUs, $this->snmpReintentos);
 
@@ -106,6 +115,8 @@ class SnmpService
 
         return [
             'cpu_pct' => self::parsearCargaProcesadores($cargas),
+            'cpu_modelo' => $cpuModelo,
+            'sistema_operativo' => $sistemaOperativo,
             'ram_pct' => $recursos['ram']['pct'] ?? null,
             'ram_total_gb' => $recursos['ram']['total_gb'] ?? null,
             'ram_usado_gb' => $recursos['ram']['usado_gb'] ?? null,
@@ -120,7 +131,7 @@ class SnmpService
      * exponer SNMP, también CPU/RAM/disco. Usado tanto por el comando
      * programado como por el refresco on-demand de la UI.
      *
-     * @return array{id: int, nombre: string, ip: string, tipo: string, alcanzable: bool, latencia_ms: int|null, cpu_pct: float|null, ram_pct: float|null, disco_pct: float|null}
+     * @return array{id: int, nombre: string, ip: string, tipo: string, alcanzable: bool, latencia_ms: int|null, cpu_pct: float|null, cpu_modelo: string|null, sistema_operativo: string|null, ram_pct: float|null, ram_total_gb: float|null, ram_usado_gb: float|null, disco_pct: float|null, disco_total_gb: float|null, disco_usado_gb: float|null}
      */
     public function relevarDispositivo(DispositivoEdificio $dispositivo): array
     {
@@ -138,8 +149,14 @@ class SnmpService
             'alcanzable' => $ping['alcanzable'],
             'latencia_ms' => $ping['latencia_ms'],
             'cpu_pct' => $metricas['cpu_pct'] ?? null,
+            'cpu_modelo' => $metricas['cpu_modelo'] ?? null,
+            'sistema_operativo' => $metricas['sistema_operativo'] ?? null,
             'ram_pct' => $metricas['ram_pct'] ?? null,
+            'ram_total_gb' => $metricas['ram_total_gb'] ?? null,
+            'ram_usado_gb' => $metricas['ram_usado_gb'] ?? null,
             'disco_pct' => $metricas['disco_pct'] ?? null,
+            'disco_total_gb' => $metricas['disco_total_gb'] ?? null,
+            'disco_usado_gb' => $metricas['disco_usado_gb'] ?? null,
         ];
     }
 
@@ -166,6 +183,47 @@ class SnmpService
     {
         return in_array($tipo, DispositivoEdificio::TIPOS_CON_SO, true)
             || in_array($tipo, DispositivoEdificio::TIPOS_CON_PUERTOS, true);
+    }
+
+    /**
+     * De sysDescr ("Hardware: <modelo de CPU> - Software: <SO>") se queda solo
+     * con la parte de hardware. Si no matchea ese formato (agente no-Windows,
+     * o vacío), devuelve el sysDescr recortado tal cual, o null si no hay dato.
+     */
+    public static function parsearModeloCpu(string $sysDescr): ?string
+    {
+        $limpio = self::limpiarDescr($sysDescr);
+
+        if ($limpio === '') {
+            return null;
+        }
+
+        if (preg_match('/^Hardware:\s*(.+?)\s*-\s*Software:/i', $limpio, $m)) {
+            return $m[1];
+        }
+
+        return $limpio;
+    }
+
+    /**
+     * De sysDescr ("Hardware: <modelo de CPU> - Software: <SO>") se queda solo
+     * con la parte de software. Si no matchea ese formato, devuelve null — a
+     * diferencia de parsearModeloCpu(), acá no tiene sentido usar el sysDescr
+     * completo como "sistema operativo".
+     */
+    public static function parsearSistemaOperativo(string $sysDescr): ?string
+    {
+        $limpio = self::limpiarDescr($sysDescr);
+
+        if ($limpio === '') {
+            return null;
+        }
+
+        if (preg_match('/-\s*Software:\s*(.+)$/i', $limpio, $m)) {
+            return trim($m[1]);
+        }
+
+        return null;
     }
 
     /**

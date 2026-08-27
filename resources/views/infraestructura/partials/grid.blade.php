@@ -128,17 +128,39 @@
                 return 'var(--accent-success)';
             }
 
-            function barra(etiqueta, pct) {
+            function barra(etiqueta, pct, detalle) {
                 if (pct === null || pct === undefined) return '';
+                var sufijo = detalle ? ' (' + detalle + ')' : '';
                 return '<div class="infra-metricas mt-1">'
-                    + '<small>' + etiqueta + ' ' + pct + '%</small>'
+                    + '<small>' + etiqueta + ' ' + pct + '%' + sufijo + '</small>'
                     + '<div class="infra-barra"><div style="width:' + Math.min(pct, 100) + '%;background:' + colorBarra(pct) + ';"></div></div>'
                     + '</div>';
             }
 
+            function detalleGb(usado, total) {
+                if (usado === null || usado === undefined || total === null || total === undefined) return null;
+                return usado + '/' + total + ' GB';
+            }
+
+            function iconoSistemaOperativo(so) {
+                if (!so) return null;
+                if (/windows/i.test(so)) return 'fab fa-windows';
+                if (/(ubuntu|debian|centos|linux)/i.test(so)) return 'fab fa-linux';
+                return 'fas fa-info-circle';
+            }
+
             function tarjeta(d) {
                 var estado = d.estado || 'pendiente';
-                var metricas = barra('CPU', d.cpu_pct) + barra('RAM', d.ram_pct) + barra('Disco', d.disco_pct);
+                var metricas = barra('CPU', d.cpu_pct)
+                    + barra('RAM', d.ram_pct, detalleGb(d.ram_usado_gb, d.ram_total_gb))
+                    + barra('Disco', d.disco_pct, detalleGb(d.disco_usado_gb, d.disco_total_gb));
+                var iconoSo = iconoSistemaOperativo(d.sistema_operativo);
+                var lineaSo = iconoSo
+                    ? '<div class="infra-meta"><i class="' + iconoSo + ' mr-1"></i>' + escapar(d.sistema_operativo) + '</div>'
+                    : '';
+                var lineaCpu = d.cpu_modelo
+                    ? '<div class="infra-meta"><i class="fas fa-microchip mr-1"></i>' + escapar(d.cpu_modelo) + '</div>'
+                    : '';
 
                 return '<div class="col-xl-3 col-lg-4 col-md-6 mb-3 infra-item" data-estado="' + estado + '">'
                     + '<div class="infra-card">'
@@ -148,6 +170,8 @@
                     + '<button type="button" class="infra-refresh" data-id="' + d.id + '" title="Refrescar ahora"><i class="fas fa-sync-alt"></i></button>'
                     + '</div>'
                     + '<div class="infra-meta">' + escapar(d.ip || 'sin IP') + (d.oficina ? ' &mdash; ' + escapar(d.oficina) : '') + '</div>'
+                    + lineaSo
+                    + lineaCpu
                     + '<div class="mt-1"><span class="infra-estado-dot infra-estado-' + estado + '"></span>'
                     + '<small>' + (etiquetasEstado[estado] || escapar(estado)) + (d.latencia_ms ? ' (' + d.latencia_ms + ' ms)' : '') + '</small></div>'
                     + metricas

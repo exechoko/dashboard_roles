@@ -9,6 +9,7 @@ class SnmpService
     public const CACHE_KEY_ESTADO = 'infraestructura.dispositivos.estado';
 
     private const OID_SYS_DESCR = '.1.3.6.1.2.1.1.1.0';
+    private const OID_SYS_UPTIME = '.1.3.6.1.2.1.1.3.0';
     private const OID_PROCESSOR_LOAD = '.1.3.6.1.2.1.25.3.3.1.2';
     private const OID_STORAGE_DESCR = '.1.3.6.1.2.1.25.2.3.1.3';
     private const OID_STORAGE_ALLOC_UNITS = '.1.3.6.1.2.1.25.2.3.1.4';
@@ -59,7 +60,7 @@ class SnmpService
      * Consulta CPU/RAM/disco por SNMP (host-resources-mib). Devuelve null si el
      * equipo no responde SNMP (agente no habilitado, community incorrecto, etc.).
      *
-     * @return array{cpu_pct: float|null, cpu_modelo: string|null, sistema_operativo: string|null, ram_pct: float|null, ram_total_gb: float|null, ram_usado_gb: float|null, disco_pct: float|null, disco_total_gb: float|null, disco_usado_gb: float|null}|null
+     * @return array{cpu_pct: float|null, cpu_modelo: string|null, sistema_operativo: string|null, uptime_segundos: int|null, ram_pct: float|null, ram_total_gb: float|null, ram_usado_gb: float|null, disco_pct: float|null, disco_total_gb: float|null, disco_usado_gb: float|null}|null
      */
     public function consultarMetricas(string $ip): ?array
     {
@@ -73,6 +74,12 @@ class SnmpService
         $sysDescr = $this->getSeguro($ip, self::OID_SYS_DESCR);
         $cpuModelo = self::parsearModeloCpu($sysDescr);
         $sistemaOperativo = self::parsearSistemaOperativo($sysDescr);
+        usleep($this->pausaEntreOidsMs * 1000);
+
+        // sysUpTime es parte del núcleo SNMPv2-MIB (a diferencia de host-resources-mib),
+        // lo exponen tanto PCs/servidores como routers/switches.
+        $sysUpTime = $this->getSeguro($ip, self::OID_SYS_UPTIME);
+        $uptimeSegundos = self::parsearUptimeSegundos($sysUpTime);
         usleep($this->pausaEntreOidsMs * 1000);
 
         $cargas = @snmp2_real_walk($ip, $this->community, self::OID_PROCESSOR_LOAD, $this->snmpTimeoutUs, $this->snmpReintentos);
@@ -117,6 +124,7 @@ class SnmpService
             'cpu_pct' => self::parsearCargaProcesadores($cargas),
             'cpu_modelo' => $cpuModelo,
             'sistema_operativo' => $sistemaOperativo,
+            'uptime_segundos' => $uptimeSegundos,
             'ram_pct' => $recursos['ram']['pct'] ?? null,
             'ram_total_gb' => $recursos['ram']['total_gb'] ?? null,
             'ram_usado_gb' => $recursos['ram']['usado_gb'] ?? null,
@@ -131,7 +139,7 @@ class SnmpService
      * exponer SNMP, también CPU/RAM/disco. Usado tanto por el comando
      * programado como por el refresco on-demand de la UI.
      *
-     * @return array{id: int, nombre: string, ip: string, tipo: string, alcanzable: bool, latencia_ms: int|null, cpu_pct: float|null, cpu_modelo: string|null, sistema_operativo: string|null, ram_pct: float|null, ram_total_gb: float|null, ram_usado_gb: float|null, disco_pct: float|null, disco_total_gb: float|null, disco_usado_gb: float|null}
+     * @return array{id: int, nombre: string, ip: string, tipo: string, alcanzable: bool, latencia_ms: int|null, cpu_pct: float|null, cpu_modelo: string|null, sistema_operativo: string|null, uptime_segundos: int|null, ram_pct: float|null, ram_total_gb: float|null, ram_usado_gb: float|null, disco_pct: float|null, disco_total_gb: float|null, disco_usado_gb: float|null}
      */
     public function relevarDispositivo(DispositivoEdificio $dispositivo): array
     {
@@ -151,6 +159,7 @@ class SnmpService
             'cpu_pct' => $metricas['cpu_pct'] ?? null,
             'cpu_modelo' => $metricas['cpu_modelo'] ?? null,
             'sistema_operativo' => $metricas['sistema_operativo'] ?? null,
+            'uptime_segundos' => $metricas['uptime_segundos'] ?? null,
             'ram_pct' => $metricas['ram_pct'] ?? null,
             'ram_total_gb' => $metricas['ram_total_gb'] ?? null,
             'ram_usado_gb' => $metricas['ram_usado_gb'] ?? null,
@@ -224,6 +233,20 @@ class SnmpService
         }
 
         return null;
+    }
+
+    /**
+     * De sysUpTime (TimeTicks, centésimas de segundo desde el último arranque
+     * del agente SNMP — en la práctica, desde que prendió el equipo) obtiene
+     * los segundos. net-snmp devuelve algo como
+     * "Timeticks: (233366396) 27 days, 0:47:43.96"; toma el número entre
+     * paréntesis, que es el valor crudo.
+     */
+    public static function parsearUptimeSegundos(string $sysUpTime): ?int
+    {
+        $ticks = self::extraerEntero($sysUpTime);
+
+        return $ticks !== null ? intdiv($ticks, 100) : null;
     }
 
     /**

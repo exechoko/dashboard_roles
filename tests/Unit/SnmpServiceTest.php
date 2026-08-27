@@ -80,6 +80,28 @@ class SnmpServiceTest extends TestCase
         $this->assertNull(SnmpService::parsearSistemaOperativo(''));
     }
 
+    // ── parsearUptimeSegundos ────────────────────────────────────────────
+
+    public function test_extrae_segundos_de_uptime_con_formato_completo_de_net_snmp(): void
+    {
+        $this->assertSame(2333663, SnmpService::parsearUptimeSegundos('Timeticks: (233366396) 27 days, 0:47:43.96'));
+    }
+
+    public function test_extrae_segundos_de_uptime_con_solo_el_numero_crudo(): void
+    {
+        $this->assertSame(2333663, SnmpService::parsearUptimeSegundos('233366396'));
+    }
+
+    public function test_uptime_vacio_devuelve_null(): void
+    {
+        $this->assertNull(SnmpService::parsearUptimeSegundos(''));
+    }
+
+    public function test_uptime_sin_snmp_devuelve_null(): void
+    {
+        $this->assertNull(SnmpService::parsearUptimeSegundos('No Such Object available on this agent at this OID'));
+    }
+
     // ── parsearCargaProcesadores ────────────────────────────────────────
 
     public function test_promedia_la_carga_de_varios_nucleos(): void

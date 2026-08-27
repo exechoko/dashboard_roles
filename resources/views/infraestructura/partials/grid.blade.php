@@ -155,6 +155,20 @@
                 return 'fas fa-info-circle';
             }
 
+            function formatUptime(segundos) {
+                var dias = Math.floor(segundos / 86400);
+                var horas = Math.floor((segundos % 86400) / 3600);
+                var minutos = Math.floor((segundos % 3600) / 60);
+                if (dias > 0) return dias + 'd ' + horas + 'h';
+                if (horas > 0) return horas + 'h ' + minutos + 'm';
+                return minutos + 'm';
+            }
+
+            function fechaArranque(segundos) {
+                var fecha = new Date(Date.now() - segundos * 1000);
+                return fecha.toLocaleString('es-AR');
+            }
+
             function tarjeta(d) {
                 var estado = d.estado || 'pendiente';
                 var pausado = !d.monitoreo_habilitado;
@@ -167,6 +181,10 @@
                     : '';
                 var lineaCpu = d.cpu_modelo
                     ? '<div class="infra-meta"><i class="fas fa-microchip mr-1"></i>' + escapar(d.cpu_modelo) + '</div>'
+                    : '';
+                var lineaUptime = (!pausado && d.uptime_segundos !== null && d.uptime_segundos !== undefined)
+                    ? '<div class="infra-meta" title="Encendido desde: ' + escapar(fechaArranque(d.uptime_segundos)) + '">'
+                        + '<i class="fas fa-power-off mr-1"></i>Encendido hace ' + formatUptime(d.uptime_segundos) + '</div>'
                     : '';
                 var btnRefresh = pausado
                     ? ''
@@ -185,6 +203,7 @@
                     + '<div class="infra-meta">' + escapar(d.ip || 'sin IP') + (d.oficina ? ' &mdash; ' + escapar(d.oficina) : '') + '</div>'
                     + lineaSo
                     + lineaCpu
+                    + lineaUptime
                     + '<div class="mt-1"><span class="infra-estado-dot infra-estado-' + estado + '"></span>'
                     + '<small>' + (etiquetasEstado[estado] || escapar(estado)) + (d.latencia_ms ? ' (' + d.latencia_ms + ' ms)' : '') + '</small></div>'
                     + metricas

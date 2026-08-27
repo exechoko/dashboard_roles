@@ -140,6 +140,7 @@ class InfraestructuraController extends Controller
                     'latencia_ms' => $lectura['latencia_ms'] ?? null,
                     'cpu_pct' => $lectura['cpu_pct'] ?? null,
                     'cpu_modelo' => $lectura['cpu_modelo'] ?? null,
+                    'uptime_segundos' => $lectura['uptime_segundos'] ?? null,
                     'ram_pct' => $lectura['ram_pct'] ?? null,
                     'ram_total_gb' => $lectura['ram_total_gb'] ?? null,
                     'ram_usado_gb' => $lectura['ram_usado_gb'] ?? null,

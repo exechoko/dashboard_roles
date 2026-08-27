@@ -15,10 +15,17 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo Instalando componente SNMP (detecta si es Windows Server o cliente)...
+echo Instalando componente SNMP (detecta si es Windows Server o cliente, y si es Windows 7)...
+REM Get-WmiObject (en vez de Get-CimInstance) porque en Windows 7 el PowerShell
+REM de fabrica es 2.0 y no tiene el modulo CIM. En Windows 7 tampoco existe
+REM Add-WindowsCapability (es de Windows 10+), asi que ahi se instala por DISM.
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "if ((Get-CimInstance Win32_OperatingSystem).ProductType -ne 1) {" ^
+    "$esServer = (Get-WmiObject Win32_OperatingSystem).ProductType -ne 1;" ^
+    "$esWindows7 = [System.Environment]::OSVersion.Version.Major -lt 10;" ^
+    "if ($esServer) {" ^
     "    Install-WindowsFeature -Name SNMP-Service -IncludeManagementTools | Out-Null" ^
+    "} elseif ($esWindows7) {" ^
+    "    Start-Process -FilePath dism.exe -ArgumentList '/online','/enable-feature','/featurename:SNMP','/all','/quiet','/norestart' -Wait -NoNewWindow" ^
     "} else {" ^
     "    Add-WindowsCapability -Online -Name 'SNMP.Client~~~~0.0.1.0' | Out-Null" ^
     "}"
@@ -35,15 +42,21 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 echo Iniciando servicio SNMP...
 powershell -NoProfile -ExecutionPolicy Bypass -Command "Set-Service -Name SNMP -StartupType Automatic; Restart-Service -Name SNMP"
 
+REM Se usa "netsh advfirewall" (en vez de los cmdlets New-NetFirewallRule /
+REM Get-NetFirewallRule) porque esos cmdlets pertenecen al modulo NetSecurity,
+REM que no existe en Windows 7. netsh si funciona igual desde Windows 7 hasta
+REM Windows 11 / Server 2022.
 echo Abriendo puerto UDP 161 en el firewall para %SERVER_IP% y %DEV_IP%...
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "if (-not (Get-NetFirewallRule -DisplayName 'SNMP desde server Laravel' -ErrorAction SilentlyContinue)) {" ^
-    "New-NetFirewallRule -DisplayName 'SNMP desde server Laravel' -Direction Inbound -Protocol UDP -LocalPort 161 -RemoteAddress '%SERVER_IP%','%DEV_IP%' -Action Allow | Out-Null }"
+netsh advfirewall firewall show rule name="SNMP desde server Laravel" >nul 2>&1
+if errorlevel 1 (
+    netsh advfirewall firewall add rule name="SNMP desde server Laravel" dir=in action=allow protocol=UDP localport=161 remoteip=%SERVER_IP%,%DEV_IP%
+)
 
 echo Habilitando ping entrante (ICMPv4) para que el monitoreo detecte si el equipo esta caido...
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "if (-not (Get-NetFirewallRule -DisplayName 'Permitir ping entrante' -ErrorAction SilentlyContinue)) {" ^
-    "New-NetFirewallRule -DisplayName 'Permitir ping entrante' -Direction Inbound -Protocol ICMPv4 -IcmpType 8 -Action Allow | Out-Null }"
+netsh advfirewall firewall show rule name="Permitir ping entrante" >nul 2>&1
+if errorlevel 1 (
+    netsh advfirewall firewall add rule name="Permitir ping entrante" protocol=icmpv4:8,any dir=in action=allow
+)
 
 echo.
 powershell -NoProfile -Command "Get-Service SNMP"

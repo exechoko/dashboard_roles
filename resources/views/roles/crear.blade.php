@@ -70,6 +70,7 @@
                                                         'menu-herramientas',
                                                         'menu-constancias-credenciales',
                                                         'menu-chat',
+                                                        'menu-infraestructura',
                                                     ],
                                                     'Administración' => [
                                                         'rol',
@@ -181,6 +182,16 @@
                                                         'web-galeria',
                                                         'web-dependencias',
                                                         'noticia'
+                                                    ],
+                                                    'Infraestructura' => [
+                                                        'infraestructura-pcs',
+                                                        'infraestructura-servidores',
+                                                        'infraestructura-camaras',
+                                                        'infraestructura-red',
+                                                        'infraestructura-librenms',
+                                                        'infraestructura-central-telefonica',
+                                                        'infraestructura-workers',
+                                                        'infraestructura',
                                                     ]
                                                 ];
 
@@ -295,6 +306,7 @@
                                                                                             'cargar' => 'fas fa-upload text-success',
                                                                                             'restaurar' => 'fas fa-undo text-success',
                                                             'descargar' => 'fas fa-download text-primary',
+                                                                                            'refrescar' => 'fas fa-sync-alt text-primary',
                                                                                         ];
                                                                                     @endphp
 

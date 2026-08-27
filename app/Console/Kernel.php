@@ -198,6 +198,14 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/central_telefonica_troncales.log'));
 
+        // Releva por ping+SNMP las PCs, servidores, cámaras internas y equipos de
+        // red del edificio (dispositivos_edificio) y avisa por Telegram cuando
+        // alguno cae o supera los umbrales de CPU/RAM/disco.
+        $schedule->command('infraestructura:monitorear')
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/infraestructura.log'));
+
         // Avisa por mail si quedaron mensajes de chat sin leer hace más de 30 minutos.
         // No repite el aviso hasta que el usuario vuelva a leer esa conversación.
         $schedule->command('chat:avisar-no-leidos')

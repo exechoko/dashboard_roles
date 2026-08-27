@@ -20,14 +20,14 @@ class NotificacionController extends Controller
         $usuario = $request->user();
 
         $notificaciones = Notificacion::query()
-            ->categoria(Notificacion::CATEGORIA_INFRAESTRUCTURA)
+            ->deInfraestructura()
             ->latest('created_at')
             ->limit(self::POR_PAGINA)
             ->get();
 
         $vistasEn = $usuario->notificaciones_vistas_en;
         $noLeidas = Notificacion::query()
-            ->categoria(Notificacion::CATEGORIA_INFRAESTRUCTURA)
+            ->deInfraestructura()
             ->noLeidasDesde($vistasEn)
             ->count();
 
@@ -48,7 +48,7 @@ class NotificacionController extends Controller
 
     public function vaciar(): JsonResponse
     {
-        Notificacion::query()->categoria(Notificacion::CATEGORIA_INFRAESTRUCTURA)->delete();
+        Notificacion::query()->deInfraestructura()->delete();
 
         return response()->json(['ok' => true]);
     }

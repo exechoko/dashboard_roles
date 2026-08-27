@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Notificacion;
 use App\Services\CentralTelefonicaTroncalesService;
 use App\Services\TelegramService;
 use Illuminate\Console\Command;
@@ -87,11 +88,13 @@ class MonitorearTroncalesCentralTelefonica extends Command
         }
 
         foreach ($caidos as $troncal) {
+            $this->registrarNotificacion($troncal, Notificacion::TIPO_ALERTA);
             $telegram->enviarMensaje($this->mensajeCaido($troncal));
             $this->info("📨 Alerta enviada por Telegram: {$troncal['nombre']} caído");
         }
 
         foreach ($recuperados as $troncal) {
+            $this->registrarNotificacion($troncal, Notificacion::TIPO_RECUPERACION);
             $telegram->enviarMensaje($this->mensajeRecuperado($troncal));
             $this->info("📨 Recuperación enviada por Telegram: {$troncal['nombre']}");
         }
@@ -101,6 +104,25 @@ class MonitorearTroncalesCentralTelefonica extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * @param array{nombre: string, host: string} $troncal
+     */
+    private function registrarNotificacion(array $troncal, string $tipo): void
+    {
+        $esAlerta = $tipo === Notificacion::TIPO_ALERTA;
+
+        Notificacion::create([
+            'categoria' => Notificacion::CATEGORIA_INFRAESTRUCTURA,
+            'tipo' => $tipo,
+            'nivel' => $esAlerta ? 'danger' : 'success',
+            'titulo' => $esAlerta ? "Troncal SIP caído: {$troncal['nombre']}" : "Troncal SIP recuperado: {$troncal['nombre']}",
+            'mensaje' => $esAlerta
+                ? "{$troncal['host']} — puede afectar el ingreso o egreso de llamadas al 911."
+                : "{$troncal['host']} volvió a estar online.",
+            'datos' => $troncal,
+        ]);
     }
 
     /**

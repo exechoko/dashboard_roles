@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Notificacion;
 use App\Services\LibreNmsService;
 use App\Services\TelegramService;
 use Illuminate\Console\Command;
@@ -91,11 +92,13 @@ class MonitorearCpuVideo extends Command
         }
 
         if (!empty($nuevasAlertas)) {
+            $this->registrarNotificaciones($nuevasAlertas, Notificacion::TIPO_ALERTA, $umbral);
             $this->enviarATodos($telegram, $this->mensajeAlerta($nuevasAlertas, $umbral));
             $this->info('📨 Alerta enviada por Telegram: ' . implode(', ', array_column($nuevasAlertas, 'hostname')));
         }
 
         if (!empty($recuperados)) {
+            $this->registrarNotificaciones($recuperados, Notificacion::TIPO_RECUPERACION, $umbral);
             $this->enviarATodos($telegram, $this->mensajeRecuperacion($recuperados, $umbral));
             $this->info('📨 Recuperación enviada por Telegram: ' . implode(', ', array_column($recuperados, 'hostname')));
         }
@@ -137,6 +140,27 @@ class MonitorearCpuVideo extends Command
         }
 
         return $mensaje;
+    }
+
+    /**
+     * @param array<int, array{hostname: string, promedio: float, maximo: int}> $dispositivos
+     */
+    private function registrarNotificaciones(array $dispositivos, string $tipo, int $umbral): void
+    {
+        $esAlerta = $tipo === Notificacion::TIPO_ALERTA;
+
+        foreach ($dispositivos as $d) {
+            Notificacion::create([
+                'categoria' => Notificacion::CATEGORIA_INFRAESTRUCTURA,
+                'tipo' => $tipo,
+                'nivel' => $esAlerta ? 'warning' : 'success',
+                'titulo' => $esAlerta ? "CPU alta: {$d['hostname']}" : "CPU normalizada: {$d['hostname']}",
+                'mensaje' => $esAlerta
+                    ? "{$d['promedio']}% promedio, núcleo máx {$d['maximo']}% (umbral {$umbral}%)"
+                    : "{$d['promedio']}% promedio, por debajo del umbral ({$umbral}%)",
+                'datos' => $d,
+            ]);
+        }
     }
 
     private function enviarATodos(TelegramService $telegram, string $mensaje): void

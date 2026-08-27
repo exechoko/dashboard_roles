@@ -15,6 +15,8 @@ class Notificacion extends Model
 
     public const CATEGORIA_INFRAESTRUCTURA = 'infraestructura';
 
+    public const CATEGORIA_CAMARAS_CCTV = 'camaras_cctv';
+
     public const TIPO_ALERTA = 'alerta';
 
     public const TIPO_RECUPERACION = 'recuperacion';
@@ -41,6 +43,15 @@ class Notificacion extends Model
     public function scopeCategoria(Builder $query, string $categoria): Builder
     {
         return $query->where('categoria', $categoria);
+    }
+
+    /**
+     * Todo lo que se muestra en el panel de notificaciones de Infraestructura:
+     * el monitoreo ping+SNMP del edificio y el resumen de cámaras 911 (CCTV).
+     */
+    public function scopeDeInfraestructura(Builder $query): Builder
+    {
+        return $query->whereIn('categoria', [self::CATEGORIA_INFRAESTRUCTURA, self::CATEGORIA_CAMARAS_CCTV]);
     }
 
     public function scopeNoLeidasDesde(Builder $query, ?string $fecha): Builder

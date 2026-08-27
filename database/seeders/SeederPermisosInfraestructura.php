@@ -25,6 +25,7 @@ class SeederPermisosInfraestructura extends Seeder
             'ver-infraestructura-librenms',
             'ver-infraestructura-central-telefonica',
             'ver-infraestructura-workers',
+            'ver-infraestructura-notificaciones',
             'refrescar-infraestructura',
         ];
 

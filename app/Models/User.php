@@ -54,6 +54,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'notificaciones_vistas_en' => 'datetime',
     ];
 
     public function auditoria(){

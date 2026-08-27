@@ -31,6 +31,7 @@ use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\CamaraFisicaController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\CecocoRecursoAliasController;
 use App\Http\Controllers\SitioController;
 use App\Http\Controllers\CecocoController;
@@ -89,6 +90,12 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/conversaciones/{conversacion}/leido', [ChatController::class, 'marcarLeido'])->name('conversaciones.leido');
         Route::post('/conversaciones/{conversacion}/escribiendo', [ChatController::class, 'escribiendo'])->name('conversaciones.escribiendo');
         Route::get('/adjuntos/{adjunto}', [ChatController::class, 'adjunto'])->name('adjuntos.show');
+    });
+
+    Route::prefix('notificaciones')->name('notificaciones.')->group(function () {
+        Route::get('/sync', [NotificacionController::class, 'sync'])->middleware('throttle:chat-sync')->name('sync');
+        Route::post('/marcar-leidas', [NotificacionController::class, 'marcarLeidas'])->name('marcar-leidas');
+        Route::delete('/', [NotificacionController::class, 'vaciar'])->name('vaciar');
     });
 
     // 🔹 ADMINISTRAR WEB (div911.stper.com.ar)

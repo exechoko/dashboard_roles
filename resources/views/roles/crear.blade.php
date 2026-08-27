@@ -191,6 +191,7 @@
                                                         'infraestructura-librenms',
                                                         'infraestructura-central-telefonica',
                                                         'infraestructura-workers',
+                                                        'infraestructura-notificaciones',
                                                         'infraestructura',
                                                     ]
                                                 ];

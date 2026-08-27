@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\DispositivoEdificio;
+use App\Models\Notificacion;
 use App\Services\SnmpService;
 use App\Services\TelegramService;
 use Illuminate\Console\Command;
@@ -113,11 +114,13 @@ class MonitorearInfraestructura extends Command
         }
 
         if (!empty($nuevasAlertas)) {
+            $this->registrarNotificaciones($nuevasAlertas, Notificacion::TIPO_ALERTA);
             $this->enviarATodos($telegram, $this->mensajeAlerta($nuevasAlertas));
             $this->info('📨 Alerta enviada por Telegram: ' . implode(', ', array_column($nuevasAlertas, 'nombre')));
         }
 
         if (!empty($recuperados)) {
+            $this->registrarNotificaciones($recuperados, Notificacion::TIPO_RECUPERACION);
             $this->enviarATodos($telegram, $this->mensajeRecuperacion($recuperados));
             $this->info('📨 Recuperación enviada por Telegram: ' . implode(', ', array_column($recuperados, 'nombre')));
         }
@@ -196,6 +199,28 @@ class MonitorearInfraestructura extends Command
         }
 
         return empty($partes) ? 'sin datos SNMP' : implode(', ', $partes);
+    }
+
+    /**
+     * @param array<int, array{id: int, nombre: string, tipo: string, ip: string, estado: string, cpu_pct: float|null, ram_pct: float|null, disco_pct: float|null}> $lecturas
+     */
+    private function registrarNotificaciones(array $lecturas, string $tipo): void
+    {
+        foreach ($lecturas as $lectura) {
+            $esAlerta = $tipo === Notificacion::TIPO_ALERTA;
+
+            Notificacion::create([
+                'categoria' => Notificacion::CATEGORIA_INFRAESTRUCTURA,
+                'tipo' => $tipo,
+                'nivel' => $esAlerta ? ($lectura['estado'] === 'caido' ? 'danger' : 'warning') : 'success',
+                'titulo' => $esAlerta ? "Alerta: {$lectura['nombre']}" : "Recuperado: {$lectura['nombre']}",
+                'mensaje' => $esAlerta
+                    ? ($lectura['estado'] === 'caido' ? 'No responde' : $this->detalleMetricas($lectura)) . " ({$lectura['ip']})"
+                    : "Volvió a la normalidad ({$lectura['ip']})",
+                'dispositivo_edificio_id' => $lectura['id'],
+                'datos' => $lectura,
+            ]);
+        }
     }
 
     private function enviarATodos(TelegramService $telegram, string $mensaje): void

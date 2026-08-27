@@ -45,7 +45,7 @@ class InfraestructuraController extends Controller
         ]);
         $this->middleware(['permission:ver-infraestructura-pcs|ver-infraestructura-servidores|ver-infraestructura-camaras|ver-infraestructura-red'])
             ->only(['estadoGrupo']);
-        $this->middleware('permission:refrescar-infraestructura')->only(['refrescarDispositivo']);
+        $this->middleware('permission:refrescar-infraestructura')->only(['refrescarDispositivo', 'toggleMonitoreo']);
     }
 
     public function pcs()
@@ -119,6 +119,9 @@ class InfraestructuraController extends Controller
             ->get()
             ->map(function (DispositivoEdificio $dispositivo) use ($lecturas): array {
                 $lectura = $lecturas->get($dispositivo->id);
+                $estado = !$dispositivo->monitoreo_habilitado
+                    ? 'deshabilitado'
+                    : ($lectura['estado'] ?? SnmpService::estadoSinLectura($dispositivo->ip));
 
                 return [
                     'id' => $dispositivo->id,
@@ -129,10 +132,11 @@ class InfraestructuraController extends Controller
                     'icono' => $dispositivo->icono,
                     'oficina' => $dispositivo->oficina,
                     'piso' => $dispositivo->piso,
+                    'monitoreo_habilitado' => $dispositivo->monitoreo_habilitado,
                     // Preferir el dato en vivo por SNMP (sysDescr) sobre el cargado
                     // a mano en dispositivos_edificio, que puede haber quedado viejo.
                     'sistema_operativo' => $lectura['sistema_operativo'] ?? $dispositivo->sistema_operativo,
-                    'estado' => $lectura['estado'] ?? SnmpService::estadoSinLectura($dispositivo->ip),
+                    'estado' => $estado,
                     'latencia_ms' => $lectura['latencia_ms'] ?? null,
                     'cpu_pct' => $lectura['cpu_pct'] ?? null,
                     'cpu_modelo' => $lectura['cpu_modelo'] ?? null,
@@ -159,6 +163,10 @@ class InfraestructuraController extends Controller
      */
     public function refrescarDispositivo(DispositivoEdificio $dispositivo, SnmpService $snmp): JsonResponse
     {
+        if (!$dispositivo->monitoreo_habilitado) {
+            return response()->json(['ok' => false, 'error' => 'El monitoreo de este dispositivo está pausado.'], 422);
+        }
+
         if (!SnmpService::esIpMonitoreable($dispositivo->ip)) {
             return response()->json(['ok' => false, 'error' => 'IP inválida, no se puede monitorear.'], 422);
         }
@@ -175,6 +183,29 @@ class InfraestructuraController extends Controller
         ], now()->addMinutes(30));
 
         return response()->json(['ok' => true, 'lectura' => $lectura]);
+    }
+
+    /**
+     * Prende/apaga el monitoreo de un dispositivo puntual (botón en la card).
+     * No lo saca del inventario ni de la pantalla, solo evita que el comando
+     * programado y el refresco manual lo consulten mientras está pausado.
+     */
+    public function toggleMonitoreo(DispositivoEdificio $dispositivo): JsonResponse
+    {
+        $dispositivo->monitoreo_habilitado = !$dispositivo->monitoreo_habilitado;
+        $dispositivo->save();
+
+        if (!$dispositivo->monitoreo_habilitado) {
+            $cache = Cache::get(SnmpService::CACHE_KEY_ESTADO, ['dispositivos' => [], 'consultado_en' => null]);
+            $dispositivos = collect($cache['dispositivos'])->keyBy('id');
+            $dispositivos->forget($dispositivo->id);
+            Cache::put(SnmpService::CACHE_KEY_ESTADO, [
+                'dispositivos' => $dispositivos->values()->all(),
+                'consultado_en' => $cache['consultado_en'],
+            ], now()->addMinutes(30));
+        }
+
+        return response()->json(['ok' => true, 'monitoreo_habilitado' => $dispositivo->monitoreo_habilitado]);
     }
 
     /**

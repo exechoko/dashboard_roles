@@ -27,10 +27,15 @@ class MonitorearInfraestructura extends Command
         $tipoOpcion = $this->option('tipo');
         $tipos = $tipoOpcion ? [$tipoOpcion] : self::TIPOS_MONITOREADOS;
 
-        $dispositivos = DispositivoEdificio::activos()->whereIn('tipo', $tipos)->orderBy('tipo')->orderBy('nombre')->get();
+        $dispositivos = DispositivoEdificio::activos()
+            ->conMonitoreoHabilitado()
+            ->whereIn('tipo', $tipos)
+            ->orderBy('tipo')
+            ->orderBy('nombre')
+            ->get();
 
         if ($dispositivos->isEmpty()) {
-            $this->warn('No hay dispositivos activos para los tipos solicitados.');
+            $this->warn('No hay dispositivos activos con monitoreo habilitado para los tipos solicitados.');
 
             return Command::SUCCESS;
         }

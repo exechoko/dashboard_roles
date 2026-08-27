@@ -182,6 +182,97 @@ class InfraestructuraTest extends TestCase
         $this->assertSame('caido', collect($cache['dispositivos'])->firstWhere('id', $dispositivo->id)['estado']);
     }
 
+    // ── toggleMonitoreo ──────────────────────────────────────────────────
+
+    public function test_toggle_monitoreo_requiere_permiso(): void
+    {
+        $dispositivo = DispositivoEdificio::create([
+            'tipo' => 'pc', 'nombre' => 'PC-TOGGLE', 'ip' => self::IP_NO_RUTEABLE, 'oficina' => 'X', 'activo' => true,
+        ]);
+        $usuario = User::factory()->create();
+
+        $this->actingAs($usuario)
+            ->postJson(route('api.infraestructura.toggle-monitoreo', $dispositivo))
+            ->assertForbidden();
+    }
+
+    public function test_toggle_monitoreo_invierte_el_flag_y_lo_persiste(): void
+    {
+        $dispositivo = DispositivoEdificio::create([
+            'tipo' => 'pc', 'nombre' => 'PC-TOGGLE-2', 'ip' => self::IP_NO_RUTEABLE, 'oficina' => 'X', 'activo' => true,
+        ]);
+        $this->assertTrue($dispositivo->fresh()->monitoreo_habilitado);
+        $usuario = $this->usuarioConPermiso('refrescar-infraestructura');
+
+        $respuesta = $this->actingAs($usuario)
+            ->postJson(route('api.infraestructura.toggle-monitoreo', $dispositivo));
+
+        $respuesta->assertOk();
+        $respuesta->assertJsonPath('monitoreo_habilitado', false);
+        $this->assertFalse($dispositivo->fresh()->monitoreo_habilitado);
+
+        // Toggle de vuelta
+        $this->actingAs($usuario)
+            ->postJson(route('api.infraestructura.toggle-monitoreo', $dispositivo))
+            ->assertJsonPath('monitoreo_habilitado', true);
+    }
+
+    public function test_pausar_monitoreo_saca_al_dispositivo_del_cache_y_lo_marca_deshabilitado(): void
+    {
+        $dispositivo = DispositivoEdificio::create([
+            'tipo' => 'pc', 'nombre' => 'PC-PAUSADA', 'ip' => self::IP_NO_RUTEABLE, 'oficina' => 'X', 'activo' => true,
+        ]);
+
+        Cache::put(SnmpService::CACHE_KEY_ESTADO, [
+            'dispositivos' => [
+                ['id' => $dispositivo->id, 'estado' => 'alerta', 'cpu_pct' => 99.0, 'ram_pct' => null, 'disco_pct' => null, 'latencia_ms' => 5],
+            ],
+            'consultado_en' => '2026-01-01 10:00:00',
+        ], now()->addMinutes(30));
+
+        $usuario = $this->usuarioConPermiso('refrescar-infraestructura');
+        $this->actingAs($usuario)->postJson(route('api.infraestructura.toggle-monitoreo', $dispositivo))->assertOk();
+
+        $cache = Cache::get(SnmpService::CACHE_KEY_ESTADO);
+        $this->assertNull(collect($cache['dispositivos'])->firstWhere('id', $dispositivo->id));
+
+        $respuesta = $this->actingAs($this->usuarioConPermiso('ver-infraestructura-pcs'))
+            ->getJson(route('api.infraestructura.estado-grupo', 'pcs'));
+        $respuesta->assertJsonFragment(['id' => $dispositivo->id, 'estado' => 'deshabilitado']);
+    }
+
+    public function test_refrescar_dispositivo_pausado_devuelve_422(): void
+    {
+        $dispositivo = DispositivoEdificio::create([
+            'tipo' => 'pc', 'nombre' => 'PC-PAUSADA-2', 'ip' => self::IP_NO_RUTEABLE, 'oficina' => 'X',
+            'activo' => true, 'monitoreo_habilitado' => false,
+        ]);
+        $usuario = $this->usuarioConPermiso('refrescar-infraestructura');
+
+        $this->actingAs($usuario)
+            ->postJson(route('api.infraestructura.refrescar-dispositivo', $dispositivo))
+            ->assertStatus(422);
+    }
+
+    public function test_comando_no_releva_dispositivos_con_monitoreo_pausado(): void
+    {
+        // Estado previo conocido (el cache "estado" no participa de la
+        // transacción de BD, así que no hay que asumir que arranca vacío).
+        Cache::put(SnmpService::CACHE_KEY_ESTADO, ['dispositivos' => ['centinela'], 'consultado_en' => 'previo'], now()->addMinutes(30));
+
+        $dispositivo = DispositivoEdificio::create([
+            'tipo' => 'servidor_nebula', 'nombre' => 'SRV-PAUSADO', 'ip' => self::IP_NO_RUTEABLE, 'oficina' => 'X',
+            'activo' => true, 'monitoreo_habilitado' => false,
+        ]);
+
+        $this->artisan('infraestructura:monitorear --tipo=servidor_nebula --sin-telegram')->assertSuccessful();
+
+        // Sin dispositivos elegibles el comando no debe pisar el cache: sigue
+        // "previo", no un array vacío ni con el dispositivo pausado adentro.
+        $cache = Cache::get(SnmpService::CACHE_KEY_ESTADO);
+        $this->assertSame('previo', $cache['consultado_en']);
+    }
+
     // ── Endpoints movidos desde el Dashboard (LibreNMS / Central / Workers) ─
 
     public function test_estado_cctv_sin_cache_reciente_indica_no_disponible(): void

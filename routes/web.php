@@ -658,6 +658,9 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/dispositivos/{dispositivo}/refrescar', [InfraestructuraController::class, 'refrescarDispositivo'])
             ->middleware('throttle:12,1')
             ->name('refrescar-dispositivo');
+        Route::post('/dispositivos/{dispositivo}/monitoreo', [InfraestructuraController::class, 'toggleMonitoreo'])
+            ->middleware('throttle:12,1')
+            ->name('toggle-monitoreo');
         Route::get('/workers-status', [InfraestructuraController::class, 'workersStatus'])->name('workers-status');
         Route::get('/estado-cctv', [InfraestructuraController::class, 'estadoCctv'])->name('estado-cctv');
         Route::get('/estado-troncales-central-telefonica', [InfraestructuraController::class, 'estadoTroncalesCentralTelefonica'])

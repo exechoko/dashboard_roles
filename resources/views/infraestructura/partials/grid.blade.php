@@ -23,12 +23,14 @@
         .infra-estado-ok, .infra-estado-sin_snmp { background: var(--accent-success); }
         .infra-estado-alerta { background: var(--accent-warning); }
         .infra-estado-caido { background: var(--accent-danger); }
-        .infra-estado-pendiente, .infra-estado-ip_invalida { background: var(--text-secondary); }
+        .infra-estado-pendiente, .infra-estado-ip_invalida, .infra-estado-deshabilitado { background: var(--text-secondary); }
+        .infra-card.infra-pausada { opacity: .6; }
         .infra-metricas small { color: var(--text-secondary); }
         .infra-barra { height: 6px; border-radius: 4px; background: var(--bg-tertiary); overflow: hidden; margin-top: 2px; }
         .infra-barra > div { height: 100%; }
-        .infra-refresh { border: none; background: transparent; color: var(--text-secondary); cursor: pointer; padding: 0 .25rem; }
-        .infra-refresh:hover { color: var(--accent-primary); }
+        .infra-refresh, .infra-toggle { border: none; background: transparent; color: var(--text-secondary); cursor: pointer; padding: 0 .25rem; }
+        .infra-refresh:hover, .infra-toggle:hover { color: var(--accent-primary); }
+        .infra-toggle.activo { color: var(--accent-success); }
         .infra-refresh.girando i { animation: infra-spin .8s linear infinite; }
         @keyframes infra-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
@@ -59,12 +61,14 @@
         .filtro-alerta    { --neon: #d97706; --neon-soft: rgba(217, 119, 6, 0.16); }
         .filtro-caido     { --neon: #dc2626; --neon-soft: rgba(220, 38, 38, 0.16); }
         .filtro-pendiente { --neon: #64748b; --neon-soft: rgba(100, 116, 139, 0.16); }
+        .filtro-pausado   { --neon: #7c3aed; --neon-soft: rgba(124, 58, 237, 0.16); }
 
         [data-theme="dark"] .filtro-todos     { --neon: #00e5ff; --neon-soft: rgba(0, 229, 255, 0.22); }
         [data-theme="dark"] .filtro-ok        { --neon: #00f2a6; --neon-soft: rgba(0, 242, 166, 0.22); }
         [data-theme="dark"] .filtro-alerta    { --neon: #ffb020; --neon-soft: rgba(255, 176, 32, 0.22); }
         [data-theme="dark"] .filtro-caido     { --neon: #ff355d; --neon-soft: rgba(255, 53, 93, 0.22); }
         [data-theme="dark"] .filtro-pendiente { --neon: #93a8c0; --neon-soft: rgba(147, 168, 192, 0.22); }
+        [data-theme="dark"] .filtro-pausado   { --neon: #a78bfa; --neon-soft: rgba(167, 139, 250, 0.22); }
     </style>
 @endpush
 
@@ -88,6 +92,7 @@
             <a href="#" data-filtro="alerta" class="btn btn-sm btn-filtro-infra filtro-alerta">Alerta <span class="badge ml-1" data-count="alerta">0</span></a>
             <a href="#" data-filtro="caido" class="btn btn-sm btn-filtro-infra filtro-caido">Caídos <span class="badge ml-1" data-count="caido">0</span></a>
             <a href="#" data-filtro="pendiente" class="btn btn-sm btn-filtro-infra filtro-pendiente">Pendientes <span class="badge ml-1" data-count="pendiente">0</span></a>
+            <a href="#" data-filtro="deshabilitado" class="btn btn-sm btn-filtro-infra filtro-pausado">Pausados <span class="badge ml-1" data-count="deshabilitado">0</span></a>
         </div>
 
         <div class="row" id="infra-grid-{{ $grupo }}">
@@ -102,6 +107,7 @@
             var grupo = '{{ $grupo }}';
             var url = '{{ route('api.infraestructura.estado-grupo', $grupo) }}';
             var refreshUrlTemplate = '{{ route('api.infraestructura.refrescar-dispositivo', ['dispositivo' => '__ID__']) }}';
+            var toggleUrlTemplate = '{{ route('api.infraestructura.toggle-monitoreo', ['dispositivo' => '__ID__']) }}';
             var filtroActual = '';
 
             // Contenedores: no se reemplazan nunca, solo su contenido — se
@@ -119,7 +125,7 @@
 
             var etiquetasEstado = {
                 ok: 'OK', alerta: 'Alerta', caido: 'Caído', sin_snmp: 'En línea',
-                pendiente: 'Pendiente', ip_invalida: 'IP inválida'
+                pendiente: 'Pendiente', ip_invalida: 'IP inválida', deshabilitado: 'Monitoreo pausado'
             };
 
             function colorBarra(pct) {
@@ -151,7 +157,8 @@
 
             function tarjeta(d) {
                 var estado = d.estado || 'pendiente';
-                var metricas = barra('CPU', d.cpu_pct)
+                var pausado = !d.monitoreo_habilitado;
+                var metricas = pausado ? '' : barra('CPU', d.cpu_pct)
                     + barra('RAM', d.ram_pct, detalleGb(d.ram_usado_gb, d.ram_total_gb))
                     + barra('Disco', d.disco_pct, detalleGb(d.disco_usado_gb, d.disco_total_gb));
                 var iconoSo = iconoSistemaOperativo(d.sistema_operativo);
@@ -161,13 +168,19 @@
                 var lineaCpu = d.cpu_modelo
                     ? '<div class="infra-meta"><i class="fas fa-microchip mr-1"></i>' + escapar(d.cpu_modelo) + '</div>'
                     : '';
+                var btnRefresh = pausado
+                    ? ''
+                    : '<button type="button" class="infra-refresh" data-id="' + d.id + '" title="Refrescar ahora"><i class="fas fa-sync-alt"></i></button>';
+                var btnToggle = '<button type="button" class="infra-toggle' + (pausado ? '' : ' activo') + '" data-id="' + d.id
+                    + '" title="' + (pausado ? 'Reanudar monitoreo' : 'Pausar monitoreo') + '">'
+                    + '<i class="fas ' + (pausado ? 'fa-toggle-off' : 'fa-toggle-on') + '"></i></button>';
 
                 return '<div class="col-xl-3 col-lg-4 col-md-6 mb-3 infra-item" data-estado="' + estado + '">'
-                    + '<div class="infra-card">'
+                    + '<div class="infra-card' + (pausado ? ' infra-pausada' : '') + '">'
                     + '<div class="d-flex justify-content-between align-items-start">'
                     + '<div><i class="' + escapar(d.icono || 'fas fa-cube') + ' mr-1"></i>'
                     + '<span class="infra-nombre">' + escapar(d.nombre) + '</span></div>'
-                    + '<button type="button" class="infra-refresh" data-id="' + d.id + '" title="Refrescar ahora"><i class="fas fa-sync-alt"></i></button>'
+                    + '<div>' + btnRefresh + btnToggle + '</div>'
                     + '</div>'
                     + '<div class="infra-meta">' + escapar(d.ip || 'sin IP') + (d.oficina ? ' &mdash; ' + escapar(d.oficina) : '') + '</div>'
                     + lineaSo
@@ -189,7 +202,7 @@
             }
 
             function renderFiltros(datos) {
-                var conteos = { ok: 0, alerta: 0, caido: 0, pendiente: 0 };
+                var conteos = { ok: 0, alerta: 0, caido: 0, pendiente: 0, deshabilitado: 0 };
                 datos.forEach(function (d) {
                     var e = normalizarEstado(d.estado);
                     if (conteos[e] !== undefined) conteos[e]++;
@@ -209,19 +222,37 @@
                 });
             }
 
+            function csrfToken() {
+                return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            }
+
             function vincularBotonesRefresh() {
                 elGrid.querySelectorAll('.infra-refresh').forEach(function (btn) {
                     btn.addEventListener('click', function () {
                         if (btn.classList.contains('girando')) return;
                         btn.classList.add('girando');
-                        var csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
                         fetch(refreshUrlTemplate.replace('__ID__', btn.getAttribute('data-id')), {
                             method: 'POST',
-                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrf }
+                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfToken() }
                         })
                             .then(function () { return verificar(); })
                             .catch(function () {})
                             .finally(function () { btn.classList.remove('girando'); });
+                    });
+                });
+            }
+
+            function vincularBotonesToggle() {
+                elGrid.querySelectorAll('.infra-toggle').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        btn.disabled = true;
+                        fetch(toggleUrlTemplate.replace('__ID__', btn.getAttribute('data-id')), {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': csrfToken() }
+                        })
+                            .then(function () { return verificar(); })
+                            .catch(function () {})
+                            .finally(function () { btn.disabled = false; });
                     });
                 });
             }
@@ -235,6 +266,7 @@
                 elGrid.innerHTML = datos.map(tarjeta).join('');
                 aplicarFiltro();
                 vincularBotonesRefresh();
+                vincularBotonesToggle();
             }
 
             function verificar() {

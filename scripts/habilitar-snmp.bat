@@ -19,16 +19,26 @@ echo Instalando componente SNMP (detecta si es Windows Server o cliente, y si es
 REM Get-WmiObject (en vez de Get-CimInstance) porque en Windows 7 el PowerShell
 REM de fabrica es 2.0 y no tiene el modulo CIM. En Windows 7 tampoco existe
 REM Add-WindowsCapability (es de Windows 10+), asi que ahi se instala por DISM.
+REM Sin /all ni /quiet: en el DISM de Windows 7 esas opciones no son validas
+REM para /Enable-Feature (da "Error: 87 - opcion no reconocida").
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "$esServer = (Get-WmiObject Win32_OperatingSystem).ProductType -ne 1;" ^
     "$esWindows7 = [System.Environment]::OSVersion.Version.Major -lt 10;" ^
     "if ($esServer) {" ^
     "    Install-WindowsFeature -Name SNMP-Service -IncludeManagementTools | Out-Null" ^
     "} elseif ($esWindows7) {" ^
-    "    Start-Process -FilePath dism.exe -ArgumentList '/online','/enable-feature','/featurename:SNMP','/all','/quiet','/norestart' -Wait -NoNewWindow" ^
+    "    Start-Process -FilePath dism.exe -ArgumentList '/online','/enable-feature','/featurename:SNMP','/norestart' -Wait -NoNewWindow" ^
     "} else {" ^
     "    Add-WindowsCapability -Online -Name 'SNMP.Client~~~~0.0.1.0' | Out-Null" ^
     "}"
+
+powershell -NoProfile -Command "if (-not (Get-Service -Name SNMP -ErrorAction SilentlyContinue)) { exit 1 }"
+if %errorlevel% neq 0 (
+    echo.
+    echo ERROR: no se pudo instalar el servicio SNMP. Revisa los mensajes de arriba.
+    pause
+    exit /b 1
+)
 
 echo Configurando community string y restricciones...
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^

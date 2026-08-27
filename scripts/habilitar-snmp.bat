@@ -1,5 +1,5 @@
 @echo off
-REM Habilita el servicio SNMP de Windows para monitoreo desde el server Laravel.
+REM Habilita el servicio SNMP y el ping entrante (ICMPv4) de Windows para el monitoreo desde el server Laravel.
 REM Ejecutar como Administrador en cada PC (clic derecho > Ejecutar como administrador).
 
 REM ==== CONFIGURAR ANTES DE DISTRIBUIR ====
@@ -39,6 +39,11 @@ echo Abriendo puerto UDP 161 en el firewall para %SERVER_IP% y %DEV_IP%...
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
     "if (-not (Get-NetFirewallRule -DisplayName 'SNMP desde server Laravel' -ErrorAction SilentlyContinue)) {" ^
     "New-NetFirewallRule -DisplayName 'SNMP desde server Laravel' -Direction Inbound -Protocol UDP -LocalPort 161 -RemoteAddress '%SERVER_IP%','%DEV_IP%' -Action Allow | Out-Null }"
+
+echo Habilitando ping entrante (ICMPv4) para que el monitoreo detecte si el equipo esta caido...
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+    "if (-not (Get-NetFirewallRule -DisplayName 'Permitir ping entrante' -ErrorAction SilentlyContinue)) {" ^
+    "New-NetFirewallRule -DisplayName 'Permitir ping entrante' -Direction Inbound -Protocol ICMPv4 -IcmpType 8 -Action Allow | Out-Null }"
 
 echo.
 powershell -NoProfile -Command "Get-Service SNMP"

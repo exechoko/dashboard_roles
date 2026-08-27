@@ -14,7 +14,7 @@
             </div>
         </div>
         <div id="notificaciones-lista" class="notificaciones-panel-lista">
-            <div class="notificaciones-panel-vacia text-muted">Sin notificaciones.</div>
+            <div class="notificaciones-panel-vacia">Sin notificaciones.</div>
         </div>
     </div>
 </li>
@@ -32,8 +32,9 @@
         align-items: center;
         justify-content: space-between;
         padding: 10px 14px;
-        border-bottom: 1px solid rgba(0, 0, 0, .08);
+        border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, .08));
         font-weight: 600;
+        color: var(--text-primary, #212529) !important;
     }
 
     .notificaciones-panel-lista {
@@ -45,29 +46,35 @@
         padding: 24px 14px;
         text-align: center;
         font-size: 13px;
+        color: var(--text-secondary, #6c757d) !important;
     }
 
     .notificacion-item {
         display: flex;
         gap: 10px;
         padding: 10px 14px;
-        border-bottom: 1px solid rgba(0, 0, 0, .05);
+        border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, .05));
+    }
+
+    .notificacion-item:hover {
+        background-color: var(--bg-tertiary, rgba(0, 0, 0, .02));
     }
 
     .notificacion-item.no-leida {
-        background-color: rgba(220, 53, 69, .06);
+        background-color: rgba(220, 53, 69, .1);
     }
 
     .notificacion-item__icono {
         flex: 0 0 auto;
-        width: 30px;
-        height: 30px;
+        width: 20px;
+        height: 20px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         color: #fff;
-        font-size: 13px;
+        font-size: 9px;
+        margin-top: 1px;
     }
 
     .notificacion-item__icono.nivel-danger { background-color: #dc3545; }
@@ -83,18 +90,20 @@
         font-weight: 600;
         font-size: 13px;
         display: block;
+        color: var(--text-primary, #212529) !important;
     }
 
     .notificacion-item__mensaje {
         font-size: 12px;
-        color: #6c757d;
+        color: var(--text-secondary, #6c757d) !important;
         display: block;
         word-break: break-word;
     }
 
     .notificacion-item__fecha {
         font-size: 10.5px;
-        color: #adb5bd;
+        color: var(--text-secondary, #adb5bd) !important;
+        opacity: .8;
     }
 
     @keyframes notifBadgePulso {
@@ -132,17 +141,15 @@ $(function () {
 
     function pintarLista(notificaciones) {
         if (!notificaciones.length) {
-            lista.html('<div class="notificaciones-panel-vacia text-muted">Sin notificaciones.</div>');
+            lista.html('<div class="notificaciones-panel-vacia">Sin notificaciones.</div>');
             return;
         }
 
-        const iconos = { alerta: 'fa-triangle-exclamation', recuperacion: 'fa-circle-check' };
-
         lista.html(notificaciones.map(function (n) {
-            const icono = iconos[n.tipo] || 'fa-bell';
+            const icono = n.icono || 'fas fa-bell';
             const claseLeida = n.leida ? '' : 'no-leida';
             return '<div class="notificacion-item ' + claseLeida + '">'
-                + '<div class="notificacion-item__icono nivel-' + n.nivel + '"><i class="fas ' + icono + '"></i></div>'
+                + '<div class="notificacion-item__icono nivel-' + n.nivel + '"><i class="' + icono + '"></i></div>'
                 + '<div class="notificacion-item__texto">'
                 + '<span class="notificacion-item__titulo">' + escapeHtml(n.titulo) + '</span>'
                 + '<span class="notificacion-item__mensaje">' + escapeHtml(n.mensaje) + '</span>'

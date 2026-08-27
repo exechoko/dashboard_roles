@@ -158,7 +158,7 @@ class MonitorearCpuVideo extends Command
                 'mensaje' => $esAlerta
                     ? "{$d['promedio']}% promedio, núcleo máx {$d['maximo']}% (umbral {$umbral}%)"
                     : "{$d['promedio']}% promedio, por debajo del umbral ({$umbral}%)",
-                'datos' => $d,
+                'datos' => array_merge($d, ['tipo' => 'pc_video']),
             ]);
         }
     }

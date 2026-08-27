@@ -121,7 +121,7 @@ class MonitorearTroncalesCentralTelefonica extends Command
             'mensaje' => $esAlerta
                 ? "{$troncal['host']} — puede afectar el ingreso o egreso de llamadas al 911."
                 : "{$troncal['host']} volvió a estar online.",
-            'datos' => $troncal,
+            'datos' => array_merge($troncal, ['tipo' => 'troncal_telefonica']),
         ]);
     }
 

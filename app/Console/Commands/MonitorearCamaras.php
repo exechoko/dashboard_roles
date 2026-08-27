@@ -89,7 +89,7 @@ class MonitorearCamaras extends Command
             'mensaje' => $caidas === 0
                 ? "Las {$total} cámaras del grupo CCTV responden con normalidad."
                 : $nombres . ($restantes > 0 ? " y {$restantes} más" : ''),
-            'datos' => ['total' => $total, 'caidas' => $caidas, 'anterior' => $anterior, 'offline' => $offline],
+            'datos' => ['tipo' => 'camara_cctv', 'total' => $total, 'caidas' => $caidas, 'anterior' => $anterior, 'offline' => $offline],
         ]);
     }
 }

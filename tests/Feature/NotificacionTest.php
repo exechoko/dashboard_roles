@@ -76,6 +76,45 @@ class NotificacionTest extends TestCase
         $this->assertTrue($respuesta['notificaciones'][0]['leida']);
     }
 
+    /**
+     * @dataProvider tiposYIconosEsperados
+     */
+    public function test_sync_expone_el_icono_segun_el_tipo_de_dispositivo(?string $tipoDispositivo, string $iconoEsperado): void
+    {
+        $usuario = $this->usuarioConPermiso('ver-infraestructura-notificaciones');
+
+        Notificacion::create([
+            'categoria' => Notificacion::CATEGORIA_INFRAESTRUCTURA,
+            'tipo' => Notificacion::TIPO_ALERTA,
+            'nivel' => 'danger',
+            'titulo' => 'Alerta: TEST',
+            'mensaje' => 'm',
+            'datos' => $tipoDispositivo ? ['tipo' => $tipoDispositivo] : null,
+        ]);
+
+        $respuesta = $this->actingAs($usuario)
+            ->getJson(route('notificaciones.sync'))
+            ->assertOk()
+            ->json();
+
+        $this->assertSame($iconoEsperado, $respuesta['notificaciones'][0]['icono']);
+    }
+
+    public static function tiposYIconosEsperados(): array
+    {
+        return [
+            'camara interna' => ['camara_interna', 'fas fa-video'],
+            'pc' => ['pc', 'fas fa-desktop'],
+            'servidor' => ['servidor', 'fas fa-server'],
+            'router' => ['router', 'fas fa-wifi'],
+            'cámara CCTV (resumen)' => ['camara_cctv', 'fas fa-video'],
+            'pc de video (LibreNMS)' => ['pc_video', 'fas fa-desktop'],
+            'troncal SIP' => ['troncal_telefonica', 'fas fa-phone-volume'],
+            'tipo desconocido' => ['no_existe', 'fas fa-bell'],
+            'sin datos' => [null, 'fas fa-bell'],
+        ];
+    }
+
     public function test_vaciar_borra_el_historial(): void
     {
         $usuario = $this->usuarioConPermiso('ver-infraestructura-notificaciones');

@@ -49,6 +49,12 @@ return [
             'visibility' => 'public',
         ],
 
+        'descargas' => [
+            'driver' => 'local',
+            'root' => env('DESCARGAS_PATH', storage_path('app/descargas')),
+            'visibility' => 'private',
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

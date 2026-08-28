@@ -51,6 +51,8 @@ use App\Http\Controllers\ArmaTipoController;
 use App\Http\Controllers\ArmaPersonalController;
 use App\Http\Controllers\ArmeriaArmaController;
 use App\Http\Controllers\ArmeriaChalecoController;
+use App\Http\Controllers\DescargaController;
+use App\Http\Controllers\DescargaAdminController;
 
 /*
 |--------------------------------------------------------------------------
@@ -690,6 +692,50 @@ Route::group(['middleware' => ['auth']], function () {
             Route::get('/{mensaje}/imprimir', [App\Http\Controllers\MailController::class, 'imprimir'])->whereNumber('mensaje')->name('imprimir');
             Route::get('/{mensaje}/adjunto/{parte}', [App\Http\Controllers\MailController::class, 'adjunto'])->whereNumber('mensaje')->name('adjunto');
             Route::get('/{mensaje}/eml', [App\Http\Controllers\MailController::class, 'eml'])->whereNumber('mensaje')->name('eml');
+        });
+    });
+
+    // Plataforma de Descargas
+    Route::prefix('descargas')->name('descargas.')->group(function () {
+        // Rutas para usuarios (ver y descargar)
+        Route::get('/', [DescargaController::class, 'index'])->name('index');
+        Route::get('/{archivo}', [DescargaController::class, 'show'])->name('show');
+        Route::get('/{archivo}/download', [DescargaController::class, 'download'])->name('download');
+        Route::get('/{archivo}/preview', [DescargaController::class, 'preview'])->name('preview');
+        Route::post('/{archivo}/comentar', [DescargaController::class, 'comentar'])->name('comentar');
+
+        // Link público (sin auth)
+        Route::get('/link/{token}', [DescargaController::class, 'linkPublico'])->name('link.publico');
+
+        // Rutas de administración
+        Route::prefix('admin')->name('admin.')->group(function () {
+            Route::get('/', [DescargaAdminController::class, 'index'])->name('index');
+
+            // Categorías
+            Route::get('/categorias', [DescargaAdminController::class, 'categorias'])->name('categorias');
+            Route::post('/categorias', [DescargaAdminController::class, 'storeCategoria'])->name('categorias.store');
+            Route::put('/categorias/{categoria}', [DescargaAdminController::class, 'updateCategoria'])->name('categorias.update');
+            Route::delete('/categorias/{categoria}', [DescargaAdminController::class, 'destroyCategoria'])->name('categorias.destroy');
+
+            // Archivos
+            Route::get('/archivos', [DescargaAdminController::class, 'archivos'])->name('archivos');
+            Route::get('/archivos/create', [DescargaAdminController::class, 'create'])->name('create');
+            Route::post('/archivos', [DescargaAdminController::class, 'store'])->name('store');
+            Route::get('/archivos/conflictos', [DescargaAdminController::class, 'resolverConflictos'])->name('resolver_conflictos');
+            Route::post('/archivos/conflictos/procesar', [DescargaAdminController::class, 'procesarConflicto'])->name('procesar_conflictos');
+            Route::get('/archivos/{archivo}/edit', [DescargaAdminController::class, 'edit'])->name('edit');
+            Route::put('/archivos/{archivo}', [DescargaAdminController::class, 'update'])->name('update');
+            Route::delete('/archivos/{archivo}', [DescargaAdminController::class, 'destroy'])->name('destroy');
+            Route::post('/archivos/{archivo}/reactivar', [DescargaAdminController::class, 'reactivar'])->name('reactivar');
+
+            // Logs
+            Route::get('/logs', [DescargaAdminController::class, 'logs'])->name('logs');
+            Route::get('/logs/exportar', [DescargaAdminController::class, 'exportarLogs'])->name('exportar_logs');
+
+            // Links públicos
+            Route::get('/links', [DescargaAdminController::class, 'links'])->name('links');
+            Route::post('/links', [DescargaAdminController::class, 'crearLink'])->name('links.store');
+            Route::delete('/links/{link}', [DescargaAdminController::class, 'destroyLink'])->name('links.destroy');
         });
     });
 

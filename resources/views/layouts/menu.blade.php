@@ -597,6 +597,49 @@
     </li>
 @endcanany
 
+@can('ver-plataforma-descargas')
+    <li class="dropdown {{ request()->is('descargas*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-download"></i><span>Descargas</span>
+        </a>
+        <ul class="dropdown-menu">
+            <li class="{{ request()->routeIs('descargas.index') || request()->routeIs('descargas.show') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('descargas.index') }}">
+                    <i class="fas fa-folder-open"></i><span>Archivos</span>
+                </a>
+            </li>
+            @can('administrar-plataforma-descargas')
+                <li class="dropdown-divider"></li>
+                <li class="dropdown-header">ADMINISTRACIÓN</li>
+                <li class="{{ request()->routeIs('descargas.admin.categorias*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('descargas.admin.categorias') }}">
+                        <i class="fas fa-tags"></i><span>Categorías</span>
+                    </a>
+                </li>
+                <li class="{{ request()->routeIs('descargas.admin.archivos*') || request()->routeIs('descargas.admin.create') || request()->routeIs('descargas.admin.edit') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('descargas.admin.archivos') }}">
+                        <i class="fas fa-file-alt"></i><span>Archivos</span>
+                    </a>
+                </li>
+                @can('ver-logs-descargas')
+                    <li class="{{ request()->routeIs('descargas.admin.logs*') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('descargas.admin.logs') }}">
+                            <i class="fas fa-history"></i><span>Historial Descargas</span>
+                        </a>
+                    </li>
+                @endcan
+                @can('generar-links-publicos')
+                    <li class="{{ request()->routeIs('descargas.admin.links*') ? 'active' : '' }}">
+                        <a class="nav-link" href="{{ route('descargas.admin.links') }}">
+                            <i class="fas fa-link"></i><span>Links Públicos</span>
+                        </a>
+                    </li>
+                @endcan
+            @endcan
+        </ul>
+    </li>
+@endcan
+
 @canany(['ver-menu-web', 'editar-web-contadores', 'editar-web-textos', 'editar-web-historia', 'editar-web-tecnologia', 'editar-web-dependencias', 'editar-web-galeria', 'crear-noticia', 'editar-noticia', 'eliminar-noticia'])
     <li class="{{ request()->is('web-admin*') || request()->is('noticias*') || request()->is('web-dependencias*') || request()->is('web-historia*') || request()->is('web-tecnologia*') || request()->is('web-galeria*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">

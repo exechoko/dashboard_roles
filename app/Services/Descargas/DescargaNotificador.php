@@ -38,7 +38,6 @@ class DescargaNotificador
         return User::whereHas('roles', function ($query) use ($roleIds) {
             $query->whereIn('roles.id', $roleIds);
         })
-            ->where('activo', true)
             ->whereNotNull('email')
             ->get();
     }

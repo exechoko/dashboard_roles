@@ -296,6 +296,18 @@ class SeederTablaPermisos extends Seeder
             'crear-noticia',
             'editar-noticia',
             'eliminar-noticia',
+
+            //Infraestructura
+            'ver-menu-infraestructura',
+            'ver-infraestructura-pcs',
+            'ver-infraestructura-servidores',
+            'ver-infraestructura-camaras',
+            'ver-infraestructura-red',
+            'ver-infraestructura-librenms',
+            'ver-infraestructura-central-telefonica',
+            'ver-infraestructura-workers',
+            'ver-infraestructura-notificaciones',
+            'refrescar-infraestructura',
         ];
 
         // Crear permisos si no existen

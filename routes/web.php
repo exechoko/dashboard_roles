@@ -31,12 +31,14 @@ use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\CamaraFisicaController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\CecocoRecursoAliasController;
 use App\Http\Controllers\SitioController;
 use App\Http\Controllers\CecocoController;
 use App\Http\Controllers\TranscripcionController;
 use App\Http\Controllers\RAGController;
 use App\Http\Controllers\PlanoEdificioController;
+use App\Http\Controllers\InfraestructuraController;
 use App\Http\Controllers\PersonalController;
 use App\Http\Controllers\ManualesController;
 use App\Http\Controllers\WebAdminController;
@@ -90,6 +92,12 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/conversaciones/{conversacion}/leido', [ChatController::class, 'marcarLeido'])->name('conversaciones.leido');
         Route::post('/conversaciones/{conversacion}/escribiendo', [ChatController::class, 'escribiendo'])->name('conversaciones.escribiendo');
         Route::get('/adjuntos/{adjunto}', [ChatController::class, 'adjunto'])->name('adjuntos.show');
+    });
+
+    Route::prefix('notificaciones')->name('notificaciones.')->group(function () {
+        Route::get('/sync', [NotificacionController::class, 'sync'])->middleware('throttle:chat-sync')->name('sync');
+        Route::post('/marcar-leidas', [NotificacionController::class, 'marcarLeidas'])->name('marcar-leidas');
+        Route::delete('/', [NotificacionController::class, 'vaciar'])->name('vaciar');
     });
 
     // 🔹 ADMINISTRAR WEB (div911.stper.com.ar)
@@ -642,22 +650,37 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/api/dashboard/cecoco-mapa', [App\Http\Controllers\HomeController::class, 'cecocoMapaDatos'])
         ->name('api.dashboard.cecoco-mapa');
 
-    Route::get('/api/dashboard/workers-status', [App\Http\Controllers\HomeController::class, 'workersStatus'])
-        ->name('api.dashboard.workers-status');
+    // 🔹 INFRAESTRUCTURA
+    Route::prefix('infraestructura')->name('infraestructura.')->group(function () {
+        Route::get('/pcs', [InfraestructuraController::class, 'pcs'])->name('pcs');
+        Route::get('/servidores', [InfraestructuraController::class, 'servidores'])->name('servidores');
+        Route::get('/camaras', [InfraestructuraController::class, 'camaras'])->name('camaras');
+        Route::get('/red', [InfraestructuraController::class, 'red'])->name('red');
+        Route::get('/librenms', [InfraestructuraController::class, 'librenms'])->name('librenms');
+        Route::get('/central-telefonica', [InfraestructuraController::class, 'centralTelefonica'])->name('central-telefonica');
+        Route::get('/workers', [InfraestructuraController::class, 'workers'])->name('workers');
+    });
 
-    Route::get('/api/dashboard/estado-cctv', [App\Http\Controllers\HomeController::class, 'estadoCctv'])
-        ->name('api.dashboard.estado-cctv');
-
-    Route::get('/api/dashboard/estado-troncales-central-telefonica', [App\Http\Controllers\HomeController::class, 'estadoTroncalesCentralTelefonica'])
-        ->name('api.dashboard.estado-troncales-central-telefonica');
-
-    Route::post('/api/dashboard/refresh-restauraciones', [App\Http\Controllers\HomeController::class, 'refreshRestauracionesCache'])
-        ->middleware('throttle:3,1')
-        ->name('api.dashboard.refresh-restauraciones');
-
-    Route::post('/api/dashboard/refresh-restauraciones-gps', [App\Http\Controllers\HomeController::class, 'refreshRestauracionesGpsCache'])
-        ->middleware('throttle:3,1')
-        ->name('api.dashboard.refresh-restauraciones-gps');
+    Route::prefix('api/infraestructura')->name('api.infraestructura.')->group(function () {
+        Route::get('/estado/{grupo}', [InfraestructuraController::class, 'estadoGrupo'])->name('estado-grupo');
+        Route::get('/estado-nominatim', [InfraestructuraController::class, 'estadoNominatim'])->name('estado-nominatim');
+        Route::post('/dispositivos/{dispositivo}/refrescar', [InfraestructuraController::class, 'refrescarDispositivo'])
+            ->middleware('throttle:12,1')
+            ->name('refrescar-dispositivo');
+        Route::post('/dispositivos/{dispositivo}/monitoreo', [InfraestructuraController::class, 'toggleMonitoreo'])
+            ->middleware('throttle:12,1')
+            ->name('toggle-monitoreo');
+        Route::get('/workers-status', [InfraestructuraController::class, 'workersStatus'])->name('workers-status');
+        Route::get('/estado-cctv', [InfraestructuraController::class, 'estadoCctv'])->name('estado-cctv');
+        Route::get('/estado-troncales-central-telefonica', [InfraestructuraController::class, 'estadoTroncalesCentralTelefonica'])
+            ->name('estado-troncales-central-telefonica');
+        Route::post('/refresh-restauraciones', [InfraestructuraController::class, 'refreshRestauracionesCache'])
+            ->middleware('throttle:3,1')
+            ->name('refresh-restauraciones');
+        Route::post('/refresh-restauraciones-gps', [InfraestructuraController::class, 'refreshRestauracionesGpsCache'])
+            ->middleware('throttle:3,1')
+            ->name('refresh-restauraciones-gps');
+    });
 
     // Herramientas
     Route::prefix('herramientas')->name('herramientas.')->group(function () {

@@ -19,4 +19,8 @@ return [
     'gps_password_monitor' => env('CECOCO_GPS_PASSWORD_MONITOR', ''),
     'timeout' => env('CECOCO_TIMEOUT', 60),
     'recordings_path' => env('CECOCO_RECORDINGS_PATH', 'G:\\Audios Cecoco'),
+
+    // Tamaño (MB) de la BD de restauraciones (CECOCO y GPS) a partir del cual
+    // se dispara una notificación/alerta por Telegram.
+    'umbral_restauraciones_mb' => (int) env('CECOCO_UMBRAL_RESTAURACIONES_MB', 4000),
 ];

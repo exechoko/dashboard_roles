@@ -515,6 +515,65 @@
     </li>
 @endcan
 
+@can('ver-menu-infraestructura')
+    <li class="dropdown {{ request()->is('infraestructura*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-network-wired"></i><span>Infraestructura</span>
+        </a>
+        <ul class="dropdown-menu">
+            @can('ver-infraestructura-pcs')
+                <li class="{{ request()->is('infraestructura/pcs*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('infraestructura.pcs') }}">
+                        <i class="fas fa-desktop"></i><span>PCs Policiales</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-infraestructura-servidores')
+                <li class="{{ request()->is('infraestructura/servidores*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('infraestructura.servidores') }}">
+                        <i class="fas fa-server"></i><span>Servidores</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-infraestructura-camaras')
+                <li class="{{ request()->is('infraestructura/camaras*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('infraestructura.camaras') }}">
+                        <i class="fas fa-video"></i><span>Cámaras Internas</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-infraestructura-red')
+                <li class="{{ request()->is('infraestructura/red*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('infraestructura.red') }}">
+                        <i class="fas fa-project-diagram"></i><span>Routers / Switches</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-infraestructura-librenms')
+                <li class="{{ request()->is('infraestructura/librenms*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('infraestructura.librenms') }}">
+                        <i class="fas fa-chart-area"></i><span>LibreNMS</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-infraestructura-central-telefonica')
+                <li class="{{ request()->is('infraestructura/central-telefonica*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('infraestructura.central-telefonica') }}">
+                        <i class="fas fa-phone-alt"></i><span>Central Telefónica</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-infraestructura-workers')
+                <li class="{{ request()->is('infraestructura/workers*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('infraestructura.workers') }}">
+                        <i class="fas fa-database"></i><span>Workers y Bases de Datos</span>
+                    </a>
+                </li>
+            @endcan
+        </ul>
+    </li>
+@endcan
+
 @can('ver-menu-chat')
     <li class="{{ request()->is('chat*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('chat.index') }}">

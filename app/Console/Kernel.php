@@ -198,6 +198,14 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/central_telefonica_troncales.log'));
 
+        // Releva por ping+SNMP las PCs, servidores, cámaras internas y equipos de
+        // red del edificio (dispositivos_edificio) y avisa por Telegram cuando
+        // alguno cae o supera los umbrales de CPU/RAM/disco.
+        $schedule->command('infraestructura:monitorear')
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/infraestructura.log'));
+
         // Avisa por mail si quedaron mensajes de chat sin leer hace más de 30 minutos.
         // No repite el aviso hasta que el usuario vuelva a leer esa conversación.
         $schedule->command('chat:avisar-no-leidos')
@@ -220,26 +228,15 @@ class Kernel extends ConsoleKernel
 
         // Tamaño de la BD de restauraciones de CECOCO: se consulta una vez por hora
         // y se cachea para que el dashboard nunca pegue al servidor remoto en cada poll.
+        // Se dispara vía el Job (no llamando al servicio directo) para que la
+        // alerta de "supera el umbral" corra también acá, igual que cuando se
+        // dispara desde el botón "refrescar ahora" de la pantalla Workers.
         $schedule->call(function () {
-            try {
-                app(\App\Services\CecocoExpedienteService::class)
-                    ->actualizarCacheTamanoBaseRestauraciones();
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('No se pudo actualizar tamaño BD restauraciones', [
-                    'error' => $e->getMessage(),
-                ]);
-            }
+            \App\Jobs\ConsultarTamanoRestauracionesCecoco::dispatchSync();
         })->name('cache-cecoco-tamano-restauraciones')->hourly()->withoutOverlapping();
 
         $schedule->call(function () {
-            try {
-                app(\App\Services\CecocoExpedienteService::class)
-                    ->actualizarCacheTamanoBaseRestauracionesGps();
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('No se pudo actualizar tamaño BD restauraciones GPS', [
-                    'error' => $e->getMessage(),
-                ]);
-            }
+            \App\Jobs\ConsultarTamanoRestauracionesCecoco::dispatchSync(true);
         })->name('cache-cecoco-gps-tamano-restauraciones')->hourly()->withoutOverlapping();
     }
 

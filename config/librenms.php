@@ -34,4 +34,8 @@ return [
     // Chat IDs de Telegram para las alertas (separados por coma). Vacío = usa
     // el TELEGRAM_CHAT_ID por defecto del bot.
     'telegram_chat_ids' => env('LIBRENMS_TELEGRAM_CHAT_IDS', ''),
+
+    // Cantidad de cámaras 911 caídas a partir de la cual la notificación
+    // resumen se marca como crítica (nivel "danger") en vez de "warning".
+    'umbral_camaras_criticas' => (int) env('LIBRENMS_UMBRAL_CAMARAS_CRITICAS', 10),
 ];

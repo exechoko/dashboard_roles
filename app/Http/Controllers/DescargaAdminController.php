@@ -160,47 +160,69 @@ class DescargaAdminController extends Controller
         $request->validate([
             'archivos' => 'required|array|min:1',
             'archivos.*' => 'required|file',
-            'categoria_id' => 'required|exists:descarga_categorias,id',
-            'descripcion' => 'nullable|string|max:1000',
-            'roles' => 'required|array|min:1',
-            'roles.*' => 'exists:roles,id',
-            'destacado' => 'boolean',
-            'expira_dias' => 'nullable|integer|min:1',
+            'archivos_config' => 'required|array',
+            'archivos_config.*.categoria_id' => 'required|exists:descarga_categorias,id',
+            'archivos_config.*.descripcion' => 'nullable|string|max:1000',
+            'archivos_config.*.roles' => 'required|array|min:1',
+            'archivos_config.*.roles.*' => 'exists:roles,id',
+            'archivos_config.*.destacado' => 'boolean',
+            'archivos_config.*.expira_dias' => 'nullable|integer|min:1',
         ]);
 
-        $expiraAt = $request->filled('expira_dias')
-            ? now()->addDays($request->input('expira_dias'))
-            : null;
-
-        $data = [
-            'categoria_id' => $request->input('categoria_id'),
-            'descripcion' => $request->input('descripcion'),
-            'roles' => $request->input('roles'),
-            'destacado' => $request->boolean('destacado'),
-            'expira_at' => $expiraAt,
-            'user_id' => Auth::id(),
-        ];
+        $archivosConfig = $request->input('archivos_config', []);
+        $configs = [];
+        
+        foreach ($archivosConfig as $index => $config) {
+            $expiraAt = !empty($config['expira_dias'])
+                ? now()->addDays($config['expira_dias'])
+                : null;
+                
+            $configs[$index] = [
+                'categoria_id' => $config['categoria_id'],
+                'descripcion' => $config['descripcion'] ?? null,
+                'roles' => $config['roles'],
+                'destacado' => !empty($config['destacado']),
+                'expira_at' => $expiraAt,
+                'user_id' => Auth::id(),
+            ];
+        }
 
         $archivosCreados = [];
         $conflictos = [];
+        $tempDir = storage_path('app/temp_descargas');
+        
+        if (!is_dir($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
 
-        foreach ($request->file('archivos') as $archivo) {
+        foreach ($request->file('archivos') as $index => $archivo) {
             $conflicto = $this->repositorio->verificarConflicto($archivo->getClientOriginalName());
 
             if ($conflicto) {
+                $size = $archivo->getSize();
+                $mimeType = $archivo->getMimeType();
+                $originalName = $archivo->getClientOriginalName();
+                
+                $tempFile = $tempDir . '/' . uniqid() . '_' . $originalName;
+                $archivo->move($tempDir, basename($tempFile));
+                
                 $conflictos[] = [
-                    'archivo' => $archivo,
-                    'conflicto' => $conflicto,
+                    'temp_path' => $tempFile,
+                    'original_name' => $originalName,
+                    'size' => $size,
+                    'mime_type' => $mimeType,
+                    'conflicto_id' => $conflicto->id,
+                    'conflicto_nombre' => $conflicto->nombre_original,
+                    'config' => $configs[$index] ?? null,
                 ];
                 continue;
             }
 
-            $archivosCreados[] = $this->repositorio->subirArchivo($archivo, $data);
+            $archivosCreados[] = $this->repositorio->subirArchivo($archivo, $configs[$index]);
         }
 
         if (!empty($conflictos)) {
             session()->flash('conflictos', $conflictos);
-            session()->flash('data', $data);
             return redirect()->route('descargas.admin.resolver_conflictos');
         }
 
@@ -216,13 +238,12 @@ class DescargaAdminController extends Controller
     public function resolverConflictos()
     {
         $conflictos = session('conflictos', []);
-        $data = session('data', []);
 
         if (empty($conflictos)) {
             return redirect()->route('descargas.admin.create');
         }
 
-        return view('herramientas.descargas.admin.conflictos', compact('conflictos', 'data'));
+        return view('herramientas.descargas.admin.conflictos', compact('conflictos'));
     }
 
     public function procesarConflicto(Request $request)
@@ -230,39 +251,60 @@ class DescargaAdminController extends Controller
         $request->validate([
             'acciones' => 'required|array',
             'acciones.*.accion' => 'required|in:reemplazar,cancelar,copia',
-            'data' => 'required',
         ]);
 
         $acciones = $request->input('acciones');
-        $data = $request->input('data');
         $archivosCreados = [];
+        $tempDir = storage_path('app/temp_descargas');
 
         foreach ($acciones as $index => $conflictoData) {
             $accion = $conflictoData['accion'];
-            $archivoOriginal = $conflictoData['archivo'];
+            $configRaw = $conflictoData['config'] ?? '[]';
+            $config = is_string($configRaw) ? json_decode($configRaw, true) : $configRaw;
 
             if ($accion === 'cancelar') {
+                if (isset($conflictoData['temp_path']) && file_exists($conflictoData['temp_path'])) {
+                    unlink($conflictoData['temp_path']);
+                }
                 continue;
             }
+
+            $tempPath = $conflictoData['temp_path'];
+            if (!file_exists($tempPath)) {
+                continue;
+            }
+
+            $uploadedFile = new \Illuminate\Http\UploadedFile(
+                $tempPath,
+                $conflictoData['original_name'],
+                $conflictoData['mime_type'],
+                null,
+                true
+            );
 
             if ($accion === 'reemplazar') {
                 $archivoExistente = DescargaArchivo::find($conflictoData['conflicto_id']);
                 if ($archivoExistente) {
                     $this->repositorio->reemplazarArchivo(
                         $archivoExistente,
-                        $archivoOriginal,
+                        $uploadedFile,
                         Auth::id(),
                         $conflictoData['motivo'] ?? null
                     );
                     $archivosCreados[] = $archivoExistente;
                 }
             } elseif ($accion === 'copia') {
+                $config['user_id'] = $config['user_id'] ?? Auth::id();
                 $archivosCreados[] = $this->repositorio->cargarComoCopia(
                     DescargaArchivo::find($conflictoData['conflicto_id']),
-                    $archivoOriginal,
-                    $data
+                    $uploadedFile,
+                    $config
                 );
             }
+        }
+
+        if (is_dir($tempDir)) {
+            array_map('unlink', glob($tempDir . '/*'));
         }
 
         $notificador = app(DescargaNotificador::class);

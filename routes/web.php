@@ -722,10 +722,6 @@ Route::group(['middleware' => ['auth']], function () {
     Route::prefix('descargas')->name('descargas.')->group(function () {
         // Rutas para usuarios (ver y descargar)
         Route::get('/', [DescargaController::class, 'index'])->name('index');
-        Route::get('/{archivo}', [DescargaController::class, 'show'])->name('show');
-        Route::get('/{archivo}/download', [DescargaController::class, 'download'])->name('download');
-        Route::get('/{archivo}/preview', [DescargaController::class, 'preview'])->name('preview');
-        Route::post('/{archivo}/comentar', [DescargaController::class, 'comentar'])->name('comentar');
 
         // Link público (sin auth)
         Route::get('/link/{token}', [DescargaController::class, 'linkPublico'])->name('link.publico');
@@ -760,6 +756,12 @@ Route::group(['middleware' => ['auth']], function () {
             Route::post('/links', [DescargaAdminController::class, 'crearLink'])->name('links.store');
             Route::delete('/links/{link}', [DescargaAdminController::class, 'destroyLink'])->name('links.destroy');
         });
+
+        // Rutas catch-all (deben ir al final)
+        Route::get('/{archivo}', [DescargaController::class, 'show'])->name('show');
+        Route::get('/{archivo}/download', [DescargaController::class, 'download'])->name('download');
+        Route::get('/{archivo}/preview', [DescargaController::class, 'preview'])->name('preview');
+        Route::post('/{archivo}/comentar', [DescargaController::class, 'comentar'])->name('comentar');
     });
 
     // Manuales

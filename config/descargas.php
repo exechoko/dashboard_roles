@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'tamano_maximo_kb' => env('DESCARGAS_TAMANO_MAX', 512000),
+    'tamano_maximo_kb' => env('DESCARGAS_TAMANO_MAX', 10485760),
 
     'extensiones_permitidas' => [
         'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',

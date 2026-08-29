@@ -668,32 +668,11 @@
                 </a>
             </li>
             @can('administrar-plataforma-descargas')
-                <li class="dropdown-divider"></li>
-                <li class="dropdown-header">ADMINISTRACIÓN</li>
-                <li class="{{ request()->routeIs('descargas.admin.categorias*') ? 'active' : '' }}">
-                    <a class="nav-link" href="{{ route('descargas.admin.categorias') }}">
-                        <i class="fas fa-tags"></i><span>Categorías</span>
+                <li class="{{ request()->routeIs('descargas.admin.*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('descargas.admin.index') }}">
+                        <i class="fas fa-cogs"></i><span>Administración</span>
                     </a>
                 </li>
-                <li class="{{ request()->routeIs('descargas.admin.archivos*') || request()->routeIs('descargas.admin.create') || request()->routeIs('descargas.admin.edit') ? 'active' : '' }}">
-                    <a class="nav-link" href="{{ route('descargas.admin.archivos') }}">
-                        <i class="fas fa-file-alt"></i><span>Archivos</span>
-                    </a>
-                </li>
-                @can('ver-logs-descargas')
-                    <li class="{{ request()->routeIs('descargas.admin.logs*') ? 'active' : '' }}">
-                        <a class="nav-link" href="{{ route('descargas.admin.logs') }}">
-                            <i class="fas fa-history"></i><span>Historial Descargas</span>
-                        </a>
-                    </li>
-                @endcan
-                @can('generar-links-publicos')
-                    <li class="{{ request()->routeIs('descargas.admin.links*') ? 'active' : '' }}">
-                        <a class="nav-link" href="{{ route('descargas.admin.links') }}">
-                            <i class="fas fa-link"></i><span>Links Públicos</span>
-                        </a>
-                    </li>
-                @endcan
             @endcan
         </ul>
     </li>

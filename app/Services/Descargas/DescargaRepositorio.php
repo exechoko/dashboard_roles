@@ -113,10 +113,10 @@ class DescargaRepositorio
 
         $nuevoArchivo->storeAs($ruta, $nombreUnico, self::DISK);
 
-        return DB::transaction(function () use ($rutaCompleta, $nombreUnico, $nombreOriginal, $extension, $nuevoArchivo, $data) {
+        return DB::transaction(function () use ($rutaCompleta, $nombreUnico, $nombreCopia, $extension, $nuevoArchivo, $data) {
             $descargaArchivo = DescargaArchivo::create([
                 'categoria_id' => $data['categoria_id'],
-                'nombre_original' => $nombreBase . '(' . pathinfo($nombreUnico, PATHINFO_FILENAME) . ').' . $extension,
+                'nombre_original' => $nombreCopia . '.' . $extension,
                 'nombre_archivo' => $nombreUnico,
                 'ruta_relativa' => $rutaCompleta,
                 'mime_type' => $nuevoArchivo->getMimeType(),

@@ -12,21 +12,15 @@
             Se encontraron archivos con el mismo nombre que ya existen en el sistema. Por favor, indica qué acción tomar para cada uno.
         </div>
 
-        <form action="{{ route('descargas.admin.procesar_conflictos') }}" method="POST" enctype="multipart/form-data">
+        <form action="{{ route('descargas.admin.procesar_conflictos') }}" method="POST">
             @csrf
 
-            <input type="hidden" name="data" value="{{ json_encode($data) }}">
-
             @foreach($conflictos as $index => $conflicto)
-                @php
-                    $archivo = $conflicto['archivo'];
-                    $existente = $conflicto['conflicto'];
-                @endphp
                 <div class="card mb-4">
                     <div class="card-header bg-warning">
                         <h5 class="mb-0">
                             <i class="fas fa-file mr-2"></i>
-                            {{ $archivo->getClientOriginalName() }}
+                            {{ $conflicto['original_name'] }}
                         </h5>
                     </div>
                     <div class="card-body">
@@ -34,17 +28,14 @@
                             <div class="col-md-6">
                                 <h6>Archivo existente:</h6>
                                 <ul class="list-unstyled">
-                                    <li><strong>Nombre:</strong> {{ $existente->nombre_original }}</li>
-                                    <li><strong>Tamaño:</strong> {{ $existente->tamano_humano }}</li>
-                                    <li><strong>Fecha:</strong> {{ $existente->created_at->format('d/m/Y H:i') }}</li>
-                                    <li><strong>Categoría:</strong> {{ $existente->categoria->nombre }}</li>
+                                    <li><strong>Nombre:</strong> {{ $conflicto['conflicto_nombre'] }}</li>
                                 </ul>
                             </div>
                             <div class="col-md-6">
                                 <h6>Nuevo archivo:</h6>
                                 <ul class="list-unstyled">
-                                    <li><strong>Nombre:</strong> {{ $archivo->getClientOriginalName() }}</li>
-                                    <li><strong>Tamaño:</strong> {{ number_format($archivo->getSize() / 1024, 2) }} KB</li>
+                                    <li><strong>Nombre:</strong> {{ $conflicto['original_name'] }}</li>
+                                    <li><strong>Tamaño:</strong> {{ number_format($conflicto['size'] / 1024, 2) }} KB</li>
                                     <li><strong>Fecha:</strong> Ahora</li>
                                 </ul>
                             </div>
@@ -79,8 +70,11 @@
                             <input type="text" name="acciones[{{ $index }}][motivo]" class="form-control" placeholder="Ej: Versión actualizada, corrección de errores...">
                         </div>
 
-                        <input type="hidden" name="acciones[{{ $index }}][archivo]" value="">
-                        <input type="hidden" name="acciones[{{ $index }}][conflicto_id]" value="{{ $existente->id }}">
+                        <input type="hidden" name="acciones[{{ $index }}][temp_path]" value="{{ $conflicto['temp_path'] }}">
+                        <input type="hidden" name="acciones[{{ $index }}][original_name]" value="{{ $conflicto['original_name'] }}">
+                        <input type="hidden" name="acciones[{{ $index }}][mime_type]" value="{{ $conflicto['mime_type'] }}">
+                        <input type="hidden" name="acciones[{{ $index }}][conflicto_id]" value="{{ $conflicto['conflicto_id'] }}">
+                        <input type="hidden" name="acciones[{{ $index }}][config]" value="{{ json_encode($conflicto['config'] ?? []) }}">
                     </div>
                 </div>
             @endforeach
@@ -97,15 +91,6 @@
 
 @push('scripts')
 <script>
-// Guardar archivos en el formulario
-document.querySelector('form').addEventListener('submit', function(e) {
-    const dataTransfer = new DataTransfer();
-    @foreach($conflictos as $index => $conflicto)
-        // Los archivos ya están en el input original
-    @endforeach
-});
-
-// Mostrar/ocultar motivo según la opción seleccionada
 document.querySelectorAll('input[type="radio"]').forEach(radio => {
     radio.addEventListener('change', function() {
         const card = this.closest('.card-body');

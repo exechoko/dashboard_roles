@@ -15,7 +15,6 @@
                 <form action="{{ route('descargas.admin.store') }}" method="POST" enctype="multipart/form-data" id="formUpload">
                     @csrf
 
-                    {{-- Dropzone --}}
                     <div class="form-group">
                         <label>Archivos *</label>
                         <div class="dropzone-custom" id="dropzoneArea">
@@ -36,67 +35,12 @@
                         </small>
                     </div>
 
-                    {{-- Lista de archivos seleccionados --}}
-                    <div id="archivosSeleccionados" class="mb-4" style="display: none;">
-                        <h6>Archivos seleccionados:</h6>
-                        <ul class="list-group" id="listaArchivos"></ul>
-                    </div>
+                    <div id="archivosConfig" class="mt-4"></div>
 
-                    <hr>
-
-                    {{-- Configuración común --}}
-                    <h5 class="mb-3">Configuración</h5>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Categoría *</label>
-                                <select name="categoria_id" class="form-control" required>
-                                    <option value="">Seleccionar categoría...</option>
-                                    @foreach($categorias as $cat)
-                                        <option value="{{ $cat->id }}">
-                                            {{ $cat->nombre }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label>Expiración (días)</label>
-                                <input type="number" name="expira_dias" class="form-control" min="1" placeholder="Sin expiración">
-                                <small class="form-text text-muted">Dejar vacío para sin expiración</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Descripción</label>
-                        <textarea name="descripcion" class="form-control" rows="3" placeholder="Descripción opcional del archivo..."></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Roles que pueden descargar *</label>
-                        <div class="row">
-                            @foreach($roles as $rol)
-                                <div class="col-md-4 col-sm-6">
-                                    <div class="custom-control custom-checkbox">
-                                        <input type="checkbox" name="roles[]" value="{{ $rol->id }}" class="custom-control-input" id="rol_{{ $rol->id }}">
-                                        <label class="custom-control-label" for="rol_{{ $rol->id }}">{{ $rol->name }}</label>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                        <small class="form-text text-muted">Selecciona al menos un rol que pueda descargar estos archivos.</small>
-                    </div>
-
-                    <div class="form-group">
-                        <div class="custom-control custom-switch">
-                            <input type="hidden" name="destacado" value="0">
-                            <input type="checkbox" name="destacado" class="custom-control-input" id="destacado" value="1">
-                            <label class="custom-control-label" for="destacado">Marcar como destacado</label>
-                        </div>
-                        <small class="form-text text-muted">Los archivos destacados aparecen primero en la lista.</small>
+                    <div id="accionesGlobales" class="mt-3" style="display: none;">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="btnAplicarTodos">
+                            <i class="fas fa-copy"></i> Aplicar configuración del 1er archivo a todos
+                        </button>
                     </div>
 
                     <hr>
@@ -111,18 +55,78 @@
         </div>
     </div>
 </section>
+
+{{-- Template para cada archivo --}}
+<template id="tplArchivoConfig">
+    <div class="card mb-3 archivo-config-card">
+        <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <div>
+                <i class="fas fa-file text-muted mr-2"></i>
+                <strong class="archivo-nombre"></strong>
+                <small class="text-muted ml-2 archivo-tamano"></small>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger btn-remover">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="card-body py-3">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group mb-2">
+                        <label class="small font-weight-bold">Categoría *</label>
+                        <select class="form-control form-control-sm config-categoria" required>
+                            <option value="">Seleccionar...</option>
+                            @foreach($categorias as $cat)
+                                <option value="{{ $cat->id }}">{{ $cat->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group mb-2">
+                        <label class="small font-weight-bold">Expiración (días)</label>
+                        <input type="number" class="form-control form-control-sm config-expira" min="1" placeholder="Sin expiración">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group mb-2">
+                        <label class="small font-weight-bold">Descripción</label>
+                        <input type="text" class="form-control form-control-sm config-descripcion" placeholder="Opcional">
+                    </div>
+                </div>
+            </div>
+            <div class="form-group mb-2">
+                <label class="small font-weight-bold">Roles que pueden descargar *</label>
+                <div class="row">
+                    @foreach($roles as $rol)
+                        <div class="col-md-4 col-sm-6">
+                            <div class="custom-control custom-checkbox custom-control-sm">
+                                <input type="checkbox" value="{{ $rol->id }}" class="custom-control-input config-rol" id="rol_{{ $rol->id }}__INDEX__">
+                                <label class="custom-control-label small" for="rol_{{ $rol->id }}__INDEX__">{{ $rol->name }}</label>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            <div class="custom-control custom-switch">
+                <input type="checkbox" class="custom-control-input config-destacado" id="destacado__INDEX__">
+                <label class="custom-control-label small" for="destacado__INDEX__">Destacado</label>
+            </div>
+        </div>
+    </div>
+</template>
 @endsection
 
 @push('scripts')
 <script>
 const fileInput = document.getElementById('fileInput');
 const dropzoneArea = document.getElementById('dropzoneArea');
-const archivosSeleccionados = document.getElementById('archivosSeleccionados');
-const listaArchivos = document.getElementById('listaArchivos');
+const archivosConfig = document.getElementById('archivosConfig');
+const accionesGlobales = document.getElementById('accionesGlobales');
 const btnSubmit = document.getElementById('btnSubmit');
+const tplArchivoConfig = document.getElementById('tplArchivoConfig');
 let archivos = [];
 
-// Drag and drop
 dropzoneArea.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropzoneArea.classList.add('dragover');
@@ -156,42 +160,111 @@ function agregarArchivos(files) {
 }
 
 function actualizarLista() {
+    archivosConfig.innerHTML = '';
+
     if (archivos.length === 0) {
-        archivosSeleccionados.style.display = 'none';
         btnSubmit.disabled = true;
+        accionesGlobales.style.display = 'none';
         return;
     }
 
-    archivosSeleccionados.style.display = 'block';
     btnSubmit.disabled = false;
-    listaArchivos.innerHTML = '';
+    accionesGlobales.style.display = archivos.length > 1 ? 'block' : 'none';
 
     archivos.forEach((file, index) => {
-        const li = document.createElement('li');
-        li.className = 'list-group-item d-flex justify-content-between align-items-center';
-        li.innerHTML = `
-            <div>
-                <i class="fas fa-file text-muted mr-2"></i>
-                <strong>${file.name}</strong>
-                <small class="text-muted ml-2">(${formatSize(file.size)})</small>
-            </div>
-            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removerArchivo(${index})">
-                <i class="fas fa-times"></i>
-            </button>
-        `;
-        listaArchivos.appendChild(li);
+        const clone = tplArchivoConfig.content.cloneNode(true);
+        const card = clone.querySelector('.archivo-config-card');
+        
+        card.querySelector('.archivo-nombre').textContent = file.name;
+        card.querySelector('.archivo-tamano').textContent = '(' + formatSize(file.size) + ')';
+        
+        const rolesContainer = card.querySelector('.row');
+        card.querySelectorAll('.config-rol').forEach((checkbox, i) => {
+            checkbox.id = checkbox.id.replace('__INDEX__', index);
+            const label = card.querySelectorAll('.custom-control-label')[i];
+            if (label) label.setAttribute('for', checkbox.id);
+        });
+        
+        card.querySelector('.config-destacado').id = card.querySelector('.config-destacado').id.replace('__INDEX__', index);
+        card.querySelector('.config-destacado').nextElementSibling.setAttribute('for', 
+            card.querySelector('.config-destacado').id
+        );
+        
+        card.querySelector('.btn-remover').addEventListener('click', () => {
+            archivos.splice(index, 1);
+            actualizarLista();
+        });
+        
+        card.dataset.index = index;
+        archivosConfig.appendChild(clone);
     });
 
-    // Actualizar input file
     const dataTransfer = new DataTransfer();
     archivos.forEach(file => dataTransfer.items.add(file));
     fileInput.files = dataTransfer.files;
 }
 
-function removerArchivo(index) {
-    archivos.splice(index, 1);
-    actualizarLista();
-}
+document.getElementById('btnAplicarTodos').addEventListener('click', () => {
+    const primera = archivosConfig.querySelector('.archivo-config-card');
+    if (!primera) return;
+
+    const categoria = primera.querySelector('.config-categoria').value;
+    const expira = primera.querySelector('.config-expira').value;
+    const descripcion = primera.querySelector('.config-descripcion').value;
+    const destacado = primera.querySelector('.config-destacado').checked;
+    const rolesCheckeados = [];
+    primera.querySelectorAll('.config-rol:checked').forEach(cb => rolesCheckeados.push(cb.value));
+
+    const cards = archivosConfig.querySelectorAll('.archivo-config-card');
+    cards.forEach((card, i) => {
+        if (i === 0) return;
+        card.querySelector('.config-categoria').value = categoria;
+        card.querySelector('.config-expira').value = expira;
+        card.querySelector('.config-descripcion').value = descripcion;
+        card.querySelector('.config-destacado').checked = destacado;
+        card.querySelectorAll('.config-rol').forEach(cb => {
+            cb.checked = rolesCheckeados.includes(cb.value);
+        });
+    });
+});
+
+document.getElementById('formUpload').addEventListener('submit', function(e) {
+    archivosConfig.querySelectorAll('.archivo-config-card').forEach((card, index) => {
+        const prefix = 'archivos_config[' + index + ']';
+        
+        const catInput = document.createElement('input');
+        catInput.type = 'hidden';
+        catInput.name = prefix + '[categoria_id]';
+        catInput.value = card.querySelector('.config-categoria').value;
+        this.appendChild(catInput);
+        
+        const expiraInput = document.createElement('input');
+        expiraInput.type = 'hidden';
+        expiraInput.name = prefix + '[expira_dias]';
+        expiraInput.value = card.querySelector('.config-expira').value;
+        this.appendChild(expiraInput);
+        
+        const descInput = document.createElement('input');
+        descInput.type = 'hidden';
+        descInput.name = prefix + '[descripcion]';
+        descInput.value = card.querySelector('.config-descripcion').value;
+        this.appendChild(descInput);
+        
+        const destInput = document.createElement('input');
+        destInput.type = 'hidden';
+        destInput.name = prefix + '[destacado]';
+        destInput.value = card.querySelector('.config-destacado').checked ? '1' : '0';
+        this.appendChild(destInput);
+        
+        card.querySelectorAll('.config-rol:checked').forEach(cb => {
+            const rolInput = document.createElement('input');
+            rolInput.type = 'hidden';
+            rolInput.name = prefix + '[roles][]';
+            rolInput.value = cb.value;
+            this.appendChild(rolInput);
+        });
+    });
+});
 
 function formatSize(bytes) {
     if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(2) + ' GB';
@@ -213,6 +286,9 @@ function formatSize(bytes) {
 .dropzone-custom:hover,
 .dropzone-custom.dragover {
     border-color: #007bff;
+    background-color: #f8f9fa;
+}
+.archivo-config-card .card-header {
     background-color: #f8f9fa;
 }
 </style>

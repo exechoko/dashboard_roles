@@ -715,12 +715,49 @@
     </li>
 @endcanany
 
-@can('ver-menu-auditoria')
-    <li class="{{ request()->is('auditoria*') ? 'active' : '' }}">
-        <a class="nav-link" href="/auditoria">
-            <i class=" fas fa-search"></i><span>Auditoría</span>
+@canany(['ver-menu-auditoria', 'ver-configuracion-env', 'ver-configuracion-ia', 'ver-configuracion-workers', 'ver-configuracion-backup'])
+    <li class="dropdown {{ request()->is('auditoria*') || request()->is('configuracion*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-sliders-h"></i><span>Configuración del Sistema</span>
         </a>
+        <ul class="dropdown-menu">
+            @can('ver-menu-auditoria')
+                <li class="{{ request()->is('auditoria*') ? 'active' : '' }}">
+                    <a class="nav-link" href="/auditoria">
+                        <i class="fas fa-search"></i><span>Auditoría</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-configuracion-env')
+                <li class="{{ request()->is('configuracion/env*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('configuracion.env') }}">
+                        <i class="fas fa-file-alt"></i><span>Variables de Entorno</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-configuracion-ia')
+                <li class="{{ request()->is('configuracion/ia*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('configuracion.ia') }}">
+                        <i class="fas fa-brain"></i><span>IA y API Keys</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-configuracion-workers')
+                <li class="{{ request()->is('configuracion/workers*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('configuracion.workers') }}">
+                        <i class="fas fa-cogs"></i><span>Workers y Colas</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-configuracion-backup')
+                <li class="{{ request()->is('configuracion/backups*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('configuracion.backups') }}">
+                        <i class="fas fa-database"></i><span>Backups de Base de Datos</span>
+                    </a>
+                </li>
+            @endcan
+        </ul>
     </li>
-@endcan
+@endcanany
 
 <!--Documentacion en GetStisla-->

@@ -238,6 +238,12 @@ class Kernel extends ConsoleKernel
         $schedule->call(function () {
             \App\Jobs\ConsultarTamanoRestauracionesCecoco::dispatchSync(true);
         })->name('cache-cecoco-gps-tamano-restauraciones')->hourly()->withoutOverlapping();
+
+        // Backup diario de la base de datos principal (Configuración del Sistema > Backups).
+        // Desactivado por defecto: descomentar cuando se quiera automatizar.
+        // $schedule->command('configuracion:backup-bd')->dailyAt('04:00')
+        //     ->withoutOverlapping()
+        //     ->appendOutputTo(storage_path('logs/configuracion_backup_bd.log'));
     }
 
     /**

@@ -54,6 +54,17 @@ return [
             'after_commit' => false,
         ],
 
+        // Cola dedicada a backups/restore de la BD (Configuración del Sistema >
+        // Backups): mysqldump/mysql de una base grande puede tardar varios
+        // minutos, igual que 'mbox' arriba — mismo motivo, mismo retry_after.
+        'backups' => [
+            'driver' => 'database',
+            'table' => 'jobs',
+            'queue' => 'backups',
+            'retry_after' => 86400,
+            'after_commit' => false,
+        ],
+
         'beanstalkd' => [
             'driver' => 'beanstalkd',
             'host' => 'localhost',

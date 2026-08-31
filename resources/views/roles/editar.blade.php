@@ -72,11 +72,19 @@
                                                         'menu-constancias-credenciales',
                                                         'menu-chat',
                                                         'menu-infraestructura',
+                                                        'menu-configuracion-sistema',
                                                     ],
                                                     'Administración' => [
                                                         'rol',
                                                         'usuario',
                                                         'auditoria'
+                                                    ],
+                                                    'Configuración del Sistema' => [
+                                                        'configuracion-env',
+                                                        'configuracion-env-critico',
+                                                        'configuracion-ia',
+                                                        'configuracion-workers',
+                                                        'configuracion-backup',
                                                     ],
                                                     'Dependencias' => [
                                                         'dependencia'

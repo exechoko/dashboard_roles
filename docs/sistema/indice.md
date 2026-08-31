@@ -8,7 +8,7 @@ Usá las palabras de la consulta para seleccionar un documento.
 | equipo, terminal, TEI, ISSI, flota, movimiento, histórico, vehículo, recurso, estadísticas, tipo de terminal | `inventario-flota.md` |
 | cámara, CCTV, sitio, dependencia, bodycam, mapa, tipo de cámara, cámara física, remito | `camaras-dependencias.md` |
 | entrega, devolución, acta, combustible, cargo, patrimonio, traslado, baja, bien, tipo de bien | `entregas-patrimonio.md` |
-| tarea, recurrencia, usuario, rol, permiso, manual, auditoría, personal efectivo, LP, jerarquía, tótem, activación, credencial | `tareas-administracion.md` |
+| tarea, recurrencia, usuario, rol, permiso, manual, auditoría, personal efectivo, LP, jerarquía, tótem, activación, credencial, configuración del sistema, variables de entorno, .env, API key, modelo de IA, worker, cola, backup de base de datos, restaurar backup | `tareas-administracion.md` |
 | CECOCO, evento, expediente, analítica, mapa de calor, histórico móvil, GIS, mapa en vivo | `cecoco-mapas.md` |
 | IA, audio, transcribir, llamada, RAG, documento, temática | `ia-transcripcion.md` |
 | arma, retención, devolución de arma, personal, chaleco, licencia, motivo, armería | `armas-personal.md` |

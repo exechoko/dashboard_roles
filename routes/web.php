@@ -38,6 +38,7 @@ use App\Http\Controllers\CecocoController;
 use App\Http\Controllers\TranscripcionController;
 use App\Http\Controllers\RAGController;
 use App\Http\Controllers\PlanoEdificioController;
+use App\Http\Controllers\ConfiguracionSistemaController;
 use App\Http\Controllers\InfraestructuraController;
 use App\Http\Controllers\PersonalController;
 use App\Http\Controllers\ManualesController;
@@ -680,6 +681,32 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/refresh-restauraciones-gps', [InfraestructuraController::class, 'refreshRestauracionesGpsCache'])
             ->middleware('throttle:3,1')
             ->name('refresh-restauraciones-gps');
+    });
+
+    // 🔹 CONFIGURACIÓN DEL SISTEMA
+    Route::prefix('configuracion')->name('configuracion.')->group(function () {
+        Route::get('/', [ConfiguracionSistemaController::class, 'index'])->name('index');
+
+        Route::get('/env', [ConfiguracionSistemaController::class, 'env'])->name('env');
+        Route::put('/env', [ConfiguracionSistemaController::class, 'envUpdate'])->name('env.update');
+
+        Route::get('/ia', [ConfiguracionSistemaController::class, 'ia'])->name('ia');
+        Route::put('/ia', [ConfiguracionSistemaController::class, 'iaUpdate'])->name('ia.update');
+        Route::post('/ia/probar/{servicio}', [ConfiguracionSistemaController::class, 'probarConexion'])
+            ->middleware('throttle:12,1')
+            ->name('ia.probar');
+
+        Route::get('/workers', [ConfiguracionSistemaController::class, 'workers'])->name('workers');
+        Route::put('/workers', [ConfiguracionSistemaController::class, 'workersUpdate'])->name('workers.update');
+        Route::post('/workers/jobs/reintentar/{id?}', [ConfiguracionSistemaController::class, 'jobsReintentar'])->name('workers.jobs.reintentar');
+        Route::post('/workers/jobs/purgar', [ConfiguracionSistemaController::class, 'jobsPurgar'])->name('workers.jobs.purgar');
+
+        Route::get('/backups', [ConfiguracionSistemaController::class, 'backups'])->name('backups');
+        Route::get('/backups/estado', [ConfiguracionSistemaController::class, 'backupEstado'])->name('backups.estado');
+        Route::post('/backups', [ConfiguracionSistemaController::class, 'backupCrear'])->name('backups.crear');
+        Route::get('/backups/{archivo}/descargar', [ConfiguracionSistemaController::class, 'backupDescargar'])->name('backups.descargar');
+        Route::post('/backups/{archivo}/restaurar', [ConfiguracionSistemaController::class, 'backupRestaurar'])->name('backups.restaurar');
+        Route::delete('/backups/{archivo}', [ConfiguracionSistemaController::class, 'backupEliminar'])->name('backups.eliminar');
     });
 
     // Herramientas

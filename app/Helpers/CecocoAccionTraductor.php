@@ -15,6 +15,7 @@ class CecocoAccionTraductor
         'event section update' => 'Actualización de la sección de eventos',
         'event creation' => 'Creación del evento',
         'event closed' => 'Evento cerrado',
+        'close section update' => 'Actualización de la sección de cierre',
         'type of service change' => 'Cambio de tipo de servicio',
         'service change of status' => 'Cambio de estado del servicio',
         'service update' => 'Actualización del servicio',

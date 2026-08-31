@@ -196,6 +196,13 @@
                             banner.className = 'alert alert-danger';
                             texto.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Falló: ' + (data.error || 'error desconocido') + '. Actualizando...';
                             setTimeout(function () { window.location.reload(); }, 4000);
+                        } else if (data.estado !== 'procesando') {
+                            // 'inactivo' (o cualquier otro valor): alguien limpió el estado
+                            // a mano (job borrado, caché limpiada) sin pasar por el Job.
+                            clearInterval(intervalo);
+                            banner.className = 'alert alert-warning';
+                            texto.innerHTML = '<i class="fas fa-info-circle"></i> La operación ya no está en curso. Actualizando...';
+                            setTimeout(function () { window.location.reload(); }, 1500);
                         }
                     })
                     .catch(function () { /* red caída puntual: reintenta en el próximo tick */ });

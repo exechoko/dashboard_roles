@@ -181,7 +181,7 @@
                     <tr>
                         <td>{{ $ev['fecha_hora'] ?? '-' }}</td>
                         <td>{{ $ev['operador'] ?? '-' }}</td>
-                        <td>{{ $ev['descripcion'] ?? '' }}</td>
+                        <td>{{ \App\Helpers\CecocoAccionTraductor::traducir($ev['descripcion'] ?? '') }}</td>
                         <td>{{ $ev['estado'] ?? '' }}</td>
                     </tr>
                 @endforeach

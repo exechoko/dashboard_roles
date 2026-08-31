@@ -200,6 +200,25 @@
                                     </div>
                                 @endcan
 
+                                @can('ver-configuracion-backup')
+                                    {{-- Cola de backups/restore de la BD --}}
+                                    <div class="estado-procesos-bloque" title="Worker dedicado a backups/restore de la base de datos, Configuración del Sistema (php artisan queue:work backups --queue=backups).">
+                                        <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-database mr-1"></i><strong>Cola de Backups</strong></small>
+                                        <div class="d-flex align-items-center flex-wrap" style="gap:0.75rem;">
+                                            <span class="d-flex align-items-center">
+                                                <span id="backups-worker-dot" class="mr-2"
+                                                    style="width:10px;height:10px;border-radius:50%;display:inline-block;background:#aaa;"></span>
+                                                <span id="backups-worker-label" class="badge badge-secondary">Verificando...</span>
+                                            </span>
+                                            <span><small>Pendientes:</small> <span id="backups-pendientes" class="badge badge-secondary">—</span></span>
+                                            <span><small>Procesando:</small> <span id="backups-procesando" class="badge badge-secondary">—</span></span>
+                                            <a href="{{ route('configuracion.backups') }}" class="btn btn-xs btn-outline-primary" title="Ver backups">
+                                                <i class="fas fa-database"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endcan
+
                                 {{-- Geocodificación --}}
                                 <div class="estado-procesos-bloque">
                                     <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-map-marker-alt mr-1"></i><strong>Geocodificación</strong></small>
@@ -556,6 +575,29 @@
                     if (mboxPend) { mboxPend.textContent = d.mbox_pendientes; mboxPend.className = d.mbox_pendientes > 0 ? 'badge badge-warning' : 'badge badge-secondary'; }
                     var mboxProc = document.getElementById('mbox-procesando');
                     if (mboxProc) { mboxProc.textContent = d.mbox_procesando; mboxProc.className = d.mbox_procesando > 0 ? 'badge badge-info' : 'badge badge-secondary'; }
+
+                    // Cola de backups/restore de la BD
+                    var backupsDot = document.getElementById('backups-worker-dot');
+                    var backupsLabel = document.getElementById('backups-worker-label');
+                    if (backupsDot && backupsLabel) {
+                        if (d.backups_worker_activo) {
+                            backupsDot.style.background = '#22c55e';
+                            backupsLabel.className = 'badge badge-success';
+                            backupsLabel.textContent = 'Activo';
+                        } else if (d.backups_pendientes > 0) {
+                            backupsDot.style.background = '#ef4444';
+                            backupsLabel.className = 'badge badge-danger';
+                            backupsLabel.textContent = 'Detenido';
+                        } else {
+                            backupsDot.style.background = '#6b7280';
+                            backupsLabel.className = 'badge badge-secondary';
+                            backupsLabel.textContent = 'Sin trabajos';
+                        }
+                    }
+                    var backupsPend = document.getElementById('backups-pendientes');
+                    if (backupsPend) { backupsPend.textContent = d.backups_pendientes; backupsPend.className = d.backups_pendientes > 0 ? 'badge badge-warning' : 'badge badge-secondary'; }
+                    var backupsProc = document.getElementById('backups-procesando');
+                    if (backupsProc) { backupsProc.textContent = d.backups_procesando; backupsProc.className = d.backups_procesando > 0 ? 'badge badge-info' : 'badge badge-secondary'; }
 
                     // Geocodificación
                     var elGeoServicio = document.getElementById('workers-geo-servicio');

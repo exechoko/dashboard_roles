@@ -144,6 +144,7 @@
                     '<div class="col"><h4>' + d.procesando + '</h4><small>Procesando</small></div>' +
                     '<div class="col"><h4 class="' + (d.fallidos > 0 ? 'text-danger' : '') + '">' + d.fallidos + '</h4><small>Fallidos</small></div>' +
                     '<div class="col"><h4>' + (d.mbox_worker_activo ? '<span class="text-success">Activo</span>' : '<span class="text-danger">Inactivo</span>') + '</h4><small>Worker mbox</small></div>' +
+                    '<div class="col"><h4>' + (d.backups_worker_activo ? '<span class="text-success">Activo</span>' : '<span class="text-danger">Inactivo</span>') + '</h4><small>Worker backups</small></div>' +
                     '</div>';
                 document.getElementById('estadoWorkers').innerHTML = html;
             }

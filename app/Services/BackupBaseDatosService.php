@@ -47,7 +47,8 @@ class BackupBaseDatosService
 
     public function __construct(?string $carpeta = null)
     {
-        $this->carpeta = $carpeta ?? storage_path('app/backups/db');
+        $configurada = $carpeta ?? config('configuracion_sistema.backups.path');
+        $this->carpeta = $configurada ? rtrim($configurada, '\\/') : storage_path('app/backups/db');
     }
 
     /**

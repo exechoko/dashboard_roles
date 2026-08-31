@@ -254,6 +254,19 @@ class ConfiguracionSistemaTest extends TestCase
         $servicio->ruta('equipamiento_20260101_000000.sql');
     }
 
+    public function test_backup_service_usa_db_path_del_config_cuando_no_se_pasa_carpeta(): void
+    {
+        $carpeta = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'car911_db_path_test';
+        config(['configuracion_sistema.backups.path' => $carpeta . DIRECTORY_SEPARATOR]); // con barra final
+
+        $servicio = new BackupBaseDatosService();
+        $servicio->listar(); // fuerza a crear la carpeta configurada
+
+        $this->assertDirectoryExists($carpeta);
+
+        @rmdir($carpeta);
+    }
+
     // ── Restaurar: confirmación obligatoria ─────────────────────────────
 
     public function test_restaurar_backup_rechaza_si_la_confirmacion_no_coincide(): void

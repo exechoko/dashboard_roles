@@ -153,6 +153,7 @@ return [
             'claves' => [
                 'APP_NAME' => ['label' => 'Nombre de la aplicación', 'tipo' => 'text'],
                 'MYSQL_BIN_PATH' => ['label' => 'Carpeta de mysqldump/mysql', 'tipo' => 'text', 'ayuda' => 'Sólo si no están en el PATH del sistema. Ej: C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin'],
+                'DB_PATH' => ['label' => 'Carpeta de backups de la base de datos', 'tipo' => 'text', 'ayuda' => 'Dónde se guardan los .sql generados en Configuración del Sistema > Backups. En el servidor: F:\\Backup_DB. Vacío = storage/app/backups/db.'],
             ],
         ],
 
@@ -191,5 +192,14 @@ return [
         // (en esta máquina de desarrollo, por ejemplo, sólo existen dentro de
         // "C:\Program Files\MySQL\MySQL Workbench 8.0").
         'bin_path' => env('MYSQL_BIN_PATH'),
+    ],
+
+    'backups' => [
+        // Carpeta donde se guardan los .sql generados en Configuración del
+        // Sistema > Backups. En el servidor: F:\Backup_DB (mismo patrón que
+        // MBOX_PATH: cada entorno define la suya en su propio .env). Vacía en
+        // esta máquina de dev (F:\ no existe acá) => cae al default del
+        // servicio, storage/app/backups/db.
+        'path' => env('DB_PATH'),
     ],
 ];

@@ -62,7 +62,6 @@ class ProcesarArchivoDescarga implements ShouldQueue
                 'user_id' => $this->userId,
                 'expira_at' => $this->expiraAt,
                 'activo' => true,
-                'job_id' => $this->job->getJobId(),
                 'estado_proceso' => 'procesando',
                 'progreso' => 10,
             ]);

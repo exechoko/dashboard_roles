@@ -185,7 +185,7 @@ class DescargaAdminController extends Controller
         ]);
 
         $archivosConfig = $request->input('archivos_config', []);
-        $jobsIds = [];
+        $archivosProcesados = 0;
         $conflictos = [];
         $tempDir = 'temp_descargas';
         
@@ -233,7 +233,7 @@ class DescargaAdminController extends Controller
                 : null;
 
             // Dispatch del Job
-            $job = ProcesarArchivoDescarga::dispatch(
+            ProcesarArchivoDescarga::dispatch(
                 $archivoTemporalPath,
                 $archivo->getClientOriginalName(),
                 $config['categoria_id'],
@@ -245,10 +245,7 @@ class DescargaAdminController extends Controller
                 Auth::id()
             );
 
-            $jobsIds[] = [
-                'job_id' => $job->getJobId(),
-                'nombre_archivo' => $archivo->getClientOriginalName(),
-            ];
+            $archivosProcesados++;
         }
 
         if (!empty($conflictos)) {
@@ -256,10 +253,8 @@ class DescargaAdminController extends Controller
             return redirect()->route('descargas.admin.resolver_conflictos');
         }
 
-        // Redirigir a página de progreso
-        return redirect()->route('descargas.admin.progreso', [
-            'jobs' => json_encode($jobsIds)
-        ]);
+        return redirect()->route('descargas.admin.archivos')
+            ->with('success', $archivosProcesados . ' archivo(s) subido(s). Se están procesando en segundo plano.');
     }
 
     public function resolverConflictos()

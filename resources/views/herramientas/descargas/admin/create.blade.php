@@ -22,15 +22,14 @@
                                 <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
                                 <p class="mb-2"><strong>Arrastra archivos aquí</strong></p>
                                 <p class="text-muted mb-3">o haz clic para seleccionar</p>
-                                <input type="file" name="archivos[]" id="fileInput" multiple class="d-none"
-                                       accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.7z,.jpg,.jpeg,.png,.gif,.txt,.csv">
+                                <input type="file" name="archivos[]" id="fileInput" multiple class="d-none">
                                 <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
                                     <i class="fas fa-folder-open"></i> Seleccionar archivos
                                 </button>
                             </div>
                         </div>
                         <small class="form-text text-muted">
-                            Extensiones permitidas: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, ZIP, RAR, 7Z, JPG, PNG, GIF, TXT, CSV.
+                            Se aceptan todos los tipos de archivos.
                             Tamaño máximo: {{ number_format(config('descargas.tamano_maximo_kb') / 1024) }} MB por archivo.
                         </small>
                     </div>

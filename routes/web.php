@@ -139,8 +139,8 @@ Route::group(['middleware' => ['auth']], function () {
         ->middleware('permission:ver-menu-web|editar-web-contadores|editar-web-textos|editar-web-historia|editar-web-tecnologia|editar-web-dependencias|editar-web-galeria');
 
     Route::resource('roles', RolController::class);
-    Route::resource('usuarios', UsuarioController::class);
     Route::get('/usuarios/json', [UsuarioController::class, 'json'])->name('usuarios.json');
+    Route::resource('usuarios', UsuarioController::class);
     Route::resource('blogs', BlogController::class);
     Route::get('/equipos/estadisticas', [App\Http\Controllers\DashboardController::class, 'equipamientoEstadisticas'])
         ->name('equipos.estadisticas')
@@ -786,10 +786,6 @@ Route::group(['middleware' => ['auth']], function () {
             Route::get('/links', [DescargaAdminController::class, 'links'])->name('links');
             Route::post('/links', [DescargaAdminController::class, 'crearLink'])->name('links.store');
             Route::delete('/links/{link}', [DescargaAdminController::class, 'destroyLink'])->name('links.destroy');
-
-            // Progreso de carga
-            Route::get('/progreso', [DescargaAdminController::class, 'progreso'])->name('progreso');
-            Route::get('/job-status/{jobId}', [DescargaAdminController::class, 'jobStatus'])->name('jobStatus');
 
             // Solicitudes de compartir
             Route::get('/solicitudes', [DescargaAdminController::class, 'solicitudes'])->name('solicitudes');

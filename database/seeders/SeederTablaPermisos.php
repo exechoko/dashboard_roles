@@ -111,6 +111,7 @@ class SeederTablaPermisos extends Seeder
             'ver-menu-manuales',
             'ver-menu-herramientas',
             'ver-menu-chat',
+            'ver-menu-configuracion-sistema',
 
             //CeCoCo
             'ver-llamadas-cecoco',
@@ -308,6 +309,20 @@ class SeederTablaPermisos extends Seeder
             'ver-infraestructura-workers',
             'ver-infraestructura-notificaciones',
             'refrescar-infraestructura',
+
+            // Configuración del Sistema
+            'ver-configuracion-env',
+            'editar-configuracion-env',
+            'editar-configuracion-env-critico',
+            'ver-configuracion-ia',
+            'editar-configuracion-ia',
+            'ver-configuracion-workers',
+            'editar-configuracion-workers',
+            'ver-configuracion-backup',
+            'crear-configuracion-backup',
+            'descargar-configuracion-backup',
+            'restaurar-configuracion-backup',
+            'borrar-configuracion-backup',
         ];
 
         // Crear permisos si no existen

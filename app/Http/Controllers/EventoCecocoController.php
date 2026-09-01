@@ -407,28 +407,7 @@ class EventoCecocoController extends Controller
         $this->authorize('ver-expediente-cecoco');
 
         try {
-            $refrescar = $request->query('refrescar', false);
-            $detalle = null;
-
-            if (!$refrescar) {
-                $cache = \App\Models\DetalleExpedienteCecoco::where('evento_cecoco_id', $eventoCecoco->id)->first();
-                if ($cache) {
-                    $detalle = $cache->detalle_json;
-                }
-            }
-
-            if (!$detalle) {
-                $detalle = $this->expedienteService->obtenerDetalleExpediente($eventoCecoco->nro_expediente);
-
-                \App\Models\DetalleExpedienteCecoco::updateOrCreate(
-                    ['evento_cecoco_id' => $eventoCecoco->id],
-                    [
-                        'nro_expediente' => $eventoCecoco->nro_expediente,
-                        'detalle_json' => $detalle,
-                        'fecha_consulta' => now(),
-                    ]
-                );
-            }
+            $detalle = $this->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
 
             $filtros = $request->only([
                 'anio',
@@ -453,6 +432,114 @@ class EventoCecocoController extends Controller
                 ->route('cecoco.show', $eventoCecoco)
                 ->with('error', 'Error al obtener el detalle del expediente: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Exporta el reporte del expediente en el formato original de CECOCO web
+     * (mismo HTML que entrega el sistema), listo para imprimir/guardar como PDF.
+     */
+    public function exportarPdfOriginal(Request $request, EventoCecoco $eventoCecoco)
+    {
+        $this->authorize('ver-expediente-cecoco');
+
+        try {
+            $cacheKey = 'cecoco_reporte_html_original_' . $eventoCecoco->nro_expediente;
+            $html = $request->boolean('refrescar') ? null : Cache::get($cacheKey);
+
+            if (!$html) {
+                $html = $this->expedienteService->obtenerReporteHtmlOriginal($eventoCecoco->nro_expediente);
+                Cache::put($cacheKey, $html, 60 * 30);
+            }
+
+            return response($this->envolverHtmlOriginalParaImprimir($html, $eventoCecoco->nro_expediente))
+                ->header('Content-Type', 'text/html; charset=UTF-8');
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('cecoco.show', $eventoCecoco)
+                ->with('error', 'Error al exportar el reporte original: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Exporta el expediente en un formato interno prolijo (propio del sistema),
+     * listo para imprimir/guardar como PDF.
+     */
+    public function exportarPdfInterno(Request $request, EventoCecoco $eventoCecoco)
+    {
+        $this->authorize('ver-expediente-cecoco');
+
+        try {
+            $detalle = $this->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
+
+            return view('eventos-cecoco.exportar-interno-pdf', compact('eventoCecoco', 'detalle'));
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('cecoco.show', $eventoCecoco)
+                ->with('error', 'Error al generar el reporte interno: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Obtiene el detalle del expediente desde caché en BD (o lo consulta a CECOCO
+     * si no existe o se pidió refrescar), guardándolo para reutilizarlo después.
+     *
+     * @return array<string, mixed>
+     */
+    private function obtenerDetalleExpedienteCacheado(EventoCecoco $eventoCecoco, bool $refrescar): array
+    {
+        $detalle = null;
+
+        if (!$refrescar) {
+            $cache = \App\Models\DetalleExpedienteCecoco::where('evento_cecoco_id', $eventoCecoco->id)->first();
+            if ($cache) {
+                $detalle = $cache->detalle_json;
+            }
+        }
+
+        if (!$detalle) {
+            $detalle = $this->expedienteService->obtenerDetalleExpediente($eventoCecoco->nro_expediente);
+
+            \App\Models\DetalleExpedienteCecoco::updateOrCreate(
+                ['evento_cecoco_id' => $eventoCecoco->id],
+                [
+                    'nro_expediente' => $eventoCecoco->nro_expediente,
+                    'detalle_json' => $detalle,
+                    'fecha_consulta' => now(),
+                ]
+            );
+        }
+
+        return $detalle;
+    }
+
+    /**
+     * Inyecta una barra flotante de "Guardar como PDF" / "Cerrar" (oculta al
+     * imprimir) en el HTML original de CECOCO, sin alterar su contenido.
+     */
+    private function envolverHtmlOriginalParaImprimir(string $html, string $nroExpediente): string
+    {
+        $toolbar = '<div class="cecoco-print-toolbar" style="position:fixed;top:10px;right:10px;'
+            . 'z-index:99999;display:flex;gap:8px;font-family:Arial,sans-serif;">'
+            . '<button onclick="window.print()" style="background:#007bff;color:#fff;border:none;'
+            . 'padding:8px 15px;border-radius:4px;cursor:pointer;font-size:14px;">'
+            . '<i class="fas fa-print"></i> Guardar como PDF</button>'
+            . '<button onclick="window.close()" style="background:#6c757d;color:#fff;border:none;'
+            . 'padding:8px 15px;border-radius:4px;cursor:pointer;font-size:14px;">Cerrar</button>'
+            . '</div>'
+            . '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">'
+            . '<style>@media print { .cecoco-print-toolbar { display: none !important; } }</style>';
+
+        if (stripos($html, '<body') !== false) {
+            return preg_replace('/(<body[^>]*>)/i', '$1' . $toolbar, $html, 1);
+        }
+
+        if (stripos($html, '<html') !== false) {
+            return $toolbar . $html;
+        }
+
+        return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
+            . '<title>Expediente ' . e($nroExpediente) . ' - CECOCO (original)</title></head>'
+            . '<body>' . $toolbar . $html . '</body></html>';
     }
 
     /**

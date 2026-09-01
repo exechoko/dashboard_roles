@@ -1,24 +1,36 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="mb-4">
-    <a href="{{ !empty($filtros) ? route('cecoco.index', $filtros) : route('cecoco.index') }}" class="btn btn-outline-secondary">
-        <i class="fas fa-arrow-left"></i> Volver al listado
-    </a>
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap" style="gap:.5rem;">
+    <div class="d-flex flex-wrap align-items-center" style="gap:.5rem;">
+        <a href="{{ !empty($filtros) ? route('cecoco.index', $filtros) : route('cecoco.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al listado
+        </a>
+        @can('ver-expediente-cecoco')
+        <a href="{{ route('cecoco.expediente', $eventoCecoco) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-success">
+            <i class="fas fa-file-alt"></i> Ver Detalle Completo
+        </a>
+        @endcan
+        @can('ver-grabacion-evento')
+        <button type="button" class="btn btn-dark" id="btnGrabaciones" onclick="abrirGrabaciones()">
+            <i class="fas fa-microphone"></i> Grabaciones de llamada
+        </button>
+        @endcan
+        @can('escuchar-modulaciones-cecoco')
+        <button type="button" class="btn btn-primary" id="btnModulaciones" onclick="abrirModulaciones()">
+            <i class="fas fa-broadcast-tower"></i> Modulaciones
+        </button>
+        @endcan
+    </div>
     @can('ver-expediente-cecoco')
-    <a href="{{ route('cecoco.expediente', $eventoCecoco) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-success">
-        <i class="fas fa-file-alt"></i> Ver Detalle Completo
-    </a>
-    @endcan
-    @can('ver-grabacion-evento')
-    <button type="button" class="btn btn-dark" id="btnGrabaciones" onclick="abrirGrabaciones()">
-        <i class="fas fa-microphone"></i> Grabaciones de llamada
-    </button>
-    @endcan
-    @can('escuchar-modulaciones-cecoco')
-    <button type="button" class="btn btn-primary" id="btnModulaciones" onclick="abrirModulaciones()">
-        <i class="fas fa-broadcast-tower"></i> Modulaciones
-    </button>
+    <div class="d-flex flex-wrap align-items-center" style="gap:.5rem;">
+        <a href="{{ route('cecoco.exportar.pdf-original', $eventoCecoco) }}" target="_blank" class="btn btn-dark">
+            <i class="fas fa-file-pdf"></i> PDF Original CECOCO
+        </a>
+        <a href="{{ route('cecoco.exportar.pdf-interno', $eventoCecoco) }}" target="_blank" class="btn btn-info">
+            <i class="fas fa-file-invoice"></i> PDF Interno
+        </a>
+    </div>
     @endcan
 </div>
 

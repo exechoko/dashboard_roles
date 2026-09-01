@@ -1,19 +1,29 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="mb-4">
-        <a href="{{ !empty($filtros) ? route('cecoco.index', $filtros) : route('cecoco.index') }}"
-            class="btn btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Volver al listado
-        </a>
-        <a href="{{ route('cecoco.show', $eventoCecoco) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}"
-            class="btn btn-outline-primary">
-            <i class="bi bi-file-text"></i> Ver resumen
-        </a>
-        <a href="{{ route('cecoco.expediente', array_merge($filtros ?? [], ['eventoCecoco' => $eventoCecoco, 'refrescar' => 1])) }}"
-            class="btn btn-outline-success">
-            <i class="bi bi-arrow-clockwise"></i> Actualizar desde CECOCO
-        </a>
+    <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap" style="gap:.5rem;">
+        <div class="d-flex flex-wrap align-items-center" style="gap:.5rem;">
+            <a href="{{ !empty($filtros) ? route('cecoco.index', $filtros) : route('cecoco.index') }}"
+                class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al listado
+            </a>
+            <a href="{{ route('cecoco.show', $eventoCecoco) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}"
+                class="btn btn-outline-primary">
+                <i class="bi bi-file-text"></i> Ver resumen
+            </a>
+            <a href="{{ route('cecoco.expediente', array_merge($filtros ?? [], ['eventoCecoco' => $eventoCecoco, 'refrescar' => 1])) }}"
+                class="btn btn-outline-success">
+                <i class="bi bi-arrow-clockwise"></i> Actualizar desde CECOCO
+            </a>
+        </div>
+        <div class="d-flex flex-wrap align-items-center" style="gap:.5rem;">
+            <a href="{{ route('cecoco.exportar.pdf-original', $eventoCecoco) }}" target="_blank" class="btn btn-dark">
+                <i class="bi bi-file-earmark-pdf"></i> PDF Original CECOCO
+            </a>
+            <a href="{{ route('cecoco.exportar.pdf-interno', $eventoCecoco) }}" target="_blank" class="btn btn-info">
+                <i class="bi bi-file-earmark-text"></i> PDF Interno
+            </a>
+        </div>
     </div>
 
     @include('eventos-cecoco.partials.resumen_ia', ['eventoCecoco' => $eventoCecoco])

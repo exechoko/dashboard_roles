@@ -355,6 +355,7 @@ class InfraestructuraController extends Controller
                         WHEN payload LIKE '%ProcesarArchivoEventoCecoco%' THEN 'Importación Excel'
                         WHEN payload LIKE '%GeocodificarLoteEventosCecoco%' THEN 'Geocodificación'
                         WHEN payload LIKE '%IndexarArchivoMbox%' THEN 'Indexación de Correos'
+                        WHEN payload LIKE '%GenerarBackupBaseDatos%' OR payload LIKE '%RestaurarBackupBaseDatos%' THEN 'Backup/Restore de BD'
                         ELSE 'Otro'
                     END AS tipo,
                     COUNT(*) as total,
@@ -365,6 +366,7 @@ class InfraestructuraController extends Controller
                         WHEN payload LIKE '%ProcesarArchivoEventoCecoco%' THEN 'Importación Excel'
                         WHEN payload LIKE '%GeocodificarLoteEventosCecoco%' THEN 'Geocodificación'
                         WHEN payload LIKE '%IndexarArchivoMbox%' THEN 'Indexación de Correos'
+                        WHEN payload LIKE '%GenerarBackupBaseDatos%' OR payload LIKE '%RestaurarBackupBaseDatos%' THEN 'Backup/Restore de BD'
                         ELSE 'Otro'
                     END
                 ")
@@ -398,6 +400,17 @@ class InfraestructuraController extends Controller
                 ->where('reserved_at', '>=', now()->subMinutes(10)->timestamp)
                 ->exists();
 
+            // Cola 'backups' (backups/restore de la BD desde Configuración del Sistema):
+            // mismo motivo que 'mbox' — corre en un worker propio
+            // (queue:work backups --queue=backups) que puede estar caído sin que el
+            // indicador general de arriba lo note.
+            $pendientesBackups = DB::table('jobs')->where('queue', 'backups')->whereNull('reserved_at')->count();
+            $procesandoBackups = DB::table('jobs')->where('queue', 'backups')->whereNotNull('reserved_at')->count();
+            $workerActivoBackups = $procesandoBackups > 0 || DB::table('jobs')
+                ->where('queue', 'backups')
+                ->where('reserved_at', '>=', now()->subMinutes(10)->timestamp)
+                ->exists();
+
             // Tamaño BD restauraciones CECOCO: caché que refresca el schedule horario.
             $tamanoRest = Cache::get(CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES);
             $tamanoRestGps = Cache::get(CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES_GPS);
@@ -414,6 +427,9 @@ class InfraestructuraController extends Controller
             'mbox_worker_activo' => $workerActivoMbox,
             'mbox_pendientes' => $pendientesMbox,
             'mbox_procesando' => $procesandoMbox,
+            'backups_worker_activo' => $workerActivoBackups,
+            'backups_pendientes' => $pendientesBackups,
+            'backups_procesando' => $procesandoBackups,
             'geo_total_dir' => $totalDirecciones,
             'geo_cacheadas' => $geocodeadas,
             'geo_pendientes' => ($totalDirecciones !== null && $geocodeadas !== null) ? max(0, $totalDirecciones - $geocodeadas) : null,

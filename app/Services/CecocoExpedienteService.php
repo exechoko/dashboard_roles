@@ -185,6 +185,20 @@ class CecocoExpedienteService
         return $this->iniciarSesion();
     }
 
+    /**
+     * Obtiene el reporte del expediente tal cual lo entrega CECOCO, sin parsear.
+     * Reutiliza el mismo login que obtenerDetalleExpediente() para exportarlo con
+     * el formato original del sistema.
+     */
+    public function obtenerReporteHtmlOriginal(string $nroExpediente): string
+    {
+        Log::info('Consultando reporte HTML original CECOCO', ['expediente' => $nroExpediente]);
+
+        $client = $this->iniciarSesion();
+
+        return $this->obtenerReporteHTML($client, $nroExpediente);
+    }
+
     private function iniciarSesion()
     {
         try {

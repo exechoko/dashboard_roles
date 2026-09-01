@@ -534,6 +534,7 @@
             <a href="#herramientas"><span class="nav-num">19</span><span>Herramientas</span></a>
             <a href="#administrar-web"><span class="nav-num">20</span><span>Administrar Web</span></a>
             <a href="#auditoria"><span class="nav-num">21</span><span>Auditoría</span></a>
+            <a href="#configuracion-sistema"><span class="nav-num">22</span><span>Configuración del Sistema</span></a>
 
             <p class="nav-group">Apéndice</p>
             <a href="#asistente"><span class="nav-num">··</span><span>Asistente de ayuda</span></a>
@@ -550,7 +551,7 @@
                 <p class="lede">Control y Administración de Recursos 911: equipamiento de comunicaciones,
                     videovigilancia, patrimonio y las herramientas de trabajo diario del centro.</p>
                 <div class="meta">
-                    <span>21 módulos</span>
+                    <span>22 módulos</span>
                     <span>Edición 2026</span>
                     <span>Ordenado como el menú</span>
                 </div>
@@ -581,6 +582,7 @@
                     <li><a href="#herramientas">Herramientas</a></li>
                     <li><a href="#administrar-web">Administrar Web</a></li>
                     <li><a href="#auditoria">Auditoría</a></li>
+                    <li><a href="#configuracion-sistema">Configuración del Sistema</a></li>
                     <li><a href="#asistente">Asistente de ayuda</a></li>
                 </ol>
             </details>
@@ -596,6 +598,8 @@
                         30 minutos desde el último uso, en vez de pedirse en cada acción.</li>
                     <li>Se documentan por primera vez Patrimonio, Control de Armas, Entregas, Análisis 911,
                         Tickets PG, IA, Administrar Web, Chat y Auditoría.</li>
+                    <li><strong>Configuración del Sistema:</strong> nuevo menú que agrupa Auditoría junto a
+                        Variables de Entorno, IA y API Keys, Workers y Colas, y Backups de Base de Datos.</li>
                 </ul>
             </div>
 
@@ -1720,7 +1724,7 @@
             <!-- 21 -->
             <section id="auditoria">
                 <div class="sec-head"><span class="sec-num">21</span><h2>Auditoría</h2></div>
-                <p class="menu-path"><b>Auditoría</b><span class="sep">·</span>
+                <p class="menu-path"><b>Configuración del Sistema</b><span class="sep">·</span><b>Auditoría</b><span class="sep">·</span>
                     <span class="path">/auditoria</span><span class="sep">·</span>
                     <span class="perm">ver-menu-auditoria</span></p>
 
@@ -1730,6 +1734,63 @@
                 </ol>
                 <p>Sirve para verificar trazabilidad: no permite editar ni borrar eventos, y los campos
                     sensibles aparecen ocultos.</p>
+            </section>
+
+            <section id="configuracion-sistema">
+                <div class="sec-head"><span class="sec-num">22</span><h2>Configuración del Sistema</h2></div>
+                <p class="menu-path"><b>Configuración del Sistema</b><span class="sep">·</span>
+                    <span class="path">/configuracion</span><span class="sep">·</span>
+                    <span class="perm">ver-menu-configuracion-sistema</span></p>
+                <p class="intro">Configuración operativa del sistema: credenciales y parámetros de los servicios
+                    integrados, servidores y modelos de IA, colas de workers y backups de la base de datos.
+                    Cada pantalla exige su propio permiso.</p>
+
+                <h3>Variables de Entorno</h3>
+                <p class="menu-path"><span class="path">/configuracion/env</span><span class="sep">·</span>
+                    <span class="perm">ver-configuracion-env / editar-configuracion-env</span></p>
+                <ol>
+                    <li>Elegí la pestaña del servicio (IA, Mapas, CECOCO, Infraestructura, Ticketera,
+                        Notificaciones, Workers, General) o <b>Avanzado</b> para el resto de las claves.</li>
+                    <li>Los campos de contraseña o API key se muestran en blanco: dejarlos así conserva el
+                        valor actual, no lo borra.</li>
+                    <li>Guardá los cambios.</li>
+                </ol>
+                <p>Cada guardado hace un respaldo automático del archivo <code>.env</code> antes de escribir. El
+                    grupo <b>Críticas</b> (entorno, URL base, conexión a la base de datos) exige el permiso
+                    adicional <span class="perm">editar-configuracion-env-critico</span>: un cambio mal hecho ahí
+                    puede dejar el sistema sin conexión a la base de datos.</p>
+
+                <h3>IA y API Keys</h3>
+                <p class="menu-path"><span class="path">/configuracion/ia</span><span class="sep">·</span>
+                    <span class="perm">ver-configuracion-ia / editar-configuracion-ia</span></p>
+                <ol>
+                    <li>Editá servidor, modelo y timeouts de cada servicio (Ollama, Whisper, RAG, OpenCode) y
+                        las API keys de terceros (OpenAI, ElevenLabs, TinyMCE).</li>
+                    <li>Usá <b>Probar conexión</b> para verificar que el servidor configurado responde antes de
+                        guardar.</li>
+                </ol>
+
+                <h3>Workers y Colas</h3>
+                <p class="menu-path"><span class="path">/configuracion/workers</span><span class="sep">·</span>
+                    <span class="perm">ver-configuracion-workers / editar-configuracion-workers</span></p>
+                <ol>
+                    <li>Consultá el estado en vivo: worker activo, pendientes, procesando y fallidos.</li>
+                    <li>Ajustá la conexión de colas y la indexación automática de correos.</li>
+                    <li>Reintentá o purgá los jobs fallidos desde la tabla de abajo.</li>
+                </ol>
+
+                <h3>Backups de Base de Datos</h3>
+                <p class="menu-path"><span class="path">/configuracion/backups</span><span class="sep">·</span>
+                    <span class="perm">ver-configuracion-backup</span></p>
+                <ol>
+                    <li>Pulsá <b>Generar backup ahora</b> (con nota opcional) para encolar un backup de la base
+                        <code>equipamiento</code>. Corre en segundo plano — puede tardar varios minutos en bases
+                        grandes — y la pantalla se actualiza sola cuando termina.</li>
+                    <li>Descargá, restaurá o eliminá un backup existente según tu permiso.</li>
+                </ol>
+                <p>Restaurar también corre en segundo plano y exige escribir el nombre exacto del archivo como
+                    confirmación; genera automáticamente un backup de seguridad de la base actual antes de
+                    reemplazarla. Mientras hay una operación en curso no se puede iniciar otra.</p>
             </section>
 
             <!-- Apéndice -->

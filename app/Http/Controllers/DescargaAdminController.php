@@ -2,10 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\ProcesarArchivoDescarga;
+use App\Mail\CompartirAprobadoMail;
+use App\Mail\CompartirRechazadoMail;
 use App\Models\DescargaArchivo;
 use App\Models\DescargaCategoria;
 use App\Models\DescargaLinkPublico;
 use App\Models\DescargaLog;
+use App\Models\DescargaQrCode;
+use App\Models\DescargaSolicitudCompartir;
+use App\Models\User;
 use App\Services\Descargas\DescargaNotificador;
 use App\Services\Descargas\DescargaRepositorio;
 use Illuminate\Http\Request;
@@ -13,7 +19,10 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Spatie\Permission\Models\Role;
 
 class DescargaAdminController extends Controller
@@ -33,6 +42,8 @@ class DescargaAdminController extends Controller
         $totalCategorias = DescargaCategoria::activas()->count();
         $archivosExpirados = DescargaArchivo::expirados()->count();
         $archivosDestacados = DescargaArchivo::destacados()->count();
+        $archivosCompartidos = DescargaArchivo::compartidos()->count();
+        $solicitudesPendientes = DescargaSolicitudCompartir::pendientes()->count();
 
         $ultimosArchivos = DescargaArchivo::with(['categoria', 'user'])
             ->latest()
@@ -51,6 +62,8 @@ class DescargaAdminController extends Controller
             'totalCategorias',
             'archivosExpirados',
             'archivosDestacados',
+            'archivosCompartidos',
+            'solicitudesPendientes',
             'ultimosArchivos',
             'archivosPopulares'
         ));
@@ -165,37 +178,30 @@ class DescargaAdminController extends Controller
             'archivos_config.*.descripcion' => 'nullable|string|max:1000',
             'archivos_config.*.roles' => 'required|array|min:1',
             'archivos_config.*.roles.*' => 'exists:roles,id',
+            'archivos_config.*.usuarios' => 'nullable|array',
+            'archivos_config.*.usuarios.*' => 'exists:users,id',
             'archivos_config.*.destacado' => 'boolean',
             'archivos_config.*.expira_dias' => 'nullable|integer|min:1',
         ]);
 
         $archivosConfig = $request->input('archivos_config', []);
-        $configs = [];
-        
-        foreach ($archivosConfig as $index => $config) {
-            $expiraAt = !empty($config['expira_dias'])
-                ? now()->addDays($config['expira_dias'])
-                : null;
-                
-            $configs[$index] = [
-                'categoria_id' => $config['categoria_id'],
-                'descripcion' => $config['descripcion'] ?? null,
-                'roles' => $config['roles'],
-                'destacado' => !empty($config['destacado']),
-                'expira_at' => $expiraAt,
-                'user_id' => Auth::id(),
-            ];
-        }
-
-        $archivosCreados = [];
+        $jobsIds = [];
         $conflictos = [];
-        $tempDir = storage_path('app/temp_descargas');
+        $tempDir = 'temp_descargas';
         
-        if (!is_dir($tempDir)) {
-            mkdir($tempDir, 0755, true);
+        // Crear directorio temporal si no existe
+        if (!Storage::exists($tempDir)) {
+            Storage::makeDirectory($tempDir);
         }
 
         foreach ($request->file('archivos') as $index => $archivo) {
+            $config = $archivosConfig[$index] ?? null;
+            
+            if (!$config) {
+                continue;
+            }
+
+            // Verificar conflictos
             $conflicto = $this->repositorio->verificarConflicto($archivo->getClientOriginalName());
 
             if ($conflicto) {
@@ -203,8 +209,8 @@ class DescargaAdminController extends Controller
                 $mimeType = $archivo->getMimeType();
                 $originalName = $archivo->getClientOriginalName();
                 
-                $tempFile = $tempDir . '/' . uniqid() . '_' . $originalName;
-                $archivo->move($tempDir, basename($tempFile));
+                // Guardar archivo temporal
+                $tempFile = $archivo->store($tempDir);
                 
                 $conflictos[] = [
                     'temp_path' => $tempFile,
@@ -213,12 +219,36 @@ class DescargaAdminController extends Controller
                     'mime_type' => $mimeType,
                     'conflicto_id' => $conflicto->id,
                     'conflicto_nombre' => $conflicto->nombre_original,
-                    'config' => $configs[$index] ?? null,
+                    'config' => $config,
                 ];
                 continue;
             }
 
-            $archivosCreados[] = $this->repositorio->subirArchivo($archivo, $configs[$index]);
+            // Guardar archivo temporal
+            $archivoTemporalPath = $archivo->store($tempDir);
+
+            // Calcular fecha de expiración
+            $expiraAt = !empty($config['expira_dias'])
+                ? now()->addDays($config['expira_dias'])->toDateTimeString()
+                : null;
+
+            // Dispatch del Job
+            $job = ProcesarArchivoDescarga::dispatch(
+                $archivoTemporalPath,
+                $archivo->getClientOriginalName(),
+                $config['categoria_id'],
+                $config['descripcion'] ?? null,
+                $config['roles'] ?? [],
+                $config['usuarios'] ?? [],
+                $expiraAt,
+                !empty($config['destacado']),
+                Auth::id()
+            );
+
+            $jobsIds[] = [
+                'job_id' => $job->getJobId(),
+                'nombre_archivo' => $archivo->getClientOriginalName(),
+            ];
         }
 
         if (!empty($conflictos)) {
@@ -226,13 +256,10 @@ class DescargaAdminController extends Controller
             return redirect()->route('descargas.admin.resolver_conflictos');
         }
 
-        $notificador = app(DescargaNotificador::class);
-        foreach ($archivosCreados as $archivo) {
-            $notificador->notificarNuevoArchivo($archivo);
-        }
-
-        return redirect()->route('descargas.admin.archivos')
-            ->with('success', count($archivosCreados) . ' archivo(s) cargado(s) correctamente.');
+        // Redirigir a página de progreso
+        return redirect()->route('descargas.admin.progreso', [
+            'jobs' => json_encode($jobsIds)
+        ]);
     }
 
     public function resolverConflictos()
@@ -456,5 +483,275 @@ class DescargaAdminController extends Controller
         return response($csv)
             ->header('Content-Type', 'text/csv')
             ->header('Content-Disposition', 'attachment; filename="logs_descargas_' . now()->format('Y-m-d') . '.csv"');
+    }
+
+    public function progreso(Request $request)
+    {
+        $jobs = json_decode($request->query('jobs', '[]'), true);
+
+        return view('herramientas.descargas.admin.progreso', compact('jobs'));
+    }
+
+    public function jobStatus($jobId)
+    {
+        $archivo = DescargaArchivo::where('job_id', $jobId)->first();
+
+        if (!$archivo) {
+            return response()->json([
+                'estado' => 'desconocido',
+                'progreso' => 0,
+                'error' => null,
+            ]);
+        }
+
+        return response()->json([
+            'estado' => $archivo->estado_proceso,
+            'progreso' => $archivo->progreso,
+            'error' => $archivo->error_proceso,
+            'archivo_id' => $archivo->id,
+        ]);
+    }
+
+    /**
+     * Mostrar todas las solicitudes de compartir
+     */
+    public function solicitudes(Request $request)
+    {
+        $query = DescargaSolicitudCompartir::with([
+            'archivo.categoria',
+            'usuarioSolicita',
+            'usuarioDestino',
+            'aprobadoPor'
+        ]);
+
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->input('estado'));
+        } else {
+            // Por defecto mostrar todas
+        }
+
+        if ($request->filled('buscar')) {
+            $busqueda = $request->input('buscar');
+            $query->whereHas('archivo', function ($q) use ($busqueda) {
+                $q->where('nombre_original', 'like', "%{$busqueda}%");
+            });
+        }
+
+        $solicitudes = $query->latest()->paginate(20)->withQueryString();
+
+        return view('herramientas.descargas.admin.solicitudes', compact('solicitudes'));
+    }
+
+    /**
+     * Aprobar una solicitud de compartir
+     */
+    public function aprobarSolicitud(DescargaSolicitudCompartir $solicitud, Request $request)
+    {
+        if (!$solicitud->estaPendiente()) {
+            return redirect()->route('descargas.admin.solicitudes')
+                ->with('error', 'Esta solicitud ya fue procesada.');
+        }
+
+        $archivo = $solicitud->archivo;
+        $usuarioDestino = $solicitud->usuarioDestino;
+
+        // Actualizar la solicitud
+        $solicitud->update([
+            'estado' => 'aprobado',
+            'aprobado_por' => Auth::id(),
+            'respondido_at' => now(),
+        ]);
+
+        // Agregar el usuario destino a la lista de usuarios con acceso
+        $archivo->usuarios()->syncWithoutDetaching([$usuarioDestino->id]);
+
+        // Marcar el archivo como compartido
+        $archivo->update([
+            'es_compartido' => true,
+            'compartido_por_user_id' => $solicitud->usuario_solicita_id,
+        ]);
+
+        // Enviar notificación al usuario que solicitó
+        if ($solicitud->usuarioSolicita->email) {
+            Mail::to($solicitud->usuarioSolicita->email)->send(new CompartirAprobadoMail($solicitud));
+        }
+
+        // Enviar notificación al usuario destino
+        $notificador = app(DescargaNotificador::class);
+        $notificador->notificarAccesoDirecto($archivo, $usuarioDestino);
+
+        return redirect()->route('descargas.admin.solicitudes')
+            ->with('success', 'Solicitud aprobada correctamente.');
+    }
+
+    /**
+     * Rechazar una solicitud de compartir
+     */
+    public function rechazarSolicitud(DescargaSolicitudCompartir $solicitud, Request $request)
+    {
+        if (!$solicitud->estaPendiente()) {
+            return redirect()->route('descargas.admin.solicitudes')
+                ->with('error', 'Esta solicitud ya fue procesada.');
+        }
+
+        $request->validate([
+            'motivo_respuesta' => 'nullable|string|max:1000',
+        ]);
+
+        // Actualizar la solicitud
+        $solicitud->update([
+            'estado' => 'rechazado',
+            'aprobado_por' => Auth::id(),
+            'motivo_respuesta' => $request->motivo_respuesta,
+            'respondido_at' => now(),
+        ]);
+
+        // Enviar notificación al usuario que solicitó
+        if ($solicitud->usuarioSolicita->email) {
+            Mail::to($solicitud->usuarioSolicita->email)->send(new CompartirRechazadoMail($solicitud));
+        }
+
+        return redirect()->route('descargas.admin.solicitudes')
+            ->with('success', 'Solicitud rechazada correctamente.');
+    }
+
+    /**
+     * Revocar acceso de un usuario a un archivo compartido
+     */
+    public function revocarAcceso(DescargaArchivo $archivo, User $usuario)
+    {
+        // Verificar que el archivo es compartido
+        if (!$archivo->es_compartido) {
+            return redirect()->route('descargas.admin.archivos')
+                ->with('error', 'Este archivo no es compartido.');
+        }
+
+        // Remover el usuario de la lista de usuarios con acceso
+        $archivo->usuarios()->detach($usuario->id);
+
+        // Verificar si quedan usuarios con acceso directo
+        if ($archivo->usuarios()->count() === 0) {
+            $archivo->update([
+                'es_compartido' => false,
+                'compartido_por_user_id' => null,
+            ]);
+        }
+
+        return redirect()->route('descargas.show', $archivo)
+            ->with('success', 'Acceso revocado correctamente.');
+    }
+
+    /**
+     * Generar código QR para un archivo
+     */
+    public function generarQr(DescargaArchivo $archivo, Request $request)
+    {
+        $request->validate([
+            'expira_horas' => 'nullable|integer|min:1|max:720',
+            'password' => 'nullable|string|min:4',
+        ]);
+
+        $expiraHoras = $request->input('expira_horas', config('descargas.qr_default_expiracion_horas', 24));
+        $password = $request->input('password');
+
+        // Generar token único
+        $token = Str::random(64);
+
+        // Generar URL de descarga
+        $urlDescarga = route('descargas.qr.descargar', $token);
+
+        // Generar código QR
+        $qrNombre = 'qr_' . $token . '.png';
+        $qrPath = 'descargas/qrcodes/' . $qrNombre;
+
+        // Asegurar que el directorio existe
+        if (!Storage::exists('descargas/qrcodes')) {
+            Storage::makeDirectory('descargas/qrcodes');
+        }
+
+        $qrFullPath = storage_path('app/' . $qrPath);
+        QrCode::format('png')
+            ->size(config('descargas.qr_tamano_px', 300))
+            ->margin(1)
+            ->generate($urlDescarga, $qrFullPath);
+
+        // Crear registro en la base de datos
+        $qrCode = DescargaQrCode::create([
+            'archivo_id' => $archivo->id,
+            'token' => $token,
+            'ruta_qr' => $qrPath,
+            'password' => $password ? Hash::make($password) : null,
+            'max_usos' => 1,
+            'usos_count' => 0,
+            'expira_at' => now()->addHours($expiraHoras),
+            'generado_por' => Auth::id(),
+            'activo' => true,
+            'created_at' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Código QR generado exitosamente',
+            'qr_id' => $qrCode->id,
+            'qr_url' => route('descargas.admin.qr.descargar-imagen', $qrCode->id),
+            'download_url' => $urlDescarga,
+            'expira_at' => $qrCode->expira_at->format('d/m/Y H:i'),
+        ]);
+    }
+
+    /**
+     * Descargar imagen QR
+     */
+    public function descargarImagenQr(DescargaQrCode $qrCode)
+    {
+        if (!Storage::exists($qrCode->ruta_qr)) {
+            abort(404, 'Imagen QR no encontrada');
+        }
+
+        return response()->download(
+            storage_path('app/' . $qrCode->ruta_qr),
+            'qr_' . $qrCode->archivo->nombre_original . '.png'
+        );
+    }
+
+    /**
+     * Listar códigos QR generados
+     */
+    public function listarQrs(Request $request)
+    {
+        $query = DescargaQrCode::with(['archivo', 'generadoPorUser']);
+
+        if ($request->filled('archivo_id')) {
+            $query->where('archivo_id', $request->input('archivo_id'));
+        }
+
+        if ($request->filled('estado')) {
+            switch ($request->input('estado')) {
+                case 'activos':
+                    $query->where('activo', true)->where('expira_at', '>', now());
+                    break;
+                case 'expirados':
+                    $query->where('expira_at', '<=', now());
+                    break;
+                case 'usados':
+                    $query->where('usos_count', '>=', DB::raw('max_usos'));
+                    break;
+            }
+        }
+
+        $qrs = $query->orderByDesc('created_at')->paginate(20);
+
+        return view('herramientas.descargas.admin.qrs', compact('qrs'));
+    }
+
+    /**
+     * Desactivar código QR
+     */
+    public function desactivarQr(DescargaQrCode $qrCode)
+    {
+        $qrCode->update(['activo' => false]);
+
+        return redirect()->route('descargas.admin.qrs')
+            ->with('success', 'Código QR desactivado correctamente');
     }
 }

@@ -238,6 +238,16 @@ class Kernel extends ConsoleKernel
         $schedule->call(function () {
             \App\Jobs\ConsultarTamanoRestauracionesCecoco::dispatchSync(true);
         })->name('cache-cecoco-gps-tamano-restauraciones')->hourly()->withoutOverlapping();
+
+        // Limpia los archivos ZIP temporales de la Plataforma de Descargas que han expirado.
+        // Se ejecuta cada hora para liberar espacio en disco.
+        $schedule->command('descargas:limpiar-zips')
+            ->hourly()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/descargas_limpiar_zips.log'))
+            ->onFailure(function () {
+                app(TelegramService::class)->notificarScheduleFallido('descargas:limpiar-zips', 'El comando finalizó con error.');
+            });
     }
 
     /**

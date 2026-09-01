@@ -61,16 +61,16 @@
                 <div class="card card-statistic-1">
                     <div class="card-wrap">
                         <div class="card-header">
-                            <h4>Categorías</h4>
+                            <h4>Compartidos</h4>
                         </div>
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <h2 class="text-info">{{ $totalCategorias }}</h2>
-                                    <p class="text-muted mb-0">Categorías activas</p>
+                                    <h2 class="text-info">{{ $archivosCompartidos }}</h2>
+                                    <p class="text-muted mb-0">Archivos compartidos</p>
                                 </div>
                                 <div class="text-info">
-                                    <i class="fas fa-tags fa-3x"></i>
+                                    <i class="fas fa-share-alt fa-3x"></i>
                                 </div>
                             </div>
                         </div>
@@ -81,16 +81,18 @@
                 <div class="card card-statistic-1">
                     <div class="card-wrap">
                         <div class="card-header">
-                            <h4>Expirados</h4>
+                            <h4>Solicitudes</h4>
                         </div>
                         <div class="card-body">
                             <div class="d-flex justify-content-between">
                                 <div>
-                                    <h2 class="text-warning">{{ $archivosExpirados }}</h2>
-                                    <p class="text-muted mb-0">Archivos expirados</p>
+                                    <h2 class="text-{{ $solicitudesPendientes > 0 ? 'danger' : 'secondary' }}">
+                                        {{ $solicitudesPendientes }}
+                                    </h2>
+                                    <p class="text-muted mb-0">Pendientes</p>
                                 </div>
-                                <div class="text-warning">
-                                    <i class="fas fa-clock fa-3x"></i>
+                                <div class="text-{{ $solicitudesPendientes > 0 ? 'danger' : 'secondary' }}">
+                                    <i class="fas fa-envelope-open fa-3x"></i>
                                 </div>
                             </div>
                         </div>
@@ -108,6 +110,18 @@
                     </div>
                     <div class="card-body">
                         <div class="row text-center">
+                            @php
+                                $solicitudesPendientes = \App\Models\DescargaSolicitudCompartir::where('estado', 'pendiente')->count();
+                            @endphp
+                            <div class="col-md-3 col-6 mb-3">
+                                <a href="{{ route('descargas.admin.solicitudes') }}" class="btn btn-outline-{{ $solicitudesPendientes > 0 ? 'danger' : 'secondary' }} btn-lg btn-block position-relative">
+                                    <i class="fas fa-envelope-open fa-2x mb-2"></i><br>
+                                    Solicitudes
+                                    @if($solicitudesPendientes > 0)
+                                        <span class="badge badge-danger badge-pill">{{ $solicitudesPendientes }}</span>
+                                    @endif
+                                </a>
+                            </div>
                             <div class="col-md-3 col-6 mb-3">
                                 <a href="{{ route('descargas.admin.categorias') }}" class="btn btn-outline-primary btn-lg btn-block">
                                     <i class="fas fa-tags fa-2x mb-2"></i><br>
@@ -126,10 +140,18 @@
                                     Historial
                                 </a>
                             </div>
+                        </div>
+                        <div class="row text-center">
                             <div class="col-md-3 col-6 mb-3">
                                 <a href="{{ route('descargas.admin.links') }}" class="btn btn-outline-warning btn-lg btn-block">
                                     <i class="fas fa-link fa-2x mb-2"></i><br>
                                     Links públicos
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <a href="{{ route('descargas.admin.qrs') }}" class="btn btn-outline-warning btn-lg btn-block">
+                                    <i class="fas fa-qrcode fa-2x mb-2"></i><br>
+                                    Códigos QR
                                 </a>
                             </div>
                         </div>

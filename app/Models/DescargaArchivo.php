@@ -27,17 +27,27 @@ class DescargaArchivo extends Model
         'descripcion',
         'destacado',
         'user_id',
+        'compartido_por_user_id',
+        'es_compartido',
         'descargas_count',
         'expira_at',
         'activo',
+        'job_id',
+        'estado_proceso',
+        'progreso',
+        'error_proceso',
+        'procesado_at',
     ];
 
     protected $casts = [
         'destacado' => 'boolean',
         'activo' => 'boolean',
+        'es_compartido' => 'boolean',
         'tamano_bytes' => 'integer',
         'descargas_count' => 'integer',
         'expira_at' => 'datetime',
+        'progreso' => 'integer',
+        'procesado_at' => 'datetime',
     ];
 
     public function categoria(): BelongsTo
@@ -50,6 +60,16 @@ class DescargaArchivo extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function compartidoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'compartido_por_user_id');
+    }
+
+    public function solicitudesCompartir(): HasMany
+    {
+        return $this->hasMany(DescargaSolicitudCompartir::class, 'archivo_id');
+    }
+
     public function roles(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -57,6 +77,16 @@ class DescargaArchivo extends Model
             'descarga_archivo_roles',
             'archivo_id',
             'role_id'
+        )->withTimestamps();
+    }
+
+    public function usuarios(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            User::class,
+            'descarga_archivo_usuarios',
+            'archivo_id',
+            'user_id'
         )->withTimestamps();
     }
 
@@ -80,6 +110,11 @@ class DescargaArchivo extends Model
         return $this->hasMany(DescargaLinkPublico::class, 'archivo_id');
     }
 
+    public function qrCodes(): HasMany
+    {
+        return $this->hasMany(DescargaQrCode::class, 'archivo_id');
+    }
+
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -90,14 +125,33 @@ class DescargaArchivo extends Model
         )->withTimestamps();
     }
 
+    public function favoritos(): HasMany
+    {
+        return $this->hasMany(DescargaFavorito::class, 'archivo_id');
+    }
+
+    public function scopeFavoritosDe($query, $userId)
+    {
+        return $query->whereHas('favoritos', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        });
+    }
+
     public function scopeAccesiblesPor(Builder $query, User $user): Builder
     {
         if ($user->can('administrar-plataforma-descargas')) {
             return $query;
         }
 
-        return $query->whereHas('roles', function (Builder $q) use ($user) {
-            $q->whereIn('roles.id', $user->roles()->pluck('id'));
+        return $query->where(function ($q) use ($user) {
+            // Acceso por rol
+            $q->whereHas('roles', function ($q2) use ($user) {
+                $q2->whereIn('roles.id', $user->roles()->pluck('id'));
+            })
+            // O acceso directo por usuario
+            ->orWhereHas('usuarios', function ($q2) use ($user) {
+                $q2->where('users.id', $user->id);
+            });
         });
     }
 
@@ -127,6 +181,16 @@ class DescargaArchivo extends Model
     public function scopeConExpiracion($query)
     {
         return $query->whereNotNull('expira_at');
+    }
+
+    public function scopeCompartidos($query)
+    {
+        return $query->where('es_compartido', true);
+    }
+
+    public function scopeNoCompartidos($query)
+    {
+        return $query->where('es_compartido', false);
     }
 
     public function getEstaExpiradoAttribute(): bool
@@ -203,6 +267,12 @@ class DescargaArchivo extends Model
             return false;
         }
 
-        return $this->roles->pluck('id')->intersect($user->roles->pluck('id'))->isNotEmpty();
+        // Verificar acceso por rol
+        $tieneAccesoPorRol = $this->roles->pluck('id')->intersect($user->roles->pluck('id'))->isNotEmpty();
+        
+        // Verificar acceso directo por usuario
+        $tieneAccesoDirecto = $this->usuarios->contains('id', $user->id);
+
+        return $tieneAccesoPorRol || $tieneAccesoDirecto;
     }
 }

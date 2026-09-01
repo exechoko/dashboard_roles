@@ -108,6 +108,13 @@
                     @endforeach
                 </div>
             </div>
+            <div class="form-group mb-2">
+                <label class="small font-weight-bold">Usuarios específicos (opcional)</label>
+                <select class="form-control form-control-sm config-usuarios" multiple data-placeholder="Seleccionar usuarios...">
+                    <option value="">Cargando usuarios...</option>
+                </select>
+                <small class="form-text text-muted">Además de los roles, estos usuarios específicos también podrán descargar el archivo.</small>
+            </div>
             <div class="custom-control custom-switch">
                 <input type="checkbox" class="custom-control-input config-destacado" id="destacado__INDEX__">
                 <label class="custom-control-label small" for="destacado__INDEX__">Destacado</label>
@@ -126,7 +133,19 @@ const accionesGlobales = document.getElementById('accionesGlobales');
 const btnSubmit = document.getElementById('btnSubmit');
 const tplArchivoConfig = document.getElementById('tplArchivoConfig');
 let archivos = [];
+let usuariosDisponibles = [];
 
+// Cargar usuarios al iniciar
+fetch('{{ route("usuarios.json") }}')
+    .then(response => response.json())
+    .then(data => {
+        usuariosDisponibles = data;
+    })
+    .catch(error => {
+        console.error('Error cargando usuarios:', error);
+    });
+
+// Event listeners para drag & drop
 dropzoneArea.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropzoneArea.classList.add('dragover');
@@ -178,17 +197,37 @@ function actualizarLista() {
         card.querySelector('.archivo-nombre').textContent = file.name;
         card.querySelector('.archivo-tamano').textContent = '(' + formatSize(file.size) + ')';
         
-        const rolesContainer = card.querySelector('.row');
+        // Actualizar IDs de checkboxes de roles
         card.querySelectorAll('.config-rol').forEach((checkbox, i) => {
             checkbox.id = checkbox.id.replace('__INDEX__', index);
             const label = card.querySelectorAll('.custom-control-label')[i];
             if (label) label.setAttribute('for', checkbox.id);
         });
         
+        // Actualizar ID de checkbox destacado
         card.querySelector('.config-destacado').id = card.querySelector('.config-destacado').id.replace('__INDEX__', index);
         card.querySelector('.config-destacado').nextElementSibling.setAttribute('for', 
             card.querySelector('.config-destacado').id
         );
+        
+        // Inicializar selector de usuarios
+        const selectUsuarios = card.querySelector('.config-usuarios');
+        selectUsuarios.innerHTML = '<option value="">Seleccionar usuarios...</option>';
+        usuariosDisponibles.forEach(usuario => {
+            const option = document.createElement('option');
+            option.value = usuario.id;
+            option.textContent = usuario.name + ' (' + usuario.email + ')';
+            selectUsuarios.appendChild(option);
+        });
+        
+        // Inicializar Select2 si está disponible
+        if ($.fn.select2) {
+            $(selectUsuarios).select2({
+                placeholder: 'Seleccionar usuarios...',
+                allowClear: true,
+                width: '100%'
+            });
+        }
         
         card.querySelector('.btn-remover').addEventListener('click', () => {
             archivos.splice(index, 1);
@@ -204,6 +243,7 @@ function actualizarLista() {
     fileInput.files = dataTransfer.files;
 }
 
+// Botón "Aplicar a todos"
 document.getElementById('btnAplicarTodos').addEventListener('click', () => {
     const primera = archivosConfig.querySelector('.archivo-config-card');
     if (!primera) return;
@@ -214,6 +254,9 @@ document.getElementById('btnAplicarTodos').addEventListener('click', () => {
     const destacado = primera.querySelector('.config-destacado').checked;
     const rolesCheckeados = [];
     primera.querySelectorAll('.config-rol:checked').forEach(cb => rolesCheckeados.push(cb.value));
+    const usuariosSeleccionados = Array.from(primera.querySelector('.config-usuarios').selectedOptions)
+        .map(opt => opt.value)
+        .filter(v => v !== '');
 
     const cards = archivosConfig.querySelectorAll('.archivo-config-card');
     cards.forEach((card, i) => {
@@ -225,9 +268,19 @@ document.getElementById('btnAplicarTodos').addEventListener('click', () => {
         card.querySelectorAll('.config-rol').forEach(cb => {
             cb.checked = rolesCheckeados.includes(cb.value);
         });
+        
+        // Actualizar usuarios
+        const selectUsuarios = card.querySelector('.config-usuarios');
+        Array.from(selectUsuarios.options).forEach(opt => {
+            opt.selected = usuariosSeleccionados.includes(opt.value);
+        });
+        if ($.fn.select2) {
+            $(selectUsuarios).trigger('change');
+        }
     });
 });
 
+// Submit del formulario
 document.getElementById('formUpload').addEventListener('submit', function(e) {
     archivosConfig.querySelectorAll('.archivo-config-card').forEach((card, index) => {
         const prefix = 'archivos_config[' + index + ']';
@@ -262,6 +315,19 @@ document.getElementById('formUpload').addEventListener('submit', function(e) {
             rolInput.name = prefix + '[roles][]';
             rolInput.value = cb.value;
             this.appendChild(rolInput);
+        });
+        
+        // Agregar usuarios seleccionados
+        const usuariosSeleccionados = Array.from(card.querySelector('.config-usuarios').selectedOptions)
+            .map(opt => opt.value)
+            .filter(v => v !== '');
+        
+        usuariosSeleccionados.forEach(userId => {
+            const userInput = document.createElement('input');
+            userInput.type = 'hidden';
+            userInput.name = prefix + '[usuarios][]';
+            userInput.value = userId;
+            this.appendChild(userInput);
         });
     });
 });

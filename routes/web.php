@@ -139,6 +139,7 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::resource('roles', RolController::class);
     Route::resource('usuarios', UsuarioController::class);
+    Route::get('/usuarios/json', [UsuarioController::class, 'json'])->name('usuarios.json');
     Route::resource('blogs', BlogController::class);
     Route::get('/equipos/estadisticas', [App\Http\Controllers\DashboardController::class, 'equipamientoEstadisticas'])
         ->name('equipos.estadisticas')
@@ -725,6 +726,7 @@ Route::group(['middleware' => ['auth']], function () {
 
         // Link público (sin auth)
         Route::get('/link/{token}', [DescargaController::class, 'linkPublico'])->name('link.publico');
+        Route::get('/qr/{token}', [DescargaController::class, 'descargarConQr'])->name('qr.descargar');
 
         // Rutas de administración
         Route::prefix('admin')->name('admin.')->group(function () {
@@ -755,9 +757,35 @@ Route::group(['middleware' => ['auth']], function () {
             Route::get('/links', [DescargaAdminController::class, 'links'])->name('links');
             Route::post('/links', [DescargaAdminController::class, 'crearLink'])->name('links.store');
             Route::delete('/links/{link}', [DescargaAdminController::class, 'destroyLink'])->name('links.destroy');
+
+            // Progreso de carga
+            Route::get('/progreso', [DescargaAdminController::class, 'progreso'])->name('progreso');
+            Route::get('/job-status/{jobId}', [DescargaAdminController::class, 'jobStatus'])->name('jobStatus');
+
+            // Solicitudes de compartir
+            Route::get('/solicitudes', [DescargaAdminController::class, 'solicitudes'])->name('solicitudes');
+            Route::post('/solicitudes/{solicitud}/aprobar', [DescargaAdminController::class, 'aprobarSolicitud'])->name('solicitudes.aprobar');
+            Route::post('/solicitudes/{solicitud}/rechazar', [DescargaAdminController::class, 'rechazarSolicitud'])->name('solicitudes.rechazar');
+            Route::post('/archivos/{archivo}/revocar-acceso/{usuario}', [DescargaAdminController::class, 'revocarAcceso'])->name('revocar-acceso');
+
+            // Códigos QR
+            Route::get('/qrs', [DescargaAdminController::class, 'listarQrs'])->name('qrs');
+            Route::post('/archivos/{archivo}/generar-qr', [DescargaAdminController::class, 'generarQr'])->name('generar-qr');
+            Route::get('/qrs/{qrCode}/imagen', [DescargaAdminController::class, 'descargarImagenQr'])->name('qr.descargar-imagen');
+            Route::post('/qrs/{qrCode}/desactivar', [DescargaAdminController::class, 'desactivarQr'])->name('qr.desactivar');
         });
 
+        // Rutas para usuarios
+        Route::get('/compartidos-conmigo', [DescargaController::class, 'compartidosConmigo'])->name('compartidos-conmigo');
+        Route::get('/mis-favoritos', [DescargaController::class, 'misFavoritos'])->name('mis-favoritos');
+        Route::get('/mi-historial', [DescargaController::class, 'miHistorial'])->name('mi-historial');
+        Route::post('/{archivo}/solicitar-compartir', [DescargaController::class, 'solicitarCompartir'])->name('solicitar-compartir');
+        Route::post('/{archivo}/favorito', [DescargaController::class, 'toggleFavorito'])->name('toggle-favorito');
+        Route::post('/solicitar-zip', [DescargaController::class, 'solicitarZip'])->name('solicitar-zip');
+        Route::get('/descargar-zip/{token}', [DescargaController::class, 'descargarZip'])->name('descargar-zip');
+
         // Rutas catch-all (deben ir al final)
+        Route::get('/galeria', [DescargaController::class, 'galeria'])->name('galeria');
         Route::get('/{archivo}', [DescargaController::class, 'show'])->name('show');
         Route::get('/{archivo}/download', [DescargaController::class, 'download'])->name('download');
         Route::get('/{archivo}/preview', [DescargaController::class, 'preview'])->name('preview');

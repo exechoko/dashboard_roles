@@ -78,6 +78,11 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function archivosSubidos(): HasMany
+    {
+        return $this->hasMany(DescargaArchivo::class, 'user_id');
+    }
+
     public function getRoleColor($roleName) {
         $role = \Spatie\Permission\Models\Role::where('name', $roleName)->first();
         return $role ? $role->color : null;

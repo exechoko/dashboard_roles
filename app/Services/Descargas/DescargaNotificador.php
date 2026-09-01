@@ -41,4 +41,33 @@ class DescargaNotificador
             ->whereNotNull('email')
             ->get();
     }
+
+    /**
+     * Notificar a un usuario específico que se le dio acceso directo a un archivo
+     */
+    public function notificarAccesoDirecto(DescargaArchivo $archivo, User $usuario): void
+    {
+        if (!$usuario->email) {
+            Log::warning('No se puede notificar al usuario sin email', [
+                'archivo_id' => $archivo->id,
+                'user_id' => $usuario->id,
+            ]);
+            return;
+        }
+
+        try {
+            Mail::to($usuario->email)->send(new NuevoArchivoDescargaMail($archivo, $usuario));
+            
+            Log::info('Notificación de acceso directo enviada', [
+                'archivo_id' => $archivo->id,
+                'user_id' => $usuario->id,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error enviando notificación de acceso directo', [
+                'archivo_id' => $archivo->id,
+                'user_id' => $usuario->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
 }

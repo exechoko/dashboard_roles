@@ -4,62 +4,116 @@
 <section class="section">
     <div class="section-header d-flex justify-content-between align-items-center">
         <h3 class="page__heading"><i class="fas fa-download mr-2"></i>Plataforma de Descargas</h3>
-        @can('administrar-plataforma-descargas')
-            <a href="{{ route('descargas.admin.index') }}" class="btn btn-outline-primary">
-                <i class="fas fa-cogs"></i> Administrar
+        <div>
+            <a href="{{ route('descargas.galeria') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-images"></i> Ver Galería
             </a>
-        @endcan
+            @can('administrar-plataforma-descargas')
+                <a href="{{ route('descargas.admin.index') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-cogs"></i> Administrar
+                </a>
+            @endcan
+        </div>
     </div>
 
     <div class="section-body">
         {{-- Filtros --}}
         <div class="card mb-4">
             <div class="card-body">
-                <form method="GET" action="{{ route('descargas.index') }}" class="row align-items-end">
-                    <div class="col-md-3 mb-2">
-                        <label class="form-label">Buscar</label>
-                        <input type="text" name="buscar" class="form-control" placeholder="Nombre o extensión..."
-                               value="{{ request('buscar') }}">
+                <form method="GET" action="{{ route('descargas.index') }}">
+                    <div class="row align-items-end">
+                        <div class="col-md-3 mb-2">
+                            <label class="form-label">Buscar</label>
+                            <input type="text" name="buscar" class="form-control" placeholder="Nombre o descripción..."
+                                   value="{{ request('buscar') }}">
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label">Categoría</label>
+                            <select name="categoria_id" class="form-control">
+                                <option value="">Todas</option>
+                                @foreach($categorias as $cat)
+                                    <option value="{{ $cat->id }}" {{ request('categoria_id') == $cat->id ? 'selected' : '' }}>
+                                        {{ $cat->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label">Extensión</label>
+                            <select name="extension" class="form-control">
+                                <option value="">Todas</option>
+                                @foreach($extensiones as $ext)
+                                    <option value="{{ $ext }}" {{ request('extension') == $ext ? 'selected' : '' }}>
+                                        .{{ strtoupper($ext) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="form-label">Ordenar</label>
+                            <select name="orden" class="form-control">
+                                <option value="recientes" {{ request('orden') == 'recientes' ? 'selected' : '' }}>Más recientes</option>
+                                <option value="antiguos" {{ request('orden') == 'antiguos' ? 'selected' : '' }}>Más antiguos</option>
+                                <option value="nombre" {{ request('orden') == 'nombre' ? 'selected' : '' }}>Nombre A-Z</option>
+                                <option value="descargas" {{ request('orden') == 'descargas' ? 'selected' : '' }}>Más descargados</option>
+                                <option value="tamano" {{ request('orden') == 'tamano' ? 'selected' : '' }}>Tamaño</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button type="submit" class="btn btn-primary mr-2">
+                                <i class="fas fa-search"></i> Filtrar
+                            </button>
+                            <a href="{{ route('descargas.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Limpiar
+                            </a>
+                        </div>
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <label class="form-label">Categoría</label>
-                        <select name="categoria_id" class="form-control">
-                            <option value="">Todas</option>
-                            @foreach($categorias as $cat)
-                                <option value="{{ $cat->id }}" {{ request('categoria_id') == $cat->id ? 'selected' : '' }}>
-                                    {{ $cat->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
+                    
+                    {{-- Filtros avanzados --}}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <a href="#" class="btn btn-sm btn-outline-secondary" data-toggle="collapse" data-target="#filtrosAvanzados">
+                                <i class="fas fa-sliders-h"></i> Filtros avanzados
+                            </a>
+                        </div>
                     </div>
-                    <div class="col-md-2 mb-2">
-                        <label class="form-label">Extensión</label>
-                        <select name="extension" class="form-control">
-                            <option value="">Todas</option>
-                            @foreach($extensiones as $ext)
-                                <option value="{{ $ext }}" {{ request('extension') == $ext ? 'selected' : '' }}>
-                                    .{{ strtoupper($ext) }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-2 mb-2">
-                        <label class="form-label">Ordenar</label>
-                        <select name="orden" class="form-control">
-                            <option value="recientes" {{ request('orden') == 'recientes' ? 'selected' : '' }}>Más recientes</option>
-                            <option value="antiguos" {{ request('orden') == 'antiguos' ? 'selected' : '' }}>Más antiguos</option>
-                            <option value="nombre" {{ request('orden') == 'nombre' ? 'selected' : '' }}>Nombre A-Z</option>
-                            <option value="descargas" {{ request('orden') == 'descargas' ? 'selected' : '' }}>Más descargados</option>
-                            <option value="tamano" {{ request('orden') == 'tamano' ? 'selected' : '' }}>Tamaño</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 mb-2">
-                        <button type="submit" class="btn btn-primary mr-2">
-                            <i class="fas fa-search"></i> Filtrar
-                        </button>
-                        <a href="{{ route('descargas.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-times"></i> Limpiar
-                        </a>
+                    
+                    <div class="collapse mt-3" id="filtrosAvanzados">
+                        <div class="row">
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Subido por</label>
+                                <select name="user_id" class="form-control">
+                                    <option value="">Todos</option>
+                                    @foreach($usuarios as $user)
+                                        <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
+                                            {{ $user->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Fecha desde</label>
+                                <input type="date" name="fecha_subida_desde" class="form-control" 
+                                       value="{{ request('fecha_subida_desde') }}">
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Fecha hasta</label>
+                                <input type="date" name="fecha_subida_hasta" class="form-control" 
+                                       value="{{ request('fecha_subida_hasta') }}">
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label">Tamaño (KB)</label>
+                                <div class="input-group">
+                                    <input type="number" name="tamano_min" class="form-control" placeholder="Mín" 
+                                           value="{{ request('tamano_min') }}">
+                                    <div class="input-group-prepend input-group-append">
+                                        <span class="input-group-text">-</span>
+                                    </div>
+                                    <input type="number" name="tamano_max" class="form-control" placeholder="Máx" 
+                                           value="{{ request('tamano_max') }}">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -87,11 +141,19 @@
         {{-- Lista de archivos --}}
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-folder-open mr-2"></i>
-                    Archivos disponibles
-                    <span class="badge badge-secondary ml-2">{{ $archivos->total() }}</span>
-                </h5>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-folder-open mr-2"></i>
+                        Archivos disponibles
+                        <span class="badge badge-secondary ml-2">{{ $archivos->total() }}</span>
+                    </h5>
+                    <div>
+                        <button type="button" class="btn btn-success btn-sm" id="btnDescargarZip" disabled>
+                            <i class="fas fa-file-archive"></i> Descargar seleccionados como ZIP
+                            <span class="badge badge-light ml-2" id="contadorSeleccionados">0</span>
+                        </button>
+                    </div>
+                </div>
             </div>
             <div class="card-body p-0">
                 @if($archivos->count() > 0)
@@ -99,6 +161,12 @@
                         <table class="table table-hover mb-0">
                             <thead class="thead-light">
                                 <tr>
+                                    <th style="width: 40px;">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="selectAll">
+                                            <label class="custom-control-label" for="selectAll"></label>
+                                        </div>
+                                    </th>
                                     <th style="width: 50px;"></th>
                                     <th>Nombre</th>
                                     <th>Categoría</th>
@@ -112,6 +180,14 @@
                             <tbody>
                                 @foreach($archivos as $archivo)
                                     <tr>
+                                        <td>
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input archivo-checkbox" 
+                                                       id="archivo_{{ $archivo->id }}" value="{{ $archivo->id }}"
+                                                       data-tamano="{{ $archivo->tamano_bytes }}">
+                                                <label class="custom-control-label" for="archivo_{{ $archivo->id }}"></label>
+                                            </div>
+                                        </td>
                                         <td class="text-center">
                                             @if($archivo->destacado)
                                                 <i class="fas fa-star text-warning" title="Destacado"></i>
@@ -175,4 +251,103 @@
         </div>
     </div>
 </section>
+
+@push('scripts')
+<script>
+$(document).ready(function() {
+    const maxTamanoBytes = {{ config('descargas.zip_tamano_maximo_gb', 10) * 1024 * 1024 * 1024 }};
+    
+    // Seleccionar/deseleccionar todos
+    $('#selectAll').change(function() {
+        $('.archivo-checkbox').prop('checked', this.checked);
+        actualizarContador();
+    });
+    
+    // Actualizar contador al cambiar selección
+    $('.archivo-checkbox').change(function() {
+        actualizarContador();
+    });
+    
+    function actualizarContador() {
+        const seleccionados = $('.archivo-checkbox:checked').length;
+        $('#contadorSeleccionados').text(seleccionados);
+        $('#btnDescargarZip').prop('disabled', seleccionados === 0);
+        
+        // Calcular tamaño total
+        let tamanoTotal = 0;
+        $('.archivo-checkbox:checked').each(function() {
+            tamanoTotal += parseInt($(this).data('tamano')) || 0;
+        });
+        
+        if (tamanoTotal > maxTamanoBytes) {
+            $('#btnDescargarZip').prop('disabled', true);
+            alert('El tamaño total de los archivos seleccionados supera el límite de {{ config('descargas.zip_tamano_maximo_gb', 10) }} GB');
+        }
+    }
+    
+    // Descargar ZIP
+    $('#btnDescargarZip').click(function() {
+        const archivosIds = [];
+        $('.archivo-checkbox:checked').each(function() {
+            archivosIds.push($(this).val());
+        });
+        
+        if (archivosIds.length === 0) {
+            return;
+        }
+        
+        const btn = $(this);
+        const originalText = btn.html();
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creando ZIP...');
+        
+        $.ajax({
+            url: '{{ route("descargas.solicitar-zip") }}',
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                archivos: archivosIds
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Mostrar mensaje de éxito
+                    const alertHtml = `
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle"></i>
+                            ${response.message} - ${response.archivos} archivos (${response.tamano})
+                            <a href="${response.download_url}" class="btn btn-success btn-sm ml-3">
+                                <i class="fas fa-download"></i> Descargar ZIP
+                            </a>
+                            <button type="button" class="close" data-dismiss="alert">
+                                <span>&times;</span>
+                            </button>
+                        </div>
+                    `;
+                    $('.section-body').prepend(alertHtml);
+                    
+                    // Resetear selección
+                    $('.archivo-checkbox').prop('checked', false);
+                    $('#selectAll').prop('checked', false);
+                    actualizarContador();
+                    
+                    // Auto-ocultar después de 10 segundos
+                    setTimeout(function() {
+                        $('.alert').alert('close');
+                    }, 10000);
+                } else {
+                    alert(response.message);
+                }
+            },
+            error: function(xhr) {
+                const response = xhr.responseJSON;
+                alert(response?.message || 'Error al crear el ZIP');
+            },
+            complete: function() {
+                btn.prop('disabled', false).html(originalText);
+                actualizarContador();
+            }
+        });
+    });
+});
+</script>
+@endpush
 @endsection

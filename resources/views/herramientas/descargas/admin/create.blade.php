@@ -105,7 +105,7 @@
                 </div>
             </div>
             <div class="form-group mb-2">
-                <label class="small font-weight-bold">Roles que pueden descargar *</label>
+                <label class="small font-weight-bold">Roles que pueden descargar</label>
                 <div class="row">
                     @foreach($roles as $rol)
                         <div class="col-md-4 col-sm-6">
@@ -118,11 +118,11 @@
                 </div>
             </div>
             <div class="form-group mb-2">
-                <label class="small font-weight-bold">Usuarios específicos (opcional)</label>
+                <label class="small font-weight-bold">Usuarios específicos</label>
                 <select class="form-control form-control-sm config-usuarios" multiple data-placeholder="Seleccionar usuarios...">
                     <option value="">Cargando usuarios...</option>
                 </select>
-                <small class="form-text text-muted">Además de los roles, estos usuarios específicos también podrán descargar el archivo.</small>
+                <small class="form-text text-muted">Se puede compartir por rol, por usuarios específicos, o ambos — pero hace falta elegir al menos uno.</small>
             </div>
             <div class="custom-control custom-switch">
                 <input type="checkbox" class="custom-control-input config-destacado" id="destacado__INDEX__">

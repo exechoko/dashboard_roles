@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Spatie\Permission\Models\Role;
@@ -170,13 +171,13 @@ class DescargaAdminController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'archivos' => 'required|array|min:1',
             'archivos.*' => 'required|file',
             'archivos_config' => 'required|array',
             'archivos_config.*.categoria_id' => 'required|exists:descarga_categorias,id',
             'archivos_config.*.descripcion' => 'nullable|string|max:1000',
-            'archivos_config.*.roles' => 'required|array|min:1',
+            'archivos_config.*.roles' => 'nullable|array',
             'archivos_config.*.roles.*' => 'exists:roles,id',
             'archivos_config.*.usuarios' => 'nullable|array',
             'archivos_config.*.usuarios.*' => 'exists:users,id',
@@ -184,6 +185,23 @@ class DescargaAdminController extends Controller
             'archivos_config.*.notificar' => 'boolean',
             'archivos_config.*.expira_dias' => 'nullable|integer|min:1',
         ]);
+
+        // El acceso puede darse por rol O por usuario especifico
+        // (DescargaArchivo::scopeAccesiblesPor ya soporta ambos de forma
+        // independiente), asi que no tiene sentido exigir rol si ya se
+        // eligio al menos un usuario puntual.
+        $validator->after(function ($validator) use ($request) {
+            foreach ($request->input('archivos_config', []) as $index => $config) {
+                if (empty($config['roles']) && empty($config['usuarios'])) {
+                    $validator->errors()->add(
+                        "archivos_config.$index.roles",
+                        'Seleccioná al menos un rol o un usuario específico que pueda descargar el archivo.'
+                    );
+                }
+            }
+        });
+
+        $validator->validate();
 
         $archivosConfig = $request->input('archivos_config', []);
         $archivosProcesados = 0;

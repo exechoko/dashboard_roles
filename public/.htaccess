@@ -1,14 +1,12 @@
-<!--
-    Limites para la Plataforma de Descargas (hasta 10GB por archivo, ver
-    config/descargas.php: tamano_maximo_kb). El nombre de modulo correcto
-    para el SAPI de Apache de PHP 8.x en Windows es "php_module" (no
-    "mod_php7.c", que es de PHP 7 y nunca matcheaba con PHP 8.1 -> estas
-    directivas quedaban sin aplicarse). Se dejan ambos por si acaso.
-
-    OJO: esto SOLO tiene efecto si PHP corre como modulo de Apache
-    (mod_php). Si corre via FastCGI/PHP-FPM, .htaccess no puede tocar
-    estos valores y hay que subirlos directo en el php.ini del servidor.
--->
+# Limites para la Plataforma de Descargas (hasta 10GB por archivo, ver
+# config/descargas.php: tamano_maximo_kb). El nombre de modulo correcto
+# para el SAPI de Apache de PHP 8.x en Windows es "php_module" (no
+# "mod_php7.c", que es de PHP 7 y nunca matcheaba con PHP 8.1 -> estas
+# directivas quedaban sin aplicarse). Se dejan ambos por si acaso.
+#
+# OJO: esto SOLO tiene efecto si PHP corre como modulo de Apache
+# (mod_php). Si corre via FastCGI/PHP-FPM, .htaccess no puede tocar
+# estos valores y hay que subirlos directo en el php.ini del servidor.
 <IfModule php_module>
     php_value upload_max_filesize 10240M
     php_value post_max_size 10240M

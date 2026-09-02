@@ -30,7 +30,9 @@ class ComprimirArchivosZip implements ShouldQueue
         $this->timeout = config('descargas.job_timeout', 7200);
         $this->tries = config('descargas.job_tries', 2);
         $this->backoff = config('descargas.job_backoff', 300);
-        $this->onQueue('descargas');
+        // Ver comentario en ProcesarArchivoDescarga sobre por qué usa la
+        // conexión dedicada 'descargas' en vez de la 'database' por defecto.
+        $this->onConnection('descargas')->onQueue('descargas');
     }
 
     public function handle(): void

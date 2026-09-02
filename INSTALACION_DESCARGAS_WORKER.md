@@ -11,71 +11,39 @@ La Plataforma de Descargas utiliza el sistema de colas (queues) de Laravel para 
 
 ## Configuración del Worker
 
-### Opción 1: Usar el Worker General (Recomendado)
+**Importante:** la cola `descargas` necesita un worker propio, igual que `mbox` y `backups`. El worker general (`LaravelQueueWorker`) corre `queue:work` sin `--queue`, por lo que **solo** procesa la cola `default` — nunca va a tocar `descargas`. Además, si un worker se conecta con la conexión `database` por defecto (retry_after=90s) en vez de la conexión dedicada `descargas` (retry_after=7200s, ver `config/queue.php`), un archivo pesado que tarde más de 90s en moverse/comprimirse quedaría "reservado" y otro intento lo marcaría como fallido sin haber terminado. Por eso los Jobs (`ProcesarArchivoDescarga`, `EnviarNotificacionDescarga`, `ComprimirArchivosZip`, `GenerarCodigoQr`) usan `->onConnection('descargas')->onQueue('descargas')`, y el worker debe arrancarse indicando esa misma conexión.
 
-El worker general ya está configurado para procesar todas las colas del sistema, incluyendo la cola `descargas`.
+### Opción 1: Instalar el servicio de Windows (Recomendado para Producción)
 
-**Verificar que el worker está corriendo:**
-
-```bash
-# En Windows, verificar el proceso
-tasklist | findstr php
-
-# Deberías ver algo como:
-# php.exe  1234  Console  1  123,456 K  Running  0:05:23  php artisan queue:work
-```
-
-**Si el worker no está corriendo:**
+Usá los scripts ya preparados en la raíz del proyecto (requieren NSSM instalado en `C:\nssm\nssm.exe` y ejecutarse como Administrador):
 
 ```bash
-# Iniciar el worker manualmente
-php artisan queue:work --queue=default,descargas,mbox --sleep=3 --tries=2 --timeout=7200
+install-queue-service-descargas.bat
 ```
 
-### Opción 2: Crear un Servicio en Windows (Recomendado para Producción)
-
-Para que el worker se inicie automáticamente con Windows, puedes usar NSSM (Non-Sucking Service Manager):
-
-1. **Descargar NSSM:**
-   - Ir a https://nssm.cc/download
-   - Descargar la versión win32 o win64 según tu sistema
-
-2. **Instalar el servicio:**
+Esto crea el servicio `LaravelQueueWorkerDescargas`, que ejecuta:
 
 ```bash
-# Abrir CMD como administrador
-nssm install LaravelQueueWorkerDescargas
-
-# En la interfaz gráfica:
-# Path: C:\php\php.exe (o donde tengas PHP)
-# Arguments: artisan queue:work --queue=default,descargas,mbox --sleep=3 --tries=2 --timeout=7200
-# Working directory: C:\Apache24\htdocs\dashboard_roles
+php artisan queue:work descargas --queue=descargas --sleep=5 --tries=2 --timeout=0 --max-time=3600
 ```
 
-3. **Iniciar el servicio:**
+Para desinstalarlo: `uninstall-queue-service-descargas.bat`.
+
+**Verificar el estado:**
 
 ```bash
-nssm start LaravelQueueWorkerDescargas
+sc query LaravelQueueWorkerDescargas
 ```
 
-4. **Verificar el estado:**
+Ver logs: `storage/logs/queue-worker-descargas.log` y `queue-worker-descargas-error.log`.
+
+### Opción 2: Correrlo manualmente (para probar en dev)
 
 ```bash
-nssm status LaravelQueueWorkerDescargas
+php artisan queue:work descargas --queue=descargas --sleep=5 --tries=2 --timeout=0
 ```
 
-### Opción 3: Usar el Programador de Tareas de Windows
-
-Si prefieres usar el Programador de Tareas:
-
-1. Abrir el Programador de Tareas de Windows
-2. Crear una nueva tarea básica
-3. Nombre: "Laravel Queue Worker Descargas"
-4. Trigger: "When the computer starts"
-5. Action: "Start a program"
-   - Program: `C:\php\php.exe`
-   - Arguments: `artisan queue:work --queue=default,descargas,mbox --sleep=3 --tries=2 --timeout=7200`
-   - Start in: `C:\Apache24\htdocs\dashboard_roles`
+Nota: en dev, si `.env` tiene `QUEUE_CONNECTION=sync`, los jobs de Descargas se ejecutan igual en el mismo request (no hace falta worker) — esto solo aplica cuando `QUEUE_CONNECTION=database`, como en producción.
 
 ## Colas Configuradas
 
@@ -184,9 +152,9 @@ Los ZIPs expiran después de 24 horas por defecto. Puedes cambiar esto en `confi
    # Detener el worker actual (Ctrl+C si está en primer plano)
    # O detener el servicio
    nssm stop LaravelQueueWorkerDescargas
-   
+
    # Iniciar nuevamente
-   php artisan queue:work --queue=default,descargas,mbox --sleep=3 --tries=2 --timeout=7200
+   nssm start LaravelQueueWorkerDescargas
    ```
 
 ### Los trabajos fallan repetidamente
@@ -231,7 +199,7 @@ php artisan queue:monitor default,descargas,mbox
 php artisan queue:restart
 
 # Ver trabajos en tiempo real
-php artisan queue:work --queue=descargas --verbose
+php artisan queue:work descargas --queue=descargas --verbose
 
 # Limpiar la cola (¡cuidado! elimina todos los trabajos pendientes)
 php artisan queue:clear --queue=descargas

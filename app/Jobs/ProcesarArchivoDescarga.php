@@ -34,7 +34,11 @@ class ProcesarArchivoDescarga implements ShouldQueue
         $this->timeout = config('descargas.job_timeout', 7200);
         $this->tries = config('descargas.job_tries', 2);
         $this->backoff = config('descargas.job_backoff', 300);
-        $this->onQueue('descargas');
+        // Cola dedicada con retry_after largo (ver config/queue.php): la de
+        // 'database' (90s) re-entregaría este job a otro worker antes de que
+        // termine de mover un archivo pesado. Requiere un worker propio en
+        // producción, igual que 'mbox'/'backups': php artisan queue:work descargas --queue=descargas
+        $this->onConnection('descargas')->onQueue('descargas');
     }
 
     public function handle(): void

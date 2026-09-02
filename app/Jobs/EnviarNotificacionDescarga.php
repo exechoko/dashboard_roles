@@ -24,7 +24,9 @@ class EnviarNotificacionDescarga implements ShouldQueue
     public function __construct(
         protected DescargaArchivo $archivo
     ) {
-        $this->onQueue('descargas');
+        // Ver comentario en ProcesarArchivoDescarga sobre por qué usa la
+        // conexión dedicada 'descargas' en vez de la 'database' por defecto.
+        $this->onConnection('descargas')->onQueue('descargas');
     }
 
     public function handle(): void

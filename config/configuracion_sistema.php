@@ -154,6 +154,7 @@ return [
                 'APP_NAME' => ['label' => 'Nombre de la aplicación', 'tipo' => 'text'],
                 'MYSQL_BIN_PATH' => ['label' => 'Carpeta de mysqldump/mysql', 'tipo' => 'text', 'ayuda' => 'Sólo si no están en el PATH del sistema. Ej: C:\\Program Files\\MySQL\\MySQL Server 8.0\\bin'],
                 'DB_PATH' => ['label' => 'Carpeta de backups de la base de datos', 'tipo' => 'text', 'ayuda' => 'Dónde se guardan los .sql generados en Configuración del Sistema > Backups. En el servidor: F:\\Backup_DB. Vacío = storage/app/backups/db.'],
+                'DESCARGAS_PATH' => ['label' => 'Carpeta de archivos de la Plataforma de Descargas', 'tipo' => 'text', 'ayuda' => 'Dónde se guardan los archivos subidos (estructura AAAA/MM). En el servidor: F:\\Descargas_Sistema. Vacío = storage/app/descargas.'],
             ],
         ],
 

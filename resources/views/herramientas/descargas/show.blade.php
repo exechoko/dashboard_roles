@@ -390,6 +390,7 @@ $(document).ready(function() {
 });
 </script>
 @endpush
+@endcan
 
 {{-- Modal para generar QR --}}
 @can('administrar-plataforma-descargas')

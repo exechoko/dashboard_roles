@@ -75,6 +75,16 @@ Route::get('/', function () {
 
 Auth::routes();
 
+// Plataforma de Descargas: link/QR de descarga publica, a proposito fuera
+// del grupo 'auth' de abajo, para poder compartir con gente sin cuenta en
+// el sistema. La seguridad la da el token del link/QR (+ password,
+// expiracion y max_usos), no el login. Ver
+// DescargaController::linkPublico()/descargarConQr().
+Route::prefix('descargas')->name('descargas.')->group(function () {
+    Route::get('/link/{token}', [DescargaController::class, 'linkPublico'])->name('link.publico');
+    Route::get('/qr/{token}', [DescargaController::class, 'descargarConQr'])->name('qr.descargar');
+});
+
 Route::group(['middleware' => ['auth']], function () {
     Route::prefix('chatbot')->name('chatbot.')->group(function () {
         Route::get('/history', [ChatbotController::class, 'history'])->name('history');
@@ -752,10 +762,6 @@ Route::group(['middleware' => ['auth']], function () {
     Route::prefix('descargas')->name('descargas.')->group(function () {
         // Rutas para usuarios (ver y descargar)
         Route::get('/', [DescargaController::class, 'index'])->name('index');
-
-        // Link público (sin auth)
-        Route::get('/link/{token}', [DescargaController::class, 'linkPublico'])->name('link.publico');
-        Route::get('/qr/{token}', [DescargaController::class, 'descargarConQr'])->name('qr.descargar');
 
         // Rutas de administración
         Route::prefix('admin')->name('admin.')->group(function () {

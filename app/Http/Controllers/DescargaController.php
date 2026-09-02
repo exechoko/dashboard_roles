@@ -25,7 +25,11 @@ class DescargaController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:ver-plataforma-descargas');
+        // linkPublico/descargarConQr son de acceso publico (rutas fuera del
+        // grupo 'auth' en routes/web.php): la seguridad la da el token del
+        // link/QR, no el login ni el permiso del sistema.
+        $this->middleware('permission:ver-plataforma-descargas')
+            ->except(['linkPublico', 'descargarConQr']);
     }
 
     public function index(Request $request)

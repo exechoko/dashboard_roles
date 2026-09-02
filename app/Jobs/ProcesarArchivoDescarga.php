@@ -29,7 +29,8 @@ class ProcesarArchivoDescarga implements ShouldQueue
         protected array $usuariosIds,
         protected ?string $expiraAt,
         protected bool $destacado,
-        protected int $userId
+        protected int $userId,
+        protected bool $notificar = true
     ) {
         $this->timeout = config('descargas.job_timeout', 7200);
         $this->tries = config('descargas.job_tries', 2);
@@ -99,8 +100,11 @@ class ProcesarArchivoDescarga implements ShouldQueue
                 'progreso' => 70,
             ]);
 
-            // Enviar notificaciones
-            EnviarNotificacionDescarga::dispatch($archivo);
+            // Enviar notificaciones (opcional, para no llenar de mails
+            // cuando se comparte con un rol/usuario que no hace falta avisar)
+            if ($this->notificar) {
+                EnviarNotificacionDescarga::dispatch($archivo);
+            }
             $archivo->update(['progreso' => 90]);
 
             // Completar

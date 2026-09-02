@@ -181,6 +181,7 @@ class DescargaAdminController extends Controller
             'archivos_config.*.usuarios' => 'nullable|array',
             'archivos_config.*.usuarios.*' => 'exists:users,id',
             'archivos_config.*.destacado' => 'boolean',
+            'archivos_config.*.notificar' => 'boolean',
             'archivos_config.*.expira_dias' => 'nullable|integer|min:1',
         ]);
 
@@ -248,7 +249,8 @@ class DescargaAdminController extends Controller
                 $config['usuarios'] ?? [],
                 $expiraAt,
                 !empty($config['destacado']),
-                Auth::id()
+                Auth::id(),
+                $request->boolean("archivos_config.$index.notificar", true)
             );
 
             $archivosProcesados++;

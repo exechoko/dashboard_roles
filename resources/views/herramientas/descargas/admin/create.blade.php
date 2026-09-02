@@ -128,6 +128,10 @@
                 <input type="checkbox" class="custom-control-input config-destacado" id="destacado__INDEX__">
                 <label class="custom-control-label small" for="destacado__INDEX__">Destacado</label>
             </div>
+            <div class="custom-control custom-switch">
+                <input type="checkbox" class="custom-control-input config-notificar" id="notificar__INDEX__" checked>
+                <label class="custom-control-label small" for="notificar__INDEX__">Notificar por email a los usuarios/roles con acceso</label>
+            </div>
         </div>
     </div>
 </template>
@@ -215,10 +219,16 @@ function actualizarLista() {
         
         // Actualizar ID de checkbox destacado
         card.querySelector('.config-destacado').id = card.querySelector('.config-destacado').id.replace('__INDEX__', index);
-        card.querySelector('.config-destacado').nextElementSibling.setAttribute('for', 
+        card.querySelector('.config-destacado').nextElementSibling.setAttribute('for',
             card.querySelector('.config-destacado').id
         );
-        
+
+        // Actualizar ID de checkbox notificar
+        card.querySelector('.config-notificar').id = card.querySelector('.config-notificar').id.replace('__INDEX__', index);
+        card.querySelector('.config-notificar').nextElementSibling.setAttribute('for',
+            card.querySelector('.config-notificar').id
+        );
+
         // Inicializar selector de usuarios
         const selectUsuarios = card.querySelector('.config-usuarios');
         selectUsuarios.innerHTML = '<option value="">Seleccionar usuarios...</option>';
@@ -261,6 +271,7 @@ document.getElementById('btnAplicarTodos').addEventListener('click', () => {
     const expira = primera.querySelector('.config-expira').value;
     const descripcion = primera.querySelector('.config-descripcion').value;
     const destacado = primera.querySelector('.config-destacado').checked;
+    const notificar = primera.querySelector('.config-notificar').checked;
     const rolesCheckeados = [];
     primera.querySelectorAll('.config-rol:checked').forEach(cb => rolesCheckeados.push(cb.value));
     const usuariosSeleccionados = Array.from(primera.querySelector('.config-usuarios').selectedOptions)
@@ -274,6 +285,7 @@ document.getElementById('btnAplicarTodos').addEventListener('click', () => {
         card.querySelector('.config-expira').value = expira;
         card.querySelector('.config-descripcion').value = descripcion;
         card.querySelector('.config-destacado').checked = destacado;
+        card.querySelector('.config-notificar').checked = notificar;
         card.querySelectorAll('.config-rol').forEach(cb => {
             cb.checked = rolesCheckeados.includes(cb.value);
         });
@@ -310,6 +322,7 @@ document.getElementById('formUpload').addEventListener('submit', function(e) {
         formData.append(prefix + '[expira_dias]', card.querySelector('.config-expira').value);
         formData.append(prefix + '[descripcion]', card.querySelector('.config-descripcion').value);
         formData.append(prefix + '[destacado]', card.querySelector('.config-destacado').checked ? '1' : '0');
+        formData.append(prefix + '[notificar]', card.querySelector('.config-notificar').checked ? '1' : '0');
 
         card.querySelectorAll('.config-rol:checked').forEach(cb => {
             formData.append(prefix + '[roles][]', cb.value);

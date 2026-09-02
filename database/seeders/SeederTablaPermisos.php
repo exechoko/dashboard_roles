@@ -277,6 +277,7 @@ class SeederTablaPermisos extends Seeder
             'administrar-visor-mails',
 
             //Plataforma de Descargas
+            'ver-menu-descargas',
             'ver-plataforma-descargas',
             'subir-archivos-descargas',
             'administrar-plataforma-descargas',

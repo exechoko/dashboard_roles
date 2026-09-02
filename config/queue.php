@@ -54,6 +54,17 @@ return [
             'after_commit' => false,
         ],
 
+        // Cola para la Plataforma de Descargas: procesamiento de archivos,
+        // compresión ZIP, generación de QR, envío de notificaciones.
+        // Timeout de 2 horas para soportar archivos grandes.
+        'descargas' => [
+            'driver' => 'database',
+            'table' => 'jobs',
+            'queue' => 'descargas',
+            'retry_after' => 7200,
+            'after_commit' => false,
+        ],
+
         // Cola dedicada a backups/restore de la BD (Configuración del Sistema >
         // Backups): mysqldump/mysql de una base grande puede tardar varios
         // minutos, igual que 'mbox' arriba — mismo motivo, mismo retry_after.

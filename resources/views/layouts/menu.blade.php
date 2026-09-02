@@ -656,6 +656,55 @@
     </li>
 @endcanany
 
+@can('ver-plataforma-descargas')
+    <li class="dropdown {{ request()->is('descargas*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-download"></i><span>Descargas</span>
+        </a>
+        <ul class="dropdown-menu">
+            <li class="{{ request()->routeIs('descargas.index') || request()->routeIs('descargas.show') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('descargas.index') }}">
+                    <i class="fas fa-folder-open"></i><span>Archivos</span>
+                </a>
+            </li>
+            <li class="{{ request()->routeIs('descargas.compartidos-conmigo') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('descargas.compartidos-conmigo') }}">
+                    <i class="fas fa-share-alt"></i><span>Compartidos conmigo</span>
+                </a>
+            </li>
+            <li class="{{ request()->routeIs('descargas.mis-favoritos') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('descargas.mis-favoritos') }}">
+                    <i class="fas fa-star"></i><span>Mis Favoritos</span>
+                </a>
+            </li>
+            <li class="{{ request()->routeIs('descargas.mi-historial') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('descargas.mi-historial') }}">
+                    <i class="fas fa-history"></i><span>Mi Historial</span>
+                </a>
+            </li>
+            @can('administrar-plataforma-descargas')
+                <li class="dropdown-divider"></li>
+                <li class="{{ request()->routeIs('descargas.admin.solicitudes') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('descargas.admin.solicitudes') }}">
+                        <i class="fas fa-envelope-open"></i><span>Solicitudes</span>
+                        @php
+                            $solicitudesPendientes = \App\Models\DescargaSolicitudCompartir::where('estado', 'pendiente')->count();
+                        @endphp
+                        @if($solicitudesPendientes > 0)
+                            <span class="badge badge-danger badge-pill">{{ $solicitudesPendientes }}</span>
+                        @endif
+                    </a>
+                </li>
+                <li class="{{ request()->routeIs('descargas.admin.*') && !request()->routeIs('descargas.admin.solicitudes') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('descargas.admin.index') }}">
+                        <i class="fas fa-cogs"></i><span>Administración</span>
+                    </a>
+                </li>
+            @endcan
+        </ul>
+    </li>
+@endcan
+
 @canany(['ver-menu-web', 'editar-web-contadores', 'editar-web-textos', 'editar-web-historia', 'editar-web-tecnologia', 'editar-web-dependencias', 'editar-web-galeria', 'crear-noticia', 'editar-noticia', 'eliminar-noticia'])
     <li class="{{ request()->is('web-admin*') || request()->is('noticias*') || request()->is('web-dependencias*') || request()->is('web-historia*') || request()->is('web-tecnologia*') || request()->is('web-galeria*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">

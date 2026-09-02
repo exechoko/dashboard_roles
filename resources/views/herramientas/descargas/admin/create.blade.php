@@ -44,6 +44,8 @@
 
                     <hr>
 
+                    <div id="uploadErrorAlert" class="alert alert-danger" style="display:none;"></div>
+
                     <div class="text-right">
                         <button type="submit" class="btn btn-success btn-lg" id="btnSubmit" disabled>
                             <i class="fas fa-upload"></i> Subir archivos
@@ -59,10 +61,18 @@
 <template id="tplArchivoConfig">
     <div class="card mb-3 archivo-config-card">
         <div class="card-header d-flex justify-content-between align-items-center py-2">
-            <div>
-                <i class="fas fa-file text-muted mr-2"></i>
-                <strong class="archivo-nombre"></strong>
-                <small class="text-muted ml-2 archivo-tamano"></small>
+            <div class="flex-grow-1 mr-3">
+                <div>
+                    <i class="fas fa-file text-muted mr-2"></i>
+                    <strong class="archivo-nombre"></strong>
+                    <small class="text-muted ml-2 archivo-tamano"></small>
+                </div>
+                <div class="archivo-progress-wrap mt-2" style="display:none;">
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-primary archivo-progress-bar" role="progressbar" style="width:0%;"></div>
+                    </div>
+                    <small class="text-muted archivo-progress-label"></small>
+                </div>
             </div>
             <button type="button" class="btn btn-sm btn-outline-danger btn-remover">
                 <i class="fas fa-times"></i>
@@ -279,57 +289,121 @@ document.getElementById('btnAplicarTodos').addEventListener('click', () => {
     });
 });
 
-// Submit del formulario
+// Submit del formulario: se envía por XHR (no submit nativo) para poder
+// mostrar progreso de subida. Como todos los archivos van en un único
+// request multipart, el progreso por archivo se aproxima repartiendo los
+// bytes totales enviados según el tamaño de cada archivo, en el mismo
+// orden en que se agregan al FormData (los navegadores arman el body
+// multipart respetando ese orden, así que la aproximación es muy precisa;
+// el único margen de error es el pequeño overhead de cada parte del
+// multipart, despreciable frente al tamaño real de los archivos).
 document.getElementById('formUpload').addEventListener('submit', function(e) {
-    archivosConfig.querySelectorAll('.archivo-config-card').forEach((card, index) => {
+    e.preventDefault();
+
+    const cards = Array.from(archivosConfig.querySelectorAll('.archivo-config-card'));
+    const formData = new FormData();
+    formData.append('_token', this.querySelector('input[name="_token"]').value);
+
+    cards.forEach((card, index) => {
         const prefix = 'archivos_config[' + index + ']';
-        
-        const catInput = document.createElement('input');
-        catInput.type = 'hidden';
-        catInput.name = prefix + '[categoria_id]';
-        catInput.value = card.querySelector('.config-categoria').value;
-        this.appendChild(catInput);
-        
-        const expiraInput = document.createElement('input');
-        expiraInput.type = 'hidden';
-        expiraInput.name = prefix + '[expira_dias]';
-        expiraInput.value = card.querySelector('.config-expira').value;
-        this.appendChild(expiraInput);
-        
-        const descInput = document.createElement('input');
-        descInput.type = 'hidden';
-        descInput.name = prefix + '[descripcion]';
-        descInput.value = card.querySelector('.config-descripcion').value;
-        this.appendChild(descInput);
-        
-        const destInput = document.createElement('input');
-        destInput.type = 'hidden';
-        destInput.name = prefix + '[destacado]';
-        destInput.value = card.querySelector('.config-destacado').checked ? '1' : '0';
-        this.appendChild(destInput);
-        
+        formData.append(prefix + '[categoria_id]', card.querySelector('.config-categoria').value);
+        formData.append(prefix + '[expira_dias]', card.querySelector('.config-expira').value);
+        formData.append(prefix + '[descripcion]', card.querySelector('.config-descripcion').value);
+        formData.append(prefix + '[destacado]', card.querySelector('.config-destacado').checked ? '1' : '0');
+
         card.querySelectorAll('.config-rol:checked').forEach(cb => {
-            const rolInput = document.createElement('input');
-            rolInput.type = 'hidden';
-            rolInput.name = prefix + '[roles][]';
-            rolInput.value = cb.value;
-            this.appendChild(rolInput);
+            formData.append(prefix + '[roles][]', cb.value);
         });
-        
-        // Agregar usuarios seleccionados
-        const usuariosSeleccionados = Array.from(card.querySelector('.config-usuarios').selectedOptions)
+
+        Array.from(card.querySelector('.config-usuarios').selectedOptions)
             .map(opt => opt.value)
-            .filter(v => v !== '');
-        
-        usuariosSeleccionados.forEach(userId => {
-            const userInput = document.createElement('input');
-            userInput.type = 'hidden';
-            userInput.name = prefix + '[usuarios][]';
-            userInput.value = userId;
-            this.appendChild(userInput);
+            .filter(v => v !== '')
+            .forEach(userId => formData.append(prefix + '[usuarios][]', userId));
+    });
+
+    // Límites acumulados de bytes (mismo orden que "archivos", que es el
+    // orden en que se agregan al FormData a continuación).
+    const acumulados = [0];
+    archivos.forEach(file => acumulados.push(acumulados[acumulados.length - 1] + file.size));
+    archivos.forEach(file => formData.append('archivos[]', file));
+
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
+    document.getElementById('uploadErrorAlert').style.display = 'none';
+    cards.forEach(card => {
+        card.querySelector('.archivo-progress-wrap').style.display = 'block';
+    });
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', this.action);
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.setRequestHeader('Accept', 'application/json');
+
+    xhr.upload.addEventListener('progress', function (evt) {
+        if (!evt.lengthComputable) return;
+
+        const totalBytesArchivos = acumulados[acumulados.length - 1];
+        if (totalBytesArchivos === 0) return;
+        // evt.total incluye el overhead del multipart (config, tokens, etc.);
+        // escalamos los límites acumulados a esa magnitud real.
+        const escala = evt.total / totalBytesArchivos;
+
+        cards.forEach((card, i) => {
+            const inicio = acumulados[i] * escala;
+            const fin = acumulados[i + 1] * escala;
+            let pct;
+            if (evt.loaded >= fin) pct = 100;
+            else if (evt.loaded <= inicio) pct = 0;
+            else pct = Math.round(((evt.loaded - inicio) / (fin - inicio)) * 100);
+
+            const bar = card.querySelector('.archivo-progress-bar');
+            const label = card.querySelector('.archivo-progress-label');
+            bar.style.width = pct + '%';
+
+            if (pct >= 100) {
+                bar.classList.remove('bg-primary');
+                bar.classList.add('bg-success');
+                label.textContent = 'Subido ✓';
+            } else if (pct > 0) {
+                label.textContent = 'Subiendo... ' + pct + '%';
+            } else {
+                label.textContent = 'En espera...';
+            }
         });
     });
+
+    xhr.onload = function () {
+        let data = null;
+        try { data = JSON.parse(xhr.responseText); } catch (err) { /* respuesta no-JSON */ }
+
+        if (xhr.status >= 200 && xhr.status < 300 && data && data.redirect) {
+            window.location.href = data.redirect;
+            return;
+        }
+
+        let mensaje = 'Ocurrió un error al subir los archivos.';
+        if (xhr.status === 422 && data && data.errors) {
+            mensaje = Object.values(data.errors).flat().join(' ');
+        } else if (data && data.message) {
+            mensaje = data.message;
+        }
+        mostrarErrorUpload(mensaje);
+    };
+
+    xhr.onerror = function () {
+        mostrarErrorUpload('No se pudo conectar con el servidor. Verificá tu conexión e intentá de nuevo.');
+    };
+
+    xhr.send(formData);
 });
+
+function mostrarErrorUpload(mensaje) {
+    const alerta = document.getElementById('uploadErrorAlert');
+    alerta.textContent = mensaje;
+    alerta.style.display = 'block';
+    btnSubmit.disabled = false;
+    btnSubmit.innerHTML = '<i class="fas fa-upload"></i> Subir archivos';
+}
 
 function formatSize(bytes) {
     if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(2) + ' GB';

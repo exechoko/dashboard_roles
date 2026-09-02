@@ -256,11 +256,26 @@ class DescargaAdminController extends Controller
 
         if (!empty($conflictos)) {
             session()->flash('conflictos', $conflictos);
+
+            if ($request->expectsJson()) {
+                return response()->json(['redirect' => route('descargas.admin.resolver_conflictos')]);
+            }
+
             return redirect()->route('descargas.admin.resolver_conflictos');
         }
 
+        $mensajeExito = $archivosProcesados . ' archivo(s) subido(s). Se están procesando en segundo plano.';
+
+        if ($request->expectsJson()) {
+            session()->flash('success', $mensajeExito);
+
+            return response()->json([
+                'redirect' => route('descargas.admin.archivos'),
+            ]);
+        }
+
         return redirect()->route('descargas.admin.archivos')
-            ->with('success', $archivosProcesados . ' archivo(s) subido(s). Se están procesando en segundo plano.');
+            ->with('success', $mensajeExito);
     }
 
     public function resolverConflictos()

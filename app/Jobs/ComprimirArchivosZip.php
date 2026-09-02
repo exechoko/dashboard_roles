@@ -61,17 +61,20 @@ class ComprimirArchivosZip implements ShouldQueue
                     config('descargas.zip_tamano_maximo_gb', 10) . ' GB');
             }
 
-            // Crear directorio temporal para ZIPs
-            $zipDir = 'descargas/zips_temporales';
-            if (!Storage::exists($zipDir)) {
-                Storage::makeDirectory($zipDir);
+            // Crear directorio temporal para ZIPs. Todo lo relacionado a
+            // Descargas vive en el disco 'descargas' (DESCARGAS_PATH), no en
+            // el disco por defecto: DescargaController::descargarZip() lee
+            // ruta_zip con Storage::disk('descargas').
+            $zipDir = 'zips_temporales';
+            if (!Storage::disk('descargas')->exists($zipDir)) {
+                Storage::disk('descargas')->makeDirectory($zipDir);
             }
 
             // Generar nombre único para el ZIP
             $token = Str::random(64);
             $zipNombre = 'zip_' . $token . '.zip';
             $zipRuta = $zipDir . '/' . $zipNombre;
-            $zipRutaCompleta = storage_path('app/' . $zipRuta);
+            $zipRutaCompleta = Storage::disk('descargas')->path($zipRuta);
 
             // Crear ZIP
             $zip = new ZipArchive();
@@ -83,7 +86,7 @@ class ComprimirArchivosZip implements ShouldQueue
             $archivosProcesados = 0;
 
             foreach ($archivos as $archivo) {
-                $archivoRuta = storage_path('app/' . $archivo->ruta_relativa);
+                $archivoRuta = Storage::disk('descargas')->path($archivo->ruta_relativa);
 
                 if (!file_exists($archivoRuta)) {
                     Log::warning('Archivo no encontrado, omitiendo', [
@@ -141,8 +144,8 @@ class ComprimirArchivosZip implements ShouldQueue
             ]);
 
             // Limpiar ZIP si se creó
-            if ($zipTemporal && Storage::exists($zipTemporal->ruta_zip)) {
-                Storage::delete($zipTemporal->ruta_zip);
+            if ($zipTemporal && Storage::disk('descargas')->exists($zipTemporal->ruta_zip)) {
+                Storage::disk('descargas')->delete($zipTemporal->ruta_zip);
                 $zipTemporal->delete();
             }
 

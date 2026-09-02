@@ -58,7 +58,9 @@ class ProcesarArchivoDescarga implements ShouldQueue
                 'nombre_original' => $this->nombreOriginal,
                 'nombre_archivo' => $this->nombreOriginal,
                 'ruta_relativa' => '', // Se actualizará después
-                'mime_type' => mime_content_type(storage_path('app/' . $this->archivoTemporalPath)),
+                // Resuelto contra el disco 'descargas' (no storage_path('app/...')):
+                // el temporal vive bajo DESCARGAS_PATH, no bajo el disco por defecto.
+                'mime_type' => Storage::disk('descargas')->mimeType($this->archivoTemporalPath),
                 'extension' => pathinfo($this->nombreOriginal, PATHINFO_EXTENSION),
                 'tamano_bytes' => 0, // Se actualizará después
                 'descripcion' => $this->descripcion,

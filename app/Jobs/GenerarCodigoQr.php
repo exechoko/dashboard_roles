@@ -45,10 +45,11 @@ class GenerarCodigoQr implements ShouldQueue
             // Obtener archivo
             $archivo = DescargaArchivo::findOrFail($this->archivoId);
 
-            // Crear directorio para QRs si no existe
-            $qrDir = 'descargas/qrcodes';
-            if (!Storage::exists($qrDir)) {
-                Storage::makeDirectory($qrDir);
+            // Crear directorio para QRs si no existe. Vive en el disco
+            // 'descargas' (DESCARGAS_PATH), no en el disco por defecto.
+            $qrDir = 'qrcodes';
+            if (!Storage::disk('descargas')->exists($qrDir)) {
+                Storage::disk('descargas')->makeDirectory($qrDir);
             }
 
             // Generar token único
@@ -57,14 +58,16 @@ class GenerarCodigoQr implements ShouldQueue
             // Generar URL de descarga
             $urlDescarga = route('descargas.qr.descargar', $token);
 
-            // Generar nombre único para el QR
-            $qrNombre = 'qr_' . $token . '.png';
+            // Generar nombre único para el QR. SVG en vez de PNG: format('png')
+            // requiere la extension imagick, que no esta instalada (y es
+            // complicada de sumar en Windows Server) - ver DescargaAdminController::generarQr().
+            $qrNombre = 'qr_' . $token . '.svg';
             $qrRuta = $qrDir . '/' . $qrNombre;
-            $qrRutaCompleta = storage_path('app/' . $qrRuta);
+            $qrRutaCompleta = Storage::disk('descargas')->path($qrRuta);
 
             // Generar código QR
             $tamano = config('descargas.qr_tamano_px', 300);
-            QrCode::format('png')
+            QrCode::format('svg')
                 ->size($tamano)
                 ->margin(1)
                 ->generate($urlDescarga, $qrRutaCompleta);

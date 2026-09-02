@@ -249,6 +249,16 @@ class Kernel extends ConsoleKernel
                 app(TelegramService::class)->notificarScheduleFallido('descargas:limpiar-zips', 'El comando finalizó con error.');
             });
 
+        // Limpia las carpetas de chunks de subidas por partes abandonadas
+        // (usuario cerró la pestaña a mitad de subir un archivo grande).
+        $schedule->command('descargas:limpiar-chunks-huerfanos')
+            ->hourly()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/descargas_limpiar_chunks.log'))
+            ->onFailure(function () {
+                app(TelegramService::class)->notificarScheduleFallido('descargas:limpiar-chunks-huerfanos', 'El comando finalizó con error.');
+            });
+
         // Backup diario de la base de datos principal (Configuración del Sistema > Backups).
         // Desactivado por defecto: descomentar cuando se quiera automatizar.
         // $schedule->command('configuracion:backup-bd')->dailyAt('04:00')

@@ -221,57 +221,25 @@ class DescargaAdminController extends Controller
 
         foreach ($request->file('archivos') as $index => $archivo) {
             $config = $archivosConfig[$index] ?? null;
-            
+
             if (!$config) {
                 continue;
             }
 
-            // Verificar conflictos
-            $conflicto = $this->repositorio->verificarConflicto($archivo->getClientOriginalName());
-
-            if ($conflicto) {
-                $size = $archivo->getSize();
-                $mimeType = $archivo->getMimeType();
-                $originalName = $archivo->getClientOriginalName();
-                
-                // Guardar archivo temporal
-                $tempFile = $archivo->store($tempDir, 'descargas');
-
-                $conflictos[] = [
-                    'temp_path' => $tempFile,
-                    'original_name' => $originalName,
-                    'size' => $size,
-                    'mime_type' => $mimeType,
-                    'conflicto_id' => $conflicto->id,
-                    'conflicto_nombre' => $conflicto->nombre_original,
-                    'config' => $config,
-                ];
-                continue;
-            }
-
-            // Guardar archivo temporal
             $archivoTemporalPath = $archivo->store($tempDir, 'descargas');
+            $notificar = $request->boolean("archivos_config.$index.notificar", true);
 
-            // Calcular fecha de expiración
-            $expiraAt = !empty($config['expira_dias'])
-                ? now()->addDays($config['expira_dias'])->toDateTimeString()
-                : null;
-
-            // Dispatch del Job
-            ProcesarArchivoDescarga::dispatch(
+            $dispatched = $this->encolarOMarcarConflicto(
                 $archivoTemporalPath,
                 $archivo->getClientOriginalName(),
-                $config['categoria_id'],
-                $config['descripcion'] ?? null,
-                $config['roles'] ?? [],
-                $config['usuarios'] ?? [],
-                $expiraAt,
-                !empty($config['destacado']),
-                Auth::id(),
-                $request->boolean("archivos_config.$index.notificar", true)
+                $config,
+                $conflictos,
+                $notificar
             );
 
-            $archivosProcesados++;
+            if ($dispatched) {
+                $archivosProcesados++;
+            }
         }
 
         if (!empty($conflictos)) {
@@ -296,6 +264,225 @@ class DescargaAdminController extends Controller
 
         return redirect()->route('descargas.admin.archivos')
             ->with('success', $mensajeExito);
+    }
+
+    /**
+     * Verifica si ya existe un archivo con el mismo nombre este año; si hay
+     * conflicto, lo agrega a $conflictos para que el usuario decida
+     * (reemplazar/copia/cancelar) en la pantalla de conflictos. Si no hay
+     * conflicto, encola el Job de procesamiento normal. Usado tanto por
+     * store() (subida clasica, un solo POST) como por finalizarArchivo()
+     * (subida por partes). Devuelve true si se encolo, false si quedo
+     * pendiente de resolver un conflicto.
+     */
+    private function encolarOMarcarConflicto(
+        string $archivoTemporalPath,
+        string $originalName,
+        array $config,
+        array &$conflictos,
+        bool $notificar
+    ): bool {
+        $conflicto = $this->repositorio->verificarConflicto($originalName);
+
+        if ($conflicto) {
+            $conflictos[] = [
+                'temp_path' => $archivoTemporalPath,
+                'original_name' => $originalName,
+                'size' => Storage::disk('descargas')->size($archivoTemporalPath),
+                'mime_type' => Storage::disk('descargas')->mimeType($archivoTemporalPath),
+                'conflicto_id' => $conflicto->id,
+                'conflicto_nombre' => $conflicto->nombre_original,
+                'config' => $config,
+            ];
+
+            return false;
+        }
+
+        $expiraAt = !empty($config['expira_dias'])
+            ? now()->addDays($config['expira_dias'])->toDateTimeString()
+            : null;
+
+        ProcesarArchivoDescarga::dispatch(
+            $archivoTemporalPath,
+            $originalName,
+            $config['categoria_id'],
+            $config['descripcion'] ?? null,
+            $config['roles'] ?? [],
+            $config['usuarios'] ?? [],
+            $expiraAt,
+            !empty($config['destacado']),
+            Auth::id(),
+            $notificar
+        );
+
+        return true;
+    }
+
+    /**
+     * Recibe un pedazo (chunk) de un archivo grande y lo guarda en una
+     * carpeta temporal propia de esa subida (upload_id). Los archivos
+     * mayores al limite del tunel de Cloudflare (100MB en el plan Free de
+     * produccion) nunca llegarian enteros - por eso el frontend los parte
+     * en pedazos de config('descargas.chunk_size_mb') y los manda uno por
+     * uno a este endpoint antes de pedir finalizarArchivo().
+     */
+    public function subirChunk(Request $request)
+    {
+        $request->validate([
+            'upload_id' => ['required', 'regex:/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i'],
+            'chunk_index' => 'required|integer|min:0',
+            'total_chunks' => 'required|integer|min:1|max:100000',
+            'chunk' => 'required|file',
+        ]);
+
+        if ($request->integer('chunk_index') >= $request->integer('total_chunks')) {
+            abort(422, 'chunk_index fuera de rango');
+        }
+
+        $dir = 'chunks_temp/' . $request->input('upload_id');
+
+        if (!Storage::disk('descargas')->exists($dir)) {
+            Storage::disk('descargas')->makeDirectory($dir);
+        }
+
+        $request->file('chunk')->storeAs($dir, (string) $request->integer('chunk_index'), 'descargas');
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Una vez que el frontend termino de mandar todos los chunks de UN
+     * archivo (via subirChunk), los reensambla en orden en un archivo
+     * temporal y sigue el mismo camino que store(): verificar conflicto o
+     * encolar el Job. Se llama una vez por archivo.
+     */
+    public function finalizarArchivo(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'upload_id' => ['required', 'regex:/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i'],
+            'total_chunks' => 'required|integer|min:1',
+            'nombre_original' => 'required|string|max:255',
+            'categoria_id' => 'required|exists:descarga_categorias,id',
+            'descripcion' => 'nullable|string|max:1000',
+            'roles' => 'nullable|array',
+            'roles.*' => 'exists:roles,id',
+            'usuarios' => 'nullable|array',
+            'usuarios.*' => 'exists:users,id',
+            'destacado' => 'boolean',
+            'notificar' => 'boolean',
+            'expira_dias' => 'nullable|integer|min:1',
+        ]);
+
+        $validator->after(function ($validator) use ($request) {
+            if (empty($request->input('roles')) && empty($request->input('usuarios'))) {
+                $validator->errors()->add(
+                    'roles',
+                    'Seleccioná al menos un rol o un usuario específico que pueda descargar el archivo.'
+                );
+            }
+        });
+
+        $validator->validate();
+
+        $uploadId = $request->input('upload_id');
+        $totalChunks = $request->integer('total_chunks');
+        $dir = "chunks_temp/{$uploadId}";
+
+        for ($i = 0; $i < $totalChunks; $i++) {
+            if (!Storage::disk('descargas')->exists("{$dir}/{$i}")) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Falta la parte {$i} de la subida. Reintentá el archivo.",
+                ], 422);
+            }
+        }
+
+        $tamanoTotal = 0;
+        for ($i = 0; $i < $totalChunks; $i++) {
+            $tamanoTotal += Storage::disk('descargas')->size("{$dir}/{$i}");
+        }
+
+        $maximoBytes = config('descargas.tamano_maximo_kb', 10485760) * 1024;
+        if ($tamanoTotal > $maximoBytes) {
+            Storage::disk('descargas')->deleteDirectory($dir);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'El archivo supera el tamaño máximo permitido (' .
+                    number_format(config('descargas.tamano_maximo_kb', 10485760) / 1024) . ' MB).',
+            ], 422);
+        }
+
+        $tempDir = 'temp_descargas';
+        if (!Storage::disk('descargas')->exists($tempDir)) {
+            Storage::disk('descargas')->makeDirectory($tempDir);
+        }
+
+        $extension = pathinfo($request->input('nombre_original'), PATHINFO_EXTENSION);
+        $archivoTemporalPath = $tempDir . '/' . Str::random(40) . ($extension ? ".{$extension}" : '');
+
+        // Reensamblar los chunks en orden, en streaming (sin cargar todo en
+        // memoria de una), en el archivo temporal final.
+        $destinoHandle = fopen(Storage::disk('descargas')->path($archivoTemporalPath), 'wb');
+        if ($destinoHandle === false) {
+            return response()->json(['success' => false, 'message' => 'No se pudo crear el archivo en el servidor.'], 500);
+        }
+
+        for ($i = 0; $i < $totalChunks; $i++) {
+            $origenHandle = fopen(Storage::disk('descargas')->path("{$dir}/{$i}"), 'rb');
+            stream_copy_to_stream($origenHandle, $destinoHandle);
+            fclose($origenHandle);
+        }
+        fclose($destinoHandle);
+
+        Storage::disk('descargas')->deleteDirectory($dir);
+
+        $config = $request->only(['categoria_id', 'descripcion', 'roles', 'usuarios', 'destacado', 'notificar', 'expira_dias']);
+        $notificar = $request->boolean('notificar', true);
+        $conflictos = [];
+
+        $dispatched = $this->encolarOMarcarConflicto(
+            $archivoTemporalPath,
+            $request->input('nombre_original'),
+            $config,
+            $conflictos,
+            $notificar
+        );
+
+        return response()->json([
+            'success' => true,
+            'conflicto' => $dispatched ? null : $conflictos[0],
+        ]);
+    }
+
+    /**
+     * El frontend llama esto una sola vez, al terminar de subir TODOS los
+     * archivos del lote (cada uno via subirChunk+finalizarArchivo), para
+     * dejar en sesion el mensaje de exito o los conflictos acumulados y
+     * saber a donde redirigir - mismo resultado final que ya devolvia
+     * store() para la subida clasica en un solo POST.
+     */
+    public function completarLoteChunked(Request $request)
+    {
+        $request->validate([
+            'conflictos' => 'nullable|array',
+            'procesados' => 'required|integer|min:0',
+        ]);
+
+        $conflictos = $request->input('conflictos', []);
+
+        if (!empty($conflictos)) {
+            session()->flash('conflictos', $conflictos);
+
+            return response()->json(['redirect' => route('descargas.admin.resolver_conflictos')]);
+        }
+
+        session()->flash(
+            'success',
+            $request->integer('procesados') . ' archivo(s) subido(s). Se están procesando en segundo plano.'
+        );
+
+        return response()->json(['redirect' => route('descargas.admin.archivos')]);
     }
 
     public function resolverConflictos()

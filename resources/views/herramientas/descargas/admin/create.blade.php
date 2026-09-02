@@ -301,44 +301,152 @@ document.getElementById('btnAplicarTodos').addEventListener('click', () => {
     });
 });
 
-// Submit del formulario: se envía por XHR (no submit nativo) para poder
-// mostrar progreso de subida. Como todos los archivos van en un único
-// request multipart, el progreso por archivo se aproxima repartiendo los
-// bytes totales enviados según el tamaño de cada archivo, en el mismo
-// orden en que se agregan al FormData (los navegadores arman el body
-// multipart respetando ese orden, así que la aproximación es muy precisa;
-// el único margen de error es el pequeño overhead de cada parte del
-// multipart, despreciable frente al tamaño real de los archivos).
-document.getElementById('formUpload').addEventListener('submit', function(e) {
+// Subida por partes (chunks): el sitio pasa por un tunel de Cloudflare
+// (plan Free, ~100MB por request) asi que un archivo grande enviado entero
+// nunca llegaria al servidor. Cada archivo se corta en pedazos de
+// CHUNK_SIZE, se mandan uno por uno a upload-chunk, y al terminar todos
+// los pedazos de ese archivo se llama a upload-finalizar para que el
+// servidor los reensamble y siga el flujo normal (conflicto o encolar).
+// Los archivos del lote se procesan de a uno (secuencial), lo que de paso
+// da una barra de progreso real y exacta por archivo, en vez de aproximada.
+const CHUNK_SIZE = {{ (int) config('descargas.chunk_size_mb', 20) }} * 1024 * 1024;
+
+function generarUUID() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+function leerConfigDeCard(card) {
+    const usuarios = Array.from(card.querySelector('.config-usuarios').selectedOptions)
+        .map(opt => opt.value)
+        .filter(v => v !== '');
+    const roles = Array.from(card.querySelectorAll('.config-rol:checked')).map(cb => cb.value);
+
+    return {
+        categoria_id: card.querySelector('.config-categoria').value,
+        expira_dias: card.querySelector('.config-expira').value || null,
+        descripcion: card.querySelector('.config-descripcion').value,
+        destacado: card.querySelector('.config-destacado').checked ? '1' : '0',
+        notificar: card.querySelector('.config-notificar').checked ? '1' : '0',
+        roles: roles,
+        usuarios: usuarios,
+    };
+}
+
+function subirArchivoPorChunks(file, config, card, token) {
+    return new Promise((resolve, reject) => {
+        const uploadId = generarUUID();
+        const totalChunks = Math.max(1, Math.ceil(file.size / CHUNK_SIZE));
+        const bar = card.querySelector('.archivo-progress-bar');
+        const label = card.querySelector('.archivo-progress-label');
+
+        let chunkIndex = 0;
+        let bytesSubidos = 0;
+
+        function actualizarProgreso(bytesDelChunkActual) {
+            const total = bytesSubidos + bytesDelChunkActual;
+            const pct = file.size === 0 ? 100 : Math.min(100, Math.round((total / file.size) * 100));
+            bar.style.width = pct + '%';
+            label.textContent = pct >= 100 ? 'Subido, procesando...' : ('Subiendo... ' + pct + '%');
+            if (pct >= 100) {
+                bar.classList.remove('bg-primary');
+                bar.classList.add('bg-success');
+            }
+        }
+
+        function subirSiguienteChunk() {
+            if (chunkIndex >= totalChunks) {
+                finalizar();
+                return;
+            }
+
+            const inicio = chunkIndex * CHUNK_SIZE;
+            const fin = Math.min(inicio + CHUNK_SIZE, file.size);
+            const trozo = file.slice(inicio, fin);
+            const tamanoChunk = fin - inicio;
+
+            const formData = new FormData();
+            formData.append('_token', token);
+            formData.append('upload_id', uploadId);
+            formData.append('chunk_index', chunkIndex);
+            formData.append('total_chunks', totalChunks);
+            formData.append('chunk', trozo, file.name);
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '{{ route('descargas.admin.upload-chunk') }}');
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.setRequestHeader('Accept', 'application/json');
+
+            xhr.upload.addEventListener('progress', function (evt) {
+                if (!evt.lengthComputable) return;
+                actualizarProgreso(evt.loaded);
+            });
+
+            xhr.onload = function () {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    bytesSubidos += tamanoChunk;
+                    chunkIndex++;
+                    subirSiguienteChunk();
+                } else {
+                    reject(new Error('Error subiendo una parte de "' + file.name + '" (parte ' + (chunkIndex + 1) + ' de ' + totalChunks + ').'));
+                }
+            };
+            xhr.onerror = function () {
+                reject(new Error('Se perdió la conexión subiendo "' + file.name + '".'));
+            };
+
+            xhr.send(formData);
+        }
+
+        function finalizar() {
+            label.textContent = 'Procesando...';
+
+            const body = Object.assign({
+                upload_id: uploadId,
+                total_chunks: totalChunks,
+                nombre_original: file.name,
+            }, config);
+
+            fetch('{{ route('descargas.admin.upload-finalizar') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': token,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
+            })
+                .then(r => r.json().then(data => ({ status: r.status, data })))
+                .then(({ status, data }) => {
+                    if (status >= 200 && status < 300 && data.success) {
+                        label.textContent = 'Subido ✓';
+                        resolve({ conflicto: data.conflicto || null });
+                    } else {
+                        let mensaje = data.message || ('Error procesando "' + file.name + '".');
+                        if (data.errors) {
+                            mensaje = Object.values(data.errors).flat().join(' ');
+                        }
+                        reject(new Error(mensaje));
+                    }
+                })
+                .catch(() => reject(new Error('No se pudo confirmar la subida de "' + file.name + '".')));
+        }
+
+        subirSiguienteChunk();
+    });
+}
+
+document.getElementById('formUpload').addEventListener('submit', async function (e) {
     e.preventDefault();
 
     const cards = Array.from(archivosConfig.querySelectorAll('.archivo-config-card'));
-    const formData = new FormData();
-    formData.append('_token', this.querySelector('input[name="_token"]').value);
+    if (cards.length === 0) return;
 
-    cards.forEach((card, index) => {
-        const prefix = 'archivos_config[' + index + ']';
-        formData.append(prefix + '[categoria_id]', card.querySelector('.config-categoria').value);
-        formData.append(prefix + '[expira_dias]', card.querySelector('.config-expira').value);
-        formData.append(prefix + '[descripcion]', card.querySelector('.config-descripcion').value);
-        formData.append(prefix + '[destacado]', card.querySelector('.config-destacado').checked ? '1' : '0');
-        formData.append(prefix + '[notificar]', card.querySelector('.config-notificar').checked ? '1' : '0');
-
-        card.querySelectorAll('.config-rol:checked').forEach(cb => {
-            formData.append(prefix + '[roles][]', cb.value);
-        });
-
-        Array.from(card.querySelector('.config-usuarios').selectedOptions)
-            .map(opt => opt.value)
-            .filter(v => v !== '')
-            .forEach(userId => formData.append(prefix + '[usuarios][]', userId));
-    });
-
-    // Límites acumulados de bytes (mismo orden que "archivos", que es el
-    // orden en que se agregan al FormData a continuación).
-    const acumulados = [0];
-    archivos.forEach(file => acumulados.push(acumulados[acumulados.length - 1] + file.size));
-    archivos.forEach(file => formData.append('archivos[]', file));
+    const token = this.querySelector('input[name="_token"]').value;
 
     btnSubmit.disabled = true;
     btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
@@ -347,67 +455,42 @@ document.getElementById('formUpload').addEventListener('submit', function(e) {
         card.querySelector('.archivo-progress-wrap').style.display = 'block';
     });
 
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', this.action);
-    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-    xhr.setRequestHeader('Accept', 'application/json');
+    const conflictosAcumulados = [];
+    let procesados = 0;
 
-    xhr.upload.addEventListener('progress', function (evt) {
-        if (!evt.lengthComputable) return;
+    for (let i = 0; i < cards.length; i++) {
+        const card = cards[i];
+        const file = archivos[i];
+        const config = leerConfigDeCard(card);
 
-        const totalBytesArchivos = acumulados[acumulados.length - 1];
-        if (totalBytesArchivos === 0) return;
-        // evt.total incluye el overhead del multipart (config, tokens, etc.);
-        // escalamos los límites acumulados a esa magnitud real.
-        const escala = evt.total / totalBytesArchivos;
-
-        cards.forEach((card, i) => {
-            const inicio = acumulados[i] * escala;
-            const fin = acumulados[i + 1] * escala;
-            let pct;
-            if (evt.loaded >= fin) pct = 100;
-            else if (evt.loaded <= inicio) pct = 0;
-            else pct = Math.round(((evt.loaded - inicio) / (fin - inicio)) * 100);
-
-            const bar = card.querySelector('.archivo-progress-bar');
-            const label = card.querySelector('.archivo-progress-label');
-            bar.style.width = pct + '%';
-
-            if (pct >= 100) {
-                bar.classList.remove('bg-primary');
-                bar.classList.add('bg-success');
-                label.textContent = 'Subido ✓';
-            } else if (pct > 0) {
-                label.textContent = 'Subiendo... ' + pct + '%';
+        try {
+            const resultado = await subirArchivoPorChunks(file, config, card, token);
+            if (resultado.conflicto) {
+                conflictosAcumulados.push(resultado.conflicto);
             } else {
-                label.textContent = 'En espera...';
+                procesados++;
             }
-        });
-    });
-
-    xhr.onload = function () {
-        let data = null;
-        try { data = JSON.parse(xhr.responseText); } catch (err) { /* respuesta no-JSON */ }
-
-        if (xhr.status >= 200 && xhr.status < 300 && data && data.redirect) {
-            window.location.href = data.redirect;
+        } catch (err) {
+            mostrarErrorUpload(err.message || 'Ocurrió un error al subir los archivos.');
             return;
         }
+    }
 
-        let mensaje = 'Ocurrió un error al subir los archivos.';
-        if (xhr.status === 422 && data && data.errors) {
-            mensaje = Object.values(data.errors).flat().join(' ');
-        } else if (data && data.message) {
-            mensaje = data.message;
-        }
-        mostrarErrorUpload(mensaje);
-    };
-
-    xhr.onerror = function () {
-        mostrarErrorUpload('No se pudo conectar con el servidor. Verificá tu conexión e intentá de nuevo.');
-    };
-
-    xhr.send(formData);
+    try {
+        const respuesta = await fetch('{{ route('descargas.admin.upload-completar-lote') }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': token,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ conflictos: conflictosAcumulados, procesados: procesados }),
+        });
+        const data = await respuesta.json();
+        window.location.href = data.redirect;
+    } catch (err) {
+        mostrarErrorUpload('Los archivos se subieron pero no se pudo confirmar el resultado. Recargá la página.');
+    }
 });
 
 function mostrarErrorUpload(mensaje) {

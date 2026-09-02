@@ -777,6 +777,9 @@ Route::group(['middleware' => ['auth']], function () {
             Route::get('/archivos', [DescargaAdminController::class, 'archivos'])->name('archivos');
             Route::get('/archivos/create', [DescargaAdminController::class, 'create'])->name('create');
             Route::post('/archivos', [DescargaAdminController::class, 'store'])->name('store');
+            Route::post('/archivos/upload-chunk', [DescargaAdminController::class, 'subirChunk'])->name('upload-chunk');
+            Route::post('/archivos/upload-finalizar', [DescargaAdminController::class, 'finalizarArchivo'])->name('upload-finalizar');
+            Route::post('/archivos/upload-completar-lote', [DescargaAdminController::class, 'completarLoteChunked'])->name('upload-completar-lote');
             Route::get('/archivos/conflictos', [DescargaAdminController::class, 'resolverConflictos'])->name('resolver_conflictos');
             Route::post('/archivos/conflictos/procesar', [DescargaAdminController::class, 'procesarConflicto'])->name('procesar_conflictos');
             Route::get('/archivos/{archivo}/edit', [DescargaAdminController::class, 'edit'])->name('edit');

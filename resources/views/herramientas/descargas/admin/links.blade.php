@@ -17,7 +17,7 @@
     <div class="section-body">
         <div class="alert alert-info">
             <i class="fas fa-info-circle mr-2"></i>
-            Los links públicos permiten compartir archivos con personas externas al sistema. Cada link es de <strong>un solo uso</strong> y expira automáticamente.
+            Los links públicos permiten compartir archivos con personas externas al sistema. Cada link tiene un <strong>límite de usos configurable</strong> (1 por defecto) y expira automáticamente.
         </div>
 
         <div class="card">
@@ -133,6 +133,11 @@
                         <label>Expiración (horas)</label>
                         <input type="number" name="expira_horas" class="form-control" value="24" min="1">
                         <small class="form-text text-muted">El link dejará de funcionar después de este tiempo</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Usos permitidos</label>
+                        <input type="number" name="max_usos" class="form-control" value="1" min="1" max="1000">
+                        <small class="form-text text-muted">Cantidad de veces que se puede usar el link antes de dejar de funcionar</small>
                     </div>
                     <div class="form-group">
                         <label>Contraseña (opcional)</label>

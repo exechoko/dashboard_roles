@@ -407,8 +407,8 @@ $(document).ready(function() {
                 @csrf
                 <div class="modal-body">
                     <p class="text-muted mb-3">
-                        Genera un código QR de un solo uso para descargar este archivo. 
-                        El QR expirará después de ser utilizado o al vencer el tiempo configurado.
+                        Genera un código QR para descargar este archivo, con un límite de usos y
+                        de tiempo configurables.
                     </p>
 
                     <div class="form-group">
@@ -423,17 +423,25 @@ $(document).ready(function() {
 
                     <div class="form-group">
                         <label>Contraseña (opcional)</label>
-                        <input type="text" name="password" class="form-control" 
+                        <input type="text" name="password" class="form-control"
                                placeholder="Dejar vacío para no requerir contraseña">
                         <small class="form-text text-muted">
                             Si se establece, se requerirá esta contraseña para descargar el archivo
                         </small>
                     </div>
 
+                    <div class="form-group">
+                        <label>Usos permitidos</label>
+                        <input type="number" name="max_usos" class="form-control" value="1" min="1" max="1000">
+                        <small class="form-text text-muted">
+                            Cantidad de veces que se puede escanear y descargar antes de que el QR deje de funcionar
+                        </small>
+                    </div>
+
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle mr-2"></i>
-                        <strong>Importante:</strong> El código QR será de un solo uso. Una vez descargado el archivo, 
-                        el QR dejará de funcionar.
+                        <strong>Importante:</strong> el código QR dejará de funcionar al alcanzar el límite de usos
+                        configurado, o al vencer el tiempo de expiración, lo que ocurra primero.
                     </div>
                 </div>
                 <div class="modal-footer">

@@ -448,17 +448,19 @@ class DescargaAdminController extends Controller
             'archivo_id' => 'required|exists:descarga_archivos,id',
             'expira_horas' => 'nullable|integer|min:1',
             'password' => 'nullable|string|min:4',
+            'max_usos' => 'nullable|integer|min:1|max:1000',
         ]);
 
         $archivo = DescargaArchivo::findOrFail($request->input('archivo_id'));
 
         $expiraHoras = $request->input('expira_horas', config('descargas.links_expiracion_horas'));
+        $maxUsos = $request->input('max_usos', config('descargas.links_max_usos_default', 1));
 
         $link = DescargaLinkPublico::create([
             'archivo_id' => $archivo->id,
             'token' => DescargaLinkPublico::generarToken(),
             'password' => $request->filled('password') ? Hash::make($request->input('password')) : null,
-            'max_usos' => config('descargas.links_max_usos_default', 1),
+            'max_usos' => $maxUsos,
             'expira_at' => now()->addHours($expiraHoras),
             'user_id' => Auth::id(),
             'activo' => true,
@@ -671,10 +673,12 @@ class DescargaAdminController extends Controller
         $request->validate([
             'expira_horas' => 'nullable|integer|min:1|max:720',
             'password' => 'nullable|string|min:4',
+            'max_usos' => 'nullable|integer|min:1|max:1000',
         ]);
 
         $expiraHoras = $request->input('expira_horas', config('descargas.qr_default_expiracion_horas', 24));
         $password = $request->input('password');
+        $maxUsos = $request->input('max_usos', 1);
 
         // Generar token único
         $token = Str::random(64);
@@ -706,7 +710,7 @@ class DescargaAdminController extends Controller
             'token' => $token,
             'ruta_qr' => $qrPath,
             'password' => $password ? Hash::make($password) : null,
-            'max_usos' => 1,
+            'max_usos' => $maxUsos,
             'usos_count' => 0,
             'expira_at' => now()->addHours($expiraHoras),
             'generado_por' => Auth::id(),

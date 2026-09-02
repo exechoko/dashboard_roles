@@ -656,7 +656,7 @@
     </li>
 @endcanany
 
-@can('ver-plataforma-descargas')
+@can('ver-menu-descargas')
     <li class="dropdown {{ request()->is('descargas*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-download"></i><span>Descargas</span>

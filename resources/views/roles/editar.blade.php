@@ -73,6 +73,7 @@
                                                         'menu-chat',
                                                         'menu-infraestructura',
                                                         'menu-configuracion-sistema',
+                                                        'menu-descargas',
                                                     ],
                                                     'Administración' => [
                                                         'rol',
@@ -205,6 +206,12 @@
                                                         'infraestructura-workers',
                                                         'infraestructura-notificaciones',
                                                         'infraestructura',
+                                                    ],
+                                                    'Descargas' => [
+                                                        'plataforma-descargas',
+                                                        'archivos-descargas',
+                                                        'logs-descargas',
+                                                        'links-publicos',
                                                     ]
                                                 ];
 

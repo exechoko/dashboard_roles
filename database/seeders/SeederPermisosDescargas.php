@@ -15,6 +15,7 @@ class SeederPermisosDescargas extends Seeder
     public function run(): void
     {
         $permisos = [
+            'ver-menu-descargas',
             'ver-plataforma-descargas',
             'subir-archivos-descargas',
             'administrar-plataforma-descargas',

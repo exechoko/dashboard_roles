@@ -188,10 +188,16 @@ class DescargaAdminController extends Controller
         $archivosProcesados = 0;
         $conflictos = [];
         $tempDir = 'temp_descargas';
-        
-        // Crear directorio temporal si no existe
-        if (!Storage::exists($tempDir)) {
-            Storage::makeDirectory($tempDir);
+
+        // Crear directorio temporal si no existe. Debe vivir en el disco
+        // 'descargas' (no en el disco por defecto): ProcesarArchivoDescarga
+        // despues mueve este archivo con Storage::disk('descargas')->move(),
+        // que resuelve la ruta de origen contra la raiz de ese disco
+        // (DESCARGAS_PATH). Si el temporal se guarda en otro disco, move()
+        // no encuentra el origen, no lanza excepcion, y el archivo final
+        // nunca se crea (falla despues al pedir su tamano).
+        if (!Storage::disk('descargas')->exists($tempDir)) {
+            Storage::disk('descargas')->makeDirectory($tempDir);
         }
 
         foreach ($request->file('archivos') as $index => $archivo) {
@@ -210,8 +216,8 @@ class DescargaAdminController extends Controller
                 $originalName = $archivo->getClientOriginalName();
                 
                 // Guardar archivo temporal
-                $tempFile = $archivo->store($tempDir);
-                
+                $tempFile = $archivo->store($tempDir, 'descargas');
+
                 $conflictos[] = [
                     'temp_path' => $tempFile,
                     'original_name' => $originalName,
@@ -225,7 +231,7 @@ class DescargaAdminController extends Controller
             }
 
             // Guardar archivo temporal
-            $archivoTemporalPath = $archivo->store($tempDir);
+            $archivoTemporalPath = $archivo->store($tempDir, 'descargas');
 
             // Calcular fecha de expiración
             $expiraAt = !empty($config['expira_dias'])
@@ -277,7 +283,10 @@ class DescargaAdminController extends Controller
 
         $acciones = $request->input('acciones');
         $archivosCreados = [];
-        $tempDir = storage_path('app/temp_descargas');
+        // 'temp_path' llega como ruta relativa al disco 'descargas' (la
+        // guardo store() con ese disco), hay que resolverla a ruta absoluta
+        // con ese mismo disco antes de usar file_exists()/unlink().
+        $tempDir = Storage::disk('descargas')->path('temp_descargas');
 
         foreach ($acciones as $index => $conflictoData) {
             $accion = $conflictoData['accion'];
@@ -285,13 +294,16 @@ class DescargaAdminController extends Controller
             $config = is_string($configRaw) ? json_decode($configRaw, true) : $configRaw;
 
             if ($accion === 'cancelar') {
-                if (isset($conflictoData['temp_path']) && file_exists($conflictoData['temp_path'])) {
-                    unlink($conflictoData['temp_path']);
+                if (isset($conflictoData['temp_path'])) {
+                    $tempPathCancelar = Storage::disk('descargas')->path($conflictoData['temp_path']);
+                    if (file_exists($tempPathCancelar)) {
+                        unlink($tempPathCancelar);
+                    }
                 }
                 continue;
             }
 
-            $tempPath = $conflictoData['temp_path'];
+            $tempPath = Storage::disk('descargas')->path($conflictoData['temp_path']);
             if (!file_exists($tempPath)) {
                 continue;
             }

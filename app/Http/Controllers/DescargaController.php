@@ -583,12 +583,12 @@ class DescargaController extends Controller
 
         // Crear el ZIP
         $zipNombre = 'descargas_' . Auth::id() . '_' . time() . '.zip';
-        $zipPath = 'descargas/temp/' . $zipNombre;
-        $zipFullPath = storage_path('app/' . $zipPath);
+        $zipPath = 'temp/' . $zipNombre;
+        $zipFullPath = Storage::disk('descargas')->path($zipPath);
 
         // Asegurar que el directorio existe
-        if (!Storage::exists('descargas/temp')) {
-            Storage::makeDirectory('descargas/temp');
+        if (!Storage::disk('descargas')->exists('temp')) {
+            Storage::disk('descargas')->makeDirectory('temp');
         }
 
         $zip = new ZipArchive();
@@ -613,7 +613,7 @@ class DescargaController extends Controller
         $zip->close();
 
         if ($archivosAgregados === 0) {
-            Storage::delete($zipPath);
+            Storage::disk('descargas')->delete($zipPath);
             return response()->json([
                 'success' => false,
                 'message' => 'No se pudieron agregar archivos al ZIP'
@@ -657,7 +657,7 @@ class DescargaController extends Controller
             abort(410, 'El ZIP ha expirado');
         }
 
-        if (!Storage::exists($zipTemporal->ruta_zip)) {
+        if (!Storage::disk('descargas')->exists($zipTemporal->ruta_zip)) {
             abort(404, 'El archivo ZIP ya no está disponible');
         }
 
@@ -675,7 +675,7 @@ class DescargaController extends Controller
         ]);
 
         return response()->download(
-            storage_path('app/' . $zipTemporal->ruta_zip),
+            Storage::disk('descargas')->path($zipTemporal->ruta_zip),
             'descargas_' . date('Y-m-d_H-i-s') . '.zip'
         );
     }

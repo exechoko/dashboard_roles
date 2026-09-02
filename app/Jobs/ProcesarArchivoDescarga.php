@@ -82,14 +82,14 @@ class ProcesarArchivoDescarga implements ShouldQueue
             $anio = date('Y');
             $mes = date('m');
             $nombreUnico = uniqid() . '_' . $this->nombreOriginal;
-            $rutaFinal = "descargas/{$anio}/{$mes}/{$nombreUnico}";
+            $rutaFinal = "{$anio}/{$mes}/{$nombreUnico}";
 
-            Storage::move($this->archivoTemporalPath, $rutaFinal);
+            Storage::disk('descargas')->move($this->archivoTemporalPath, $rutaFinal);
 
             $archivo->update([
                 'nombre_archivo' => $nombreUnico,
                 'ruta_relativa' => $rutaFinal,
-                'tamano_bytes' => Storage::size($rutaFinal),
+                'tamano_bytes' => Storage::disk('descargas')->size($rutaFinal),
                 'progreso' => 70,
             ]);
 

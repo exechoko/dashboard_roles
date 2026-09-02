@@ -308,38 +308,48 @@ $(document).ready(function() {
                 archivos: archivosIds
             },
             success: function(response) {
+                console.log('Respuesta del servidor:', response);
+                
                 if (response.success) {
                     // Mostrar mensaje de éxito
                     const alertHtml = `
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle"></i>
-                            ${response.message} - ${response.archivos} archivos (${response.tamano})
-                            <a href="${response.download_url}" class="btn btn-success btn-sm ml-3">
+                        <div class="alert alert-success alert-dismissible fade show" role="alert" style="margin-bottom: 20px;">
+                            <h5><i class="fas fa-check-circle"></i> ${response.message}</h5>
+                            <p><strong>${response.archivos} archivos</strong> - ${response.tamano}</p>
+                            <a href="${response.download_url}" class="btn btn-success btn-lg" target="_blank">
                                 <i class="fas fa-download"></i> Descargar ZIP
                             </a>
-                            <button type="button" class="close" data-dismiss="alert">
-                                <span>&times;</span>
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
                             </button>
                         </div>
                     `;
+                    
+                    // Insertar el alert al principio de section-body
                     $('.section-body').prepend(alertHtml);
+                    
+                    // Scroll suave hacia el alert
+                    $('html, body').animate({
+                        scrollTop: $('.alert-success').offset().top - 100
+                    }, 500);
                     
                     // Resetear selección
                     $('.archivo-checkbox').prop('checked', false);
                     $('#selectAll').prop('checked', false);
                     actualizarContador();
                     
-                    // Auto-ocultar después de 10 segundos
-                    setTimeout(function() {
-                        $('.alert').alert('close');
-                    }, 10000);
+                    // No auto-ocultar para que el usuario pueda hacer clic en el botón
                 } else {
                     alert(response.message);
                 }
             },
-            error: function(xhr) {
+            error: function(xhr, status, error) {
+                console.error('Error en AJAX:', status, error);
+                console.error('Respuesta:', xhr.responseText);
+                console.error('Status:', xhr.status);
+                
                 const response = xhr.responseJSON;
-                alert(response?.message || 'Error al crear el ZIP');
+                alert(response?.message || 'Error al crear el ZIP (Status: ' + xhr.status + ')');
             },
             complete: function() {
                 btn.prop('disabled', false).html(originalText);

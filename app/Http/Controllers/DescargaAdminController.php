@@ -655,8 +655,11 @@ class DescargaAdminController extends Controller
         // Generar URL de descarga
         $urlDescarga = route('descargas.qr.descargar', $token);
 
-        // Generar código QR
-        $qrNombre = 'qr_' . $token . '.png';
+        // Generar código QR en SVG: la libreria (bacon/bacon-qr-code) solo
+        // puede generar PNG via la extension imagick, que no esta instalada
+        // (y es complicada de sumar en el Windows Server 2012 R2 de
+        // produccion). El backend SVG es PHP puro y no requiere nada extra.
+        $qrNombre = 'qr_' . $token . '.svg';
         $qrPath = 'descargas/qrcodes/' . $qrNombre;
 
         // Asegurar que el directorio existe
@@ -665,7 +668,7 @@ class DescargaAdminController extends Controller
         }
 
         $qrFullPath = storage_path('app/' . $qrPath);
-        QrCode::format('png')
+        QrCode::format('svg')
             ->size(config('descargas.qr_tamano_px', 300))
             ->margin(1)
             ->generate($urlDescarga, $qrFullPath);
@@ -705,7 +708,7 @@ class DescargaAdminController extends Controller
 
         return response()->download(
             storage_path('app/' . $qrCode->ruta_qr),
-            'qr_' . $qrCode->archivo->nombre_original . '.png'
+            'qr_' . $qrCode->archivo->nombre_original . '.svg'
         );
     }
 

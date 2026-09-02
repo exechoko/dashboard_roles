@@ -356,6 +356,7 @@ class InfraestructuraController extends Controller
                         WHEN payload LIKE '%GeocodificarLoteEventosCecoco%' THEN 'Geocodificación'
                         WHEN payload LIKE '%IndexarArchivoMbox%' THEN 'Indexación de Correos'
                         WHEN payload LIKE '%GenerarBackupBaseDatos%' OR payload LIKE '%RestaurarBackupBaseDatos%' THEN 'Backup/Restore de BD'
+                        WHEN payload LIKE '%ProcesarArchivoDescarga%' OR payload LIKE '%ComprimirArchivosZip%' OR payload LIKE '%GenerarCodigoQr%' OR payload LIKE '%EnviarNotificacionDescarga%' THEN 'Plataforma de Descargas'
                         ELSE 'Otro'
                     END AS tipo,
                     COUNT(*) as total,
@@ -367,6 +368,7 @@ class InfraestructuraController extends Controller
                         WHEN payload LIKE '%GeocodificarLoteEventosCecoco%' THEN 'Geocodificación'
                         WHEN payload LIKE '%IndexarArchivoMbox%' THEN 'Indexación de Correos'
                         WHEN payload LIKE '%GenerarBackupBaseDatos%' OR payload LIKE '%RestaurarBackupBaseDatos%' THEN 'Backup/Restore de BD'
+                        WHEN payload LIKE '%ProcesarArchivoDescarga%' OR payload LIKE '%ComprimirArchivosZip%' OR payload LIKE '%GenerarCodigoQr%' OR payload LIKE '%EnviarNotificacionDescarga%' THEN 'Plataforma de Descargas'
                         ELSE 'Otro'
                     END
                 ")
@@ -411,6 +413,17 @@ class InfraestructuraController extends Controller
                 ->where('reserved_at', '>=', now()->subMinutes(10)->timestamp)
                 ->exists();
 
+            // Cola 'descargas' (Plataforma de Descargas: mover archivos, comprimir
+            // ZIPs, generar QRs, notificaciones): mismo motivo que 'mbox'/'backups'
+            // — corre en un worker propio (queue:work descargas --queue=descargas)
+            // que puede estar caído sin que el indicador general de arriba lo note.
+            $pendientesDescargas = DB::table('jobs')->where('queue', 'descargas')->whereNull('reserved_at')->count();
+            $procesandoDescargas = DB::table('jobs')->where('queue', 'descargas')->whereNotNull('reserved_at')->count();
+            $workerActivoDescargas = $procesandoDescargas > 0 || DB::table('jobs')
+                ->where('queue', 'descargas')
+                ->where('reserved_at', '>=', now()->subMinutes(10)->timestamp)
+                ->exists();
+
             // Tamaño BD restauraciones CECOCO: caché que refresca el schedule horario.
             $tamanoRest = Cache::get(CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES);
             $tamanoRestGps = Cache::get(CecocoExpedienteService::CACHE_KEY_TAMANO_RESTAURACIONES_GPS);
@@ -430,6 +443,9 @@ class InfraestructuraController extends Controller
             'backups_worker_activo' => $workerActivoBackups,
             'backups_pendientes' => $pendientesBackups,
             'backups_procesando' => $procesandoBackups,
+            'descargas_worker_activo' => $workerActivoDescargas,
+            'descargas_pendientes' => $pendientesDescargas,
+            'descargas_procesando' => $procesandoDescargas,
             'geo_total_dir' => $totalDirecciones,
             'geo_cacheadas' => $geocodeadas,
             'geo_pendientes' => ($totalDirecciones !== null && $geocodeadas !== null) ? max(0, $totalDirecciones - $geocodeadas) : null,

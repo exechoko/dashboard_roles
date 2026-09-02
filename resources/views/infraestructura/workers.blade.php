@@ -219,6 +219,25 @@
                                     </div>
                                 @endcan
 
+                                @can('administrar-plataforma-descargas')
+                                    {{-- Cola de la Plataforma de Descargas --}}
+                                    <div class="estado-procesos-bloque" title="Worker dedicado a la Plataforma de Descargas: mover archivos, comprimir ZIPs, generar QRs, notificaciones (php artisan queue:work descargas --queue=descargas).">
+                                        <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-download mr-1"></i><strong>Cola de Descargas</strong></small>
+                                        <div class="d-flex align-items-center flex-wrap" style="gap:0.75rem;">
+                                            <span class="d-flex align-items-center">
+                                                <span id="descargas-worker-dot" class="mr-2"
+                                                    style="width:10px;height:10px;border-radius:50%;display:inline-block;background:#aaa;"></span>
+                                                <span id="descargas-worker-label" class="badge badge-secondary">Verificando...</span>
+                                            </span>
+                                            <span><small>Pendientes:</small> <span id="descargas-pendientes" class="badge badge-secondary">—</span></span>
+                                            <span><small>Procesando:</small> <span id="descargas-procesando" class="badge badge-secondary">—</span></span>
+                                            <a href="{{ route('descargas.admin.index') }}" class="btn btn-xs btn-outline-primary" title="Ver Descargas">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endcan
+
                                 {{-- Geocodificación --}}
                                 <div class="estado-procesos-bloque">
                                     <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-map-marker-alt mr-1"></i><strong>Geocodificación</strong></small>
@@ -598,6 +617,29 @@
                     if (backupsPend) { backupsPend.textContent = d.backups_pendientes; backupsPend.className = d.backups_pendientes > 0 ? 'badge badge-warning' : 'badge badge-secondary'; }
                     var backupsProc = document.getElementById('backups-procesando');
                     if (backupsProc) { backupsProc.textContent = d.backups_procesando; backupsProc.className = d.backups_procesando > 0 ? 'badge badge-info' : 'badge badge-secondary'; }
+
+                    // Cola de la Plataforma de Descargas
+                    var descargasDot = document.getElementById('descargas-worker-dot');
+                    var descargasLabel = document.getElementById('descargas-worker-label');
+                    if (descargasDot && descargasLabel) {
+                        if (d.descargas_worker_activo) {
+                            descargasDot.style.background = '#22c55e';
+                            descargasLabel.className = 'badge badge-success';
+                            descargasLabel.textContent = 'Activo';
+                        } else if (d.descargas_pendientes > 0) {
+                            descargasDot.style.background = '#ef4444';
+                            descargasLabel.className = 'badge badge-danger';
+                            descargasLabel.textContent = 'Detenido';
+                        } else {
+                            descargasDot.style.background = '#6b7280';
+                            descargasLabel.className = 'badge badge-secondary';
+                            descargasLabel.textContent = 'Sin trabajos';
+                        }
+                    }
+                    var descargasPend = document.getElementById('descargas-pendientes');
+                    if (descargasPend) { descargasPend.textContent = d.descargas_pendientes; descargasPend.className = d.descargas_pendientes > 0 ? 'badge badge-warning' : 'badge badge-secondary'; }
+                    var descargasProc = document.getElementById('descargas-procesando');
+                    if (descargasProc) { descargasProc.textContent = d.descargas_procesando; descargasProc.className = d.descargas_procesando > 0 ? 'badge badge-info' : 'badge badge-secondary'; }
 
                     // Geocodificación
                     var elGeoServicio = document.getElementById('workers-geo-servicio');

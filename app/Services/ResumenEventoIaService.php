@@ -36,7 +36,7 @@ class ResumenEventoIaService
      * Genera un resumen estructurado del evento a partir del detalle ya parseado.
      *
      * @param array<string, mixed> $detalle Resultado de CecocoExpedienteService::obtenerDetalleExpediente()
-     * @return array{resumen: string, mensaje: string, tipo: string, resultado: string, recursos: array<int, string>, personas: array<int, array{nombre: string, rol: string, dni: string}>, vehiculos: array<int, array{tipo: string, marca: string, modelo: string, color: string, distintivo: string, dominio: string}>, lugar: array{direccion: string, interseccion: string, localidad: string}, estado_final: string, modelo: string}
+     * @return array{resumen: string, mensaje: string, tipo: string, resultado: string, recursos: array<int, string>, personas: array<int, array{nombre: string, rol: string, dni: string}>, personal_policial: array<int, array{jerarquia: string, apellido: string, nombre: string, movil: string, estado: string, candidatos: array<int, array{id: int, nombre_completo: string, jerarquia: string, lp: string}>}>, vehiculos: array<int, array{tipo: string, marca: string, modelo: string, color: string, distintivo: string, dominio: string}>, lugar: array{direccion: string, interseccion: string, localidad: string}, estado_final: string, modelo: string}
      */
     public function resumir(array $detalle): array
     {
@@ -56,6 +56,12 @@ class ResumenEventoIaService
             // Los recursos son dato duro del expediente: los tomamos de los trámites
             // parseados, no de lo que devuelva el modelo (que a veces los omite).
             $salida['recursos'] = $this->recursosDesdeDetalle($detalle);
+
+            // Cruzamos el personal mencionado en el texto contra personal911 para
+            // identificar de quién se trata (legajo, nombre completo); si hay más
+            // de un candidato con el mismo apellido, no se elige ninguno: queda
+            // "ambiguo" con la lista de candidatos para que lo confirme un humano.
+            $salida['personal_policial'] = app(PersonalPolicialMatcher::class)->cruzar($salida['personal_policial']);
 
             // Texto listo para copiar y enviar por mensaje (fecha/hora + narrativa).
             $salida['mensaje'] = $this->mensajeParaEnviar($detalle, $salida['resumen']);
@@ -224,6 +230,7 @@ class ResumenEventoIaService
             . '{"resumen": string, "tipo": string, "resultado": string corto, '
             . '"recursos": [string], '
             . '"personas": [{"nombre": string, "rol": string, "dni": string}], '
+            . '"personal_policial": [{"jerarquia": string, "apellido": string, "nombre": string, "movil": string}], '
             . '"vehiculos": [{"tipo": string, "marca": string, "modelo": string, "color": string, "distintivo": string, "dominio": string}], '
             . '"lugar": {"direccion": string, "interseccion": string, "localidad": string}, '
             . '"estado_final": string}. '
@@ -253,6 +260,10 @@ class ResumenEventoIaService
             . 'El "rol" es la función de la persona en el evento (ej: llamante, víctima, demorado, autor, testigo, entrevistado), no su sexo. '
             . 'El campo "dni" SOLO se completa si el texto dice explícitamente "DNI" o "documento" seguido del número '
             . '(7 u 8 dígitos). NUNCA uses como DNI un número de teléfono ni un número entre paréntesis: esos son teléfonos, no documentos. '
+            . 'En "personal_policial" incluí al personal POLICIAL que intervino o quedó a cargo de un móvil (ej: "a/c Sgto. Pérez", '
+            . '"Cabo Gutiérrez"), tal como figura en el texto: "jerarquia" tal cual aparece (puede venir abreviada, ej. "Sgto.", "Cbo.", "Ofic."), '
+            . '"apellido", "nombre" solo si figura, y "movil" con el número de móvil a cargo del cual está si se menciona (vacío si no). '
+            . 'No repitas acá a civiles ni llamantes (eso va en "personas"). No inventes jerarquía ni apellido: si no figura ninguno, no lo incluyas. '
             . 'En "vehiculos" incluí solo los vehículos mencionados explícitamente en el texto; si no se menciona ningún vehículo, devolvé lista vacía. '
             . '"tipo": moto, auto, camioneta, camión, bicicleta, colectivo, etc. "dominio" es la patente: copialo TAL CUAL aparece en el texto, '
             . 'solo si figura una patente real; si no figura, dejá "dominio" vacío. Nunca inventes una patente. '
@@ -382,7 +393,7 @@ class ResumenEventoIaService
 
     /**
      * @param array<string, mixed> $datos
-     * @return array{resumen: string, tipo: string, resultado: string, recursos: array<int, string>, personas: array<int, array{nombre: string, rol: string, dni: string}>, direccion: string, estado_final: string}
+     * @return array{resumen: string, tipo: string, resultado: string, recursos: array<int, string>, personas: array<int, array{nombre: string, rol: string, dni: string}>, personal_policial: array<int, array{jerarquia: string, apellido: string, nombre: string, movil: string}>, direccion: string, estado_final: string}
      */
     private function normalizarSalida(array $datos): array
     {
@@ -403,6 +414,24 @@ class ResumenEventoIaService
             if (is_string($recurso) && trim($recurso) !== '') {
                 $recursos[] = trim($recurso);
             }
+        }
+
+        $personalPolicial = [];
+        foreach ($datos['personal_policial'] ?? [] as $funcionario) {
+            if (!is_array($funcionario)) {
+                continue;
+            }
+            $apellido = trim((string) ($funcionario['apellido'] ?? ''));
+            if ($apellido === '') {
+                // Sin apellido no hay nada que cruzar contra personal911.
+                continue;
+            }
+            $personalPolicial[] = [
+                'jerarquia' => trim((string) ($funcionario['jerarquia'] ?? '')),
+                'apellido' => $apellido,
+                'nombre' => trim((string) ($funcionario['nombre'] ?? '')),
+                'movil' => trim((string) ($funcionario['movil'] ?? '')),
+            ];
         }
 
         $vehiculos = [];
@@ -437,6 +466,7 @@ class ResumenEventoIaService
             'resultado' => (string) ($datos['resultado'] ?? ''),
             'recursos' => $recursos,
             'personas' => $personas,
+            'personal_policial' => $personalPolicial,
             'vehiculos' => $vehiculos,
             'lugar' => $lugar,
             'estado_final' => (string) ($datos['estado_final'] ?? ''),

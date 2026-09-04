@@ -48,6 +48,16 @@
                     </table>
                 </div>
             </div>
+            <div data-ia-personal-wrap class="mb-3" style="display:none;">
+                <div class="small text-muted mb-1"><i class="bi bi-shield"></i> Personal policial interviniente</div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mb-0">
+                        <thead class="table-secondary"><tr><th>Mencionado en el texto</th><th>Móvil</th><th>Cruce con personal911</th></tr></thead>
+                        <tbody data-ia-personal></tbody>
+                    </table>
+                </div>
+                <div class="small text-muted mt-1">El cruce contra personal911 es orientativo: revisalo antes de dar por confirmada la identidad.</div>
+            </div>
             <div data-ia-vehiculos-wrap class="mb-3" style="display:none;">
                 <div class="small text-muted mb-1"><i class="bi bi-car-front"></i> Vehículos involucrados</div>
                 <div class="table-responsive">
@@ -124,6 +134,32 @@
             root.querySelector('[data-ia-personas-wrap]').style.display = '';
         } else {
             root.querySelector('[data-ia-personas-wrap]').style.display = 'none';
+        }
+
+        var tbodyP = root.querySelector('[data-ia-personal]');
+        tbodyP.innerHTML = '';
+        var personalPolicial = Array.isArray(r.personal_policial) ? r.personal_policial : [];
+        if (personalPolicial.length) {
+            personalPolicial.forEach(function (p) {
+                var mencion = ((p.jerarquia || '') + ' ' + (p.apellido || '') + (p.nombre ? ', ' + p.nombre : '')).trim();
+                var cruceHtml;
+                if (p.estado === 'confirmado') {
+                    var c = p.candidatos[0];
+                    cruceHtml = '<span class="badge badge-success mb-1">Confirmado</span><br>' +
+                        '<strong>' + esc(c.nombre_completo) + '</strong>' + (c.lp ? ' · L.P. ' + esc(c.lp) : '');
+                } else if (p.estado === 'ambiguo') {
+                    cruceHtml = '<span class="badge badge-warning mb-1">Varios candidatos, confirmar</span><ul class="mb-0 pl-3">' +
+                        p.candidatos.map(function (c) {
+                            return '<li>' + esc(c.nombre_completo) + (c.lp ? ' · L.P. ' + esc(c.lp) : '') + '</li>';
+                        }).join('') + '</ul>';
+                } else {
+                    cruceHtml = '<span class="badge badge-secondary">Sin coincidencia en personal911</span>';
+                }
+                tbodyP.innerHTML += '<tr><td>' + esc(mencion) + '</td><td>' + esc(p.movil) + '</td><td>' + cruceHtml + '</td></tr>';
+            });
+            root.querySelector('[data-ia-personal-wrap]').style.display = '';
+        } else {
+            root.querySelector('[data-ia-personal-wrap]').style.display = 'none';
         }
 
         var tbodyV = root.querySelector('[data-ia-vehiculos]');

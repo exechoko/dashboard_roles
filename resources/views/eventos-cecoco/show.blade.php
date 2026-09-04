@@ -224,14 +224,6 @@
             <p class="text-muted mb-0"><em>No se registraron recursos asignados para este evento.</em></p>
         @endif
 
-        @if(!empty(array_filter($cierreQuick)))
-            <hr class="my-4">
-            <h5 class="mb-2"><i class="fas fa-door-closed"></i> Observaciones de cierre</h5>
-            <div class="p-3 border rounded mb-2" style="white-space: pre-wrap; font-size: 13px; background-color: var(--bs-secondary-bg);">
-                {{ !empty($cierreQuick['observaciones']) ? $cierreQuick['observaciones'] : 'Sin observaciones de cierre.' }}
-            </div>
-        @endif
-
         <hr class="my-4">
 
         <h5 class="mb-3">Descripción completa</h5>
@@ -242,6 +234,14 @@
                 <em class="text-muted">Sin descripción registrada.</em>
             @endif
         </div>
+
+        @if(!empty(array_filter($cierreQuick)))
+            <hr class="my-4">
+            <h5 class="mb-2"><i class="fas fa-door-closed"></i> Observaciones de cierre</h5>
+            <div class="p-3 border rounded mb-2" style="white-space: pre-wrap; font-size: 13px; background-color: var(--bs-secondary-bg);">
+                {{ !empty($cierreQuick['observaciones']) ? $cierreQuick['observaciones'] : 'Sin observaciones de cierre.' }}
+            </div>
+        @endif
     </div>
     <div class="card-footer text-muted">
         <small>

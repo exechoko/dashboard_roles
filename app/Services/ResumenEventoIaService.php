@@ -36,7 +36,7 @@ class ResumenEventoIaService
      * Genera un resumen estructurado del evento a partir del detalle ya parseado.
      *
      * @param array<string, mixed> $detalle Resultado de CecocoExpedienteService::obtenerDetalleExpediente()
-     * @return array{resumen: string, mensaje: string, tipo: string, resultado: string, recursos: array<int, string>, personas: array<int, array{nombre: string, rol: string, dni: string}>, personal_policial: array<int, array{jerarquia: string, apellido: string, nombre: string, movil: string, estado: string, candidatos: array<int, array{id: int, nombre_completo: string, jerarquia: string, lp: string}>}>, vehiculos: array<int, array{tipo: string, marca: string, modelo: string, color: string, distintivo: string, dominio: string}>, lugar: array{direccion: string, interseccion: string, localidad: string}, estado_final: string, modelo: string}
+     * @return array{resumen: string, mensaje: string, tipo: string, resultado: string, recursos: array<int, string>, personas: array<int, array{nombre: string, rol: string, dni: string}>, personal_policial: array<int, array{jerarquia: string, apellido: string, nombre: string, movil: string}>, vehiculos: array<int, array{tipo: string, marca: string, modelo: string, color: string, distintivo: string, dominio: string}>, lugar: array{direccion: string, interseccion: string, localidad: string}, estado_final: string, modelo: string}
      */
     public function resumir(array $detalle): array
     {
@@ -56,12 +56,6 @@ class ResumenEventoIaService
             // Los recursos son dato duro del expediente: los tomamos de los trámites
             // parseados, no de lo que devuelva el modelo (que a veces los omite).
             $salida['recursos'] = $this->recursosDesdeDetalle($detalle);
-
-            // Cruzamos el personal mencionado en el texto contra personal911 para
-            // identificar de quién se trata (legajo, nombre completo); si hay más
-            // de un candidato con el mismo apellido, no se elige ninguno: queda
-            // "ambiguo" con la lista de candidatos para que lo confirme un humano.
-            $salida['personal_policial'] = app(PersonalPolicialMatcher::class)->cruzar($salida['personal_policial']);
 
             // Texto listo para copiar y enviar por mensaje (fecha/hora + narrativa).
             $salida['mensaje'] = $this->mensajeParaEnviar($detalle, $salida['resumen']);

@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\DetalleExpedienteCecoco;
+use App\Models\EventoCecoco;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
@@ -172,6 +174,42 @@ class CecocoExpedienteService
             ]);
             throw $e;
         }
+    }
+
+    /**
+     * Obtiene el detalle del expediente desde caché en BD (o lo consulta a CECOCO
+     * si no existe o se pidió refrescar), guardándolo para reutilizarlo después.
+     *
+     * Usado tanto por el buscador de escritorio como por el móvil, para no
+     * duplicar esta lógica de caché.
+     *
+     * @return array<string, mixed>
+     */
+    public function obtenerDetalleExpedienteCacheado(EventoCecoco $eventoCecoco, bool $refrescar): array
+    {
+        $detalle = null;
+
+        if (!$refrescar) {
+            $cache = DetalleExpedienteCecoco::where('evento_cecoco_id', $eventoCecoco->id)->first();
+            if ($cache) {
+                $detalle = $cache->detalle_json;
+            }
+        }
+
+        if (!$detalle) {
+            $detalle = $this->obtenerDetalleExpediente($eventoCecoco->nro_expediente);
+
+            DetalleExpedienteCecoco::updateOrCreate(
+                ['evento_cecoco_id' => $eventoCecoco->id],
+                [
+                    'nro_expediente' => $eventoCecoco->nro_expediente,
+                    'detalle_json' => $detalle,
+                    'fecha_consulta' => now(),
+                ]
+            );
+        }
+
+        return $detalle;
     }
 
     /**

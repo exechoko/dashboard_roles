@@ -56,47 +56,6 @@ class EventoCecocoController extends Controller
                 $q->whereNotNull('detalle_json');
             }]);
 
-            if ($request->filled('anio')) {
-                $query->delAnio((int) $request->anio);
-            }
-
-            if ($request->filled('mes')) {
-                $query->delMes((int) $request->mes);
-            }
-
-            if ($request->filled('operador')) {
-                $query->porOperador($request->operador);
-            }
-
-            $tiposFiltro = $this->tiposDesdeRequest($request);
-            if ($tiposFiltro !== []) {
-                $this->aplicarFiltroTipos($query, $tiposFiltro);
-            } elseif ($request->filled('tipo')) {
-                $query->porTipo($request->tipo);
-            }
-
-            if ($request->filled('desde_datetime') && $request->filled('hasta_datetime')) {
-                $desdeCompleto = str_replace('T', ' ', $request->input('desde_datetime'));
-                $hastaCompleto = str_replace('T', ' ', $request->input('hasta_datetime'));
-
-                if (strlen($desdeCompleto) === 16) {
-                    $desdeCompleto .= ':00';
-                }
-
-                if (strlen($hastaCompleto) === 16) {
-                    $hastaCompleto .= ':59';
-                }
-                $query->whereBetween('fecha_hora', [$desdeCompleto, $hastaCompleto]);
-            } elseif ($request->filled('desde') && $request->filled('hasta')) {
-                $desdeCompleto = $request->desde . ' ' . ($request->filled('hora_desde') ? $request->hora_desde : '00:00:00');
-                $hastaCompleto = $request->hasta . ' ' . ($request->filled('hora_hasta') ? $request->hora_hasta : '23:59:59');
-                $query->whereBetween('fecha_hora', [$desdeCompleto, $hastaCompleto]);
-            }
-
-            if ($request->filled('buscar')) {
-                $query->buscar($request->buscar);
-            }
-
             $filtrosConteo = [
                 'anio' => $request->input('anio'),
                 'mes' => $request->input('mes'),
@@ -112,12 +71,14 @@ class EventoCecocoController extends Controller
                 'buscar' => $request->input('buscar'),
             ];
 
+            $query->filtrado($filtrosConteo);
+
             $cacheKeyConteo = 'cecoco_count_filtros_' . md5(json_encode($filtrosConteo));
             $totalResultados = Cache::remember($cacheKeyConteo, 120, function () use ($query) {
                 return (clone $query)->count();
             });
 
-            $this->aplicarOrden($query, $request->input('orden'));
+            $query->ordenadoPor($request->input('orden'));
 
             $eventos = $query->simplePaginate(50)->withQueryString();
 
@@ -411,7 +372,7 @@ class EventoCecocoController extends Controller
         $this->authorize('ver-expediente-cecoco');
 
         try {
-            $detalle = $this->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
+            $detalle = $this->expedienteService->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
 
             $filtros = $request->only([
                 'anio',
@@ -502,7 +463,7 @@ class EventoCecocoController extends Controller
         $this->authorize('ver-expediente-cecoco');
 
         try {
-            $detalle = $this->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
+            $detalle = $this->expedienteService->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
 
             return view('eventos-cecoco.exportar-interno-pdf', compact('eventoCecoco', 'detalle'));
         } catch (\Exception $e) {
@@ -510,39 +471,6 @@ class EventoCecocoController extends Controller
                 ->route('cecoco.show', $eventoCecoco)
                 ->with('error', 'Error al generar el reporte interno: ' . $e->getMessage());
         }
-    }
-
-    /**
-     * Obtiene el detalle del expediente desde caché en BD (o lo consulta a CECOCO
-     * si no existe o se pidió refrescar), guardándolo para reutilizarlo después.
-     *
-     * @return array<string, mixed>
-     */
-    private function obtenerDetalleExpedienteCacheado(EventoCecoco $eventoCecoco, bool $refrescar): array
-    {
-        $detalle = null;
-
-        if (!$refrescar) {
-            $cache = \App\Models\DetalleExpedienteCecoco::where('evento_cecoco_id', $eventoCecoco->id)->first();
-            if ($cache) {
-                $detalle = $cache->detalle_json;
-            }
-        }
-
-        if (!$detalle) {
-            $detalle = $this->expedienteService->obtenerDetalleExpediente($eventoCecoco->nro_expediente);
-
-            \App\Models\DetalleExpedienteCecoco::updateOrCreate(
-                ['evento_cecoco_id' => $eventoCecoco->id],
-                [
-                    'nro_expediente' => $eventoCecoco->nro_expediente,
-                    'detalle_json' => $detalle,
-                    'fecha_consulta' => now(),
-                ]
-            );
-        }
-
-        return $detalle;
     }
 
     /**

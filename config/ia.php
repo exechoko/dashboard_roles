@@ -1,6 +1,17 @@
 <?php
 
 return [
+    // Proveedor del resumen IA de eventos CECOCO:
+    //  - 'ollama' (local, red interna, más lento en este hardware).
+    //  - 'opencode' (reusa el servidor OpenCode del chatbot de ayuda —config
+    //    services.opencode.*— con el modelo pago de OpenCode Go configurado y un
+    //    agente propio sin acceso a herramientas; nunca cae al modelo gratuito).
+    //  - 'gemini' (API de Google). OJO: con GEMINI_API_KEY del tier gratuito,
+    //    Google puede usar los datos enviados para mejorar sus modelos — no
+    //    mandar eventos reales con datos sensibles hasta confirmar que la key
+    //    es del tier pago.
+    'provider' => env('IA_PROVIDER', 'ollama'),
+
     // Servidor de inferencia Ollama en la red local (API compatible).
     'url'   => env('IA_URL', 'http://193.169.1.246:11434'),
 
@@ -28,4 +39,8 @@ return [
 
     // Permite desactivar la funcionalidad sin tocar código.
     'enabled' => env('IA_ENABLED', true),
+
+    // API de Gemini (Google), usada solo si 'provider' = 'gemini'.
+    'gemini_api_key' => env('GEMINI_API_KEY'),
+    'gemini_model'   => env('GEMINI_MODEL', 'gemini-2.5-flash'),
 ];

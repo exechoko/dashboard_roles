@@ -8,15 +8,19 @@ use Exception;
 
 class ResumenEventoIaService
 {
+    private string $provider;
     private string $url;
     private string $model;
     private int $timeout;
     private string $keepAlive;
     private int $numThread;
     private ?bool $think;
+    private ?string $geminiApiKey;
+    private string $geminiModel;
 
     public function __construct()
     {
+        $this->provider = (string) config('ia.provider', 'ollama');
         $this->url = rtrim((string) config('ia.url'), '/');
         $this->model = (string) config('ia.model');
         $this->timeout = (int) config('ia.timeout', 180);
@@ -24,6 +28,8 @@ class ResumenEventoIaService
         $this->numThread = (int) config('ia.num_thread', 16);
         $think = config('ia.think');
         $this->think = $think === null ? null : (bool) $think;
+        $this->geminiApiKey = config('ia.gemini_api_key') ? (string) config('ia.gemini_api_key') : null;
+        $this->geminiModel = (string) config('ia.gemini_model', 'gemini-2.5-flash');
     }
 
     /**
@@ -38,6 +44,38 @@ class ResumenEventoIaService
             throw new Exception('La función de resumen con IA está desactivada.');
         }
 
+        try {
+            [$datos, $modeloUsado] = match ($this->provider) {
+                'gemini' => $this->generarConGemini($detalle),
+                'opencode' => $this->generarConOpencode($detalle),
+                default => $this->generarConOllama($detalle),
+            };
+
+            $salida = $this->normalizarSalida($datos);
+
+            // Los recursos son dato duro del expediente: los tomamos de los trámites
+            // parseados, no de lo que devuelva el modelo (que a veces los omite).
+            $salida['recursos'] = $this->recursosDesdeDetalle($detalle);
+
+            // Texto listo para copiar y enviar por mensaje (fecha/hora + narrativa).
+            $salida['mensaje'] = $this->mensajeParaEnviar($detalle, $salida['resumen']);
+
+            // Guardamos el modelo que generó el resumen para mostrarlo y trazarlo.
+            $salida['modelo'] = $modeloUsado;
+
+            return $salida;
+        } catch (Exception $e) {
+            Log::error('Error al generar resumen IA del evento', ['error' => $e->getMessage(), 'proveedor' => $this->provider]);
+            throw new Exception('No se pudo generar el resumen con IA: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $detalle
+     * @return array{0: array<string, mixed>, 1: string}
+     */
+    private function generarConOllama(array $detalle): array
+    {
         $payload = [
             'model' => $this->model,
             'stream' => false,
@@ -59,38 +97,124 @@ class ResumenEventoIaService
             $payload['think'] = $this->think;
         }
 
-        try {
-            $respuesta = Http::timeout($this->timeout)
-                ->post($this->url . '/api/chat', $payload);
+        $respuesta = Http::timeout($this->timeout)
+            ->post($this->url . '/api/chat', $payload);
 
-            if (!$respuesta->successful()) {
-                throw new Exception('El servidor de IA respondió con estado ' . $respuesta->status());
-            }
-
-            $contenido = (string) $respuesta->json('message.content');
-            $datos = json_decode($contenido, true);
-
-            if (!is_array($datos)) {
-                throw new Exception('La respuesta de la IA no es un JSON válido.');
-            }
-
-            $salida = $this->normalizarSalida($datos);
-
-            // Los recursos son dato duro del expediente: los tomamos de los trámites
-            // parseados, no de lo que devuelva el modelo (que a veces los omite).
-            $salida['recursos'] = $this->recursosDesdeDetalle($detalle);
-
-            // Texto listo para copiar y enviar por mensaje (fecha/hora + narrativa).
-            $salida['mensaje'] = $this->mensajeParaEnviar($detalle, $salida['resumen']);
-
-            // Guardamos el modelo que generó el resumen para mostrarlo y trazarlo.
-            $salida['modelo'] = $this->model;
-
-            return $salida;
-        } catch (Exception $e) {
-            Log::error('Error al generar resumen IA del evento', ['error' => $e->getMessage()]);
-            throw new Exception('No se pudo generar el resumen con IA: ' . $e->getMessage());
+        if (!$respuesta->successful()) {
+            throw new Exception('El servidor de IA respondió con estado ' . $respuesta->status());
         }
+
+        $contenido = (string) $respuesta->json('message.content');
+        $datos = json_decode($contenido, true);
+
+        if (!is_array($datos)) {
+            throw new Exception('La respuesta de la IA no es un JSON válido.');
+        }
+
+        return [$datos, $this->model];
+    }
+
+    /**
+     * @param array<string, mixed> $detalle
+     * @return array{0: array<string, mixed>, 1: string}
+     */
+    private function generarConGemini(array $detalle): array
+    {
+        if (empty($this->geminiApiKey)) {
+            throw new Exception('Falta configurar GEMINI_API_KEY.');
+        }
+
+        $payload = [
+            'systemInstruction' => ['parts' => [['text' => $this->promptSistema()]]],
+            'contents' => [
+                ['role' => 'user', 'parts' => [['text' => $this->construirEntrada($detalle)]]],
+            ],
+            'generationConfig' => [
+                'temperature' => 0.2,
+                'responseMimeType' => 'application/json',
+            ],
+        ];
+
+        // La key va como query param (no en el body) para que no quede mezclada
+        // con $payload si algo lo llega a loguear.
+        $respuesta = Http::timeout($this->timeout)
+            ->withQueryParameters(['key' => $this->geminiApiKey])
+            ->post(
+                "https://generativelanguage.googleapis.com/v1beta/models/{$this->geminiModel}:generateContent",
+                $payload
+            );
+
+        if (!$respuesta->successful()) {
+            throw new Exception('El servidor de Gemini respondió con estado ' . $respuesta->status() . ': ' . substr($respuesta->body(), 0, 300));
+        }
+
+        $contenido = (string) $respuesta->json('candidates.0.content.parts.0.text');
+        $datos = json_decode($contenido, true);
+
+        if (!is_array($datos)) {
+            throw new Exception('La respuesta de Gemini no es un JSON válido.');
+        }
+
+        return [$datos, 'gemini:' . $this->geminiModel];
+    }
+
+    /**
+     * Usa el mismo servidor OpenCode del chatbot de ayuda, pero con un agente propio
+     * (resumen-cecoco, sin acceso a herramientas ni restricción de salida JSON) y sin
+     * el fallback automático al modelo gratuito de Zen: si el modelo de Go configurado
+     * falla, se propaga el error en vez de degradar silenciosamente a un modelo gratuito.
+     *
+     * @param array<string, mixed> $detalle
+     * @return array{0: array<string, mixed>, 1: string}
+     */
+    private function generarConOpencode(array $detalle): array
+    {
+        $modelo = trim((string) config('services.opencode.model'));
+        if ($modelo === '') {
+            throw new Exception('Falta configurar OPENCODE_MODEL.');
+        }
+
+        $opencode = app(OpenCodeService::class);
+        $agente = (string) config('services.opencode.resumen_agent', 'resumen-cecoco');
+
+        $sesion = $opencode->createSession('Resumen CECOCO ' . ($detalle['nro_expediente'] ?? ''));
+
+        try {
+            $texto = $opencode->sendConAgente(
+                $sesion['id'],
+                $agente,
+                $this->promptSistema(),
+                $this->construirEntrada($detalle),
+                $modelo
+            );
+        } finally {
+            $opencode->deleteSession($sesion['id']);
+        }
+
+        $datos = json_decode($this->limpiarJson($texto), true);
+
+        if (!is_array($datos)) {
+            throw new Exception('La respuesta de OpenCode no es un JSON válido: ' . mb_substr($texto, 0, 200));
+        }
+
+        return [$datos, 'opencode:' . $modelo];
+    }
+
+    /**
+     * Quita el cerco de código Markdown (```json ... ```) que algunos modelos
+     * agregan alrededor del JSON pese a que se les pide no hacerlo.
+     */
+    private function limpiarJson(string $texto): string
+    {
+        $texto = trim($texto);
+        if (!str_starts_with($texto, '```')) {
+            return $texto;
+        }
+
+        $texto = preg_replace('/^```[a-zA-Z]*\s*/', '', $texto);
+        $texto = preg_replace('/\s*```$/', '', (string) $texto);
+
+        return trim((string) $texto);
     }
 
     private function promptSistema(): string

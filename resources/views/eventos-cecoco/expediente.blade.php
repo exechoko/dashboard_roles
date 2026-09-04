@@ -17,6 +17,9 @@
             </a>
         </div>
         <div class="d-flex flex-wrap align-items-center" style="gap:.5rem;">
+            <a href="{{ route('cecoco.exportar.pdf-resumen', $eventoCecoco) }}" target="_blank" class="btn btn-danger">
+                <i class="bi bi-printer"></i> Imprimir Parte de Novedad
+            </a>
             <a href="{{ route('cecoco.exportar.pdf-original', $eventoCecoco) }}" target="_blank" class="btn btn-dark">
                 <i class="bi bi-file-earmark-pdf"></i> PDF Original CECOCO
             </a>

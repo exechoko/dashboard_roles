@@ -461,6 +461,35 @@ class EventoCecocoController extends Controller
     }
 
     /**
+     * Exporta el PDF nativo del "Parte de novedad general" de CECOCO (el mismo
+     * que genera el botón de impresión dentro del sistema CECOCO), con los datos
+     * básicos del evento y sin la cronología completa de acciones.
+     */
+    public function exportarPdfResumen(Request $request, EventoCecoco $eventoCecoco)
+    {
+        $this->authorize('ver-expediente-cecoco');
+
+        try {
+            $cacheKey = 'cecoco_reporte_pdf_resumen_' . $eventoCecoco->nro_expediente;
+            $pdf = $request->boolean('refrescar') ? null : Cache::get($cacheKey);
+
+            if (!$pdf) {
+                $pdf = $this->expedienteService->obtenerReportePdfOriginal($eventoCecoco->nro_expediente);
+                Cache::put($cacheKey, $pdf, 60 * 30);
+            }
+
+            return response($pdf, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="expediente_' . $eventoCecoco->nro_expediente . '.pdf"',
+            ]);
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('cecoco.show', $eventoCecoco)
+                ->with('error', 'Error al exportar el PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Exporta el expediente en un formato interno prolijo (propio del sistema),
      * listo para imprimir/guardar como PDF.
      */

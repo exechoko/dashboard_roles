@@ -24,6 +24,9 @@
     </div>
     @can('ver-expediente-cecoco')
     <div class="d-flex flex-wrap align-items-center" style="gap:.5rem;">
+        <a href="{{ route('cecoco.exportar.pdf-resumen', $eventoCecoco) }}" target="_blank" class="btn btn-danger">
+            <i class="fas fa-print"></i> Imprimir Parte de Novedad
+        </a>
         <a href="{{ route('cecoco.exportar.pdf-original', $eventoCecoco) }}" target="_blank" class="btn btn-dark">
             <i class="fas fa-file-pdf"></i> PDF Original CECOCO
         </a>

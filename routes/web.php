@@ -641,6 +641,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/llamadas-central-telefonica/importar-hoy', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'importarHoy'])->name('llamadas-central-telefonica.importar-hoy');
         Route::get('/{eventoCecoco}/expediente', [App\Http\Controllers\EventoCecocoController::class, 'verExpediente'])->name('expediente');
         Route::get('/{eventoCecoco}/exportar/pdf-original', [App\Http\Controllers\EventoCecocoController::class, 'exportarPdfOriginal'])->name('exportar.pdf-original');
+        Route::get('/{eventoCecoco}/exportar/pdf-resumen', [App\Http\Controllers\EventoCecocoController::class, 'exportarPdfResumen'])->name('exportar.pdf-resumen');
         Route::get('/{eventoCecoco}/exportar/pdf-interno', [App\Http\Controllers\EventoCecocoController::class, 'exportarPdfInterno'])->name('exportar.pdf-interno');
         Route::get('/{eventoCecoco}', [App\Http\Controllers\EventoCecocoController::class, 'show'])->name('show');
     });

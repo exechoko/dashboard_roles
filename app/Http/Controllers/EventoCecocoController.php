@@ -117,7 +117,9 @@ class EventoCecocoController extends Controller
                 return (clone $query)->count();
             });
 
-            $eventos = $query->orderBy('fecha_hora', 'desc')->simplePaginate(50)->withQueryString();
+            $this->aplicarOrden($query, $request->input('orden'));
+
+            $eventos = $query->simplePaginate(50)->withQueryString();
 
             $eventos->getCollection()->transform(function ($e) {
                 if (preg_match('/^(d\.?d\.?|dd)(?=\s|$)/i', trim($e->direccion))) {
@@ -339,7 +341,9 @@ class EventoCecocoController extends Controller
                 'Mes'
             ], ';');
 
-            $query->orderBy('fecha_hora', 'desc')->chunk(500, function ($eventos) use ($handle) {
+            $this->aplicarOrden($query, $request->input('orden'));
+
+            $query->chunk(500, function ($eventos) use ($handle) {
                 foreach ($eventos as $evento) {
                     fputcsv($handle, [
                         $evento->nro_expediente,
@@ -1287,6 +1291,30 @@ class EventoCecocoController extends Controller
             return 'Dispositivo Dual';
         }
         return trim($tipo);
+    }
+
+    /**
+     * Aplica el orden elegido en el buscador. El nro_expediente se guarda como
+     * string (largo variable: 5 a 7 dígitos), por eso se castea a numérico para
+     * que el orden sea el real y no el alfabético (donde "999" > "10000").
+     */
+    private function aplicarOrden(Builder $query, ?string $orden): void
+    {
+        switch ($orden) {
+            case 'expediente_menor_mayor':
+                $query->orderByRaw('CAST(nro_expediente AS UNSIGNED) ASC');
+                break;
+            case 'expediente_mayor_menor':
+                $query->orderByRaw('CAST(nro_expediente AS UNSIGNED) DESC');
+                break;
+            case 'fecha_antigua':
+                $query->orderBy('fecha_hora', 'asc');
+                break;
+            case 'fecha_reciente':
+            default:
+                $query->orderBy('fecha_hora', 'desc');
+                break;
+        }
     }
 
     /**

@@ -86,6 +86,27 @@
                             </div>
                         </div>
 
+                        {{-- Fila 3b: Orden --}}
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label">Ordenar por</label>
+                                <select name="orden" class="form-select">
+                                    <option value="fecha_reciente" {{ request('orden', 'fecha_reciente') == 'fecha_reciente' ? 'selected' : '' }}>
+                                        Fecha: lo más nuevo primero
+                                    </option>
+                                    <option value="fecha_antigua" {{ request('orden') == 'fecha_antigua' ? 'selected' : '' }}>
+                                        Fecha: lo más viejo primero
+                                    </option>
+                                    <option value="expediente_mayor_menor" {{ request('orden') == 'expediente_mayor_menor' ? 'selected' : '' }}>
+                                        Nº Expediente: del más alto al más bajo
+                                    </option>
+                                    <option value="expediente_menor_mayor" {{ request('orden') == 'expediente_menor_mayor' ? 'selected' : '' }}>
+                                        Nº Expediente: del más bajo al más alto
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
                         {{-- Fila 4: Botones de acción --}}
                         <div class="row g-2">
                             <div class="col-12 d-flex gap-2 flex-wrap">

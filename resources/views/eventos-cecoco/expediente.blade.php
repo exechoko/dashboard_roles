@@ -21,10 +21,10 @@
                 <i class="bi bi-printer"></i> Imprimir Parte de Novedad
             </a>
             <a href="{{ route('cecoco.exportar.pdf-original', $eventoCecoco) }}" target="_blank" class="btn btn-dark">
-                <i class="bi bi-file-earmark-pdf"></i> PDF Original CECOCO
+                <i class="bi bi-file-earmark-pdf"></i> PDF Original CECOCO Completo
             </a>
             <a href="{{ route('cecoco.exportar.pdf-interno', $eventoCecoco) }}" target="_blank" class="btn btn-info">
-                <i class="bi bi-file-earmark-text"></i> PDF Interno
+                <i class="bi bi-file-earmark-text"></i> PDF Interno Completo
             </a>
         </div>
     </div>

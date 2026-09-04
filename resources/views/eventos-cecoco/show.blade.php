@@ -28,10 +28,10 @@
             <i class="fas fa-print"></i> Imprimir Parte de Novedad
         </a>
         <a href="{{ route('cecoco.exportar.pdf-original', $eventoCecoco) }}" target="_blank" class="btn btn-dark">
-            <i class="fas fa-file-pdf"></i> PDF Original CECOCO
+            <i class="fas fa-file-pdf"></i> PDF Original CECOCO Completo
         </a>
         <a href="{{ route('cecoco.exportar.pdf-interno', $eventoCecoco) }}" target="_blank" class="btn btn-info">
-            <i class="fas fa-file-invoice"></i> PDF Interno
+            <i class="fas fa-file-invoice"></i> PDF Interno Completo
         </a>
     </div>
     @endcan

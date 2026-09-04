@@ -37,5 +37,13 @@
                 <span class="m-home-tile__subtitle">Buscar eventos y expedientes</span>
             </a>
         @endcan
+
+        @can('ver-dependencia')
+            <a href="{{ route('movil.dependencias.index') }}" class="m-home-tile">
+                <i class="fas fa-building"></i>
+                <span class="m-home-tile__title">Dependencias</span>
+                <span class="m-home-tile__subtitle">Teléfonos de comisarías y divisiones</span>
+            </a>
+        @endcan
     </div>
 @endsection

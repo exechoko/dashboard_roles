@@ -108,6 +108,9 @@ Route::group(['middleware' => ['auth']], function () {
 
         Route::get('/eventos', [App\Http\Controllers\Movil\EventosController::class, 'index'])->name('eventos.index');
         Route::get('/eventos/{eventoCecoco}', [App\Http\Controllers\Movil\EventosController::class, 'show'])->name('eventos.show');
+
+        Route::get('/dependencias', [App\Http\Controllers\Movil\DependenciasController::class, 'index'])->name('dependencias.index');
+        Route::get('/dependencias/{dependencia}', [App\Http\Controllers\Movil\DependenciasController::class, 'show'])->name('dependencias.show');
     });
 
     // Fuera del middleware de permisos de cada sección: la sirve el service

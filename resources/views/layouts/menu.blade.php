@@ -6,6 +6,12 @@
     </li>
 @endcan
 
+<li class="{{ request()->is('movil*') ? 'active' : '' }}">
+    <a class="nav-link" href="{{ route('movil.index') }}">
+        <i class="fas fa-mobile-alt"></i><span>Versión móvil</span>
+    </a>
+</li>
+
 @can('ver-menu-equipamientos')
     <li
         class="dropdown {{ request()->is('equipos*') ? 'active' : '' }} {{ request()->is('busqueda-avanzada*') ? 'active' : '' }} {{ request()->is('flota*') ? 'active' : '' }} {{ request()->is('recursos*') ? 'active' : '' }} {{ request()->is('vehiculos*') ? 'active' : '' }} {{ request()->is('terminales*') ? 'active' : '' }}">

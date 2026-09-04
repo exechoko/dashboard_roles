@@ -1,0 +1,370 @@
+:root {
+    --m-bg: #f4f6f9;
+    --m-surface: #ffffff;
+    --m-border: #e2e6ec;
+    --m-text: #1c2530;
+    --m-muted: #6b7684;
+    --m-accent: #0d6efd;
+    --m-accent-contrast: #ffffff;
+    --m-danger: #dc3545;
+    --m-success: #198754;
+    --m-shadow: 0 1px 3px rgba(16, 24, 40, .08);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --m-bg: #0b1220;
+        --m-surface: #131b2c;
+        --m-border: #223049;
+        --m-text: #e8edf5;
+        --m-muted: #96a3b6;
+        --m-accent: #4c9aff;
+        --m-accent-contrast: #06101f;
+        --m-danger: #ff6b81;
+        --m-success: #2fd88a;
+        --m-shadow: 0 1px 3px rgba(0, 0, 0, .4);
+    }
+}
+
+* { box-sizing: border-box; }
+
+html, body.m-body { max-width: 100%; overflow-x: hidden; }
+
+body.m-body {
+    background: var(--m-bg);
+    color: var(--m-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding-bottom: 72px;
+    min-height: 100vh;
+    /* Datos como el TEI son cadenas largas sin espacios: sin esto no cortan
+       línea y empujan la página a hacer scroll horizontal en el celular. */
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+a { color: var(--m-accent); text-decoration: none; }
+
+.m-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .8rem 1rem;
+    background: var(--m-surface);
+    border-bottom: 1px solid var(--m-border);
+}
+
+.m-topbar__back {
+    font-size: 1.1rem;
+    color: var(--m-text);
+    width: 2rem;
+    text-align: center;
+}
+
+.m-topbar__title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.m-page {
+    padding: 1rem;
+    max-width: 640px;
+    margin: 0 auto;
+}
+
+.m-search {
+    display: flex;
+    gap: .5rem;
+    margin-bottom: 1rem;
+}
+
+.m-search input[type="text"],
+.m-search input[type="date"],
+.m-search select,
+.m-field input,
+.m-field select {
+    font-size: 16px;
+    padding: .55rem .7rem;
+    border: 1px solid var(--m-border);
+    border-radius: .5rem;
+    background: var(--m-surface);
+    color: var(--m-text);
+    width: 100%;
+}
+
+.m-search input[type="text"] { flex: 1; min-width: 0; }
+
+.m-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    font-size: .95rem;
+    font-weight: 600;
+    padding: .55rem 1rem;
+    border-radius: .5rem;
+    border: 1px solid var(--m-accent);
+    background: var(--m-accent);
+    color: var(--m-accent-contrast);
+}
+
+.m-btn--outline {
+    background: transparent;
+    color: var(--m-accent);
+}
+
+.m-filters {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    background: var(--m-surface);
+    border: 1px solid var(--m-border);
+    border-radius: .6rem;
+    padding: .8rem;
+    margin-bottom: 1rem;
+}
+
+.m-filters__row { display: flex; gap: .5rem; }
+.m-filters__row > * { flex: 1; min-width: 0; }
+
+.m-field label {
+    display: block;
+    font-size: .78rem;
+    color: var(--m-muted);
+    margin-bottom: .2rem;
+}
+
+.m-list { display: flex; flex-direction: column; gap: .6rem; min-width: 0; }
+
+.m-card {
+    display: block;
+    min-width: 0;
+    background: var(--m-surface);
+    border: 1px solid var(--m-border);
+    border-radius: .6rem;
+    padding: .8rem .9rem;
+    box-shadow: var(--m-shadow);
+    color: var(--m-text);
+}
+
+.m-card__title {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: .2rem;
+}
+
+.m-card__subtitle {
+    color: var(--m-muted);
+    font-size: .85rem;
+}
+
+.m-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+    margin-top: .5rem;
+}
+
+.m-chip {
+    display: inline-block;
+    font-size: .72rem;
+    font-weight: 600;
+    padding: .15rem .55rem;
+    border-radius: 999px;
+    background: var(--m-border);
+    color: var(--m-text);
+}
+
+.m-empty {
+    text-align: center;
+    color: var(--m-muted);
+    padding: 2.5rem 1rem;
+}
+
+.m-detail {
+    background: var(--m-surface);
+    border: 1px solid var(--m-border);
+    border-radius: .6rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.m-detail__row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .4rem 0;
+    border-bottom: 1px solid var(--m-border);
+    font-size: .9rem;
+}
+
+.m-detail__row:last-child { border-bottom: none; }
+.m-detail__row dt { color: var(--m-muted); flex: 0 0 auto; }
+.m-detail__row dd { margin: 0; text-align: right; min-width: 0; }
+
+.m-section-title {
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--m-muted);
+    margin: 1.2rem 0 .5rem;
+}
+
+.m-pagination {
+    display: flex;
+    justify-content: center;
+    gap: .5rem;
+    margin-top: 1rem;
+}
+
+/* Paginación de Laravel (Bootstrap): por defecto es un <ul> flex sin wrap,
+   con muchos números de página, y eso es justo lo que empujaba el listado
+   a hacer scroll horizontal en el celular. */
+.m-pagination .pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: .3rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.m-pagination .page-item { display: block; }
+
+.m-pagination .page-link {
+    display: block;
+    padding: .4rem .65rem;
+    font-size: .82rem;
+    border-radius: .4rem !important;
+    background: var(--m-surface);
+    border: 1px solid var(--m-border);
+    color: var(--m-text);
+    line-height: 1.2;
+}
+
+.m-pagination .page-item.active .page-link {
+    background: var(--m-accent);
+    border-color: var(--m-accent);
+    color: var(--m-accent-contrast);
+}
+
+.m-pagination .page-item.disabled .page-link {
+    background: transparent;
+    color: var(--m-muted);
+    opacity: .5;
+}
+
+.m-alert {
+    border-radius: .6rem;
+    padding: .7rem .9rem;
+    font-size: .9rem;
+    margin-bottom: 1rem;
+}
+
+.m-alert--danger {
+    background: rgba(220, 53, 69, .12);
+    color: var(--m-danger);
+}
+
+.m-bottomnav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* Leaflet dibuja sus propias capas con z-index de hasta ~1000 (panes,
+       controles, popups); si el nav queda por debajo, el mapa lo tapa
+       aunque siga presente en el DOM. */
+    z-index: 1100;
+    display: flex;
+    background: var(--m-surface);
+    border-top: 1px solid var(--m-border);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+.m-bottomnav a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .15rem;
+    padding: .55rem 0;
+    color: var(--m-muted);
+    font-size: .68rem;
+}
+
+.m-bottomnav a i { font-size: 1.15rem; }
+.m-bottomnav a.is-active { color: var(--m-accent); }
+
+.m-home-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .8rem;
+}
+
+.m-home-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .5rem;
+    background: var(--m-surface);
+    border: 1px solid var(--m-border);
+    border-radius: .8rem;
+    padding: 1rem;
+    box-shadow: var(--m-shadow);
+    color: var(--m-text);
+}
+
+.m-home-tile i { font-size: 1.4rem; color: var(--m-accent); }
+.m-home-tile__title { font-weight: 700; }
+.m-home-tile__subtitle { font-size: .78rem; color: var(--m-muted); }
+
+#m-map { width: 100%; height: calc(100vh - 130px); }
+
+/* La tarjeta de "Resumen con IA" es la misma vista parcial que usa el panel
+   de escritorio (eventos-cecoco/partials/resumen_ia.blade.php) — se reutiliza
+   tal cual, así que sus clases Bootstrap se retocan acá para que combinen
+   con el tema oscuro del móvil en vez de quedar con el card blanco por defecto. */
+.m-body .card {
+    background: var(--m-surface);
+    border-color: var(--m-border);
+    color: var(--m-text);
+}
+
+.m-body .card-header {
+    background: rgba(255, 255, 255, .03);
+    border-color: var(--m-border);
+}
+
+.m-body .table {
+    color: var(--m-text);
+}
+
+.m-body .table-secondary {
+    background: rgba(255, 255, 255, .06);
+    color: var(--m-text);
+}
+
+.m-body .text-muted {
+    color: var(--m-muted) !important;
+}
+
+.m-offline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 70vh;
+    gap: .6rem;
+    padding: 1rem;
+}

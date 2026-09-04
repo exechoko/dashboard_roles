@@ -75,6 +75,14 @@ Route::get('/', function () {
 
 Auth::routes();
 
+// Login propio de la app móvil: misma autenticación (guard 'web', mismos
+// usuarios) que el login de escritorio, pero con una URL y una vista propias
+// para poder entrar directo a /movil sin pasar por el login de escritorio.
+Route::prefix('movil')->name('movil.')->group(function () {
+    Route::get('/ingresar', [App\Http\Controllers\Movil\LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/ingresar', [App\Http\Controllers\Movil\LoginController::class, 'login']);
+});
+
 // Plataforma de Descargas: link/QR de descarga publica, a proposito fuera
 // del grupo 'auth' de abajo, para poder compartir con gente sin cuenta en
 // el sistema. La seguridad la da el token del link/QR (+ password,
@@ -86,6 +94,27 @@ Route::prefix('descargas')->name('descargas.')->group(function () {
 });
 
 Route::group(['middleware' => ['auth']], function () {
+    Route::prefix('movil')->name('movil.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Movil\InicioController::class, 'index'])->name('index');
+
+        Route::get('/flota', [App\Http\Controllers\Movil\FlotaController::class, 'index'])->name('flota.index');
+        Route::get('/flota/{flota}', [App\Http\Controllers\Movil\FlotaController::class, 'show'])->name('flota.show');
+
+        Route::get('/camaras', [App\Http\Controllers\Movil\CamarasController::class, 'index'])->name('camaras.index');
+        Route::get('/camaras/{camara}', [App\Http\Controllers\Movil\CamarasController::class, 'show'])->name('camaras.show');
+
+        Route::get('/mapa/camaras.json', [App\Http\Controllers\Movil\MapaController::class, 'camarasJson'])->name('mapa.camaras-json');
+        Route::get('/mapa', [App\Http\Controllers\Movil\MapaController::class, 'index'])->name('mapa.index');
+
+        Route::get('/eventos', [App\Http\Controllers\Movil\EventosController::class, 'index'])->name('eventos.index');
+        Route::get('/eventos/{eventoCecoco}', [App\Http\Controllers\Movil\EventosController::class, 'show'])->name('eventos.show');
+    });
+
+    // Fuera del middleware de permisos de cada sección: la sirve el service
+    // worker cuando no hay red, así que tiene que responder siempre para
+    // cualquier usuario autenticado.
+    Route::get('/movil/offline', fn() => view('movil.offline'))->name('movil.offline');
+
     Route::prefix('chatbot')->name('chatbot.')->group(function () {
         Route::get('/history', [ChatbotController::class, 'history'])->name('history');
         Route::post('/messages', [ChatbotController::class, 'ask'])->middleware('throttle:chatbot')->name('ask');

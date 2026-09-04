@@ -11,8 +11,10 @@
     --m-shadow: 0 1px 3px rgba(16, 24, 40, .08);
 }
 
+/* Sigue el tema del sistema por defecto, salvo que el usuario haya elegido
+   uno manualmente (data-theme, guardado en su perfil y en localStorage). */
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
         --m-bg: #0b1220;
         --m-surface: #131b2c;
         --m-border: #223049;
@@ -24,6 +26,19 @@
         --m-success: #2fd88a;
         --m-shadow: 0 1px 3px rgba(0, 0, 0, .4);
     }
+}
+
+:root[data-theme="dark"] {
+    --m-bg: #0b1220;
+    --m-surface: #131b2c;
+    --m-border: #223049;
+    --m-text: #e8edf5;
+    --m-muted: #96a3b6;
+    --m-accent: #4c9aff;
+    --m-accent-contrast: #06101f;
+    --m-danger: #ff6b81;
+    --m-success: #2fd88a;
+    --m-shadow: 0 1px 3px rgba(0, 0, 0, .4);
 }
 
 * { box-sizing: border-box; }
@@ -62,6 +77,17 @@ a { color: var(--m-accent); text-decoration: none; }
     color: var(--m-text);
     width: 2rem;
     text-align: center;
+}
+
+.m-topbar__theme {
+    flex: 0 0 auto;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 999px;
+    border: 1px solid var(--m-border);
+    background: transparent;
+    color: var(--m-text);
+    font-size: 1rem;
 }
 
 .m-topbar__title {
@@ -271,6 +297,27 @@ a { color: var(--m-accent); text-decoration: none; }
     margin-bottom: 1rem;
 }
 
+.m-install-banner {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .6rem 1rem;
+    background: var(--m-accent);
+    color: var(--m-accent-contrast);
+    font-size: .82rem;
+}
+
+.m-install-banner span { flex: 1; min-width: 0; }
+
+.m-install-banner__close {
+    background: transparent;
+    border: 0;
+    color: inherit;
+    font-size: 1.3rem;
+    line-height: 1;
+    padding: 0 .3rem;
+}
+
 .m-alert--danger {
     background: rgba(220, 53, 69, .12);
     color: var(--m-danger);
@@ -293,16 +340,23 @@ a { color: var(--m-accent); text-decoration: none; }
 
 .m-bottomnav a {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: .15rem;
     padding: .55rem 0;
     color: var(--m-muted);
-    font-size: .68rem;
+    font-size: .65rem;
 }
 
-.m-bottomnav a i { font-size: 1.15rem; }
+.m-bottomnav a i { font-size: 1.1rem; }
+
+.m-bottomnav a span {
+    max-width: 100%;
+    text-align: center;
+    line-height: 1.1;
+}
 .m-bottomnav a.is-active { color: var(--m-accent); }
 
 .m-home-grid {

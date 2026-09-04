@@ -45,5 +45,13 @@
                 <span class="m-home-tile__subtitle">Teléfonos de comisarías y divisiones</span>
             </a>
         @endcan
+
+        @can('ver-chat')
+            <a href="{{ route('movil.chat.index') }}" class="m-home-tile">
+                <i class="fas fa-comments"></i>
+                <span class="m-home-tile__title">Chat</span>
+                <span class="m-home-tile__subtitle">Conversaciones y notificaciones</span>
+            </a>
+        @endcan
     </div>
 @endsection

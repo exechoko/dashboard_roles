@@ -63,3 +63,47 @@ self.addEventListener('fetch', (event) => {
         );
     }
 });
+
+// Notificaciones push del chat (ver EnviarPushMensajeChat en el backend).
+self.addEventListener('push', (event) => {
+    if (!event.data) {
+        return;
+    }
+
+    let payload;
+    try {
+        payload = event.data.json();
+    } catch (e) {
+        return;
+    }
+
+    event.waitUntil(
+        self.registration.showNotification(payload.title || 'C.A.R. 911 Móvil', {
+            body: payload.body || '',
+            icon: '/img/pwa-192.png',
+            badge: '/img/pwa-192.png',
+            data: { url: payload.url || '/movil' },
+        })
+    );
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+
+    const url = event.notification.data && event.notification.data.url
+        ? event.notification.data.url
+        : '/movil';
+
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((lista) => {
+            for (const ventana of lista) {
+                if (ventana.url.includes(url) && 'focus' in ventana) {
+                    return ventana.focus();
+                }
+            }
+            if (clients.openWindow) {
+                return clients.openWindow(url);
+            }
+        })
+    );
+});

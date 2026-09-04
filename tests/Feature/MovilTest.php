@@ -37,7 +37,7 @@ class MovilTest extends TestCase
 
     public function test_un_usuario_con_permisos_ve_las_secciones_habilitadas(): void
     {
-        $usuario = $this->usuarioCon(['ver-flota', 'ver-camara', 'ver-analizador-eventos-cecoco', 'ver-dependencia']);
+        $usuario = $this->usuarioCon(['ver-flota', 'ver-camara', 'ver-analizador-eventos-cecoco', 'ver-dependencia', 'ver-chat']);
 
         $this->actingAs($usuario)->get(route('movil.index'))->assertOk();
         $this->actingAs($usuario)->get(route('movil.flota.index'))->assertOk()->assertViewIs('movil.flota.index');
@@ -45,6 +45,7 @@ class MovilTest extends TestCase
         $this->actingAs($usuario)->get(route('movil.mapa.index'))->assertOk()->assertViewIs('movil.mapa.index');
         $this->actingAs($usuario)->get(route('movil.eventos.index'))->assertOk()->assertViewIs('movil.eventos.index');
         $this->actingAs($usuario)->get(route('movil.dependencias.index'))->assertOk()->assertViewIs('movil.dependencias.index');
+        $this->actingAs($usuario)->get(route('movil.chat.index'))->assertOk()->assertViewIs('movil.chat.index');
     }
 
     public function test_un_usuario_sin_ver_dependencia_recibe_403_en_dependencias(): void
@@ -52,6 +53,13 @@ class MovilTest extends TestCase
         $usuario = $this->usuarioCon(['ver-flota']);
 
         $this->actingAs($usuario)->get(route('movil.dependencias.index'))->assertForbidden();
+    }
+
+    public function test_un_usuario_sin_ver_chat_recibe_403_en_chat(): void
+    {
+        $usuario = $this->usuarioCon(['ver-flota']);
+
+        $this->actingAs($usuario)->get(route('movil.chat.index'))->assertForbidden();
     }
 
     public function test_un_usuario_sin_ver_flota_recibe_403_en_flota(): void

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#06101f">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="vapid-public-key" content="{{ config('services.webpush.public_key') }}">
     <title>@yield('title', 'Inicio') · C.A.R. 911 Móvil</title>
 
     <script>
@@ -41,7 +42,7 @@
     @stack('styles')
 </head>
 
-<body class="m-body">
+<body class="m-body @hasSection('hideNav') m-body--no-nav @endif">
     <header class="m-topbar">
         @hasSection('back')
             <a href="@yield('back')" class="m-topbar__back"><i class="fas fa-arrow-left"></i></a>
@@ -69,37 +70,36 @@
         @yield('content')
     </main>
 
-    <nav class="m-bottomnav">
-        <a href="{{ route('movil.index') }}" class="{{ request()->routeIs('movil.index') ? 'is-active' : '' }}">
-            <i class="fas fa-home"></i><span>Inicio</span>
-        </a>
-        @can('ver-flota')
-            <a href="{{ route('movil.flota.index') }}" class="{{ request()->routeIs('movil.flota.*') ? 'is-active' : '' }}">
-                <i class="fas fa-satellite-dish"></i><span>Flota</span>
+    @unless ($__env->hasSection('hideNav'))
+        <nav class="m-bottomnav">
+            <a href="{{ route('movil.index') }}" class="{{ request()->routeIs('movil.index') ? 'is-active' : '' }}">
+                <i class="fas fa-home"></i><span>Inicio</span>
             </a>
-        @endcan
-        @can('ver-camara')
-            <a href="{{ route('movil.camaras.index') }}" class="{{ request()->routeIs('movil.camaras.*') ? 'is-active' : '' }}">
-                <i class="fas fa-video"></i><span>Cámaras</span>
-            </a>
-            <a href="{{ route('movil.mapa.index') }}" class="{{ request()->routeIs('movil.mapa.*') ? 'is-active' : '' }}">
-                <i class="fas fa-map-marked-alt"></i><span>Mapa</span>
-            </a>
-        @endcan
-        @can('ver-analizador-eventos-cecoco')
-            <a href="{{ route('movil.eventos.index') }}" class="{{ request()->routeIs('movil.eventos.*') ? 'is-active' : '' }}">
-                <i class="fas fa-list-alt"></i><span>Eventos</span>
-            </a>
-        @endcan
-        @can('ver-dependencia')
-            <a href="{{ route('movil.dependencias.index') }}" class="{{ request()->routeIs('movil.dependencias.*') ? 'is-active' : '' }}">
-                <i class="fas fa-building"></i><span>Dependencias</span>
-            </a>
-        @endcan
-    </nav>
-
-    @yield('scripts')
-    @stack('scripts')
+            @can('ver-flota')
+                <a href="{{ route('movil.flota.index') }}" class="{{ request()->routeIs('movil.flota.*') ? 'is-active' : '' }}">
+                    <i class="fas fa-satellite-dish"></i><span>Flota</span>
+                </a>
+            @endcan
+            @can('ver-camara')
+                <a href="{{ route('movil.camaras.index') }}" class="{{ request()->routeIs('movil.camaras.*') ? 'is-active' : '' }}">
+                    <i class="fas fa-video"></i><span>Cámaras</span>
+                </a>
+                <a href="{{ route('movil.mapa.index') }}" class="{{ request()->routeIs('movil.mapa.*') ? 'is-active' : '' }}">
+                    <i class="fas fa-map-marked-alt"></i><span>Mapa</span>
+                </a>
+            @endcan
+            @can('ver-analizador-eventos-cecoco')
+                <a href="{{ route('movil.eventos.index') }}" class="{{ request()->routeIs('movil.eventos.*') ? 'is-active' : '' }}">
+                    <i class="fas fa-list-alt"></i><span>Eventos</span>
+                </a>
+            @endcan
+            @can('ver-dependencia')
+                <a href="{{ route('movil.dependencias.index') }}" class="{{ request()->routeIs('movil.dependencias.*') ? 'is-active' : '' }}">
+                    <i class="fas fa-building"></i><span>Dependencias</span>
+                </a>
+            @endcan
+        </nav>
+    @endunless
 
     <script>
         if ('serviceWorker' in navigator) {
@@ -108,6 +108,89 @@
             });
         }
     </script>
+
+    <script>
+        // Helper compartido para activar/desactivar notificaciones push del
+        // chat. Definido ANTES de los scripts de cada página a propósito:
+        // las páginas de /movil/chat lo usan apenas cargan.
+        window.MovilPush = (function () {
+            function base64UrlToUint8Array(base64Url) {
+                var padding = '='.repeat((4 - base64Url.length % 4) % 4);
+                var base64 = (base64Url + padding).replace(/-/g, '+').replace(/_/g, '/');
+                var raw = atob(base64);
+                var salida = new Uint8Array(raw.length);
+                for (var i = 0; i < raw.length; ++i) {
+                    salida[i] = raw.charCodeAt(i);
+                }
+                return salida;
+            }
+
+            function csrfHeaders(extra) {
+                return Object.assign({
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-Requested-With': 'XMLHttpRequest',
+                }, extra || {});
+            }
+
+            function soportado() {
+                return 'serviceWorker' in navigator && 'PushManager' in window;
+            }
+
+            function suscripcionActual() {
+                if (!soportado()) return Promise.resolve(null);
+                return navigator.serviceWorker.ready.then(function (reg) {
+                    return reg.pushManager.getSubscription();
+                });
+            }
+
+            function activar() {
+                if (!soportado()) return Promise.reject(new Error('no soportado'));
+
+                return Notification.requestPermission().then(function (permiso) {
+                    if (permiso !== 'granted') {
+                        throw new Error('permiso denegado');
+                    }
+                    return navigator.serviceWorker.ready;
+                }).then(function (reg) {
+                    var vapidKey = document.querySelector('meta[name="vapid-public-key"]').content;
+                    return reg.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: base64UrlToUint8Array(vapidKey),
+                    });
+                }).then(function (suscripcion) {
+                    return fetch('{{ route('movil.push.store') }}', {
+                        method: 'POST',
+                        headers: csrfHeaders({ 'Content-Type': 'application/json', 'Accept': 'application/json' }),
+                        body: JSON.stringify(suscripcion.toJSON()),
+                    }).then(function () { return suscripcion; });
+                });
+            }
+
+            function desactivar() {
+                return suscripcionActual().then(function (suscripcion) {
+                    if (!suscripcion) return;
+                    var endpoint = suscripcion.endpoint;
+                    return suscripcion.unsubscribe().then(function () {
+                        return fetch('{{ route('movil.push.destroy') }}', {
+                            method: 'DELETE',
+                            headers: csrfHeaders({ 'Content-Type': 'application/json', 'Accept': 'application/json' }),
+                            body: JSON.stringify({ endpoint: endpoint }),
+                        });
+                    });
+                });
+            }
+
+            return {
+                soportado: soportado,
+                suscripcionActual: suscripcionActual,
+                activar: activar,
+                desactivar: desactivar,
+            };
+        })();
+    </script>
+
+    @yield('scripts')
+    @stack('scripts')
 
     <script>
         (function () {

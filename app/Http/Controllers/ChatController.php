@@ -38,8 +38,15 @@ class ChatController extends Controller
         $user = $request->user();
         $conversacionActivaId = $request->integer('conversacion') ?: null;
         $desde = $request->integer('desde') ?: 0;
+        $plataforma = $request->string('plataforma')->value();
+        $plataforma = in_array($plataforma, ['movil', 'escritorio'], true) ? $plataforma : 'escritorio';
 
+        // La clave general sirve para el indicador de "en línea" en la UI del
+        // chat; la de plataforma es la que usa EnviarPushMensajeChat para no
+        // duplicar con push solo en el dispositivo que está mirando el chat
+        // ahora mismo (ver WebPushService::enviarATodasLasSuscripciones).
         Cache::put("chat.online.{$user->id}", true, now()->addSeconds(90));
+        Cache::put("chat.online.{$user->id}.{$plataforma}", true, now()->addSeconds(90));
 
         $conversaciones = $user->chatConversaciones()
             ->with([

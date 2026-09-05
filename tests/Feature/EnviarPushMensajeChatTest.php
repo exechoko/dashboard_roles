@@ -21,12 +21,13 @@ class EnviarPushMensajeChatTest extends TestCase
     {
         [$emisor, $destinatario, $conversacion, $mensaje] = $this->crearConversacionConMensaje();
 
-        Cache::forget("chat.online.{$destinatario->id}");
+        Cache::forget("chat.online.{$destinatario->id}.movil");
+        Cache::forget("chat.online.{$destinatario->id}.escritorio");
 
         $this->mock(WebPushService::class, function (MockInterface $mock) use ($destinatario) {
             $mock->shouldReceive('enviarATodasLasSuscripciones')
                 ->once()
-                ->withArgs(fn (User $user, callable $payloadPara) => $user->id === $destinatario->id);
+                ->withArgs(fn (User $user, callable $payloadPara, array $plataformasEnLinea) => $user->id === $destinatario->id && $plataformasEnLinea === []);
         });
 
         app(EnviarPushMensajeChat::class)->handle(new ChatMensajeEnviado($mensaje, $conversacion));
@@ -36,14 +37,15 @@ class EnviarPushMensajeChatTest extends TestCase
     {
         [$emisor, $destinatario, $conversacion, $mensaje] = $this->crearConversacionConMensaje();
 
-        Cache::forget("chat.online.{$destinatario->id}");
+        Cache::forget("chat.online.{$destinatario->id}.movil");
+        Cache::forget("chat.online.{$destinatario->id}.escritorio");
 
         $payloadParaCapturado = null;
 
         $this->mock(WebPushService::class, function (MockInterface $mock) use (&$payloadParaCapturado) {
             $mock->shouldReceive('enviarATodasLasSuscripciones')
                 ->once()
-                ->withArgs(function (User $user, callable $payloadPara) use (&$payloadParaCapturado) {
+                ->withArgs(function (User $user, callable $payloadPara, array $plataformasEnLinea) use (&$payloadParaCapturado) {
                     $payloadParaCapturado = $payloadPara;
 
                     return true;
@@ -66,14 +68,17 @@ class EnviarPushMensajeChatTest extends TestCase
         $this->assertStringNotContainsString('/movil/chat', $payloadEscritorio['url']);
     }
 
-    public function test_no_envia_push_si_el_destinatario_esta_en_linea(): void
+    public function test_avisa_que_plataforma_esta_en_linea_para_no_duplicar_ahi(): void
     {
         [$emisor, $destinatario, $conversacion, $mensaje] = $this->crearConversacionConMensaje();
 
-        Cache::put("chat.online.{$destinatario->id}", true, now()->addSeconds(90));
+        Cache::forget("chat.online.{$destinatario->id}.movil");
+        Cache::put("chat.online.{$destinatario->id}.escritorio", true, now()->addSeconds(90));
 
-        $this->mock(WebPushService::class, function (MockInterface $mock) {
-            $mock->shouldNotReceive('enviarATodasLasSuscripciones');
+        $this->mock(WebPushService::class, function (MockInterface $mock) use ($destinatario) {
+            $mock->shouldReceive('enviarATodasLasSuscripciones')
+                ->once()
+                ->withArgs(fn (User $user, callable $payloadPara, array $plataformasEnLinea) => $user->id === $destinatario->id && $plataformasEnLinea === ['escritorio']);
         });
 
         app(EnviarPushMensajeChat::class)->handle(new ChatMensajeEnviado($mensaje, $conversacion));
@@ -83,11 +88,15 @@ class EnviarPushMensajeChatTest extends TestCase
     {
         [$emisor, $destinatario, $conversacion, $mensaje] = $this->crearConversacionConMensaje();
 
-        Cache::forget("chat.online.{$emisor->id}");
-        Cache::put("chat.online.{$destinatario->id}", true, now()->addSeconds(90));
+        Cache::forget("chat.online.{$emisor->id}.movil");
+        Cache::forget("chat.online.{$emisor->id}.escritorio");
+        Cache::forget("chat.online.{$destinatario->id}.movil");
+        Cache::forget("chat.online.{$destinatario->id}.escritorio");
 
-        $this->mock(WebPushService::class, function (MockInterface $mock) {
-            $mock->shouldNotReceive('enviarATodasLasSuscripciones');
+        $this->mock(WebPushService::class, function (MockInterface $mock) use ($destinatario) {
+            $mock->shouldReceive('enviarATodasLasSuscripciones')
+                ->once()
+                ->withArgs(fn (User $user) => $user->id === $destinatario->id);
         });
 
         app(EnviarPushMensajeChat::class)->handle(new ChatMensajeEnviado($mensaje, $conversacion));

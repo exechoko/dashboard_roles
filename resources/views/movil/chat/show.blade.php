@@ -71,7 +71,7 @@
                 });
 
             var pollTimer = setInterval(function () {
-                fetch('{{ route('chat.sync') }}?conversacion=' + conversacionId + '&desde=' + ultimoId, {
+                fetch('{{ route('chat.sync') }}?plataforma=movil&conversacion=' + conversacionId + '&desde=' + ultimoId, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 })
                     .then(function (r) { return r.json(); })

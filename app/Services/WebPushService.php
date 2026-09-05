@@ -32,8 +32,10 @@ class WebPushService
      * el navegador reporta vencidas o inválidas se borran de una.
      *
      * @param callable(PushSubscription): array{title: string, body: string, url: string} $payloadPara
+     * @param array<int, string> $plataformasEnLinea Plataformas ('movil'|'escritorio') donde el
+     *   usuario está mirando el chat ahora mismo: se les omite el push porque ya lo ven en vivo.
      */
-    public function enviarATodasLasSuscripciones(User $user, callable $payloadPara): void
+    public function enviarATodasLasSuscripciones(User $user, callable $payloadPara, array $plataformasEnLinea = []): void
     {
         $suscripciones = PushSubscription::where('user_id', $user->id)->get();
 
@@ -41,7 +43,15 @@ class WebPushService
             return;
         }
 
+        $porEnviar = 0;
+
         foreach ($suscripciones as $suscripcion) {
+            if (in_array($suscripcion->plataforma, $plataformasEnLinea, true)) {
+                continue;
+            }
+
+            $porEnviar++;
+
             $this->webPush->queueNotification(
                 Subscription::create([
                     'endpoint' => $suscripcion->endpoint,
@@ -51,6 +61,10 @@ class WebPushService
                 ]),
                 json_encode($payloadPara($suscripcion))
             );
+        }
+
+        if ($porEnviar === 0) {
+            return;
         }
 
         foreach ($this->webPush->flush() as $reporte) {

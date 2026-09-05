@@ -47,26 +47,23 @@ class EnviarPushMensajeChat implements ShouldQueue
             ->pluck('user_id');
 
         foreach ($destinatarios as $userId) {
-            // Si está activo en el chat ahora mismo (pisó /chat/sync hace
-            // menos de 90s), ya lo va a ver en vivo: no duplicar con push.
-            // OJO: esto es por usuario, no por dispositivo — si tiene /chat
-            // abierto en escritorio, tampoco le llega el push al celular.
-            if (Cache::has("chat.online.{$userId}")) {
-                Log::warning('EnviarPushMensajeChat: se omite, usuario marcado online', [
-                    'user_id' => $userId,
-                ]);
-
-                continue;
-            }
-
             $usuario = User::find($userId);
 
             if ($usuario === null) {
                 continue;
             }
 
+            // Si está activo en el chat ahora mismo en alguna plataforma (pisó
+            // /chat/sync hace menos de 90s ahí), ya lo va a ver en vivo: no
+            // duplicar con push, pero solo en esa plataforma — si tiene /chat
+            // abierto en escritorio igual le tiene que llegar al celular.
+            $plataformasEnLinea = collect(['movil', 'escritorio'])
+                ->filter(fn (string $plataforma): bool => Cache::has("chat.online.{$userId}.{$plataforma}"))
+                ->values()
+                ->all();
+
             try {
-                $this->webPush->enviarATodasLasSuscripciones($usuario, $payloadPara);
+                $this->webPush->enviarATodasLasSuscripciones($usuario, $payloadPara, $plataformasEnLinea);
             } catch (\Throwable $e) {
                 Log::error('EnviarPushMensajeChat: error al enviar', [
                     'user_id' => $userId,

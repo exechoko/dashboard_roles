@@ -70,7 +70,7 @@
             }
 
             function cargar() {
-                fetch('{{ route('chat.sync') }}', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                fetch('{{ route('chat.sync') }}?plataforma=movil', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                     .then(function (r) { return r.json(); })
                     .then(function (data) { render(data.conversaciones || []); })
                     .catch(function () {});

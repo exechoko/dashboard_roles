@@ -25,6 +25,7 @@
 
     <meta charset="UTF-8">
     <meta name="csrf-token" content="{{ csrf_token() }}" />
+    <meta name="vapid-public-key" content="{{ config('services.webpush.public_key') }}" />
     <link rel="shortcut icon" type="image/ico" href="{{ asset('/img/logo.ico') }}?v={{ filemtime(public_path('img/logo.ico')) }}">
     <link rel="shortcut icon" sizes="192x192" href="{{ asset('/img/logo.ico') }}?v={{ filemtime(public_path('img/logo.ico')) }}">
     <title>C.A.R. 911</title>
@@ -133,6 +134,14 @@
             <script src="https://cdn.jsdelivr.net/npm/pusher-js@8.4.0/dist/web/pusher.min.js" crossorigin="anonymous"></script>
             <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js" crossorigin="anonymous"></script>
             @include('chat.echo')
+            <script>
+                // Service worker propio para poder recibir push en el chat de
+                // escritorio (scope acotado a /chat, no afecta el resto del panel).
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('/sw.js', { scope: '/chat' }).catch(function () {});
+                }
+            </script>
+            @include('partials.web-push')
             @include('chat.notificaciones')
             @unless(request()->is('chat*'))
                 @include('chat.badge')

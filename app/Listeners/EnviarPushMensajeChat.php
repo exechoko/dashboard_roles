@@ -3,6 +3,7 @@
 namespace App\Listeners;
 
 use App\Events\ChatMensajeEnviado;
+use App\Models\PushSubscription;
 use App\Models\User;
 use App\Services\WebPushService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -26,10 +27,19 @@ class EnviarPushMensajeChat implements ShouldQueue
             ? Str::limit($mensaje->cuerpo, 120)
             : 'Envió un adjunto';
 
-        $payload = [
+        // La URL a abrir depende de la plataforma de cada suscripción: la
+        // ficha liviana de /movil/chat, o la vista de escritorio (que ya
+        // sabe abrir una conversación puntual vía ?conversacion=).
+        $urlPara = function (PushSubscription $suscripcion) use ($conversacion): string {
+            return $suscripcion->plataforma === 'escritorio'
+                ? url("/chat?conversacion={$conversacion->id}")
+                : url("/movil/chat/{$conversacion->id}");
+        };
+
+        $payloadPara = fn (PushSubscription $suscripcion) => [
             'title' => $titulo,
             'body' => $cuerpo,
-            'url' => url("/movil/chat/{$conversacion->id}"),
+            'url' => $urlPara($suscripcion),
         ];
 
         $destinatarios = $conversacion->participantes()
@@ -50,7 +60,7 @@ class EnviarPushMensajeChat implements ShouldQueue
             }
 
             try {
-                $this->webPush->enviarATodasLasSuscripciones($usuario, $payload);
+                $this->webPush->enviarATodasLasSuscripciones($usuario, $payloadPara);
             } catch (\Throwable $e) {
                 Log::error('EnviarPushMensajeChat: error al enviar', [
                     'user_id' => $userId,

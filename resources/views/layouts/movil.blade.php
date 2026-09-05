@@ -109,85 +109,9 @@
         }
     </script>
 
-    <script>
-        // Helper compartido para activar/desactivar notificaciones push del
-        // chat. Definido ANTES de los scripts de cada página a propósito:
-        // las páginas de /movil/chat lo usan apenas cargan.
-        window.MovilPush = (function () {
-            function base64UrlToUint8Array(base64Url) {
-                var padding = '='.repeat((4 - base64Url.length % 4) % 4);
-                var base64 = (base64Url + padding).replace(/-/g, '+').replace(/_/g, '/');
-                var raw = atob(base64);
-                var salida = new Uint8Array(raw.length);
-                for (var i = 0; i < raw.length; ++i) {
-                    salida[i] = raw.charCodeAt(i);
-                }
-                return salida;
-            }
-
-            function csrfHeaders(extra) {
-                return Object.assign({
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'X-Requested-With': 'XMLHttpRequest',
-                }, extra || {});
-            }
-
-            function soportado() {
-                return 'serviceWorker' in navigator && 'PushManager' in window;
-            }
-
-            function suscripcionActual() {
-                if (!soportado()) return Promise.resolve(null);
-                return navigator.serviceWorker.ready.then(function (reg) {
-                    return reg.pushManager.getSubscription();
-                });
-            }
-
-            function activar() {
-                if (!soportado()) return Promise.reject(new Error('no soportado'));
-
-                return Notification.requestPermission().then(function (permiso) {
-                    if (permiso !== 'granted') {
-                        throw new Error('permiso denegado');
-                    }
-                    return navigator.serviceWorker.ready;
-                }).then(function (reg) {
-                    var vapidKey = document.querySelector('meta[name="vapid-public-key"]').content;
-                    return reg.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: base64UrlToUint8Array(vapidKey),
-                    });
-                }).then(function (suscripcion) {
-                    return fetch('{{ route('movil.push.store') }}', {
-                        method: 'POST',
-                        headers: csrfHeaders({ 'Content-Type': 'application/json', 'Accept': 'application/json' }),
-                        body: JSON.stringify(suscripcion.toJSON()),
-                    }).then(function () { return suscripcion; });
-                });
-            }
-
-            function desactivar() {
-                return suscripcionActual().then(function (suscripcion) {
-                    if (!suscripcion) return;
-                    var endpoint = suscripcion.endpoint;
-                    return suscripcion.unsubscribe().then(function () {
-                        return fetch('{{ route('movil.push.destroy') }}', {
-                            method: 'DELETE',
-                            headers: csrfHeaders({ 'Content-Type': 'application/json', 'Accept': 'application/json' }),
-                            body: JSON.stringify({ endpoint: endpoint }),
-                        });
-                    });
-                });
-            }
-
-            return {
-                soportado: soportado,
-                suscripcionActual: suscripcionActual,
-                activar: activar,
-                desactivar: desactivar,
-            };
-        })();
-    </script>
+    {{-- window.WebPush: definido ANTES de los scripts de cada página a
+         propósito, las páginas de /movil/chat lo usan apenas cargan. --}}
+    @include('partials.web-push')
 
     @yield('scripts')
     @stack('scripts')

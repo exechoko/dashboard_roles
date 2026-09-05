@@ -57,7 +57,11 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    if (request.mode === 'navigate') {
+    // Este mismo sw.js también se registra con scope '/chat' en el escritorio
+    // (solo para poder recibir push ahí). El fallback offline con la pantalla
+    // de /movil/offline es específico del shell móvil: para otras rutas, que
+    // el navegador muestre su propia pantalla de "sin conexión".
+    if (request.mode === 'navigate' && url.pathname.startsWith('/movil')) {
         event.respondWith(
             fetch(request).catch(() => caches.match('/movil/offline'))
         );

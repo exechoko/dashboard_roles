@@ -23,15 +23,47 @@ class EnviarPushMensajeChatTest extends TestCase
 
         Cache::forget("chat.online.{$destinatario->id}");
 
-        $this->mock(WebPushService::class, function (MockInterface $mock) use ($destinatario, $mensaje, $conversacion) {
+        $this->mock(WebPushService::class, function (MockInterface $mock) use ($destinatario) {
             $mock->shouldReceive('enviarATodasLasSuscripciones')
                 ->once()
-                ->withArgs(fn (User $user, array $payload) => $user->id === $destinatario->id
-                    && $payload['title'] === trim($mensaje->usuario->name . ' ' . $mensaje->usuario->apellido)
-                    && str_contains($payload['url'], "/movil/chat/{$conversacion->id}"));
+                ->withArgs(fn (User $user, callable $payloadPara) => $user->id === $destinatario->id);
         });
 
         app(EnviarPushMensajeChat::class)->handle(new ChatMensajeEnviado($mensaje, $conversacion));
+    }
+
+    public function test_arma_la_url_segun_la_plataforma_de_cada_suscripcion(): void
+    {
+        [$emisor, $destinatario, $conversacion, $mensaje] = $this->crearConversacionConMensaje();
+
+        Cache::forget("chat.online.{$destinatario->id}");
+
+        $payloadParaCapturado = null;
+
+        $this->mock(WebPushService::class, function (MockInterface $mock) use (&$payloadParaCapturado) {
+            $mock->shouldReceive('enviarATodasLasSuscripciones')
+                ->once()
+                ->withArgs(function (User $user, callable $payloadPara) use (&$payloadParaCapturado) {
+                    $payloadParaCapturado = $payloadPara;
+
+                    return true;
+                });
+        });
+
+        app(EnviarPushMensajeChat::class)->handle(new ChatMensajeEnviado($mensaje, $conversacion));
+
+        $this->assertIsCallable($payloadParaCapturado);
+
+        $suscripcionMovil = new PushSubscription(['plataforma' => 'movil']);
+        $suscripcionEscritorio = new PushSubscription(['plataforma' => 'escritorio']);
+
+        $payloadMovil = $payloadParaCapturado($suscripcionMovil);
+        $payloadEscritorio = $payloadParaCapturado($suscripcionEscritorio);
+
+        $this->assertSame(trim($mensaje->usuario->name . ' ' . $mensaje->usuario->apellido), $payloadMovil['title']);
+        $this->assertStringContainsString("/movil/chat/{$conversacion->id}", $payloadMovil['url']);
+        $this->assertStringContainsString("/chat?conversacion={$conversacion->id}", $payloadEscritorio['url']);
+        $this->assertStringNotContainsString('/movil/chat', $payloadEscritorio['url']);
     }
 
     public function test_no_envia_push_si_el_destinatario_esta_en_linea(): void

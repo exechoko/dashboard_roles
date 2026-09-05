@@ -23,21 +23,22 @@ class WebPushService
     }
 
     /**
-     * Manda el mismo payload a todas las suscripciones activas del usuario
-     * (puede tener más de una: distintos celulares/navegadores). Las que el
-     * navegador reporta vencidas o inválidas se borran de una.
+     * Manda una notificación a todas las suscripciones activas del usuario
+     * (puede tener más de una: celular y escritorio, por ejemplo). El payload
+     * se arma por suscripción — vía $payloadPara(PushSubscription): array —
+     * porque la URL a abrir depende de la plataforma de cada una (la ficha
+     * liviana de /movil/chat o la vista de escritorio). Las suscripciones que
+     * el navegador reporta vencidas o inválidas se borran de una.
      *
-     * @param array{title: string, body: string, url: string} $payload
+     * @param callable(PushSubscription): array{title: string, body: string, url: string} $payloadPara
      */
-    public function enviarATodasLasSuscripciones(User $user, array $payload): void
+    public function enviarATodasLasSuscripciones(User $user, callable $payloadPara): void
     {
         $suscripciones = PushSubscription::where('user_id', $user->id)->get();
 
         if ($suscripciones->isEmpty()) {
             return;
         }
-
-        $cuerpo = json_encode($payload);
 
         foreach ($suscripciones as $suscripcion) {
             $this->webPush->queueNotification(
@@ -47,7 +48,7 @@ class WebPushService
                     'authToken' => $suscripcion->auth_token,
                     'contentEncoding' => $suscripcion->content_encoding ?: 'aes128gcm',
                 ]),
-                $cuerpo
+                json_encode($payloadPara($suscripcion))
             );
         }
 

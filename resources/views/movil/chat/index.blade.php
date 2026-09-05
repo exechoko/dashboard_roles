@@ -5,7 +5,7 @@
 @section('content')
     <div class="m-install-banner" id="mPushBanner" hidden>
         <i class="fas fa-bell"></i>
-        <span>Activá las notificaciones para enterarte de mensajes nuevos.</span>
+        <span id="mPushBannerText">Activá las notificaciones para enterarte de mensajes nuevos.</span>
         <button type="button" id="mPushBtn" class="m-btn" style="padding:.35rem .8rem; font-size:.82rem;">Activar</button>
         <button type="button" id="mPushDismiss" class="m-install-banner__close" aria-label="Cerrar">&times;</button>
     </div>
@@ -152,20 +152,39 @@
                 try { return localStorage.getItem(LS_KEY) === '1'; } catch (e) { return false; }
             }
 
-            if (window.MovilPush && window.MovilPush.soportado() && Notification.permission !== 'denied' && !fueDescartado()) {
-                window.MovilPush.suscripcionActual().then(function (suscripcion) {
+            if (window.WebPush && window.WebPush.soportado() && Notification.permission !== 'denied' && !fueDescartado()) {
+                window.WebPush.suscripcionActual().then(function (suscripcion) {
                     if (!suscripcion) {
                         banner.hidden = false;
                     }
                 });
             }
 
-            document.getElementById('mPushBtn').addEventListener('click', function () {
-                window.MovilPush.activar().then(function () {
+            var pushBtn = document.getElementById('mPushBtn');
+            var pushBannerText = document.getElementById('mPushBannerText');
+            var pushBannerTextOriginal = pushBannerText.textContent;
+
+            pushBtn.addEventListener('click', function () {
+                pushBtn.disabled = true;
+
+                window.WebPush.activar('movil').then(function () {
                     banner.hidden = true;
                 }).catch(function () {
-                    banner.hidden = true;
-                    try { localStorage.setItem(LS_KEY, '1'); } catch (e) {}
+                    pushBtn.disabled = false;
+
+                    if (Notification.permission === 'denied') {
+                        // El usuario eligió no permitirlo: no insistir.
+                        try { localStorage.setItem(LS_KEY, '1'); } catch (e) {}
+                        banner.hidden = true;
+                        return;
+                    }
+
+                    // Error real (red, servidor, etc.): mostrar y dejar
+                    // reintentar, sin marcarlo como descartado.
+                    pushBannerText.textContent = 'No se pudo activar. Volvé a intentar en un momento.';
+                    setTimeout(function () {
+                        pushBannerText.textContent = pushBannerTextOriginal;
+                    }, 5000);
                 });
             });
 

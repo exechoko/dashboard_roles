@@ -15,12 +15,14 @@ class PushSubscriptionController extends Controller
             'endpoint' => ['required', 'string'],
             'keys.p256dh' => ['required', 'string'],
             'keys.auth' => ['required', 'string'],
+            'plataforma' => ['nullable', 'string', 'in:movil,escritorio'],
         ]);
 
         PushSubscription::updateOrCreate(
             ['endpoint_hash' => hash('sha256', $data['endpoint'])],
             [
                 'user_id' => $request->user()->id,
+                'plataforma' => $data['plataforma'] ?? 'movil',
                 'endpoint' => $data['endpoint'],
                 'public_key' => $data['keys']['p256dh'],
                 'auth_token' => $data['keys']['auth'],

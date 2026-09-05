@@ -121,8 +121,9 @@
     <p class="text-muted mb-3" style="font-size:.9rem">
         Minutos entre que un recurso pasa a "En desplazamiento" y llega a "En atención", según el timeline de los
         expedientes de CECOCO ya consultados. Se toma el recurso móvil más rápido de cada evento (se descartan bases,
-        despachos, cámaras y otros puestos fijos); solo se incluyen eventos cuyo expediente ya fue abierto al menos
-        una vez.
+        despachos, cámaras y otros puestos fijos). No todos los eventos consultados quedan cubiertos: muchos no
+        tienen ese par de marcas para ningún recurso móvil (por ejemplo, si solo intervino un recurso fijo o nunca se
+        despachó un móvil), y se excluyen del cálculo aunque su expediente ya fue procesado.
     </p>
 
     {{-- Filtros --}}
@@ -509,7 +510,7 @@
                         ultimosDatos = datos;
 
                         document.getElementById('texto-cobertura').textContent =
-                            `${fmt(datos.cobertura)} de ${fmt(datos.total_eventos_periodo)} eventos del período tienen expediente consultado con datos de recurso (${datos.cobertura_pct}% de cobertura). El resto no fue analizado porque nadie abrió su expediente todavía.`;
+                            `${fmt(datos.cobertura)} de ${fmt(datos.total_eventos_periodo)} eventos del período tienen un tiempo de respuesta calculable (${datos.cobertura_pct}% de cobertura). El resto tiene su expediente consultado pero su timeline no registra un recurso móvil pasando por "En desplazamiento" y "En atención" (solo intervino un recurso fijo, no se despachó un móvil, etc.).`;
 
                         document.getElementById('loading-tiempos').style.display = 'none';
                         document.getElementById('contenido-tiempos').style.display = 'block';

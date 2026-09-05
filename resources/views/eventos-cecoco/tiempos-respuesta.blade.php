@@ -120,7 +120,9 @@
     <h4 class="mb-1"><i class="bi bi-stopwatch-fill me-2 text-primary"></i>Tiempos de respuesta</h4>
     <p class="text-muted mb-3" style="font-size:.9rem">
         Minutos entre que un recurso pasa a "En desplazamiento" y llega a "En atención", según el timeline de los
-        expedientes de CECOCO ya consultados.
+        expedientes de CECOCO ya consultados. Se toma el recurso móvil más rápido de cada evento (se descartan bases,
+        despachos, cámaras y otros puestos fijos); solo se incluyen eventos cuyo expediente ya fue abierto al menos
+        una vez.
     </p>
 
     {{-- Filtros --}}

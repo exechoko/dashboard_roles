@@ -1,0 +1,288 @@
+COMANDOS ARTISAN DEL SISTEMA
+=============================
+Referencia de todos los comandos artisan propios de la app (app/Console/Commands),
+para ejecutar manualmente por consola cuando haga falta (reprocesar algo, forzar
+una corrida fuera de horario, debug, etc).
+
+Uso general: php artisan <comando> [opciones]
+Ver ayuda de cualquiera:  php artisan <comando> --help
+Ver todo el cronograma:   php artisan schedule:list
+
+
+CECOCO - EVENTOS Y EXPEDIENTES
+-------------------------------
+
+cecoco:importar-dia-anterior
+    Descarga el XLS del día anterior desde CECOCO e importa los eventos.
+    Opciones: --fecha=Y-m-d (default: ayer) | --dry-run (descarga pero no importa)
+    Automático: todos los días a las 06:00.
+
+cecoco:prefetch-detalles
+    Trae y guarda el timeline/detalle completo (acciones, recursos, cierre) de
+    los eventos de un día o rango de fechas. Solo toma eventos ya CERRADOS y,
+    por defecto, salta los que ya tienen detalle guardado.
+    Opciones:
+        --fecha=Y-m-d       día único (default: ayer; se ignora si se usa --desde)
+        --desde=Y-m-d       inicio de rango
+        --hasta=Y-m-d       fin de rango (default: igual a --desde)
+        --pausa=200         ms de pausa entre expedientes
+        --limite=N          máximo de expedientes a procesar (debug)
+        --refrescar         reconsulta aunque ya tenga detalle cacheado
+    Ejemplo rango:   php artisan cecoco:prefetch-detalles --desde=2026-08-01 --hasta=2026-08-10
+    Automático: todos los días a las 06:45 (día anterior).
+
+cecoco:resumir-pendientes
+    Genera con IA los resúmenes de eventos CECOCO encolados desde la pantalla
+    (estado "pendiente"). Requiere IA habilitada (config ia.enabled).
+    Opciones: --limite=5 (resúmenes por corrida)
+    Automático: cada minuto (procesa la cola de a poco).
+
+cecoco:geocodificar-dia-anterior
+    Geocodifica en lotes (Nominatim/Google) las direcciones del día anterior
+    para el mapa de calor.
+    Opciones: --fecha=Y-m-d (default: ayer) | --lote=50 | --delay=20 (seg entre
+    lotes encolados) | --pausa= (ms entre llamadas) | --sincrono (no encola jobs)
+    Automático: todos los días a las 06:30.
+
+cecoco:geocodificar-historico
+    Igual que el anterior pero sobre TODO el backlog histórico nunca intentado.
+    Opciones: --lote=50 | --delay=20 | --pausa= | --limit=0 (0 = todas) |
+    --sincrono | --dry-run (solo estadísticas)
+    Manual únicamente (no está en el schedule) — usar con cuidado, puede ser pesado.
+
+cecoco:reintentar-geocodificacion-fallida
+    Reintenta con Nominatim las direcciones cacheadas sin coordenadas (backlog
+    viejo de cuando Google era el único motor).
+    Opciones: --limite=2000 (0 = sin tope) | --pausa= | --fuente=google
+    Automático: todos los días a las 02:00 (con --limite=10000 --pausa=50).
+
+cecoco:validar-config
+    Valida la configuración de integración PHP nativa con CECOCO (sin Python).
+    Sin opciones. Manual, para diagnóstico.
+
+cecoco:tamano-restauraciones
+    Consulta CECOCO Históricos > Gestión > Restauraciones y cachea el tamaño
+    de la BD. Útil para diagnosticar producción.
+    Opciones: --show-cache (solo muestra el valor cacheado, no consulta)
+    Automático: cada hora (vía Job, no por este comando directo).
+
+cecoco:limpiar-temporales
+    Limpia archivos temporales de importaciones antiguos.
+    Opciones: --horas=24 (más antiguos que X horas)
+    Manual (no está en el schedule).
+
+
+CECOCO - LLAMADAS CENTRAL TELEFÓNICA
+--------------------------------------
+
+cecoco:sincronizar-llamadas-central-telefonica
+    Trae los CDR directo del panel SSW de la central (sin CSV manual) y los
+    importa.
+    Opciones: --fecha=Y-m-d (default: ayer) | --desde=Y-m-d H:i:s (prioridad
+    sobre --fecha) | --hasta=Y-m-d H:i:s (default: ahora si se usa --desde)
+    Automático: todos los días a las 06:15.
+
+cecoco:importar-llamadas-central-telefonica
+    Importa/actualiza CDR desde CSV exportados manualmente a una carpeta.
+    Opciones: --dir=docs/varios/CSVs_central_telefonica
+    Manual (flujo alternativo al de sincronización automática por panel).
+
+central-telefonica:monitorear-troncales
+    Consulta el estado de los troncales SIP (panel SSW) y avisa por Telegram
+    si alguno cae o se recupera.
+    Opciones: --sin-telegram (solo consola, no envía alertas)
+    Automático: cada 5 minutos.
+
+
+TÓTEM (CÁMARAS CORPORALES / BDE)
+----------------------------------
+
+totem:detectar-activaciones
+    Detecta activaciones de tótem BDE en los eventos CECOCO recientes.
+    Opciones: --dias=7 (ventana hacia atrás a escanear)
+    Automático: todos los días a las 07:00.
+
+totem:avisar-pendientes
+    Avisa por Telegram si hay activaciones pendientes de descarga o vencidas
+    por el plazo legal de 6 meses.
+    Sin opciones. Automático: todos los días a las 07:10.
+
+totem:procesar-videos-pendientes
+    Hashea y copia a la carpeta de red los videos subidos y encolados desde
+    la pantalla.
+    Opciones: --limite=5 (videos por corrida)
+    Automático: cada minuto.
+
+
+TAREAS Y AVISOS
+-----------------
+
+tareas:generar
+    Genera instancias (tarea_items) para tareas activas y recurrentes.
+    Opciones: --days=60 (días hacia adelante)
+    Automático: todos los días a las 01:00.
+
+tareas:avisar
+    Envía por mail las tareas programadas para el día (pendiente/en_proceso).
+    Opciones: --fecha=Y-m-d (default: hoy) | --emails=a@x.com,b@x.com (override)
+    Automático: todos los días a las 08:00.
+
+telegram:tareas-diarias
+    Envía por Telegram las tareas de hoy y mañana.
+    Sin opciones. Automático: todos los días a las 07:00.
+
+telegram:polling
+    Consulta mensajes nuevos del bot de Telegram y responde automáticamente.
+    Sin opciones. Automático: cada minuto (corre ~55s y se relanza).
+
+chat:avisar-no-leidos
+    Avisa por mail a usuarios con mensajes de chat sin leer hace más de N min.
+    Opciones: --minutos=30
+    Automático: cada 5 minutos.
+
+
+IA / TRANSCRIPCIÓN / RAG
+--------------------------
+
+transcribir:pendientes
+    Procesa todas las transcripciones de audio pendientes.
+    Sin opciones. Automático: cada minuto.
+
+transcribir:proceso {job_id}
+    Procesa UNA transcripción puntual en background (uso interno, requiere
+    argumento job_id). No se llama a mano normalmente.
+
+transcribe {audio_path}
+    Transcribe un audio puntual a texto con Whisper (requiere ruta del archivo).
+    Manual, para pruebas/debug directo por consola.
+
+callanalysis:pendientes
+    Procesa los análisis de llamadas 911 pendientes (IA).
+    Sin opciones. Automático: cada minuto.
+
+rag:procesar-pendientes
+    Procesa las cargas de documentos RAG pendientes (con resumen Ollama).
+    Sin opciones. Automático: cada minuto.
+
+rag:consultar-pendientes
+    Procesa las consultas RAG pendientes (sin límite de Cloudflare).
+    Sin opciones. Automático: cada minuto.
+
+
+MONITOREO (LibreNMS / infraestructura / SNMP)
+------------------------------------------------
+
+librenms:monitorear-cpu
+    Consulta uso de CPU de las PCs de operadores de video (grupo CCTV) y
+    avisa por Telegram si supera el umbral.
+    Opciones: --umbral=N (%, default: el de config) | --sin-telegram
+    Automático: cada 5 minutos.
+
+librenms:monitorear-camaras
+    Consulta estado de las +300 cámaras 911 (grupo Camaras) y cachea total y
+    caídas para el dashboard y el bot.
+    Sin opciones. Automático: cada 5 minutos.
+
+infraestructura:monitorear
+    Releva por ping+SNMP PCs, servidores, cámaras internas y equipos de red
+    del edificio; avisa por Telegram si algo cae o supera umbrales de
+    CPU/RAM/disco.
+    Opciones: --tipo=pc|servidor|router|switch|camara_interna (solo un tipo) |
+    --sin-telegram
+    Automático: cada 5 minutos.
+
+
+CORREOS (VISOR MBOX)
+-----------------------
+
+mbox:detectar-nuevos
+    Recorre las carpetas de buzones activos, registra .mbox nuevos o
+    modificados y encola su indexación. No hace nada si MBOX_AUTO_INDEXAR
+    está apagado (config/mbox.php).
+    Sin opciones. Automático: todos los días a las 03:00.
+
+mbox:indexar {archivo_id}
+    Indexa en primer plano un .mbox puntual (requiere el ID de mail_archivos).
+    Útil en dev o para reanudar/forzar a mano.
+    Opciones: --reiniciar (ignora progreso guardado, indexa desde el principio)
+
+
+GEOCODIFICACIÓN / CALLES
+----------------------------
+
+calles:import-georef
+    Importa el callejero de Entre Ríos desde la API Georef (CSV completo,
+    sin rate limit).
+    Opciones: --provincia="Entre Ríos" | --dry-run (no persiste, solo cuenta)
+    Manual (carga inicial / actualización puntual del callejero).
+
+
+DESCARGAS (PLATAFORMA DE ARCHIVOS)
+--------------------------------------
+
+descargas:limpiar-zips
+    Elimina los ZIP temporales que expiraron.
+    Sin opciones. Automático: cada hora.
+
+descargas:limpiar-chunks-huerfanos
+    Elimina carpetas de chunks temporales de subidas por partes abandonadas.
+    Sin opciones. Automático: cada hora.
+
+descargas:desactivar-expirados
+    Desactiva los archivos de descarga que ya expiraron.
+    Sin opciones. Manual (no está en el schedule actualmente).
+
+
+ARMAS / PERSONAL / EQUIPOS
+------------------------------
+
+armas:importar-personal911
+    Importa personal, estados, funciones, observaciones, armas, chalecos y
+    licencias desde la base personal911.
+    Sin opciones. Automático: todos los días a las 05:30.
+
+equipos:relevar-accesorios-inicial
+    Carga el relevamiento inicial de accesorios faltantes (MDT400 sin antena
+    RF, flota HTT500 sin antenas disponibles). Es un script de carga puntual,
+    ya ejecutado una vez — no correrlo de nuevo sin revisar el código primero.
+    Opciones: --dry-run (muestra qué marcaría, sin escribir)
+
+
+VARIOS / SISTEMA
+--------------------
+
+efemerides:actualizar
+    Consulta Wikipedia y refresca el caché diario de efemérides (Argentina /
+    Entre Ríos).
+    Sin opciones. Automático: todos los días a las 00:30.
+
+configuracion:backup-bd
+    Genera un backup de la BD principal en storage/app/backups/db.
+    Opciones: --nota="texto" (para identificar el backup)
+    Manual: está DESACTIVADO en el schedule (comentado en Kernel.php). Si se
+    quiere automatizar, hay que descomentarlo.
+
+
+WEB PÚBLICA (regeneración de JS estáticos desde la BD)
+----------------------------------------------------------
+Todos manuales (se disparan desde el Panel Admin Web al guardar cambios; no
+están en el schedule). Sin opciones, ninguno recibe argumentos:
+
+web:generar-config-datos     -> config-datos.js (contadores/config general)
+web:generar-textos           -> config-textos.js
+web:generar-dependencias     -> js/dependencias-data.js
+web:generar-galeria          -> js/galeria-data.js
+web:generar-historia         -> js/historia-data.js
+web:generar-tecnologia       -> js/tecnologia-data.js
+web:generar-noticias         -> noticias.json
+
+
+NOTAS
+------
+- "Automático" = ya está en app/Console/Kernel.php y corre solo con el
+  scheduler del servidor (cron -> schedule:run). Ejecutarlo a mano no rompe
+  nada, es solo forzar una corrida extra o fuera de horario.
+- Los comandos con --dry-run o --show-cache son seguros para probar sin
+  escribir datos.
+- Varios comandos de CECOCO dependen de que la sesión/login contra CECOCO
+  esté funcionando (ver cecoco:validar-config si algo falla raro).

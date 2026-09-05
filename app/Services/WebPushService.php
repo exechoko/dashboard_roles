@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\PushSubscription;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 use Minishlink\WebPush\Subscription;
 use Minishlink\WebPush\WebPush;
 
@@ -59,7 +60,16 @@ class WebPushService
 
             if ($reporte->isSubscriptionExpired()) {
                 PushSubscription::where('endpoint', $reporte->getEndpoint())->delete();
+
+                continue;
             }
+
+            Log::warning('WebPushService: envío rechazado por el push service', [
+                'endpoint' => $reporte->getEndpoint(),
+                'reason' => $reporte->getReason(),
+                'status' => $reporte->getResponse()?->getStatusCode(),
+                'response' => $reporte->getResponseContent(),
+            ]);
         }
     }
 }

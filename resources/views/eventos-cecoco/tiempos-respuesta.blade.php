@@ -509,8 +509,11 @@
                     .then(datos => {
                         ultimosDatos = datos;
 
+                        const textoFaltantes = datos.cobertura < datos.total_eventos_periodo
+                            ? ' El resto tiene su expediente consultado pero su timeline no registra un recurso móvil pasando por "En desplazamiento" y "En atención" (solo intervino un recurso fijo, no se despachó un móvil, etc.).'
+                            : '';
                         document.getElementById('texto-cobertura').textContent =
-                            `${fmt(datos.cobertura)} de ${fmt(datos.total_eventos_periodo)} eventos del período tienen un tiempo de respuesta calculable (${datos.cobertura_pct}% de cobertura). El resto tiene su expediente consultado pero su timeline no registra un recurso móvil pasando por "En desplazamiento" y "En atención" (solo intervino un recurso fijo, no se despachó un móvil, etc.).`;
+                            `${fmt(datos.cobertura)} de ${fmt(datos.total_eventos_periodo)} eventos del período tienen un tiempo de respuesta calculable (${datos.cobertura_pct}% de cobertura).${textoFaltantes}`;
 
                         document.getElementById('loading-tiempos').style.display = 'none';
                         document.getElementById('contenido-tiempos').style.display = 'block';

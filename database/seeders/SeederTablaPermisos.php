@@ -124,6 +124,7 @@ class SeederTablaPermisos extends Seeder
             'ver-mapa-cecoco-en-vivo',
             'ver-analizador-eventos-cecoco',
             'ver-analitica-eventos-cecoco',
+            'ver-tiempos-respuesta-cecoco',
             'ver-mapa-gis-cecoco',
             'ver-mapa-gis-historico-cecoco',
             'importar-eventos',

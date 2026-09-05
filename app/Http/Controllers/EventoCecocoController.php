@@ -12,6 +12,7 @@ use App\Services\CecocoGrabacionesLocalService;
 use App\Services\GrabadorTetraService;
 use App\Services\CecocoModulacionesLocalService;
 use App\Services\ResumenEventoIaService;
+use App\Services\TiempoRespuestaCecocoService;
 use App\Jobs\DescargarEventosCecoco;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -28,7 +29,8 @@ class EventoCecocoController extends Controller
     public function __construct(
         EventoCecocoParser $parser,
         CecocoExpedienteService $expedienteService,
-        private ResumenEventoIaService $resumenIaService
+        private ResumenEventoIaService $resumenIaService,
+        private TiempoRespuestaCecocoService $tiempoRespuestaService
     ) {
         $this->parser = $parser;
         $this->expedienteService = $expedienteService;
@@ -1499,6 +1501,157 @@ class EventoCecocoController extends Controller
             'eventos' => $eventos,
             'eventos_limit' => 100,
         ]);
+    }
+
+    public function tiemposRespuesta(Request $request)
+    {
+        $this->authorize('ver-tiempos-respuesta-cecoco');
+
+        $tipos = Cache::rememberForever('cecoco_tipos', function () {
+            return EventoCecoco::distinct()->orderBy('tipo_servicio')->pluck('tipo_servicio');
+        });
+
+        $tipos = $tipos->filter()->map(fn($t) => self::normalizarTipo($t))->unique()->sort()->values();
+
+        return view('eventos-cecoco.tiempos-respuesta', compact('tipos'));
+    }
+
+    public function tiemposRespuestaDatos(AnaliticaEventoCecocoRequest $request): JsonResponse
+    {
+        $this->authorize('ver-tiempos-respuesta-cecoco');
+
+        $validated = $request->validated();
+
+        $desde = $request->filled('desde')
+            ? $validated['desde'] . ' 00:00:00'
+            : now()->subDays(6)->startOfDay()->format('Y-m-d H:i:s');
+
+        $hasta = $request->filled('hasta')
+            ? $validated['hasta'] . ' 23:59:59'
+            : now()->endOfDay()->format('Y-m-d H:i:s');
+
+        $tiposFiltro = collect($validated['tipos'] ?? [])
+            ->filter(fn($tipo) => is_string($tipo) && trim($tipo) !== '')
+            ->map(fn($tipo) => trim($tipo))
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($tiposFiltro === [] && !empty($validated['tipo'])) {
+            $tiposFiltro = [$validated['tipo']];
+        }
+
+        $base = EventoCecoco::whereBetween('fecha_hora', [$desde, $hasta]);
+
+        if ($tiposFiltro !== []) {
+            $this->aplicarFiltroTipos($base, $tiposFiltro);
+        }
+
+        $totalEventosPeriodo = (clone $base)->count();
+
+        $filas = $this->tiempoRespuestaService->calcular(clone $base);
+
+        if ($filas->isEmpty()) {
+            return response()->json([
+                'desde' => $desde,
+                'hasta' => $hasta,
+                'total_eventos_periodo' => $totalEventosPeriodo,
+                'cobertura' => 0,
+                'cobertura_pct' => 0,
+                'promedio_minutos' => null,
+                'mediana_minutos' => null,
+                'minimo_minutos' => null,
+                'maximo_minutos' => null,
+                'por_fecha' => [],
+                'por_hora' => array_fill(0, 24, null),
+                'distribucion' => [],
+                'top_tipos' => [],
+                'eventos_lentos' => [],
+            ]);
+        }
+
+        $minutos = $filas->pluck('minutos');
+        $cobertura = $filas->count();
+
+        $porFecha = $filas->groupBy(fn($fila) => $fila['fecha_hora']->format('Y-m-d'))
+            ->map(fn($grupo) => round($grupo->pluck('minutos')->avg(), 1))
+            ->sortKeys();
+
+        $porHoraRaw = $filas->groupBy(fn($fila) => (int) $fila['fecha_hora']->format('G'))
+            ->map(fn($grupo) => round($grupo->pluck('minutos')->avg(), 1));
+        $porHora = [];
+        for ($h = 0; $h < 24; $h++) {
+            $porHora[$h] = $porHoraRaw->get($h);
+        }
+
+        $bandas = [
+            '0-5 min' => fn($m) => $m <= 5,
+            '5-10 min' => fn($m) => $m > 5 && $m <= 10,
+            '10-15 min' => fn($m) => $m > 10 && $m <= 15,
+            '15-30 min' => fn($m) => $m > 15 && $m <= 30,
+            '30-60 min' => fn($m) => $m > 30 && $m <= 60,
+            'Más de 60 min' => fn($m) => $m > 60,
+        ];
+        $distribucion = [];
+        foreach ($bandas as $etiqueta => $condicion) {
+            $distribucion[] = ['banda' => $etiqueta, 'total' => $minutos->filter($condicion)->count()];
+        }
+
+        $topTipos = $filas->groupBy('tipo_servicio')
+            ->map(fn($grupo, $tipo) => [
+                'tipo' => $tipo,
+                'promedio' => round($grupo->pluck('minutos')->avg(), 1),
+                'cantidad' => $grupo->count(),
+            ])
+            ->filter(fn($item) => $item['cantidad'] >= 3)
+            ->sortByDesc('promedio')
+            ->values()
+            ->take(10);
+
+        $eventosLentos = $filas->sortByDesc('minutos')
+            ->take(15)
+            ->map(fn($fila) => [
+                'id' => $fila['evento_id'],
+                'nro_expediente' => $fila['nro_expediente'],
+                'fecha_hora' => $fila['fecha_hora']->format('d/m/Y H:i'),
+                'tipo_servicio' => $fila['tipo_servicio'],
+                'recurso' => $fila['recurso'],
+                'minutos' => $fila['minutos'],
+            ])
+            ->values();
+
+        return response()->json([
+            'desde' => $desde,
+            'hasta' => $hasta,
+            'total_eventos_periodo' => $totalEventosPeriodo,
+            'cobertura' => $cobertura,
+            'cobertura_pct' => $totalEventosPeriodo > 0 ? round($cobertura / $totalEventosPeriodo * 100, 1) : 0,
+            'promedio_minutos' => round($minutos->avg(), 1),
+            'mediana_minutos' => $this->mediana($minutos->values()->all()),
+            'minimo_minutos' => round($minutos->min(), 1),
+            'maximo_minutos' => round($minutos->max(), 1),
+            'por_fecha' => $porFecha,
+            'por_hora' => $porHora,
+            'distribucion' => $distribucion,
+            'top_tipos' => $topTipos,
+            'eventos_lentos' => $eventosLentos,
+        ]);
+    }
+
+    /**
+     * @param array<int, float> $valores
+     */
+    private function mediana(array $valores): float
+    {
+        sort($valores);
+        $cantidad = count($valores);
+        $medio = intdiv($cantidad, 2);
+
+        if ($cantidad % 2 === 0) {
+            return round(($valores[$medio - 1] + $valores[$medio]) / 2, 1);
+        }
+
+        return round($valores[$medio], 1);
     }
 
     /**

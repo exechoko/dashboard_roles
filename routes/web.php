@@ -670,6 +670,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/mapa-calor/geocodificar-manual', [App\Http\Controllers\EventoCecocoController::class, 'geocodificarManual'])->name('mapa-calor.geocodificar-manual');
         Route::post('/mapa-calor/geocodificar-coordenadas', [App\Http\Controllers\EventoCecocoController::class, 'geocodificarCoordenadas'])->name('mapa-calor.geocodificar-coordenadas');
         Route::get('/analitica', [App\Http\Controllers\EventoCecocoController::class, 'analitica'])->name('analitica');
+        Route::get('/tiempos-respuesta', [App\Http\Controllers\EventoCecocoController::class, 'tiemposRespuesta'])->name('tiempos-respuesta');
         Route::get('/llamadas-central-telefonica', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'index'])->name('llamadas-central-telefonica');
         Route::get('/llamadas-central-telefonica/datos', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'datos'])->name('llamadas-central-telefonica.datos');
         Route::get('/llamadas-central-telefonica/exportar-docx', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'exportarDocx'])->name('llamadas-central-telefonica.exportar-docx');
@@ -698,6 +699,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/modulacion/stream', [App\Http\Controllers\EventoCecocoController::class, 'streamModulacion'])->name('modulacion.stream');
         Route::get('/eventos/{eventoCecoco}/resumen-ia', [App\Http\Controllers\EventoCecocoController::class, 'resumenIa'])->name('resumen-ia');
         Route::get('/analitica/datos', [App\Http\Controllers\EventoCecocoController::class, 'analiticaDatos'])->name('analitica.datos');
+        Route::get('/tiempos-respuesta/datos', [App\Http\Controllers\EventoCecocoController::class, 'tiemposRespuestaDatos'])->name('tiempos-respuesta.datos');
     });
 
     Route::get('/api/dashboard/cecoco-mapa', [App\Http\Controllers\HomeController::class, 'cecocoMapaDatos'])

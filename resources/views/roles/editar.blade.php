@@ -118,6 +118,7 @@
                                                         'mapa-cecoco-en-vivo',
                                                         'ver-analizador-eventos-cecoco',
                                                         'ver-analitica-eventos-cecoco',
+                                                        'ver-tiempos-respuesta-cecoco',
                                                         'mapa-gis-cecoco',
                                                         'mapa-gis-historico-cecoco',
                                                         'importar-eventos',

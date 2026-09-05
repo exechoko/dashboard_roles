@@ -319,6 +319,13 @@
                     </a>
                 </li>
             @endcan
+            @can('ver-tiempos-respuesta-cecoco')
+                <li class="{{ request()->routeIs('cecoco.tiempos-respuesta') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('cecoco.tiempos-respuesta') }}">
+                        <i class="fas fa-stopwatch"></i><span>Tiempos de Respuesta</span>
+                    </a>
+                </li>
+            @endcan
             @can('ver-analizador-eventos-cecoco')
                 <li class="{{ request()->routeIs('cecoco.index') || request()->routeIs('cecoco.show') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('cecoco.index') }}">

@@ -49,7 +49,13 @@ class EnviarPushMensajeChat implements ShouldQueue
         foreach ($destinatarios as $userId) {
             // Si está activo en el chat ahora mismo (pisó /chat/sync hace
             // menos de 90s), ya lo va a ver en vivo: no duplicar con push.
+            // OJO: esto es por usuario, no por dispositivo — si tiene /chat
+            // abierto en escritorio, tampoco le llega el push al celular.
             if (Cache::has("chat.online.{$userId}")) {
+                Log::warning('EnviarPushMensajeChat: se omite, usuario marcado online', [
+                    'user_id' => $userId,
+                ]);
+
                 continue;
             }
 

@@ -3,8 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Destino;
-use App\Models\Recurso;
-use App\Models\VehiculoPrestamo;
+use App\Models\RecursoPrestamo;
 use Illuminate\Http\Request;
 
 class FlotaDashboard911Controller extends Controller
@@ -21,33 +20,31 @@ class FlotaDashboard911Controller extends Controller
         $division = Destino::findOrFail(self::DIVISION_911_ID);
         $todosLosDestinoIds = $division->getDestinosHijosRecursivo();
 
-        // Vehículos agrupados por sección
         $secciones = Destino::whereIn('id', $todosLosDestinoIds)
             ->with([
                 'recursos' => function ($q) {
-                    $q->whereNotNull('vehiculo_id')
-                      ->with([
-                          'vehiculo',
-                          'vehiculo.estadoSeccion',
-                          'vehiculo.novedadesPendientes',
-                          'vehiculo.prestamoActivo.destinoDestino',
-                          'vehiculo.estadoDiarioHoy',
-                      ]);
+                    $q->with([
+                        'vehiculo',
+                        'asignacionActual.vehiculo',
+                        'estadoSeccion',
+                        'novedadesPendientes',
+                        'prestamoActivo.destinoDestino',
+                        'estadoDiarioHoy',
+                    ]);
                 },
             ])
             ->get()
             ->filter(fn($d) => $d->recursos->isNotEmpty());
 
-        $prestamosActivos = VehiculoPrestamo::activos()
+        $prestamosActivos = RecursoPrestamo::activos()
             ->whereIn('destino_origen_id', $todosLosDestinoIds)
-            ->with(['vehiculo', 'destinoDestino'])
+            ->with(['recurso', 'vehiculoSnapshot', 'destinoDestino'])
             ->orderByDesc('fecha_salida')
             ->get();
 
-        // Contadores globales
-        $totalVehiculos = $secciones->sum(fn($s) => $s->recursos->count());
+        $totalRecursos = $secciones->sum(fn($s) => $s->recursos->count());
         $totalNovedadesPendientes = $secciones->sum(
-            fn($s) => $s->recursos->sum(fn($r) => $r->vehiculo?->novedadesPendientes->count() ?? 0)
+            fn($s) => $s->recursos->sum(fn($r) => $r->novedadesPendientes->count())
         );
         $totalPrestados = $prestamosActivos->count();
 
@@ -55,7 +52,7 @@ class FlotaDashboard911Controller extends Controller
             'division',
             'secciones',
             'prestamosActivos',
-            'totalVehiculos',
+            'totalRecursos',
             'totalNovedadesPendientes',
             'totalPrestados',
         ));

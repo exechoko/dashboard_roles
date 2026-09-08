@@ -5,10 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Destino;
 use App\Models\Personal;
 use App\Models\Recurso;
-use App\Models\Vehiculo;
-use App\Models\VehiculoDotacion;
-use App\Models\VehiculoEstadoDiario;
-use App\Models\VehiculoInformePreferencia;
+use App\Models\RecursoDotacion;
+use App\Models\RecursoEstadoDiario;
+use App\Models\RecursoInformePreferencia;
 use App\Services\FlotaInformeService;
 use Illuminate\Http\Request;
 
@@ -28,10 +27,7 @@ class VehiculoInformeController extends Controller
         $division = Destino::findOrFail(self::DIVISION_911_ID);
         $todosLosDestinoIds = $division->getDestinosHijosRecursivo();
 
-        // Secciones con sus vehículos
         $secciones = $this->getSecciones($todosLosDestinoIds, $fecha);
-
-        // Personal disponible para dotaciones
         $personal = Personal::orderBy('apellido')->get(['id', 'jerarquia', 'apellido', 'nombre', 'lp']);
 
         return view('flota-911.informes.parte-diario', compact('fecha', 'secciones', 'personal', 'division'));
@@ -40,30 +36,29 @@ class VehiculoInformeController extends Controller
     public function generarParteDiario(Request $request)
     {
         $request->validate([
-            'fecha'            => 'required|date',
+            'fecha'               => 'required|date',
             'novedades_generales' => 'nullable|string|max:3000',
-            'vehiculos'        => 'nullable|array',
-            'vehiculos.*.id'   => 'required|exists:vehiculos,id',
-            'vehiculos.*.estado_dia' => 'required|in:circula,reserva,fuera_de_servicio,otro',
-            'vehiculos.*.motivo'  => 'nullable|string|max:500',
-            'vehiculos.*.dotacion' => 'nullable|array',
+            'recursos'            => 'nullable|array',
+            'recursos.*.id'       => 'required|exists:recursos,id',
+            'recursos.*.estado_dia' => 'required|in:circula,reserva,fuera_de_servicio,otro',
+            'recursos.*.motivo'   => 'nullable|string|max:500',
+            'recursos.*.dotacion' => 'nullable|array',
         ]);
 
         $fecha = $request->fecha;
         $userId = auth()->id();
 
-        // Persistir estados diarios y dotaciones
-        foreach ($request->input('vehiculos', []) as $datos) {
-            VehiculoEstadoDiario::updateOrCreate(
-                ['vehiculo_id' => $datos['id'], 'fecha' => $fecha],
+        foreach ($request->input('recursos', []) as $datos) {
+            RecursoEstadoDiario::updateOrCreate(
+                ['recurso_id' => $datos['id'], 'fecha' => $fecha],
                 ['estado_dia' => $datos['estado_dia'], 'motivo' => $datos['motivo'] ?? null, 'user_id' => $userId]
             );
 
-            VehiculoDotacion::where('vehiculo_id', $datos['id'])->whereDate('fecha', $fecha)->delete();
+            RecursoDotacion::where('recurso_id', $datos['id'])->whereDate('fecha', $fecha)->delete();
 
             foreach ($datos['dotacion'] ?? [] as $personalId) {
-                VehiculoDotacion::create([
-                    'vehiculo_id' => $datos['id'],
+                RecursoDotacion::create([
+                    'recurso_id' => $datos['id'],
                     'personal_id' => $personalId,
                     'fecha'       => $fecha,
                     'user_id'     => $userId,
@@ -71,12 +66,10 @@ class VehiculoInformeController extends Controller
             }
         }
 
-        // Guardar preferencias de selección por sección
         $this->guardarPreferencias($request, $userId);
 
         $division = Destino::findOrFail(self::DIVISION_911_ID);
-        $todosLosDestinoIds = $division->getDestinosHijosRecursivo();
-        $secciones = $this->getSecciones($todosLosDestinoIds, $fecha);
+        $secciones = $this->getSecciones($division->getDestinosHijosRecursivo(), $fecha);
 
         return $this->informeService->generarParteDiario($secciones, $fecha, $request->novedades_generales);
     }
@@ -88,8 +81,12 @@ class VehiculoInformeController extends Controller
 
         $secciones = Destino::whereIn('id', $todosLosDestinoIds)
             ->with([
-                'recursos' => fn($q) => $q->whereNotNull('vehiculo_id')
-                    ->with(['vehiculo', 'vehiculo.estadoSeccion', 'vehiculo.novedadesPendientes']),
+                'recursos' => fn($q) => $q->with([
+                    'asignacionActual.vehiculo',
+                    'vehiculo',
+                    'estadoSeccion',
+                    'novedadesPendientes',
+                ]),
             ])
             ->get()
             ->filter(fn($d) => $d->recursos->isNotEmpty());
@@ -101,42 +98,39 @@ class VehiculoInformeController extends Controller
     {
         $request->validate([
             'destino_id'  => 'required|exists:destino,id',
-            'vehiculo_ids' => 'required|array|min:1',
-            'vehiculo_ids.*' => 'exists:vehiculos,id',
+            'recurso_ids' => 'required|array|min:1',
+            'recurso_ids.*' => 'exists:recursos,id',
         ], [
             'destino_id.required'   => 'Seleccione una sección.',
-            'vehiculo_ids.required' => 'Seleccione al menos un vehículo.',
+            'recurso_ids.required'  => 'Seleccione al menos un recurso.',
         ]);
 
-        // Guardar preferencia
-        VehiculoInformePreferencia::updateOrCreate(
+        RecursoInformePreferencia::updateOrCreate(
             ['user_id' => auth()->id(), 'destino_id' => $request->destino_id],
-            ['vehiculo_ids' => $request->vehiculo_ids]
+            ['recurso_ids' => $request->recurso_ids]
         );
 
         $destino = Destino::findOrFail($request->destino_id);
-        $vehiculos = Vehiculo::whereIn('id', $request->vehiculo_ids)
-            ->with(['estadoSeccion', 'novedadesPendientes'])
+        $recursos = Recurso::whereIn('id', $request->recurso_ids)
+            ->with(['asignacionActual.vehiculo', 'vehiculo', 'estadoSeccion', 'novedadesPendientes'])
             ->get();
 
-        return $this->informeService->generarEstadoFlota($vehiculos, $destino);
+        return $this->informeService->generarEstadoFlota($recursos, $destino);
     }
 
-    /**
-     * @param \Illuminate\Support\Collection<int> $destinoIds
-     */
     private function getSecciones($destinoIds, string $fecha)
     {
         return Destino::whereIn('id', $destinoIds)
             ->with([
                 'recursos' => function ($q) use ($fecha) {
-                    $q->whereNotNull('vehiculo_id')->with([
+                    $q->with([
+                        'asignacionActual.vehiculo',
                         'vehiculo',
-                        'vehiculo.estadoSeccion',
-                        'vehiculo.novedadesPendientes',
-                        'vehiculo.prestamoActivo.destinoDestino',
-                        'vehiculo.estadoDiario' => fn($q2) => $q2->whereDate('fecha', $fecha),
-                        'vehiculo.dotaciones'   => fn($q2) => $q2->whereDate('fecha', $fecha)->with('personal'),
+                        'estadoSeccion',
+                        'novedadesPendientes',
+                        'prestamoActivo.destinoDestino',
+                        'estadoDiario' => fn($q2) => $q2->whereDate('fecha', $fecha),
+                        'dotaciones'   => fn($q2) => $q2->whereDate('fecha', $fecha)->with('personal'),
                     ]);
                 },
             ])
@@ -148,17 +142,17 @@ class VehiculoInformeController extends Controller
     {
         $porSeccion = [];
 
-        foreach ($request->input('vehiculos', []) as $datos) {
-            $recurso = Recurso::where('vehiculo_id', $datos['id'])->first();
+        foreach ($request->input('recursos', []) as $datos) {
+            $recurso = Recurso::find($datos['id']);
             if ($recurso) {
                 $porSeccion[$recurso->destino_id][] = $datos['id'];
             }
         }
 
-        foreach ($porSeccion as $destinoId => $vehiculoIds) {
-            VehiculoInformePreferencia::updateOrCreate(
+        foreach ($porSeccion as $destinoId => $recursoIds) {
+            RecursoInformePreferencia::updateOrCreate(
                 ['user_id' => $userId, 'destino_id' => $destinoId],
-                ['vehiculo_ids' => $vehiculoIds]
+                ['recurso_ids' => $recursoIds]
             );
         }
     }

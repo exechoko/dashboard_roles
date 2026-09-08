@@ -42,25 +42,22 @@
                             <table class="table table-modern mb-0">
                                 <thead>
                                     <tr>
-                                        <th>Vehículo</th>
+                                        <th>Recurso</th>
+                                        <th>Dominio (al salir)</th>
                                         <th>Origen</th>
                                         <th>Destino</th>
                                         <th>Desde</th>
-                                        <th>Novedades salida</th>
                                         <th class="text-center">Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($prestamos as $prestamo)
                                     <tr>
-                                        <td>
-                                            <strong>{{ $prestamo->vehiculo->marca }} {{ $prestamo->vehiculo->modelo }}</strong>
-                                            <br><span class="tei-badge">{{ $prestamo->vehiculo->dominio }}</span>
-                                        </td>
+                                        <td><strong>{{ $prestamo->recurso->nombre }}</strong></td>
+                                        <td><span class="tei-badge">{{ $prestamo->vehiculoSnapshot?->dominio ?? '—' }}</span></td>
                                         <td><small>{{ $prestamo->destinoOrigen->nombre }}</small></td>
                                         <td><small>{{ $prestamo->destinoDestino->nombre }}</small></td>
                                         <td><small>{{ $prestamo->fecha_salida->format('d/m/Y H:i') }}</small></td>
-                                        <td><small class="text-muted">{{ Str::limit($prestamo->observaciones_salida, 40) ?? '—' }}</small></td>
                                         <td class="text-center">
                                             <button class="btn btn-sm btn-success" data-toggle="modal"
                                                 data-target="#modalDevolver{{ $prestamo->id }}">
@@ -92,21 +89,21 @@
                             <table class="table table-modern mb-0">
                                 <thead>
                                     <tr>
-                                        <th>Vehículo</th>
+                                        <th>Recurso</th>
+                                        <th>Dominio</th>
                                         <th>Destino</th>
                                         <th>Salida</th>
                                         <th>Retorno</th>
-                                        <th>Novedades retorno</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($historial as $p)
                                     <tr>
-                                        <td>{{ $p->vehiculo->marca }} {{ $p->vehiculo->modelo }} <span class="tei-badge">{{ $p->vehiculo->dominio }}</span></td>
+                                        <td>{{ $p->recurso->nombre }}</td>
+                                        <td><span class="tei-badge">{{ $p->vehiculoSnapshot?->dominio ?? '—' }}</span></td>
                                         <td><small>{{ $p->destinoDestino->nombre }}</small></td>
                                         <td><small>{{ $p->fecha_salida->format('d/m/Y') }}</small></td>
                                         <td><small>{{ $p->fecha_retorno?->format('d/m/Y H:i') ?? '—' }}</small></td>
-                                        <td><small class="text-muted">{{ Str::limit($p->observaciones_retorno, 40) ?? '—' }}</small></td>
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -132,20 +129,14 @@
                         <form action="{{ route('flota-911.prestamos.store') }}" method="POST">
                             @csrf
                             <div class="form-group">
-                                <label>Vehículo <span class="text-danger">*</span></label>
-                                <select name="vehiculo_id" class="form-control" required>
+                                <label>Recurso <span class="text-danger">*</span></label>
+                                <select name="recurso_id" class="form-control" required>
                                     <option value="">— Seleccionar —</option>
-                                    @foreach($destinos->where('id', 42)->first()?->getDestinosHijosRecursivo() ?? [] as $did)
-                                        @php $d = $destinos->find($did); @endphp
-                                        @if($d)
-                                            <optgroup label="{{ $d->nombre }}">
-                                                @foreach($d->recursos ?? [] as $r)
-                                                    @if($r->vehiculo_id)
-                                                        <option value="{{ $r->vehiculo_id }}">{{ $r->nombre }} ({{ $r->vehiculo->dominio ?? '—' }})</option>
-                                                    @endif
-                                                @endforeach
-                                            </optgroup>
-                                        @endif
+                                    @foreach($recursosDisponibles as $r)
+                                        @php $v = $r->vehiculoActual(); @endphp
+                                        <option value="{{ $r->id }}">
+                                            {{ $r->nombre }}{{ $v ? ' ('.$v->dominio.')' : '' }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -175,7 +166,7 @@
                             <div class="form-group">
                                 <label>Novedades de salida</label>
                                 <textarea name="observaciones_salida" class="form-control" rows="3"
-                                    maxlength="1000" placeholder="Condición del vehículo, motivo del préstamo..."></textarea>
+                                    maxlength="1000" placeholder="Condición del recurso, motivo del préstamo..."></textarea>
                             </div>
                             <button type="submit" class="btn btn-primary btn-block">
                                 <i class="fas fa-save mr-1"></i> Registrar
@@ -200,7 +191,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Registrar devolución — {{ $prestamo->vehiculo->dominio }}</h5>
+                <h5 class="modal-title">Registrar devolución — {{ $prestamo->recurso->nombre }}</h5>
                 <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
             </div>
             <form action="{{ route('flota-911.prestamos.devolver', $prestamo->id) }}" method="POST">

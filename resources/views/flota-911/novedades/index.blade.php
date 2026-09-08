@@ -4,8 +4,12 @@
 <section class="section">
     <div class="section-header">
         <h3 class="page__heading">
-            Historial — {{ $vehiculo->marca }} {{ $vehiculo->modelo }}
-            <small class="text-muted ml-2">{{ $vehiculo->dominio }}</small>
+            Historial — {{ $recurso->nombre }}
+            @if($vehiculoActual)
+                <small class="text-muted ml-2">{{ $vehiculoActual->dominio }}</small>
+            @else
+                <small class="text-muted ml-2">Sin vehículo asignado</small>
+            @endif
         </h3>
     </div>
     <div class="section-body">
@@ -44,10 +48,16 @@
                                     <span class="badge badge-{{ $novedad->resuelta ? 'success' : 'danger' }} mr-2">
                                         {{ $novedad->resuelta ? 'Resuelta' : 'Pendiente' }}
                                     </span>
+                                    <span class="badge badge-{{ $novedad->tipo === 'mecanica' ? 'warning' : 'secondary' }} mr-2">
+                                        {{ $novedad->tipo === 'mecanica' ? 'Mecánica' : 'Operativa' }}
+                                    </span>
                                     <small class="text-muted">
                                         {{ $novedad->fecha_novedad->format('d/m/Y') }}
                                         @if($novedad->km_actuales)
                                             &mdash; {{ number_format($novedad->km_actuales) }} km
+                                        @endif
+                                        @if($novedad->tipo === 'mecanica' && $novedad->vehiculoReferencia)
+                                            &mdash; ref. {{ $novedad->vehiculoReferencia->dominio }}
                                         @endif
                                         &mdash; registrada por {{ $novedad->usuario?->name ?? '—' }}
                                     </small>
@@ -66,7 +76,6 @@
 
                             <p class="mb-2">{{ $novedad->descripcion }}</p>
 
-                            {{-- Seguimientos --}}
                             @if($novedad->seguimientos->isNotEmpty())
                             <div class="ml-3 border-left pl-3 mt-2">
                                 @foreach($novedad->seguimientos as $seg)
@@ -81,7 +90,6 @@
                             </div>
                             @endif
 
-                            {{-- Adjuntos --}}
                             @if($novedad->adjuntos->isNotEmpty())
                             <div class="mt-2 d-flex flex-wrap gap-2">
                                 @foreach($novedad->adjuntos as $adjunto)
@@ -103,7 +111,6 @@
                             </div>
                             @endif
 
-                            {{-- Agregar seguimiento y adjunto --}}
                             @can('gestionar-flota-911')
                             @if(!$novedad->resuelta)
                             <div class="mt-3 border-top pt-2">
@@ -143,7 +150,7 @@
                         @empty
                         <div class="text-center py-5">
                             <i class="fas fa-clipboard fa-2x text-muted mb-2 d-block"></i>
-                            <span class="text-muted">Este vehículo no tiene novedades registradas.</span>
+                            <span class="text-muted">Este recurso no tiene novedades registradas.</span>
                         </div>
                         @endforelse
 
@@ -163,8 +170,15 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <form action="{{ route('flota-911.novedades.store', $vehiculo->id) }}" method="POST" enctype="multipart/form-data">
+                        <form action="{{ route('flota-911.novedades.store', $recurso->id) }}" method="POST" enctype="multipart/form-data">
                             @csrf
+                            <div class="form-group">
+                                <label>Tipo <span class="text-danger">*</span></label>
+                                <select name="tipo" class="form-control" required>
+                                    <option value="operativa">Operativa</option>
+                                    <option value="mecanica">Mecánica{{ $vehiculoActual ? ' (ref. '.$vehiculoActual->dominio.')' : '' }}</option>
+                                </select>
+                            </div>
                             <div class="form-group">
                                 <label>Fecha <span class="text-danger">*</span></label>
                                 <input type="date" name="fecha_novedad" class="form-control"
@@ -196,17 +210,17 @@
                     <div class="card-header-modern">
                         <div class="card-header-left">
                             <div class="header-icon"><i class="fas fa-sliders-h"></i></div>
-                            <h5 class="header-title">Estado del vehículo</h5>
+                            <h5 class="header-title">Estado del recurso</h5>
                         </div>
                     </div>
                     <div class="card-body">
-                        @php $estadoActual = $vehiculo->estadoSeccion; @endphp
-                        <form action="{{ route('flota-911.estado-seccion.update', $vehiculo->id) }}" method="POST">
+                        @php $estadoActual = $recurso->estadoSeccion; @endphp
+                        <form action="{{ route('flota-911.estado-seccion.update', $recurso->id) }}" method="POST">
                             @csrf @method('PATCH')
                             <div class="form-group">
                                 <label>Estado general</label>
                                 <select name="estado" class="form-control" required>
-                                    @foreach(\App\Models\VehiculoEstadoSeccion::$estados as $key => $label)
+                                    @foreach(\App\Models\RecursoEstadoSeccion::$estados as $key => $label)
                                         <option value="{{ $key }}" {{ ($estadoActual?->estado ?? 'en_servicio') === $key ? 'selected' : '' }}>
                                             {{ $label }}
                                         </option>

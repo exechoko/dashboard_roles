@@ -37,10 +37,10 @@
                 </div>
             </div>
 
-            {{-- Vehículos por sección --}}
+            {{-- Recursos por sección --}}
             @foreach($secciones as $i => $seccion)
             @php
-                $recursos = $seccion->recursos->filter(fn($r) => $r->vehiculo !== null);
+                $recursos = $seccion->recursos;
                 if($recursos->isEmpty()) continue;
             @endphp
             <div class="card shadow-sm border-0 mb-4">
@@ -64,24 +64,28 @@
                             <tbody>
                                 @foreach($recursos as $j => $recurso)
                                 @php
-                                    $v = $recurso->vehiculo;
-                                    $idx = "vehiculos[{$v->id}]";
-                                    $estadoDiario = $v->estadoDiario->first();
+                                    $idx = "recursos[{$recurso->id}]";
+                                    $estadoDiario = $recurso->estadoDiario->first();
                                     $estadoDia = $estadoDiario?->estado_dia ?? 'circula';
-                                    $dotacionIds = $v->dotaciones
+                                    $vehiculoActual = $recurso->vehiculoActual();
+                                    $dotacionIds = $recurso->dotaciones
                                         ->filter(fn($d) => $d->fecha?->toDateString() === $fecha)
                                         ->pluck('personal_id')->toArray();
                                 @endphp
                                 <tr>
                                     <td>
-                                        <input type="hidden" name="{{ $idx }}[id]" value="{{ $v->id }}">
+                                        <input type="hidden" name="{{ $idx }}[id]" value="{{ $recurso->id }}">
                                         <strong>{{ $recurso->nombre }}</strong><br>
-                                        <span class="tei-badge">{{ $v->dominio ?? '—' }}</span>
+                                        @if($vehiculoActual)
+                                            <span class="tei-badge">{{ $vehiculoActual->dominio ?? '—' }}</span>
+                                        @else
+                                            <span class="badge badge-light text-muted">Sin ficha</span>
+                                        @endif
                                     </td>
                                     <td>
                                         <select name="{{ $idx }}[estado_dia]" class="form-control form-control-sm estado-dia-select"
-                                            data-vehiculo="{{ $v->id }}">
-                                            @foreach(\App\Models\VehiculoEstadoDiario::$estados as $key => $label)
+                                            data-recurso="{{ $recurso->id }}">
+                                            @foreach(\App\Models\RecursoEstadoDiario::$estados as $key => $label)
                                                 <option value="{{ $key }}" {{ $estadoDia === $key ? 'selected' : '' }}>{{ $label }}</option>
                                             @endforeach
                                         </select>
@@ -91,12 +95,12 @@
                                             value="{{ $estadoDiario?->motivo }}" maxlength="200"
                                             placeholder="Motivo..."
                                             {{ $estadoDia === 'circula' ? 'style=display:none' : '' }}
-                                            id="motivo{{ $v->id }}">
+                                            id="motivo{{ $recurso->id }}">
                                     </td>
                                     <td>
                                         <select name="{{ $idx }}[dotacion][]" class="form-control select2-personal"
                                             multiple data-placeholder="Buscar personal..."
-                                            id="dotacion{{ $v->id }}">
+                                            id="dotacion{{ $recurso->id }}">
                                             @foreach($personal as $p)
                                                 <option value="{{ $p->id }}"
                                                     {{ in_array($p->id, $dotacionIds) ? 'selected' : '' }}>
@@ -144,18 +148,16 @@
 
 @push('scripts')
 <script>
-// Mostrar/ocultar campo motivo según estado
 document.querySelectorAll('.estado-dia-select').forEach(function(sel) {
     sel.addEventListener('change', function() {
-        var vehiculoId = this.dataset.vehiculo;
-        var motivo = document.getElementById('motivo' + vehiculoId);
+        var recursoId = this.dataset.recurso;
+        var motivo = document.getElementById('motivo' + recursoId);
         if (motivo) {
             motivo.style.display = this.value === 'circula' ? 'none' : '';
         }
     });
 });
 
-// Select2 para personal
 $(document).ready(function() {
     $('.select2-personal').select2({
         width: '100%',

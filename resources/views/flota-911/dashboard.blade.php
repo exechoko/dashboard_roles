@@ -7,7 +7,6 @@
     </div>
     <div class="section-body">
 
-        {{-- Alertas --}}
         @if(session('success'))
             <div class="alert alert-success alert-dismissible fade show">
                 {{ session('success') }}
@@ -22,8 +21,8 @@
                     <div class="card-body d-flex align-items-center">
                         <div class="mr-3 text-primary"><i class="fas fa-truck-pickup fa-2x"></i></div>
                         <div>
-                            <div class="h4 mb-0 font-weight-bold">{{ $totalVehiculos }}</div>
-                            <small class="text-muted">Vehículos en la división</small>
+                            <div class="h4 mb-0 font-weight-bold">{{ $totalRecursos }}</div>
+                            <small class="text-muted">Recursos en la división</small>
                         </div>
                     </div>
                 </div>
@@ -77,7 +76,7 @@
             @endcan
         </div>
 
-        {{-- Vehículos por sección --}}
+        {{-- Recursos por sección --}}
         @foreach($secciones as $seccion)
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header-modern">
@@ -85,7 +84,7 @@
                     <div class="header-icon"><i class="fas fa-users"></i></div>
                     <div>
                         <h5 class="header-title">{{ $seccion->nombre }}</h5>
-                        <small class="text-muted">{{ $seccion->recursos->count() }} vehículo(s)</small>
+                        <small class="text-muted">{{ $seccion->recursos->count() }} recurso(s)</small>
                     </div>
                 </div>
             </div>
@@ -105,21 +104,28 @@
                         <tbody>
                             @foreach($seccion->recursos as $recurso)
                             @php
-                                $vehiculo = $recurso->vehiculo;
-                                if (!$vehiculo) continue;
-                                $estado = $vehiculo->estadoSeccion;
-                                $pendientes = $vehiculo->novedadesPendientes->count();
-                                $prestamo = $vehiculo->prestamoActivo;
+                                $vehiculo = $recurso->vehiculoActual();
+                                $estado = $recurso->estadoSeccion;
+                                $pendientes = $recurso->novedadesPendientes->count();
+                                $prestamo = $recurso->prestamoActivo;
                             @endphp
                             <tr>
                                 <td><strong>{{ $recurso->nombre }}</strong></td>
                                 <td>
-                                    <span class="tei-badge">
-                                        <i class="fas fa-id-card mr-1"></i>{{ $vehiculo->dominio ?? '—' }}
-                                    </span>
+                                    @if($vehiculo)
+                                        <span class="tei-badge">
+                                            <i class="fas fa-id-card mr-1"></i>{{ $vehiculo->dominio ?? '—' }}
+                                        </span>
+                                    @else
+                                        <span class="badge badge-light text-muted">Sin ficha</span>
+                                    @endif
                                 </td>
                                 <td>
-                                    <small>{{ implode(' / ', array_filter([$vehiculo->tipo_vehiculo, $vehiculo->marca, $vehiculo->modelo])) }}</small>
+                                    @if($vehiculo)
+                                        <small>{{ implode(' / ', array_filter([$vehiculo->tipo_vehiculo, $vehiculo->marca, $vehiculo->modelo])) }}</small>
+                                    @else
+                                        <small class="text-muted">—</small>
+                                    @endif
                                 </td>
                                 <td>
                                     @if($prestamo)
@@ -140,13 +146,13 @@
                                     @endif
                                 </td>
                                 <td class="text-center action-td">
-                                    <a href="{{ route('flota-911.novedades.index', $vehiculo->id) }}"
+                                    <a href="{{ route('flota-911.novedades.index', $recurso->id) }}"
                                        class="action-btn btn-view" title="Ver historial">
                                         <i class="fas fa-history"></i>
                                     </a>
                                     @can('gestionar-flota-911')
                                     <button class="action-btn btn-edit" title="Cambiar estado"
-                                        data-toggle="modal" data-target="#modalEstado{{ $vehiculo->id }}">
+                                        data-toggle="modal" data-target="#modalEstado{{ $recurso->id }}">
                                         <i class="fas fa-sliders-h"></i>
                                     </button>
                                     @endcan
@@ -159,24 +165,28 @@
             </div>
         </div>
 
-        {{-- Modales de estado por vehículo --}}
+        {{-- Modales de estado por recurso --}}
         @can('gestionar-flota-911')
         @foreach($seccion->recursos as $recurso)
-        @php $vehiculo = $recurso->vehiculo; if(!$vehiculo) continue; $estadoActual = $vehiculo->estadoSeccion; @endphp
-        <div class="modal fade" id="modalEstado{{ $vehiculo->id }}" tabindex="-1">
+        @php $estadoActual = $recurso->estadoSeccion; @endphp
+        <div class="modal fade" id="modalEstado{{ $recurso->id }}" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title">Estado de {{ $recurso->nombre }} ({{ $vehiculo->dominio }})</h5>
+                        <h5 class="modal-title">
+                            Estado de {{ $recurso->nombre }}
+                            @php $v = $recurso->vehiculoActual(); @endphp
+                            @if($v) <small class="text-muted">({{ $v->dominio }})</small> @endif
+                        </h5>
                         <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
                     </div>
-                    <form action="{{ route('flota-911.estado-seccion.update', $vehiculo->id) }}" method="POST">
+                    <form action="{{ route('flota-911.estado-seccion.update', $recurso->id) }}" method="POST">
                         @csrf @method('PATCH')
                         <div class="modal-body">
                             <div class="form-group">
                                 <label>Estado general</label>
                                 <select name="estado" class="form-control" required>
-                                    @foreach(\App\Models\VehiculoEstadoSeccion::$estados as $key => $label)
+                                    @foreach(\App\Models\RecursoEstadoSeccion::$estados as $key => $label)
                                         <option value="{{ $key }}" {{ ($estadoActual?->estado ?? 'en_servicio') === $key ? 'selected' : '' }}>
                                             {{ $label }}
                                         </option>
@@ -208,7 +218,7 @@
                     <div class="header-icon text-warning"><i class="fas fa-exchange-alt"></i></div>
                     <div>
                         <h5 class="header-title">Préstamos activos</h5>
-                        <small class="text-muted">Vehículos prestados a otras dependencias</small>
+                        <small class="text-muted">Recursos prestados a otras dependencias</small>
                     </div>
                 </div>
             </div>
@@ -217,7 +227,7 @@
                     <table class="table table-modern mb-0">
                         <thead>
                             <tr>
-                                <th>Vehículo</th>
+                                <th>Recurso</th>
                                 <th>Dominio</th>
                                 <th>Destino</th>
                                 <th>Desde</th>
@@ -226,8 +236,8 @@
                         <tbody>
                             @foreach($prestamosActivos as $prestamo)
                             <tr>
-                                <td>{{ $prestamo->vehiculo->marca }} {{ $prestamo->vehiculo->modelo }}</td>
-                                <td><span class="tei-badge">{{ $prestamo->vehiculo->dominio }}</span></td>
+                                <td>{{ $prestamo->recurso->nombre }}</td>
+                                <td><span class="tei-badge">{{ $prestamo->vehiculoSnapshot?->dominio ?? '—' }}</span></td>
                                 <td>{{ $prestamo->destinoDestino->nombre }}</td>
                                 <td>{{ $prestamo->fecha_salida->format('d/m/Y H:i') }}</td>
                             </tr>

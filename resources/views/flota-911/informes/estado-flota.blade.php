@@ -19,14 +19,13 @@
 
             @foreach($secciones as $seccion)
             @php
-                $recursos = $seccion->recursos->filter(fn($r) => $r->vehiculo !== null);
+                $recursos = $seccion->recursos;
                 if($recursos->isEmpty()) continue;
 
-                // Preferencia guardada del usuario para esta sección
-                $preferencia = \App\Models\VehiculoInformePreferencia::where('user_id', auth()->id())
+                $preferencia = \App\Models\RecursoInformePreferencia::where('user_id', auth()->id())
                     ->where('destino_id', $seccion->id)
                     ->first();
-                $preseleccionados = $preferencia?->vehiculo_ids ?? $recursos->pluck('vehiculo_id')->toArray();
+                $preseleccionados = $preferencia?->recurso_ids ?? $recursos->pluck('id')->toArray();
             @endphp
 
             <div class="card shadow-sm border-0 mb-4">
@@ -47,28 +46,31 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    {{-- Campo oculto para destino_id al seleccionar radio --}}
                     <input type="radio" name="destino_id" value="{{ $seccion->id }}"
                         {{ $loop->first ? 'checked' : '' }} class="d-none destino-radio-{{ $seccion->id }}">
 
                     <div class="row" id="seccion{{ $seccion->id }}">
                         @foreach($recursos as $recurso)
-                        @php $v = $recurso->vehiculo; @endphp
+                        @php $vehiculoActual = $recurso->vehiculoActual(); @endphp
                         <div class="col-md-6 col-lg-4 mb-2">
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input seccion-check-{{ $seccion->id }}"
-                                    name="vehiculo_ids[]" value="{{ $v->id }}"
-                                    id="veh{{ $v->id }}"
-                                    {{ in_array($v->id, $preseleccionados) ? 'checked' : '' }}>
-                                <label class="custom-control-label" for="veh{{ $v->id }}">
+                                    name="recurso_ids[]" value="{{ $recurso->id }}"
+                                    id="rec{{ $recurso->id }}"
+                                    {{ in_array($recurso->id, $preseleccionados) ? 'checked' : '' }}>
+                                <label class="custom-control-label" for="rec{{ $recurso->id }}">
                                     <strong>{{ $recurso->nombre }}</strong>
-                                    <span class="tei-badge ml-1">{{ $v->dominio ?? '—' }}</span>
-                                    @php $estado = $v->estadoSeccion; @endphp
+                                    @if($vehiculoActual)
+                                        <span class="tei-badge ml-1">{{ $vehiculoActual->dominio ?? '—' }}</span>
+                                    @else
+                                        <span class="badge badge-light text-muted ml-1">Sin ficha</span>
+                                    @endif
+                                    @php $estado = $recurso->estadoSeccion; @endphp
                                     @if($estado && $estado->estado !== 'en_servicio')
                                         <span class="badge badge-{{ $estado->badgeClass }} ml-1">{{ $estado->label }}</span>
                                     @endif
-                                    @if($v->novedadesPendientes->isNotEmpty())
-                                        <span class="badge badge-danger ml-1">{{ $v->novedadesPendientes->count() }} nov.</span>
+                                    @if($recurso->novedadesPendientes->isNotEmpty())
+                                        <span class="badge badge-danger ml-1">{{ $recurso->novedadesPendientes->count() }} nov.</span>
                                     @endif
                                 </label>
                             </div>

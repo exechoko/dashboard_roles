@@ -202,6 +202,13 @@ class Destino extends Model
         return $destino ? $destino->getDestinosHijosRecursivo() : collect([$destinoId]);
     }
 
+    // ─── Relaciones flota ───────────────────────────────────
+
+    public function recursos(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Recurso::class);
+    }
+
     // ─── Relaciones patrimoniales ────────────────────────────
 
     /**

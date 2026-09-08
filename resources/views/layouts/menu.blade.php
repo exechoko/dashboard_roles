@@ -56,6 +56,13 @@
                     </a>
                 </li>
             @endcan
+            @can('ver-flota-911')
+                <li class="{{ request()->is('flota-911*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('flota-911.dashboard') }}">
+                        <i class="fas fa-shield-alt"></i><span>Flota 911</span>
+                    </a>
+                </li>
+            @endcan
         </ul>
     </li>
 @endcan

@@ -51,6 +51,11 @@ use App\Http\Controllers\ArmaTipoController;
 use App\Http\Controllers\ArmaPersonalController;
 use App\Http\Controllers\ArmeriaArmaController;
 use App\Http\Controllers\ArmeriaChalecoController;
+use App\Http\Controllers\FlotaDashboard911Controller;
+use App\Http\Controllers\VehiculoNovedadController;
+use App\Http\Controllers\VehiculoPrestamoController;
+use App\Http\Controllers\VehiculoEstadoSeccionController;
+use App\Http\Controllers\VehiculoInformeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -185,6 +190,33 @@ Route::group(['middleware' => ['auth']], function () {
     Route::put('dependencias/{id}/jurisdiccion', [DependenciaController::class, 'jurisdiccionUpdate'])->name('dependencias.jurisdiccion.update');
     Route::resource('dependencias', DependenciaController::class);
     Route::resource('vehiculos', VehiculoController::class);
+
+    // ─── Flota 911 ───────────────────────────────────────────
+    Route::prefix('flota-911')->name('flota-911.')->group(function () {
+        Route::get('/', [FlotaDashboard911Controller::class, 'index'])->name('dashboard');
+
+        // Novedades por vehículo
+        Route::get('/vehiculos/{vehiculo}/novedades', [VehiculoNovedadController::class, 'index'])->name('novedades.index');
+        Route::post('/vehiculos/{vehiculo}/novedades', [VehiculoNovedadController::class, 'store'])->name('novedades.store');
+        Route::patch('/novedades/{novedad}/resolver', [VehiculoNovedadController::class, 'resolver'])->name('novedades.resolver');
+        Route::post('/novedades/{novedad}/seguimientos', [VehiculoNovedadController::class, 'storeSeguimiento'])->name('novedades.seguimientos.store');
+        Route::post('/novedades/{novedad}/adjuntos', [VehiculoNovedadController::class, 'storeAdjunto'])->name('novedades.adjuntos.store');
+        Route::delete('/adjuntos/{adjunto}', [VehiculoNovedadController::class, 'destroyAdjunto'])->name('novedades.adjuntos.destroy');
+
+        // Estado contextual del vehículo
+        Route::patch('/vehiculos/{vehiculo}/estado', [VehiculoEstadoSeccionController::class, 'update'])->name('estado-seccion.update');
+
+        // Préstamos
+        Route::get('/prestamos', [VehiculoPrestamoController::class, 'index'])->name('prestamos.index');
+        Route::post('/prestamos', [VehiculoPrestamoController::class, 'store'])->name('prestamos.store');
+        Route::patch('/prestamos/{prestamo}/devolver', [VehiculoPrestamoController::class, 'devolver'])->name('prestamos.devolver');
+
+        // Informes
+        Route::get('/parte-diario', [VehiculoInformeController::class, 'parteDiario'])->name('informes.parte-diario');
+        Route::post('/parte-diario/generar', [VehiculoInformeController::class, 'generarParteDiario'])->name('informes.parte-diario.generar');
+        Route::get('/estado-flota', [VehiculoInformeController::class, 'estadoFlota'])->name('informes.estado-flota');
+        Route::post('/estado-flota/generar', [VehiculoInformeController::class, 'generarEstadoFlota'])->name('informes.estado-flota.generar');
+    });
     Route::resource('recursos', RecursoController::class);
     Route::resource('cecoco/recursos-alias', CecocoRecursoAliasController::class)
         ->parameters(['recursos-alias' => 'cecocoRecursoAlias'])

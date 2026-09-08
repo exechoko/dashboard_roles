@@ -1,3 +1,70 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+**C.A.R. 911** — Control y Administración de Recursos 911. A police resource management dashboard for tracking equipment, personnel, vehicles, weapons (armería), cameras, CECOCO real-time events, and more.
+
+## Commands
+
+### Frontend
+- `npm run dev` — development build (watch mode: `npm run watch`)
+- `npm run prod` — production build
+
+Uses **Laravel Mix** (webpack), not Vite. The CLAUDE.md note about Vite errors does not apply here.
+
+### Tests
+- `php artisan test --compact` — run all tests
+- `php artisan test --compact tests/Feature/ExampleTest.php` — run a specific file
+- `php artisan test --compact --filter=testName` — filter by test name
+
+### Queue (Windows)
+- Queue workers run via Windows Task Scheduler or NSSM service (see `.bat` files and `LaravelQueueWorker.xml`)
+- To run manually: `php artisan queue:work`
+
+## Architecture
+
+### Authorization
+- Uses `spatie/laravel-permission` for roles and permissions (seeded via `SeederTablaPermisos.php` and module-specific seeders)
+- Permission names follow the pattern `ver-X`, `crear-X`, `editar-X`, `eliminar-X` (e.g., `ver-flota`, `crear-camara`)
+- `Gate::before` in `AuthServiceProvider` grants all permissions to `admin@gmail.com`
+- `VerifyMasterPassword` middleware protects sensitive operations (Password Vault)
+
+### Key Modules
+- **CECOCO** — Real-time police resource tracking. Scrapes an external JSF web app (`config/cecoco.php`). Uses a dedicated monitor user (CECOCO allows one session per user). Services: `CecocoController`, `CecocoEventosReporteService`, `CecocoGisService`, `CecocoExpedienteService`
+- **Armería** — Weapon and vest inventory management with assignment tracking
+- **Personal** — Police personnel records and license management
+- **Flota** — Vehicle fleet management with `FlotaGeneral` tracking resource+vehicle combos
+- **Bodycam** — Bodycam delivery/return tracking
+- **Equipo / Accesorio** — IT equipment and accessories with delivery records
+- **Patrimonio** — Asset/goods management with cargo assignments
+- **Transcripción / RAG / Chatbot** — AI features using `IAService`, `RAGController`, audio transcription jobs
+- **CECOCO Geocodificación** — Geocoding events via Nominatim (`GeocodificacionService`)
+- **Central Telefónica** — Import and analysis of call center data (MBOX mail parsing via `zbateson/mail-mime-parser`)
+
+### Services Layer (`app/Services/`)
+Heavy use of service classes; controllers delegate complex logic there. Key services include `AuditoriaService`, `CecocoGisService`, `GeocodificacionService`, `IAService`, `PatrimonioService`, `TicketeraService`.
+
+### Observers (`app/Observers/`)
+Most core models (equipos, vehículos, recursos, cámaras, etc.) have observers that write to the `auditorias` table via `AuditoriaService`.
+
+### Jobs (`app/Jobs/`)
+Async processing for: CECOCO event downloads, MBOX mail indexing, geocoding batches, RAG ingestion, audio transcription, and chatbot message processing.
+
+### Exports / Imports
+- `app/Exports/` — Excel exports using `maatwebsite/excel`
+- `app/Imports/` — Excel/data imports
+- Word documents generated via `phpoffice/phpword` (e.g., `generate-docx/{id}` route)
+
+### Frontend Stack
+Bootstrap 4 + jQuery + DataTables + Select2 + Leaflet maps + iziToast + SweetAlert + Vue 2 (minimal use). Blade templates in `resources/views/`.
+
+### Custom Config Files
+- `config/cecoco.php` — CECOCO integration URLs and credentials
+- `config/central_telefonica.php` — Call center integration settings
+- `config/excel.php` — Excel export settings
+
 <laravel-boost-guidelines>
 === foundation rules ===
 

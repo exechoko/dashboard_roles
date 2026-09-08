@@ -480,16 +480,22 @@ a { color: var(--m-accent); text-decoration: none; }
 }
 
 .m-map-marker--sitio-inactivo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: relative;
     width: 26px;
     height: 26px;
     border-radius: 50%;
     background: var(--m-danger);
     color: #fff;
-    font-size: .8rem;
     box-shadow: var(--m-shadow);
+}
+
+.m-map-marker--sitio-inactivo i {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: .8rem;
+    line-height: 1;
 }
 
 /* La tarjeta de "Resumen con IA" es la misma vista parcial que usa el panel

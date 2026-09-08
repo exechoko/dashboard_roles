@@ -8,7 +8,9 @@ use App\Models\RecursoDotacion;
 use App\Models\RecursoEstadoDiario;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
+use ZipArchive;
 
 class FlotaParteDiarioTurnosTest extends TestCase
 {
@@ -25,12 +27,24 @@ class FlotaParteDiarioTurnosTest extends TestCase
     private function payloadTurno(array $overrides = []): array
     {
         return array_merge([
-            'fecha'        => '2026-09-08',
+            'fecha'        => '2099-01-15',
             'guardia'      => 'guardia_1',
             'horario'      => '07_19',
-            'fecha_inicio' => '2026-09-08T07:00',
-            'fecha_fin'    => '2026-09-08T19:00',
+            'fecha_inicio' => '2099-01-15T07:00',
+            'fecha_fin'    => '2099-01-15T19:00',
         ], $overrides);
+    }
+
+    private function textoDelDocx(TestResponse $response): string
+    {
+        $path = $response->baseResponse->getFile()->getPathname();
+
+        $zip = new ZipArchive();
+        $this->assertTrue($zip->open($path) === true, 'El .docx generado no es un ZIP válido.');
+        $xml = $zip->getFromName('word/document.xml');
+        $zip->close();
+
+        return $xml ?: '';
     }
 
     public function test_los_dos_turnos_del_mismo_dia_conviven_sin_pisarse(): void
@@ -45,12 +59,13 @@ class FlotaParteDiarioTurnosTest extends TestCase
         $this->post(route('flota-911.informes.parte-diario.generar'), $this->payloadTurno([
             'guardia'      => 'guardia_2',
             'horario'      => '19_07',
-            'fecha_inicio' => '2026-09-08T19:00',
-            'fecha_fin'    => '2026-09-09T07:00',
+            'fecha_inicio' => '2099-01-15T19:00',
+            'fecha_fin'    => '2099-01-16T07:00',
             'recursos'     => [['id' => $recurso->id, 'estado_dia' => 'circula']],
         ]))->assertOk();
 
         $estados = RecursoEstadoDiario::where('recurso_id', $recurso->id)
+            ->where('fecha_inicio', '>=', '2099-01-01')
             ->orderBy('fecha_inicio')
             ->get();
 
@@ -72,7 +87,9 @@ class FlotaParteDiarioTurnosTest extends TestCase
             'recursos' => [['id' => $recurso->id, 'estado_dia' => 'fuera_de_servicio', 'motivo' => 'Choque']],
         ]))->assertOk();
 
-        $estados = RecursoEstadoDiario::where('recurso_id', $recurso->id)->get();
+        $estados = RecursoEstadoDiario::where('recurso_id', $recurso->id)
+            ->where('fecha_inicio', '>=', '2099-01-01')
+            ->get();
         $this->assertCount(1, $estados);
         $this->assertSame('fuera_de_servicio', $estados->first()->estado_dia);
     }
@@ -93,8 +110,8 @@ class FlotaParteDiarioTurnosTest extends TestCase
         $this->post(route('flota-911.informes.parte-diario.generar'), $this->payloadTurno([
             'guardia'      => 'guardia_2',
             'horario'      => '19_07',
-            'fecha_inicio' => '2026-09-08T19:00',
-            'fecha_fin'    => '2026-09-09T07:00',
+            'fecha_inicio' => '2099-01-15T19:00',
+            'fecha_fin'    => '2099-01-16T07:00',
             'recursos'     => [[
                 'id' => $recursos[1]->id, 'estado_dia' => 'circula',
                 'dotacion' => [$personal->id],
@@ -103,6 +120,7 @@ class FlotaParteDiarioTurnosTest extends TestCase
 
         $this->assertSame(2, RecursoDotacion::where('personal_id', $personal->id)
             ->whereIn('recurso_id', $recursos->pluck('id'))
+            ->where('fecha_inicio', '>=', '2099-01-01')
             ->count());
     }
 
@@ -122,7 +140,7 @@ class FlotaParteDiarioTurnosTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHasErrors('dotacion');
         $this->assertSame(0, RecursoEstadoDiario::whereIn('recurso_id', $recursos->pluck('id'))
-            ->where('fecha_inicio', '2026-09-08 07:00:00')
+            ->where('fecha_inicio', '2099-01-15 07:00:00')
             ->count());
     }
 
@@ -130,7 +148,7 @@ class FlotaParteDiarioTurnosTest extends TestCase
     {
         $response = $this->actingAs($this->usuarioConPermiso())
             ->get(route('flota-911.informes.parte-diario', [
-                'fecha' => '2026-09-08', 'guardia' => 'guardia_1', 'horario' => '07_19',
+                'fecha' => '2099-01-15', 'guardia' => 'guardia_1', 'horario' => '07_19',
             ]));
 
         $response->assertOk();
@@ -138,12 +156,28 @@ class FlotaParteDiarioTurnosTest extends TestCase
         $response->assertSee('Cargar parte guardado de este turno');
     }
 
+    public function test_los_titulos_del_docx_se_mayusculizan_conservando_los_acentos(): void
+    {
+        $this->actingAs($this->usuarioConPermiso());
+        $recurso = Recurso::whereNotNull('vehiculo_id')->firstOrFail();
+
+        $response = $this->post(route('flota-911.informes.parte-diario.generar'), $this->payloadTurno([
+            'recursos' => [['id' => $recurso->id, 'estado_dia' => 'circula']],
+        ]));
+        $response->assertOk();
+
+        $xml = $this->textoDelDocx($response);
+
+        $this->assertStringContainsString('DIVISIÓN 911 Y VIDEOVIGILANCIA', $xml);
+        $this->assertStringNotContainsString('DIVISIóN', $xml);
+    }
+
     public function test_fecha_fin_debe_ser_posterior_al_inicio(): void
     {
         $this->actingAs($this->usuarioConPermiso());
 
         $response = $this->post(route('flota-911.informes.parte-diario.generar'), $this->payloadTurno([
-            'fecha_fin' => '2026-09-08T06:00',
+            'fecha_fin' => '2099-01-15T06:00',
         ]));
 
         $response->assertSessionHasErrors('fecha_fin');

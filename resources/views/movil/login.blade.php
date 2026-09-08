@@ -220,6 +220,14 @@
 
         <form method="POST" action="{{ route('movil.login') }}">
             @csrf
+            {{-- El celular mata el proceso del navegador/PWA todo el tiempo (cambio
+                 de app, poca memoria), y config/session.php tiene expire_on_close
+                 en true (a propósito, para el escritorio): sin "remember" esa
+                 cookie de sesión se pierde en cada uno de esos cortes y obliga a
+                 volver a loguearse. Se fuerza siempre acá para que la cookie
+                 "recordarme" (independiente de expire_on_close) mantenga la
+                 sesión activa en el celular. --}}
+            <input type="hidden" name="remember" value="1">
 
             <div class="m-login__field">
                 <label for="email">Correo institucional</label>

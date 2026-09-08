@@ -35,6 +35,35 @@ class MovilTest extends TestCase
         $this->assertAuthenticatedAs($usuario);
     }
 
+    public function test_el_formulario_de_login_movil_manda_siempre_remember(): void
+    {
+        // config/session.php tiene expire_on_close en true a propósito para el
+        // escritorio; en el celular el sistema mata el proceso del navegador/PWA
+        // todo el tiempo, lo que borra esa cookie de sesión y fuerza a volver a
+        // loguearse. El form de /movil/ingresar tiene que mandar remember=1
+        // siempre para que la cookie "recordarme" (independiente de
+        // expire_on_close) mantenga la sesión.
+        $this->get(route('movil.login'))
+            ->assertOk()
+            ->assertSee('name="remember" value="1"', false);
+    }
+
+    public function test_el_login_movil_con_remember_deja_la_cookie_recordarme_para_sobrevivir_a_que_el_celular_mate_la_sesion(): void
+    {
+        $usuario = $this->usuarioCon(['ver-flota']);
+
+        $response = $this->post(route('movil.login'), [
+            'email' => $usuario->email,
+            'password' => 'password',
+            'remember' => '1',
+        ]);
+
+        $tieneCookieRecordarme = collect($response->headers->getCookies())
+            ->contains(fn ($cookie) => str_starts_with($cookie->getName(), 'remember_web_'));
+
+        $this->assertTrue($tieneCookieRecordarme, 'El login móvil debe recordar la sesión (expire_on_close mata la cookie de sesión sola en el celular).');
+    }
+
     public function test_un_usuario_con_permisos_ve_las_secciones_habilitadas(): void
     {
         $usuario = $this->usuarioCon(['ver-flota', 'ver-camara', 'ver-analizador-eventos-cecoco', 'ver-dependencia', 'ver-chat']);

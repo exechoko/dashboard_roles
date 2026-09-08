@@ -25,7 +25,7 @@ class FlotaInformeService
         $this->addTitulo($section, 'DIVISIÓN 911 Y VIDEOVIGILANCIA');
         $section->addTextBreak(1);
         $this->addTitulo($section, 'PARTE DIARIO DE VEHÍCULOS');
-        $this->addSubtitulo($section, strtoupper($guardiaLabel) . ' — ' . $horarioLabel . ' del ' . $fechaInicio->format('d/m/Y'));
+        $this->addSubtitulo($section, mb_strtoupper($guardiaLabel, 'UTF-8') . ' — ' . $horarioLabel . ' del ' . $fechaInicio->format('d/m/Y'));
         $this->addSubtitulo($section, 'Turno: ' . $fechaInicio->format('d/m/Y H:i') . ' a ' . $fechaFin->format('d/m/Y H:i'));
         $section->addTextBreak(1);
 
@@ -35,7 +35,7 @@ class FlotaInformeService
                 continue;
             }
 
-            $this->addSeccionTitulo($section, strtoupper($seccion->nombre));
+            $this->addSeccionTitulo($section, mb_strtoupper($seccion->nombre, 'UTF-8'));
             $section->addTextBreak(1);
 
             $circulan = $recursos->filter(
@@ -124,7 +124,7 @@ class FlotaInformeService
         $fechaFormateada = now()->locale('es')->isoFormat('DD [de] MMMM [de] YYYY');
 
         $this->addTitulo($section, 'POLICÍA DE ENTRE RÍOS');
-        $this->addTitulo($section, strtoupper($destino->nombre));
+        $this->addTitulo($section, mb_strtoupper($destino->nombre, 'UTF-8'));
         $section->addTextBreak(1);
         $this->addTitulo($section, 'ESTADO DE FLOTA ACTUAL');
         $this->addSubtitulo($section, 'Fecha: ' . $fechaFormateada);

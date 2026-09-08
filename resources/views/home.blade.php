@@ -114,6 +114,8 @@
 
 </style>
 
+@include('infraestructura._workers_status_styles')
+
 @stop
 
 @section('content')
@@ -1012,10 +1014,15 @@
                                             @endcan
                                         </div>
 
+                                        @can('ver-infraestructura-workers')
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    @include('infraestructura._workers_status_card')
+                                                </div>
+                                            </div>
+                                        @endcan
 
-                                        
 
-                            
                             @endcan
 
                         </div>
@@ -1532,6 +1539,9 @@
 @endsection
 
 @section('scripts')
+@can('ver-infraestructura-workers')
+    @include('infraestructura._workers_status_scripts')
+@endcan
     <script>
         $(document).ready(function () {
 

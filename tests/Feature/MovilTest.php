@@ -94,6 +94,33 @@ class MovilTest extends TestCase
         $this->assertSame('FeatureCollection', $response->json('type'));
     }
 
+    public function test_dependencias_json_devuelve_una_feature_collection_a_quien_puede_ver_dependencias(): void
+    {
+        $usuario = $this->usuarioCon(['ver-camara', 'ver-dependencia']);
+
+        $response = $this->actingAs($usuario)->get(route('movil.mapa.dependencias-json'));
+
+        $response->assertOk()->assertJsonStructure(['type', 'features']);
+        $this->assertSame('FeatureCollection', $response->json('type'));
+    }
+
+    public function test_un_usuario_sin_ver_dependencia_recibe_403_en_dependencias_json_del_mapa(): void
+    {
+        $usuario = $this->usuarioCon(['ver-camara']);
+
+        $this->actingAs($usuario)->get(route('movil.mapa.dependencias-json'))->assertForbidden();
+    }
+
+    public function test_sitios_json_devuelve_una_feature_collection(): void
+    {
+        $usuario = $this->usuarioCon(['ver-camara']);
+
+        $response = $this->actingAs($usuario)->get(route('movil.mapa.sitios-json'));
+
+        $response->assertOk()->assertJsonStructure(['type', 'features']);
+        $this->assertSame('FeatureCollection', $response->json('type'));
+    }
+
     private function usuarioCon(array $permisos): User
     {
         $usuario = User::factory()->create();

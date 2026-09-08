@@ -386,6 +386,112 @@ a { color: var(--m-accent); text-decoration: none; }
 
 #m-map { width: 100%; height: calc(100vh - 130px); }
 
+.m-map-wrap { position: relative; }
+
+.m-map-filters-btn {
+    position: absolute;
+    top: .8rem;
+    right: .8rem;
+    /* Por debajo de los controles/popups de Leaflet (hasta ~1000) para no
+       quedar tapado, pero por encima del propio mapa. */
+    z-index: 900;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--m-border);
+    background: var(--m-surface);
+    color: var(--m-text);
+    box-shadow: var(--m-shadow);
+    font-size: 1.05rem;
+}
+
+.m-map-filters {
+    position: absolute;
+    top: 3.6rem;
+    right: .8rem;
+    left: .8rem;
+    z-index: 900;
+    background: var(--m-surface);
+    border: 1px solid var(--m-border);
+    border-radius: .6rem;
+    box-shadow: var(--m-shadow);
+    padding: .8rem;
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
+}
+
+.m-map-filters__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--m-muted);
+    margin-bottom: .5rem;
+}
+
+.m-map-filters__close {
+    background: transparent;
+    border: 0;
+    color: var(--m-muted);
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 0 .2rem;
+}
+
+.m-map-filters__chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+
+.m-chip--filter {
+    border: 1px solid var(--m-border);
+    background: transparent;
+    color: var(--m-text);
+    cursor: pointer;
+}
+
+.m-chip--filter.is-active {
+    background: var(--m-accent);
+    border-color: var(--m-accent);
+    color: var(--m-accent-contrast);
+}
+
+.m-map-filters__toggle {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .4rem 0;
+    font-size: .88rem;
+}
+
+.m-map-marker--comisaria span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--m-accent);
+    color: var(--m-accent-contrast);
+    font-size: .72rem;
+    font-weight: 700;
+}
+
+.m-map-marker--sitio-inactivo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--m-danger);
+    color: #fff;
+    font-size: .8rem;
+    box-shadow: var(--m-shadow);
+}
+
 /* La tarjeta de "Resumen con IA" es la misma vista parcial que usa el panel
    de escritorio (eventos-cecoco/partials/resumen_ia.blade.php) — se reutiliza
    tal cual, así que sus clases Bootstrap se retocan acá para que combinen

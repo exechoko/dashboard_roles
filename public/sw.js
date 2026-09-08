@@ -2,7 +2,7 @@
 // (CSS, íconos, manifest y la página offline); todo lo demás (páginas /movil/*
 // y los JSON de datos) va siempre a la red: son datos policiales, no se
 // guardan en el celular.
-const CACHE_NAME = 'car911-movil-shell-v1';
+const CACHE_NAME = 'car911-movil-shell-v2';
 const APP_SHELL = [
     '/css/movil.css',
     '/img/pwa-192.png',

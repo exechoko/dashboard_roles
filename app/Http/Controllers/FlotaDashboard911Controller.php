@@ -23,7 +23,10 @@ class FlotaDashboard911Controller extends Controller
         $secciones = Destino::whereIn('id', $todosLosDestinoIds)
             ->with([
                 'recursos' => function ($q) {
-                    $q->with([
+                    // Solo recursos con vehículo asignado (vehiculo_id directo).
+                    // Cuando se implemente rotación vía recurso_vehiculo_asignaciones,
+                    // cambiar a whereHas('asignacionActual').
+                    $q->whereNotNull('vehiculo_id')->with([
                         'vehiculo',
                         'asignacionActual.vehiculo',
                         'estadoSeccion',

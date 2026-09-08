@@ -163,6 +163,24 @@ $(document).ready(function() {
         width: '100%',
         language: 'es',
     });
+
+    $('.select2-personal').on('select2:selecting', function(e) {
+        const nuevoId = String(e.params.args.data.id);
+        const yaSeleccionado = $('.select2-personal').not(this)
+            .toArray()
+            .some(function(sel) {
+                return ($(sel).val() || []).includes(nuevoId);
+            });
+        if (yaSeleccionado) {
+            e.preventDefault();
+            iziToast.warning({
+                title: 'Funcionario duplicado',
+                message: 'Este funcionario ya figura en la dotación de otro recurso.',
+                position: 'topRight',
+                timeout: 3500,
+            });
+        }
+    });
 });
 </script>
 @endpush

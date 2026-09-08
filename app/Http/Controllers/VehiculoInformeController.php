@@ -10,6 +10,7 @@ use App\Models\RecursoEstadoDiario;
 use App\Models\RecursoInformePreferencia;
 use App\Services\FlotaInformeService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class VehiculoInformeController extends Controller
 {
@@ -48,23 +49,41 @@ class VehiculoInformeController extends Controller
         $fecha = $request->fecha;
         $userId = auth()->id();
 
-        foreach ($request->input('recursos', []) as $datos) {
-            RecursoEstadoDiario::updateOrCreate(
-                ['recurso_id' => $datos['id'], 'fecha' => $fecha],
-                ['estado_dia' => $datos['estado_dia'], 'motivo' => $datos['motivo'] ?? null, 'user_id' => $userId]
-            );
+        // Validar que ningún funcionario aparezca en más de un recurso.
+        $todosLosPersonalIds = collect($request->input('recursos', []))
+            ->flatMap(fn($d) => $d['dotacion'] ?? [])
+            ->map(fn($id) => (int) $id);
 
-            RecursoDotacion::where('recurso_id', $datos['id'])->whereDate('fecha', $fecha)->delete();
-
-            foreach ($datos['dotacion'] ?? [] as $personalId) {
-                RecursoDotacion::create([
-                    'recurso_id' => $datos['id'],
-                    'personal_id' => $personalId,
-                    'fecha'       => $fecha,
-                    'user_id'     => $userId,
-                ]);
-            }
+        $duplicados = $todosLosPersonalIds->duplicates()->unique()->values();
+        if ($duplicados->isNotEmpty()) {
+            $nombres = Personal::whereIn('id', $duplicados)
+                ->get()
+                ->map(fn($p) => $p->getNombreCompletoAttribute())
+                ->join(', ');
+            return back()
+                ->withErrors(['dotacion' => "El siguiente personal está asignado a más de un recurso: {$nombres}. Cada funcionario puede figurar en la dotación de un solo recurso por parte."])
+                ->withInput();
         }
+
+        DB::transaction(function () use ($request, $fecha, $userId) {
+            foreach ($request->input('recursos', []) as $datos) {
+                RecursoEstadoDiario::updateOrCreate(
+                    ['recurso_id' => $datos['id'], 'fecha' => $fecha],
+                    ['estado_dia' => $datos['estado_dia'], 'motivo' => $datos['motivo'] ?? null, 'user_id' => $userId]
+                );
+
+                RecursoDotacion::where('recurso_id', $datos['id'])->whereDate('fecha', $fecha)->delete();
+
+                foreach ($datos['dotacion'] ?? [] as $personalId) {
+                    RecursoDotacion::create([
+                        'recurso_id' => $datos['id'],
+                        'personal_id' => $personalId,
+                        'fecha'       => $fecha,
+                        'user_id'     => $userId,
+                    ]);
+                }
+            }
+        });
 
         $this->guardarPreferencias($request, $userId);
 
@@ -81,7 +100,7 @@ class VehiculoInformeController extends Controller
 
         $secciones = Destino::whereIn('id', $todosLosDestinoIds)
             ->with([
-                'recursos' => fn($q) => $q->with([
+                'recursos' => fn($q) => $q->whereNotNull('vehiculo_id')->with([
                     'asignacionActual.vehiculo',
                     'vehiculo',
                     'estadoSeccion',
@@ -123,7 +142,7 @@ class VehiculoInformeController extends Controller
         return Destino::whereIn('id', $destinoIds)
             ->with([
                 'recursos' => function ($q) use ($fecha) {
-                    $q->with([
+                    $q->whereNotNull('vehiculo_id')->with([
                         'asignacionActual.vehiculo',
                         'vehiculo',
                         'estadoSeccion',

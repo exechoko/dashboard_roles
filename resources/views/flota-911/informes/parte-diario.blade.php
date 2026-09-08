@@ -26,12 +26,58 @@
                 </div>
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <div class="form-group">
                                 <label>Fecha del parte <span class="text-danger">*</span></label>
                                 <input type="date" name="fecha" class="form-control"
                                     value="{{ $fecha }}" required id="inputFecha">
                             </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Guardia <span class="text-danger">*</span></label>
+                                <select name="guardia" class="form-control" required id="inputGuardia">
+                                    <option value="">Seleccione...</option>
+                                    @foreach(\App\Models\RecursoEstadoDiario::$guardias as $k => $label)
+                                        <option value="{{ $k }}" {{ $guardia === $k ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Horario <span class="text-danger">*</span></label>
+                                <select name="horario" class="form-control" required id="inputHorario">
+                                    @foreach(\App\Models\RecursoEstadoDiario::$horarios as $k => $label)
+                                        <option value="{{ $k }}" {{ $horario === $k ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Inicio del turno <span class="text-danger">*</span></label>
+                                <input type="datetime-local" name="fecha_inicio" class="form-control"
+                                    value="{{ $fechaInicio->format('Y-m-d\TH:i') }}" required id="inputFechaInicio">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>Fin del turno <span class="text-danger">*</span></label>
+                                <input type="datetime-local" name="fecha_fin" class="form-control"
+                                    value="{{ $fechaFin->format('Y-m-d\TH:i') }}" required id="inputFechaFin">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted small mb-1 mt-2">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                El inicio y fin se autocompletan según fecha y horario. Ajústelos si el cambio de guardia se movió.
+                            </p>
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="btnCargarTurno">
+                                <i class="fas fa-sync-alt mr-1"></i> Cargar parte guardado de este turno
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -68,9 +114,7 @@
                                     $estadoDiario = $recurso->estadoDiario->first();
                                     $estadoDia = $estadoDiario?->estado_dia ?? 'circula';
                                     $vehiculoActual = $recurso->vehiculoActual();
-                                    $dotacionIds = $recurso->dotaciones
-                                        ->filter(fn($d) => $d->fecha?->toDateString() === $fecha)
-                                        ->pluck('personal_id')->toArray();
+                                    $dotacionIds = $recurso->dotaciones->pluck('personal_id')->toArray();
                                 @endphp
                                 <tr>
                                     <td>
@@ -148,6 +192,45 @@
 
 @push('scripts')
 <script>
+(function() {
+    const inputFecha = document.getElementById('inputFecha');
+    const inputHorario = document.getElementById('inputHorario');
+    const inputInicio = document.getElementById('inputFechaInicio');
+    const inputFin = document.getElementById('inputFechaFin');
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function actualizarFechasPorHorario() {
+        const fecha = inputFecha.value;
+        const horario = inputHorario.value;
+        if (!fecha || !horario) { return; }
+        if (horario === '07_19') {
+            inputInicio.value = fecha + 'T07:00';
+            inputFin.value = fecha + 'T19:00';
+        } else {
+            const fin = new Date(fecha + 'T00:00');
+            fin.setDate(fin.getDate() + 1);
+            const finStr = fin.getFullYear() + '-' + pad(fin.getMonth() + 1) + '-' + pad(fin.getDate());
+            inputInicio.value = fecha + 'T19:00';
+            inputFin.value = finStr + 'T07:00';
+        }
+    }
+
+    inputFecha.addEventListener('change', actualizarFechasPorHorario);
+    inputHorario.addEventListener('change', actualizarFechasPorHorario);
+
+    document.getElementById('btnCargarTurno').addEventListener('click', function() {
+        const params = new URLSearchParams({
+            fecha: inputFecha.value,
+            guardia: document.getElementById('inputGuardia').value,
+            horario: inputHorario.value,
+            fecha_inicio: inputInicio.value,
+            fecha_fin: inputFin.value,
+        });
+        window.location.search = params.toString();
+    });
+})();
+
 document.querySelectorAll('.estado-dia-select').forEach(function(sel) {
     sel.addEventListener('change', function() {
         var recursoId = this.dataset.recurso;

@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\RecursoEstadoDiario;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\IOFactory;
@@ -11,17 +13,20 @@ class FlotaInformeService
     private const FONT = 'Arial';
     private const MARGIN = 1000;
 
-    public function generarParteDiario(Collection $secciones, string $fecha, ?string $novedadesGenerales): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function generarParteDiario(Collection $secciones, string $guardia, string $horario, Carbon $fechaInicio, Carbon $fechaFin, ?string $novedadesGenerales): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
         $phpWord = $this->crearDocumento();
         $section = $phpWord->addSection($this->layoutPortrait());
-        $fechaFormateada = \Carbon\Carbon::parse($fecha)->locale('es')->isoFormat('DD [de] MMMM [de] YYYY');
+        $fechaFormateada = $fechaInicio->copy()->locale('es')->isoFormat('DD [de] MMMM [de] YYYY');
+        $guardiaLabel = RecursoEstadoDiario::$guardias[$guardia] ?? $guardia;
+        $horarioLabel = RecursoEstadoDiario::$horarios[$horario] ?? $horario;
 
         $this->addTitulo($section, 'POLICÍA DE ENTRE RÍOS');
         $this->addTitulo($section, 'DIVISIÓN 911 Y VIDEOVIGILANCIA');
         $section->addTextBreak(1);
         $this->addTitulo($section, 'PARTE DIARIO DE VEHÍCULOS');
-        $this->addSubtitulo($section, 'Fecha: ' . $fechaFormateada);
+        $this->addSubtitulo($section, strtoupper($guardiaLabel) . ' — ' . $horarioLabel . ' del ' . $fechaInicio->format('d/m/Y'));
+        $this->addSubtitulo($section, 'Turno: ' . $fechaInicio->format('d/m/Y H:i') . ' a ' . $fechaFin->format('d/m/Y H:i'));
         $section->addTextBreak(1);
 
         foreach ($secciones as $seccion) {
@@ -53,7 +58,6 @@ class FlotaInformeService
                     $dominio = $vehiculo?->dominio ?? '—';
 
                     $dotacion = $recurso->dotaciones
-                        ->filter(fn($d) => $d->fecha?->toDateString() === $fecha)
                         ->map(fn($d) => $d->personal?->getNombreCompletoAttribute())
                         ->filter()
                         ->join("\n");
@@ -109,7 +113,7 @@ class FlotaInformeService
 
         $this->addPieFirma($section, $fechaFormateada);
 
-        $filename = 'Parte_Diario_' . str_replace('-', '', $fecha) . '.docx';
+        $filename = 'Parte_Diario_' . $fechaInicio->format('Ymd_Hi') . '.docx';
         return $this->descargar($phpWord, $filename);
     }
 

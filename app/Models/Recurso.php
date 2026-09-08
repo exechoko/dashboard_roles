@@ -101,6 +101,6 @@ class Recurso extends Model
 
     public function estadoDiarioHoy(): HasOne
     {
-        return $this->hasOne(RecursoEstadoDiario::class)->whereDate('fecha', today());
+        return $this->hasOne(RecursoEstadoDiario::class)->whereDate('fecha_inicio', today())->latest('fecha_inicio');
     }
 }

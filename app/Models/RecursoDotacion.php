@@ -9,9 +9,21 @@ class RecursoDotacion extends Model
 {
     protected $table = 'recurso_dotaciones';
 
-    protected $fillable = ['recurso_id', 'personal_id', 'fecha', 'user_id'];
+    protected $fillable = ['recurso_id', 'personal_id', 'guardia', 'horario', 'fecha_inicio', 'fecha_fin', 'user_id'];
 
-    protected $casts = ['fecha' => 'date'];
+    protected $casts = ['fecha_inicio' => 'datetime', 'fecha_fin' => 'datetime'];
+
+    public static array $guardias = [
+        'guardia_1' => 'Guardia 1',
+        'guardia_2' => 'Guardia 2',
+        'guardia_3' => 'Guardia 3',
+        'guardia_4' => 'Guardia 4',
+    ];
+
+    public static array $horarios = [
+        '07_19' => '07:00 a 19:00',
+        '19_07' => '19:00 a 07:00',
+    ];
 
     public function recurso(): BelongsTo
     {

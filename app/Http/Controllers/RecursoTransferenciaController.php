@@ -39,7 +39,7 @@ class RecursoTransferenciaController extends Controller
             ->orderByDesc('fecha_resolucion')
             ->paginate(20);
 
-        $destinos = Destino::orderBy('nombre')->get();
+        $destinos = Destino::opcionesConJerarquia();
 
         return view('flota-911.transferencias.index', compact('pendientes', 'historial', 'destinos'));
     }

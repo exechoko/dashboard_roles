@@ -282,11 +282,24 @@
                     @php $contenidoNovedades = optional($novedades)->contenido ?? []; @endphp
                     <div class="row">
                         @foreach(\App\Models\ParteDiarioNovedades::RUBROS as $clave => $etiqueta)
+                        @php $esPersonal = in_array($clave, \App\Models\ParteDiarioNovedades::RUBROS_PERSONAL, true); @endphp
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="small font-weight-bold mb-1">{{ $etiqueta }}</label>
-                                <textarea name="novedades[{{ $clave }}]" class="form-control form-control-sm" rows="1"
-                                    maxlength="2000">{{ $contenidoNovedades[$clave] ?? '' }}</textarea>
+                                @if($esPersonal)
+                                <select class="form-control form-control-sm select2-novedad-personal mb-1"
+                                    data-rubro="{{ $clave }}" data-placeholder="Agregar funcionario...">
+                                    <option value=""></option>
+                                    @foreach($personal as $p)
+                                        <option value="{{ $p->id }}"
+                                            data-corto="{{ trim($p->jerarquia.' '.$p->apellido.' '.$p->nombre) }}">
+                                            {{ $p->getNombreCompletoAttribute() }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @endif
+                                <textarea name="novedades[{{ $clave }}]" class="form-control form-control-sm"
+                                    rows="{{ $esPersonal ? 2 : 1 }}" maxlength="2000">{{ $contenidoNovedades[$clave] ?? '' }}</textarea>
                             </div>
                         </div>
                         @endforeach
@@ -400,6 +413,20 @@ document.querySelectorAll('.estado-dia-select').forEach(function(sel) {
 $(document).ready(function() {
     $('.select2-personal').select2({ width: '100%', language: 'es' });
     $('.select2-chofer').select2({ width: '100%', language: 'es', allowClear: true });
+
+    // Rubros de NOVEDADES sobre personal: el select es un "agregar" al textarea, que queda editable.
+    $('.select2-novedad-personal').select2({ width: '100%', language: 'es', placeholder: 'Agregar funcionario...' });
+    $('.select2-novedad-personal').on('select2:select', function(e) {
+        var corto = (e.params.data.element && e.params.data.element.getAttribute('data-corto')) || e.params.data.text;
+        var ta = document.querySelector('textarea[name="novedades[' + $(this).data('rubro') + ']"]');
+        if (ta && corto) {
+            var actual = ta.value.trim();
+            if (actual.indexOf(corto) === -1) {
+                ta.value = actual ? actual + '; ' + corto : corto;
+            }
+        }
+        $(this).val(null).trigger('change');
+    });
 
     $('.select2-personal').on('select2:selecting', function(e) {
         const nuevoId = String(e.params.args.data.id);

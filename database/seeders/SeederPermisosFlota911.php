@@ -21,6 +21,7 @@ class SeederPermisosFlota911 extends Seeder
             'generar-estado-flota',
             'gestionar-ficha-vehiculo',
             'asignar-vehiculo-a-recurso',
+            'confirmar-transferencia-recurso',
         ];
 
         foreach ($permisos as $nombre) {

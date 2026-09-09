@@ -68,7 +68,7 @@ class ParteDiarioCapturaTest extends TestCase
         $this->post(route('flota-911.informes.parte-diario.generar'), $this->payload([
             ['id' => $movil->id, 'estado_dia' => 'circula'],
             ['id' => $moto->id, 'estado_dia' => 'circula'],
-        ]))->assertOk();
+        ]))->assertRedirect();
 
         $this->assertSame(ParteDiario::TIPO_MOVILES, ParteDiario::where('destino_id', $movil->destino_id)
             ->where('fecha_inicio', '2099-05-20 07:00:00')->value('tipo'));
@@ -91,7 +91,7 @@ class ParteDiarioCapturaTest extends TestCase
                 'dotacion'   => [$p1->id, $p2->id],
                 'chofer_id'  => $p2->id,
             ],
-        ]))->assertOk();
+        ]))->assertRedirect();
 
         $estado = RecursoEstadoDiario::where('recurso_id', $recurso->id)
             ->where('fecha_inicio', '2099-05-20 07:00:00')->firstOrFail();
@@ -120,8 +120,8 @@ class ParteDiarioCapturaTest extends TestCase
             ]]]],
         );
 
-        $this->post(route('flota-911.informes.parte-diario.generar'), $base('14'))->assertOk();
-        $this->post(route('flota-911.informes.parte-diario.generar'), $base('31 ht 05'))->assertOk();
+        $this->post(route('flota-911.informes.parte-diario.generar'), $base('14'))->assertRedirect();
+        $this->post(route('flota-911.informes.parte-diario.generar'), $base('31 ht 05'))->assertRedirect();
 
         $parte = ParteDiario::where('destino_id', $moto->destino_id)
             ->where('fecha_inicio', '2099-05-20 07:00:00')->firstOrFail();
@@ -141,8 +141,8 @@ class ParteDiarioCapturaTest extends TestCase
             ['novedades' => ['sala_armas' => $armas, 'movil_traslado' => '']],
         );
 
-        $this->post(route('flota-911.informes.parte-diario.generar'), $payload('SGTO. PEREZ'))->assertOk();
-        $this->post(route('flota-911.informes.parte-diario.generar'), $payload('SGTO. GOMEZ'))->assertOk();
+        $this->post(route('flota-911.informes.parte-diario.generar'), $payload('SGTO. PEREZ'))->assertRedirect();
+        $this->post(route('flota-911.informes.parte-diario.generar'), $payload('SGTO. GOMEZ'))->assertRedirect();
 
         $novedades = ParteDiarioNovedades::where(['fecha' => '2099-05-20', 'guardia' => 'guardia_3'])->get();
         $this->assertCount(1, $novedades);
@@ -157,7 +157,7 @@ class ParteDiarioCapturaTest extends TestCase
 
         $this->post(route('flota-911.informes.parte-diario.generar'), $this->payload([
             ['id' => $recurso->id, 'estado_dia' => 'circula'],
-        ]))->assertOk();
+        ]))->assertRedirect();
 
         $this->assertFalse(
             ParteDiarioNovedades::where(['fecha' => '2099-05-20', 'guardia' => 'guardia_3'])->exists()
@@ -186,7 +186,7 @@ class ParteDiarioCapturaTest extends TestCase
         $this->post(route('flota-911.informes.parte-diario.generar'), $this->payload(
             [['id' => $recurso->id, 'estado_dia' => 'circula']],
             ['novedades' => ['autorizados' => $texto]],
-        ))->assertOk();
+        ))->assertRedirect();
 
         $novedades = ParteDiarioNovedades::where(['fecha' => '2099-05-20', 'guardia' => 'guardia_3'])->firstOrFail();
         $this->assertSame($texto, $novedades->contenido['autorizados']);

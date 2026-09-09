@@ -13,6 +13,9 @@ return [
         env('FLOTA911_DESTINATARIO_L2', 'LIC. CRIO. INSP. ZUNINO JUAN'),
     ],
 
+    // Prefijo que la Sección Patrulla antepone al número de móvil ("MÓVIL JP 1007").
+    'prefijo_movil_patrulla' => env('FLOTA911_PREFIJO_MOVIL', 'JP'),
+
     'membrete' => [
         'moviles' => [
             'POLICÍA DE ENTRE RÍOS',

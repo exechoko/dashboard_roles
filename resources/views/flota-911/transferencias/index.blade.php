@@ -112,12 +112,18 @@
                                 <td><small>{{ $t->reparticionDestinoNombre() }}</small></td>
                                 <td><small>{{ $t->fecha_transferencia->format('d/m/Y') }}</small></td>
                                 <td>
-                                    @if($t->estado === \App\Models\RecursoTransferencia::ESTADO_CONFIRMADA)
-                                        <span class="badge badge-success">Confirmada</span>
-                                    @else
-                                        <span class="badge badge-secondary" data-toggle="tooltip"
-                                            title="{{ $t->motivo_rechazo }}">Rechazada</span>
-                                    @endif
+                                    @switch($t->estado)
+                                        @case(\App\Models\RecursoTransferencia::ESTADO_CONFIRMADA)
+                                            <span class="badge badge-success">Confirmada</span>
+                                            @break
+                                        @case(\App\Models\RecursoTransferencia::ESTADO_REACTIVADA)
+                                            <span class="badge badge-info" data-toggle="tooltip"
+                                                title="{{ $t->observaciones }}">Reactivada</span>
+                                            @break
+                                        @default
+                                            <span class="badge badge-secondary" data-toggle="tooltip"
+                                                title="{{ $t->motivo_rechazo }}">Rechazada</span>
+                                    @endswitch
                                 </td>
                                 <td><small>{{ $t->usuarioResolucion?->name }} {{ $t->usuarioResolucion?->apellido }}</small></td>
                             </tr>

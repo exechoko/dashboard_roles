@@ -15,6 +15,7 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
+/.playwright-mcp
 
 # Agents & Skills
 /.agents

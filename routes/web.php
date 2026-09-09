@@ -54,6 +54,7 @@ use App\Http\Controllers\ArmeriaChalecoController;
 use App\Http\Controllers\FlotaDashboard911Controller;
 use App\Http\Controllers\RecursoNovedadController;
 use App\Http\Controllers\RecursoPrestamoController;
+use App\Http\Controllers\RecursoTransferenciaController;
 use App\Http\Controllers\RecursoEstadoSeccionController;
 use App\Http\Controllers\VehiculoInformeController;
 
@@ -210,6 +211,13 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/prestamos', [RecursoPrestamoController::class, 'index'])->name('prestamos.index');
         Route::post('/prestamos', [RecursoPrestamoController::class, 'store'])->name('prestamos.store');
         Route::patch('/prestamos/{prestamo}/devolver', [RecursoPrestamoController::class, 'devolver'])->name('prestamos.devolver');
+
+        // Transferencias de vehículos
+        Route::get('/transferencias', [RecursoTransferenciaController::class, 'index'])->name('transferencias.index');
+        Route::post('/recursos/{recurso}/transferencias', [RecursoTransferenciaController::class, 'store'])->name('transferencias.store');
+        Route::patch('/transferencias/{transferencia}/confirmar', [RecursoTransferenciaController::class, 'confirmar'])->name('transferencias.confirmar');
+        Route::patch('/transferencias/{transferencia}/rechazar', [RecursoTransferenciaController::class, 'rechazar'])->name('transferencias.rechazar');
+        Route::patch('/recursos/{recurso}/reactivar-transferencia', [RecursoTransferenciaController::class, 'reactivar'])->name('transferencias.reactivar');
 
         // Informes
         Route::get('/parte-diario', [VehiculoInformeController::class, 'parteDiario'])->name('informes.parte-diario');

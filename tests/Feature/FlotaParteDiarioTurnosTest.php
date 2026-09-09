@@ -54,7 +54,7 @@ class FlotaParteDiarioTurnosTest extends TestCase
 
         $this->post(route('flota-911.informes.parte-diario.generar'), $this->payloadTurno([
             'recursos' => [['id' => $recurso->id, 'estado_dia' => 'reserva', 'motivo' => 'En taller']],
-        ]))->assertOk();
+        ]))->assertRedirect();
 
         $this->post(route('flota-911.informes.parte-diario.generar'), $this->payloadTurno([
             'guardia'      => 'guardia_2',
@@ -62,7 +62,7 @@ class FlotaParteDiarioTurnosTest extends TestCase
             'fecha_inicio' => '2099-01-15T19:00',
             'fecha_fin'    => '2099-01-16T07:00',
             'recursos'     => [['id' => $recurso->id, 'estado_dia' => 'circula']],
-        ]))->assertOk();
+        ]))->assertRedirect();
 
         $estados = RecursoEstadoDiario::where('recurso_id', $recurso->id)
             ->where('fecha_inicio', '>=', '2099-01-01')
@@ -81,11 +81,11 @@ class FlotaParteDiarioTurnosTest extends TestCase
 
         $this->post(route('flota-911.informes.parte-diario.generar'), $this->payloadTurno([
             'recursos' => [['id' => $recurso->id, 'estado_dia' => 'circula']],
-        ]))->assertOk();
+        ]))->assertRedirect();
 
         $this->post(route('flota-911.informes.parte-diario.generar'), $this->payloadTurno([
             'recursos' => [['id' => $recurso->id, 'estado_dia' => 'fuera_de_servicio', 'motivo' => 'Choque']],
-        ]))->assertOk();
+        ]))->assertRedirect();
 
         $estados = RecursoEstadoDiario::where('recurso_id', $recurso->id)
             ->where('fecha_inicio', '>=', '2099-01-01')
@@ -105,7 +105,7 @@ class FlotaParteDiarioTurnosTest extends TestCase
                 'id' => $recursos[0]->id, 'estado_dia' => 'circula',
                 'dotacion' => [$personal->id],
             ]],
-        ]))->assertOk();
+        ]))->assertRedirect();
 
         $this->post(route('flota-911.informes.parte-diario.generar'), $this->payloadTurno([
             'guardia'      => 'guardia_2',
@@ -116,7 +116,7 @@ class FlotaParteDiarioTurnosTest extends TestCase
                 'id' => $recursos[1]->id, 'estado_dia' => 'circula',
                 'dotacion' => [$personal->id],
             ]],
-        ]))->assertOk();
+        ]))->assertRedirect();
 
         $this->assertSame(2, RecursoDotacion::where('personal_id', $personal->id)
             ->whereIn('recurso_id', $recursos->pluck('id'))
@@ -156,19 +156,28 @@ class FlotaParteDiarioTurnosTest extends TestCase
         $response->assertSee('Cargar parte guardado de este turno');
     }
 
-    public function test_los_titulos_del_docx_se_mayusculizan_conservando_los_acentos(): void
+    public function test_el_docx_del_parte_se_descarga_con_acentos_en_mayusculas(): void
     {
         $this->actingAs($this->usuarioConPermiso());
-        $recurso = Recurso::whereNotNull('vehiculo_id')->firstOrFail();
+        $recurso = Recurso::query()
+            ->whereNotNull('vehiculo_id')
+            ->whereHas('destino', fn ($q) => $q->where('nombre', 'like', '%Patrulla%')
+                ->where('nombre', 'not like', '%Motorizada%'))
+            ->firstOrFail();
 
-        $response = $this->post(route('flota-911.informes.parte-diario.generar'), $this->payloadTurno([
+        $this->post(route('flota-911.informes.parte-diario.generar'), $this->payloadTurno([
             'recursos' => [['id' => $recurso->id, 'estado_dia' => 'circula']],
+        ]))->assertRedirect();
+
+        $response = $this->get(route('flota-911.informes.parte-diario.docx', [
+            'seccion'      => $recurso->destino_id,
+            'fecha_inicio' => '2099-01-15T07:00',
         ]));
         $response->assertOk();
 
         $xml = $this->textoDelDocx($response);
 
-        $this->assertStringContainsString('DIVISIÓN 911 Y VIDEOVIGILANCIA', $xml);
+        $this->assertStringContainsString('DIVISIÓN 911 Y VIDEO VIGILANCIA', $xml);
         $this->assertStringNotContainsString('DIVISIóN', $xml);
     }
 

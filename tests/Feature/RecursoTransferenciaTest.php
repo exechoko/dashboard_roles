@@ -145,7 +145,7 @@ class RecursoTransferenciaTest extends TestCase
         $this->assertFalse(Recurso::activos()->whereKey($recurso->id)->exists());
     }
 
-    public function test_reactivar_limpia_los_datos_de_transferencia(): void
+    public function test_reactivar_limpia_los_datos_y_deja_registro_en_el_historial(): void
     {
         $recurso = $this->recursoActivoDe911();
         $recurso->forceFill([
@@ -160,6 +160,31 @@ class RecursoTransferenciaTest extends TestCase
         $recurso->refresh();
         $this->assertNull($recurso->fecha_transferencia);
         $this->assertNull($recurso->reparticion_transferencia);
+
+        $this->assertDatabaseHas('recurso_transferencias', [
+            'recurso_id' => $recurso->id,
+            'estado'     => RecursoTransferencia::ESTADO_REACTIVADA,
+        ]);
+    }
+
+    public function test_reparticion_destino_se_muestra_con_ruta_jerarquica(): void
+    {
+        $recurso = $this->recursoActivoDe911();
+
+        $division = Destino::where('parent_id', self::DIVISION_911_ID)->firstOrFail();
+
+        $transferencia = RecursoTransferencia::create([
+            'recurso_id'               => $recurso->id,
+            'destino_transferencia_id' => $division->id,
+            'fecha_transferencia'      => '2099-03-01',
+            'estado'                   => RecursoTransferencia::ESTADO_CONFIRMADA,
+            'user_id_reporte'          => $this->usuario('gestionar-flota-911')->id,
+        ]);
+
+        $esperado = Destino::with('padre.padre.padre.padre')->find($division->id)->rutaJerarquicaTexto();
+
+        $this->assertStringContainsString(' › ', $esperado);
+        $this->assertSame($esperado, $transferencia->fresh()->reparticionDestinoNombre());
     }
 
     public function test_la_pantalla_de_transferencias_renderiza_con_las_dependencias_jerarquizadas(): void

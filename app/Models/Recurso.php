@@ -12,6 +12,10 @@ class Recurso extends Model
 {
     protected $table = 'recursos';
 
+    protected $casts = [
+        'fecha_transferencia' => 'datetime',
+    ];
+
     public function vehiculo(): BelongsTo
     {
         return $this->belongsTo(Vehiculo::class);
@@ -20,6 +24,43 @@ class Recurso extends Model
     public function destino(): BelongsTo
     {
         return $this->belongsTo(Destino::class);
+    }
+
+    public function destinoTransferencia(): BelongsTo
+    {
+        return $this->belongsTo(Destino::class, 'destino_transferencia_id');
+    }
+
+    public function transferencias(): HasMany
+    {
+        return $this->hasMany(RecursoTransferencia::class)->orderByDesc('fecha_transferencia');
+    }
+
+    public function transferenciaPendiente(): HasOne
+    {
+        return $this->hasOne(RecursoTransferencia::class)
+            ->where('estado', RecursoTransferencia::ESTADO_PENDIENTE);
+    }
+
+    public function scopeActivos($query)
+    {
+        return $query->whereNull('fecha_transferencia');
+    }
+
+    public function scopeTransferidos($query)
+    {
+        return $query->whereNotNull('fecha_transferencia');
+    }
+
+    public function estaTransferido(): bool
+    {
+        return $this->fecha_transferencia !== null;
+    }
+
+    public function reparticionTransferenciaNombre(): string
+    {
+        return $this->destinoTransferencia?->nombre
+            ?? ($this->reparticion_transferencia ?: 'Desconocida');
     }
 
     public function flota_general(): HasMany

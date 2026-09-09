@@ -130,7 +130,7 @@ class VehiculoInformeController extends Controller
 
         $secciones = Destino::whereIn('id', $todosLosDestinoIds)
             ->with([
-                'recursos' => fn($q) => $q->whereNotNull('vehiculo_id')->with([
+                'recursos' => fn($q) => $q->activos()->whereNotNull('vehiculo_id')->with([
                     'asignacionActual.vehiculo',
                     'vehiculo',
                     'estadoSeccion',
@@ -172,7 +172,7 @@ class VehiculoInformeController extends Controller
         return Destino::whereIn('id', $destinoIds)
             ->with([
                 'recursos' => function ($q) use ($fechaInicio) {
-                    $q->whereNotNull('vehiculo_id')->with([
+                    $q->activos()->whereNotNull('vehiculo_id')->with([
                         'asignacionActual.vehiculo',
                         'vehiculo',
                         'estadoSeccion',

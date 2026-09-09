@@ -29,7 +29,7 @@ class RecursoController extends Controller
 
         // Uso del helper optimize()
         $recursos = optimize(Recurso::class)
-            ->with('vehiculo:id,dominio,marca,modelo', 'destino:id,nombre', 'destinoTransferencia:id,nombre')
+            ->with('vehiculo:id,dominio,marca,modelo', 'destino:id,nombre', 'destinoTransferencia.padre.padre.padre.padre')
             ->when($estado === 'transferidos', fn($query) => $query->whereNotNull('fecha_transferencia'))
             ->when($estado === 'activos', fn($query) => $query->whereNull('fecha_transferencia'))
             ->when($texto, function ($query) use ($texto) {

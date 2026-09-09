@@ -31,12 +31,15 @@ use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\CamaraFisicaController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\CecocoRecursoAliasController;
 use App\Http\Controllers\SitioController;
 use App\Http\Controllers\CecocoController;
 use App\Http\Controllers\TranscripcionController;
 use App\Http\Controllers\RAGController;
 use App\Http\Controllers\PlanoEdificioController;
+use App\Http\Controllers\ConfiguracionSistemaController;
+use App\Http\Controllers\InfraestructuraController;
 use App\Http\Controllers\PersonalController;
 use App\Http\Controllers\ManualesController;
 use App\Http\Controllers\WebAdminController;
@@ -57,6 +60,8 @@ use App\Http\Controllers\RecursoPrestamoController;
 use App\Http\Controllers\RecursoTransferenciaController;
 use App\Http\Controllers\RecursoEstadoSeccionController;
 use App\Http\Controllers\VehiculoInformeController;
+use App\Http\Controllers\DescargaController;
+use App\Http\Controllers\DescargaAdminController;
 
 /*
 |--------------------------------------------------------------------------
@@ -76,7 +81,57 @@ Route::get('/', function () {
 
 Auth::routes();
 
+// Login propio de la app móvil: misma autenticación (guard 'web', mismos
+// usuarios) que el login de escritorio, pero con una URL y una vista propias
+// para poder entrar directo a /movil sin pasar por el login de escritorio.
+Route::prefix('movil')->name('movil.')->group(function () {
+    Route::get('/ingresar', [App\Http\Controllers\Movil\LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/ingresar', [App\Http\Controllers\Movil\LoginController::class, 'login']);
+});
+
+// Plataforma de Descargas: link/QR de descarga publica, a proposito fuera
+// del grupo 'auth' de abajo, para poder compartir con gente sin cuenta en
+// el sistema. La seguridad la da el token del link/QR (+ password,
+// expiracion y max_usos), no el login. Ver
+// DescargaController::linkPublico()/descargarConQr().
+Route::prefix('descargas')->name('descargas.')->group(function () {
+    Route::get('/link/{token}', [DescargaController::class, 'linkPublico'])->name('link.publico');
+    Route::get('/qr/{token}', [DescargaController::class, 'descargarConQr'])->name('qr.descargar');
+});
+
 Route::group(['middleware' => ['auth']], function () {
+    Route::prefix('movil')->name('movil.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Movil\InicioController::class, 'index'])->name('index');
+
+        Route::get('/flota', [App\Http\Controllers\Movil\FlotaController::class, 'index'])->name('flota.index');
+        Route::get('/flota/{flota}', [App\Http\Controllers\Movil\FlotaController::class, 'show'])->name('flota.show');
+
+        Route::get('/camaras', [App\Http\Controllers\Movil\CamarasController::class, 'index'])->name('camaras.index');
+        Route::get('/camaras/{camara}', [App\Http\Controllers\Movil\CamarasController::class, 'show'])->name('camaras.show');
+
+        Route::get('/mapa/camaras.json', [App\Http\Controllers\Movil\MapaController::class, 'camarasJson'])->name('mapa.camaras-json');
+        Route::get('/mapa/dependencias.json', [App\Http\Controllers\Movil\MapaController::class, 'dependenciasJson'])->name('mapa.dependencias-json');
+        Route::get('/mapa/sitios.json', [App\Http\Controllers\Movil\MapaController::class, 'sitiosJson'])->name('mapa.sitios-json');
+        Route::get('/mapa', [App\Http\Controllers\Movil\MapaController::class, 'index'])->name('mapa.index');
+
+        Route::get('/eventos', [App\Http\Controllers\Movil\EventosController::class, 'index'])->name('eventos.index');
+        Route::get('/eventos/{eventoCecoco}', [App\Http\Controllers\Movil\EventosController::class, 'show'])->name('eventos.show');
+
+        Route::get('/dependencias', [App\Http\Controllers\Movil\DependenciasController::class, 'index'])->name('dependencias.index');
+        Route::get('/dependencias/{dependencia}', [App\Http\Controllers\Movil\DependenciasController::class, 'show'])->name('dependencias.show');
+
+        Route::get('/chat', [App\Http\Controllers\Movil\ChatController::class, 'index'])->name('chat.index');
+        Route::get('/chat/{conversacion}', [App\Http\Controllers\Movil\ChatController::class, 'show'])->name('chat.show');
+
+        Route::post('/push/suscribir', [App\Http\Controllers\Movil\PushSubscriptionController::class, 'store'])->name('push.store');
+        Route::delete('/push/suscribir', [App\Http\Controllers\Movil\PushSubscriptionController::class, 'destroy'])->name('push.destroy');
+    });
+
+    // Fuera del middleware de permisos de cada sección: la sirve el service
+    // worker cuando no hay red, así que tiene que responder siempre para
+    // cualquier usuario autenticado.
+    Route::get('/movil/offline', fn() => view('movil.offline'))->name('movil.offline');
+
     Route::prefix('chatbot')->name('chatbot.')->group(function () {
         Route::get('/history', [ChatbotController::class, 'history'])->name('history');
         Route::post('/messages', [ChatbotController::class, 'ask'])->middleware('throttle:chatbot')->name('ask');
@@ -94,6 +149,12 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/conversaciones/{conversacion}/leido', [ChatController::class, 'marcarLeido'])->name('conversaciones.leido');
         Route::post('/conversaciones/{conversacion}/escribiendo', [ChatController::class, 'escribiendo'])->name('conversaciones.escribiendo');
         Route::get('/adjuntos/{adjunto}', [ChatController::class, 'adjunto'])->name('adjuntos.show');
+    });
+
+    Route::prefix('notificaciones')->name('notificaciones.')->group(function () {
+        Route::get('/sync', [NotificacionController::class, 'sync'])->middleware('throttle:chat-sync')->name('sync');
+        Route::post('/marcar-leidas', [NotificacionController::class, 'marcarLeidas'])->name('marcar-leidas');
+        Route::delete('/', [NotificacionController::class, 'vaciar'])->name('vaciar');
     });
 
     // 🔹 ADMINISTRAR WEB (div911.stper.com.ar)
@@ -134,6 +195,7 @@ Route::group(['middleware' => ['auth']], function () {
         ->middleware('permission:ver-menu-web|editar-web-contadores|editar-web-textos|editar-web-historia|editar-web-tecnologia|editar-web-dependencias|editar-web-galeria');
 
     Route::resource('roles', RolController::class);
+    Route::get('/usuarios/json', [UsuarioController::class, 'json'])->name('usuarios.json');
     Route::resource('usuarios', UsuarioController::class);
     Route::resource('blogs', BlogController::class);
     Route::get('/equipos/estadisticas', [App\Http\Controllers\DashboardController::class, 'equipamientoEstadisticas'])
@@ -652,6 +714,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/mapa-calor/geocodificar-manual', [App\Http\Controllers\EventoCecocoController::class, 'geocodificarManual'])->name('mapa-calor.geocodificar-manual');
         Route::post('/mapa-calor/geocodificar-coordenadas', [App\Http\Controllers\EventoCecocoController::class, 'geocodificarCoordenadas'])->name('mapa-calor.geocodificar-coordenadas');
         Route::get('/analitica', [App\Http\Controllers\EventoCecocoController::class, 'analitica'])->name('analitica');
+        Route::get('/tiempos-respuesta', [App\Http\Controllers\EventoCecocoController::class, 'tiemposRespuesta'])->name('tiempos-respuesta');
         Route::get('/llamadas-central-telefonica', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'index'])->name('llamadas-central-telefonica');
         Route::get('/llamadas-central-telefonica/datos', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'datos'])->name('llamadas-central-telefonica.datos');
         Route::get('/llamadas-central-telefonica/exportar-docx', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'exportarDocx'])->name('llamadas-central-telefonica.exportar-docx');
@@ -660,6 +723,9 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/llamadas-central-telefonica/importar', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'importarProcesar'])->name('llamadas-central-telefonica.importar.post');
         Route::post('/llamadas-central-telefonica/importar-hoy', [App\Http\Controllers\LlamadaCentralTelefonicaController::class, 'importarHoy'])->name('llamadas-central-telefonica.importar-hoy');
         Route::get('/{eventoCecoco}/expediente', [App\Http\Controllers\EventoCecocoController::class, 'verExpediente'])->name('expediente');
+        Route::get('/{eventoCecoco}/exportar/pdf-original', [App\Http\Controllers\EventoCecocoController::class, 'exportarPdfOriginal'])->name('exportar.pdf-original');
+        Route::get('/{eventoCecoco}/exportar/pdf-resumen', [App\Http\Controllers\EventoCecocoController::class, 'exportarPdfResumen'])->name('exportar.pdf-resumen');
+        Route::get('/{eventoCecoco}/exportar/pdf-interno', [App\Http\Controllers\EventoCecocoController::class, 'exportarPdfInterno'])->name('exportar.pdf-interno');
         Route::get('/{eventoCecoco}', [App\Http\Controllers\EventoCecocoController::class, 'show'])->name('show');
     });
 
@@ -677,27 +743,69 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/modulacion/stream', [App\Http\Controllers\EventoCecocoController::class, 'streamModulacion'])->name('modulacion.stream');
         Route::get('/eventos/{eventoCecoco}/resumen-ia', [App\Http\Controllers\EventoCecocoController::class, 'resumenIa'])->name('resumen-ia');
         Route::get('/analitica/datos', [App\Http\Controllers\EventoCecocoController::class, 'analiticaDatos'])->name('analitica.datos');
+        Route::get('/tiempos-respuesta/datos', [App\Http\Controllers\EventoCecocoController::class, 'tiemposRespuestaDatos'])->name('tiempos-respuesta.datos');
     });
 
     Route::get('/api/dashboard/cecoco-mapa', [App\Http\Controllers\HomeController::class, 'cecocoMapaDatos'])
         ->name('api.dashboard.cecoco-mapa');
 
-    Route::get('/api/dashboard/workers-status', [App\Http\Controllers\HomeController::class, 'workersStatus'])
-        ->name('api.dashboard.workers-status');
+    // 🔹 INFRAESTRUCTURA
+    Route::prefix('infraestructura')->name('infraestructura.')->group(function () {
+        Route::get('/pcs', [InfraestructuraController::class, 'pcs'])->name('pcs');
+        Route::get('/servidores', [InfraestructuraController::class, 'servidores'])->name('servidores');
+        Route::get('/camaras', [InfraestructuraController::class, 'camaras'])->name('camaras');
+        Route::get('/red', [InfraestructuraController::class, 'red'])->name('red');
+        Route::get('/librenms', [InfraestructuraController::class, 'librenms'])->name('librenms');
+        Route::get('/central-telefonica', [InfraestructuraController::class, 'centralTelefonica'])->name('central-telefonica');
+        Route::get('/workers', [InfraestructuraController::class, 'workers'])->name('workers');
+    });
 
-    Route::get('/api/dashboard/estado-cctv', [App\Http\Controllers\HomeController::class, 'estadoCctv'])
-        ->name('api.dashboard.estado-cctv');
+    Route::prefix('api/infraestructura')->name('api.infraestructura.')->group(function () {
+        Route::get('/estado/{grupo}', [InfraestructuraController::class, 'estadoGrupo'])->name('estado-grupo');
+        Route::get('/estado-nominatim', [InfraestructuraController::class, 'estadoNominatim'])->name('estado-nominatim');
+        Route::post('/dispositivos/{dispositivo}/refrescar', [InfraestructuraController::class, 'refrescarDispositivo'])
+            ->middleware('throttle:12,1')
+            ->name('refrescar-dispositivo');
+        Route::post('/dispositivos/{dispositivo}/monitoreo', [InfraestructuraController::class, 'toggleMonitoreo'])
+            ->middleware('throttle:12,1')
+            ->name('toggle-monitoreo');
+        Route::get('/workers-status', [InfraestructuraController::class, 'workersStatus'])->name('workers-status');
+        Route::get('/estado-cctv', [InfraestructuraController::class, 'estadoCctv'])->name('estado-cctv');
+        Route::get('/estado-troncales-central-telefonica', [InfraestructuraController::class, 'estadoTroncalesCentralTelefonica'])
+            ->name('estado-troncales-central-telefonica');
+        Route::post('/refresh-restauraciones', [InfraestructuraController::class, 'refreshRestauracionesCache'])
+            ->middleware('throttle:3,1')
+            ->name('refresh-restauraciones');
+        Route::post('/refresh-restauraciones-gps', [InfraestructuraController::class, 'refreshRestauracionesGpsCache'])
+            ->middleware('throttle:3,1')
+            ->name('refresh-restauraciones-gps');
+    });
 
-    Route::get('/api/dashboard/estado-troncales-central-telefonica', [App\Http\Controllers\HomeController::class, 'estadoTroncalesCentralTelefonica'])
-        ->name('api.dashboard.estado-troncales-central-telefonica');
+    // 🔹 CONFIGURACIÓN DEL SISTEMA
+    Route::prefix('configuracion')->name('configuracion.')->group(function () {
+        Route::get('/', [ConfiguracionSistemaController::class, 'index'])->name('index');
 
-    Route::post('/api/dashboard/refresh-restauraciones', [App\Http\Controllers\HomeController::class, 'refreshRestauracionesCache'])
-        ->middleware('throttle:3,1')
-        ->name('api.dashboard.refresh-restauraciones');
+        Route::get('/env', [ConfiguracionSistemaController::class, 'env'])->name('env');
+        Route::put('/env', [ConfiguracionSistemaController::class, 'envUpdate'])->name('env.update');
 
-    Route::post('/api/dashboard/refresh-restauraciones-gps', [App\Http\Controllers\HomeController::class, 'refreshRestauracionesGpsCache'])
-        ->middleware('throttle:3,1')
-        ->name('api.dashboard.refresh-restauraciones-gps');
+        Route::get('/ia', [ConfiguracionSistemaController::class, 'ia'])->name('ia');
+        Route::put('/ia', [ConfiguracionSistemaController::class, 'iaUpdate'])->name('ia.update');
+        Route::post('/ia/probar/{servicio}', [ConfiguracionSistemaController::class, 'probarConexion'])
+            ->middleware('throttle:12,1')
+            ->name('ia.probar');
+
+        Route::get('/workers', [ConfiguracionSistemaController::class, 'workers'])->name('workers');
+        Route::put('/workers', [ConfiguracionSistemaController::class, 'workersUpdate'])->name('workers.update');
+        Route::post('/workers/jobs/reintentar/{id?}', [ConfiguracionSistemaController::class, 'jobsReintentar'])->name('workers.jobs.reintentar');
+        Route::post('/workers/jobs/purgar', [ConfiguracionSistemaController::class, 'jobsPurgar'])->name('workers.jobs.purgar');
+
+        Route::get('/backups', [ConfiguracionSistemaController::class, 'backups'])->name('backups');
+        Route::get('/backups/estado', [ConfiguracionSistemaController::class, 'backupEstado'])->name('backups.estado');
+        Route::post('/backups', [ConfiguracionSistemaController::class, 'backupCrear'])->name('backups.crear');
+        Route::get('/backups/{archivo}/descargar', [ConfiguracionSistemaController::class, 'backupDescargar'])->name('backups.descargar');
+        Route::post('/backups/{archivo}/restaurar', [ConfiguracionSistemaController::class, 'backupRestaurar'])->name('backups.restaurar');
+        Route::delete('/backups/{archivo}', [ConfiguracionSistemaController::class, 'backupEliminar'])->name('backups.eliminar');
+    });
 
     // Herramientas
     Route::prefix('herramientas')->name('herramientas.')->group(function () {
@@ -733,6 +841,74 @@ Route::group(['middleware' => ['auth']], function () {
             Route::get('/{mensaje}/adjunto/{parte}', [App\Http\Controllers\MailController::class, 'adjunto'])->whereNumber('mensaje')->name('adjunto');
             Route::get('/{mensaje}/eml', [App\Http\Controllers\MailController::class, 'eml'])->whereNumber('mensaje')->name('eml');
         });
+    });
+
+    // Plataforma de Descargas
+    Route::prefix('descargas')->name('descargas.')->group(function () {
+        // Rutas para usuarios (ver y descargar)
+        Route::get('/', [DescargaController::class, 'index'])->name('index');
+
+        // Rutas de administración
+        Route::prefix('admin')->name('admin.')->group(function () {
+            Route::get('/', [DescargaAdminController::class, 'index'])->name('index');
+
+            // Categorías
+            Route::get('/categorias', [DescargaAdminController::class, 'categorias'])->name('categorias');
+            Route::post('/categorias', [DescargaAdminController::class, 'storeCategoria'])->name('categorias.store');
+            Route::put('/categorias/{categoria}', [DescargaAdminController::class, 'updateCategoria'])->name('categorias.update');
+            Route::delete('/categorias/{categoria}', [DescargaAdminController::class, 'destroyCategoria'])->name('categorias.destroy');
+
+            // Archivos
+            Route::get('/archivos', [DescargaAdminController::class, 'archivos'])->name('archivos');
+            Route::get('/archivos/create', [DescargaAdminController::class, 'create'])->name('create');
+            Route::post('/archivos', [DescargaAdminController::class, 'store'])->name('store');
+            Route::post('/archivos/upload-chunk', [DescargaAdminController::class, 'subirChunk'])->name('upload-chunk');
+            Route::post('/archivos/upload-finalizar', [DescargaAdminController::class, 'finalizarArchivo'])->name('upload-finalizar');
+            Route::post('/archivos/upload-completar-lote', [DescargaAdminController::class, 'completarLoteChunked'])->name('upload-completar-lote');
+            Route::get('/archivos/conflictos', [DescargaAdminController::class, 'resolverConflictos'])->name('resolver_conflictos');
+            Route::post('/archivos/conflictos/procesar', [DescargaAdminController::class, 'procesarConflicto'])->name('procesar_conflictos');
+            Route::get('/archivos/{archivo}/edit', [DescargaAdminController::class, 'edit'])->name('edit');
+            Route::put('/archivos/{archivo}', [DescargaAdminController::class, 'update'])->name('update');
+            Route::delete('/archivos/{archivo}', [DescargaAdminController::class, 'destroy'])->name('destroy');
+            Route::post('/archivos/{archivo}/reactivar', [DescargaAdminController::class, 'reactivar'])->name('reactivar');
+
+            // Logs
+            Route::get('/logs', [DescargaAdminController::class, 'logs'])->name('logs');
+            Route::get('/logs/exportar', [DescargaAdminController::class, 'exportarLogs'])->name('exportar_logs');
+
+            // Links públicos
+            Route::get('/links', [DescargaAdminController::class, 'links'])->name('links');
+            Route::post('/links', [DescargaAdminController::class, 'crearLink'])->name('links.store');
+            Route::delete('/links/{link}', [DescargaAdminController::class, 'destroyLink'])->name('links.destroy');
+
+            // Solicitudes de compartir
+            Route::get('/solicitudes', [DescargaAdminController::class, 'solicitudes'])->name('solicitudes');
+            Route::post('/solicitudes/{solicitud}/aprobar', [DescargaAdminController::class, 'aprobarSolicitud'])->name('solicitudes.aprobar');
+            Route::post('/solicitudes/{solicitud}/rechazar', [DescargaAdminController::class, 'rechazarSolicitud'])->name('solicitudes.rechazar');
+            Route::post('/archivos/{archivo}/revocar-acceso/{usuario}', [DescargaAdminController::class, 'revocarAcceso'])->name('revocar-acceso');
+
+            // Códigos QR
+            Route::get('/qrs', [DescargaAdminController::class, 'listarQrs'])->name('qrs');
+            Route::post('/archivos/{archivo}/generar-qr', [DescargaAdminController::class, 'generarQr'])->name('generar-qr');
+            Route::get('/qrs/{qrCode}/imagen', [DescargaAdminController::class, 'descargarImagenQr'])->name('qr.descargar-imagen');
+            Route::post('/qrs/{qrCode}/desactivar', [DescargaAdminController::class, 'desactivarQr'])->name('qr.desactivar');
+        });
+
+        // Rutas para usuarios
+        Route::get('/compartidos-conmigo', [DescargaController::class, 'compartidosConmigo'])->name('compartidos-conmigo');
+        Route::get('/mis-favoritos', [DescargaController::class, 'misFavoritos'])->name('mis-favoritos');
+        Route::get('/mi-historial', [DescargaController::class, 'miHistorial'])->name('mi-historial');
+        Route::post('/{archivo}/solicitar-compartir', [DescargaController::class, 'solicitarCompartir'])->name('solicitar-compartir');
+        Route::post('/{archivo}/favorito', [DescargaController::class, 'toggleFavorito'])->name('toggle-favorito');
+        Route::post('/solicitar-zip', [DescargaController::class, 'solicitarZip'])->name('solicitar-zip');
+        Route::get('/descargar-zip/{token}', [DescargaController::class, 'descargarZip'])->name('descargar-zip');
+
+        // Rutas catch-all (deben ir al final)
+        Route::get('/galeria', [DescargaController::class, 'galeria'])->name('galeria');
+        Route::get('/{archivo}', [DescargaController::class, 'show'])->name('show');
+        Route::get('/{archivo}/download', [DescargaController::class, 'download'])->name('download');
+        Route::get('/{archivo}/preview', [DescargaController::class, 'preview'])->name('preview');
+        Route::post('/{archivo}/comentar', [DescargaController::class, 'comentar'])->name('comentar');
     });
 
     // Manuales

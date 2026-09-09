@@ -1,0 +1,26 @@
+{
+  "name": "C.A.R. 911 Móvil",
+  "short_name": "CAR 911 Móvil",
+  "description": "Consulta de flota, cámaras, mapa y eventos CECOCO en el celular.",
+  "start_url": "/movil",
+  "scope": "/movil",
+  "id": "/movil",
+  "display": "standalone",
+  "background_color": "#06101f",
+  "theme_color": "#06101f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/img/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/img/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

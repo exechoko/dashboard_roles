@@ -1,0 +1,75 @@
+<?php
+
+namespace App\Listeners;
+
+use App\Events\ChatMensajeEnviado;
+use App\Models\PushSubscription;
+use App\Models\User;
+use App\Services\WebPushService;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+
+class EnviarPushMensajeChat implements ShouldQueue
+{
+    public function __construct(private WebPushService $webPush)
+    {
+    }
+
+    public function handle(ChatMensajeEnviado $event): void
+    {
+        $mensaje = $event->mensaje;
+        $conversacion = $event->conversacion;
+
+        $titulo = trim($mensaje->usuario->name . ' ' . $mensaje->usuario->apellido);
+        $cuerpo = $mensaje->cuerpo
+            ? Str::limit($mensaje->cuerpo, 120)
+            : 'Envió un adjunto';
+
+        // La URL a abrir depende de la plataforma de cada suscripción: la
+        // ficha liviana de /movil/chat, o la vista de escritorio (que ya
+        // sabe abrir una conversación puntual vía ?conversacion=).
+        $urlPara = function (PushSubscription $suscripcion) use ($conversacion): string {
+            return $suscripcion->plataforma === 'escritorio'
+                ? url("/chat?conversacion={$conversacion->id}")
+                : url("/movil/chat/{$conversacion->id}");
+        };
+
+        $payloadPara = fn (PushSubscription $suscripcion) => [
+            'title' => $titulo,
+            'body' => $cuerpo,
+            'url' => $urlPara($suscripcion),
+        ];
+
+        $destinatarios = $conversacion->participantes()
+            ->where('user_id', '!=', $mensaje->user_id)
+            ->pluck('user_id');
+
+        foreach ($destinatarios as $userId) {
+            $usuario = User::find($userId);
+
+            if ($usuario === null) {
+                continue;
+            }
+
+            // Si está activo en el chat ahora mismo en alguna plataforma (pisó
+            // /chat/sync hace menos de 90s ahí), ya lo va a ver en vivo: no
+            // duplicar con push, pero solo en esa plataforma — si tiene /chat
+            // abierto en escritorio igual le tiene que llegar al celular.
+            $plataformasEnLinea = collect(['movil', 'escritorio'])
+                ->filter(fn (string $plataforma): bool => Cache::has("chat.online.{$userId}.{$plataforma}"))
+                ->values()
+                ->all();
+
+            try {
+                $this->webPush->enviarATodasLasSuscripciones($usuario, $payloadPara, $plataformasEnLinea);
+            } catch (\Throwable $e) {
+                Log::error('EnviarPushMensajeChat: error al enviar', [
+                    'user_id' => $userId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+    }
+}

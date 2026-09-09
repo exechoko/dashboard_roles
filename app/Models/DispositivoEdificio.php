@@ -60,6 +60,7 @@ class DispositivoEdificio extends Model
         'password',
         'observaciones',
         'activo',
+        'monitoreo_habilitado',
         'created_by',
         'updated_by',
     ];
@@ -69,6 +70,7 @@ class DispositivoEdificio extends Model
         'posicion_y' => 'decimal:4',
         'puertos' => 'integer',
         'activo' => 'boolean',
+        'monitoreo_habilitado' => 'boolean',
     ];
 
     public function setPasswordAttribute($value)
@@ -108,6 +110,11 @@ class DispositivoEdificio extends Model
     public function scopeActivos($query)
     {
         return $query->where('activo', true);
+    }
+
+    public function scopeConMonitoreoHabilitado($query)
+    {
+        return $query->where('monitoreo_habilitado', true);
     }
 
     public function scopePorTipo($query, $tipo)

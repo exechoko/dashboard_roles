@@ -107,6 +107,13 @@ return [
         'api_key' => env('API_KEY_STADIA_MAPS', ''),
     ],
 
+    // Notificaciones push (Web Push / VAPID) para el chat en la app móvil.
+    'webpush' => [
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+        'subject' => env('VAPID_SUBJECT'),
+    ],
+
     // Ticketera HESK (help desk) — lado admin.
     'ticketera' => [
         'url'               => env('TICKETERA_URL'),

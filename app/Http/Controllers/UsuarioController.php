@@ -42,6 +42,20 @@ class UsuarioController extends Controller
     }
 
     /**
+     * Obtener lista de usuarios activos en formato JSON
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function json()
+    {
+        $usuarios = User::select('id', 'name', 'email')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json($usuarios);
+    }
+
+    /**
      * Show the form for creating a new resource.
      *
      * @return \Illuminate\Http\Response

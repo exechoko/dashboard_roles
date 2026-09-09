@@ -16,10 +16,12 @@
         "laravelcollective/html": "^6.3",
         "larswiegers/laravel-maps": "^0.20",
         "maatwebsite/excel": "^3.1",
+        "minishlink/web-push": "^9.0",
         "nesbot/carbon": "^2.62",
         "phpoffice/phpspreadsheet": "^1.28",
         "phpoffice/phpword": "^0.18.3",
         "select2/select2": "^4.0",
+        "simplesoftwareio/simple-qrcode": "*",
         "spatie/laravel-permission": "^6.0",
         "zbateson/mail-mime-parser": "^4.0"
     },

@@ -1,4 +1,4 @@
-# Tareas, usuarios, roles, manuales y auditoría
+# Tareas, usuarios, roles, manuales, auditoría y configuración del sistema
 
 ## Crear una tarea
 
@@ -96,9 +96,42 @@ La carga admite PDF, DOCX, Markdown y HTML. Para instructivos se solicita títul
 
 ## Auditoría
 
-1. Abrí [Auditoría](/auditoria).
+1. Abrí [Auditoría](/auditoria), dentro de **Configuración del Sistema**.
 2. Filtrá por acción, tabla, usuario o rango de fechas.
 3. Revisá fecha, usuario, entidad, acción y resumen del cambio.
 4. Usá la auditoría para verificar trazabilidad; no permite editar ni borrar eventos.
 
 Los campos sensibles se ocultan en los registros de auditoría.
+
+## Configuración del Sistema
+
+Menú que agrupa Auditoría junto a la configuración operativa del sistema. Cada pantalla exige su propio permiso.
+
+### Variables de entorno
+
+1. Abrí [Variables de Entorno](/configuracion/env).
+2. Elegí la pestaña del servicio (IA, Mapas, CECOCO, Infraestructura, Ticketera, Notificaciones, Workers, General) o **Avanzado** para el resto de las claves del `.env`.
+3. Los campos de contraseña o API key se muestran en blanco: dejarlos así conserva el valor actual.
+4. Guardá. Cada guardado hace un respaldo automático del `.env` antes de escribir.
+
+El grupo **Críticas** (entorno, URL base, conexión a la base de datos) exige el permiso adicional de edición de claves críticas: un cambio mal hecho ahí puede dejar el sistema sin conexión a la base de datos.
+
+### IA y API Keys
+
+1. Abrí [IA y API Keys](/configuracion/ia).
+2. Editá servidor, modelo y timeouts de cada servicio (Ollama, Whisper, RAG, OpenCode) y las API keys de terceros (OpenAI, ElevenLabs, TinyMCE).
+3. Usá **Probar conexión** para verificar que el servidor configurado responde antes de guardar.
+
+### Workers y Colas
+
+1. Abrí [Workers y Colas](/configuracion/workers).
+2. Consultá el estado en vivo (worker activo, pendientes, procesando, fallidos).
+3. Ajustá la conexión de colas y la indexación automática de correos.
+4. Reintentá o purgá jobs fallidos desde la tabla de abajo.
+
+### Backups de Base de Datos
+
+1. Abrí [Backups](/configuracion/backups).
+2. Pulsá **Generar backup ahora** (con nota opcional) para encolar un backup de la base `equipamiento`. Se genera en segundo plano (puede tardar varios minutos en bases grandes); la pantalla se actualiza sola cuando termina.
+3. Descargá, restaurá o eliminá un backup existente según tu permiso.
+4. Restaurar también corre en segundo plano y exige escribir el nombre exacto del archivo como confirmación; genera automáticamente un backup de seguridad de la base actual antes de reemplazarla. Mientras hay un backup o una restauración en curso, no se puede iniciar otro.

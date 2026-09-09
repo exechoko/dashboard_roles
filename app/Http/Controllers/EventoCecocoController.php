@@ -12,6 +12,7 @@ use App\Services\CecocoGrabacionesLocalService;
 use App\Services\GrabadorTetraService;
 use App\Services\CecocoModulacionesLocalService;
 use App\Services\ResumenEventoIaService;
+use App\Services\TiempoRespuestaCecocoService;
 use App\Jobs\DescargarEventosCecoco;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -28,7 +29,8 @@ class EventoCecocoController extends Controller
     public function __construct(
         EventoCecocoParser $parser,
         CecocoExpedienteService $expedienteService,
-        private ResumenEventoIaService $resumenIaService
+        private ResumenEventoIaService $resumenIaService,
+        private TiempoRespuestaCecocoService $tiempoRespuestaService
     ) {
         $this->parser = $parser;
         $this->expedienteService = $expedienteService;
@@ -56,47 +58,6 @@ class EventoCecocoController extends Controller
                 $q->whereNotNull('detalle_json');
             }]);
 
-            if ($request->filled('anio')) {
-                $query->delAnio((int) $request->anio);
-            }
-
-            if ($request->filled('mes')) {
-                $query->delMes((int) $request->mes);
-            }
-
-            if ($request->filled('operador')) {
-                $query->porOperador($request->operador);
-            }
-
-            $tiposFiltro = $this->tiposDesdeRequest($request);
-            if ($tiposFiltro !== []) {
-                $this->aplicarFiltroTipos($query, $tiposFiltro);
-            } elseif ($request->filled('tipo')) {
-                $query->porTipo($request->tipo);
-            }
-
-            if ($request->filled('desde_datetime') && $request->filled('hasta_datetime')) {
-                $desdeCompleto = str_replace('T', ' ', $request->input('desde_datetime'));
-                $hastaCompleto = str_replace('T', ' ', $request->input('hasta_datetime'));
-
-                if (strlen($desdeCompleto) === 16) {
-                    $desdeCompleto .= ':00';
-                }
-
-                if (strlen($hastaCompleto) === 16) {
-                    $hastaCompleto .= ':59';
-                }
-                $query->whereBetween('fecha_hora', [$desdeCompleto, $hastaCompleto]);
-            } elseif ($request->filled('desde') && $request->filled('hasta')) {
-                $desdeCompleto = $request->desde . ' ' . ($request->filled('hora_desde') ? $request->hora_desde : '00:00:00');
-                $hastaCompleto = $request->hasta . ' ' . ($request->filled('hora_hasta') ? $request->hora_hasta : '23:59:59');
-                $query->whereBetween('fecha_hora', [$desdeCompleto, $hastaCompleto]);
-            }
-
-            if ($request->filled('buscar')) {
-                $query->buscar($request->buscar);
-            }
-
             $filtrosConteo = [
                 'anio' => $request->input('anio'),
                 'mes' => $request->input('mes'),
@@ -112,12 +73,16 @@ class EventoCecocoController extends Controller
                 'buscar' => $request->input('buscar'),
             ];
 
+            $query->filtrado($filtrosConteo);
+
             $cacheKeyConteo = 'cecoco_count_filtros_' . md5(json_encode($filtrosConteo));
             $totalResultados = Cache::remember($cacheKeyConteo, 120, function () use ($query) {
                 return (clone $query)->count();
             });
 
-            $eventos = $query->orderBy('fecha_hora', 'desc')->simplePaginate(50)->withQueryString();
+            $query->ordenadoPor($request->input('orden'));
+
+            $eventos = $query->simplePaginate(50)->withQueryString();
 
             $eventos->getCollection()->transform(function ($e) {
                 if (preg_match('/^(d\.?d\.?|dd)(?=\s|$)/i', trim($e->direccion))) {
@@ -339,7 +304,9 @@ class EventoCecocoController extends Controller
                 'Mes'
             ], ';');
 
-            $query->orderBy('fecha_hora', 'desc')->chunk(500, function ($eventos) use ($handle) {
+            $this->aplicarOrden($query, $request->input('orden'));
+
+            $query->chunk(500, function ($eventos) use ($handle) {
                 foreach ($eventos as $evento) {
                     fputcsv($handle, [
                         $evento->nro_expediente,
@@ -407,28 +374,7 @@ class EventoCecocoController extends Controller
         $this->authorize('ver-expediente-cecoco');
 
         try {
-            $refrescar = $request->query('refrescar', false);
-            $detalle = null;
-
-            if (!$refrescar) {
-                $cache = \App\Models\DetalleExpedienteCecoco::where('evento_cecoco_id', $eventoCecoco->id)->first();
-                if ($cache) {
-                    $detalle = $cache->detalle_json;
-                }
-            }
-
-            if (!$detalle) {
-                $detalle = $this->expedienteService->obtenerDetalleExpediente($eventoCecoco->nro_expediente);
-
-                \App\Models\DetalleExpedienteCecoco::updateOrCreate(
-                    ['evento_cecoco_id' => $eventoCecoco->id],
-                    [
-                        'nro_expediente' => $eventoCecoco->nro_expediente,
-                        'detalle_json' => $detalle,
-                        'fecha_consulta' => now(),
-                    ]
-                );
-            }
+            $detalle = $this->expedienteService->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
 
             $filtros = $request->only([
                 'anio',
@@ -453,6 +399,110 @@ class EventoCecocoController extends Controller
                 ->route('cecoco.show', $eventoCecoco)
                 ->with('error', 'Error al obtener el detalle del expediente: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Exporta el reporte del expediente en el formato original de CECOCO web
+     * (mismo HTML que entrega el sistema), listo para imprimir/guardar como PDF.
+     */
+    public function exportarPdfOriginal(Request $request, EventoCecoco $eventoCecoco)
+    {
+        $this->authorize('ver-expediente-cecoco');
+
+        try {
+            $cacheKey = 'cecoco_reporte_html_original_' . $eventoCecoco->nro_expediente;
+            $html = $request->boolean('refrescar') ? null : Cache::get($cacheKey);
+
+            if (!$html) {
+                $html = $this->expedienteService->obtenerReporteHtmlOriginal($eventoCecoco->nro_expediente);
+                Cache::put($cacheKey, $html, 60 * 30);
+            }
+
+            return response($this->envolverHtmlOriginalParaImprimir($html, $eventoCecoco->nro_expediente))
+                ->header('Content-Type', 'text/html; charset=UTF-8');
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('cecoco.show', $eventoCecoco)
+                ->with('error', 'Error al exportar el reporte original: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Exporta el PDF nativo del "Parte de novedad general" de CECOCO (el mismo
+     * que genera el botón de impresión dentro del sistema CECOCO), con los datos
+     * básicos del evento y sin la cronología completa de acciones.
+     */
+    public function exportarPdfResumen(Request $request, EventoCecoco $eventoCecoco)
+    {
+        $this->authorize('ver-expediente-cecoco');
+
+        try {
+            $cacheKey = 'cecoco_reporte_pdf_resumen_' . $eventoCecoco->nro_expediente;
+            $pdf = $request->boolean('refrescar') ? null : Cache::get($cacheKey);
+
+            if (!$pdf) {
+                $pdf = $this->expedienteService->obtenerReportePdfOriginal($eventoCecoco->nro_expediente);
+                Cache::put($cacheKey, $pdf, 60 * 30);
+            }
+
+            return response($pdf, 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="expediente_' . $eventoCecoco->nro_expediente . '.pdf"',
+            ]);
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('cecoco.show', $eventoCecoco)
+                ->with('error', 'Error al exportar el PDF: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Exporta el expediente en un formato interno prolijo (propio del sistema),
+     * listo para imprimir/guardar como PDF.
+     */
+    public function exportarPdfInterno(Request $request, EventoCecoco $eventoCecoco)
+    {
+        $this->authorize('ver-expediente-cecoco');
+
+        try {
+            $detalle = $this->expedienteService->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
+
+            return view('eventos-cecoco.exportar-interno-pdf', compact('eventoCecoco', 'detalle'));
+        } catch (\Exception $e) {
+            return redirect()
+                ->route('cecoco.show', $eventoCecoco)
+                ->with('error', 'Error al generar el reporte interno: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Inyecta una barra flotante de "Guardar como PDF" / "Cerrar" (oculta al
+     * imprimir) en el HTML original de CECOCO, sin alterar su contenido.
+     */
+    private function envolverHtmlOriginalParaImprimir(string $html, string $nroExpediente): string
+    {
+        $toolbar = '<div class="cecoco-print-toolbar" style="position:fixed;top:10px;right:10px;'
+            . 'z-index:99999;display:flex;gap:8px;font-family:Arial,sans-serif;">'
+            . '<button onclick="window.print()" style="background:#007bff;color:#fff;border:none;'
+            . 'padding:8px 15px;border-radius:4px;cursor:pointer;font-size:14px;">'
+            . '<i class="fas fa-print"></i> Guardar como PDF</button>'
+            . '<button onclick="window.close()" style="background:#6c757d;color:#fff;border:none;'
+            . 'padding:8px 15px;border-radius:4px;cursor:pointer;font-size:14px;">Cerrar</button>'
+            . '</div>'
+            . '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">'
+            . '<style>@media print { .cecoco-print-toolbar { display: none !important; } }</style>';
+
+        if (stripos($html, '<body') !== false) {
+            return preg_replace('/(<body[^>]*>)/i', '$1' . $toolbar, $html, 1);
+        }
+
+        if (stripos($html, '<html') !== false) {
+            return $toolbar . $html;
+        }
+
+        return '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
+            . '<title>Expediente ' . e($nroExpediente) . ' - CECOCO (original)</title></head>'
+            . '<body>' . $toolbar . $html . '</body></html>';
     }
 
     /**
@@ -1174,6 +1224,30 @@ class EventoCecocoController extends Controller
     }
 
     /**
+     * Aplica el orden elegido en el buscador. El nro_expediente se guarda como
+     * string (largo variable: 5 a 7 dígitos), por eso se castea a numérico para
+     * que el orden sea el real y no el alfabético (donde "999" > "10000").
+     */
+    private function aplicarOrden(Builder $query, ?string $orden): void
+    {
+        switch ($orden) {
+            case 'expediente_menor_mayor':
+                $query->orderByRaw('CAST(nro_expediente AS UNSIGNED) ASC');
+                break;
+            case 'expediente_mayor_menor':
+                $query->orderByRaw('CAST(nro_expediente AS UNSIGNED) DESC');
+                break;
+            case 'fecha_antigua':
+                $query->orderBy('fecha_hora', 'asc');
+                break;
+            case 'fecha_reciente':
+            default:
+                $query->orderBy('fecha_hora', 'desc');
+                break;
+        }
+    }
+
+    /**
      * @return array<int, string>
      */
     private function tiposDesdeRequest(Request $request): array
@@ -1427,6 +1501,157 @@ class EventoCecocoController extends Controller
             'eventos' => $eventos,
             'eventos_limit' => 100,
         ]);
+    }
+
+    public function tiemposRespuesta(Request $request)
+    {
+        $this->authorize('ver-tiempos-respuesta-cecoco');
+
+        $tipos = Cache::rememberForever('cecoco_tipos', function () {
+            return EventoCecoco::distinct()->orderBy('tipo_servicio')->pluck('tipo_servicio');
+        });
+
+        $tipos = $tipos->filter()->map(fn($t) => self::normalizarTipo($t))->unique()->sort()->values();
+
+        return view('eventos-cecoco.tiempos-respuesta', compact('tipos'));
+    }
+
+    public function tiemposRespuestaDatos(AnaliticaEventoCecocoRequest $request): JsonResponse
+    {
+        $this->authorize('ver-tiempos-respuesta-cecoco');
+
+        $validated = $request->validated();
+
+        $desde = $request->filled('desde')
+            ? $validated['desde'] . ' 00:00:00'
+            : now()->subDays(6)->startOfDay()->format('Y-m-d H:i:s');
+
+        $hasta = $request->filled('hasta')
+            ? $validated['hasta'] . ' 23:59:59'
+            : now()->endOfDay()->format('Y-m-d H:i:s');
+
+        $tiposFiltro = collect($validated['tipos'] ?? [])
+            ->filter(fn($tipo) => is_string($tipo) && trim($tipo) !== '')
+            ->map(fn($tipo) => trim($tipo))
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($tiposFiltro === [] && !empty($validated['tipo'])) {
+            $tiposFiltro = [$validated['tipo']];
+        }
+
+        $base = EventoCecoco::whereBetween('fecha_hora', [$desde, $hasta]);
+
+        if ($tiposFiltro !== []) {
+            $this->aplicarFiltroTipos($base, $tiposFiltro);
+        }
+
+        $totalEventosPeriodo = (clone $base)->count();
+
+        $filas = $this->tiempoRespuestaService->calcular(clone $base);
+
+        if ($filas->isEmpty()) {
+            return response()->json([
+                'desde' => $desde,
+                'hasta' => $hasta,
+                'total_eventos_periodo' => $totalEventosPeriodo,
+                'cobertura' => 0,
+                'cobertura_pct' => 0,
+                'promedio_minutos' => null,
+                'mediana_minutos' => null,
+                'minimo_minutos' => null,
+                'maximo_minutos' => null,
+                'por_fecha' => [],
+                'por_hora' => array_fill(0, 24, null),
+                'distribucion' => [],
+                'top_tipos' => [],
+                'eventos_lentos' => [],
+            ]);
+        }
+
+        $minutos = $filas->pluck('minutos');
+        $cobertura = $filas->count();
+
+        $porFecha = $filas->groupBy(fn($fila) => $fila['fecha_hora']->format('Y-m-d'))
+            ->map(fn($grupo) => round($grupo->pluck('minutos')->avg(), 1))
+            ->sortKeys();
+
+        $porHoraRaw = $filas->groupBy(fn($fila) => (int) $fila['fecha_hora']->format('G'))
+            ->map(fn($grupo) => round($grupo->pluck('minutos')->avg(), 1));
+        $porHora = [];
+        for ($h = 0; $h < 24; $h++) {
+            $porHora[$h] = $porHoraRaw->get($h);
+        }
+
+        $bandas = [
+            '0-5 min' => fn($m) => $m <= 5,
+            '5-10 min' => fn($m) => $m > 5 && $m <= 10,
+            '10-15 min' => fn($m) => $m > 10 && $m <= 15,
+            '15-30 min' => fn($m) => $m > 15 && $m <= 30,
+            '30-60 min' => fn($m) => $m > 30 && $m <= 60,
+            'Más de 60 min' => fn($m) => $m > 60,
+        ];
+        $distribucion = [];
+        foreach ($bandas as $etiqueta => $condicion) {
+            $distribucion[] = ['banda' => $etiqueta, 'total' => $minutos->filter($condicion)->count()];
+        }
+
+        $topTipos = $filas->groupBy('tipo_servicio')
+            ->map(fn($grupo, $tipo) => [
+                'tipo' => $tipo,
+                'promedio' => round($grupo->pluck('minutos')->avg(), 1),
+                'cantidad' => $grupo->count(),
+            ])
+            ->filter(fn($item) => $item['cantidad'] >= 3)
+            ->sortByDesc('promedio')
+            ->values()
+            ->take(10);
+
+        $eventosLentos = $filas->sortByDesc('minutos')
+            ->take(15)
+            ->map(fn($fila) => [
+                'id' => $fila['evento_id'],
+                'nro_expediente' => $fila['nro_expediente'],
+                'fecha_hora' => $fila['fecha_hora']->format('d/m/Y H:i'),
+                'tipo_servicio' => $fila['tipo_servicio'],
+                'recurso' => $fila['recurso'],
+                'minutos' => $fila['minutos'],
+            ])
+            ->values();
+
+        return response()->json([
+            'desde' => $desde,
+            'hasta' => $hasta,
+            'total_eventos_periodo' => $totalEventosPeriodo,
+            'cobertura' => $cobertura,
+            'cobertura_pct' => $totalEventosPeriodo > 0 ? round($cobertura / $totalEventosPeriodo * 100, 1) : 0,
+            'promedio_minutos' => round($minutos->avg(), 1),
+            'mediana_minutos' => $this->mediana($minutos->values()->all()),
+            'minimo_minutos' => round($minutos->min(), 1),
+            'maximo_minutos' => round($minutos->max(), 1),
+            'por_fecha' => $porFecha,
+            'por_hora' => $porHora,
+            'distribucion' => $distribucion,
+            'top_tipos' => $topTipos,
+            'eventos_lentos' => $eventosLentos,
+        ]);
+    }
+
+    /**
+     * @param array<int, float> $valores
+     */
+    private function mediana(array $valores): float
+    {
+        sort($valores);
+        $cantidad = count($valores);
+        $medio = intdiv($cantidad, 2);
+
+        if ($cantidad % 2 === 0) {
+            return round(($valores[$medio - 1] + $valores[$medio]) / 2, 1);
+        }
+
+        return round($valores[$medio], 1);
     }
 
     /**

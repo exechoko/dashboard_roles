@@ -1,24 +1,39 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="mb-4">
-    <a href="{{ !empty($filtros) ? route('cecoco.index', $filtros) : route('cecoco.index') }}" class="btn btn-outline-secondary">
-        <i class="fas fa-arrow-left"></i> Volver al listado
-    </a>
+<div class="mb-4 d-flex justify-content-between align-items-center flex-wrap" style="gap:.5rem;">
+    <div class="d-flex flex-wrap align-items-center" style="gap:.5rem;">
+        <a href="{{ !empty($filtros) ? route('cecoco.index', $filtros) : route('cecoco.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al listado
+        </a>
+        @can('ver-expediente-cecoco')
+        <a href="{{ route('cecoco.expediente', $eventoCecoco) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-success">
+            <i class="fas fa-file-alt"></i> Ver Detalle Completo
+        </a>
+        @endcan
+        @can('ver-grabacion-evento')
+        <button type="button" class="btn btn-dark" id="btnGrabaciones" onclick="abrirGrabaciones()">
+            <i class="fas fa-microphone"></i> Grabaciones de llamada
+        </button>
+        @endcan
+        @can('escuchar-modulaciones-cecoco')
+        <button type="button" class="btn btn-primary" id="btnModulaciones" onclick="abrirModulaciones()">
+            <i class="fas fa-broadcast-tower"></i> Modulaciones
+        </button>
+        @endcan
+    </div>
     @can('ver-expediente-cecoco')
-    <a href="{{ route('cecoco.expediente', $eventoCecoco) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-success">
-        <i class="fas fa-file-alt"></i> Ver Detalle Completo
-    </a>
-    @endcan
-    @can('ver-grabacion-evento')
-    <button type="button" class="btn btn-dark" id="btnGrabaciones" onclick="abrirGrabaciones()">
-        <i class="fas fa-microphone"></i> Grabaciones de llamada
-    </button>
-    @endcan
-    @can('escuchar-modulaciones-cecoco')
-    <button type="button" class="btn btn-primary" id="btnModulaciones" onclick="abrirModulaciones()">
-        <i class="fas fa-broadcast-tower"></i> Modulaciones
-    </button>
+    <div class="d-flex flex-wrap align-items-center" style="gap:.5rem;">
+        <a href="{{ route('cecoco.exportar.pdf-resumen', $eventoCecoco) }}" target="_blank" class="btn btn-danger">
+            <i class="fas fa-print"></i> Imprimir Parte de Novedad
+        </a>
+        <a href="{{ route('cecoco.exportar.pdf-original', $eventoCecoco) }}" target="_blank" class="btn btn-dark">
+            <i class="fas fa-file-pdf"></i> PDF Original CECOCO Completo
+        </a>
+        <a href="{{ route('cecoco.exportar.pdf-interno', $eventoCecoco) }}" target="_blank" class="btn btn-info">
+            <i class="fas fa-file-invoice"></i> PDF Interno Completo
+        </a>
+    </div>
     @endcan
 </div>
 
@@ -209,14 +224,6 @@
             <p class="text-muted mb-0"><em>No se registraron recursos asignados para este evento.</em></p>
         @endif
 
-        @if(!empty(array_filter($cierreQuick)))
-            <hr class="my-4">
-            <h5 class="mb-2"><i class="fas fa-door-closed"></i> Observaciones de cierre</h5>
-            <div class="p-3 border rounded mb-2" style="white-space: pre-wrap; font-size: 13px; background-color: var(--bs-secondary-bg);">
-                {{ !empty($cierreQuick['observaciones']) ? $cierreQuick['observaciones'] : 'Sin observaciones de cierre.' }}
-            </div>
-        @endif
-
         <hr class="my-4">
 
         <h5 class="mb-3">Descripción completa</h5>
@@ -227,6 +234,14 @@
                 <em class="text-muted">Sin descripción registrada.</em>
             @endif
         </div>
+
+        @if(!empty(array_filter($cierreQuick)))
+            <hr class="my-4">
+            <h5 class="mb-2"><i class="fas fa-door-closed"></i> Observaciones de cierre</h5>
+            <div class="p-3 border rounded mb-2" style="white-space: pre-wrap; font-size: 13px; background-color: var(--bs-secondary-bg);">
+                {{ !empty($cierreQuick['observaciones']) ? $cierreQuick['observaciones'] : 'Sin observaciones de cierre.' }}
+            </div>
+        @endif
     </div>
     <div class="card-footer text-muted">
         <small>

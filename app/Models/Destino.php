@@ -74,15 +74,20 @@ class Destino extends Model
     }
 
     /**
-     * Verifica si tiene número de WhatsApp (para comisarías)
+     * Extrae el número de celular del campo libre "telefono" (formato típico:
+     * "Fijo: 1234567 - Celular: 3434601234"), sin importar el tipo de
+     * dependencia: cualquiera que tenga un celular cargado puede recibir
+     * WhatsApp.
      */
     public function getTelefonoWhatsapp()
     {
-        if ($this->tipo === 'comisaria' && $this->telefono) {
-            preg_match('/Celular:\s*(\d+)/', $this->telefono, $matches);
-            return $matches[1] ?? null;
+        if (!$this->telefono) {
+            return null;
         }
-        return null;
+
+        preg_match('/Celular:?\s*(\d{6,})/i', $this->telefono, $matches);
+
+        return $matches[1] ?? null;
     }
 
     /**

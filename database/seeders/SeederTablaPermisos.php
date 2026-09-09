@@ -111,6 +111,7 @@ class SeederTablaPermisos extends Seeder
             'ver-menu-manuales',
             'ver-menu-herramientas',
             'ver-menu-chat',
+            'ver-menu-configuracion-sistema',
 
             //CeCoCo
             'ver-llamadas-cecoco',
@@ -123,6 +124,7 @@ class SeederTablaPermisos extends Seeder
             'ver-mapa-cecoco-en-vivo',
             'ver-analizador-eventos-cecoco',
             'ver-analitica-eventos-cecoco',
+            'ver-tiempos-respuesta-cecoco',
             'ver-mapa-gis-cecoco',
             'ver-mapa-gis-historico-cecoco',
             'importar-eventos',
@@ -275,6 +277,14 @@ class SeederTablaPermisos extends Seeder
             'ver-visor-mails',
             'administrar-visor-mails',
 
+            //Plataforma de Descargas
+            'ver-menu-descargas',
+            'ver-plataforma-descargas',
+            'subir-archivos-descargas',
+            'administrar-plataforma-descargas',
+            'ver-logs-descargas',
+            'generar-links-publicos',
+
             //Chat interno
             'ver-chat',
 
@@ -289,6 +299,32 @@ class SeederTablaPermisos extends Seeder
             'crear-noticia',
             'editar-noticia',
             'eliminar-noticia',
+
+            //Infraestructura
+            'ver-menu-infraestructura',
+            'ver-infraestructura-pcs',
+            'ver-infraestructura-servidores',
+            'ver-infraestructura-camaras',
+            'ver-infraestructura-red',
+            'ver-infraestructura-librenms',
+            'ver-infraestructura-central-telefonica',
+            'ver-infraestructura-workers',
+            'ver-infraestructura-notificaciones',
+            'refrescar-infraestructura',
+
+            // Configuración del Sistema
+            'ver-configuracion-env',
+            'editar-configuracion-env',
+            'editar-configuracion-env-critico',
+            'ver-configuracion-ia',
+            'editar-configuracion-ia',
+            'ver-configuracion-workers',
+            'editar-configuracion-workers',
+            'ver-configuracion-backup',
+            'crear-configuracion-backup',
+            'descargar-configuracion-backup',
+            'restaurar-configuracion-backup',
+            'borrar-configuracion-backup',
         ];
 
         // Crear permisos si no existen

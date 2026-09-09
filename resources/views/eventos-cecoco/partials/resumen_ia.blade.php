@@ -48,6 +48,15 @@
                     </table>
                 </div>
             </div>
+            <div data-ia-personal-wrap class="mb-3" style="display:none;">
+                <div class="small text-muted mb-1"><i class="bi bi-shield"></i> Personal policial interviniente</div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mb-0">
+                        <thead class="table-secondary"><tr><th>Jerarquía</th><th>Apellido</th><th>Nombre</th><th>Móvil</th></tr></thead>
+                        <tbody data-ia-personal></tbody>
+                    </table>
+                </div>
+            </div>
             <div data-ia-vehiculos-wrap class="mb-3" style="display:none;">
                 <div class="small text-muted mb-1"><i class="bi bi-car-front"></i> Vehículos involucrados</div>
                 <div class="table-responsive">
@@ -124,6 +133,19 @@
             root.querySelector('[data-ia-personas-wrap]').style.display = '';
         } else {
             root.querySelector('[data-ia-personas-wrap]').style.display = 'none';
+        }
+
+        var tbodyP = root.querySelector('[data-ia-personal]');
+        tbodyP.innerHTML = '';
+        var personalPolicial = Array.isArray(r.personal_policial) ? r.personal_policial : [];
+        if (personalPolicial.length) {
+            personalPolicial.forEach(function (p) {
+                tbodyP.innerHTML += '<tr><td>' + esc(p.jerarquia) + '</td><td>' + esc(p.apellido) + '</td><td>' +
+                    esc(p.nombre) + '</td><td>' + esc(p.movil) + '</td></tr>';
+            });
+            root.querySelector('[data-ia-personal-wrap]').style.display = '';
+        } else {
+            root.querySelector('[data-ia-personal-wrap]').style.display = 'none';
         }
 
         var tbodyV = root.querySelector('[data-ia-vehiculos]');

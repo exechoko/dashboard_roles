@@ -16,6 +16,22 @@ class LibreNmsServiceTest extends TestCase
         $this->assertSame([426, 445], LibreNmsService::extraerIdsDispositivos($html));
     }
 
+    /**
+     * Regresión: LibreNMS migró sus URLs de graph.php?...&device=N a
+     * graphs?type=device_processor&...&device=N (rutas sin extensión), lo
+     * que rompió silenciosamente el conteo de CPU de video (devolvía 0
+     * dispositivos sin ningún error). Ver commit que agrega este test.
+     */
+    public function test_extrae_ids_con_el_formato_de_url_sin_php_de_libreNMS_actual(): void
+    {
+        $html = '<a href="http://172.40.20.113/graphs?type=device_processor&amp;id=0&amp;device=426" x-data="deviceLink({device_id: 426})">'
+            . '<img src="http://172.40.20.113/graph.php?height=110&width=315&id=0&type=device_processor&legend=no&title=yes&device=426" style="border:0;"></a>'
+            . '<a href="http://172.40.20.113/graphs?type=device_processor&amp;id=0&amp;device=445" x-data="deviceLink({device_id: 445})">'
+            . '<img src="http://172.40.20.113/graph.php?height=110&width=315&id=0&type=device_processor&legend=no&title=yes&device=445" style="border:0;"></a>';
+
+        $this->assertSame([426, 445], LibreNmsService::extraerIdsDispositivos($html));
+    }
+
     public function test_extrae_ids_devuelve_vacio_sin_graficos(): void
     {
         $this->assertSame([], LibreNmsService::extraerIdsDispositivos('<html><body>Sin resultados</body></html>'));

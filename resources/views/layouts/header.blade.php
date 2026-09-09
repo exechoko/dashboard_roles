@@ -433,6 +433,10 @@
 
 <ul class="navbar-nav navbar-right">
 
+    @can('ver-infraestructura-notificaciones')
+        @include('notificaciones.panel')
+    @endcan
+
     @can('ver-chat')
         <li class="nav-item" style="position: relative;">
             <a href="{{ route('chat.index') }}" class="nav-link nav-link-lg" title="Chat interno">

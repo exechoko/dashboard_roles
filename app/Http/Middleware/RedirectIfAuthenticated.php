@@ -23,6 +23,10 @@ class RedirectIfAuthenticated
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
+                if ($request->is('movil') || $request->is('movil/*')) {
+                    return redirect('/movil');
+                }
+
                 return redirect(RouteServiceProvider::HOME);
             }
         }

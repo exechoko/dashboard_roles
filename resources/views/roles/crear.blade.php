@@ -70,11 +70,21 @@
                                                         'menu-herramientas',
                                                         'menu-constancias-credenciales',
                                                         'menu-chat',
+                                                        'menu-infraestructura',
+                                                        'menu-configuracion-sistema',
+                                                        'menu-descargas',
                                                     ],
                                                     'Administración' => [
                                                         'rol',
                                                         'usuario',
                                                         'auditoria'
+                                                    ],
+                                                    'Configuración del Sistema' => [
+                                                        'configuracion-env',
+                                                        'configuracion-env-critico',
+                                                        'configuracion-ia',
+                                                        'configuracion-workers',
+                                                        'configuracion-backup',
                                                     ],
                                                     'Dependencias' => [
                                                         'dependencia'
@@ -104,6 +114,7 @@
                                                         'mapa-cecoco-en-vivo',
                                                         'ver-analizador-eventos-cecoco',
                                                         'ver-analitica-eventos-cecoco',
+                                                        'ver-tiempos-respuesta-cecoco',
                                                         'mapa-gis-cecoco',
                                                         'mapa-gis-historico-cecoco',
                                                         'importar-eventos',
@@ -181,6 +192,23 @@
                                                         'web-galeria',
                                                         'web-dependencias',
                                                         'noticia'
+                                                    ],
+                                                    'Infraestructura' => [
+                                                        'infraestructura-pcs',
+                                                        'infraestructura-servidores',
+                                                        'infraestructura-camaras',
+                                                        'infraestructura-red',
+                                                        'infraestructura-librenms',
+                                                        'infraestructura-central-telefonica',
+                                                        'infraestructura-workers',
+                                                        'infraestructura-notificaciones',
+                                                        'infraestructura',
+                                                    ],
+                                                    'Descargas' => [
+                                                        'plataforma-descargas',
+                                                        'archivos-descargas',
+                                                        'logs-descargas',
+                                                        'links-publicos',
                                                     ]
                                                 ];
 
@@ -295,6 +323,7 @@
                                                                                             'cargar' => 'fas fa-upload text-success',
                                                                                             'restaurar' => 'fas fa-undo text-success',
                                                             'descargar' => 'fas fa-download text-primary',
+                                                                                            'refrescar' => 'fas fa-sync-alt text-primary',
                                                                                         ];
                                                                                     @endphp
 

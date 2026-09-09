@@ -63,27 +63,49 @@ class OpenCodeService
             }
         }
 
-        $parts = $response->json('parts', []);
-        $texts = collect(is_array($parts) ? $parts : [])
-            ->filter(fn (mixed $part): bool => is_array($part) && ($part['type'] ?? null) === 'text')
-            ->pluck('text')
-            ->filter(fn (mixed $text): bool => is_string($text) && trim($text) !== '')
-            ->map(fn (string $text): string => trim($text));
-
-        $answer = $texts->implode("\n\n");
-
-        if ($answer === '') {
-            throw new RuntimeException('El asistente devolvió una respuesta vacía.');
-        }
-
-        return $answer;
+        return $this->extraerTexto($response);
     }
 
     protected function requestMessage(string $sessionId, string $question, ?string $model = null, string $catalogoConsultas = ''): \Illuminate\Http\Client\Response
     {
+        return $this->postMessage(
+            $sessionId,
+            config('services.opencode.agent', 'ayuda-sistema'),
+            $this->systemPrompt($catalogoConsultas),
+            $question,
+            $model
+        );
+    }
+
+    /**
+     * Envía un mensaje con un agente y system prompt propios, para usos distintos
+     * del chatbot de ayuda (ej. resumen IA de eventos). A diferencia de
+     * sendMessage(), NO reintenta con el modelo gratuito de fallback ante un
+     * error: si el modelo pedido falla, se propaga la excepción.
+     */
+    public function sendConAgente(string $sessionId, string $agent, string $systemPrompt, string $userText, ?string $model = null): string
+    {
+        $response = $this->postMessage($sessionId, $agent, $systemPrompt, $userText, $model);
+
+        if ($response->failed()) {
+            $this->logFailure('enviar mensaje', $response->status(), $response->body());
+            throw new RuntimeException('El servidor OpenCode no pudo procesar la consulta.');
+        }
+
+        $modelError = $response->json('info.error');
+        if (is_array($modelError)) {
+            $this->logFailure('ejecutar el modelo', 200, json_encode($modelError) ?: 'Error desconocido');
+            throw new RuntimeException('OpenCode no pudo ejecutar el modelo configurado.');
+        }
+
+        return $this->extraerTexto($response);
+    }
+
+    protected function postMessage(string $sessionId, string $agent, string $systemPrompt, string $question, ?string $model = null): \Illuminate\Http\Client\Response
+    {
         $payload = [
-            'agent' => config('services.opencode.agent', 'ayuda-sistema'),
-            'system' => $this->systemPrompt($catalogoConsultas),
+            'agent' => $agent,
+            'system' => $systemPrompt,
             'parts' => [
                 ['type' => 'text', 'text' => $question],
             ],
@@ -100,6 +122,24 @@ class OpenCodeService
         return $this->client()
             ->timeout((int) config('services.opencode.response_timeout', 180))
             ->post($this->url("/session/{$sessionId}/message"), $payload);
+    }
+
+    protected function extraerTexto(\Illuminate\Http\Client\Response $response): string
+    {
+        $parts = $response->json('parts', []);
+        $texts = collect(is_array($parts) ? $parts : [])
+            ->filter(fn (mixed $part): bool => is_array($part) && ($part['type'] ?? null) === 'text')
+            ->pluck('text')
+            ->filter(fn (mixed $text): bool => is_string($text) && trim($text) !== '')
+            ->map(fn (string $text): string => trim($text));
+
+        $answer = $texts->implode("\n\n");
+
+        if ($answer === '') {
+            throw new RuntimeException('El asistente devolvió una respuesta vacía.');
+        }
+
+        return $answer;
     }
 
     public function deleteSession(string $sessionId): void

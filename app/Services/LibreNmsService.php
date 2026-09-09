@@ -220,14 +220,18 @@ class LibreNmsService
     }
 
     /**
-     * Extrae los IDs de dispositivos de la página de gráficos de un grupo
-     * (aparecen como graph.php?...&device=NNN).
+     * Extrae los IDs de dispositivos de la página de gráficos de un grupo.
+     * LibreNMS generaba estas URLs como graph.php?...&device=NNN; desde que
+     * migraron a rutas sin extensión pasaron a graphs?type=device_processor&
+     * ...&device=NNN (mismo query, sin el ".php"). Se matchea sobre
+     * "type=device_processor...device=N" para no depender del nombre exacto
+     * del endpoint y sólo contar gráficos de procesador (no otros tipos).
      *
      * @return array<int, int>
      */
     public static function extraerIdsDispositivos(string $html): array
     {
-        preg_match_all('/graph\.php\?[^"\']*?device=(\d+)/', $html, $coincidencias);
+        preg_match_all('/type=device_processor[^"\']*?device=(\d+)/', $html, $coincidencias);
 
         $ids = array_map('intval', array_unique($coincidencias[1]));
         sort($ids);

@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\DetalleExpedienteCecoco;
+use App\Models\EventoCecoco;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
@@ -175,6 +177,42 @@ class CecocoExpedienteService
     }
 
     /**
+     * Obtiene el detalle del expediente desde caché en BD (o lo consulta a CECOCO
+     * si no existe o se pidió refrescar), guardándolo para reutilizarlo después.
+     *
+     * Usado tanto por el buscador de escritorio como por el móvil, para no
+     * duplicar esta lógica de caché.
+     *
+     * @return array<string, mixed>
+     */
+    public function obtenerDetalleExpedienteCacheado(EventoCecoco $eventoCecoco, bool $refrescar): array
+    {
+        $detalle = null;
+
+        if (!$refrescar) {
+            $cache = DetalleExpedienteCecoco::where('evento_cecoco_id', $eventoCecoco->id)->first();
+            if ($cache) {
+                $detalle = $cache->detalle_json;
+            }
+        }
+
+        if (!$detalle) {
+            $detalle = $this->obtenerDetalleExpediente($eventoCecoco->nro_expediente);
+
+            DetalleExpedienteCecoco::updateOrCreate(
+                ['evento_cecoco_id' => $eventoCecoco->id],
+                [
+                    'nro_expediente' => $eventoCecoco->nro_expediente,
+                    'detalle_json' => $detalle,
+                    'fecha_consulta' => now(),
+                ]
+            );
+        }
+
+        return $detalle;
+    }
+
+    /**
      * Devuelve un cliente HTTP con sesión CECOCO iniciada, para reutilizarlo en
      * procesos por lote que consultan muchos expedientes seguidos.
      *
@@ -183,6 +221,67 @@ class CecocoExpedienteService
     public function iniciarSesionCompartida()
     {
         return $this->iniciarSesion();
+    }
+
+    /**
+     * Obtiene el reporte del expediente tal cual lo entrega CECOCO, sin parsear.
+     * Reutiliza el mismo login que obtenerDetalleExpediente() para exportarlo con
+     * el formato original del sistema.
+     */
+    public function obtenerReporteHtmlOriginal(string $nroExpediente): string
+    {
+        Log::info('Consultando reporte HTML original CECOCO', ['expediente' => $nroExpediente]);
+
+        $client = $this->iniciarSesion();
+
+        return $this->obtenerReporteHTML($client, $nroExpediente);
+    }
+
+    /**
+     * Descarga el PDF nativo del "Parte de novedad general" (reports/issues/report_issues.rptdesign),
+     * el mismo reporte resumido de un solo expediente que genera el botón de impresión
+     * dentro de CECOCO. A diferencia del reporte histórico (report_history.rptdesign),
+     * este no incluye la cronología completa de acciones del evento.
+     */
+    public function obtenerReportePdfOriginal(string $nroExpediente): string
+    {
+        Log::info('Consultando PDF original (parte de novedad) CECOCO', ['expediente' => $nroExpediente]);
+
+        $client = $this->iniciarSesion();
+
+        $params = [
+            '__report' => 'reports/issues/report_issues.rptdesign',
+            '__format' => 'pdf',
+            'p_time_format' => 'HH:mm',
+            '__isnull' => 'p_shift_interval',
+            'p_activa_mostrar_informacion_duplicidad' => 'false',
+            'p_dbrestore_namedb' => 'bdrestauraciones',
+            'p_date_format' => 'dd/MM/yyyy HH:mm:ss',
+            'p_shift' => 'false',
+            'p_shift_time_min' => '00:00:00',
+            'p_dbworking_namedb' => 'bdmatriz',
+            'p_shift_time_max' => '23:59:59',
+            '__rtl' => 'false',
+            'p_id' => $nroExpediente,
+            '__overwrite' => 'false',
+            '__locale' => 'es',
+            '__designer' => 'false',
+            '__dpi' => '96',
+            '__pageoverflow' => '0',
+        ];
+
+        $response = $client->get($this->baseUrl . '/output', $params);
+
+        if (!$response->successful()) {
+            throw new Exception('Error al obtener el PDF original del expediente: ' . $response->status());
+        }
+
+        $pdf = $response->body();
+        if (strlen($pdf) < 100 || !str_starts_with($pdf, '%PDF')) {
+            throw new Exception("CECOCO no devolvió un PDF válido para el expediente {$nroExpediente}");
+        }
+
+        return $pdf;
     }
 
     private function iniciarSesion()

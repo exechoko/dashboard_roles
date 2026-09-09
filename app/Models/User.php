@@ -54,6 +54,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'notificaciones_vistas_en' => 'datetime',
     ];
 
     public function auditoria(){
@@ -75,6 +76,11 @@ class User extends Authenticatable
         return $this->belongsToMany(ChatConversacion::class, 'chat_participantes')
             ->withPivot(['es_admin', 'ultimo_leido_id', 'ultimo_leido_at'])
             ->withTimestamps();
+    }
+
+    public function archivosSubidos(): HasMany
+    {
+        return $this->hasMany(DescargaArchivo::class, 'user_id');
     }
 
     public function getRoleColor($roleName) {

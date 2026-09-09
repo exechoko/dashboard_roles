@@ -320,6 +320,13 @@
                     </a>
                 </li>
             @endcan
+            @can('ver-tiempos-respuesta-cecoco')
+                <li class="{{ request()->routeIs('cecoco.tiempos-respuesta') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('cecoco.tiempos-respuesta') }}">
+                        <i class="fas fa-stopwatch"></i><span>Tiempos de Respuesta</span>
+                    </a>
+                </li>
+            @endcan
             @can('ver-analizador-eventos-cecoco')
                 <li class="{{ request()->routeIs('cecoco.index') || request()->routeIs('cecoco.show') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('cecoco.index') }}">
@@ -522,6 +529,65 @@
     </li>
 @endcan
 
+@can('ver-menu-infraestructura')
+    <li class="dropdown {{ request()->is('infraestructura*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-network-wired"></i><span>Infraestructura</span>
+        </a>
+        <ul class="dropdown-menu">
+            @can('ver-infraestructura-pcs')
+                <li class="{{ request()->is('infraestructura/pcs*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('infraestructura.pcs') }}">
+                        <i class="fas fa-desktop"></i><span>PCs Policiales</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-infraestructura-servidores')
+                <li class="{{ request()->is('infraestructura/servidores*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('infraestructura.servidores') }}">
+                        <i class="fas fa-server"></i><span>Servidores</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-infraestructura-camaras')
+                <li class="{{ request()->is('infraestructura/camaras*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('infraestructura.camaras') }}">
+                        <i class="fas fa-video"></i><span>Cámaras Internas</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-infraestructura-red')
+                <li class="{{ request()->is('infraestructura/red*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('infraestructura.red') }}">
+                        <i class="fas fa-project-diagram"></i><span>Routers / Switches</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-infraestructura-librenms')
+                <li class="{{ request()->is('infraestructura/librenms*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('infraestructura.librenms') }}">
+                        <i class="fas fa-chart-area"></i><span>LibreNMS</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-infraestructura-central-telefonica')
+                <li class="{{ request()->is('infraestructura/central-telefonica*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('infraestructura.central-telefonica') }}">
+                        <i class="fas fa-phone-alt"></i><span>Central Telefónica</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-infraestructura-workers')
+                <li class="{{ request()->is('infraestructura/workers*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('infraestructura.workers') }}">
+                        <i class="fas fa-database"></i><span>Workers y Bases de Datos</span>
+                    </a>
+                </li>
+            @endcan
+        </ul>
+    </li>
+@endcan
+
 @can('ver-menu-chat')
     <li class="{{ request()->is('chat*') ? 'active' : '' }}">
         <a class="nav-link" href="{{ route('chat.index') }}">
@@ -604,6 +670,55 @@
     </li>
 @endcanany
 
+@can('ver-menu-descargas')
+    <li class="dropdown {{ request()->is('descargas*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-download"></i><span>Descargas</span>
+        </a>
+        <ul class="dropdown-menu">
+            <li class="{{ request()->routeIs('descargas.index') || request()->routeIs('descargas.show') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('descargas.index') }}">
+                    <i class="fas fa-folder-open"></i><span>Archivos</span>
+                </a>
+            </li>
+            <li class="{{ request()->routeIs('descargas.compartidos-conmigo') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('descargas.compartidos-conmigo') }}">
+                    <i class="fas fa-share-alt"></i><span>Compartidos conmigo</span>
+                </a>
+            </li>
+            <li class="{{ request()->routeIs('descargas.mis-favoritos') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('descargas.mis-favoritos') }}">
+                    <i class="fas fa-star"></i><span>Mis Favoritos</span>
+                </a>
+            </li>
+            <li class="{{ request()->routeIs('descargas.mi-historial') ? 'active' : '' }}">
+                <a class="nav-link" href="{{ route('descargas.mi-historial') }}">
+                    <i class="fas fa-history"></i><span>Mi Historial</span>
+                </a>
+            </li>
+            @can('administrar-plataforma-descargas')
+                <li class="dropdown-divider"></li>
+                <li class="{{ request()->routeIs('descargas.admin.solicitudes') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('descargas.admin.solicitudes') }}">
+                        <i class="fas fa-envelope-open"></i><span>Solicitudes</span>
+                        @php
+                            $solicitudesPendientes = \App\Models\DescargaSolicitudCompartir::where('estado', 'pendiente')->count();
+                        @endphp
+                        @if($solicitudesPendientes > 0)
+                            <span class="badge badge-danger badge-pill">{{ $solicitudesPendientes }}</span>
+                        @endif
+                    </a>
+                </li>
+                <li class="{{ request()->routeIs('descargas.admin.*') && !request()->routeIs('descargas.admin.solicitudes') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('descargas.admin.index') }}">
+                        <i class="fas fa-cogs"></i><span>Administración</span>
+                    </a>
+                </li>
+            @endcan
+        </ul>
+    </li>
+@endcan
+
 @canany(['ver-menu-web', 'editar-web-contadores', 'editar-web-textos', 'editar-web-historia', 'editar-web-tecnologia', 'editar-web-dependencias', 'editar-web-galeria', 'crear-noticia', 'editar-noticia', 'eliminar-noticia'])
     <li class="{{ request()->is('web-admin*') || request()->is('noticias*') || request()->is('web-dependencias*') || request()->is('web-historia*') || request()->is('web-tecnologia*') || request()->is('web-galeria*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
@@ -663,12 +778,49 @@
     </li>
 @endcanany
 
-@can('ver-menu-auditoria')
-    <li class="{{ request()->is('auditoria*') ? 'active' : '' }}">
-        <a class="nav-link" href="/auditoria">
-            <i class=" fas fa-search"></i><span>Auditoría</span>
+@canany(['ver-menu-auditoria', 'ver-configuracion-env', 'ver-configuracion-ia', 'ver-configuracion-workers', 'ver-configuracion-backup'])
+    <li class="dropdown {{ request()->is('auditoria*') || request()->is('configuracion*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-sliders-h"></i><span>Configuración del Sistema</span>
         </a>
+        <ul class="dropdown-menu">
+            @can('ver-menu-auditoria')
+                <li class="{{ request()->is('auditoria*') ? 'active' : '' }}">
+                    <a class="nav-link" href="/auditoria">
+                        <i class="fas fa-search"></i><span>Auditoría</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-configuracion-env')
+                <li class="{{ request()->is('configuracion/env*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('configuracion.env') }}">
+                        <i class="fas fa-file-alt"></i><span>Variables de Entorno</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-configuracion-ia')
+                <li class="{{ request()->is('configuracion/ia*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('configuracion.ia') }}">
+                        <i class="fas fa-brain"></i><span>IA y API Keys</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-configuracion-workers')
+                <li class="{{ request()->is('configuracion/workers*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('configuracion.workers') }}">
+                        <i class="fas fa-cogs"></i><span>Workers y Colas</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-configuracion-backup')
+                <li class="{{ request()->is('configuracion/backups*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('configuracion.backups') }}">
+                        <i class="fas fa-database"></i><span>Backups de Base de Datos</span>
+                    </a>
+                </li>
+            @endcan
+        </ul>
     </li>
-@endcan
+@endcanany
 
 <!--Documentacion en GetStisla-->

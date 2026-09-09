@@ -13,6 +13,7 @@ use App\Models\Division;
 use App\Models\Seccion;
 use App\Models\Sitio;
 use App\Models\TipoCamara;
+use App\Services\CamarasMapaService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +24,10 @@ use function PHPUnit\Framework\callback;
 
 class MapaController extends Controller
 {
+    public function __construct(private CamarasMapaService $camarasMapaService)
+    {
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -31,7 +36,7 @@ class MapaController extends Controller
     public function index()
     {
         $comisarias = $this->comisariasFijas();
-        $camaras = $this->camarasParaMapa();
+        $camaras = $this->camarasMapaService->paraMapa();
         $sitios = $this->sitiosParaMapa();
         $antenas = $this->antenasFijas();
         $jurisdicciones = $this->jurisdiccionesDeComisarias();
@@ -57,14 +62,14 @@ class MapaController extends Controller
      */
     public function vista3d()
     {
-        $camaras = $this->camarasParaMapa();
+        $camaras = $this->camarasMapaService->paraMapa();
         $sitios = $this->sitiosParaMapa();
         $comisarias = $this->comisariasFijas();
         $antenas = $this->antenasFijas();
         $jurisdicciones = $this->jurisdiccionesDeComisarias();
 
         $geojson = [
-            'camaras' => $this->camarasGeoJson($camaras),
+            'camaras' => $this->camarasMapaService->geoJson($camaras),
             'sitios' => $this->sitiosGeoJson($sitios),
             'comisarias' => $this->comisariasGeoJson($comisarias),
             'antenas' => $this->antenasGeoJson($antenas),
@@ -91,25 +96,7 @@ class MapaController extends Controller
      */
     private function comisariasFijas(): array
     {
-        return [
-            ['latitud' => -31.72978, 'longitud' => -60.53547, 'titulo' => 'Cria. 1°', 'numero' => 1],
-            ['latitud' => -31.73735, 'longitud' => -60.5284, 'titulo' => 'Cria. 2°', 'numero' => 2],
-            ['latitud' => -31.757298, 'longitud' => -60.495857, 'titulo' => 'Cria. 3°', 'numero' => 3],
-            ['latitud' => -31.73771, 'longitud' => -60.51383, 'titulo' => 'Cria. 4°', 'numero' => 4],
-            ['latitud' => -31.73001, 'longitud' => -60.54851, 'titulo' => 'Cria. 5°', 'numero' => 5],
-            ['latitud' => -31.74674, 'longitud' => -60.5364, 'titulo' => 'Cria. 6°', 'numero' => 6],
-            ['latitud' => -31.73711, 'longitud' => -60.45818, 'titulo' => 'Cria. 7°', 'numero' => 7],
-            ['latitud' => -31.72208, 'longitud' => -60.51665, 'titulo' => 'Cria. 8°', 'numero' => 8],
-            ['latitud' => -31.74051, 'longitud' => -60.55312, 'titulo' => 'Cria. 9°', 'numero' => 9],
-            ['latitud' => -31.75655, 'longitud' => -60.51133, 'titulo' => 'Cria. 10°', 'numero' => 10],
-            ['latitud' => -31.70670, 'longitud' => -60.56671, 'titulo' => 'Cria. 11°', 'numero' => 11],
-            ['latitud' => -31.75109, 'longitud' => -60.48563, 'titulo' => 'Cria. 12°', 'numero' => 12],
-            ['latitud' => -31.77106, 'longitud' => -60.52482, 'titulo' => 'Cria. 13°', 'numero' => 13],
-            ['latitud' => -31.73017, 'longitud' => -60.49726, 'titulo' => 'Cria. 14°', 'numero' => 14],
-            ['latitud' => -31.77032, 'longitud' => -60.48219, 'titulo' => 'Cria. 15°', 'numero' => 15],
-            ['latitud' => -31.73434, 'longitud' => -60.55248, 'titulo' => 'Cria. 16°', 'numero' => 16],
-            ['latitud' => -31.72189, 'longitud' => -60.54260, 'titulo' => 'Cria. 17°', 'numero' => 17],
-        ];
+        return Comisaria::coordenadasFijas();
     }
 
     /**
@@ -128,36 +115,6 @@ class MapaController extends Controller
             ['latitud' => -31.324043, 'longitud' => -58.012072, 'titulo' => 'SBS 11', 'numero' => 11],
             ['latitud' => -31.391542, 'longitud' => -58.032703, 'titulo' => 'SBS 12', 'numero' => 12],
         ];
-    }
-
-    /**
-     * Cámaras activas con datos de sitio y tipo, listas para el mapa.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function camarasParaMapa(): array
-    {
-        return Camara::select(
-            'camaras.*',
-            'sitio.*',
-            'tipo_camara.tipo as tipo_camara',
-            'tipo_camara.imagen as imagen',
-            'tipo_camara.marca as marca',
-            'tipo_camara.modelo as modelo',
-            'tipo_camara.canales as canales',
-            'destino.nombre as dependencia',
-            DB::raw('sitio.nombre as sitio'),
-            DB::raw('sitio.cartel as cartel'),
-            DB::raw('sitio.latitud as latitud'),
-            DB::raw('sitio.longitud as longitud'),
-            DB::raw('camaras.id as numero'),
-            DB::raw('camaras.nombre as titulo')
-        )
-            ->where('sitio.activo', 1)
-            ->leftJoin('sitio', 'camaras.sitio_id', '=', 'sitio.id')
-            ->leftJoin('tipo_camara', 'camaras.tipo_camara_id', '=', 'tipo_camara.id')
-            ->leftJoin('destino', 'sitio.destino_id', '=', 'destino.id')
-            ->get()->toArray();
     }
 
     /**
@@ -276,53 +233,6 @@ class MapaController extends Controller
             'sitiosSanBenito' => $sitiosActivos['San Benito']->total ?? 0,
             'sitiosOroVerde' => $sitiosActivos['Oro Verde']->total ?? 0,
         ];
-    }
-
-    /**
-     * GeoJSON de cámaras (Point) para la vista 3D.
-     *
-     * @param array<int, array<string, mixed>> $camaras
-     * @return array<string, mixed>
-     */
-    private function camarasGeoJson(array $camaras): array
-    {
-        $features = [];
-
-        foreach ($camaras as $camara) {
-            $lat = $camara['latitud'] ?? null;
-            $lng = $camara['longitud'] ?? null;
-            if (!is_numeric($lat) || !is_numeric($lng)) {
-                continue;
-            }
-
-            $features[] = [
-                'type' => 'Feature',
-                'geometry' => [
-                    'type' => 'Point',
-                    'coordinates' => [(float) $lng, (float) $lat],
-                ],
-                'properties' => [
-                    'id' => $camara['numero'],
-                    'titulo' => $camara['titulo'],
-                    'tipo_camara' => $camara['tipo_camara'],
-                    'imagen' => $camara['imagen'],
-                    'sitio' => $camara['sitio'],
-                    'dependencia' => $camara['dependencia'],
-                    'etapa' => $camara['etapa'] ?? null,
-                    'fecha_instalacion' => $camara['fecha_instalacion'] ?? null,
-                    'inteligencia' => $camara['inteligencia'] ?? null,
-                    'marca' => $camara['marca'] ?? null,
-                    'modelo' => $camara['modelo'] ?? null,
-                    'nro_serie' => $camara['nro_serie'] ?? null,
-                    'canales' => $camara['canales'] ?? 1,
-                    'cartel' => (bool) ($camara['cartel'] ?? false),
-                    'angulo' => $camara['angulo'] ?? 60,
-                    'orientacion' => $camara['orientacion'] ?? 'norte',
-                ],
-            ];
-        }
-
-        return ['type' => 'FeatureCollection', 'features' => $features];
     }
 
     /**

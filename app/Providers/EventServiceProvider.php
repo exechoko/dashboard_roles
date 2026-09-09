@@ -12,10 +12,12 @@ use App\Observers\FlotaGeneralObserver;
 use App\Observers\HistoricoObserver;
 use App\Observers\RecursoObserver;
 use App\Observers\UserObserver;
+use App\Events\ChatMensajeEnviado;
 use App\Listeners\AuditFailedLoginListener;
 use App\Listeners\AuditLoginListener;
 use App\Listeners\AuditLogoutListener;
 use App\Listeners\AuditMailSentListener;
+use App\Listeners\EnviarPushMensajeChat;
 use App\Listeners\TelegramJobCompletadoListener;
 use App\Listeners\TelegramJobFallidoListener;
 use App\Services\AuditoriaService;
@@ -62,6 +64,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         MessageSent::class => [
             AuditMailSentListener::class,
+        ],
+        ChatMensajeEnviado::class => [
+            EnviarPushMensajeChat::class,
         ],
     ];
 

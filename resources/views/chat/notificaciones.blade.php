@@ -2,8 +2,20 @@
 window.ChatNotificador = (function () {
     const urlChat = @json(route('chat.index'));
 
+    function activarPushEscritorio() {
+        if (window.WebPush && window.WebPush.soportado()) {
+            window.WebPush.activar('escritorio').catch(function () {});
+        }
+    }
+
     if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
+        Notification.requestPermission().then(function (permiso) {
+            if (permiso === 'granted') {
+                activarPushEscritorio();
+            }
+        });
+    } else if ('Notification' in window && Notification.permission === 'granted') {
+        activarPushEscritorio();
     }
 
     function sonido() {

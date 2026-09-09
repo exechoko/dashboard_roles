@@ -1,0 +1,163 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\User;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Spatie\Permission\Models\Permission;
+use Tests\TestCase;
+
+class MovilTest extends TestCase
+{
+    use DatabaseTransactions;
+
+    public function test_un_invitado_es_redirigido_al_login_movil(): void
+    {
+        $response = $this->get(route('movil.index'));
+
+        $response->assertRedirect(route('movil.login'));
+    }
+
+    public function test_un_invitado_puede_loguearse_desde_movil_ingresar_y_vuelve_a_la_pagina_que_queria_ver(): void
+    {
+        $usuario = $this->usuarioCon(['ver-flota']);
+
+        // Intenta entrar a una página protegida sin sesión: guarda la URL
+        // "intended" y redirige al login móvil (no al de escritorio).
+        $this->get(route('movil.flota.index'))->assertRedirect(route('movil.login'));
+
+        $response = $this->post(route('movil.login'), [
+            'email' => $usuario->email,
+            'password' => 'password',
+        ]);
+
+        $response->assertRedirect(route('movil.flota.index'));
+        $this->assertAuthenticatedAs($usuario);
+    }
+
+    public function test_el_formulario_de_login_movil_manda_siempre_remember(): void
+    {
+        // config/session.php tiene expire_on_close en true a propósito para el
+        // escritorio; en el celular el sistema mata el proceso del navegador/PWA
+        // todo el tiempo, lo que borra esa cookie de sesión y fuerza a volver a
+        // loguearse. El form de /movil/ingresar tiene que mandar remember=1
+        // siempre para que la cookie "recordarme" (independiente de
+        // expire_on_close) mantenga la sesión.
+        $this->get(route('movil.login'))
+            ->assertOk()
+            ->assertSee('name="remember" value="1"', false);
+    }
+
+    public function test_el_login_movil_con_remember_deja_la_cookie_recordarme_para_sobrevivir_a_que_el_celular_mate_la_sesion(): void
+    {
+        $usuario = $this->usuarioCon(['ver-flota']);
+
+        $response = $this->post(route('movil.login'), [
+            'email' => $usuario->email,
+            'password' => 'password',
+            'remember' => '1',
+        ]);
+
+        $tieneCookieRecordarme = collect($response->headers->getCookies())
+            ->contains(fn ($cookie) => str_starts_with($cookie->getName(), 'remember_web_'));
+
+        $this->assertTrue($tieneCookieRecordarme, 'El login móvil debe recordar la sesión (expire_on_close mata la cookie de sesión sola en el celular).');
+    }
+
+    public function test_un_usuario_con_permisos_ve_las_secciones_habilitadas(): void
+    {
+        $usuario = $this->usuarioCon(['ver-flota', 'ver-camara', 'ver-analizador-eventos-cecoco', 'ver-dependencia', 'ver-chat']);
+
+        $this->actingAs($usuario)->get(route('movil.index'))->assertOk();
+        $this->actingAs($usuario)->get(route('movil.flota.index'))->assertOk()->assertViewIs('movil.flota.index');
+        $this->actingAs($usuario)->get(route('movil.camaras.index'))->assertOk()->assertViewIs('movil.camaras.index');
+        $this->actingAs($usuario)->get(route('movil.mapa.index'))->assertOk()->assertViewIs('movil.mapa.index');
+        $this->actingAs($usuario)->get(route('movil.eventos.index'))->assertOk()->assertViewIs('movil.eventos.index');
+        $this->actingAs($usuario)->get(route('movil.dependencias.index'))->assertOk()->assertViewIs('movil.dependencias.index');
+        $this->actingAs($usuario)->get(route('movil.chat.index'))->assertOk()->assertViewIs('movil.chat.index');
+    }
+
+    public function test_un_usuario_sin_ver_dependencia_recibe_403_en_dependencias(): void
+    {
+        $usuario = $this->usuarioCon(['ver-flota']);
+
+        $this->actingAs($usuario)->get(route('movil.dependencias.index'))->assertForbidden();
+    }
+
+    public function test_un_usuario_sin_ver_chat_recibe_403_en_chat(): void
+    {
+        $usuario = $this->usuarioCon(['ver-flota']);
+
+        $this->actingAs($usuario)->get(route('movil.chat.index'))->assertForbidden();
+    }
+
+    public function test_un_usuario_sin_ver_flota_recibe_403_en_flota(): void
+    {
+        $usuario = $this->usuarioCon(['ver-camara']);
+
+        $this->actingAs($usuario)->get(route('movil.flota.index'))->assertForbidden();
+    }
+
+    public function test_un_usuario_sin_ver_camara_recibe_403_en_camaras_y_mapa(): void
+    {
+        $usuario = $this->usuarioCon(['ver-flota']);
+
+        $this->actingAs($usuario)->get(route('movil.camaras.index'))->assertForbidden();
+        $this->actingAs($usuario)->get(route('movil.mapa.index'))->assertForbidden();
+    }
+
+    public function test_un_usuario_sin_permiso_recibe_403_en_eventos(): void
+    {
+        $usuario = $this->usuarioCon(['ver-flota']);
+
+        $this->actingAs($usuario)->get(route('movil.eventos.index'))->assertForbidden();
+    }
+
+    public function test_camaras_json_devuelve_una_feature_collection(): void
+    {
+        $usuario = $this->usuarioCon(['ver-camara']);
+
+        $response = $this->actingAs($usuario)->get(route('movil.mapa.camaras-json'));
+
+        $response->assertOk()->assertJsonStructure(['type', 'features']);
+        $this->assertSame('FeatureCollection', $response->json('type'));
+    }
+
+    public function test_dependencias_json_devuelve_una_feature_collection_a_quien_puede_ver_dependencias(): void
+    {
+        $usuario = $this->usuarioCon(['ver-camara', 'ver-dependencia']);
+
+        $response = $this->actingAs($usuario)->get(route('movil.mapa.dependencias-json'));
+
+        $response->assertOk()->assertJsonStructure(['type', 'features']);
+        $this->assertSame('FeatureCollection', $response->json('type'));
+    }
+
+    public function test_un_usuario_sin_ver_dependencia_recibe_403_en_dependencias_json_del_mapa(): void
+    {
+        $usuario = $this->usuarioCon(['ver-camara']);
+
+        $this->actingAs($usuario)->get(route('movil.mapa.dependencias-json'))->assertForbidden();
+    }
+
+    public function test_sitios_json_devuelve_una_feature_collection(): void
+    {
+        $usuario = $this->usuarioCon(['ver-camara']);
+
+        $response = $this->actingAs($usuario)->get(route('movil.mapa.sitios-json'));
+
+        $response->assertOk()->assertJsonStructure(['type', 'features']);
+        $this->assertSame('FeatureCollection', $response->json('type'));
+    }
+
+    private function usuarioCon(array $permisos): User
+    {
+        $usuario = User::factory()->create();
+
+        foreach ($permisos as $permiso) {
+            $usuario->givePermissionTo(Permission::findOrCreate($permiso, 'web'));
+        }
+
+        return $usuario->fresh();
+    }
+}

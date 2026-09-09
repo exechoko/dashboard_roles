@@ -48,7 +48,8 @@ class ParteDiarioBorradorService
      * @var array<string, list<string>>
      */
     private const NOVEDADES_FUNCIONES = [
-        'sala_monitoreo'   => ['Monitoreo V.G. %G%', 'Video Vigilancia %G%'],
+        // "Sala de monitoreo" = monitoreo de alarmas de Patrulla 911, NO video vigilancia.
+        'sala_monitoreo'   => ['Patrulla 911 - Monitoreo %G%'],
         'sala_armas'       => ['Armería %G%'],
         'personal_guardia' => ['SubOf Gdia. 911 %G%'],
     ];

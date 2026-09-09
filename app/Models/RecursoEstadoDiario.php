@@ -9,13 +9,20 @@ class RecursoEstadoDiario extends Model
 {
     protected $table = 'recurso_estado_diario';
 
-    protected $fillable = ['recurso_id', 'guardia', 'horario', 'fecha_inicio', 'fecha_fin', 'estado_dia', 'motivo', 'user_id'];
+    protected $fillable = [
+        'recurso_id', 'parte_diario_id', 'guardia', 'horario', 'zona', 'ht',
+        'fecha_inicio', 'fecha_fin', 'estado_dia', 'motivo', 'user_id',
+    ];
 
-    protected $casts = ['fecha_inicio' => 'datetime', 'fecha_fin' => 'datetime'];
+    protected $casts = ['fecha_inicio' => 'datetime', 'fecha_fin' => 'datetime', 'zona' => 'integer'];
 
     public static array $estados = [
         'circula'           => 'Circula',
         'reserva'           => 'Reserva',
+        'qap_playon'        => 'Q.A.P. (Playón 911)',
+        'a_presto'          => 'A presto',
+        'de_traslado'       => 'De traslado',
+        'en_comision'       => 'En comisión',
         'fuera_de_servicio' => 'Fuera de servicio',
         'otro'              => 'Otro',
     ];
@@ -35,6 +42,11 @@ class RecursoEstadoDiario extends Model
     public function recurso(): BelongsTo
     {
         return $this->belongsTo(Recurso::class);
+    }
+
+    public function parteDiario(): BelongsTo
+    {
+        return $this->belongsTo(ParteDiario::class);
     }
 
     public function usuario(): BelongsTo

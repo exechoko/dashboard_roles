@@ -111,6 +111,39 @@ class Destino extends Model
     }
 
     /**
+     * Devuelve las dependencias como opciones para un <select>, cada una con su
+     * ruta jerárquica completa (departamental / dirección › … › dependencia) para
+     * poder distinguir las homónimas. Resuelve la ascendencia en memoria (sin N+1).
+     *
+     * @return \Illuminate\Support\Collection<int, object{id:int, nombre:string, label:string}>
+     */
+    public static function opcionesConJerarquia(string $separador = ' › '): \Illuminate\Support\Collection
+    {
+        $todos = static::query()->get(['id', 'nombre', 'parent_id'])->keyBy('id');
+
+        return $todos->map(function (self $destino) use ($todos, $separador): object {
+            $cadena = [];
+            $actual = $destino;
+            $vueltas = 0;
+
+            while ($actual && $vueltas++ < 15) {
+                $cadena[] = $actual->nombre;
+                $actual = $actual->parent_id ? $todos->get($actual->parent_id) : null;
+            }
+
+            if (count($cadena) > 1) {
+                array_pop($cadena); // quita la raíz (Jefatura), común a todas
+            }
+
+            return (object) [
+                'id'     => $destino->id,
+                'nombre' => $destino->nombre,
+                'label'  => implode($separador, array_reverse($cadena)),
+            ];
+        })->sortBy('label', SORT_NATURAL | SORT_FLAG_CASE)->values();
+    }
+
+    /**
      * Verifica si puede ser eliminada
      */
     public function puedeSerEliminada()

@@ -29,13 +29,27 @@
                         </div>
 
                         <div class="card-body pt-3">
+                            <div class="btn-group mb-3" role="group">
+                                <a href="{{ route('recursos.index', ['estado' => 'activos']) }}"
+                                   class="btn btn-sm {{ $estado === 'activos' ? 'btn-primary' : 'btn-outline-primary' }}">
+                                    Activos
+                                </a>
+                                <a href="{{ route('recursos.index', ['estado' => 'transferidos']) }}"
+                                   class="btn btn-sm {{ $estado === 'transferidos' ? 'btn-primary' : 'btn-outline-primary' }}">
+                                    Transferidos
+                                    @if($totalTransferidos > 0)
+                                        <span class="badge badge-light ml-1">{{ $totalTransferidos }}</span>
+                                    @endif
+                                </a>
+                            </div>
                             <form action="{{ route('recursos.index') }}" method="get" onsubmit="return showLoad()" class="mb-4">
+                                <input type="hidden" name="estado" value="{{ $estado }}">
                                 <div class="search-wrapper">
                                     <div class="search-icon-left"><i class="fas fa-search"></i></div>
                                     <input type="text" name="texto" class="search-input"
                                         placeholder="Buscar por nombre de recurso..." value="{{ $texto }}" autocomplete="off">
                                     @if($texto)
-                                        <a href="{{ route('recursos.index') }}" class="search-clear"><i class="fas fa-times"></i></a>
+                                        <a href="{{ route('recursos.index', ['estado' => $estado]) }}" class="search-clear"><i class="fas fa-times"></i></a>
                                     @endif
                                     <select name="dependencia_id" class="form-control search-select select2"
                                         style="border:none;border-left:1px solid var(--border-color);border-radius:0;max-width:240px;background:transparent;color:var(--text-primary);">
@@ -62,7 +76,11 @@
                                             <th>Nombre</th>
                                             <th style="min-width:180px;">Vehículo</th>
                                             <th>Dependencia</th>
-                                            <th>Observaciones</th>
+                                            @if($estado === 'transferidos')
+                                                <th style="min-width:200px;">Transferencia</th>
+                                            @else
+                                                <th>Observaciones</th>
+                                            @endif
                                             <th class="text-center" style="width:120px;">Acciones</th>
                                         </tr>
                                     </thead>
@@ -95,32 +113,55 @@
                                                     <span class="dep-nombre">{{ $recurso->destino->nombre }}</span>
                                                     <span class="dep-padre">{{ $recurso->destino->dependeDe() }}</span>
                                                 </td>
-                                                <td class="obs-cell">
-                                                    @if($recurso->observaciones)
-                                                        <span class="obs-text" data-toggle="tooltip" data-placement="left"
-                                                              data-container="body" title="{{ $recurso->observaciones }}">
-                                                            {{ Str::limit($recurso->observaciones, 35, '…') }}
-                                                        </span>
-                                                    @else
-                                                        <span class="text-muted">—</span>
-                                                    @endif
-                                                </td>
+                                                @if($estado === 'transferidos')
+                                                    <td class="obs-cell">
+                                                        <div><i class="fas fa-calendar-alt mr-1 text-muted"></i>{{ optional($recurso->fecha_transferencia)->format('d/m/Y') ?? '—' }}</div>
+                                                        <div><i class="fas fa-map-marker-alt mr-1 text-muted"></i>{{ $recurso->reparticionTransferenciaNombre() }}</div>
+                                                        @if($recurso->observaciones_transferencia)
+                                                            <small class="text-muted">{{ Str::limit($recurso->observaciones_transferencia, 40, '…') }}</small>
+                                                        @endif
+                                                    </td>
+                                                @else
+                                                    <td class="obs-cell">
+                                                        @if($recurso->observaciones)
+                                                            <span class="obs-text" data-toggle="tooltip" data-placement="left"
+                                                                  data-container="body" title="{{ $recurso->observaciones }}">
+                                                                {{ Str::limit($recurso->observaciones, 35, '…') }}
+                                                            </span>
+                                                        @else
+                                                            <span class="text-muted">—</span>
+                                                        @endif
+                                                    </td>
+                                                @endif
                                                 <td class="text-center action-td">
                                                     <a class="action-btn btn-view" data-toggle="modal"
                                                         data-target="#ModalDetalle{{ $recurso->id }}">
                                                         <i class="far fa-eye"></i>
                                                     </a>
-                                                    @can('editar-recurso')
-                                                        <a class="action-btn btn-edit" href="{{ route('recursos.edit', $recurso->id) }}">
-                                                            <i class="fas fa-edit"></i>
-                                                        </a>
-                                                    @endcan
-                                                    @can('borrar-recurso')
-                                                        <a class="action-btn btn-del" data-toggle="modal"
-                                                            data-target="#ModalDelete{{ $recurso->id }}">
-                                                            <i class="far fa-trash-alt"></i>
-                                                        </a>
-                                                    @endcan
+                                                    @if($estado === 'transferidos')
+                                                        @can('confirmar-transferencia-recurso')
+                                                            <form action="{{ route('flota-911.transferencias.reactivar', $recurso->id) }}"
+                                                                  method="POST" class="d-inline"
+                                                                  onsubmit="return confirm('¿Reactivar este recurso en la flota?');">
+                                                                @csrf @method('PATCH')
+                                                                <button type="submit" class="action-btn btn-edit" title="Reactivar en la flota">
+                                                                    <i class="fas fa-undo"></i>
+                                                                </button>
+                                                            </form>
+                                                        @endcan
+                                                    @else
+                                                        @can('editar-recurso')
+                                                            <a class="action-btn btn-edit" href="{{ route('recursos.edit', $recurso->id) }}">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                        @endcan
+                                                        @can('borrar-recurso')
+                                                            <a class="action-btn btn-del" data-toggle="modal"
+                                                                data-target="#ModalDelete{{ $recurso->id }}">
+                                                                <i class="far fa-trash-alt"></i>
+                                                            </a>
+                                                        @endcan
+                                                    @endif
                                                 </td>
                                             </tr>
                                         @empty

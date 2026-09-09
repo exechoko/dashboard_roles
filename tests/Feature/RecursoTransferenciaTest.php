@@ -162,6 +162,23 @@ class RecursoTransferenciaTest extends TestCase
         $this->assertNull($recurso->reparticion_transferencia);
     }
 
+    public function test_la_pantalla_de_transferencias_renderiza_con_las_dependencias_jerarquizadas(): void
+    {
+        $recurso = $this->recursoActivoDe911();
+
+        RecursoTransferencia::create([
+            'recurso_id'          => $recurso->id,
+            'fecha_transferencia' => '2099-03-01',
+            'estado'              => RecursoTransferencia::ESTADO_PENDIENTE,
+            'user_id_reporte'     => $this->usuario('gestionar-flota-911')->id,
+        ]);
+
+        $this->actingAs($this->usuario('ver-flota-911', 'confirmar-transferencia-recurso'))
+            ->get(route('flota-911.transferencias.index'))
+            ->assertOk()
+            ->assertSee(' › ', false);
+    }
+
     public function test_el_listado_de_recursos_oculta_los_transferidos_salvo_con_el_filtro(): void
     {
         $recurso = $this->recursoActivoDe911();

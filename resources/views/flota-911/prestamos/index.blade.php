@@ -142,19 +142,19 @@
                             </div>
                             <div class="form-group">
                                 <label>Sección origen <span class="text-danger">*</span></label>
-                                <select name="destino_origen_id" class="form-control" required>
+                                <select name="destino_origen_id" class="form-control select2-destino" required>
                                     <option value="">— Seleccionar —</option>
                                     @foreach($destinos as $d)
-                                        <option value="{{ $d->id }}">{{ $d->nombre }}</option>
+                                        <option value="{{ $d->id }}">{{ $d->label }}</option>
                                     @endforeach
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label>Destino <span class="text-danger">*</span></label>
-                                <select name="destino_destino_id" class="form-control" required>
+                                <select name="destino_destino_id" class="form-control select2-destino" required>
                                     <option value="">— Seleccionar —</option>
                                     @foreach($destinos as $d)
-                                        <option value="{{ $d->id }}">{{ $d->nombre }}</option>
+                                        <option value="{{ $d->id }}">{{ $d->label }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -219,4 +219,10 @@
     </div>
 </div>
 @endforeach
+
+<script>
+    $(function () {
+        $('.select2-destino').select2({ width: '100%', placeholder: '— Seleccionar —' });
+    });
+</script>
 @endsection

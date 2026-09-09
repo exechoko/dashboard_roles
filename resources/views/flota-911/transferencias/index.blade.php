@@ -214,9 +214,11 @@
     </div>
 </div>
 @endforeach
+@endsection
 
+@push('scripts')
 <script>
-    $(function () {
+    $(document).ready(function () {
         $(document).on('shown.bs.modal', '.modal', function () {
             $(this).find('.select2-destino').each(function () {
                 if ($(this).hasClass('select2-hidden-accessible')) { return; }
@@ -228,6 +230,12 @@
                 });
             });
         });
+        $(document).on('select2:open', function () {
+            setTimeout(function () {
+                var campo = document.querySelector('.select2-container--open .select2-search__field');
+                if (campo) { campo.focus(); }
+            }, 0);
+        });
     });
 </script>
-@endsection
+@endpush

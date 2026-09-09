@@ -13,6 +13,32 @@
                 <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
             </div>
         @endif
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible fade show">
+                {{ session('error') }}
+                <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+            </div>
+        @endif
+        @if($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show">
+                <ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
+                <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+            </div>
+        @endif
+
+        @can('confirmar-transferencia-recurso')
+        @if($transferenciasPendientes > 0)
+            <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="fas fa-exchange-alt mr-2"></i>
+                    Hay <strong>{{ $transferenciasPendientes }}</strong> transferencia(s) reportada(s) pendiente(s) de confirmar.
+                </span>
+                <a href="{{ route('flota-911.transferencias.index') }}" class="btn btn-sm btn-warning">
+                    Revisar
+                </a>
+            </div>
+        @endif
+        @endcan
 
         {{-- Contadores globales --}}
         <div class="row mb-4">
@@ -71,6 +97,16 @@
             <div class="col-auto">
                 <a href="{{ route('flota-911.prestamos.index') }}" class="btn btn-warning">
                     <i class="fas fa-exchange-alt mr-1"></i> Préstamos
+                </a>
+            </div>
+            @endcan
+            @can('confirmar-transferencia-recurso')
+            <div class="col-auto">
+                <a href="{{ route('flota-911.transferencias.index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-truck-moving mr-1"></i> Transferencias
+                    @if($transferenciasPendientes > 0)
+                        <span class="badge badge-danger ml-1">{{ $transferenciasPendientes }}</span>
+                    @endif
                 </a>
             </div>
             @endcan
@@ -155,6 +191,16 @@
                                         data-toggle="modal" data-target="#modalEstado{{ $recurso->id }}">
                                         <i class="fas fa-sliders-h"></i>
                                     </button>
+                                    @if($recurso->transferenciaPendiente)
+                                        <span class="action-btn text-warning" title="Transferencia reportada, pendiente de confirmar">
+                                            <i class="fas fa-truck-moving"></i>
+                                        </span>
+                                    @else
+                                        <button class="action-btn btn-del" title="Reportar transferencia del vehículo"
+                                            data-toggle="modal" data-target="#modalTransferir{{ $recurso->id }}">
+                                            <i class="fas fa-truck-moving"></i>
+                                        </button>
+                                    @endif
                                     @endcan
                                 </td>
                             </tr>
@@ -206,6 +252,63 @@
                 </div>
             </div>
         </div>
+
+        @unless($recurso->transferenciaPendiente)
+        <div class="modal fade" id="modalTransferir{{ $recurso->id }}" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            Reportar transferencia — {{ $recurso->nombre }}
+                            @php $vt = $recurso->vehiculoActual(); @endphp
+                            @if($vt) <small class="text-muted">({{ $vt->dominio }})</small> @endif
+                        </h5>
+                        <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                    </div>
+                    <form action="{{ route('flota-911.transferencias.store', $recurso->id) }}" method="POST">
+                        @csrf
+                        <div class="modal-body">
+                            <p class="text-muted small">
+                                Se avisa a los administradores para que efectivicen el movimiento. El recurso sigue
+                                activo hasta que un administrador confirme la transferencia.
+                            </p>
+                            <div class="form-group">
+                                <label>Fecha de la transferencia <span class="text-danger">*</span></label>
+                                <input type="date" name="fecha_transferencia" class="form-control"
+                                    value="{{ now()->format('Y-m-d') }}" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Repartición destino</label>
+                                <select name="destino_transferencia_id" class="form-control">
+                                    <option value="">— Desconocida —</option>
+                                    @foreach($destinos as $d)
+                                        <option value="{{ $d->id }}">{{ $d->nombre }}</option>
+                                    @endforeach
+                                </select>
+                                <small class="text-muted">Dejar en "Desconocida" si no se sabe adónde fue.</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Repartición destino (texto libre)</label>
+                                <input type="text" name="reparticion_texto" class="form-control" maxlength="255"
+                                    placeholder="Solo si la repartición no está en la lista">
+                            </div>
+                            <div class="form-group">
+                                <label>Observaciones</label>
+                                <textarea name="observaciones" class="form-control" rows="3" maxlength="2000"
+                                    placeholder="Motivo, vehículo de reemplazo, etc."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-truck-moving mr-1"></i> Reportar transferencia
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        @endunless
         @endforeach
         @endcan
         @endforeach

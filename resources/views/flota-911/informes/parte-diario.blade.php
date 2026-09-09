@@ -7,6 +7,12 @@
     </div>
     <div class="section-body">
 
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show">
+                {{ session('success') }}
+                <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+            </div>
+        @endif
         @if($errors->any())
             <div class="alert alert-danger alert-dismissible fade show">
                 <ul class="mb-0">@foreach($errors->all() as $e)<li>{{ $e }}</li>@endforeach</ul>
@@ -114,6 +120,13 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    @if($parteSeccion)
+                    <a href="{{ route('flota-911.informes.parte-diario.docx', ['seccion' => $seccion->id, 'fecha_inicio' => $fechaInicio->format('Y-m-d\TH:i')]) }}"
+                       class="btn btn-success btn-sm mb-3">
+                        <i class="fas fa-file-word mr-1"></i>
+                        Descargar parte de {{ $esMotos ? 'motos' : 'móviles' }} (.docx)
+                    </a>
+                    @endif
                     <div class="table-responsive">
                         <table class="table table-modern mb-0">
                             <thead>
@@ -312,7 +325,7 @@
                     <i class="fas fa-arrow-left mr-1"></i> Volver
                 </a>
                 <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="fas fa-file-word mr-1"></i> Generar Parte Diario (.docx)
+                    <i class="fas fa-save mr-1"></i> Guardar parte
                 </button>
             </div>
 

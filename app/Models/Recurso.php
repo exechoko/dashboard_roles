@@ -59,8 +59,8 @@ class Recurso extends Model
 
     public function reparticionTransferenciaNombre(): string
     {
-        return $this->destinoTransferencia?->nombre
-            ?? ($this->reparticion_transferencia ?: 'Desconocida');
+        return $this->destinoTransferencia?->rutaJerarquicaTexto()
+            ?: ($this->reparticion_transferencia ?: 'Desconocida');
     }
 
     public function flota_general(): HasMany

@@ -36,7 +36,8 @@ class RecursoPrestamoController extends Controller
         $destinos = Destino::orderBy('nombre')->get();
 
         // Recursos con vehículo actual para el selector de préstamo
-        $recursosDisponibles = Recurso::whereIn('destino_id', $destinoIds)
+        $recursosDisponibles = Recurso::activos()
+            ->whereIn('destino_id', $destinoIds)
             ->with(['asignacionActual.vehiculo', 'vehiculo'])
             ->get()
             ->filter(fn($r) => $r->vehiculoActual() !== null);

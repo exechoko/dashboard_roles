@@ -111,6 +111,28 @@ class Destino extends Model
     }
 
     /**
+     * Ruta jerárquica de esta dependencia como texto (departamental / dirección › … › dependencia),
+     * para distinguir las homónimas. Recorre la relación `padre`; conviene eager-loadearla.
+     */
+    public function rutaJerarquicaTexto(string $separador = ' › ', bool $incluirRaiz = false): string
+    {
+        $cadena = [];
+        $actual = $this;
+        $vueltas = 0;
+
+        while ($actual && $vueltas++ < 15) {
+            $cadena[] = $actual->nombre;
+            $actual = $actual->padre;
+        }
+
+        if (! $incluirRaiz && count($cadena) > 1) {
+            array_pop($cadena); // quita la raíz (Jefatura), común a todas
+        }
+
+        return implode($separador, array_reverse($cadena));
+    }
+
+    /**
      * Devuelve las dependencias como opciones para un <select>, cada una con su
      * ruta jerárquica completa (departamental / dirección › … › dependencia) para
      * poder distinguir las homónimas. Resuelve la ascendencia en memoria (sin N+1).

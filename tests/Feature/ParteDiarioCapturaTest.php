@@ -164,6 +164,34 @@ class ParteDiarioCapturaTest extends TestCase
         );
     }
 
+    public function test_los_rubros_de_personal_tienen_buscador_y_los_de_moviles_no(): void
+    {
+        $respuesta = $this->actingAs($this->usuario())
+            ->get(route('flota-911.informes.parte-diario', ['guardia' => 'guardia_3']));
+
+        $respuesta->assertOk()
+            ->assertSee('select2-novedad-personal', false)
+            ->assertSee('data-rubro="sala_monitoreo"', false)
+            ->assertSee('data-rubro="autorizados"', false)
+            ->assertDontSee('data-rubro="moviles_qap"', false);
+    }
+
+    public function test_novedad_de_personal_admite_varios_funcionarios_escritos_a_mano(): void
+    {
+        $this->actingAs($this->usuario());
+        $recurso = $this->recursoDeMoviles();
+
+        $texto = 'SGTO. PEREZ JUAN; CABO GOMEZ ANA; AGTE. LOPEZ (autorizado verbal)';
+
+        $this->post(route('flota-911.informes.parte-diario.generar'), $this->payload(
+            [['id' => $recurso->id, 'estado_dia' => 'circula']],
+            ['novedades' => ['autorizados' => $texto]],
+        ))->assertOk();
+
+        $novedades = ParteDiarioNovedades::where(['fecha' => '2099-05-20', 'guardia' => 'guardia_3'])->firstOrFail();
+        $this->assertSame($texto, $novedades->contenido['autorizados']);
+    }
+
     public function test_pre_armar_devuelve_novedades_de_sala_y_guardia_interna(): void
     {
         $respuesta = $this->actingAs($this->usuario())

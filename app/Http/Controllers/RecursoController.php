@@ -23,10 +23,15 @@ class RecursoController extends Controller
     {
         $texto = trim($request->get('texto'));
         $dependencia_seleccionada = $request->get('dependencia_id');
+        $estado = $request->get('estado') === 'transferidos' ? 'transferidos' : 'activos';
+
+        $totalTransferidos = Recurso::transferidos()->count();
 
         // Uso del helper optimize()
         $recursos = optimize(Recurso::class)
-            ->with('vehiculo:id,dominio,marca,modelo', 'destino:id,nombre')
+            ->with('vehiculo:id,dominio,marca,modelo', 'destino:id,nombre', 'destinoTransferencia:id,nombre')
+            ->when($estado === 'transferidos', fn($query) => $query->whereNotNull('fecha_transferencia'))
+            ->when($estado === 'activos', fn($query) => $query->whereNull('fecha_transferencia'))
             ->when($texto, function ($query) use ($texto) {
                 // NO usar getQuery() - trabajar directamente con $query
                 $query->where(function ($q) use ($texto) {
@@ -42,7 +47,8 @@ class RecursoController extends Controller
                 $query->where('destino_id', $dependencia_seleccionada);
             })
             ->orderBy('nombre', 'asc')
-            ->paginate(100);
+            ->paginate(100)
+            ->withQueryString();
 
         // Dependencias con caché
         $dependencias = optimize(Destino::class)
@@ -50,7 +56,7 @@ class RecursoController extends Controller
             ->cached('dependencias_all', 60)
             ->get();
 
-        return view('recursos.index', compact('recursos', 'texto', 'dependencias', 'dependencia_seleccionada'));
+        return view('recursos.index', compact('recursos', 'texto', 'dependencias', 'dependencia_seleccionada', 'estado', 'totalTransferidos'));
     }
 
     public function create()

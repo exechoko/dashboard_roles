@@ -219,10 +219,18 @@
     </div>
 </div>
 @endforeach
+@endsection
 
+@push('scripts')
 <script>
-    $(function () {
+    $(document).ready(function () {
         $('.select2-destino').select2({ width: '100%', placeholder: '— Seleccionar —' });
+        $(document).on('select2:open', function () {
+            setTimeout(function () {
+                var campo = document.querySelector('.select2-container--open .select2-search__field');
+                if (campo) { campo.focus(); }
+            }, 0);
+        });
     });
 </script>
-@endsection
+@endpush

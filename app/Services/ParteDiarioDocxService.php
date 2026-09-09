@@ -22,6 +22,28 @@ class ParteDiarioDocxService
     private const FONT = 'Arial';
     private const MARGIN = 1000;
 
+    /** Abreviaturas de jerarquía como se escriben en el oficio. */
+    private const JERARQUIA_ABREV = [
+        'Crio. General'   => 'CRIO. GRAL.',
+        'Crio. Mayor'     => 'CRIO. MY.',
+        'Crio. Principal' => 'CRIO. PPAL.',
+        'Crio. Inspector' => 'CRIO. INSP.',
+        'Comisario'       => 'CRIO.',
+        'Subcomisario'    => 'SUB CRIO.',
+        'Of. Principal'   => 'OF. PPAL.',
+        'Of. Inspector'   => 'OF. INSP.',
+        'Of. SubInsp.'    => 'OF. SUB INSP.',
+        'Of. Ayudante'    => 'OF. AYTE.',
+        'Subof. Mayor'    => 'SUBOF. MY.',
+        'Subof. Ppal.'    => 'SUBOF. PPAL.',
+        'Sgto. Ayudante'  => 'SGTO. AYTE.',
+        'Sgto. Primero'   => 'SGTO. 1°',
+        'Sargento'        => 'SGTO.',
+        'Cabo Primero'    => 'CABO 1°',
+        'Cabo'            => 'CABO',
+        'Agente'          => 'AGTE.',
+    ];
+
     public function generar(
         ParteDiario $parte,
         ?ParteDiarioNovedades $novedades
@@ -56,6 +78,13 @@ class ParteDiarioDocxService
 
         foreach ($parte->estadosDiarios as $estado) {
             $tripulacion = ($dotacionesPorRecurso->get($estado->recurso_id) ?? collect())->sortBy('orden');
+            $estadoDia = $estado->estado_dia ?? 'circula';
+
+            // Un móvil que "circula" sin dotación cargada no se reporta.
+            if ($estadoDia === 'circula' && $tripulacion->isEmpty()) {
+                continue;
+            }
+
             $rol = $this->rolDeTripulacion($tripulacion);
             $fila = ['estado' => $estado, 'tripulacion' => $tripulacion, 'rol' => $rol];
 
@@ -108,7 +137,7 @@ class ParteDiarioDocxService
     {
         $estado = $fila['estado'];
         $ht = $estado->ht ? ' (HT ' . $estado->ht . ')' : '';
-        $encabezado = mb_strtoupper($estado->recurso?->nombre ?? 'MÓVIL', 'UTF-8') . $ht . ':';
+        $encabezado = $this->nombreMovil($estado->recurso?->nombre) . $ht . ':';
 
         $run = $s->addTextRun();
         $run->addText($encabezado, ['bold' => true, 'size' => 10, 'name' => self::FONT]);
@@ -199,20 +228,13 @@ class ParteDiarioDocxService
         $this->lineaEtiquetada($s, 'Personal de Licencia O.', $parte->licencia_ordinaria);
         $s->addTextBreak(1);
 
-        $asignaciones = $parte->asignaciones->filter(fn ($a) => trim((string) $a->asignacion_texto) !== '');
+        $asignaciones = $parte->asignaciones
+            ->filter(fn ($a) => trim((string) $a->asignacion_texto) !== '')
+            ->values();
+
         if ($asignaciones->isNotEmpty()) {
             $this->titulo($s, 'Asignación de servicios:', 11);
-            $tabla = $s->addTable($this->estiloTabla($phpWord));
-            $tabla->addRow(300);
-            foreach (['Grupo', 'Consigna', 'Asignación'] as $h) {
-                $tabla->addCell(null, ['bgColor' => '2C3E50'])->addText($h, ['bold' => true, 'color' => 'FFFFFF', 'size' => 9, 'name' => self::FONT]);
-            }
-            foreach ($asignaciones as $a) {
-                $tabla->addRow(280);
-                $tabla->addCell(2200)->addText($a->grupo ?: '—', ['size' => 9, 'name' => self::FONT]);
-                $tabla->addCell(3000)->addText($a->nombre, ['size' => 9, 'name' => self::FONT]);
-                $tabla->addCell(3500)->addText($a->asignacion_texto, ['size' => 9, 'name' => self::FONT]);
-            }
+            $this->grillaAsignaciones($s, $phpWord, $asignaciones);
             $s->addTextBreak(1);
         }
 
@@ -224,6 +246,43 @@ class ParteDiarioDocxService
         $this->pieFirma($s);
 
         return $this->descargar($phpWord, 'Parte_Motos_' . $parte->fecha_inicio->format('Ymd_Hi') . '.docx');
+    }
+
+    /**
+     * Grilla de "Asignación de servicios" en 4 columnas: por cada bloque de hasta
+     * 4 consignas, una fila con el grupo (si es común), una con los nombres y otra
+     * con las asignaciones — como en el parte de motos.
+     *
+     * @param  \Illuminate\Support\Collection<int, \App\Models\ParteDiarioAsignacion>  $asignaciones
+     */
+    private function grillaAsignaciones(Section $s, PhpWord $phpWord, Collection $asignaciones): void
+    {
+        $tabla = $s->addTable($this->estiloTabla($phpWord));
+        $anchoCelda = (int) floor(9600 / 4);
+
+        foreach ($asignaciones->chunk(4) as $bloque) {
+            $bloque = $bloque->values();
+            $n = $bloque->count();
+            $grupos = $bloque->pluck('grupo')->map(fn ($g) => trim((string) $g))->unique();
+
+            if ($grupos->count() === 1 && $grupos->first() !== '') {
+                $tabla->addRow(260);
+                $tabla->addCell($anchoCelda * $n, ['gridSpan' => $n, 'bgColor' => 'EEEEEE'])
+                    ->addText($grupos->first(), ['bold' => true, 'size' => 9, 'name' => self::FONT], ['alignment' => 'center']);
+            }
+
+            $tabla->addRow(260);
+            foreach ($bloque as $a) {
+                $tabla->addCell($anchoCelda, ['bgColor' => '2C3E50'])
+                    ->addText($a->nombre, ['bold' => true, 'color' => 'FFFFFF', 'size' => 8, 'name' => self::FONT], ['alignment' => 'center']);
+            }
+
+            $tabla->addRow(300);
+            foreach ($bloque as $a) {
+                $tabla->addCell($anchoCelda)
+                    ->addText($a->asignacion_texto ?: '—', ['size' => 9, 'name' => self::FONT], ['alignment' => 'center']);
+            }
+        }
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -274,10 +333,22 @@ class ParteDiarioDocxService
             return '—';
         }
 
-        return trim(mb_strtoupper(
-            trim("{$p->jerarquia} {$p->apellido} {$p->nombre}"),
-            'UTF-8'
-        ));
+        $jerarquia = self::JERARQUIA_ABREV[trim((string) $p->jerarquia)]
+            ?? mb_strtoupper(trim((string) $p->jerarquia), 'UTF-8');
+
+        return trim($jerarquia . ' ' . mb_strtoupper(trim("{$p->apellido} {$p->nombre}"), 'UTF-8'));
+    }
+
+    private function nombreMovil(?string $nombre): string
+    {
+        $nombre = trim((string) $nombre) ?: 'Móvil';
+        $prefijo = trim((string) config('flota911.prefijo_movil_patrulla', ''));
+
+        if ($prefijo !== '' && preg_match('/^(ex\s+)?m[óo]vil\s+(.+)$/iu', $nombre, $m) === 1) {
+            $nombre = ($m[1] ? 'Ex ' : '') . 'Móvil ' . $prefijo . ' ' . $m[2];
+        }
+
+        return mb_strtoupper($nombre, 'UTF-8');
     }
 
     private function guardiaLabel(string $guardia): string
@@ -287,7 +358,9 @@ class ParteDiarioDocxService
 
     private function fechaLarga(Carbon $fecha): string
     {
-        return Str::ucfirst($fecha->locale('es')->isoFormat('DD [de] MMMM [de] YYYY'));
+        $mes = Str::ucfirst($fecha->locale('es')->isoFormat('MMMM'));
+
+        return $fecha->format('d') . ' de ' . $mes . ' de ' . $fecha->format('Y');
     }
 
     private function membrete(Section $s, array $lineas): void

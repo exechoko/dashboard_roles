@@ -162,11 +162,11 @@
                     </div>
                     <div class="form-group">
                         <label>Repartición destino</label>
-                        <select name="destino_transferencia_id" class="form-control">
+                        <select name="destino_transferencia_id" class="form-control select2-destino">
                             <option value="">— Desconocida —</option>
                             @foreach($destinos as $d)
                                 <option value="{{ $d->id }}" {{ $t->destino_transferencia_id == $d->id ? 'selected' : '' }}>
-                                    {{ $d->nombre }}
+                                    {{ $d->label }}
                                 </option>
                             @endforeach
                         </select>
@@ -214,4 +214,20 @@
     </div>
 </div>
 @endforeach
+
+<script>
+    $(function () {
+        $(document).on('shown.bs.modal', '.modal', function () {
+            $(this).find('.select2-destino').each(function () {
+                if ($(this).hasClass('select2-hidden-accessible')) { return; }
+                $(this).select2({
+                    width: '100%',
+                    placeholder: '— Desconocida —',
+                    allowClear: true,
+                    dropdownParent: $(this).closest('.modal'),
+                });
+            });
+        });
+    });
+</script>
 @endsection

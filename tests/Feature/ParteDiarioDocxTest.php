@@ -128,9 +128,11 @@ class ParteDiarioDocxTest extends TestCase
         $this->assertStringContainsString('OBJETO: informar.-', $texto);
         $this->assertStringContainsString('GUARDIA N° 3', $texto);
         $this->assertStringContainsString('Asignación de servicios:', $texto);
+        $this->assertStringContainsString('Microcentro', $texto);
         $this->assertStringContainsString('31 ht 05', $texto);
         $this->assertStringContainsString('Guardia: Sub Of Ppal Herrera Gabriel', $texto);
         $this->assertStringNotContainsString('Costanera', $texto, 'Las consignas sin asignación no se listan.');
+        $this->assertMatchesRegularExpression('/\b(SGTO\.|CABO|AGTE\.|OF\.|SUBOF\.|CRIO\.)/', $texto, 'La jerarquía debe ir abreviada.');
     }
 
     public function test_los_titulos_se_mayusculizan_conservando_acentos(): void
@@ -140,6 +142,6 @@ class ParteDiarioDocxTest extends TestCase
 
         $this->assertStringContainsString('MINISTERIO DE SEGURIDAD Y JUSTICIA', $texto);
         $this->assertStringContainsString('PARANÁ:', $texto);
-        $this->assertStringNotContainsString('PARANáA', $texto);
+        $this->assertStringContainsString(' de Junio de 2099', $texto, 'El mes debe ir capitalizado.');
     }
 }

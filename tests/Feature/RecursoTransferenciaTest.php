@@ -176,7 +176,8 @@ class RecursoTransferenciaTest extends TestCase
         $this->actingAs($this->usuario('ver-flota-911', 'confirmar-transferencia-recurso'))
             ->get(route('flota-911.transferencias.index'))
             ->assertOk()
-            ->assertSee(' › ', false);
+            ->assertSee(' › ', false)
+            ->assertSee('select2-destino', false);
     }
 
     public function test_el_listado_de_recursos_oculta_los_transferidos_salvo_con_el_filtro(): void

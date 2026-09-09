@@ -33,7 +33,7 @@ class RecursoPrestamoController extends Controller
             ->orderByDesc('fecha_retorno')
             ->paginate(20);
 
-        $destinos = Destino::orderBy('nombre')->get();
+        $destinos = Destino::opcionesConJerarquia();
 
         // Recursos con vehículo actual para el selector de préstamo
         $recursosDisponibles = Recurso::activos()

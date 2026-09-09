@@ -59,7 +59,7 @@ class FlotaDashboard911Controller extends Controller
                 ->count()
             : 0;
 
-        $destinos = Destino::orderBy('nombre')->get(['id', 'nombre']);
+        $destinos = Destino::opcionesConJerarquia();
 
         return view('flota-911.dashboard', compact(
             'division',

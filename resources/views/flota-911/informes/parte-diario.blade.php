@@ -78,43 +78,64 @@
                             <button type="button" class="btn btn-outline-primary btn-sm" id="btnCargarTurno">
                                 <i class="fas fa-sync-alt mr-1"></i> Cargar parte guardado de este turno
                             </button>
+                            <button type="button" class="btn btn-outline-success btn-sm" id="btnPreArmar">
+                                <i class="fas fa-magic mr-1"></i> Pre-armar desde la guardia
+                            </button>
                         </div>
                     </div>
+                    <p class="text-muted small mb-0">
+                        <i class="fas fa-lightbulb mr-1"></i>
+                        "Pre-armar" trae de la base de personal 911 la guardia interna, las licencias y las novedades de sala.
+                        La dotación de cada móvil se completa a mano.
+                    </p>
                 </div>
             </div>
 
             {{-- Recursos por sección --}}
-            @foreach($secciones as $i => $seccion)
+            @foreach($secciones as $seccion)
             @php
                 $recursos = $seccion->recursos;
                 if($recursos->isEmpty()) continue;
+                $esMotos = ($tiposPorSeccion[$seccion->id] ?? 'moviles') === 'motos';
+                $parteSeccion = $partesPorSeccion[$seccion->id] ?? null;
+                $asignacionesGuardadas = collect(optional($parteSeccion)->asignaciones)
+                    ->mapWithKeys(fn($a) => [trim($a->grupo.'|'.$a->nombre) => $a->asignacion_texto]);
             @endphp
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header-modern">
                     <div class="card-header-left">
                         <div class="header-icon"><i class="fas fa-users"></i></div>
-                        <h5 class="header-title">{{ $seccion->nombre }}</h5>
+                        <h5 class="header-title">
+                            {{ $seccion->nombre }}
+                            <span class="badge badge-{{ $esMotos ? 'warning' : 'primary' }} ml-1">
+                                {{ $esMotos ? 'Motos' : 'Móviles' }}
+                            </span>
+                        </h5>
                     </div>
                 </div>
-                <div class="card-body p-0">
+                <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-modern mb-0">
                             <thead>
                                 <tr>
-                                    <th style="width:180px">Móvil / Dominio</th>
-                                    <th style="width:200px">Estado del día</th>
-                                    <th style="width:220px">Motivo (si no circula)</th>
+                                    <th style="width:150px">Recurso</th>
+                                    <th style="width:150px">Estado del día</th>
+                                    <th style="width:70px">Zona</th>
+                                    <th style="width:110px">HT</th>
+                                    <th style="width:180px">Motivo (si no circula)</th>
                                     <th>Dotación</th>
+                                    <th style="width:200px">Chofer</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($recursos as $j => $recurso)
+                                @foreach($recursos as $recurso)
                                 @php
                                     $idx = "recursos[{$recurso->id}]";
                                     $estadoDiario = $recurso->estadoDiario->first();
                                     $estadoDia = $estadoDiario?->estado_dia ?? 'circula';
                                     $vehiculoActual = $recurso->vehiculoActual();
-                                    $dotacionIds = $recurso->dotaciones->pluck('personal_id')->toArray();
+                                    $dotacionIds = $recurso->dotaciones->pluck('personal_id')->all();
+                                    $choferId = $recurso->dotaciones->firstWhere('es_chofer', true)?->personal_id;
                                 @endphp
                                 <tr>
                                     <td>
@@ -135,8 +156,20 @@
                                         </select>
                                     </td>
                                     <td>
+                                        <select name="{{ $idx }}[zona]" class="form-control form-control-sm">
+                                            <option value="">—</option>
+                                            @for($z = 1; $z <= 4; $z++)
+                                                <option value="{{ $z }}" {{ (string)($estadoDiario?->zona) === (string)$z ? 'selected' : '' }}>{{ $z }}</option>
+                                            @endfor
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="{{ $idx }}[ht]" class="form-control form-control-sm"
+                                            value="{{ $estadoDiario?->ht }}" maxlength="50" placeholder="HT / MP">
+                                    </td>
+                                    <td>
                                         <input type="text" name="{{ $idx }}[motivo]" class="form-control form-control-sm"
-                                            value="{{ $estadoDiario?->motivo }}" maxlength="200"
+                                            value="{{ $estadoDiario?->motivo }}" maxlength="500"
                                             placeholder="Motivo..."
                                             {{ $estadoDia === 'circula' ? 'style=display:none' : '' }}
                                             id="motivo{{ $recurso->id }}">
@@ -153,26 +186,111 @@
                                             @endforeach
                                         </select>
                                     </td>
+                                    <td>
+                                        <select name="{{ $idx }}[chofer_id]" class="form-control select2-chofer"
+                                            data-placeholder="Chofer...">
+                                            <option value="">— Sin chofer —</option>
+                                            @foreach($personal as $p)
+                                                <option value="{{ $p->id }}" {{ (string)$choferId === (string)$p->id ? 'selected' : '' }}>
+                                                    {{ $p->getNombreCompletoAttribute() }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </td>
                                 </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="small font-weight-bold">Guardia (suboficiales de guardia interna)</label>
+                            <textarea name="secciones[{{ $seccion->id }}][guardia_interna]" class="form-control" rows="2"
+                                maxlength="1000">{{ optional($parteSeccion)->guardia_interna }}</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small font-weight-bold">Personal de Licencia Ordinaria</label>
+                            <textarea name="secciones[{{ $seccion->id }}][licencia_ordinaria]" class="form-control" rows="2"
+                                maxlength="1000">{{ optional($parteSeccion)->licencia_ordinaria }}</textarea>
+                        </div>
+                    </div>
+
+                    @if($esMotos)
+                    <div class="mt-3">
+                        <label class="small font-weight-bold">Asignación de servicios</label>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered mb-2">
+                                <thead>
+                                    <tr>
+                                        <th style="width:160px">Grupo</th>
+                                        <th style="width:200px">Consigna</th>
+                                        <th>Asignación (móvil / moto / HT)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($consignas as $i => $c)
+                                    <tr>
+                                        <td>
+                                            <input type="hidden" name="secciones[{{ $seccion->id }}][asignaciones][{{ $i }}][grupo]" value="{{ $c->grupo }}">
+                                            <small class="text-muted">{{ $c->grupo ?: '—' }}</small>
+                                        </td>
+                                        <td>
+                                            <input type="hidden" name="secciones[{{ $seccion->id }}][asignaciones][{{ $i }}][nombre]" value="{{ $c->nombre }}">
+                                            {{ $c->nombre }}
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm"
+                                                name="secciones[{{ $seccion->id }}][asignaciones][{{ $i }}][asignacion_texto]"
+                                                value="{{ $asignacionesGuardadas[trim($c->grupo.'|'.$c->nombre)] ?? '' }}"
+                                                maxlength="255" placeholder="ej. 31 ht 05">
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                    @for($e = 0; $e < 3; $e++)
+                                    @php $ei = $consignas->count() + $e; @endphp
+                                    <tr>
+                                        <td><input type="text" class="form-control form-control-sm" name="secciones[{{ $seccion->id }}][asignaciones][{{ $ei }}][grupo]" maxlength="80" placeholder="(opcional)"></td>
+                                        <td><input type="text" class="form-control form-control-sm" name="secciones[{{ $seccion->id }}][asignaciones][{{ $ei }}][nombre]" maxlength="120" placeholder="Consigna extra"></td>
+                                        <td><input type="text" class="form-control form-control-sm" name="secciones[{{ $seccion->id }}][asignaciones][{{ $ei }}][asignacion_texto]" maxlength="255"></td>
+                                    </tr>
+                                    @endfor
+                                </tbody>
+                            </table>
+                        </div>
+                        <label class="small font-weight-bold">NOVEDADES (pie del parte de motos)</label>
+                        <textarea name="secciones[{{ $seccion->id }}][novedades_pie]" class="form-control" rows="2"
+                            maxlength="2000">{{ optional($parteSeccion)->novedades_pie }}</textarea>
+                    </div>
+                    @endif
                 </div>
             </div>
             @endforeach
 
-            {{-- Novedades generales --}}
+            {{-- NOVEDADES (hoja de la División, una por guardia) --}}
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header-modern">
                     <div class="card-header-left">
-                        <div class="header-icon"><i class="fas fa-sticky-note"></i></div>
-                        <h5 class="header-title">Novedades generales</h5>
+                        <div class="header-icon"><i class="fas fa-clipboard-check"></i></div>
+                        <div>
+                            <h5 class="header-title">NOVEDADES — División 911</h5>
+                            <small class="text-muted">Una por guardia. Vacío = "Sin Novedad".</small>
+                        </div>
                     </div>
                 </div>
                 <div class="card-body">
-                    <textarea name="novedades_generales" class="form-control" rows="4"
-                        maxlength="3000" placeholder="Novedades generales de la jornada..."></textarea>
+                    @php $contenidoNovedades = optional($novedades)->contenido ?? []; @endphp
+                    <div class="row">
+                        @foreach(\App\Models\ParteDiarioNovedades::RUBROS as $clave => $etiqueta)
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="small font-weight-bold mb-1">{{ $etiqueta }}</label>
+                                <textarea name="novedades[{{ $clave }}]" class="form-control form-control-sm" rows="1"
+                                    maxlength="2000">{{ $contenidoNovedades[$clave] ?? '' }}</textarea>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
                 </div>
             </div>
 
@@ -229,6 +347,44 @@
         });
         window.location.search = params.toString();
     });
+
+    document.getElementById('btnPreArmar').addEventListener('click', function() {
+        const guardia = document.getElementById('inputGuardia').value;
+        if (!guardia) {
+            iziToast.warning({ title: 'Falta la guardia', message: 'Seleccione la guardia antes de pre-armar.', position: 'topRight' });
+            return;
+        }
+        const btn = this;
+        btn.disabled = true;
+        fetch('{{ route('flota-911.informes.parte-diario.pre-armar') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ guardia: guardia, fecha_inicio: inputInicio.value }),
+        })
+        .then(function(r) { return r.ok ? r.json() : Promise.reject(r); })
+        .then(function(data) {
+            Object.entries(data.novedades || {}).forEach(function(entry) {
+                const el = document.querySelector('textarea[name="novedades[' + entry[0] + ']"]');
+                if (el && !el.value.trim()) { el.value = entry[1]; }
+            });
+            Object.entries(data.secciones || {}).forEach(function(entry) {
+                const sid = entry[0], vals = entry[1];
+                ['guardia_interna', 'licencia_ordinaria'].forEach(function(campo) {
+                    const el = document.querySelector('textarea[name="secciones[' + sid + '][' + campo + ']"]');
+                    if (el && !el.value.trim() && vals[campo]) { el.value = vals[campo]; }
+                });
+            });
+            iziToast.success({ title: 'Pre-armado', message: 'Se completaron guardia interna, licencias y novedades de sala.', position: 'topRight' });
+        })
+        .catch(function() {
+            iziToast.error({ title: 'Error', message: 'No se pudo pre-armar el parte.', position: 'topRight' });
+        })
+        .finally(function() { btn.disabled = false; });
+    });
 })();
 
 document.querySelectorAll('.estado-dia-select').forEach(function(sel) {
@@ -242,10 +398,8 @@ document.querySelectorAll('.estado-dia-select').forEach(function(sel) {
 });
 
 $(document).ready(function() {
-    $('.select2-personal').select2({
-        width: '100%',
-        language: 'es',
-    });
+    $('.select2-personal').select2({ width: '100%', language: 'es' });
+    $('.select2-chofer').select2({ width: '100%', language: 'es', allowClear: true });
 
     $('.select2-personal').on('select2:selecting', function(e) {
         const nuevoId = String(e.params.args.data.id);

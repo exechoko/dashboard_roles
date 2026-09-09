@@ -9,9 +9,17 @@ class RecursoDotacion extends Model
 {
     protected $table = 'recurso_dotaciones';
 
-    protected $fillable = ['recurso_id', 'personal_id', 'guardia', 'horario', 'fecha_inicio', 'fecha_fin', 'user_id'];
+    protected $fillable = [
+        'recurso_id', 'personal_id', 'parte_diario_id', 'es_chofer', 'orden',
+        'guardia', 'horario', 'fecha_inicio', 'fecha_fin', 'user_id',
+    ];
 
-    protected $casts = ['fecha_inicio' => 'datetime', 'fecha_fin' => 'datetime'];
+    protected $casts = [
+        'fecha_inicio' => 'datetime',
+        'fecha_fin'    => 'datetime',
+        'es_chofer'    => 'boolean',
+        'orden'        => 'integer',
+    ];
 
     public static array $guardias = [
         'guardia_1' => 'Guardia 1',
@@ -28,6 +36,11 @@ class RecursoDotacion extends Model
     public function recurso(): BelongsTo
     {
         return $this->belongsTo(Recurso::class);
+    }
+
+    public function parteDiario(): BelongsTo
+    {
+        return $this->belongsTo(ParteDiario::class);
     }
 
     public function personal(): BelongsTo

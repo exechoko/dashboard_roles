@@ -15,6 +15,7 @@ use App\Models\RecursoEstadoDiario;
 use App\Models\RecursoInformePreferencia;
 use App\Services\FlotaInformeService;
 use App\Services\ParteDiarioBorradorService;
+use App\Services\ParteDiarioDocxService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,7 +28,7 @@ class VehiculoInformeController extends Controller
 
     public function __construct(private readonly FlotaInformeService $informeService)
     {
-        $this->middleware('can:generar-parte-diario')->only(['parteDiario', 'generarParteDiario', 'preArmarParteDiario']);
+        $this->middleware('can:generar-parte-diario')->only(['parteDiario', 'generarParteDiario', 'preArmarParteDiario', 'descargarParteDiario']);
         $this->middleware('can:generar-estado-flota')->only(['estadoFlota', 'generarEstadoFlota']);
     }
 
@@ -146,12 +147,39 @@ class VehiculoInformeController extends Controller
 
         $this->guardarPreferencias($request, $userId);
 
-        $division = Destino::findOrFail(self::DIVISION_911_ID);
-        $secciones = $this->getSecciones($division->getDestinosHijosRecursivo(), $fechaInicio);
+        return redirect()
+            ->route('flota-911.informes.parte-diario', [
+                'fecha'        => $fecha,
+                'guardia'      => $guardia,
+                'horario'      => $horario,
+                'fecha_inicio' => $fechaInicio->format('Y-m-d\TH:i'),
+                'fecha_fin'    => $fechaFin->format('Y-m-d\TH:i'),
+            ])
+            ->with('success', 'Parte guardado. Descargá el .docx de cada sección desde los botones de abajo.');
+    }
 
-        return $this->informeService->generarParteDiario(
-            $secciones, $guardia, $horario, $fechaInicio, $fechaFin, $request->input('novedades_generales')
-        );
+    public function descargarParteDiario(Request $request, Destino $seccion, ParteDiarioDocxService $docxService)
+    {
+        $datos = $request->validate([
+            'fecha_inicio' => ['required', 'date'],
+        ]);
+
+        $parte = ParteDiario::with([
+            'seccion',
+            'estadosDiarios.recurso.vehiculo',
+            'dotaciones.personal',
+            'asignaciones',
+        ])
+            ->where('destino_id', $seccion->id)
+            ->where('fecha_inicio', Carbon::parse($datos['fecha_inicio']))
+            ->firstOrFail();
+
+        $novedades = ParteDiarioNovedades::firstWhere([
+            'fecha'   => $parte->fecha->toDateString(),
+            'guardia' => $parte->guardia,
+        ]);
+
+        return $docxService->generar($parte, $novedades);
     }
 
     /**

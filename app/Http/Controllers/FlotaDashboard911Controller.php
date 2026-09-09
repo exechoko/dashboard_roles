@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Destino;
 use App\Models\RecursoPrestamo;
+use App\Models\RecursoTransferencia;
 use Illuminate\Http\Request;
 
 class FlotaDashboard911Controller extends Controller
@@ -26,13 +27,14 @@ class FlotaDashboard911Controller extends Controller
                     // Solo recursos con vehículo asignado (vehiculo_id directo).
                     // Cuando se implemente rotación vía recurso_vehiculo_asignaciones,
                     // cambiar a whereHas('asignacionActual').
-                    $q->whereNotNull('vehiculo_id')->with([
+                    $q->activos()->whereNotNull('vehiculo_id')->with([
                         'vehiculo',
                         'asignacionActual.vehiculo',
                         'estadoSeccion',
                         'novedadesPendientes',
                         'prestamoActivo.destinoDestino',
                         'estadoDiarioHoy',
+                        'transferenciaPendiente',
                     ]);
                 },
             ])
@@ -51,6 +53,14 @@ class FlotaDashboard911Controller extends Controller
         );
         $totalPrestados = $prestamosActivos->count();
 
+        $transferenciasPendientes = auth()->user()->can('confirmar-transferencia-recurso')
+            ? RecursoTransferencia::pendientes()
+                ->whereHas('recurso', fn($q) => $q->whereIn('destino_id', $todosLosDestinoIds))
+                ->count()
+            : 0;
+
+        $destinos = Destino::orderBy('nombre')->get(['id', 'nombre']);
+
         return view('flota-911.dashboard', compact(
             'division',
             'secciones',
@@ -58,6 +68,8 @@ class FlotaDashboard911Controller extends Controller
             'totalRecursos',
             'totalNovedadesPendientes',
             'totalPrestados',
+            'transferenciasPendientes',
+            'destinos',
         ));
     }
 }

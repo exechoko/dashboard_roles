@@ -32,6 +32,23 @@ class ParteDiarioNovedades extends Model
 
     public const SIN_NOVEDAD = 'Sin Novedad';
 
+    /**
+     * Rubros que refieren a PERSONAL (admiten selección de funcionarios con buscador
+     * además de la edición libre del texto). El resto refiere a móviles.
+     *
+     * @var list<string>
+     */
+    public const RUBROS_PERSONAL = [
+        'sala_monitoreo',
+        'personal_guardia',
+        'sala_armas',
+        'licencia_ordinaria',
+        'parte_enfermo',
+        'cuidado_familiar',
+        'bajo_art',
+        'autorizados',
+    ];
+
     protected $fillable = [
         'fecha',
         'guardia',

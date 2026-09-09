@@ -25,7 +25,13 @@ class RecursoTransferenciaController extends Controller
         $division = Destino::findOrFail(self::DIVISION_911_ID);
         $destinoIds = $division->getDestinosHijosRecursivo();
 
-        $relaciones = ['recurso.destino', 'vehiculo', 'destinoTransferencia', 'usuarioReporte', 'usuarioResolucion'];
+        $relaciones = [
+            'recurso.destino',
+            'vehiculo',
+            'destinoTransferencia.padre.padre.padre.padre',
+            'usuarioReporte',
+            'usuarioResolucion',
+        ];
 
         $pendientes = RecursoTransferencia::pendientes()
             ->whereHas('recurso', fn ($q) => $q->whereIn('destino_id', $destinoIds))
@@ -140,12 +146,31 @@ class RecursoTransferenciaController extends Controller
             return back()->with('error', 'El recurso no figura como transferido.');
         }
 
+        $confirmada = $recurso->transferencias()
+            ->where('estado', RecursoTransferencia::ESTADO_CONFIRMADA)
+            ->latest('id')
+            ->first();
+
+        RecursoTransferencia::create([
+            'recurso_id'               => $recurso->id,
+            'vehiculo_id'              => $recurso->vehiculoActual()?->id,
+            'destino_transferencia_id' => $recurso->destino_transferencia_id,
+            'reparticion_texto'        => $recurso->reparticion_transferencia,
+            'fecha_transferencia'      => $recurso->fecha_transferencia?->toDateString() ?? now()->toDateString(),
+            'observaciones'            => 'Reactivación del recurso en la flota.'
+                . ($confirmada ? " Revierte la transferencia #{$confirmada->id}." : ''),
+            'estado'                   => RecursoTransferencia::ESTADO_REACTIVADA,
+            'user_id_reporte'          => auth()->id(),
+            'user_id_resolucion'       => auth()->id(),
+            'fecha_resolucion'         => now(),
+        ]);
+
         $recurso->fecha_transferencia = null;
         $recurso->destino_transferencia_id = null;
         $recurso->reparticion_transferencia = null;
         $recurso->observaciones_transferencia = null;
         $recurso->save();
 
-        return back()->with('success', 'Recurso reactivado en la flota.');
+        return back()->with('success', 'Recurso reactivado en la flota. Queda registrado en el historial.');
     }
 }

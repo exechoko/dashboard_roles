@@ -13,6 +13,7 @@ class RecursoTransferencia extends Model
     public const ESTADO_PENDIENTE = 'pendiente';
     public const ESTADO_CONFIRMADA = 'confirmada';
     public const ESTADO_RECHAZADA = 'rechazada';
+    public const ESTADO_REACTIVADA = 'reactivada';
 
     protected $table = 'recurso_transferencias';
 
@@ -72,7 +73,11 @@ class RecursoTransferencia extends Model
 
     public function scopeResueltas($query)
     {
-        return $query->whereIn('estado', [self::ESTADO_CONFIRMADA, self::ESTADO_RECHAZADA]);
+        return $query->whereIn('estado', [
+            self::ESTADO_CONFIRMADA,
+            self::ESTADO_RECHAZADA,
+            self::ESTADO_REACTIVADA,
+        ]);
     }
 
     public function estaPendiente(): bool
@@ -82,7 +87,7 @@ class RecursoTransferencia extends Model
 
     public function reparticionDestinoNombre(): string
     {
-        return $this->destinoTransferencia?->nombre
-            ?? ($this->reparticion_texto ?: 'Desconocida');
+        return $this->destinoTransferencia?->rutaJerarquicaTexto()
+            ?: ($this->reparticion_texto ?: 'Desconocida');
     }
 }

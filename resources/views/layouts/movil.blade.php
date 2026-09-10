@@ -53,6 +53,13 @@
         <button type="button" class="m-topbar__theme" id="mThemeToggle" aria-label="Cambiar tema claro/oscuro">
             <i class="fas fa-adjust" id="mThemeIcon"></i>
         </button>
+        <a href="{{ url('logout') }}" class="m-topbar__theme" id="mLogoutBtn" aria-label="Cerrar sesión"
+            onclick="event.preventDefault(); localStorage.clear(); document.getElementById('mLogoutForm').submit();">
+            <i class="fas fa-sign-out-alt"></i>
+        </a>
+        <form id="mLogoutForm" action="{{ url('/logout') }}" method="POST" class="d-none">
+            @csrf
+        </form>
     </header>
 
     <div class="m-install-banner" id="mInstallBanner" hidden>

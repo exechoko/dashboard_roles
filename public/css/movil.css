@@ -83,6 +83,9 @@ a { color: var(--m-accent); text-decoration: none; }
 
 .m-topbar__theme {
     flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 2.2rem;
     height: 2.2rem;
     border-radius: 999px;

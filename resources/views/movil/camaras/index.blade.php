@@ -3,6 +3,16 @@
 @section('title', 'Cámaras')
 
 @section('content')
+    <div class="m-card__meta" style="margin-bottom:.8rem; flex-wrap:wrap;">
+        <span class="m-chip">Total: {{ $resumenPorTipo['total'] }} / Canales: {{ $resumenPorTipo['canales'] }}</span>
+        <span class="m-chip">Fijas: {{ $resumenPorTipo['fijas'] }}</span>
+        <span class="m-chip">Fijas FR: {{ $resumenPorTipo['fijas_fr'] }}</span>
+        <span class="m-chip">Fijas LPR: {{ $resumenPorTipo['fijas_lpr'] }}</span>
+        <span class="m-chip">Domos: {{ $resumenPorTipo['domos'] }}</span>
+        <span class="m-chip">Domos Duales: {{ $resumenPorTipo['domos_duales'] }}</span>
+        <span class="m-chip">BDE (Tótem): {{ $resumenPorTipo['bde'] }}</span>
+    </div>
+
     <form method="GET" action="{{ route('movil.camaras.index') }}" class="m-search">
         <input type="text" name="texto" value="{{ $texto }}" placeholder="Nombre o sitio…">
         <button type="submit" class="m-btn"><i class="fas fa-search"></i></button>

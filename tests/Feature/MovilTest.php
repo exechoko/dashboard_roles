@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Camara;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Http;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -104,6 +106,37 @@ class MovilTest extends TestCase
 
         $this->actingAs($usuario)->get(route('movil.camaras.index'))->assertForbidden();
         $this->actingAs($usuario)->get(route('movil.mapa.index'))->assertForbidden();
+    }
+
+    public function test_el_indice_de_camaras_movil_incluye_el_resumen_por_tipo(): void
+    {
+        $usuario = $this->usuarioCon(['ver-camara']);
+
+        $response = $this->actingAs($usuario)->get(route('movil.camaras.index'));
+
+        $response->assertOk()->assertViewHas('resumenPorTipo', function (array $resumen) {
+            return array_key_exists('total', $resumen) && array_key_exists('canales', $resumen);
+        });
+    }
+
+    public function test_un_usuario_sin_reiniciar_camara_recibe_403_al_reiniciarla_desde_movil(): void
+    {
+        $usuario = $this->usuarioCon(['ver-camara']);
+        $camara = Camara::create(['nombre' => 'Cámara test', 'ip' => '10.0.0.5']);
+
+        $this->actingAs($usuario)->post(route('movil.camaras.reiniciar', $camara))->assertForbidden();
+    }
+
+    public function test_un_usuario_con_reiniciar_camara_puede_reiniciarla_desde_movil(): void
+    {
+        Http::fake(['*/cgi-bin/magicBox.cgi*' => Http::response('', 200)]);
+
+        $usuario = $this->usuarioCon(['ver-camara', 'reiniciar-camara']);
+        $camara = Camara::create(['nombre' => 'Cámara test', 'ip' => '10.0.0.5']);
+
+        $response = $this->actingAs($usuario)->post(route('movil.camaras.reiniciar', $camara));
+
+        $response->assertOk()->assertJson(['ok' => true]);
     }
 
     public function test_un_usuario_sin_permiso_recibe_403_en_eventos(): void

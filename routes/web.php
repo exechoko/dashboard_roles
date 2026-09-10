@@ -102,6 +102,7 @@ Route::group(['middleware' => ['auth']], function () {
 
         Route::get('/camaras', [App\Http\Controllers\Movil\CamarasController::class, 'index'])->name('camaras.index');
         Route::get('/camaras/{camara}', [App\Http\Controllers\Movil\CamarasController::class, 'show'])->name('camaras.show');
+        Route::post('/camaras/{camara}/reiniciar', [App\Http\Controllers\Movil\CamarasController::class, 'reiniciar'])->name('camaras.reiniciar');
 
         Route::get('/mapa/camaras.json', [App\Http\Controllers\Movil\MapaController::class, 'camarasJson'])->name('mapa.camaras-json');
         Route::get('/mapa/dependencias.json', [App\Http\Controllers\Movil\MapaController::class, 'dependenciasJson'])->name('mapa.dependencias-json');

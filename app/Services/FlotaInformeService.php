@@ -2,8 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\RecursoEstadoDiario;
-use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\IOFactory;
@@ -12,110 +10,6 @@ class FlotaInformeService
 {
     private const FONT = 'Arial';
     private const MARGIN = 1000;
-
-    public function generarParteDiario(Collection $secciones, string $guardia, string $horario, Carbon $fechaInicio, Carbon $fechaFin, ?string $novedadesGenerales): \Symfony\Component\HttpFoundation\BinaryFileResponse
-    {
-        $phpWord = $this->crearDocumento();
-        $section = $phpWord->addSection($this->layoutPortrait());
-        $fechaFormateada = $fechaInicio->copy()->locale('es')->isoFormat('DD [de] MMMM [de] YYYY');
-        $guardiaLabel = RecursoEstadoDiario::$guardias[$guardia] ?? $guardia;
-        $horarioLabel = RecursoEstadoDiario::$horarios[$horario] ?? $horario;
-
-        $this->addTitulo($section, 'POLICÍA DE ENTRE RÍOS');
-        $this->addTitulo($section, 'DIVISIÓN 911 Y VIDEOVIGILANCIA');
-        $section->addTextBreak(1);
-        $this->addTitulo($section, 'PARTE DIARIO DE VEHÍCULOS');
-        $this->addSubtitulo($section, mb_strtoupper($guardiaLabel, 'UTF-8') . ' — ' . $horarioLabel . ' del ' . $fechaInicio->format('d/m/Y'));
-        $this->addSubtitulo($section, 'Turno: ' . $fechaInicio->format('d/m/Y H:i') . ' a ' . $fechaFin->format('d/m/Y H:i'));
-        $section->addTextBreak(1);
-
-        foreach ($secciones as $seccion) {
-            $recursos = $seccion->recursos;
-            if ($recursos->isEmpty()) {
-                continue;
-            }
-
-            $this->addSeccionTitulo($section, mb_strtoupper($seccion->nombre, 'UTF-8'));
-            $section->addTextBreak(1);
-
-            $circulan = $recursos->filter(
-                fn($r) => ($r->estadoDiario->first()?->estado_dia ?? 'circula') === 'circula'
-            );
-
-            if ($circulan->isNotEmpty()) {
-                $this->addSubtitulo($section, 'Vehículos que circulan:');
-                $table = $section->addTable($this->estiloTabla($phpWord, 'tablaCirculan' . $seccion->id));
-
-                $table->addRow(400);
-                foreach (['Móvil', 'Dominio', 'Tipo', 'Dotación'] as $h) {
-                    $table->addCell(null, ['bgColor' => '2C3E50'])->addText(
-                        $h, ['bold' => true, 'size' => 9, 'color' => 'FFFFFF', 'name' => self::FONT], ['alignment' => 'center']
-                    );
-                }
-
-                foreach ($circulan as $recurso) {
-                    $vehiculo = $recurso->vehiculoActual();
-                    $dominio = $vehiculo?->dominio ?? '—';
-
-                    $dotacion = $recurso->dotaciones
-                        ->map(fn($d) => $d->personal?->getNombreCompletoAttribute())
-                        ->filter()
-                        ->join("\n");
-
-                    $table->addRow(300);
-                    $table->addCell(1200)->addText($recurso->nombre, ['size' => 9, 'name' => self::FONT]);
-                    $table->addCell(1200)->addText($dominio, ['size' => 9, 'name' => self::FONT], ['alignment' => 'center']);
-                    $table->addCell(1200)->addText($vehiculo?->tipo_vehiculo ?? '—', ['size' => 9, 'name' => self::FONT], ['alignment' => 'center']);
-                    $table->addCell(5000)->addText($dotacion ?: '—', ['size' => 9, 'name' => self::FONT]);
-                }
-
-                $section->addTextBreak(1);
-            }
-
-            $reserva = $recursos->filter(
-                fn($r) => ($r->estadoDiario->first()?->estado_dia ?? 'circula') === 'reserva'
-            );
-
-            if ($reserva->isNotEmpty()) {
-                $this->addSubtitulo($section, 'Vehículos en reserva:');
-                foreach ($reserva as $recurso) {
-                    $vehiculo = $recurso->vehiculoActual();
-                    $motivo = $recurso->estadoDiario->first()?->motivo ?? '';
-                    $dominio = $vehiculo?->dominio ?? 'S/D';
-                    $texto = "{$recurso->nombre} ({$dominio})" . ($motivo ? " — {$motivo}" : '');
-                    $section->addText('• ' . $texto, ['size' => 9, 'name' => self::FONT]);
-                }
-                $section->addTextBreak(1);
-            }
-
-            $fueraDeServicio = $recursos->filter(
-                fn($r) => in_array($r->estadoDiario->first()?->estado_dia ?? 'circula', ['fuera_de_servicio', 'otro'])
-            );
-
-            if ($fueraDeServicio->isNotEmpty()) {
-                $this->addSubtitulo($section, 'Vehículos fuera de servicio:');
-                foreach ($fueraDeServicio as $recurso) {
-                    $vehiculo = $recurso->vehiculoActual();
-                    $motivo = $recurso->estadoDiario->first()?->motivo ?? '';
-                    $dominio = $vehiculo?->dominio ?? 'S/D';
-                    $texto = "{$recurso->nombre} ({$dominio})" . ($motivo ? " — {$motivo}" : '');
-                    $section->addText('• ' . $texto, ['size' => 9, 'name' => self::FONT]);
-                }
-                $section->addTextBreak(1);
-            }
-        }
-
-        if ($novedadesGenerales) {
-            $this->addSeccionTitulo($section, 'NOVEDADES GENERALES');
-            $section->addText($novedadesGenerales, ['size' => 9, 'name' => self::FONT]);
-            $section->addTextBreak(1);
-        }
-
-        $this->addPieFirma($section, $fechaFormateada);
-
-        $filename = 'Parte_Diario_' . $fechaInicio->format('Ymd_Hi') . '.docx';
-        return $this->descargar($phpWord, $filename);
-    }
 
     public function generarEstadoFlota(Collection $recursos, $destino): \Symfony\Component\HttpFoundation\BinaryFileResponse
     {
@@ -132,7 +26,7 @@ class FlotaInformeService
 
         $table = $section->addTable($this->estiloTabla($phpWord, 'tablaFlota'));
         $table->addRow(400);
-        foreach (['Móvil', 'Dominio', 'Tipo / Marca / Modelo', 'Estado', 'Novedades pendientes'] as $h) {
+        foreach (['Móvil', 'Dominio', 'Tipo / Marca / Modelo', 'Estado', 'Última novedad de bitácora'] as $h) {
             $table->addCell(null, ['bgColor' => '2C3E50'])->addText(
                 $h, ['bold' => true, 'size' => 9, 'color' => 'FFFFFF', 'name' => self::FONT], ['alignment' => 'center']
             );
@@ -149,9 +43,12 @@ class FlotaInformeService
                 default             => 'EAFAF1',
             };
 
-            $novedades = $recurso->novedadesPendientes
-                ->map(fn($n) => '• ' . \Illuminate\Support\Str::limit($n->descripcion, 80))
-                ->join("\n");
+            $ultima = $recurso->ultimaBitacora;
+            $novedades = $ultima
+                ? $ultima->fecha_hora->format('d/m/Y') . ' — ' . $ultima->categoriaLabel()
+                    . ($recurso->bitacoraAbiertas->isNotEmpty() ? ' (en taller)' : '')
+                    . "\n" . \Illuminate\Support\Str::limit($ultima->descripcion, 90)
+                : '—';
 
             $tipoMarcaModelo = $vehiculo ? implode(' / ', array_filter([
                 $vehiculo->tipo_vehiculo,
@@ -164,7 +61,7 @@ class FlotaInformeService
             $table->addCell(1200)->addText($vehiculo?->dominio ?? '—', ['size' => 9, 'name' => self::FONT], ['alignment' => 'center']);
             $table->addCell(2500)->addText($tipoMarcaModelo, ['size' => 9, 'name' => self::FONT]);
             $table->addCell(1500, ['bgColor' => $estadoBg])->addText($estadoLabel, ['size' => 9, 'name' => self::FONT], ['alignment' => 'center']);
-            $table->addCell(3000)->addText($novedades ?: '—', ['size' => 9, 'name' => self::FONT]);
+            $table->addCell(3000)->addText($novedades, ['size' => 9, 'name' => self::FONT]);
         }
 
         $section->addTextBreak(2);

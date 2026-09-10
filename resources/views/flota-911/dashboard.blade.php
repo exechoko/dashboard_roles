@@ -182,7 +182,7 @@
                                     @endif
                                 </td>
                                 <td class="text-center action-td">
-                                    <a href="{{ route('flota-911.informes.estado-flota') }}?q={{ urlencode($recurso->nombre) }}"
+                                    <a href="{{ route('flota-911.estado-flota.bitacora', $recurso->id) }}"
                                        class="action-btn btn-view" title="Bitácora del recurso">
                                         <i class="fas fa-history"></i>
                                     </a>

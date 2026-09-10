@@ -101,6 +101,20 @@
                 </div>
             </div>
 
+            @can('ver-infraestructura-librenms')
+                {{-- Cámaras 911 (LibreNMS) --}}
+                <div class="estado-procesos-bloque" title="Estado de las cámaras 911 monitoreadas por LibreNMS. Se actualiza cada 5 minutos.">
+                    <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-video mr-1"></i><strong>Cámaras 911 (LibreNMS)</strong></small>
+                    <div class="d-flex align-items-center flex-wrap" style="gap:0.5rem;">
+                        <span id="camaras-librenms-total" class="badge badge-secondary">Verificando...</span>
+                        <button type="button" id="btn-ver-camaras-librenms" class="btn btn-xs btn-outline-danger"
+                            data-toggle="modal" data-target="#modal-camaras-librenms" disabled>
+                            <i class="fas fa-video-slash mr-1"></i>Ver caídas
+                        </button>
+                    </div>
+                </div>
+            @endcan
+
             {{-- Tamaño BD restauraciones CECOCO --}}
             <div class="estado-procesos-bloque" title="Tamaño de la base de datos de restauraciones de CECOCO. Se actualiza una vez por hora.">
                 <small class="estado-procesos-titulo d-block mb-1"><i class="fas fa-database mr-1"></i><strong>Tamaño BD restauraciones</strong></small>
@@ -208,6 +222,32 @@
                 </div>
                 <div class="modal-footer">
                     <small id="inventario-discrepancias-actualizado" class="text-muted mr-auto"></small>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+@endcan
+
+@can('ver-infraestructura-librenms')
+    <div class="modal fade" id="modal-camaras-librenms" tabindex="-1" role="dialog" aria-labelledby="modalCamarasLibreNmsTitulo" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="modalCamarasLibreNmsTitulo">
+                        <i class="fas fa-video-slash mr-2"></i>Cámaras 911 caídas
+                    </h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Cerrar">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div id="camaras-librenms-detalle">
+                        <span class="text-muted">Cargando detalle...</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <small id="camaras-librenms-actualizado" class="text-muted mr-auto"></small>
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
                 </div>
             </div>

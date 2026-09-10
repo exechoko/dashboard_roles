@@ -34,6 +34,16 @@
         </dl>
     </div>
 
+    @can('ver-infraestructura-librenms')
+        <div class="m-section-title">Cámaras 911 (LibreNMS)</div>
+        <div class="m-detail">
+            <dl style="margin:0;">
+                <div class="m-detail__row"><dt>Estado</dt><dd><span id="mInfraCamarasEstado" class="badge badge-secondary">Verificando...</span></dd></div>
+            </dl>
+        </div>
+        <dl id="mInfraCamarasCaidas" class="m-detail" style="display:none; margin-top:-.4rem;"></dl>
+    @endcan
+
     <div class="m-section-title">Tamaño de bases de datos</div>
     <div class="m-detail">
         <dl style="margin:0;">
@@ -128,12 +138,55 @@
                         pintarTamanoBd('mInfraRestMb', d.restauraciones_mb, d.restauraciones_umbral_mb || 4000);
                         pintarTamanoBd('mInfraRestGpsMb', d.restauraciones_gps_mb, d.restauraciones_gps_umbral_mb || 4000);
 
+                        pintarCamarasLibreNms(d.camaras_librenms);
+
                         var hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                         document.getElementById('mInfraActualizado').textContent = 'Actualizado: ' + hora;
                     })
                     .catch(function () {
                         pintarEstadoVacio(document.getElementById('mInfraDot'), document.getElementById('mInfraLabel'), 'Error', 'badge-warning');
                     });
+            }
+
+            function escapar(texto) {
+                var div = document.createElement('div');
+                div.textContent = texto == null ? '' : String(texto);
+                return div.innerHTML;
+            }
+
+            function pintarCamarasLibreNms(datos) {
+                var estado = document.getElementById('mInfraCamarasEstado');
+                var caidas = document.getElementById('mInfraCamarasCaidas');
+                if (!estado) return;
+
+                if (!datos || !datos.disponible) {
+                    estado.textContent = 'sin lectura reciente';
+                    estado.className = 'badge badge-warning';
+                    if (caidas) caidas.style.display = 'none';
+                    return;
+                }
+
+                var nroCaidas = datos.caidas || 0;
+                if (nroCaidas > 0) {
+                    estado.textContent = nroCaidas + ' caída' + (nroCaidas === 1 ? '' : 's') + ' de ' + datos.total;
+                    estado.className = 'badge badge-danger';
+                } else {
+                    estado.textContent = 'las ' + datos.total + ' online';
+                    estado.className = 'badge badge-success';
+                }
+
+                if (!caidas) return;
+
+                if (nroCaidas === 0) {
+                    caidas.style.display = 'none';
+                    return;
+                }
+
+                caidas.style.display = '';
+                caidas.innerHTML = (datos.offline || []).map(function (cam) {
+                    return '<div class="m-detail__row"><dt><i class="fas fa-video-slash text-danger"></i> ' + escapar(cam.nombre) + '</dt>'
+                        + '<dd><small>' + (cam.ip ? escapar(cam.ip) + ' — ' : '') + 'hace ' + escapar(cam.caida_hace || '?') + '</small></dd></div>';
+                }).join('');
             }
 
             function pintarTamanoBd(elId, mb, umbral) {

@@ -65,4 +65,27 @@ class ParteDiario extends Model
     {
         return $this->tipo === self::TIPO_MOTOS;
     }
+
+    /**
+     * La hoja NOVEDADES de la División para este parte. Se resuelve por
+     * fecha + guardia (es única a ese nivel, no por sección), así que no
+     * puede ser una relación eager-loadeable.
+     */
+    public function novedades(): ?ParteDiarioNovedades
+    {
+        return ParteDiarioNovedades::firstWhere([
+            'fecha'   => $this->fecha->toDateString(),
+            'guardia' => $this->guardia,
+        ]);
+    }
+
+    public function guardiaLabel(): string
+    {
+        return RecursoEstadoDiario::$guardias[$this->guardia] ?? $this->guardia;
+    }
+
+    public function horarioLabel(): string
+    {
+        return RecursoEstadoDiario::$horarios[$this->horario] ?? $this->horario;
+    }
 }

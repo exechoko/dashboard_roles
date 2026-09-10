@@ -198,7 +198,7 @@
 @endcan
 
 @can('ver-menu-armamento')
-    <li class="dropdown {{ request()->is('armas*') ? 'active' : '' }}">
+    <li class="dropdown {{ request()->is('armas*') && !request()->is('armas/personal*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-shield-alt"></i><span>Control de Armas</span>
         </a>
@@ -224,13 +224,6 @@
                     </a>
                 </li>
             @endcan
-            @can('ver-personal')
-                <li class="{{ request()->is('armas/personal*') ? 'active' : '' }}">
-                    <a class="nav-link" href="{{ route('armas.personal.index') }}">
-                        <i class="fas fa-users"></i><span>Personal</span>
-                    </a>
-                </li>
-            @endcan
             @can('ver-armeria')
                 <li class="dropdown-divider"></li>
                 <li class="dropdown-header">ARMERÍA</li>
@@ -246,6 +239,14 @@
                 </li>
             @endcan
         </ul>
+    </li>
+@endcan
+
+@can('ver-menu-personal')
+    <li class="{{ request()->is('armas/personal*') ? 'active' : '' }}">
+        <a class="nav-link" href="{{ route('armas.personal.index') }}">
+            <i class="fas fa-users"></i><span>Personal</span>
+        </a>
     </li>
 @endcan
 

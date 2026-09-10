@@ -25,6 +25,27 @@
                 </div>
             @endif
 
+            <div class="row mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="card card-statistic-1">
+                        <div class="card-icon bg-success"><i class="fas fa-user-check"></i></div>
+                        <div class="card-wrap">
+                            <div class="card-header"><h4>Personal Activo</h4></div>
+                            <div class="card-body">{{ $totalActivos }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card card-statistic-1">
+                        <div class="card-icon bg-warning"><i class="fas fa-calendar-times"></i></div>
+                        <div class="card-wrap">
+                            <div class="card-header"><h4>Personal de Licencia</h4></div>
+                            <div class="card-body">{{ $totalDeLicencia }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-body">
                     <form method="GET" action="{{ route('armas.personal.index') }}" class="mb-3">

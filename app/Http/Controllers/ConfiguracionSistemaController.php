@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
 class ConfiguracionSistemaController extends Controller
@@ -230,7 +231,7 @@ class ConfiguracionSistemaController extends Controller
         return back()->with('success', 'Backup encolado: se está generando en segundo plano. Esta pantalla se actualiza sola cuando termine.');
     }
 
-    public function backupDescargar(string $archivo, BackupBaseDatosService $backups): Response
+    public function backupDescargar(string $archivo, BackupBaseDatosService $backups): BinaryFileResponse
     {
         try {
             $ruta = $backups->ruta($archivo);

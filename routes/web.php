@@ -55,7 +55,6 @@ use App\Http\Controllers\ArmaPersonalController;
 use App\Http\Controllers\ArmeriaArmaController;
 use App\Http\Controllers\ArmeriaChalecoController;
 use App\Http\Controllers\FlotaDashboard911Controller;
-use App\Http\Controllers\RecursoNovedadController;
 use App\Http\Controllers\RecursoPrestamoController;
 use App\Http\Controllers\RecursoTransferenciaController;
 use App\Http\Controllers\RecursoEstadoSeccionController;
@@ -257,14 +256,6 @@ Route::group(['middleware' => ['auth']], function () {
     // ─── Flota 911 ───────────────────────────────────────────
     Route::prefix('flota-911')->name('flota-911.')->group(function () {
         Route::get('/', [FlotaDashboard911Controller::class, 'index'])->name('dashboard');
-
-        // Novedades por recurso
-        Route::get('/recursos/{recurso}/novedades', [RecursoNovedadController::class, 'index'])->name('novedades.index');
-        Route::post('/recursos/{recurso}/novedades', [RecursoNovedadController::class, 'store'])->name('novedades.store');
-        Route::patch('/novedades/{novedad}/resolver', [RecursoNovedadController::class, 'resolver'])->name('novedades.resolver');
-        Route::post('/novedades/{novedad}/seguimientos', [RecursoNovedadController::class, 'storeSeguimiento'])->name('novedades.seguimientos.store');
-        Route::post('/novedades/{novedad}/adjuntos', [RecursoNovedadController::class, 'storeAdjunto'])->name('novedades.adjuntos.store');
-        Route::delete('/adjuntos/{adjunto}', [RecursoNovedadController::class, 'destroyAdjunto'])->name('novedades.adjuntos.destroy');
 
         // Estado contextual del recurso
         Route::patch('/recursos/{recurso}/estado', [RecursoEstadoSeccionController::class, 'update'])->name('estado-seccion.update');

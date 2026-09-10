@@ -276,11 +276,11 @@ Route::group(['middleware' => ['auth']], function () {
         Route::patch('/recursos/{recurso}/reactivar-transferencia', [RecursoTransferenciaController::class, 'reactivar'])->name('transferencias.reactivar');
 
         // Informes
-        Route::get('/parte-diario', [VehiculoInformeController::class, 'parteDiario'])->name('informes.parte-diario');
         Route::post('/parte-diario/pre-armar', [VehiculoInformeController::class, 'preArmarParteDiario'])->name('informes.parte-diario.pre-armar');
         Route::get('/parte-diario/desde-ultima-guardia', [VehiculoInformeController::class, 'parteDesdeUltimaGuardia'])->name('informes.parte-diario.desde-guardia');
         Route::post('/parte-diario/generar', [VehiculoInformeController::class, 'generarParteDiario'])->name('informes.parte-diario.generar');
-        Route::get('/parte-diario/{seccion}/docx', [VehiculoInformeController::class, 'descargarParteDiario'])->name('informes.parte-diario.docx');
+        Route::get('/parte-diario/{tipo}', [VehiculoInformeController::class, 'parteDiario'])->name('informes.parte-diario')->where('tipo', 'moviles|motos');
+        Route::get('/parte-diario/{tipo}/docx', [VehiculoInformeController::class, 'descargarParteDiario'])->name('informes.parte-diario.docx')->where('tipo', 'moviles|motos');
 
         // Histórico de partes diarios (consulta de solo lectura)
         Route::get('/partes-diarios', [ParteDiarioHistorialController::class, 'index'])->name('partes-diarios.index');

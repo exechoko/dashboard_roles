@@ -81,8 +81,13 @@
         <div class="row mb-4">
             @can('generar-parte-diario')
             <div class="col-auto">
-                <a href="{{ route('flota-911.informes.parte-diario') }}" class="btn btn-primary">
-                    <i class="fas fa-file-alt mr-1"></i> Parte Diario
+                <a href="{{ route('flota-911.informes.parte-diario', 'moviles') }}" class="btn btn-primary">
+                    <i class="fas fa-file-alt mr-1"></i> Parte de Móviles
+                </a>
+            </div>
+            <div class="col-auto">
+                <a href="{{ route('flota-911.informes.parte-diario', 'motos') }}" class="btn btn-primary">
+                    <i class="fas fa-motorcycle mr-1"></i> Parte de Motopatrullas
                 </a>
             </div>
             @endcan

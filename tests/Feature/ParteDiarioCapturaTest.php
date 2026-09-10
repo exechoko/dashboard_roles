@@ -50,6 +50,7 @@ class ParteDiarioCapturaTest extends TestCase
     private function payload(array $recursos, array $overrides = []): array
     {
         return array_merge([
+            'tipo'         => 'moviles',
             'fecha'        => '2099-05-20',
             'guardia'      => 'guardia_3',
             'horario'      => '06_18',
@@ -59,7 +60,7 @@ class ParteDiarioCapturaTest extends TestCase
         ], $overrides);
     }
 
-    public function test_guardar_crea_una_cabecera_de_parte_por_seccion_con_el_tipo_correcto(): void
+    public function test_guardar_crea_una_cabecera_de_parte_por_tipo_a_nivel_division(): void
     {
         $this->actingAs($this->usuario());
         $movil = $this->recursoDeMoviles();
@@ -67,13 +68,21 @@ class ParteDiarioCapturaTest extends TestCase
 
         $this->post(route('flota-911.informes.parte-diario.generar'), $this->payload([
             ['id' => $movil->id, 'estado_dia' => 'circula'],
-            ['id' => $moto->id, 'estado_dia' => 'circula'],
         ]))->assertRedirect();
 
-        $this->assertSame(ParteDiario::TIPO_MOVILES, ParteDiario::where('destino_id', $movil->destino_id)
-            ->where('fecha_inicio', '2099-05-20 06:15:00')->value('tipo'));
-        $this->assertSame(ParteDiario::TIPO_MOTOS, ParteDiario::where('destino_id', $moto->destino_id)
-            ->where('fecha_inicio', '2099-05-20 06:15:00')->value('tipo'));
+        $this->post(route('flota-911.informes.parte-diario.generar'), $this->payload(
+            [['id' => $moto->id, 'estado_dia' => 'circula']],
+            ['tipo' => 'motos'],
+        ))->assertRedirect();
+
+        $partes = ParteDiario::where('destino_id', 42)
+            ->where('fecha_inicio', '2099-05-20 06:15:00')
+            ->pluck('tipo', 'tipo');
+
+        $this->assertEqualsCanonicalizing(
+            [ParteDiario::TIPO_MOVILES, ParteDiario::TIPO_MOTOS],
+            $partes->values()->all()
+        );
     }
 
     public function test_guarda_zona_ht_y_marca_al_chofer_en_la_dotacion(): void
@@ -114,16 +123,16 @@ class ParteDiarioCapturaTest extends TestCase
 
         $base = fn (string $texto) => $this->payload(
             [['id' => $moto->id, 'estado_dia' => 'circula']],
-            ['secciones' => [$moto->destino_id => ['asignaciones' => [
+            ['tipo' => 'motos', 'asignaciones' => [
                 ['grupo' => 'Microcentro', 'nombre' => 'Sector 1', 'asignacion_texto' => $texto],
                 ['grupo' => '', 'nombre' => '', 'asignacion_texto' => ''],
-            ]]]],
+            ]],
         );
 
         $this->post(route('flota-911.informes.parte-diario.generar'), $base('14'))->assertRedirect();
         $this->post(route('flota-911.informes.parte-diario.generar'), $base('31 ht 05'))->assertRedirect();
 
-        $parte = ParteDiario::where('destino_id', $moto->destino_id)
+        $parte = ParteDiario::where('destino_id', 42)->where('tipo', 'motos')
             ->where('fecha_inicio', '2099-05-20 06:15:00')->firstOrFail();
         $asignaciones = ParteDiarioAsignacion::where('parte_diario_id', $parte->id)->get();
 
@@ -167,7 +176,7 @@ class ParteDiarioCapturaTest extends TestCase
     public function test_los_rubros_de_personal_tienen_buscador_y_los_de_moviles_no(): void
     {
         $respuesta = $this->actingAs($this->usuario())
-            ->get(route('flota-911.informes.parte-diario', ['guardia' => 'guardia_3']));
+            ->get(route('flota-911.informes.parte-diario', ['tipo' => 'moviles', 'guardia' => 'guardia_3']));
 
         $respuesta->assertOk()
             ->assertSee('select2-novedad-personal', false)
@@ -196,12 +205,13 @@ class ParteDiarioCapturaTest extends TestCase
     {
         $respuesta = $this->actingAs($this->usuario())
             ->postJson(route('flota-911.informes.parte-diario.pre-armar'), [
+                'tipo'         => 'moviles',
                 'guardia'      => 'guardia_3',
                 'fecha_inicio' => '2099-05-20T06:15',
             ]);
 
         $respuesta->assertOk()
-            ->assertJsonStructure(['novedades', 'secciones']);
+            ->assertJsonStructure(['novedades', 'guardia_interna', 'licencia_ordinaria']);
 
         $this->assertNotEmpty($respuesta->json('novedades.sala_armas'));
     }

@@ -13,6 +13,20 @@ return [
         env('FLOTA911_DESTINATARIO_L2', 'LIC. CRIO. INSP. ZUNINO JUAN'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Partes diarios — de qué destinos salen los recursos de cada parte
+    |--------------------------------------------------------------------------
+    | El parte se arma consolidado a nivel División (no por sección): una lista
+    | plana de móviles y otra de motopatrullas.
+    */
+
+    'parte' => [
+        'division_id'      => 42,
+        'destinos_moviles' => [42, 230, 237], // División 911 (directo) + Sección Patrulla + Depósito (PROMIN)
+        'destinos_motos'   => [231],          // Sección Patrulla Motorizada
+    ],
+
     // Prefijo que la Sección Patrulla antepone al número de móvil ("MÓVIL JP 1007").
     'prefijo_movil_patrulla' => env('FLOTA911_PREFIJO_MOVIL', 'JP'),
 

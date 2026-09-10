@@ -28,6 +28,7 @@ class ParteDiarioHistorialTest extends TestCase
 
         $this->actingAs($this->usuario('generar-parte-diario'))
             ->post(route('flota-911.informes.parte-diario.generar'), array_merge([
+                'tipo'         => 'moviles',
                 'fecha'        => $fecha,
                 'guardia'      => $guardia,
                 'horario'      => '06_18',

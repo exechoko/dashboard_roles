@@ -20,7 +20,6 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class VehiculoInformeController extends Controller
 {
@@ -33,7 +32,11 @@ class VehiculoInformeController extends Controller
         $this->middleware('can:generar-estado-flota')->only('generarEstadoFlota');
     }
 
-    public function parteDiario(Request $request)
+    /**
+     * Formulario del parte diario. Un tipo por pantalla ("moviles" | "motos"):
+     * trae la lista plana de todos los recursos de ese tipo de la División 911.
+     */
+    public function parteDiario(Request $request, string $tipo)
     {
         $fecha = $request->get('fecha', today()->toDateString());
         $guardia = $request->get('guardia');
@@ -42,146 +45,133 @@ class VehiculoInformeController extends Controller
             $fecha, $horario, $request->get('fecha_inicio'), $request->get('fecha_fin')
         );
 
-        $division = Destino::findOrFail(self::DIVISION_911_ID);
-        $todosLosDestinoIds = $division->getDestinosHijosRecursivo();
-
-        $secciones = $this->getSecciones($todosLosDestinoIds, $fechaInicio);
+        $recursos = $this->recursosDelParte($tipo, $fechaInicio);
         $personal = Personal::orderBy('apellido')->get(['id', 'jerarquia', 'apellido', 'nombre', 'lp']);
         $consignas = ParteDiarioConsigna::activas()->ordenadas()->get();
 
-        $partesPorSeccion = ParteDiario::with('asignaciones')
+        $parte = ParteDiario::with('asignaciones')
+            ->where('destino_id', self::DIVISION_911_ID)
+            ->where('tipo', $tipo)
             ->where('fecha_inicio', $fechaInicio)
-            ->get()
-            ->keyBy('destino_id');
+            ->first();
 
-        $novedades = $guardia
+        $novedades = ($tipo === ParteDiario::TIPO_MOVILES && $guardia)
             ? ParteDiarioNovedades::firstWhere(['fecha' => $fecha, 'guardia' => $guardia])
             : null;
 
-        $tiposPorSeccion = $secciones->mapWithKeys(
-            fn (Destino $s) => [$s->id => $this->tipoDeSeccion($s)]
-        );
-
-        return view('flota-911.informes.parte-diario', compact(
-            'fecha', 'guardia', 'horario', 'fechaInicio', 'fechaFin', 'secciones', 'personal',
-            'division', 'consignas', 'partesPorSeccion', 'novedades', 'tiposPorSeccion'
+        return view('flota-911.informes.parte-' . $tipo, compact(
+            'tipo', 'fecha', 'guardia', 'horario', 'fechaInicio', 'fechaFin',
+            'recursos', 'personal', 'consignas', 'parte', 'novedades'
         ));
     }
 
     /**
-     * Devuelve, por sección, los datos del último parte guardado de la guardia
-     * indicada (recursos que circularon, zona/HT, dotación + chofer, guardia
-     * interna, licencias, asignaciones y los 14 rubros de novedades) para
-     * precargar el formulario de un parte nuevo. No guarda nada.
+     * Recursos de la lista plana del parte del tipo dado (todos los de la
+     * División, sin separar por sección). Las motopatrullas se traen aunque no
+     * tengan ficha de vehículo.
+     */
+    private function recursosDelParte(string $tipo, Carbon $fechaInicio)
+    {
+        return Recurso::query()
+            ->whereIn('destino_id', config('flota911.parte.destinos_' . $tipo, []))
+            ->activos()
+            ->when($tipo === ParteDiario::TIPO_MOVILES, fn ($q) => $q->whereNotNull('vehiculo_id'))
+            ->with([
+                'vehiculo',
+                'estadoDiario' => fn ($q) => $q->where('fecha_inicio', $fechaInicio),
+                'dotaciones'   => fn ($q) => $q->where('fecha_inicio', $fechaInicio)->orderBy('orden')->with('personal'),
+            ])
+            ->orderBy('nombre')
+            ->get();
+    }
+
+    /**
+     * Datos del último parte guardado de la guardia + tipo indicados (recursos
+     * que circularon, zona/HT, dotación + chofer, guardia interna, licencias,
+     * asignaciones y —en móviles— los 14 rubros de novedades) para precargar el
+     * formulario de un parte nuevo. No guarda nada.
      */
     public function parteDesdeUltimaGuardia(Request $request): JsonResponse
     {
         $datos = $request->validate([
+            'tipo'    => ['required', 'in:moviles,motos'],
             'guardia' => ['required', 'in:guardia_1,guardia_2,guardia_3,guardia_4'],
         ]);
-        $guardia = $datos['guardia'];
 
-        $division = Destino::findOrFail(self::DIVISION_911_ID);
-
-        $ultimosPorSeccion = ParteDiario::query()
-            ->whereIn('destino_id', $division->getDestinosHijosRecursivo())
-            ->where('guardia', $guardia)
+        $parte = ParteDiario::query()
+            ->where('destino_id', self::DIVISION_911_ID)
+            ->where('tipo', $datos['tipo'])
+            ->where('guardia', $datos['guardia'])
             ->with(['estadosDiarios', 'dotaciones' => fn ($q) => $q->orderBy('orden'), 'asignaciones'])
             ->orderByDesc('fecha_inicio')
-            ->get()
-            ->groupBy('destino_id')
-            ->map->first();
+            ->first();
 
-        if ($ultimosPorSeccion->isEmpty()) {
+        if (! $parte) {
             return response()->json(['encontrado' => false]);
         }
 
-        $secciones = [];
+        $dotacionPorRecurso = $parte->dotaciones->groupBy('recurso_id');
+        $recursos = [];
 
-        foreach ($ultimosPorSeccion as $destinoId => $parte) {
-            $dotacionPorRecurso = $parte->dotaciones->groupBy('recurso_id');
-            $recursos = [];
-
-            foreach ($parte->estadosDiarios as $estado) {
-                $dot = $dotacionPorRecurso->get($estado->recurso_id, collect());
-                $recursos[$estado->recurso_id] = [
-                    'estado_dia' => $estado->estado_dia,
-                    'zona'       => $estado->zona ? (string) $estado->zona : '',
-                    'ht'         => (string) ($estado->ht ?? ''),
-                    'motivo'     => (string) ($estado->motivo ?? ''),
-                    'dotacion'   => $dot->sortBy('orden')->pluck('personal_id')->map(fn ($id) => (int) $id)->values(),
-                    'chofer_id'  => optional($dot->firstWhere('es_chofer', true))->personal_id,
-                ];
-            }
-
-            $secciones[$destinoId] = [
-                'guardia_interna'    => (string) ($parte->guardia_interna ?? ''),
-                'licencia_ordinaria' => (string) ($parte->licencia_ordinaria ?? ''),
-                'novedades_pie'      => (string) ($parte->novedades_pie ?? ''),
-                'recursos'           => $recursos,
-                'asignaciones'       => $parte->asignaciones
-                    ->map(fn ($a) => [
-                        'grupo'            => $a->grupo,
-                        'nombre'           => $a->nombre,
-                        'asignacion_texto' => $a->asignacion_texto,
-                    ])
-                    ->values(),
+        foreach ($parte->estadosDiarios as $estado) {
+            $dot = $dotacionPorRecurso->get($estado->recurso_id, collect());
+            $recursos[$estado->recurso_id] = [
+                'estado_dia' => $estado->estado_dia,
+                'zona'       => $estado->zona ? (string) $estado->zona : '',
+                'ht'         => (string) ($estado->ht ?? ''),
+                'motivo'     => (string) ($estado->motivo ?? ''),
+                'dotacion'   => $dot->sortBy('orden')->pluck('personal_id')->map(fn ($id) => (int) $id)->values(),
+                'chofer_id'  => optional($dot->firstWhere('es_chofer', true))->personal_id,
             ];
         }
 
-        $referencia    = $ultimosPorSeccion->sortByDesc('fecha_inicio')->first();
-        $novedadesRow  = ParteDiarioNovedades::where('guardia', $guardia)
-            ->orderByDesc('fecha_inicio')
-            ->first();
+        $novedadesRow = $datos['tipo'] === ParteDiario::TIPO_MOVILES
+            ? ParteDiarioNovedades::where('guardia', $datos['guardia'])->orderByDesc('fecha_inicio')->first()
+            : null;
 
         return response()->json([
             'encontrado' => true,
             'referencia' => [
-                'fecha'         => optional($referencia->fecha)->toDateString(),
-                'guardia_label' => $referencia->guardiaLabel(),
+                'fecha'         => optional($parte->fecha)->toDateString(),
+                'guardia_label' => $parte->guardiaLabel(),
             ],
-            'secciones'  => $secciones,
-            'novedades'  => $novedadesRow?->contenido ?? [],
+            'recursos'           => $recursos,
+            'guardia_interna'    => (string) ($parte->guardia_interna ?? ''),
+            'licencia_ordinaria' => (string) ($parte->licencia_ordinaria ?? ''),
+            'novedades_pie'      => (string) ($parte->novedades_pie ?? ''),
+            'asignaciones'       => $parte->asignaciones
+                ->map(fn ($a) => [
+                    'grupo'            => $a->grupo,
+                    'nombre'           => $a->nombre,
+                    'asignacion_texto' => $a->asignacion_texto,
+                ])
+                ->values(),
+            'novedades'          => $novedadesRow?->contenido ?? [],
         ]);
     }
 
     public function preArmarParteDiario(Request $request, ParteDiarioBorradorService $borradorService): JsonResponse
     {
         $datos = $request->validate([
+            'tipo'         => ['required', 'in:moviles,motos'],
             'guardia'      => ['required', 'in:guardia_1,guardia_2,guardia_3,guardia_4'],
             'fecha_inicio' => ['required', 'date'],
         ]);
 
-        $fechaInicio = Carbon::parse($datos['fecha_inicio']);
-        $division = Destino::findOrFail(self::DIVISION_911_ID);
-        $secciones = $this->getSecciones($division->getDestinosHijosRecursivo(), $fechaInicio);
-
-        $novedades = [];
-        $porSeccion = [];
-
-        foreach ($secciones as $seccion) {
-            $tipo = $this->tipoDeSeccion($seccion);
-            $borrador = $borradorService->armar($tipo, $datos['guardia'], $fechaInicio);
-
-            $porSeccion[$seccion->id] = [
-                'guardia_interna'    => $borrador['guardia_interna']
-                    ->map(fn (Personal $p) => trim("{$p->jerarquia} {$p->apellido} {$p->nombre}"))
-                    ->join('; '),
-                'licencia_ordinaria' => $borrador['novedades']['licencia_ordinaria'] ?? '',
-                'calle_disponibles'  => $borrador['personal_calle']->count(),
-            ];
-
-            $novedades = array_merge($novedades, array_filter($borrador['novedades']));
-        }
+        $borrador = $borradorService->armar($datos['tipo'], $datos['guardia'], Carbon::parse($datos['fecha_inicio']));
 
         return response()->json([
-            'novedades' => $novedades,
-            'secciones' => $porSeccion,
+            'guardia_interna'    => $borrador['guardia_interna']
+                ->map(fn (Personal $p) => trim("{$p->jerarquia} {$p->apellido} {$p->nombre}"))
+                ->join('; '),
+            'licencia_ordinaria' => $borrador['novedades']['licencia_ordinaria'] ?? '',
+            'novedades'          => array_filter($borrador['novedades']),
         ]);
     }
 
     public function generarParteDiario(GuardarParteDiarioRequest $request)
     {
+        $tipo = $request->input('tipo');
         $guardia = $request->input('guardia');
         $horario = $request->input('horario');
         $fecha = $request->input('fecha');
@@ -189,54 +179,49 @@ class VehiculoInformeController extends Controller
         $fechaFin = Carbon::parse($request->input('fecha_fin'));
         $userId = auth()->id();
 
-        DB::transaction(function () use ($request, $guardia, $horario, $fecha, $fechaInicio, $fechaFin, $userId) {
-            $recursosPorSeccion = collect($request->input('recursos', []))
-                ->groupBy(fn ($datos) => Recurso::find($datos['id'])?->destino_id)
-                ->filter(fn ($_, $destinoId) => $destinoId !== null && $destinoId !== '');
+        DB::transaction(function () use ($request, $tipo, $guardia, $horario, $fecha, $fechaInicio, $fechaFin, $userId) {
+            $parte = ParteDiario::updateOrCreate(
+                ['destino_id' => self::DIVISION_911_ID, 'tipo' => $tipo, 'fecha_inicio' => $fechaInicio],
+                [
+                    'fecha'              => $fecha,
+                    'guardia'            => $guardia,
+                    'horario'            => $horario,
+                    'fecha_fin'          => $fechaFin,
+                    'guardia_interna'    => $request->input('guardia_interna'),
+                    'licencia_ordinaria' => $request->input('licencia_ordinaria'),
+                    'novedades_pie'      => $request->input('novedades_pie'),
+                    'user_id'            => $userId,
+                ]
+            );
 
-            foreach ($recursosPorSeccion as $destinoId => $recursos) {
-                $seccion = Destino::find($destinoId);
-                $datosSeccion = $request->input("secciones.{$destinoId}", []);
-
-                $parte = ParteDiario::updateOrCreate(
-                    ['destino_id' => $destinoId, 'fecha_inicio' => $fechaInicio],
-                    [
-                        'tipo'               => $this->tipoDeSeccion($seccion),
-                        'fecha'              => $fecha,
-                        'guardia'            => $guardia,
-                        'horario'            => $horario,
-                        'fecha_fin'          => $fechaFin,
-                        'guardia_interna'    => $datosSeccion['guardia_interna'] ?? null,
-                        'licencia_ordinaria' => $datosSeccion['licencia_ordinaria'] ?? null,
-                        'novedades_pie'      => $datosSeccion['novedades_pie'] ?? null,
-                        'user_id'            => $userId,
-                    ]
-                );
-
-                foreach ($recursos as $datos) {
-                    $this->guardarRecursoDelParte($parte, $datos, $guardia, $horario, $fechaInicio, $fechaFin, $userId);
-                }
-
-                $this->guardarAsignaciones($parte, $datosSeccion['asignaciones'] ?? []);
+            foreach ($request->input('recursos', []) as $datos) {
+                $this->guardarRecursoDelParte($parte, $datos, $guardia, $horario, $fechaInicio, $fechaFin, $userId);
             }
 
-            $this->guardarNovedades($request, $fecha, $guardia, $horario, $fechaInicio, $fechaFin, $userId);
+            if ($tipo === ParteDiario::TIPO_MOTOS) {
+                $this->guardarAsignaciones($parte, $request->input('asignaciones', []));
+            }
+
+            if ($tipo === ParteDiario::TIPO_MOVILES) {
+                $this->guardarNovedades($request, $fecha, $guardia, $horario, $fechaInicio, $fechaFin, $userId);
+            }
         });
 
         $this->guardarPreferencias($request, $userId);
 
         return redirect()
             ->route('flota-911.informes.parte-diario', [
+                'tipo'         => $tipo,
                 'fecha'        => $fecha,
                 'guardia'      => $guardia,
                 'horario'      => $horario,
                 'fecha_inicio' => $fechaInicio->format('Y-m-d\TH:i'),
                 'fecha_fin'    => $fechaFin->format('Y-m-d\TH:i'),
             ])
-            ->with('success', 'Parte guardado. Descargá el .docx de cada sección desde los botones de abajo.');
+            ->with('success', 'Parte guardado. Descargá el .docx desde el botón de abajo.');
     }
 
-    public function descargarParteDiario(Request $request, Destino $seccion, ParteDiarioDocxService $docxService)
+    public function descargarParteDiario(Request $request, string $tipo, ParteDiarioDocxService $docxService)
     {
         $datos = $request->validate([
             'fecha_inicio' => ['required', 'date'],
@@ -248,16 +233,12 @@ class VehiculoInformeController extends Controller
             'dotaciones.personal',
             'asignaciones',
         ])
-            ->where('destino_id', $seccion->id)
+            ->where('destino_id', self::DIVISION_911_ID)
+            ->where('tipo', $tipo)
             ->where('fecha_inicio', Carbon::parse($datos['fecha_inicio']))
             ->firstOrFail();
 
-        $novedades = ParteDiarioNovedades::firstWhere([
-            'fecha'   => $parte->fecha->toDateString(),
-            'guardia' => $parte->guardia,
-        ]);
-
-        return $docxService->generar($parte, $novedades);
+        return $docxService->generar($parte, $parte->novedades());
     }
 
     /**
@@ -362,13 +343,6 @@ class VehiculoInformeController extends Controller
         );
     }
 
-    private function tipoDeSeccion(?Destino $seccion): string
-    {
-        return $seccion && Str::contains(Str::lower($seccion->nombre), 'motor')
-            ? ParteDiario::TIPO_MOTOS
-            : ParteDiario::TIPO_MOVILES;
-    }
-
     public function estadoFlota(Request $request)
     {
         $division = Destino::findOrFail(self::DIVISION_911_ID);
@@ -444,26 +418,6 @@ class VehiculoInformeController extends Controller
             ->get();
 
         return $this->informeService->generarEstadoFlota($recursos, $destino);
-    }
-
-    private function getSecciones($destinoIds, Carbon $fechaInicio)
-    {
-        return Destino::whereIn('id', $destinoIds)
-            ->with([
-                'recursos' => function ($q) use ($fechaInicio) {
-                    $q->activos()->whereNotNull('vehiculo_id')->with([
-                        'asignacionActual.vehiculo',
-                        'vehiculo',
-                        'estadoSeccion',
-                        'prestamoActivo.destinoDestino',
-                        'estadoDiario' => fn($q2) => $q2->where('fecha_inicio', $fechaInicio),
-                        'dotaciones'   => fn($q2) => $q2->where('fecha_inicio', $fechaInicio)
-                            ->orderBy('orden')->with('personal'),
-                    ]);
-                },
-            ])
-            ->get()
-            ->filter(fn($d) => $d->recursos->isNotEmpty());
     }
 
     /**

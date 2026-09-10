@@ -23,6 +23,7 @@ class ParteDiarioDesdeGuardiaTest extends TestCase
     private function generarParte(Recurso $recurso, array $dotacion, int $chofer, string $guardia): void
     {
         $this->post(route('flota-911.informes.parte-diario.generar'), [
+            'tipo'         => 'moviles',
             'fecha'        => '2099-03-10',
             'guardia'      => $guardia,
             'horario'      => '06_18',
@@ -50,14 +51,13 @@ class ParteDiarioDesdeGuardiaTest extends TestCase
 
         $this->generarParte($recurso, $personal, $personal[0], 'guardia_2');
 
-        $data = $this->getJson(route('flota-911.informes.parte-diario.desde-guardia', ['guardia' => 'guardia_2']))
+        $data = $this->getJson(route('flota-911.informes.parte-diario.desde-guardia', ['tipo' => 'moviles', 'guardia' => 'guardia_2']))
             ->assertOk()
             ->json();
 
         $this->assertTrue($data['encontrado']);
 
-        $seccion = $data['secciones'][$recurso->destino_id];
-        $r = $seccion['recursos'][$recurso->id];
+        $r = $data['recursos'][$recurso->id];
 
         $this->assertSame('circula', $r['estado_dia']);
         $this->assertSame('3', $r['zona']);
@@ -76,7 +76,7 @@ class ParteDiarioDesdeGuardiaTest extends TestCase
 
         $this->generarParte($recurso, $personal, $personal[0], 'guardia_2');
 
-        $contenido = $this->getJson(route('flota-911.informes.parte-diario.desde-guardia', ['guardia' => 'guardia_4']))
+        $contenido = $this->getJson(route('flota-911.informes.parte-diario.desde-guardia', ['tipo' => 'moviles', 'guardia' => 'guardia_4']))
             ->assertOk()
             ->getContent();
 
@@ -86,7 +86,7 @@ class ParteDiarioDesdeGuardiaTest extends TestCase
     public function test_sin_permiso_no_puede_consultar(): void
     {
         $this->actingAs($this->usuario('ver-flota-911'))
-            ->getJson(route('flota-911.informes.parte-diario.desde-guardia', ['guardia' => 'guardia_1']))
+            ->getJson(route('flota-911.informes.parte-diario.desde-guardia', ['tipo' => 'moviles', 'guardia' => 'guardia_1']))
             ->assertForbidden();
     }
 }

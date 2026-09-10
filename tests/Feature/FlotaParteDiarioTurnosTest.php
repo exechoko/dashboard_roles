@@ -27,6 +27,7 @@ class FlotaParteDiarioTurnosTest extends TestCase
     private function payloadTurno(array $overrides = []): array
     {
         return array_merge([
+            'tipo'         => 'moviles',
             'fecha'        => '2099-01-15',
             'guardia'      => 'guardia_1',
             'horario'      => '06_18',
@@ -148,7 +149,7 @@ class FlotaParteDiarioTurnosTest extends TestCase
     {
         $response = $this->actingAs($this->usuarioConPermiso())
             ->get(route('flota-911.informes.parte-diario', [
-                'fecha' => '2099-01-15', 'guardia' => 'guardia_1', 'horario' => '06_18',
+                'tipo' => 'moviles', 'fecha' => '2099-01-15', 'guardia' => 'guardia_1', 'horario' => '06_18',
             ]));
 
         $response->assertOk();
@@ -170,7 +171,7 @@ class FlotaParteDiarioTurnosTest extends TestCase
         ]))->assertRedirect();
 
         $response = $this->get(route('flota-911.informes.parte-diario.docx', [
-            'seccion'      => $recurso->destino_id,
+            'tipo'         => 'moviles',
             'fecha_inicio' => '2099-01-15T06:15',
         ]));
         $response->assertOk();

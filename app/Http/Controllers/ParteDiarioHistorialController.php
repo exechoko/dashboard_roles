@@ -28,31 +28,30 @@ class ParteDiarioHistorialController extends Controller
 
         $desde   = $request->filled('desde') ? $request->date('desde') : null;
         $hasta   = $request->filled('hasta') ? $request->date('hasta') : null;
-        $seccion = $request->integer('seccion') ?: null;
+        $tipo    = $request->input('tipo');
         $guardia = $request->input('guardia');
 
         $partes = ParteDiario::query()
             ->whereIn('destino_id', $seccionIds)
-            ->with(['seccion', 'usuario'])
+            ->with('usuario')
             ->withCount('dotaciones')
             ->when($desde, fn ($q) => $q->whereDate('fecha', '>=', $desde))
             ->when($hasta, fn ($q) => $q->whereDate('fecha', '<=', $hasta))
-            ->when($seccion, fn ($q) => $q->where('destino_id', $seccion))
+            ->when(
+                in_array($tipo, [ParteDiario::TIPO_MOVILES, ParteDiario::TIPO_MOTOS], true),
+                fn ($q) => $q->where('tipo', $tipo)
+            )
             ->when(
                 array_key_exists($guardia, RecursoEstadoDiario::$guardias),
                 fn ($q) => $q->where('guardia', $guardia)
             )
             ->orderByDesc('fecha_inicio')
-            ->orderBy('destino_id')
             ->paginate(25)
             ->withQueryString();
 
-        $secciones = Destino::whereIn('id', $seccionIds)->orderBy('nombre')->get(['id', 'nombre']);
-        $guardias  = RecursoEstadoDiario::$guardias;
+        $guardias = RecursoEstadoDiario::$guardias;
 
-        return view('flota-911.partes-diarios.index', compact(
-            'partes', 'secciones', 'guardias', 'desde', 'hasta', 'seccion', 'guardia'
-        ));
+        return view('flota-911.partes-diarios.index', compact('partes', 'guardias', 'desde', 'hasta', 'tipo', 'guardia'));
     }
 
     public function show(ParteDiario $parte): View

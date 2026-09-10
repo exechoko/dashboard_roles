@@ -68,9 +68,14 @@
                             </a>
                         </li>
                         @can('generar-parte-diario')
-                            <li class="{{ request()->is('flota-911/parte-diario*') ? 'active' : '' }}">
-                                <a class="nav-link" href="{{ route('flota-911.informes.parte-diario') }}">
-                                    <i class="fas fa-file-alt"></i><span>Parte Diario</span>
+                            <li class="{{ request()->is('flota-911/parte-diario/moviles*') ? 'active' : '' }}">
+                                <a class="nav-link" href="{{ route('flota-911.informes.parte-diario', 'moviles') }}">
+                                    <i class="fas fa-file-alt"></i><span>Parte de Móviles</span>
+                                </a>
+                            </li>
+                            <li class="{{ request()->is('flota-911/parte-diario/motos*') ? 'active' : '' }}">
+                                <a class="nav-link" href="{{ route('flota-911.informes.parte-diario', 'motos') }}">
+                                    <i class="fas fa-motorcycle"></i><span>Parte de Motopatrullas</span>
                                 </a>
                             </li>
                         @endcan

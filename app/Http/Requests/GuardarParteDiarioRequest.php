@@ -23,24 +23,24 @@ class GuardarParteDiarioRequest extends FormRequest
         $estados = implode(',', array_keys(RecursoEstadoDiario::$estados));
 
         return [
+            'tipo'         => ['required', 'in:moviles,motos'],
             'fecha'        => ['required', 'date'],
             'guardia'      => ['required', 'in:guardia_1,guardia_2,guardia_3,guardia_4'],
             'horario'      => ['required', 'in:06_18,18_06'],
             'fecha_inicio' => ['required', 'date'],
             'fecha_fin'    => ['required', 'date', 'after:fecha_inicio'],
 
-            'novedades_generales' => ['nullable', 'string', 'max:3000'],
-            'novedades'           => ['nullable', 'array'],
-            'novedades.*'         => ['nullable', 'string', 'max:2000'],
+            'guardia_interna'    => ['nullable', 'string', 'max:1000'],
+            'licencia_ordinaria' => ['nullable', 'string', 'max:1000'],
+            'novedades_pie'      => ['nullable', 'string', 'max:2000'],
 
-            'secciones'                        => ['nullable', 'array'],
-            'secciones.*.guardia_interna'      => ['nullable', 'string', 'max:1000'],
-            'secciones.*.licencia_ordinaria'   => ['nullable', 'string', 'max:1000'],
-            'secciones.*.novedades_pie'        => ['nullable', 'string', 'max:2000'],
-            'secciones.*.asignaciones'         => ['nullable', 'array'],
-            'secciones.*.asignaciones.*.grupo' => ['nullable', 'string', 'max:80'],
-            'secciones.*.asignaciones.*.nombre' => ['required_with:secciones.*.asignaciones.*.asignacion_texto', 'nullable', 'string', 'max:120'],
-            'secciones.*.asignaciones.*.asignacion_texto' => ['nullable', 'string', 'max:255'],
+            'novedades'   => ['nullable', 'array'],
+            'novedades.*' => ['nullable', 'string', 'max:2000'],
+
+            'asignaciones'                    => ['nullable', 'array'],
+            'asignaciones.*.grupo'            => ['nullable', 'string', 'max:80'],
+            'asignaciones.*.nombre'           => ['required_with:asignaciones.*.asignacion_texto', 'nullable', 'string', 'max:120'],
+            'asignaciones.*.asignacion_texto' => ['nullable', 'string', 'max:255'],
 
             'recursos'              => ['nullable', 'array'],
             'recursos.*.id'         => ['required', 'exists:recursos,id'],

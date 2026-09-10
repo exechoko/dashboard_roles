@@ -30,12 +30,11 @@
                                value="{{ $hasta?->toDateString() }}">
                     </div>
                     <div class="col-md-3">
-                        <label class="small font-weight-bold mb-1">Sección</label>
-                        <select name="seccion" class="form-control form-control-sm">
-                            <option value="">Todas</option>
-                            @foreach($secciones as $s)
-                                <option value="{{ $s->id }}" {{ (int) $seccion === $s->id ? 'selected' : '' }}>{{ $s->nombre }}</option>
-                            @endforeach
+                        <label class="small font-weight-bold mb-1">Tipo</label>
+                        <select name="tipo" class="form-control form-control-sm">
+                            <option value="">Todos</option>
+                            <option value="moviles" {{ $tipo === 'moviles' ? 'selected' : '' }}>Móviles</option>
+                            <option value="motos" {{ $tipo === 'motos' ? 'selected' : '' }}>Motopatrullas</option>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -49,7 +48,7 @@
                     </div>
                     <div class="col-md-3 mt-2 mt-md-0">
                         <button class="btn btn-primary btn-sm" type="submit"><i class="fas fa-search mr-1"></i> Filtrar</button>
-                        @if($desde || $hasta || $seccion || $guardia)
+                        @if($desde || $hasta || $tipo || $guardia)
                             <a href="{{ route('flota-911.partes-diarios.index') }}" class="btn btn-outline-secondary btn-sm">Limpiar</a>
                         @endif
                     </div>
@@ -58,7 +57,7 @@
                 <div class="table-responsive">
                     <table class="table table-modern mb-0">
                         <thead><tr>
-                            <th>Fecha</th><th>Guardia</th><th>Horario</th><th>Sección</th>
+                            <th>Fecha</th><th>Guardia</th><th>Horario</th>
                             <th>Tipo</th><th class="text-center">Tripulantes</th><th>Generó</th><th></th>
                         </tr></thead>
                         <tbody>
@@ -67,10 +66,9 @@
                             <td><strong>{{ $parte->fecha->format('d/m/Y') }}</strong></td>
                             <td>{{ $parte->guardiaLabel() }}</td>
                             <td>{{ $parte->horarioLabel() }}</td>
-                            <td>{{ $parte->seccion?->nombre ?? '—' }}</td>
                             <td>
                                 <span class="badge badge-{{ $parte->esMotos() ? 'warning' : 'primary' }}">
-                                    {{ $parte->esMotos() ? 'Motos' : 'Móviles' }}
+                                    {{ $parte->esMotos() ? 'Motopatrullas' : 'Móviles' }}
                                 </span>
                             </td>
                             <td class="text-center">{{ $parte->dotaciones_count }}</td>
@@ -90,7 +88,7 @@
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="8" class="text-center py-4 text-muted">No hay partes diarios que coincidan con el filtro.</td></tr>
+                        <tr><td colspan="7" class="text-center py-4 text-muted">No hay partes diarios que coincidan con el filtro.</td></tr>
                         @endforelse
                         </tbody>
                     </table>

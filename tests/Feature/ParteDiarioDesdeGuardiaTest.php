@@ -25,9 +25,9 @@ class ParteDiarioDesdeGuardiaTest extends TestCase
         $this->post(route('flota-911.informes.parte-diario.generar'), [
             'fecha'        => '2099-03-10',
             'guardia'      => $guardia,
-            'horario'      => '07_19',
-            'fecha_inicio' => '2099-03-10T07:00',
-            'fecha_fin'    => '2099-03-10T19:00',
+            'horario'      => '06_18',
+            'fecha_inicio' => '2099-03-10T06:15',
+            'fecha_fin'    => '2099-03-10T18:15',
             'recursos'     => [[
                 'id'         => $recurso->id,
                 'estado_dia' => 'circula',

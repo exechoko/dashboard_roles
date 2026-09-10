@@ -35,8 +35,8 @@ class RecursoEstadoDiario extends Model
     ];
 
     public static array $horarios = [
-        '07_19' => '07:00 a 19:00',
-        '19_07' => '19:00 a 07:00',
+        '06_18' => '06:15 a 18:15',
+        '18_06' => '18:15 a 06:15',
     ];
 
     public function recurso(): BelongsTo

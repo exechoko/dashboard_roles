@@ -42,16 +42,16 @@ class ParteDiarioModelosTest extends TestCase
         $recurso = Recurso::query()->whereNotNull('vehiculo_id')->firstOrFail();
         $personal = Personal::query()->firstOrFail();
         $user = User::factory()->create();
-        $fechaInicio = Carbon::parse('2099-04-10 07:00');
+        $fechaInicio = Carbon::parse('2099-04-10 06:15');
 
         $parte = ParteDiario::create([
             'destino_id'   => $seccion->id,
             'tipo'         => ParteDiario::TIPO_MOVILES,
             'fecha'        => '2099-04-10',
             'guardia'      => 'guardia_2',
-            'horario'      => '07_19',
+            'horario'      => '06_18',
             'fecha_inicio' => $fechaInicio,
-            'fecha_fin'    => '2099-04-10 19:00',
+            'fecha_fin'    => '2099-04-10 18:15',
             'user_id'      => $user->id,
         ]);
 
@@ -59,11 +59,11 @@ class ParteDiarioModelosTest extends TestCase
             'parte_diario_id' => $parte->id,
             'recurso_id'      => $recurso->id,
             'guardia'         => 'guardia_2',
-            'horario'         => '07_19',
+            'horario'         => '06_18',
             'zona'            => 2,
             'ht'             => 'HT 26',
             'fecha_inicio'    => $fechaInicio,
-            'fecha_fin'       => '2099-04-10 19:00',
+            'fecha_fin'       => '2099-04-10 18:15',
             'estado_dia'      => 'circula',
             'user_id'         => $user->id,
         ]);
@@ -75,9 +75,9 @@ class ParteDiarioModelosTest extends TestCase
             'es_chofer'       => true,
             'orden'           => 1,
             'guardia'         => 'guardia_2',
-            'horario'         => '07_19',
+            'horario'         => '06_18',
             'fecha_inicio'    => $fechaInicio,
-            'fecha_fin'       => '2099-04-10 19:00',
+            'fecha_fin'       => '2099-04-10 18:15',
             'user_id'         => $user->id,
         ]);
 

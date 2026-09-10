@@ -29,9 +29,9 @@ class FlotaParteDiarioTurnosTest extends TestCase
         return array_merge([
             'fecha'        => '2099-01-15',
             'guardia'      => 'guardia_1',
-            'horario'      => '07_19',
-            'fecha_inicio' => '2099-01-15T07:00',
-            'fecha_fin'    => '2099-01-15T19:00',
+            'horario'      => '06_18',
+            'fecha_inicio' => '2099-01-15T06:15',
+            'fecha_fin'    => '2099-01-15T18:15',
         ], $overrides);
     }
 
@@ -58,9 +58,9 @@ class FlotaParteDiarioTurnosTest extends TestCase
 
         $this->post(route('flota-911.informes.parte-diario.generar'), $this->payloadTurno([
             'guardia'      => 'guardia_2',
-            'horario'      => '19_07',
-            'fecha_inicio' => '2099-01-15T19:00',
-            'fecha_fin'    => '2099-01-16T07:00',
+            'horario'      => '18_06',
+            'fecha_inicio' => '2099-01-15T18:15',
+            'fecha_fin'    => '2099-01-16T06:15',
             'recursos'     => [['id' => $recurso->id, 'estado_dia' => 'circula']],
         ]))->assertRedirect();
 
@@ -109,9 +109,9 @@ class FlotaParteDiarioTurnosTest extends TestCase
 
         $this->post(route('flota-911.informes.parte-diario.generar'), $this->payloadTurno([
             'guardia'      => 'guardia_2',
-            'horario'      => '19_07',
-            'fecha_inicio' => '2099-01-15T19:00',
-            'fecha_fin'    => '2099-01-16T07:00',
+            'horario'      => '18_06',
+            'fecha_inicio' => '2099-01-15T18:15',
+            'fecha_fin'    => '2099-01-16T06:15',
             'recursos'     => [[
                 'id' => $recursos[1]->id, 'estado_dia' => 'circula',
                 'dotacion' => [$personal->id],
@@ -140,7 +140,7 @@ class FlotaParteDiarioTurnosTest extends TestCase
         $response->assertRedirect();
         $response->assertSessionHasErrors('dotacion');
         $this->assertSame(0, RecursoEstadoDiario::whereIn('recurso_id', $recursos->pluck('id'))
-            ->where('fecha_inicio', '2099-01-15 07:00:00')
+            ->where('fecha_inicio', '2099-01-15 06:15:00')
             ->count());
     }
 
@@ -148,7 +148,7 @@ class FlotaParteDiarioTurnosTest extends TestCase
     {
         $response = $this->actingAs($this->usuarioConPermiso())
             ->get(route('flota-911.informes.parte-diario', [
-                'fecha' => '2099-01-15', 'guardia' => 'guardia_1', 'horario' => '07_19',
+                'fecha' => '2099-01-15', 'guardia' => 'guardia_1', 'horario' => '06_18',
             ]));
 
         $response->assertOk();
@@ -171,7 +171,7 @@ class FlotaParteDiarioTurnosTest extends TestCase
 
         $response = $this->get(route('flota-911.informes.parte-diario.docx', [
             'seccion'      => $recurso->destino_id,
-            'fecha_inicio' => '2099-01-15T07:00',
+            'fecha_inicio' => '2099-01-15T06:15',
         ]));
         $response->assertOk();
 

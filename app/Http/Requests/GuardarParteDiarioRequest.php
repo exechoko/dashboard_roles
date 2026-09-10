@@ -25,7 +25,7 @@ class GuardarParteDiarioRequest extends FormRequest
         return [
             'fecha'        => ['required', 'date'],
             'guardia'      => ['required', 'in:guardia_1,guardia_2,guardia_3,guardia_4'],
-            'horario'      => ['required', 'in:07_19,19_07'],
+            'horario'      => ['required', 'in:06_18,18_06'],
             'fecha_inicio' => ['required', 'date'],
             'fecha_fin'    => ['required', 'date', 'after:fecha_inicio'],
 

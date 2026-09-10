@@ -52,7 +52,7 @@ class ParteDiarioDocxTest extends TestCase
             ->take(2)->get();
 
         $user = User::factory()->create();
-        $fi = Carbon::parse('2099-06-15 07:00');
+        $fi = Carbon::parse('2099-06-15 06:15');
         $tipo = Str::contains(Str::lower($seccion->nombre), 'motor')
             ? ParteDiario::TIPO_MOTOS
             : ParteDiario::TIPO_MOVILES;
@@ -62,9 +62,9 @@ class ParteDiarioDocxTest extends TestCase
             'tipo'         => $tipo,
             'fecha'        => '2099-06-15',
             'guardia'      => 'guardia_3',
-            'horario'      => '07_19',
+            'horario'      => '06_18',
             'fecha_inicio' => $fi,
-            'fecha_fin'    => '2099-06-15 19:00',
+            'fecha_fin'    => '2099-06-15 18:15',
             'guardia_interna' => 'Sub Of Ppal Herrera Gabriel',
             'user_id'      => $user->id,
         ]);
@@ -75,18 +75,18 @@ class ParteDiarioDocxTest extends TestCase
                 'parte_diario_id' => $parte->id,
                 'recurso_id'      => $recurso->id,
                 'guardia'         => 'guardia_3',
-                'horario'         => '07_19',
+                'horario'         => '06_18',
                 'zona'            => $i + 1,
                 'ht'             => 'HT 2' . $i,
                 'fecha_inicio'    => $fi,
-                'fecha_fin'       => '2099-06-15 19:00',
+                'fecha_fin'       => '2099-06-15 18:15',
                 'estado_dia'      => 'circula',
                 'user_id'         => $user->id,
             ]);
             RecursoDotacion::create([
                 'parte_diario_id' => $parte->id, 'recurso_id' => $recurso->id, 'personal_id' => $i === 0 ? $p1->id : $p2->id,
-                'es_chofer' => true, 'orden' => 0, 'guardia' => 'guardia_3', 'horario' => '07_19',
-                'fecha_inicio' => $fi, 'fecha_fin' => '2099-06-15 19:00', 'user_id' => $user->id,
+                'es_chofer' => true, 'orden' => 0, 'guardia' => 'guardia_3', 'horario' => '06_18',
+                'fecha_inicio' => $fi, 'fecha_fin' => '2099-06-15 18:15', 'user_id' => $user->id,
             ]);
         }
 

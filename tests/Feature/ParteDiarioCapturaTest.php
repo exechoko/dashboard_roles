@@ -52,9 +52,9 @@ class ParteDiarioCapturaTest extends TestCase
         return array_merge([
             'fecha'        => '2099-05-20',
             'guardia'      => 'guardia_3',
-            'horario'      => '07_19',
-            'fecha_inicio' => '2099-05-20T07:00',
-            'fecha_fin'    => '2099-05-20T19:00',
+            'horario'      => '06_18',
+            'fecha_inicio' => '2099-05-20T06:15',
+            'fecha_fin'    => '2099-05-20T18:15',
             'recursos'     => $recursos,
         ], $overrides);
     }
@@ -71,9 +71,9 @@ class ParteDiarioCapturaTest extends TestCase
         ]))->assertRedirect();
 
         $this->assertSame(ParteDiario::TIPO_MOVILES, ParteDiario::where('destino_id', $movil->destino_id)
-            ->where('fecha_inicio', '2099-05-20 07:00:00')->value('tipo'));
+            ->where('fecha_inicio', '2099-05-20 06:15:00')->value('tipo'));
         $this->assertSame(ParteDiario::TIPO_MOTOS, ParteDiario::where('destino_id', $moto->destino_id)
-            ->where('fecha_inicio', '2099-05-20 07:00:00')->value('tipo'));
+            ->where('fecha_inicio', '2099-05-20 06:15:00')->value('tipo'));
     }
 
     public function test_guarda_zona_ht_y_marca_al_chofer_en_la_dotacion(): void
@@ -94,13 +94,13 @@ class ParteDiarioCapturaTest extends TestCase
         ]))->assertRedirect();
 
         $estado = RecursoEstadoDiario::where('recurso_id', $recurso->id)
-            ->where('fecha_inicio', '2099-05-20 07:00:00')->firstOrFail();
+            ->where('fecha_inicio', '2099-05-20 06:15:00')->firstOrFail();
         $this->assertSame(2, $estado->zona);
         $this->assertSame('HT 26', $estado->ht);
         $this->assertNotNull($estado->parte_diario_id);
 
         $dotacion = RecursoDotacion::where('recurso_id', $recurso->id)
-            ->where('fecha_inicio', '2099-05-20 07:00:00')->orderBy('orden')->get();
+            ->where('fecha_inicio', '2099-05-20 06:15:00')->orderBy('orden')->get();
         $this->assertCount(2, $dotacion);
         $this->assertFalse($dotacion[0]->es_chofer);
         $this->assertTrue($dotacion[1]->es_chofer);
@@ -124,7 +124,7 @@ class ParteDiarioCapturaTest extends TestCase
         $this->post(route('flota-911.informes.parte-diario.generar'), $base('31 ht 05'))->assertRedirect();
 
         $parte = ParteDiario::where('destino_id', $moto->destino_id)
-            ->where('fecha_inicio', '2099-05-20 07:00:00')->firstOrFail();
+            ->where('fecha_inicio', '2099-05-20 06:15:00')->firstOrFail();
         $asignaciones = ParteDiarioAsignacion::where('parte_diario_id', $parte->id)->get();
 
         $this->assertCount(1, $asignaciones, 'La fila vacía no debe guardarse y no debe duplicar.');
@@ -197,7 +197,7 @@ class ParteDiarioCapturaTest extends TestCase
         $respuesta = $this->actingAs($this->usuario())
             ->postJson(route('flota-911.informes.parte-diario.pre-armar'), [
                 'guardia'      => 'guardia_3',
-                'fecha_inicio' => '2099-05-20T07:00',
+                'fecha_inicio' => '2099-05-20T06:15',
             ]);
 
         $respuesta->assertOk()

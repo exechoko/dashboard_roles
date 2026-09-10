@@ -37,7 +37,7 @@ class VehiculoInformeController extends Controller
     {
         $fecha = $request->get('fecha', today()->toDateString());
         $guardia = $request->get('guardia');
-        $horario = $request->get('horario', '07_19');
+        $horario = $request->get('horario', '06_18');
         [$fechaInicio, $fechaFin] = $this->calcularRangoTurno(
             $fecha, $horario, $request->get('fecha_inicio'), $request->get('fecha_fin')
         );
@@ -482,11 +482,11 @@ class VehiculoInformeController extends Controller
 
         $base = Carbon::parse($fecha)->startOfDay();
 
-        if ($horario === '19_07') {
-            return [$base->copy()->setTime(19, 0), $base->copy()->addDay()->setTime(7, 0)];
+        if ($horario === '18_06') {
+            return [$base->copy()->setTime(18, 15), $base->copy()->addDay()->setTime(6, 15)];
         }
 
-        return [$base->copy()->setTime(7, 0), $base->copy()->setTime(19, 0)];
+        return [$base->copy()->setTime(6, 15), $base->copy()->setTime(18, 15)];
     }
 
     private function guardarPreferencias(Request $request, int $userId): void

@@ -30,9 +30,9 @@ class ParteDiarioHistorialTest extends TestCase
             ->post(route('flota-911.informes.parte-diario.generar'), array_merge([
                 'fecha'        => $fecha,
                 'guardia'      => $guardia,
-                'horario'      => '07_19',
-                'fecha_inicio' => $fecha . 'T07:00',
-                'fecha_fin'    => $fecha . 'T19:00',
+                'horario'      => '06_18',
+                'fecha_inicio' => $fecha . 'T06:15',
+                'fecha_fin'    => $fecha . 'T18:15',
                 'recursos'     => [[
                     'id'         => $recurso->id,
                     'estado_dia' => 'circula',
@@ -45,7 +45,7 @@ class ParteDiarioHistorialTest extends TestCase
             ->assertRedirect();
 
         return ParteDiario::where('guardia', $guardia)
-            ->where('fecha_inicio', $fecha . ' 07:00:00')
+            ->where('fecha_inicio', $fecha . ' 06:15:00')
             ->firstOrFail();
     }
 

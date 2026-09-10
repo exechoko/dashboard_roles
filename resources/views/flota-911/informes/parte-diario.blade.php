@@ -352,15 +352,15 @@
         const fecha = inputFecha.value;
         const horario = inputHorario.value;
         if (!fecha || !horario) { return; }
-        if (horario === '07_19') {
-            inputInicio.value = fecha + 'T07:00';
-            inputFin.value = fecha + 'T19:00';
+        if (horario === '06_18') {
+            inputInicio.value = fecha + 'T06:15';
+            inputFin.value = fecha + 'T18:15';
         } else {
             const fin = new Date(fecha + 'T00:00');
             fin.setDate(fin.getDate() + 1);
             const finStr = fin.getFullYear() + '-' + pad(fin.getMonth() + 1) + '-' + pad(fin.getDate());
-            inputInicio.value = fecha + 'T19:00';
-            inputFin.value = finStr + 'T07:00';
+            inputInicio.value = fecha + 'T18:15';
+            inputFin.value = finStr + 'T06:15';
         }
     }
 

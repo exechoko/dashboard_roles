@@ -74,6 +74,13 @@
                                 </a>
                             </li>
                         @endcan
+                        @can('ver-historial-parte-diario')
+                            <li class="{{ request()->is('flota-911/partes-diarios*') ? 'active' : '' }}">
+                                <a class="nav-link" href="{{ route('flota-911.partes-diarios.index') }}">
+                                    <i class="fas fa-folder-open"></i><span>Historial partes diarios</span>
+                                </a>
+                            </li>
+                        @endcan
                         <li class="{{ request()->is('flota-911/estado-flota*') || request()->is('flota-911/bitacora*') ? 'active' : '' }}">
                             <a class="nav-link" href="{{ route('flota-911.informes.estado-flota') }}">
                                 <i class="fas fa-clipboard-list"></i><span>Estado Flota</span>

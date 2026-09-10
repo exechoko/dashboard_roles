@@ -61,6 +61,7 @@ use App\Http\Controllers\RecursoEstadoSeccionController;
 use App\Http\Controllers\RecursoBitacoraController;
 use App\Http\Controllers\BitacoraSolicitudController;
 use App\Http\Controllers\VehiculoInformeController;
+use App\Http\Controllers\ParteDiarioHistorialController;
 use App\Http\Controllers\DescargaController;
 use App\Http\Controllers\DescargaAdminController;
 
@@ -280,6 +281,11 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/parte-diario/desde-ultima-guardia', [VehiculoInformeController::class, 'parteDesdeUltimaGuardia'])->name('informes.parte-diario.desde-guardia');
         Route::post('/parte-diario/generar', [VehiculoInformeController::class, 'generarParteDiario'])->name('informes.parte-diario.generar');
         Route::get('/parte-diario/{seccion}/docx', [VehiculoInformeController::class, 'descargarParteDiario'])->name('informes.parte-diario.docx');
+
+        // Histórico de partes diarios (consulta de solo lectura)
+        Route::get('/partes-diarios', [ParteDiarioHistorialController::class, 'index'])->name('partes-diarios.index');
+        Route::get('/partes-diarios/{parte}', [ParteDiarioHistorialController::class, 'show'])->name('partes-diarios.show');
+        Route::get('/partes-diarios/{parte}/docx', [ParteDiarioHistorialController::class, 'descargar'])->name('partes-diarios.docx');
         Route::get('/estado-flota', [VehiculoInformeController::class, 'estadoFlota'])->name('informes.estado-flota');
         Route::post('/estado-flota/generar', [VehiculoInformeController::class, 'generarEstadoFlota'])->name('informes.estado-flota.generar');
 

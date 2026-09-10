@@ -53,5 +53,13 @@
                 <span class="m-home-tile__subtitle">Conversaciones y notificaciones</span>
             </a>
         @endcan
+
+        @can('ver-infraestructura-workers')
+            <a href="{{ route('movil.infraestructura.index') }}" class="m-home-tile">
+                <i class="fas fa-cogs"></i>
+                <span class="m-home-tile__title">Workers y BD</span>
+                <span class="m-home-tile__subtitle">Estado de procesos y tamaño de bases de datos</span>
+            </a>
+        @endcan
     </div>
 @endsection

@@ -114,6 +114,8 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/dependencias', [App\Http\Controllers\Movil\DependenciasController::class, 'index'])->name('dependencias.index');
         Route::get('/dependencias/{dependencia}', [App\Http\Controllers\Movil\DependenciasController::class, 'show'])->name('dependencias.show');
 
+        Route::get('/infraestructura', [App\Http\Controllers\Movil\InfraestructuraController::class, 'index'])->name('infraestructura.index');
+
         Route::get('/chat', [App\Http\Controllers\Movil\ChatController::class, 'index'])->name('chat.index');
         Route::get('/chat/{conversacion}', [App\Http\Controllers\Movil\ChatController::class, 'show'])->name('chat.show');
 

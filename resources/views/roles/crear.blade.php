@@ -64,6 +64,7 @@
                                                         'menu-gestor-claves',
                                                         'menu-patrimonio',
                                                         'menu-armamento',
+                                                        'menu-personal',
                                                         'menu-incidencias-911',
                                                         'menu-plano-edificio',
                                                         'menu-manuales',
@@ -148,8 +149,11 @@
                                                         'arma-retencion',
                                                         'arma-motivo',
                                                         'arma-tipo',
-                                                        'personal',
                                                         'armeria',
+                                                    ],
+                                                    'Personal' => [
+                                                        'personal',
+                                                        'datos-personales-personal',
                                                     ],
                                                     'Incidencias 911' => [
                                                         'periodo-911',

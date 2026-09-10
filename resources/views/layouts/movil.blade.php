@@ -36,7 +36,7 @@
 
     <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css">
     <link href="{{ asset('assets/css/@fortawesome/fontawesome-free/css/all.css') }}" rel="stylesheet" type="text/css">
-    <link href="{{ asset('css/movil.css') }}" rel="stylesheet" type="text/css">
+    <link href="{{ asset('css/movil.css') }}?v={{ filemtime(public_path('css/movil.css')) }}" rel="stylesheet" type="text/css">
 
     @yield('css')
     @stack('styles')

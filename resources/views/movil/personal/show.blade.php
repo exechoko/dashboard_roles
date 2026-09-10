@@ -27,6 +27,20 @@
         </dl>
     </div>
 
+    @can('ver-datos-personales-personal')
+        <div class="m-section-title">Datos personales</div>
+        <div class="m-detail">
+            <dl style="margin:0;">
+                <div class="m-detail__row"><dt>Dirección</dt><dd>{{ $personal->direccion ?? '—' }}</dd></div>
+                <div class="m-detail__row"><dt>Teléfono</dt><dd style="white-space: pre-line;">{{ $personal->telefono ?? '—' }}</dd></div>
+                <div class="m-detail__row"><dt>Email</dt><dd>{{ $personal->email ?? '—' }}</dd></div>
+                <div class="m-detail__row"><dt>Estado civil</dt><dd>{{ $personal->estado_civil ?? '—' }}</dd></div>
+                <div class="m-detail__row"><dt>Fecha de nacimiento</dt><dd>{{ optional($personal->fecha_nacimiento)->format('d/m/Y') ?? '—' }}</dd></div>
+                <div class="m-detail__row"><dt>Edad</dt><dd>{{ $personal->edad !== null ? $personal->edad.' años' : '—' }}</dd></div>
+            </dl>
+        </div>
+    @endcan
+
     <div class="m-section-title">Arma asignada</div>
     <div class="m-detail">
         @if ($personal->tieneArmaAsignada())

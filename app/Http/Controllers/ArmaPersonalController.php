@@ -192,6 +192,11 @@ class ArmaPersonalController extends Controller
             $personal->update([
                 'jerarquia' => $data['jerarquia'],
                 'dni' => $data['dni'] ?? null,
+                'direccion' => $data['direccion'] ?? null,
+                'telefono' => $data['telefono'] ?? null,
+                'email' => $data['email'] ?? null,
+                'estado_civil' => $data['estado_civil'] ?? null,
+                'fecha_nacimiento' => $data['fecha_nacimiento'] ?? null,
                 'updated_by' => auth()->id(),
             ]);
         });

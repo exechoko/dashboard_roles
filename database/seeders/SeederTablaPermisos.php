@@ -232,6 +232,7 @@ class SeederTablaPermisos extends Seeder
 
             // Personal (menú aparte)
             'ver-menu-personal',
+            'ver-datos-personales-personal',
 
             // Control de Armas - Armería (armas secundarias y chalecos)
             'ver-armeria',

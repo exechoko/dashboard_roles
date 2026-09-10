@@ -73,6 +73,67 @@
                         </div>
 
                         <hr>
+                        <h5 class="text-primary"><i class="fas fa-address-card"></i> Datos Personales</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="direccion">Dirección</label>
+                                    <input type="text" name="direccion" id="direccion" class="form-control @error('direccion') is-invalid @enderror"
+                                           value="{{ old('direccion', $personal->direccion) }}">
+                                    @error('direccion')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="telefono">Teléfono</label>
+                                    <input type="text" name="telefono" id="telefono" class="form-control @error('telefono') is-invalid @enderror"
+                                           value="{{ old('telefono', $personal->telefono) }}">
+                                    @error('telefono')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="email">Email</label>
+                                    <input type="email" name="email" id="email" class="form-control @error('email') is-invalid @enderror"
+                                           value="{{ old('email', $personal->email) }}">
+                                    @error('email')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="estado_civil">Estado Civil</label>
+                                    <select name="estado_civil" id="estado_civil" class="form-control @error('estado_civil') is-invalid @enderror">
+                                        <option value="">Sin informar</option>
+                                        @foreach (['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Unión convivencial'] as $opcion)
+                                            <option value="{{ $opcion }}" {{ old('estado_civil', $personal->estado_civil) === $opcion ? 'selected' : '' }}>{{ $opcion }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('estado_civil')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="fecha_nacimiento">Fecha de Nacimiento</label>
+                                    <input type="date" name="fecha_nacimiento" id="fecha_nacimiento" class="form-control @error('fecha_nacimiento') is-invalid @enderror"
+                                           value="{{ old('fecha_nacimiento', optional($personal->fecha_nacimiento)->format('Y-m-d')) }}">
+                                    @error('fecha_nacimiento')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
                         <h5 class="text-primary"><i class="fas fa-gun"></i> Arma Asignada</h5>
 
                         <div class="alert alert-info">

@@ -35,6 +35,7 @@ class SeederPermisosArmaRetencion extends Seeder
             'borrar-personal',
             'restaurar-personal',
             'ver-menu-personal',
+            'ver-datos-personales-personal',
         ];
 
         foreach ($permisos as $nombre) {

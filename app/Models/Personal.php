@@ -31,6 +31,11 @@ class Personal extends Model
         'fecha_situacion_personal911',
         'funcion_personal911',
         'observaciones_personal911',
+        'direccion',
+        'telefono',
+        'email',
+        'estado_civil',
+        'fecha_nacimiento',
         'numeracion_arma',
         'arma_tipo_id',
         'nro_chaleco',
@@ -41,6 +46,7 @@ class Personal extends Model
     protected $casts = [
         'lp' => 'string',
         'fecha_situacion_personal911' => 'date',
+        'fecha_nacimiento' => 'date',
         'arma_importacion_bloqueada' => 'boolean',
         'chaleco_importacion_bloqueada' => 'boolean',
         'inventario_bloqueado_en' => 'datetime',
@@ -56,6 +62,11 @@ class Personal extends Model
     public function getNombreCompletoAttribute()
     {
         return "{$this->jerarquia} {$this->apellido}, {$this->nombre}, L.P. Nº {$this->lp}";
+    }
+
+    public function getEdadAttribute(): ?int
+    {
+        return $this->fecha_nacimiento?->age;
     }
 
     public function indicaLicenciaEnFuncion(): bool

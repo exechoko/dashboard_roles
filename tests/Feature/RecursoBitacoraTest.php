@@ -224,4 +224,49 @@ class RecursoBitacoraTest extends TestCase
             ->get(route('flota-911.informes.estado-flota'))
             ->assertOk();
     }
+
+    public function test_el_listado_de_estado_flota_busca_y_muestra_la_ultima_entrada(): void
+    {
+        $recurso = $this->recurso();
+        RecursoBitacora::factory()->create([
+            'recurso_id' => $recurso->id,
+            'user_id'    => $this->usuario('gestionar-flota-911')->id,
+            'fecha_hora' => now()->subDay(),
+            'categoria'  => 'gomeria',
+            'descripcion' => 'Se pinchó la rueda trasera izquierda.',
+        ]);
+
+        $this->actingAs($this->usuario('ver-flota-911'))
+            ->get(route('flota-911.informes.estado-flota', ['q' => $recurso->nombre]))
+            ->assertOk()
+            ->assertSee($recurso->nombre)
+            ->assertSee('Se pinchó la rueda');
+
+        $this->actingAs($this->usuario('ver-flota-911'))
+            ->get(route('flota-911.informes.estado-flota', ['q' => 'zxqw-no-existe']))
+            ->assertOk()
+            ->assertSee('Sin resultados');
+    }
+
+    public function test_los_recursos_con_novedades_nuevas_van_primero(): void
+    {
+        [$conNuevas, $sinNuevas] = Recurso::query()->whereNotNull('vehiculo_id')->take(2)->get()->all();
+        $autor = $this->usuario('gestionar-flota-911');
+        $lector = $this->usuario('ver-flota-911');
+
+        // "sinNuevas": el lector ya lo vio después de la entrada
+        RecursoBitacora::factory()->create(['recurso_id' => $sinNuevas->id, 'user_id' => $autor->id, 'fecha_hora' => now()->subDays(3)]);
+        RecursoBitacoraVista::create(['recurso_id' => $sinNuevas->id, 'user_id' => $lector->id, 'visto_en' => now()]);
+
+        // "conNuevas": entrada reciente, nunca visto
+        RecursoBitacora::factory()->create(['recurso_id' => $conNuevas->id, 'user_id' => $autor->id, 'fecha_hora' => now()->subHour()]);
+
+        $html = $this->actingAs($lector)->get(route('flota-911.informes.estado-flota'))->assertOk()->getContent();
+
+        $posConNuevas = strpos($html, $conNuevas->nombre);
+        $posSinNuevas = strpos($html, $sinNuevas->nombre);
+        $this->assertNotFalse($posConNuevas);
+        $this->assertNotFalse($posSinNuevas);
+        $this->assertLessThan($posSinNuevas, $posConNuevas, 'El recurso con novedades nuevas debe listarse antes.');
+    }
 }

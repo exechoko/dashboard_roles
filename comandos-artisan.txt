@@ -71,6 +71,41 @@ cecoco:limpiar-temporales
     Opciones: --horas=24 (más antiguos que X horas)
     Manual (no está en el schedule).
 
+cecoco:generar-alias-911
+    Arma mapeos CECOCO-Recurso (ej. P1027 -> Móvil 1027, MP17 -> Motopatrulla 17)
+    a partir de las "Unidad" realmente vistas en los detalles ya cacheados
+    (detalle_expediente_cecoco), cruzadas por número contra los móviles de la
+    División 911 y Videovigilancia. Los guarda en cecoco_recurso_aliases
+    (mismo lugar que /cecoco/recursos-alias/). Por defecto es dry-run.
+    Opciones:
+        --aplicar               guarda los alias propuestos (sin esto solo muestra)
+        --destino-911=42        ID del destino raíz de la División 911
+    Manual, ad-hoc (script de carga para relevamientos puntuales, ej. Circular
+    Parcial D.G.A.P. y D.E. N° 05/26 sobre crisis de salud mental). Se puede
+    volver a correr: no duplica los alias ya cargados.
+
+cecoco:crisis-moviles-911
+    Cuenta expedientes CECOCO cuya descripción menciona una crisis (u otras
+    palabras clave configurables), filtrando solo los que tuvieron un móvil
+    del 911 interviniendo (según cecoco_recurso_aliases). Si el detalle del
+    expediente no está cacheado, lo trae en vivo de CECOCO y lo guarda.
+    Opciones:
+        --desde=2024-05-30      fecha de inicio
+        --hasta=                fecha de fin (default: hoy)
+        --palabras=crisis       palabras clave en la descripción, separadas por coma
+                                 (recomendado: "crisis,salud mental,psiquiatr,brote,
+                                 autolesion,suicid" — evitar "agresivo"/"alterado"/
+                                 "descompensad", meten mucho ruido no relacionado)
+        --prefijos=p,mp         prefijos de "Unidad" CECOCO considerados 911
+        --pausa=200              ms de pausa entre consultas en vivo a CECOCO
+        --limite=N               máximo de expedientes a consultar en vivo (probar
+                                 en lotes chicos antes de correr todo el rango)
+        --solo-cache             no consulta CECOCO en vivo, usa solo lo cacheado
+        --exportar=ruta.csv      vuelca el detalle expediente por expediente a CSV
+    Manual, ad-hoc (mismo relevamiento que el comando anterior). OJO: consulta
+    CECOCO en vivo secuencialmente (reportes BIRT, pesados) — no correr junto
+    con una restauración de backup en curso ni en horario de guardia si el
+    lote es grande; probar antes con --limite chico y --pausa alta.
 
 CECOCO - LLAMADAS CENTRAL TELEFÓNICA
 --------------------------------------

@@ -14,6 +14,7 @@ use App\Services\CecocoModulacionesLocalService;
 use App\Services\ResumenEventoIaService;
 use App\Services\TiempoRespuestaCecocoService;
 use App\Jobs\DescargarEventosCecoco;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -463,7 +464,8 @@ class EventoCecocoController extends Controller
 
     /**
      * Exporta el expediente en un formato interno prolijo (propio del sistema),
-     * listo para imprimir/guardar como PDF.
+     * generado como PDF real (dompdf) para poder verlo o compartirlo como
+     * archivo, no solo imprimirlo desde el navegador.
      */
     public function exportarPdfInterno(Request $request, EventoCecoco $eventoCecoco)
     {
@@ -473,7 +475,9 @@ class EventoCecocoController extends Controller
             $detalle = $this->expedienteService->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
             $tiempoRespuesta = $this->tiempoRespuestaService->calcularDesdeTimeline($detalle['timeline'] ?? []);
 
-            return view('eventos-cecoco.exportar-interno-pdf', compact('eventoCecoco', 'detalle', 'tiempoRespuesta'));
+            $pdf = Pdf::loadView('eventos-cecoco.exportar-interno-pdf', compact('eventoCecoco', 'detalle', 'tiempoRespuesta'));
+
+            return $pdf->stream('ReporteInterno_' . $eventoCecoco->nro_expediente . '.pdf');
         } catch (\Exception $e) {
             return redirect()
                 ->route('cecoco.show', $eventoCecoco)

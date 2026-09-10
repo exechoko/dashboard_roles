@@ -120,6 +120,7 @@ class SeederTablaPermisos extends Seeder
             'buscar-moviles-recorridos',
             'ver-eventos-cecoco',
             'ver-expediente-cecoco',
+            'exportar-whatsapp-cecoco',
             'ver-mapa-calor-servicios-cecoco',
             'ver-mapa-cecoco-en-vivo',
             'ver-analizador-eventos-cecoco',

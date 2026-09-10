@@ -62,8 +62,16 @@ class EventoCecocoShowTest extends TestCase
 
     private function usuarioConPermiso(string $permiso): User
     {
+        return $this->usuarioConPermisos([$permiso]);
+    }
+
+    private function usuarioConPermisos(array $permisos): User
+    {
         $usuario = User::factory()->create();
-        $usuario->givePermissionTo(Permission::findOrCreate($permiso, 'web'));
+
+        foreach ($permisos as $permiso) {
+            $usuario->givePermissionTo(Permission::findOrCreate($permiso, 'web'));
+        }
 
         return $usuario;
     }
@@ -95,19 +103,19 @@ class EventoCecocoShowTest extends TestCase
             ->assertSee('Tiempo de respuesta');
     }
 
-    public function test_el_pdf_interno_incluye_el_tiempo_de_respuesta_cuando_esta_disponible(): void
+    public function test_el_pdf_interno_se_genera_como_pdf_real_cuando_hay_tiempo_de_respuesta(): void
     {
         $usuario = $this->usuarioConPermiso('ver-expediente-cecoco');
         $evento = $this->crearEventoConDetalle();
 
-        $this->actingAs($usuario)->get(route('cecoco.exportar.pdf-interno', $evento))
-            ->assertOk()
-            ->assertSee('Tiempo de respuesta')
-            ->assertSee('22 min', false)
-            ->assertSee('Creación del evento');
+        $response = $this->actingAs($usuario)->get(route('cecoco.exportar.pdf-interno', $evento));
+
+        $response->assertOk();
+        $this->assertSame('application/pdf', $response->headers->get('content-type'));
+        $this->assertStringStartsWith('%PDF', $response->getContent());
     }
 
-    public function test_el_pdf_interno_no_muestra_tiempo_de_respuesta_si_no_se_puede_calcular(): void
+    public function test_el_pdf_interno_se_genera_igual_si_no_hay_tiempo_de_respuesta_calculable(): void
     {
         $usuario = $this->usuarioConPermiso('ver-expediente-cecoco');
         $evento = $this->crearEventoConDetalle([
@@ -116,9 +124,11 @@ class EventoCecocoShowTest extends TestCase
             ],
         ]);
 
-        $this->actingAs($usuario)->get(route('cecoco.exportar.pdf-interno', $evento))
-            ->assertOk()
-            ->assertDontSee('Tiempo de respuesta');
+        $response = $this->actingAs($usuario)->get(route('cecoco.exportar.pdf-interno', $evento));
+
+        $response->assertOk();
+        $this->assertSame('application/pdf', $response->headers->get('content-type'));
+        $this->assertStringStartsWith('%PDF', $response->getContent());
     }
 
     public function test_la_vista_movil_muestra_recursos_cronologia_traducida_y_tiempo_de_respuesta(): void
@@ -137,5 +147,25 @@ class EventoCecocoShowTest extends TestCase
             ->assertSee('22 min', false)
             ->assertSee('Imprimir Parte de Novedad')
             ->assertSee('PDF Interno Completo');
+    }
+
+    public function test_sin_exportar_whatsapp_cecoco_no_aparecen_los_botones_de_compartir(): void
+    {
+        $usuario = $this->usuarioConPermiso('ver-expediente-cecoco');
+        $evento = $this->crearEventoConDetalle();
+
+        $this->actingAs($usuario)->get(route('movil.eventos.show', $evento))
+            ->assertOk()
+            ->assertDontSee('compartirPdfEvento', false);
+    }
+
+    public function test_con_exportar_whatsapp_cecoco_aparecen_los_botones_de_compartir(): void
+    {
+        $usuario = $this->usuarioConPermisos(['ver-expediente-cecoco', 'exportar-whatsapp-cecoco']);
+        $evento = $this->crearEventoConDetalle();
+
+        $this->actingAs($usuario)->get(route('movil.eventos.show', $evento))
+            ->assertOk()
+            ->assertSee('compartirPdfEvento', false);
     }
 }

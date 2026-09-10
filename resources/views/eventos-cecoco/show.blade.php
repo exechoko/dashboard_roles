@@ -23,26 +23,28 @@
         @endcan
     </div>
     @can('ver-expediente-cecoco')
-    @php
-        $textoWaParteNovedad = rawurlencode("Parte de Novedad — Expediente {$eventoCecoco->nro_expediente}: " . route('cecoco.exportar.pdf-resumen', $eventoCecoco));
-        $textoWaPdfInterno = rawurlencode("PDF Interno Completo — Expediente {$eventoCecoco->nro_expediente}: " . route('cecoco.exportar.pdf-interno', $eventoCecoco));
-    @endphp
     <div class="d-flex flex-wrap align-items-center" style="gap:.5rem;">
         <a href="{{ route('cecoco.exportar.pdf-resumen', $eventoCecoco) }}" target="_blank" class="btn btn-danger">
             <i class="fas fa-print"></i> Imprimir Parte de Novedad
         </a>
-        <a href="https://wa.me/?text={{ $textoWaParteNovedad }}" target="_blank" rel="noopener" class="btn btn-success" title="Compartir Parte de Novedad por WhatsApp">
-            <i class="fab fa-whatsapp"></i>
-        </a>
+        @can('exportar-whatsapp-cecoco')
+            <button type="button" class="btn btn-success" title="Compartir el PDF de la Parte de Novedad"
+                onclick="compartirPdfEvento('{{ route('cecoco.exportar.pdf-resumen', $eventoCecoco) }}', 'ParteDeNovedad_{{ $eventoCecoco->nro_expediente }}.pdf', this)">
+                <i class="fab fa-whatsapp"></i>
+            </button>
+        @endcan
         <a href="{{ route('cecoco.exportar.pdf-original', $eventoCecoco) }}" target="_blank" class="btn btn-dark">
             <i class="fas fa-file-pdf"></i> PDF Original CECOCO Completo
         </a>
         <a href="{{ route('cecoco.exportar.pdf-interno', $eventoCecoco) }}" target="_blank" class="btn btn-info">
             <i class="fas fa-file-invoice"></i> PDF Interno Completo
         </a>
-        <a href="https://wa.me/?text={{ $textoWaPdfInterno }}" target="_blank" rel="noopener" class="btn btn-success" title="Compartir PDF Interno Completo por WhatsApp">
-            <i class="fab fa-whatsapp"></i>
-        </a>
+        @can('exportar-whatsapp-cecoco')
+            <button type="button" class="btn btn-success" title="Compartir el PDF Interno Completo"
+                onclick="compartirPdfEvento('{{ route('cecoco.exportar.pdf-interno', $eventoCecoco) }}', 'ReporteInterno_{{ $eventoCecoco->nro_expediente }}.pdf', this)">
+                <i class="fab fa-whatsapp"></i>
+            </button>
+        @endcan
     </div>
     @endcan
 </div>
@@ -315,6 +317,50 @@
 @endsection
 
 @push('scripts')
+<script>
+    // Comparte el PDF ya generado como archivo adjunto (no un link) usando el
+    // share sheet nativo, para poder mandarlo por WhatsApp aunque el
+    // destinatario no tenga cuenta en el sistema. Si el navegador no soporta
+    // compartir archivos (desktop sin Web Share API), lo descarga para
+    // adjuntarlo a mano.
+    async function compartirPdfEvento(url, nombreArchivo, boton) {
+        var icono = boton.querySelector('i');
+        var claseOriginal = icono.className;
+        icono.className = 'fas fa-spinner fa-spin';
+        boton.disabled = true;
+
+        try {
+            var respuesta = await fetch(url, { credentials: 'same-origin' });
+            if (!respuesta.ok) {
+                throw new Error('HTTP ' + respuesta.status);
+            }
+
+            var blob = await respuesta.blob();
+            var archivo = new File([blob], nombreArchivo, { type: blob.type || 'application/pdf' });
+
+            if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+                await navigator.share({ files: [archivo] });
+                return;
+            }
+
+            var urlObjeto = URL.createObjectURL(blob);
+            var enlace = document.createElement('a');
+            enlace.href = urlObjeto;
+            enlace.download = nombreArchivo;
+            document.body.appendChild(enlace);
+            enlace.click();
+            document.body.removeChild(enlace);
+            URL.revokeObjectURL(urlObjeto);
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                alert('No se pudo compartir el PDF: ' + e.message);
+            }
+        } finally {
+            icono.className = claseOriginal;
+            boton.disabled = false;
+        }
+    }
+</script>
 {{-- Modal --}}
 <div class="modal fade" id="modalGrabaciones" tabindex="-1" role="dialog" aria-labelledby="modalGrabacionesLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">

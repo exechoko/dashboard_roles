@@ -56,10 +56,10 @@
             <div class="col-md-4">
                 <div class="card shadow-sm border-0">
                     <div class="card-body d-flex align-items-center">
-                        <div class="mr-3 text-danger"><i class="fas fa-exclamation-triangle fa-2x"></i></div>
+                        <div class="mr-3 text-danger"><i class="fas fa-tools fa-2x"></i></div>
                         <div>
-                            <div class="h4 mb-0 font-weight-bold">{{ $totalNovedadesPendientes }}</div>
-                            <small class="text-muted">Novedades pendientes</small>
+                            <div class="h4 mb-0 font-weight-bold">{{ $totalEnTaller }}</div>
+                            <small class="text-muted">Con bitácora abierta (en taller)</small>
                         </div>
                     </div>
                 </div>
@@ -133,7 +133,7 @@
                                 <th>Dominio</th>
                                 <th>Tipo / Marca / Modelo</th>
                                 <th>Estado</th>
-                                <th>Novedades</th>
+                                <th>Bitácora</th>
                                 <th class="text-center">Acciones</th>
                             </tr>
                         </thead>
@@ -142,7 +142,7 @@
                             @php
                                 $vehiculo = $recurso->vehiculoActual();
                                 $estado = $recurso->estadoSeccion;
-                                $pendientes = $recurso->novedadesPendientes->count();
+                                $abiertas = $recurso->bitacoraAbiertas->count();
                                 $prestamo = $recurso->prestamoActivo;
                             @endphp
                             <tr>
@@ -175,15 +175,15 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($pendientes > 0)
-                                        <span class="badge badge-danger">{{ $pendientes }} pendiente(s)</span>
+                                    @if($abiertas > 0)
+                                        <span class="badge badge-warning"><i class="fas fa-tools mr-1"></i>{{ $abiertas }} abierta(s)</span>
                                     @else
                                         <span class="text-muted">—</span>
                                     @endif
                                 </td>
                                 <td class="text-center action-td">
-                                    <a href="{{ route('flota-911.novedades.index', $recurso->id) }}"
-                                       class="action-btn btn-view" title="Ver historial">
+                                    <a href="{{ route('flota-911.informes.estado-flota') }}?q={{ urlencode($recurso->nombre) }}"
+                                       class="action-btn btn-view" title="Bitácora del recurso">
                                         <i class="fas fa-history"></i>
                                     </a>
                                     @can('gestionar-flota-911')

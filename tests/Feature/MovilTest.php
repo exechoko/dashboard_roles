@@ -66,6 +66,16 @@ class MovilTest extends TestCase
         $this->assertTrue($tieneCookieRecordarme, 'El login móvil debe recordar la sesión (expire_on_close mata la cookie de sesión sola en el celular).');
     }
 
+    public function test_el_logout_de_la_app_movil_vuelve_al_login_movil_no_al_de_escritorio(): void
+    {
+        $usuario = $this->usuarioCon(['ver-flota']);
+
+        $response = $this->actingAs($usuario)->post(route('movil.logout'));
+
+        $response->assertRedirect(route('movil.login'));
+        $this->assertGuest();
+    }
+
     public function test_un_usuario_con_permisos_ve_las_secciones_habilitadas(): void
     {
         $usuario = $this->usuarioCon(['ver-flota', 'ver-camara', 'ver-analizador-eventos-cecoco', 'ver-dependencia', 'ver-chat']);

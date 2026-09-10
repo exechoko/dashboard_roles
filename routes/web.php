@@ -81,6 +81,7 @@ Auth::routes();
 Route::prefix('movil')->name('movil.')->group(function () {
     Route::get('/ingresar', [App\Http\Controllers\Movil\LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/ingresar', [App\Http\Controllers\Movil\LoginController::class, 'login']);
+    Route::post('/logout', [App\Http\Controllers\Movil\LoginController::class, 'logout'])->name('logout');
 });
 
 // Plataforma de Descargas: link/QR de descarga publica, a proposito fuera

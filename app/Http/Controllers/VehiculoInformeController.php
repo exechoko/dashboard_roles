@@ -310,7 +310,39 @@ class VehiculoInformeController extends Controller
             ->get()
             ->filter(fn($d) => $d->recursos->isNotEmpty());
 
-        return view('flota-911.informes.estado-flota', compact('secciones', 'division'));
+        $q = trim((string) $request->get('q'));
+        $vistas = \App\Models\RecursoBitacoraVista::where('user_id', auth()->id())
+            ->pluck('visto_en', 'recurso_id');
+
+        $lista = Recurso::query()
+            ->whereIn('destino_id', $todosLosDestinoIds)
+            ->activos()->whereNotNull('vehiculo_id')
+            ->with(['vehiculo', 'estadoSeccion', 'ultimaBitacora.usuario', 'bitacoraAbiertas'])
+            ->when($q !== '', fn($qq) => $qq->where(fn($w) => $w
+                ->where('nombre', 'like', "%{$q}%")
+                ->orWhereHas('vehiculo', fn($v) => $v
+                    ->where('dominio', 'like', "%{$q}%")
+                    ->orWhere('marca', 'like', "%{$q}%")
+                    ->orWhere('modelo', 'like', "%{$q}%"))))
+            ->get();
+
+        $nuevasPorRecurso = \App\Models\RecursoBitacora::whereIn('recurso_id', $lista->pluck('id'))
+            ->get(['recurso_id', 'created_at'])
+            ->groupBy('recurso_id')
+            ->map(fn($entradas, $rid) => $entradas
+                ->filter(fn($e) => ! isset($vistas[$rid]) || $e->created_at->gt($vistas[$rid]))
+                ->count());
+
+        $lista = $lista
+            ->each(fn($r) => $r->nuevas = $nuevasPorRecurso[$r->id] ?? 0)
+            ->sortByDesc(fn($r) => sprintf(
+                '%d|%011d',
+                $r->nuevas > 0 ? 1 : 0,
+                optional($r->ultimaBitacora)->fecha_hora?->timestamp ?? 0,
+            ))
+            ->values();
+
+        return view('flota-911.informes.estado-flota', compact('secciones', 'division', 'lista', 'q'));
     }
 
     public function generarEstadoFlota(Request $request)

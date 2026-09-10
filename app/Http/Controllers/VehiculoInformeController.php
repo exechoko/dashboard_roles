@@ -302,7 +302,8 @@ class VehiculoInformeController extends Controller
                     'asignacionActual.vehiculo',
                     'vehiculo',
                     'estadoSeccion',
-                    'novedadesPendientes',
+                    'ultimaBitacora',
+                    'bitacoraAbiertas',
                 ]),
             ])
             ->get()
@@ -329,7 +330,7 @@ class VehiculoInformeController extends Controller
 
         $destino = Destino::findOrFail($request->destino_id);
         $recursos = Recurso::whereIn('id', $request->recurso_ids)
-            ->with(['asignacionActual.vehiculo', 'vehiculo', 'estadoSeccion', 'novedadesPendientes'])
+            ->with(['asignacionActual.vehiculo', 'vehiculo', 'estadoSeccion', 'ultimaBitacora', 'bitacoraAbiertas'])
             ->get();
 
         return $this->informeService->generarEstadoFlota($recursos, $destino);
@@ -344,7 +345,6 @@ class VehiculoInformeController extends Controller
                         'asignacionActual.vehiculo',
                         'vehiculo',
                         'estadoSeccion',
-                        'novedadesPendientes',
                         'prestamoActivo.destinoDestino',
                         'estadoDiario' => fn($q2) => $q2->where('fecha_inicio', $fechaInicio),
                         'dotaciones'   => fn($q2) => $q2->where('fecha_inicio', $fechaInicio)

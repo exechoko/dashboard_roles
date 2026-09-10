@@ -87,12 +87,16 @@
                             <button type="button" class="btn btn-outline-success btn-sm" id="btnPreArmar">
                                 <i class="fas fa-magic mr-1"></i> Pre-armar desde la guardia
                             </button>
+                            <button type="button" class="btn btn-outline-info btn-sm" id="btnDesdeGuardia">
+                                <i class="fas fa-history mr-1"></i> Traer del último parte de esta guardia
+                            </button>
                         </div>
                     </div>
                     <p class="text-muted small mb-0">
                         <i class="fas fa-lightbulb mr-1"></i>
                         "Pre-armar" trae de la base de personal 911 la guardia interna, las licencias y las novedades de sala.
-                        La dotación de cada móvil se completa a mano.
+                        "Traer del último parte de esta guardia" copia el parte anterior de la guardia elegida
+                        (recursos, dotación, zona/HT, asignaciones y novedades) para que solo ajustes las diferencias.
                     </p>
                 </div>
             </div>
@@ -408,6 +412,113 @@
         })
         .catch(function() {
             iziToast.error({ title: 'Error', message: 'No se pudo pre-armar el parte.', position: 'topRight' });
+        })
+        .finally(function() { btn.disabled = false; });
+    });
+
+    function setSelect2(el, valor) {
+        if (!el) { return; }
+        el.value = valor == null ? '' : String(valor);
+        if (window.jQuery) { window.jQuery(el).trigger('change'); }
+    }
+
+    function rellenarDesdeUltimaGuardia(data) {
+        // Novedades — 14 rubros de la División
+        Object.entries(data.novedades || {}).forEach(function(entry) {
+            var ta = document.querySelector('textarea[name="novedades[' + entry[0] + ']"]');
+            if (ta) { ta.value = entry[1] || ''; }
+        });
+
+        Object.entries(data.secciones || {}).forEach(function(entry) {
+            var sid = entry[0], sec = entry[1];
+
+            ['guardia_interna', 'licencia_ordinaria', 'novedades_pie'].forEach(function(campo) {
+                var ta = document.querySelector('textarea[name="secciones[' + sid + '][' + campo + ']"]');
+                if (ta && sec[campo] != null) { ta.value = sec[campo]; }
+            });
+
+            (sec.asignaciones || []).forEach(function(asig) {
+                var filas = document.querySelectorAll('input[name^="secciones[' + sid + '][asignaciones]["][name$="][asignacion_texto]"]');
+                for (var i = 0; i < filas.length; i++) {
+                    var base = filas[i].name.replace('[asignacion_texto]', '');
+                    var grupo = (document.querySelector('[name="' + base + '[grupo]"]') || {}).value || '';
+                    var nombre = (document.querySelector('[name="' + base + '[nombre]"]') || {}).value || '';
+                    if (grupo === (asig.grupo || '') && nombre === (asig.nombre || '')) {
+                        filas[i].value = asig.asignacion_texto || '';
+                        return;
+                    }
+                }
+                // Sin coincidencia: primera fila extra vacía
+                for (var j = 0; j < filas.length; j++) {
+                    var b2 = filas[j].name.replace('[asignacion_texto]', '');
+                    var gInput = document.querySelector('input[name="' + b2 + '[grupo]"]');
+                    var nInput = document.querySelector('input[name="' + b2 + '[nombre]"]');
+                    if (gInput && nInput && !nInput.value && !filas[j].value) {
+                        gInput.value = asig.grupo || '';
+                        nInput.value = asig.nombre || '';
+                        filas[j].value = asig.asignacion_texto || '';
+                        return;
+                    }
+                }
+            });
+
+            Object.entries(sec.recursos || {}).forEach(function(rEntry) {
+                var rid = rEntry[0], r = rEntry[1];
+
+                var estado = document.querySelector('select[name="recursos[' + rid + '][estado_dia]"]');
+                if (estado && r.estado_dia) {
+                    estado.value = r.estado_dia;
+                    var motivo = document.getElementById('motivo' + rid);
+                    if (motivo) { motivo.style.display = r.estado_dia === 'circula' ? 'none' : ''; }
+                }
+
+                var zona = document.querySelector('select[name="recursos[' + rid + '][zona]"]');
+                if (zona) { zona.value = r.zona || ''; }
+
+                var ht = document.querySelector('input[name="recursos[' + rid + '][ht]"]');
+                if (ht) { ht.value = r.ht || ''; }
+
+                var motivoInput = document.getElementById('motivo' + rid);
+                if (motivoInput) { motivoInput.value = r.motivo || ''; }
+
+                setSelect2(document.getElementById('dotacion' + rid), null);
+                var dot = document.getElementById('dotacion' + rid);
+                if (dot && window.jQuery) {
+                    window.jQuery(dot).val((r.dotacion || []).map(String)).trigger('change');
+                }
+
+                var chofer = document.querySelector('select[name="recursos[' + rid + '][chofer_id]"]');
+                setSelect2(chofer, r.chofer_id || '');
+            });
+        });
+    }
+
+    document.getElementById('btnDesdeGuardia').addEventListener('click', function() {
+        var guardia = document.getElementById('inputGuardia').value;
+        if (!guardia) {
+            iziToast.warning({ title: 'Falta la guardia', message: 'Seleccione la guardia antes de traer el último parte.', position: 'topRight' });
+            return;
+        }
+        var btn = this;
+        btn.disabled = true;
+        fetch('{{ route('flota-911.informes.parte-diario.desde-guardia') }}?guardia=' + encodeURIComponent(guardia), {
+            headers: { 'Accept': 'application/json' },
+        })
+        .then(function(r) { return r.ok ? r.json() : Promise.reject(r); })
+        .then(function(data) {
+            if (!data.encontrado) {
+                iziToast.info({ title: 'Sin antecedentes', message: 'No hay partes previos de esta guardia.', position: 'topRight' });
+                return;
+            }
+            rellenarDesdeUltimaGuardia(data);
+            iziToast.success({
+                title: 'Cargado',
+                message: 'Datos del parte del ' + (data.referencia && data.referencia.fecha ? data.referencia.fecha : 'último turno') + ' (' + (data.referencia ? data.referencia.guardia_label : '') + ').',
+                position: 'topRight',
+            });
+        })
+        .catch(function() {
+            iziToast.error({ title: 'Error', message: 'No se pudo traer el último parte de la guardia.', position: 'topRight' });
         })
         .finally(function() { btn.disabled = false; });
     });

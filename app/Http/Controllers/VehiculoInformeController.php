@@ -28,7 +28,7 @@ class VehiculoInformeController extends Controller
 
     public function __construct(private readonly FlotaInformeService $informeService)
     {
-        $this->middleware('can:generar-parte-diario')->only(['parteDiario', 'generarParteDiario', 'preArmarParteDiario', 'descargarParteDiario']);
+        $this->middleware('can:generar-parte-diario')->only(['parteDiario', 'generarParteDiario', 'preArmarParteDiario', 'parteDesdeUltimaGuardia', 'descargarParteDiario']);
         $this->middleware('can:ver-flota-911')->only('estadoFlota');
         $this->middleware('can:generar-estado-flota')->only('generarEstadoFlota');
     }
@@ -66,6 +66,83 @@ class VehiculoInformeController extends Controller
             'fecha', 'guardia', 'horario', 'fechaInicio', 'fechaFin', 'secciones', 'personal',
             'division', 'consignas', 'partesPorSeccion', 'novedades', 'tiposPorSeccion'
         ));
+    }
+
+    /**
+     * Devuelve, por sección, los datos del último parte guardado de la guardia
+     * indicada (recursos que circularon, zona/HT, dotación + chofer, guardia
+     * interna, licencias, asignaciones y los 14 rubros de novedades) para
+     * precargar el formulario de un parte nuevo. No guarda nada.
+     */
+    public function parteDesdeUltimaGuardia(Request $request): JsonResponse
+    {
+        $datos = $request->validate([
+            'guardia' => ['required', 'in:guardia_1,guardia_2,guardia_3,guardia_4'],
+        ]);
+        $guardia = $datos['guardia'];
+
+        $division = Destino::findOrFail(self::DIVISION_911_ID);
+
+        $ultimosPorSeccion = ParteDiario::query()
+            ->whereIn('destino_id', $division->getDestinosHijosRecursivo())
+            ->where('guardia', $guardia)
+            ->with(['estadosDiarios', 'dotaciones' => fn ($q) => $q->orderBy('orden'), 'asignaciones'])
+            ->orderByDesc('fecha_inicio')
+            ->get()
+            ->groupBy('destino_id')
+            ->map->first();
+
+        if ($ultimosPorSeccion->isEmpty()) {
+            return response()->json(['encontrado' => false]);
+        }
+
+        $secciones = [];
+
+        foreach ($ultimosPorSeccion as $destinoId => $parte) {
+            $dotacionPorRecurso = $parte->dotaciones->groupBy('recurso_id');
+            $recursos = [];
+
+            foreach ($parte->estadosDiarios as $estado) {
+                $dot = $dotacionPorRecurso->get($estado->recurso_id, collect());
+                $recursos[$estado->recurso_id] = [
+                    'estado_dia' => $estado->estado_dia,
+                    'zona'       => $estado->zona ? (string) $estado->zona : '',
+                    'ht'         => (string) ($estado->ht ?? ''),
+                    'motivo'     => (string) ($estado->motivo ?? ''),
+                    'dotacion'   => $dot->sortBy('orden')->pluck('personal_id')->map(fn ($id) => (int) $id)->values(),
+                    'chofer_id'  => optional($dot->firstWhere('es_chofer', true))->personal_id,
+                ];
+            }
+
+            $secciones[$destinoId] = [
+                'guardia_interna'    => (string) ($parte->guardia_interna ?? ''),
+                'licencia_ordinaria' => (string) ($parte->licencia_ordinaria ?? ''),
+                'novedades_pie'      => (string) ($parte->novedades_pie ?? ''),
+                'recursos'           => $recursos,
+                'asignaciones'       => $parte->asignaciones
+                    ->map(fn ($a) => [
+                        'grupo'            => $a->grupo,
+                        'nombre'           => $a->nombre,
+                        'asignacion_texto' => $a->asignacion_texto,
+                    ])
+                    ->values(),
+            ];
+        }
+
+        $referencia    = $ultimosPorSeccion->sortByDesc('fecha_inicio')->first();
+        $novedadesRow  = ParteDiarioNovedades::where('guardia', $guardia)
+            ->orderByDesc('fecha_inicio')
+            ->first();
+
+        return response()->json([
+            'encontrado' => true,
+            'referencia' => [
+                'fecha'         => optional($referencia->fecha)->toDateString(),
+                'guardia_label' => $referencia->guardiaLabel(),
+            ],
+            'secciones'  => $secciones,
+            'novedades'  => $novedadesRow?->contenido ?? [],
+        ]);
     }
 
     public function preArmarParteDiario(Request $request, ParteDiarioBorradorService $borradorService): JsonResponse

@@ -29,11 +29,4 @@ class Vehiculo extends Model
     {
         return $this->hasOne(RecursoVehiculoAsignacion::class)->whereNull('fecha_hasta');
     }
-
-    public function novedadesMecanicas(): HasMany
-    {
-        return $this->hasMany(RecursoNovedad::class, 'vehiculo_id_referencia')
-            ->where('tipo', 'mecanica')
-            ->orderByDesc('fecha_novedad');
-    }
 }

@@ -31,7 +31,7 @@ class FlotaDashboard911Controller extends Controller
                         'vehiculo',
                         'asignacionActual.vehiculo',
                         'estadoSeccion',
-                        'novedadesPendientes',
+                        'bitacoraAbiertas',
                         'prestamoActivo.destinoDestino',
                         'estadoDiarioHoy',
                         'transferenciaPendiente',
@@ -48,8 +48,8 @@ class FlotaDashboard911Controller extends Controller
             ->get();
 
         $totalRecursos = $secciones->sum(fn($s) => $s->recursos->count());
-        $totalNovedadesPendientes = $secciones->sum(
-            fn($s) => $s->recursos->sum(fn($r) => $r->novedadesPendientes->count())
+        $totalEnTaller = $secciones->sum(
+            fn($s) => $s->recursos->filter(fn($r) => $r->bitacoraAbiertas->isNotEmpty())->count()
         );
         $totalPrestados = $prestamosActivos->count();
 
@@ -66,7 +66,7 @@ class FlotaDashboard911Controller extends Controller
             'secciones',
             'prestamosActivos',
             'totalRecursos',
-            'totalNovedadesPendientes',
+            'totalEnTaller',
             'totalPrestados',
             'transferenciasPendientes',
             'destinos',

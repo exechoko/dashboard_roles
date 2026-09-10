@@ -57,10 +57,50 @@
                 </li>
             @endcan
             @can('ver-flota-911')
-                <li class="{{ request()->is('flota-911*') ? 'active' : '' }}">
-                    <a class="nav-link" href="{{ route('flota-911.dashboard') }}">
+                <li class="dropdown {{ request()->is('flota-911*') ? 'active' : '' }}">
+                    <a class="nav-link has-dropdown" href="#">
                         <i class="fas fa-shield-alt"></i><span>Flota 911</span>
                     </a>
+                    <ul class="dropdown-menu">
+                        <li class="{{ request()->is('flota-911') ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ route('flota-911.dashboard') }}">
+                                <i class="fas fa-tachometer-alt"></i><span>Dashboard</span>
+                            </a>
+                        </li>
+                        @can('generar-parte-diario')
+                            <li class="{{ request()->is('flota-911/parte-diario*') ? 'active' : '' }}">
+                                <a class="nav-link" href="{{ route('flota-911.informes.parte-diario') }}">
+                                    <i class="fas fa-file-alt"></i><span>Parte Diario</span>
+                                </a>
+                            </li>
+                        @endcan
+                        <li class="{{ request()->is('flota-911/estado-flota*') || request()->is('flota-911/bitacora*') ? 'active' : '' }}">
+                            <a class="nav-link" href="{{ route('flota-911.informes.estado-flota') }}">
+                                <i class="fas fa-clipboard-list"></i><span>Estado Flota</span>
+                            </a>
+                        </li>
+                        @can('gestionar-flota-911')
+                            <li class="{{ request()->is('flota-911/prestamos*') ? 'active' : '' }}">
+                                <a class="nav-link" href="{{ route('flota-911.prestamos.index') }}">
+                                    <i class="fas fa-exchange-alt"></i><span>Préstamos</span>
+                                </a>
+                            </li>
+                        @endcan
+                        @can('confirmar-transferencia-recurso')
+                            <li class="{{ request()->is('flota-911/transferencias*') ? 'active' : '' }}">
+                                <a class="nav-link" href="{{ route('flota-911.transferencias.index') }}">
+                                    <i class="fas fa-truck-moving"></i><span>Transferencias</span>
+                                </a>
+                            </li>
+                        @endcan
+                        @can('moderar-bitacora-flota-911')
+                            <li class="{{ request()->is('flota-911/bitacora/solicitudes*') ? 'active' : '' }}">
+                                <a class="nav-link" href="{{ route('flota-911.bitacora.solicitudes.index') }}">
+                                    <i class="fas fa-user-clock"></i><span>Solicitudes bitácora</span>
+                                </a>
+                            </li>
+                        @endcan
+                    </ul>
                 </li>
             @endcan
         </ul>

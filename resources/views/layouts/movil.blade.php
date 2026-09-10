@@ -105,6 +105,11 @@
                     <i class="fas fa-building"></i><span>Dependencias</span>
                 </a>
             @endcan
+            @can('ver-personal')
+                <a href="{{ route('movil.personal.index') }}" class="{{ request()->routeIs('movil.personal.*') ? 'is-active' : '' }}">
+                    <i class="fas fa-users"></i><span>Personal</span>
+                </a>
+            @endcan
         </nav>
     @endunless
 

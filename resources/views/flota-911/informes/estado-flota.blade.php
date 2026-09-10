@@ -69,8 +69,8 @@
                                     @if($estado && $estado->estado !== 'en_servicio')
                                         <span class="badge badge-{{ $estado->badgeClass }} ml-1">{{ $estado->label }}</span>
                                     @endif
-                                    @if($recurso->novedadesPendientes->isNotEmpty())
-                                        <span class="badge badge-danger ml-1">{{ $recurso->novedadesPendientes->count() }} nov.</span>
+                                    @if($recurso->bitacoraAbiertas->isNotEmpty())
+                                        <span class="badge badge-warning ml-1"><i class="fas fa-tools mr-1"></i>{{ $recurso->bitacoraAbiertas->count() }}</span>
                                     @endif
                                 </label>
                             </div>

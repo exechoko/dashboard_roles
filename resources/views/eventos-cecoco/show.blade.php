@@ -23,15 +23,25 @@
         @endcan
     </div>
     @can('ver-expediente-cecoco')
+    @php
+        $textoWaParteNovedad = rawurlencode("Parte de Novedad — Expediente {$eventoCecoco->nro_expediente}: " . route('cecoco.exportar.pdf-resumen', $eventoCecoco));
+        $textoWaPdfInterno = rawurlencode("PDF Interno Completo — Expediente {$eventoCecoco->nro_expediente}: " . route('cecoco.exportar.pdf-interno', $eventoCecoco));
+    @endphp
     <div class="d-flex flex-wrap align-items-center" style="gap:.5rem;">
         <a href="{{ route('cecoco.exportar.pdf-resumen', $eventoCecoco) }}" target="_blank" class="btn btn-danger">
             <i class="fas fa-print"></i> Imprimir Parte de Novedad
+        </a>
+        <a href="https://wa.me/?text={{ $textoWaParteNovedad }}" target="_blank" rel="noopener" class="btn btn-success" title="Compartir Parte de Novedad por WhatsApp">
+            <i class="fab fa-whatsapp"></i>
         </a>
         <a href="{{ route('cecoco.exportar.pdf-original', $eventoCecoco) }}" target="_blank" class="btn btn-dark">
             <i class="fas fa-file-pdf"></i> PDF Original CECOCO Completo
         </a>
         <a href="{{ route('cecoco.exportar.pdf-interno', $eventoCecoco) }}" target="_blank" class="btn btn-info">
             <i class="fas fa-file-invoice"></i> PDF Interno Completo
+        </a>
+        <a href="https://wa.me/?text={{ $textoWaPdfInterno }}" target="_blank" rel="noopener" class="btn btn-success" title="Compartir PDF Interno Completo por WhatsApp">
+            <i class="fab fa-whatsapp"></i>
         </a>
     </div>
     @endcan
@@ -222,6 +232,16 @@
             <hr class="my-4">
             <h5 class="mb-2"><i class="fas fa-truck"></i> Recursos que intervinieron</h5>
             <p class="text-muted mb-0"><em>No se registraron recursos asignados para este evento.</em></p>
+        @endif
+
+        @if($tiempoRespuesta)
+            <hr class="my-4">
+            <h5 class="mb-2"><i class="fas fa-stopwatch"></i> Tiempo de respuesta</h5>
+            <p class="mb-0">
+                <strong>{{ $tiempoRespuesta['minutos'] }} min</strong> hasta que
+                <strong>{{ $tiempoRespuesta['recurso'] }}</strong> pasó a "En atención"
+                (recurso más rápido de {{ $tiempoRespuesta['recursos_totales'] }}).
+            </p>
         @endif
 
         <hr class="my-4">

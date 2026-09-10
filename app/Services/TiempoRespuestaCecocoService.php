@@ -46,6 +46,31 @@ class TiempoRespuestaCecocoService
             return null;
         }
 
+        $calculo = $this->calcularDesdeTimeline($timeline);
+        if ($calculo === null) {
+            return null;
+        }
+
+        return [
+            'evento_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente ?: '-',
+            'fecha_hora' => $evento->fecha_hora,
+            'tipo_servicio' => $evento->tipo_servicio ?: '(sin tipo)',
+            ...$calculo,
+        ];
+    }
+
+    /**
+     * Calcula, a partir del timeline scrapeado de un único expediente CECOCO, los
+     * minutos entre que el recurso más rápido pasa a "En desplazamiento" y a "En
+     * atención". Se usa tanto para el reporte agregado (tiempoDelEvento) como para
+     * mostrar el dato en la vista de un evento puntual y en el PDF interno.
+     *
+     * @param array<int, array{estado?: string, fecha_hora?: string}> $timeline
+     * @return array{recurso: string, recursos_totales: int, minutos: float}|null
+     */
+    public function calcularDesdeTimeline(array $timeline): ?array
+    {
         $marcasPorRecurso = [];
         foreach ($timeline as $paso) {
             $estado = $paso['estado'] ?? null;
@@ -90,10 +115,6 @@ class TiempoRespuestaCecocoService
         $recursoMasRapido = (string) array_search(min($minutosPorRecurso), $minutosPorRecurso, true);
 
         return [
-            'evento_id' => $evento->id,
-            'nro_expediente' => $evento->nro_expediente ?: '-',
-            'fecha_hora' => $evento->fecha_hora,
-            'tipo_servicio' => $evento->tipo_servicio ?: '(sin tipo)',
             'recurso' => $recursoMasRapido,
             'recursos_totales' => count($minutosPorRecurso),
             'minutos' => round($minutosPorRecurso[$recursoMasRapido], 1),

@@ -134,6 +134,19 @@
     </div>
 @endif
 
+@if($tiempoRespuesta)
+    <div class="rpt-section">
+        <h2>Tiempo de respuesta</h2>
+        <table class="rpt-table" style="width:auto;">
+            <tbody>
+                <tr><th>Recurso m&aacute;s r&aacute;pido</th><td>{{ $tiempoRespuesta['recurso'] }}</td></tr>
+                <tr><th>Minutos hasta atenci&oacute;n</th><td>{{ $tiempoRespuesta['minutos'] }} min</td></tr>
+                <tr><th>Recursos con tiempo calculado</th><td>{{ $tiempoRespuesta['recursos_totales'] }}</td></tr>
+            </tbody>
+        </table>
+    </div>
+@endif
+
 @if(!empty($detalle['tramites']))
     <div class="rpt-section">
         <h2>Recursos que intervinieron ({{ $detalle['total_tramites'] ?? count($detalle['tramites']) }})</h2>

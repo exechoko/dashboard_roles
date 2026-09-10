@@ -16,15 +16,25 @@
                 <i class="bi bi-arrow-clockwise"></i> Actualizar desde CECOCO
             </a>
         </div>
+        @php
+            $textoWaParteNovedad = rawurlencode("Parte de Novedad — Expediente {$eventoCecoco->nro_expediente}: " . route('cecoco.exportar.pdf-resumen', $eventoCecoco));
+            $textoWaPdfInterno = rawurlencode("PDF Interno Completo — Expediente {$eventoCecoco->nro_expediente}: " . route('cecoco.exportar.pdf-interno', $eventoCecoco));
+        @endphp
         <div class="d-flex flex-wrap align-items-center" style="gap:.5rem;">
             <a href="{{ route('cecoco.exportar.pdf-resumen', $eventoCecoco) }}" target="_blank" class="btn btn-danger">
                 <i class="bi bi-printer"></i> Imprimir Parte de Novedad
+            </a>
+            <a href="https://wa.me/?text={{ $textoWaParteNovedad }}" target="_blank" rel="noopener" class="btn btn-success" title="Compartir Parte de Novedad por WhatsApp">
+                <i class="fab fa-whatsapp"></i>
             </a>
             <a href="{{ route('cecoco.exportar.pdf-original', $eventoCecoco) }}" target="_blank" class="btn btn-dark">
                 <i class="bi bi-file-earmark-pdf"></i> PDF Original CECOCO Completo
             </a>
             <a href="{{ route('cecoco.exportar.pdf-interno', $eventoCecoco) }}" target="_blank" class="btn btn-info">
                 <i class="bi bi-file-earmark-text"></i> PDF Interno Completo
+            </a>
+            <a href="https://wa.me/?text={{ $textoWaPdfInterno }}" target="_blank" rel="noopener" class="btn btn-success" title="Compartir PDF Interno Completo por WhatsApp">
+                <i class="fab fa-whatsapp"></i>
             </a>
         </div>
     </div>
@@ -224,40 +234,62 @@
             {{-- ===== ACCIONES ===== --}}
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h5 class="mb-0"><i class="bi bi-list-check"></i> Acciones</h5>
-                <small class="text-muted">Total: <strong>{{ $detalle['total_eventos'] ?? 0 }}</strong> eventos</small>
+                <div class="d-flex align-items-center" style="gap:.75rem;">
+                    <small class="text-muted">Total: <strong>{{ $detalle['total_eventos'] ?? 0 }}</strong> eventos</small>
+                    @if(!empty($detalle['timeline']) && count($detalle['timeline']) > 0)
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="collapse"
+                            data-target="#cronologia-acciones" aria-expanded="true" aria-controls="cronologia-acciones">
+                            <i class="fas fa-eye-slash"></i> Ocultar / mostrar
+                        </button>
+                    @endif
+                </div>
             </div>
 
             @if(!empty($detalle['timeline']) && count($detalle['timeline']) > 0)
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered table-hover mb-0">
-                        <thead class="table-dark">
-                            <tr>
-                                <th style="width:155px;">Fecha - Hora</th>
-                                <th style="width:185px;">Operador</th>
-                                <th>Acción</th>
-                                <th style="width:200px;">Características</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($detalle['timeline'] as $evento)
+                <div id="cronologia-acciones" class="collapse show">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-hover mb-0">
+                            <thead class="table-dark">
                                 <tr>
-                                    <td class="text-nowrap"><small>{{ $evento['fecha_hora'] ?? '-' }}</small></td>
-                                    <td><small>{{ $evento['operador'] ?? '-' }}</small></td>
-                                    <td><small>{{ $evento['descripcion'] ?? '' }}</small></td>
-                                    <td>
-                                        @if(!empty($evento['estado']))
-                                            <small class="text-muted text-wrap text-start">{{ $evento['estado'] }}</small>
-                                        @endif
-                                    </td>
+                                    <th style="width:155px;">Fecha - Hora</th>
+                                    <th style="width:185px;">Operador</th>
+                                    <th>Acción</th>
+                                    <th style="width:200px;">Características</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach($detalle['timeline'] as $evento)
+                                    <tr>
+                                        <td class="text-nowrap"><small>{{ $evento['fecha_hora'] ?? '-' }}</small></td>
+                                        <td><small>{{ $evento['operador'] ?? '-' }}</small></td>
+                                        <td><small>{{ \App\Helpers\CecocoAccionTraductor::traducir($evento['descripcion'] ?? '') }}</small></td>
+                                        <td>
+                                            @if(!empty($evento['estado']))
+                                                <small class="text-muted text-wrap text-start">{{ $evento['estado'] }}</small>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             @else
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle"></i> No se encontraron eventos en el expediente.
                 </div>
+            @endif
+
+            @if($tiempoRespuesta)
+                <hr class="my-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0"><i class="fas fa-stopwatch"></i> Tiempo de respuesta</h5>
+                </div>
+                <p class="mb-0">
+                    <strong>{{ $tiempoRespuesta['minutos'] }} min</strong> hasta que
+                    <strong>{{ $tiempoRespuesta['recurso'] }}</strong> pasó a "En atención"
+                    (recurso más rápido de {{ $tiempoRespuesta['recursos_totales'] }}).
+                </p>
             @endif
 
             {{-- ===== TRÁMITES ===== --}}

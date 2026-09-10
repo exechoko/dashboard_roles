@@ -143,7 +143,11 @@ class EventoCecocoController extends Controller
             'page',
         ]);
 
-        return view('eventos-cecoco.show', compact('eventoCecoco', 'filtros'));
+        $tiempoRespuesta = $this->tiempoRespuestaService->calcularDesdeTimeline(
+            $eventoCecoco->detalle->detalle_json['timeline'] ?? []
+        );
+
+        return view('eventos-cecoco.show', compact('eventoCecoco', 'filtros', 'tiempoRespuesta'));
     }
 
     public function importarForm()
@@ -375,6 +379,7 @@ class EventoCecocoController extends Controller
 
         try {
             $detalle = $this->expedienteService->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
+            $tiempoRespuesta = $this->tiempoRespuestaService->calcularDesdeTimeline($detalle['timeline'] ?? []);
 
             $filtros = $request->only([
                 'anio',
@@ -392,7 +397,7 @@ class EventoCecocoController extends Controller
                 'page',
             ]);
 
-            return view('eventos-cecoco.expediente', compact('eventoCecoco', 'detalle', 'filtros'));
+            return view('eventos-cecoco.expediente', compact('eventoCecoco', 'detalle', 'filtros', 'tiempoRespuesta'));
 
         } catch (\Exception $e) {
             return redirect()
@@ -466,8 +471,9 @@ class EventoCecocoController extends Controller
 
         try {
             $detalle = $this->expedienteService->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
+            $tiempoRespuesta = $this->tiempoRespuestaService->calcularDesdeTimeline($detalle['timeline'] ?? []);
 
-            return view('eventos-cecoco.exportar-interno-pdf', compact('eventoCecoco', 'detalle'));
+            return view('eventos-cecoco.exportar-interno-pdf', compact('eventoCecoco', 'detalle', 'tiempoRespuesta'));
         } catch (\Exception $e) {
             return redirect()
                 ->route('cecoco.show', $eventoCecoco)

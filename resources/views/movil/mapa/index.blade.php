@@ -67,10 +67,39 @@
 
             var mapa = L.map('m-map').setView([-31.75899, -60.47825], 13);
 
-            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            // Mismos tiles que el mapa de escritorio: claro (OSM) u oscuro
+            // (Stadia Maps, nativo, sin filtros CSS) según el tema activo.
+            var tileClaro = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '&copy; OpenStreetMap'
-            }).addTo(mapa);
+            });
+            var tileOscuro = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; Stadia Maps &copy; OpenMapTiles &copy; OpenStreetMap',
+                maxZoom: 20,
+                tileSize: 256,
+                detectRetina: false,
+                crossOrigin: true
+            });
+
+            var tileActual = null;
+            function aplicarTileSegunTema() {
+                var esOscuro = document.documentElement.getAttribute('data-theme') === 'dark';
+                var nuevoTile = esOscuro ? tileOscuro : tileClaro;
+                if (nuevoTile === tileActual) {
+                    return;
+                }
+                if (tileActual) {
+                    mapa.removeLayer(tileActual);
+                }
+                tileActual = nuevoTile;
+                mapa.addLayer(tileActual);
+            }
+            aplicarTileSegunTema();
+
+            new MutationObserver(aplicarTileSegunTema).observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['data-theme']
+            });
 
             // Cámaras: agrupadas en clusters, filtrables por tipo.
             var clusters = L.markerClusterGroup();

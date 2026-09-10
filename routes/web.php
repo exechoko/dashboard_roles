@@ -58,6 +58,8 @@ use App\Http\Controllers\FlotaDashboard911Controller;
 use App\Http\Controllers\RecursoPrestamoController;
 use App\Http\Controllers\RecursoTransferenciaController;
 use App\Http\Controllers\RecursoEstadoSeccionController;
+use App\Http\Controllers\RecursoBitacoraController;
+use App\Http\Controllers\BitacoraSolicitudController;
 use App\Http\Controllers\VehiculoInformeController;
 use App\Http\Controllers\DescargaController;
 use App\Http\Controllers\DescargaAdminController;
@@ -279,6 +281,19 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/parte-diario/{seccion}/docx', [VehiculoInformeController::class, 'descargarParteDiario'])->name('informes.parte-diario.docx');
         Route::get('/estado-flota', [VehiculoInformeController::class, 'estadoFlota'])->name('informes.estado-flota');
         Route::post('/estado-flota/generar', [VehiculoInformeController::class, 'generarEstadoFlota'])->name('informes.estado-flota.generar');
+
+        // Bitácora de recursos (desde Estado Flota)
+        Route::get('/estado-flota/{recurso}/bitacora', [RecursoBitacoraController::class, 'show'])->name('estado-flota.bitacora');
+        Route::post('/estado-flota/{recurso}/bitacora', [RecursoBitacoraController::class, 'store'])->name('estado-flota.bitacora.store');
+        Route::patch('/bitacora/{entrada}/cerrar', [RecursoBitacoraController::class, 'cerrar'])->name('bitacora.cerrar');
+        Route::post('/bitacora/{entrada}/seguimientos', [RecursoBitacoraController::class, 'storeSeguimiento'])->name('bitacora.seguimientos.store');
+        Route::post('/bitacora/{entrada}/solicitudes', [RecursoBitacoraController::class, 'solicitarCambio'])->name('bitacora.solicitudes.store');
+        Route::get('/bitacora/adjuntos/{adjunto}', [RecursoBitacoraController::class, 'descargarAdjunto'])->name('bitacora.adjuntos.show');
+        Route::delete('/bitacora/adjuntos/{adjunto}', [RecursoBitacoraController::class, 'destroyAdjunto'])->name('bitacora.adjuntos.destroy');
+
+        Route::get('/bitacora/solicitudes', [BitacoraSolicitudController::class, 'index'])->name('bitacora.solicitudes.index');
+        Route::patch('/bitacora/solicitudes/{solicitud}/aprobar', [BitacoraSolicitudController::class, 'aprobar'])->name('bitacora.solicitudes.aprobar');
+        Route::patch('/bitacora/solicitudes/{solicitud}/rechazar', [BitacoraSolicitudController::class, 'rechazar'])->name('bitacora.solicitudes.rechazar');
     });
     Route::resource('recursos', RecursoController::class);
     Route::resource('cecoco/recursos-alias', CecocoRecursoAliasController::class)

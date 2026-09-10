@@ -29,7 +29,8 @@ class VehiculoInformeController extends Controller
     public function __construct(private readonly FlotaInformeService $informeService)
     {
         $this->middleware('can:generar-parte-diario')->only(['parteDiario', 'generarParteDiario', 'preArmarParteDiario', 'descargarParteDiario']);
-        $this->middleware('can:generar-estado-flota')->only(['estadoFlota', 'generarEstadoFlota']);
+        $this->middleware('can:ver-flota-911')->only('estadoFlota');
+        $this->middleware('can:generar-estado-flota')->only('generarEstadoFlota');
     }
 
     public function parteDiario(Request $request)

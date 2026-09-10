@@ -119,6 +119,17 @@ Route::group(['middleware' => ['auth']], function () {
 
         Route::get('/infraestructura', [App\Http\Controllers\Movil\InfraestructuraController::class, 'index'])->name('infraestructura.index');
 
+        // Pantalla de verificación de contraseña maestra (sin el middleware para no crear loop)
+        Route::get('/password-vault-auth', [App\Http\Controllers\Movil\PasswordVaultController::class, 'masterPasswordForm'])
+            ->name('password-vault.master-password');
+        Route::post('/password-vault-auth', [App\Http\Controllers\Movil\PasswordVaultController::class, 'verifyMasterPassword'])
+            ->name('password-vault.verify-master-password');
+
+        Route::middleware('master.password')->group(function () {
+            Route::get('/passwords', [App\Http\Controllers\Movil\PasswordVaultController::class, 'index'])->name('password-vault.index');
+            Route::get('/passwords/{passwordVault}', [App\Http\Controllers\Movil\PasswordVaultController::class, 'show'])->name('password-vault.show');
+        });
+
         Route::get('/chat', [App\Http\Controllers\Movil\ChatController::class, 'index'])->name('chat.index');
         Route::get('/chat/{conversacion}', [App\Http\Controllers\Movil\ChatController::class, 'show'])->name('chat.show');
 

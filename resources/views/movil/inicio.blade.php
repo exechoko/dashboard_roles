@@ -54,6 +54,14 @@
             </a>
         @endcan
 
+        @can('ver-clave')
+            <a href="{{ route('movil.password-vault.index') }}" class="m-home-tile">
+                <i class="fas fa-lock"></i>
+                <span class="m-home-tile__title">Contraseñas</span>
+                <span class="m-home-tile__subtitle">Buscar y copiar credenciales guardadas</span>
+            </a>
+        @endcan
+
         @can('ver-infraestructura-workers')
             <a href="{{ route('movil.infraestructura.index') }}" class="m-home-tile">
                 <i class="fas fa-cogs"></i>

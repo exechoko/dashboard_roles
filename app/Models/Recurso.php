@@ -105,14 +105,31 @@ class Recurso extends Model
         return $this->asignacionActual?->vehiculo ?? $this->vehiculo;
     }
 
-    public function novedades(): HasMany
+    public function bitacora(): HasMany
     {
-        return $this->hasMany(RecursoNovedad::class)->orderByDesc('fecha_novedad');
+        return $this->hasMany(RecursoBitacora::class)->ordenadas();
     }
 
-    public function novedadesPendientes(): HasMany
+    public function bitacoraAbiertas(): HasMany
     {
-        return $this->hasMany(RecursoNovedad::class)->where('resuelta', false);
+        return $this->hasMany(RecursoBitacora::class)->abiertas();
+    }
+
+    public function ultimaBitacora(): HasOne
+    {
+        return $this->hasOne(RecursoBitacora::class)->ordenadas();
+    }
+
+    public function bitacoraVistas(): HasMany
+    {
+        return $this->hasMany(RecursoBitacoraVista::class);
+    }
+
+    public function tieneBitacoraAbierta(): bool
+    {
+        return $this->relationLoaded('bitacoraAbiertas')
+            ? $this->bitacoraAbiertas->isNotEmpty()
+            : $this->bitacoraAbiertas()->exists();
     }
 
     public function estadoSeccion(): HasOne

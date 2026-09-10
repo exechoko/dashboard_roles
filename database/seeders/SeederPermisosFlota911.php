@@ -18,6 +18,7 @@ class SeederPermisosFlota911 extends Seeder
             'ver-flota-911',
             'gestionar-flota-911',
             'generar-parte-diario',
+            'ver-historial-parte-diario',
             'generar-estado-flota',
             'gestionar-ficha-vehiculo',
             'asignar-vehiculo-a-recurso',

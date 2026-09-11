@@ -682,6 +682,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/importar', [App\Http\Controllers\EventoCecocoController::class, 'importar'])->name('importar.post');
         Route::post('/importar/hoy', [App\Http\Controllers\EventoCecocoController::class, 'importarHoy'])->name('importar.hoy');
         Route::post('/importar/prefetch-detalles', [App\Http\Controllers\EventoCecocoController::class, 'prefetchDetalles'])->name('importar.prefetch-detalles');
+        Route::get('/importar/prefetch-detalles/estado', [App\Http\Controllers\EventoCecocoController::class, 'prefetchDetallesEstado'])->name('importar.prefetch-detalles.estado');
         Route::get('/exportar/txt', [App\Http\Controllers\EventoCecocoController::class, 'exportarTxt'])->name('exportar.txt');
         Route::get('/mapa-gis', [App\Http\Controllers\GisViewerController::class, 'index'])->name('mapa-gis');
         Route::get('/mapa-gis-historico', [App\Http\Controllers\GisViewerController::class, 'indexHistorico'])->name('mapa-gis-historico');

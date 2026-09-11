@@ -273,6 +273,11 @@ class EventoCecocoController extends Controller
         );
     }
 
+    public function prefetchDetallesEstado(): JsonResponse
+    {
+        return response()->json(Cache::get('cecoco:prefetch-detalles:progreso') ?? ['en_curso' => false]);
+    }
+
     public function exportarTxt(Request $request)
     {
         $query = EventoCecoco::query();

@@ -58,6 +58,21 @@
                             </button>
                         </div>
                     </form>
+
+                    <div id="prefetchEstado" class="mt-3" style="display: none;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <small class="text-muted" id="prefetchEstadoRango"></small>
+                            <span class="badge" id="prefetchEstadoBadge"></span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div id="prefetchEstadoBar" class="progress-bar" role="progressbar" style="width: 0%">0 / 0</div>
+                        </div>
+                        <div class="small mt-1">
+                            <span class="badge bg-success" id="prefetchEstadoOk">ok: 0</span>
+                            <span class="badge bg-danger" id="prefetchEstadoErrores">errores: 0</span>
+                            <span class="text-muted ms-2" id="prefetchEstadoActualizado"></span>
+                        </div>
+                    </div>
                 </div>
 
                 <form method="POST" action="{{ route('cecoco.importar.post') }}" enctype="multipart/form-data" id="formImportar">
@@ -293,5 +308,59 @@ document.addEventListener('DOMContentLoaded', function() {
         btnImportar.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Encolando archivos...';
     });
 });
+
+(function prefetchDetallesMonitor() {
+    const url = '{{ route("cecoco.importar.prefetch-detalles.estado") }}';
+    const contenedor = document.getElementById('prefetchEstado');
+    if (!contenedor) return;
+
+    const bar = document.getElementById('prefetchEstadoBar');
+    const badge = document.getElementById('prefetchEstadoBadge');
+    const rangoEl = document.getElementById('prefetchEstadoRango');
+    const okEl = document.getElementById('prefetchEstadoOk');
+    const erroresEl = document.getElementById('prefetchEstadoErrores');
+    const actualizadoEl = document.getElementById('prefetchEstadoActualizado');
+
+    function render(d) {
+        if (!d || !d.total) {
+            contenedor.style.display = 'none';
+            return;
+        }
+
+        contenedor.style.display = 'block';
+        rangoEl.textContent = d.rango || '';
+
+        const total = d.total || 0;
+        const procesados = d.procesados || 0;
+        const pct = total > 0 ? Math.round((procesados / total) * 100) : 0;
+
+        bar.style.width = pct + '%';
+        bar.textContent = procesados + ' / ' + total + ' (' + pct + '%)';
+        bar.className = 'progress-bar' + (d.en_curso
+            ? ' progress-bar-striped progress-bar-animated'
+            : (d.errores > 0 ? ' bg-warning' : ' bg-success'));
+
+        badge.textContent = d.en_curso ? 'En curso' : 'Finalizado';
+        badge.className = 'badge ' + (d.en_curso ? 'bg-info' : 'bg-secondary');
+
+        okEl.textContent = 'ok: ' + (d.ok || 0);
+        erroresEl.textContent = 'errores: ' + (d.errores || 0);
+
+        const momento = d.en_curso ? d.actualizado_en : d.finalizado_en;
+        actualizadoEl.textContent = momento
+            ? ('Actualizado: ' + new Date(momento).toLocaleTimeString('es-AR'))
+            : '';
+    }
+
+    function verificar() {
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function(r) { return r.json(); })
+            .then(render)
+            .catch(function() {});
+    }
+
+    verificar();
+    setInterval(verificar, 5000);
+})();
 </script>
 @endpush

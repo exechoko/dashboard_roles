@@ -143,13 +143,89 @@
                 }
             }
 
+            // ── Ícono + cono de campo de visión por tipo de cámara: réplica
+            // exacta de generateCameraPath()/getOrientationDegrees() del mapa
+            // de escritorio (resources/views/mapa/partials/scripts.blade.php),
+            // usando tipo_camara.imagen, angulo y orientacion. ──
+            function getOrientationDegrees(orientacion) {
+                switch ((orientacion || '').toLowerCase()) {
+                    case 'norte': case 'n': return 0;
+                    case 'noreste': case 'ne': return 45;
+                    case 'este': case 'e': return 90;
+                    case 'sureste': case 'se': return 135;
+                    case 'sur': case 's': return 180;
+                    case 'suroeste': case 'so': case 'sw': return 225;
+                    case 'oeste': case 'o': case 'w': return 270;
+                    case 'noroeste': case 'no': case 'nw': return 315;
+                    default: return 0;
+                }
+            }
+
+            function generateCameraPath(angulo, orientacion) {
+                var radio = 25;
+                if (parseFloat(angulo) === 360) {
+                    return { path: '<circle cx="0" cy="0" r="' + radio + '" fill="rgba(0,255,0,0.3)" />', rotation: 0 };
+                }
+                var anguloApertura = (angulo || 60) / 2;
+                var anguloRad = (anguloApertura * Math.PI) / 180;
+                var orientacionGrados = getOrientationDegrees(orientacion);
+                var x1 = radio * Math.cos(anguloRad);
+                var y1 = -radio * Math.sin(anguloRad);
+                var x2 = radio * Math.cos(-anguloRad);
+                var y2 = -radio * Math.sin(-anguloRad);
+                var path = 'M0,0 L' + x1 + ',' + y1 + ' A' + radio + ',' + radio + ' 0 0,1 ' + x2 + ',' + y2 + ' Z';
+                return { path: path, rotation: orientacionGrados - 90 };
+            }
+
+            function iconoCamara(p) {
+                if (!p.imagen) {
+                    return null;
+                }
+                var tipo = p.tipo_camara || '';
+                var angulo = p.angulo || 60;
+                var geometria = generateCameraPath(angulo, p.orientacion);
+
+                var esOscuro = document.documentElement.getAttribute('data-theme') === 'dark';
+                var strokeColor = esOscuro ? '#ffffff' : '#000000';
+                var strokeWidth = esOscuro ? '2' : '1';
+
+                var fillColor = 'rgba(0,0,255,0.3)';
+                if (tipo.indexOf('Domo') !== -1) {
+                    fillColor = 'rgba(0,255,0,0.4)';
+                } else if (tipo.indexOf('LPR') !== -1) {
+                    fillColor = 'rgba(255,0,0,0.4)';
+                } else if (tipo.indexOf('FR') !== -1) {
+                    fillColor = 'rgba(255,165,0,0.4)';
+                }
+
+                var svgShape = parseFloat(angulo) === 360
+                    ? '<circle cx="0" cy="0" r="20" fill="' + fillColor + '" stroke="' + strokeColor + '" stroke-width="' + strokeWidth + '" />'
+                    : '<path d="' + geometria.path + '" fill="' + fillColor + '" stroke="' + strokeColor + '" stroke-width="' + strokeWidth + '" />';
+
+                return L.divIcon({
+                    className: '',
+                    html:
+                        '<div style="position:relative; width:50px; height:50px;">' +
+                        '<svg width="50" height="50" viewBox="-25 -25 50 50" xmlns="http://www.w3.org/2000/svg" ' +
+                        'style="position:absolute; top:0; left:0; transform: rotate(' + geometria.rotation + 'deg); z-index:0;">' +
+                        svgShape +
+                        '</svg>' +
+                        '<img src="' + p.imagen + '" style="width:50px; height:50px; position:absolute; top:0; left:0; z-index:1;" />' +
+                        '</div>',
+                    iconSize: [50, 50],
+                    iconAnchor: [25, 25],
+                    popupAnchor: [0, -25]
+                });
+            }
+
             fetch('{{ route('movil.mapa.camaras-json') }}')
                 .then(function (r) { return r.json(); })
                 .then(function (geojson) {
                     (geojson.features || []).forEach(function (feature) {
                         var p = feature.properties || {};
                         var coords = feature.geometry.coordinates;
-                        var marker = L.marker([coords[1], coords[0]]);
+                        var icon = iconoCamara(p);
+                        var marker = icon ? L.marker([coords[1], coords[0]], { icon: icon }) : L.marker([coords[1], coords[0]]);
                         var detalleUrl = '{{ url('/movil/camaras') }}/' + p.id;
                         marker.bindPopup(
                             '<strong>' + escapeHtml(p.titulo) + '</strong><br>' +

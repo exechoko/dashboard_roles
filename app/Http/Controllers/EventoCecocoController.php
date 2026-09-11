@@ -278,6 +278,21 @@ class EventoCecocoController extends Controller
         return response()->json(Cache::get('cecoco:prefetch-detalles:progreso') ?? ['en_curso' => false]);
     }
 
+    public function prefetchDetallesCancelar()
+    {
+        $progreso = Cache::get('cecoco:prefetch-detalles:progreso');
+
+        if (!($progreso['en_curso'] ?? false)) {
+            return redirect()->route('cecoco.importar')->with('error', 'No hay ninguna corrida de pre-traído en curso para cancelar.');
+        }
+
+        // El comando revisa este flag antes de procesar cada expediente, así que
+        // el corte no es instantáneo: termina el que está en curso y ahí para.
+        Cache::put('cecoco:prefetch-detalles:cancelar', true, now()->addHour());
+
+        return redirect()->route('cecoco.importar')->with('success', 'Cancelación solicitada. El proceso se detiene al terminar el expediente actual.');
+    }
+
     public function exportarTxt(Request $request)
     {
         $query = EventoCecoco::query();

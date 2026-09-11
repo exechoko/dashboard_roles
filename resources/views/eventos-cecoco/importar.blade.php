@@ -67,10 +67,16 @@
                         <div class="progress" style="height: 20px;">
                             <div id="prefetchEstadoBar" class="progress-bar" role="progressbar" style="width: 0%">0 / 0</div>
                         </div>
-                        <div class="small mt-1">
+                        <div class="small mt-1 d-flex align-items-center">
                             <span class="badge bg-success" id="prefetchEstadoOk">ok: 0</span>
-                            <span class="badge bg-danger" id="prefetchEstadoErrores">errores: 0</span>
+                            <span class="badge bg-danger ms-1" id="prefetchEstadoErrores">errores: 0</span>
                             <span class="text-muted ms-2" id="prefetchEstadoActualizado"></span>
+                            <form method="POST" action="{{ route('cecoco.importar.prefetch-detalles.cancelar') }}" id="prefetchEstadoCancelarForm" class="ms-auto mb-0" style="display: none;">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -320,6 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const okEl = document.getElementById('prefetchEstadoOk');
     const erroresEl = document.getElementById('prefetchEstadoErrores');
     const actualizadoEl = document.getElementById('prefetchEstadoActualizado');
+    const cancelarForm = document.getElementById('prefetchEstadoCancelarForm');
 
     function render(d) {
         if (!d || !d.total) {
@@ -340,8 +347,8 @@ document.addEventListener('DOMContentLoaded', function() {
             ? ' progress-bar-striped progress-bar-animated'
             : (d.errores > 0 ? ' bg-warning' : ' bg-success'));
 
-        badge.textContent = d.en_curso ? 'En curso' : 'Finalizado';
-        badge.className = 'badge ' + (d.en_curso ? 'bg-info' : 'bg-secondary');
+        badge.textContent = d.en_curso ? 'En curso' : (d.cancelado ? 'Cancelado' : 'Finalizado');
+        badge.className = 'badge ' + (d.en_curso ? 'bg-info' : (d.cancelado ? 'bg-warning' : 'bg-secondary'));
 
         okEl.textContent = 'ok: ' + (d.ok || 0);
         erroresEl.textContent = 'errores: ' + (d.errores || 0);
@@ -350,6 +357,8 @@ document.addEventListener('DOMContentLoaded', function() {
         actualizadoEl.textContent = momento
             ? ('Actualizado: ' + new Date(momento).toLocaleTimeString('es-AR'))
             : '';
+
+        if (cancelarForm) cancelarForm.style.display = d.en_curso ? 'block' : 'none';
     }
 
     function verificar() {

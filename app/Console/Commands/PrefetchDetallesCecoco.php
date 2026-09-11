@@ -54,6 +54,11 @@ class PrefetchDetallesCecoco extends Command
             return self::SUCCESS;
         }
 
+        // Descarta un pedido de cancelación de una corrida anterior que haya
+        // quedado sin consumir (no debería pasar, pero así una corrida nueva
+        // nunca arranca ya cancelada).
+        Cache::forget('cecoco:prefetch-detalles:cancelar');
+
         try {
             return $this->procesarRango($servicio, $fechaInicio, $fechaFin);
         } finally {
@@ -132,6 +137,28 @@ class PrefetchDetallesCecoco extends Command
         $t0 = microtime(true);
 
         foreach ($eventos as $i => $evento) {
+            if (Cache::get('cecoco:prefetch-detalles:cancelar')) {
+                Cache::forget('cecoco:prefetch-detalles:cancelar');
+                $this->warn("Cancelado por el usuario en {$i}/{$total}.");
+                Log::warning('cecoco:prefetch-detalles: cancelado por el usuario', [
+                    'rango' => $contexto,
+                    'procesados' => $i,
+                    'total' => $total,
+                ]);
+                $this->guardarProgreso([
+                    'en_curso' => false,
+                    'cancelado' => true,
+                    'rango' => $rangoLegible,
+                    'total' => $total,
+                    'procesados' => $i,
+                    'ok' => $ok,
+                    'errores' => $errores,
+                    'iniciado_en' => $iniciadoEn,
+                    'finalizado_en' => now()->toIso8601String(),
+                ]);
+                return self::SUCCESS;
+            }
+
             try {
                 $detalle = $servicio->obtenerDetalleExpediente((string) $evento->nro_expediente, $client);
 
@@ -211,7 +238,7 @@ class PrefetchDetallesCecoco extends Command
     }
 
     /**
-     * @param array{en_curso: bool, rango: string, total: int, procesados: int, ok: int, errores: int, iniciado_en?: string, actualizado_en?: string, finalizado_en?: string} $progreso
+     * @param array{en_curso: bool, rango: string, total: int, procesados: int, ok: int, errores: int, cancelado?: bool, iniciado_en?: string, actualizado_en?: string, finalizado_en?: string} $progreso
      */
     private function guardarProgreso(array $progreso): void
     {

@@ -192,6 +192,13 @@ class HistoricoMovilGisController extends Controller
     {
         $this->authorize('exportar-whatsapp-cecoco');
 
+        // Recorridos largos (hay hasta ~2000 posiciones) hacen que el motor de
+        // layout de DomPDF agote la memoria por defecto (probado: 2000 filas
+        // revienta incluso con 512M). No hay forma de evitarlo salvo achicar
+        // la tabla, así que se sube el límite puntualmente para esta acción.
+        @ini_set('memory_limit', '768M');
+        @set_time_limit(90);
+
         $registros = json_decode($historial->registros_json, true) ?? [];
 
         $pdf = Pdf::loadView('movil.historico-movil-gis.pdf', [

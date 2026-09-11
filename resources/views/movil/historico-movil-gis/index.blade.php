@@ -386,6 +386,17 @@
             });
 
             /* ═══ Compartir PDF / recorrido ═══ */
+            function descargarBlob(blob, nombreArchivo) {
+                var urlObjeto = URL.createObjectURL(blob);
+                var enlace = document.createElement('a');
+                enlace.href = urlObjeto;
+                enlace.download = nombreArchivo;
+                document.body.appendChild(enlace);
+                enlace.click();
+                document.body.removeChild(enlace);
+                URL.revokeObjectURL(urlObjeto);
+            }
+
             async function compartirArchivo(url, nombreArchivo, tipoMime, boton) {
                 var icono = boton.querySelector('i');
                 var claseOriginal = icono.className;
@@ -401,22 +412,26 @@
                     var archivo = new File([blob], nombreArchivo, { type: blob.type || tipoMime });
 
                     if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
-                        await navigator.share({ files: [archivo] });
-                        return;
+                        try {
+                            await navigator.share({ files: [archivo] });
+                            return;
+                        } catch (e) {
+                            if (e.name === 'AbortError') {
+                                return; // el usuario cerró el panel de compartir
+                            }
+                            // El navegador puede rechazar el share si tardó
+                            // demasiado en generarse/descargarse el archivo y
+                            // se perdió el "gesto de usuario" (común con
+                            // recorridos largos). Se descarga en su lugar para
+                            // que el usuario lo adjunte a mano.
+                            descargarBlob(blob, nombreArchivo);
+                            return;
+                        }
                     }
 
-                    var urlObjeto = URL.createObjectURL(blob);
-                    var enlace = document.createElement('a');
-                    enlace.href = urlObjeto;
-                    enlace.download = nombreArchivo;
-                    document.body.appendChild(enlace);
-                    enlace.click();
-                    document.body.removeChild(enlace);
-                    URL.revokeObjectURL(urlObjeto);
+                    descargarBlob(blob, nombreArchivo);
                 } catch (e) {
-                    if (e.name !== 'AbortError') {
-                        alert('No se pudo compartir: ' + e.message);
-                    }
+                    alert('No se pudo generar el archivo: ' + e.message);
                 } finally {
                     icono.className = claseOriginal;
                     boton.disabled = false;

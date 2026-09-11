@@ -8,8 +8,14 @@
         .rpt-header { border-bottom: 3px solid #0d3b66; padding-bottom: 10px; margin-bottom: 16px; }
         .rpt-header h1 { font-size: 17px; margin: 0 0 4px; color: #0d3b66; }
         .rpt-header .rpt-sub { font-size: 11px; color: #555; }
-        table.rpt-table { width: 100%; border-collapse: collapse; font-size: 10px; }
-        table.rpt-table th, table.rpt-table td { border: 1px solid #ccc; padding: 4px 6px; text-align: left; }
+        {{-- border-collapse:collapse disparaba un algoritmo de DomPDF muy
+             costoso en memoria con tablas grandes (2000+ filas agotaba 512MB
+             y volaba el proceso). separate + border-spacing:0 se ve igual
+             pero evita ese cálculo. --}}
+        table.rpt-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 10px; }
+        table.rpt-table th, table.rpt-table td { border-bottom: 1px solid #ccc; border-right: 1px solid #ccc; padding: 4px 6px; text-align: left; }
+        table.rpt-table th:first-child, table.rpt-table td:first-child { border-left: 1px solid #ccc; }
+        table.rpt-table thead th { border-top: 1px solid #ccc; }
         table.rpt-table th { background: #0d3b66; color: #fff; }
         tr.estado-detenido { background: #dbe9ff; }
         tr.estado-movimiento { background: #e2f6e9; }

@@ -8,7 +8,7 @@
         <div class="m-card__title" style="margin-bottom:.6rem;">
             Expte. {{ $eventoCecoco->nro_expediente }}
             @if ($eventoCecoco->tipo_servicio)
-                <span class="m-chip">{{ $eventoCecoco->tipo_servicio }}</span>
+                <span class="m-chip m-chip--{{ \App\Helpers\TipoServicioCecocoClasificador::badgeClass($eventoCecoco->tipo_servicio) }}">{{ $eventoCecoco->tipo_servicio }}</span>
             @endif
         </div>
 

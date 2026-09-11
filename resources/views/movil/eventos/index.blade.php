@@ -45,7 +45,9 @@
                     <div class="m-card__subtitle">{{ optional($evento->fecha_hora)->format('d/m/Y H:i') }} · {{ $evento->operador }}</div>
                     <div class="m-card__subtitle">{{ $evento->direccion }}</div>
                     @if ($evento->tipo_servicio)
-                        <div class="m-card__meta"><span class="m-chip">{{ $evento->tipo_servicio }}</span></div>
+                        <div class="m-card__meta">
+                            <span class="m-chip m-chip--{{ \App\Helpers\TipoServicioCecocoClasificador::badgeClass($evento->tipo_servicio) }}">{{ $evento->tipo_servicio }}</span>
+                        </div>
                     @endif
                 </a>
             @endforeach

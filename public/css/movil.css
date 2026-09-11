@@ -83,6 +83,10 @@ body.m-body {
     color: var(--m-text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     margin: 0;
+    /* .m-topbar es "position: fixed" (ver más abajo), así que no ocupa
+       espacio propio en el flujo: este padding-top le deja el lugar para
+       que el contenido no arranque tapado debajo. */
+    padding-top: calc(62px + env(safe-area-inset-top, 0px));
     padding-bottom: 72px;
     min-height: 100vh;
     /* Datos como el TEI son cadenas largas sin espacios: sin esto no cortan
@@ -96,13 +100,20 @@ body.m-body--no-nav { padding-bottom: 0; }
 a { color: var(--m-accent); text-decoration: none; }
 
 .m-topbar {
-    position: sticky;
+    /* "fixed" en vez de "sticky": con listas largas (chat, eventos) que
+       mutan el DOM seguido (mensajes nuevos por polling) y fuerzan scroll
+       por JS, Safari/iOS puede "despegar" un position:sticky y el usuario
+       pierde el botón de volver. Fixed no depende del flujo del documento
+       y no tiene ese problema. */
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 1100;
     display: flex;
     align-items: center;
     gap: .6rem;
-    padding: .8rem 1rem;
+    padding: calc(.8rem + env(safe-area-inset-top, 0px)) 1rem .8rem;
     background: var(--m-surface);
     border-bottom: 1px solid var(--m-border);
 }

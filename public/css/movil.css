@@ -1182,3 +1182,91 @@ button.hgis-sugerencia {
     font-size: .82rem;
     color: var(--m-muted);
 }
+
+/* ═══ Escáner de código de barras/QR/DataMatrix ═══ */
+
+.m-scanner-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1300;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+}
+
+.m-scanner-overlay__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+    padding: calc(.8rem + env(safe-area-inset-top, 0px)) 1rem .8rem;
+    color: #fff;
+    background: rgba(0, 0, 0, .55);
+    position: relative;
+    z-index: 1;
+}
+
+.m-scanner-overlay__close {
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, .3);
+    background: rgba(255, 255, 255, .08);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+}
+
+.m-scanner-overlay__video-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #000;
+}
+
+.m-scanner-overlay__video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.m-scanner-overlay__frame {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(70vw, 320px);
+    height: min(70vw, 320px);
+    border: 3px solid var(--m-accent);
+    border-radius: 1rem;
+    box-shadow: 0 0 0 999px rgba(0, 0, 0, .45);
+    pointer-events: none;
+}
+
+.m-scanner-overlay__hint {
+    position: absolute;
+    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    left: 1rem;
+    right: 1rem;
+    text-align: center;
+    color: #fff;
+    font-size: .85rem;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
+}
+
+.m-scanner-overlay__error {
+    position: absolute;
+    top: 50%;
+    left: 1.2rem;
+    right: 1.2rem;
+    transform: translateY(-50%);
+    text-align: center;
+    color: #fff;
+    background: rgba(220, 38, 38, .25);
+    border: 1px solid var(--m-danger);
+    border-radius: var(--m-radius);
+    padding: 1rem;
+    font-size: .9rem;
+}

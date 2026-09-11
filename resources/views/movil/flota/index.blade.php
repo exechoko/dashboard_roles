@@ -3,10 +3,15 @@
 @section('title', 'Flota')
 
 @section('content')
-    <form method="GET" action="{{ route('movil.flota.index') }}" class="m-search">
-        <input type="text" name="texto" value="{{ $texto }}" placeholder="TEI, ISSI, móvil o destino…">
+    <form method="GET" action="{{ route('movil.flota.index') }}" class="m-search" id="mFlotaBusqueda">
+        <input type="text" name="texto" id="mFlotaTexto" value="{{ $texto }}" placeholder="TEI, ISSI, móvil o destino…">
+        <button type="button" class="m-btn m-btn--outline" id="mFlotaBtnEscanear" aria-label="Escanear código">
+            <i class="fas fa-barcode"></i>
+        </button>
         <button type="submit" class="m-btn"><i class="fas fa-search"></i></button>
     </form>
+
+    @include('movil.partials.scanner')
 
     @if ($flota->isEmpty())
         <div class="m-empty">
@@ -51,4 +56,15 @@
             {{ $flota->links() }}
         </div>
     @endif
+@endsection
+
+@section('scripts')
+    <script>
+        document.getElementById('mFlotaBtnEscanear').addEventListener('click', function () {
+            mAbrirEscaner(function (texto) {
+                document.getElementById('mFlotaTexto').value = texto.trim();
+                document.getElementById('mFlotaBusqueda').submit();
+            });
+        });
+    </script>
 @endsection

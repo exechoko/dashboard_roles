@@ -332,6 +332,17 @@ a { color: var(--m-accent); text-decoration: none; }
     border-radius: var(--m-radius);
     padding: .5rem .6rem;
     box-shadow: var(--m-shadow);
+    /* .m-stat también se usa como filtro rápido (ej: Personal → De licencia)
+       renderizado como <a>: sin esto heredaría el color de link global. */
+    color: var(--m-text);
+    transition: border-color .15s ease, background .15s ease;
+}
+
+.m-stat:active { transform: scale(.98); }
+
+.m-stat--active {
+    border-color: var(--m-accent);
+    background: var(--m-cat-blue-bg);
 }
 
 .m-stat i { font-size: .95rem; color: var(--m-accent); flex: 0 0 auto; }

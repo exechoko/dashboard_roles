@@ -18,6 +18,7 @@ class PersonalController extends Controller
     public function index(Request $request): View
     {
         $texto = trim((string) $request->get('texto'));
+        $soloLicencia = $request->boolean('licencia');
 
         $personales = Personal::query()
             ->when($texto !== '', function (Builder $query) use ($texto): void {
@@ -26,6 +27,11 @@ class PersonalController extends Controller
                         ->orWhere('nombre', 'like', "%{$texto}%")
                         ->orWhere('lp', 'like', "%{$texto}%")
                         ->orWhere('dni', 'like', "%{$texto}%");
+                });
+            })
+            ->when($soloLicencia, function (Builder $query): void {
+                $query->whereHas('licencias', function (Builder $licencias): void {
+                    $licencias->vigentes();
                 });
             })
             ->with('licencias')
@@ -39,7 +45,7 @@ class PersonalController extends Controller
             $licencias->vigentes();
         })->count();
 
-        return view('movil.personal.index', compact('personales', 'texto', 'totalActivos', 'totalDeLicencia'));
+        return view('movil.personal.index', compact('personales', 'texto', 'soloLicencia', 'totalActivos', 'totalDeLicencia'));
     }
 
     public function show(Personal $personal): View

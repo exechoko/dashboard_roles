@@ -4,23 +4,28 @@
 
 @section('content')
     <div class="m-stats">
-        <div class="m-stat m-stat--success">
+        <a href="{{ route('movil.personal.index', array_filter(['texto' => $texto])) }}"
+            class="m-stat m-stat--success {{ !$soloLicencia ? 'm-stat--active' : '' }}">
             <i class="fas fa-user-check"></i>
             <div class="m-stat__body">
                 <div class="m-stat__value">{{ $totalActivos }}</div>
-                <div class="m-stat__label">Activos</div>
+                <div class="m-stat__label">Todos</div>
             </div>
-        </div>
-        <div class="m-stat m-stat--warning">
+        </a>
+        <a href="{{ route('movil.personal.index', array_filter(['texto' => $texto, 'licencia' => 1])) }}"
+            class="m-stat m-stat--warning {{ $soloLicencia ? 'm-stat--active' : '' }}">
             <i class="fas fa-calendar-times"></i>
             <div class="m-stat__body">
                 <div class="m-stat__value">{{ $totalDeLicencia }}</div>
                 <div class="m-stat__label">De licencia</div>
             </div>
-        </div>
+        </a>
     </div>
 
     <form method="GET" action="{{ route('movil.personal.index') }}" class="m-search">
+        @if ($soloLicencia)
+            <input type="hidden" name="licencia" value="1">
+        @endif
         <input type="text" name="texto" value="{{ $texto }}" placeholder="Apellido, nombre, LP o DNI…">
         <button type="submit" class="m-btn"><i class="fas fa-search"></i></button>
     </form>
@@ -28,7 +33,7 @@
     @if ($personales->isEmpty())
         <div class="m-empty">
             <i class="fas fa-users" style="font-size:1.6rem;"></i>
-            <p>No se encontraron funcionarios.</p>
+            <p>{{ $soloLicencia ? 'No hay nadie de licencia.' : 'No se encontraron funcionarios.' }}</p>
         </div>
     @else
         <div class="m-list">

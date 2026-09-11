@@ -120,6 +120,14 @@
             </a>
         @endcan
 
+        @can('ver-historico-movil-gis-cecoco')
+            <a href="{{ route('movil.historico-movil-gis.index') }}" class="m-home-tile">
+                <span class="m-tile-icon m-tile-icon--indigo"><i class="fas fa-route"></i></span>
+                <span class="m-home-tile__title">Histórico Móvil GIS</span>
+                <span class="m-home-tile__subtitle">Recorrido de un móvil por GPS</span>
+            </a>
+        @endcan
+
         @can('ver-infraestructura-workers')
             <a href="{{ route('movil.infraestructura.index') }}" class="m-home-tile">
                 <span class="m-tile-icon m-tile-icon--indigo"><i class="fas fa-cogs"></i></span>

@@ -126,6 +126,15 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/tareas', [App\Http\Controllers\Movil\TareaController::class, 'index'])->name('tareas.index');
         Route::get('/activaciones-totem', [App\Http\Controllers\Movil\ActivacionTotemController::class, 'index'])->name('activaciones-totem.index');
 
+        Route::get('/historico-movil-gis', [App\Http\Controllers\Movil\HistoricoMovilGisController::class, 'index'])->name('historico-movil-gis.index');
+        Route::post('/historico-movil-gis/consultar', [App\Http\Controllers\Movil\HistoricoMovilGisController::class, 'consultar'])->name('historico-movil-gis.consultar');
+        Route::get('/historico-movil-gis/buscar-recurso', [App\Http\Controllers\Movil\HistoricoMovilGisController::class, 'buscarRecurso'])->name('historico-movil-gis.buscar-recurso');
+        Route::get('/historico-movil-gis/buscar', [App\Http\Controllers\Movil\HistoricoMovilGisController::class, 'buscarHistorial'])->name('historico-movil-gis.buscar');
+        Route::get('/historico-movil-gis/{historial}/cargar', [App\Http\Controllers\Movil\HistoricoMovilGisController::class, 'cargarHistorial'])->name('historico-movil-gis.cargar');
+        Route::delete('/historico-movil-gis/{historial}', [App\Http\Controllers\Movil\HistoricoMovilGisController::class, 'eliminarHistorial'])->name('historico-movil-gis.eliminar');
+        Route::get('/historico-movil-gis/{historial}/pdf', [App\Http\Controllers\Movil\HistoricoMovilGisController::class, 'pdf'])->name('historico-movil-gis.pdf');
+        Route::get('/historico-movil-gis/{historial}/recorrido', [App\Http\Controllers\Movil\HistoricoMovilGisController::class, 'recorrido'])->name('historico-movil-gis.recorrido');
+
         // Pantalla de verificación de contraseña maestra (sin el middleware para no crear loop)
         Route::get('/password-vault-auth', [App\Http\Controllers\Movil\PasswordVaultController::class, 'masterPasswordForm'])
             ->name('password-vault.master-password');

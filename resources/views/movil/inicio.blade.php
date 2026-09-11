@@ -11,6 +11,60 @@
         <div class="m-home-header__name">{{ $saludo }}, {{ auth()->user()->name ?? auth()->user()->email }}</div>
     </div>
 
+    @php
+        $hayNovedades = (auth()->user()->can('ver-entrega-equipos') && $cantEquiposEntregados > 0)
+            || (auth()->user()->can('ver-entrega-bodycams') && $cantBodycamsEntregadas > 0)
+            || (auth()->user()->canAny(['ver-tarea', 'crear-tarea', 'editar-tarea', 'borrar-tarea']) && $cantTareasHoy > 0)
+            || (auth()->user()->can('ver-activacion-totem') && $cantActivacionesTotemPendientes > 0);
+    @endphp
+
+    @if($hayNovedades)
+        <div class="m-section-title">Novedades</div>
+        <div class="m-list">
+            @can('ver-entrega-equipos')
+                @if($cantEquiposEntregados > 0)
+                    <a href="{{ route('entrega-equipos.index') }}" class="m-card">
+                        <div class="m-card__title"><i class="fas fa-satellite-dish"></i> Equipos entregados</div>
+                        <div class="m-card__subtitle">{{ $cantEquiposEntregados }} sin devolver</div>
+                    </a>
+                @endif
+            @endcan
+
+            @can('ver-entrega-bodycams')
+                @if($cantBodycamsEntregadas > 0)
+                    <a href="{{ route('entrega-bodycams.index') }}" class="m-card">
+                        <div class="m-card__title"><i class="fas fa-mobile-alt"></i> Bodycams entregadas</div>
+                        <div class="m-card__subtitle">{{ $cantBodycamsEntregadas }} sin devolver</div>
+                    </a>
+                @endif
+            @endcan
+
+            @canany(['ver-tarea', 'crear-tarea', 'editar-tarea', 'borrar-tarea'])
+                @if($cantTareasHoy > 0)
+                    <a href="{{ route('tareas.index') }}" class="m-card">
+                        <div class="m-card__title"><i class="fas fa-tasks"></i> Tareas de hoy</div>
+                        <div class="m-card__subtitle">{{ $cantTareasHoy }} pendiente(s) o en proceso</div>
+                    </a>
+                @endif
+            @endcanany
+
+            @can('ver-activacion-totem')
+                @if($cantActivacionesTotemPendientes > 0)
+                    <a href="{{ route('activaciones-totem.index') }}" class="m-card">
+                        <div class="m-card__title"><i class="fas fa-broadcast-tower"></i> Activaciones Tótem pendientes</div>
+                        <div class="m-card__subtitle">
+                            {{ $cantActivacionesTotemPendientes }} pendiente(s)
+                            @if($cantActivacionesTotemVencidas > 0)
+                                <span class="m-chip">{{ $cantActivacionesTotemVencidas }} vencida(s)</span>
+                            @endif
+                        </div>
+                    </a>
+                @endif
+            @endcan
+        </div>
+    @endif
+
+    <div class="m-section-title">Accesos</div>
     <div class="m-home-grid">
         @can('ver-flota')
             <a href="{{ route('movil.flota.index') }}" class="m-home-tile">

@@ -15,17 +15,16 @@ class EntregaBodycamController extends Controller
 
     public function index(): View
     {
-        $entregas = EntregaBodycam::with(['bodycams', 'devoluciones.bodycams'])
-            ->activas()
+        $entregas = EntregaBodycam::activas()
             ->conDevolucionEsperada()
             ->orderBy('fecha_entrega', 'desc')
             ->get()
             ->map(function (EntregaBodycam $entrega) {
-                $entrega->bodycams_pendientes = $entrega->bodycamsPendientes()->count();
+                $entrega->bodycams_pendientes = $entrega->bodycamsPendientes()->get();
 
                 return $entrega;
             })
-            ->filter(fn(EntregaBodycam $entrega) => $entrega->bodycams_pendientes > 0)
+            ->filter(fn(EntregaBodycam $entrega) => $entrega->bodycams_pendientes->isNotEmpty())
             ->values();
 
         return view('movil.entregas-bodycams.index', compact('entregas'));

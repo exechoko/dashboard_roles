@@ -15,17 +15,15 @@ class EntregaEquipoController extends Controller
 
     public function index(): View
     {
-        $entregas = EntregaEquipo::with(['equipos', 'devoluciones.equipos'])
-            ->whereIn('estado', ['entregado', 'devolucion_parcial'])
+        $entregas = EntregaEquipo::whereIn('estado', ['entregado', 'devolucion_parcial'])
             ->orderBy('fecha_entrega', 'desc')
             ->get()
             ->map(function (EntregaEquipo $entrega) {
-                $equiposDevueltos = $entrega->devoluciones->pluck('equipos')->flatten()->pluck('id')->unique()->count();
-                $entrega->equipos_pendientes = $entrega->equipos->count() - $equiposDevueltos;
+                $entrega->equipos_pendientes = $entrega->equiposPendientes()->with('equipo')->get();
 
                 return $entrega;
             })
-            ->filter(fn(EntregaEquipo $entrega) => $entrega->equipos_pendientes > 0)
+            ->filter(fn(EntregaEquipo $entrega) => $entrega->equipos_pendientes->isNotEmpty())
             ->values();
 
         return view('movil.entregas-equipos.index', compact('entregas'));

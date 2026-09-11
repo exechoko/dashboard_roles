@@ -652,6 +652,86 @@ a { color: var(--m-accent); text-decoration: none; }
     box-shadow: 0 0 0 2px var(--m-accent), var(--m-shadow);
 }
 
+.m-chip--action {
+    border: 1px solid var(--m-border);
+    background: transparent;
+    color: var(--m-text);
+    cursor: pointer;
+    /* Un chip normal (.15rem/.72rem) queda muy chico para ser el único
+       disparador táctil de la card: se agranda el área de toque. */
+    padding: .5rem .8rem;
+    font-size: .8rem;
+    min-height: 2.25rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+}
+
+.m-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .5);
+    z-index: 1300;
+    display: flex;
+    align-items: flex-end;
+}
+
+.m-modal {
+    width: 100%;
+    max-height: 85vh;
+    /* dvh evita que la barra de direcciones de Safari/Chrome móvil (que
+       aparece/desaparece al hacer scroll) corte el modal o deje un salto
+       al recalcular el 85vh contra el viewport "completo". */
+    max-height: 85dvh;
+    display: flex;
+    flex-direction: column;
+    background: var(--m-surface);
+    border-radius: 1rem 1rem 0 0;
+    box-shadow: var(--m-shadow);
+}
+
+.m-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .6rem;
+    padding: .9rem 1rem;
+    border-bottom: 1px solid var(--m-border);
+    font-weight: 700;
+    color: var(--m-text);
+}
+
+.m-modal__close {
+    border: none;
+    background: none;
+    color: var(--m-muted);
+    font-size: 1.4rem;
+    line-height: 1;
+    /* Área de toque de al menos 44px (mínimo recomendado en iOS/Android),
+       no solo el tamaño visual del ícono. */
+    width: 2.75rem;
+    height: 2.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: -.6rem -.4rem -.6rem 0;
+}
+
+.m-modal__body {
+    padding: 1rem;
+    /* El home indicator de iPhone (franja inferior) puede tapar el final de
+       la lista si el sheet llega hasta el borde sin este respiro. */
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.m-modal__meta {
+    color: var(--m-muted);
+    font-size: .85rem;
+    margin-bottom: .8rem;
+}
+
 /* La tarjeta de "Resumen con IA" es la misma vista parcial que usa el panel
    de escritorio (eventos-cecoco/partials/resumen_ia.blade.php) — se reutiliza
    tal cual, así que sus clases Bootstrap se retocan acá para que combinen

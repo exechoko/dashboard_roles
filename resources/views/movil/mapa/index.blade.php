@@ -18,6 +18,12 @@
             <i class="fas fa-filter"></i>
         </button>
 
+        <button type="button" class="m-map-filters-btn m-map-locate-btn" id="mMapLocateBtn" aria-label="Mi ubicación">
+            <i class="fas fa-crosshairs" id="mMapLocateIcon"></i>
+        </button>
+
+        <div class="m-alert m-alert--danger m-map-locate-error" id="mMapLocateError" hidden></div>
+
         <div class="m-map-filters" id="mMapFilters" hidden>
             <div class="m-map-filters__header">
                 <span>Cámaras por tipo</span>
@@ -96,7 +102,16 @@
             }
             aplicarTileSegunTema();
 
-            new MutationObserver(aplicarTileSegunTema).observe(document.documentElement, {
+            function colorAccent() {
+                return getComputedStyle(document.documentElement).getPropertyValue('--m-accent').trim() || '#0d6efd';
+            }
+
+            new MutationObserver(function () {
+                aplicarTileSegunTema();
+                if (miUbicacionCirculo) {
+                    miUbicacionCirculo.setStyle({ color: colorAccent(), fillColor: colorAccent() });
+                }
+            }).observe(document.documentElement, {
                 attributes: true,
                 attributeFilter: ['data-theme']
             });
@@ -239,6 +254,103 @@
                     }
                 });
             }
+
+            // Mi ubicación: marcador + círculo de precisión, actualizados en
+            // vivo con watchPosition mientras el botón esté activo.
+            var locateBtn = document.getElementById('mMapLocateBtn');
+            var locateIcon = document.getElementById('mMapLocateIcon');
+            var locateError = document.getElementById('mMapLocateError');
+            var watchId = null;
+            var miUbicacionMarker = null;
+            var miUbicacionCirculo = null;
+            var primerFix = true;
+
+            function mostrarErrorUbicacion(mensaje) {
+                locateError.textContent = mensaje;
+                locateError.hidden = false;
+                setTimeout(function () { locateError.hidden = true; }, 4000);
+            }
+
+            function detenerUbicacion() {
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+                if (miUbicacionMarker) {
+                    mapa.removeLayer(miUbicacionMarker);
+                    miUbicacionMarker = null;
+                }
+                if (miUbicacionCirculo) {
+                    mapa.removeLayer(miUbicacionCirculo);
+                    miUbicacionCirculo = null;
+                }
+                locateBtn.classList.remove('is-active');
+                locateIcon.classList.remove('fa-spin');
+                primerFix = true;
+            }
+
+            function actualizarUbicacion(posicion) {
+                locateIcon.classList.remove('fa-spin');
+                var lat = posicion.coords.latitude;
+                var lng = posicion.coords.longitude;
+                var precision = posicion.coords.accuracy;
+
+                if (!miUbicacionMarker) {
+                    var icon = L.divIcon({
+                        className: 'm-map-marker m-map-marker--mi-ubicacion',
+                        html: '<span></span>',
+                        iconSize: [18, 18],
+                        iconAnchor: [9, 9]
+                    });
+                    miUbicacionMarker = L.marker([lat, lng], { icon: icon, zIndexOffset: 1000 }).addTo(mapa);
+                    miUbicacionCirculo = L.circle([lat, lng], {
+                        radius: precision,
+                        color: colorAccent(),
+                        fillColor: colorAccent(),
+                        fillOpacity: .15,
+                        weight: 1
+                    }).addTo(mapa);
+                } else {
+                    miUbicacionMarker.setLatLng([lat, lng]);
+                    miUbicacionCirculo.setLatLng([lat, lng]).setRadius(precision);
+                }
+
+                if (primerFix) {
+                    mapa.setView([lat, lng], 16);
+                    primerFix = false;
+                }
+            }
+
+            function errorUbicacion(error) {
+                locateIcon.classList.remove('fa-spin');
+                var mensajes = {
+                    1: 'Permiso de ubicación denegado. Habilitalo en la configuración del navegador.',
+                    2: 'No se pudo determinar la ubicación.',
+                    3: 'Se agotó el tiempo de espera para obtener la ubicación.'
+                };
+                mostrarErrorUbicacion(mensajes[error.code] || 'No se pudo obtener la ubicación.');
+                detenerUbicacion();
+            }
+
+            locateBtn.addEventListener('click', function () {
+                if (!('geolocation' in navigator)) {
+                    mostrarErrorUbicacion('Este dispositivo no soporta geolocalización.');
+                    return;
+                }
+
+                if (watchId !== null) {
+                    detenerUbicacion();
+                    return;
+                }
+
+                locateBtn.classList.add('is-active');
+                locateIcon.classList.add('fa-spin');
+                watchId = navigator.geolocation.watchPosition(actualizarUbicacion, errorUbicacion, {
+                    enableHighAccuracy: true,
+                    maximumAge: 10000,
+                    timeout: 15000
+                });
+            });
 
             // Panel de filtros: se muestra/oculta con el botón flotante.
             var filtersBtn = document.getElementById('mMapFiltersBtn');

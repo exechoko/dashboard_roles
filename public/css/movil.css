@@ -622,6 +622,36 @@ a { color: var(--m-accent); text-decoration: none; }
     line-height: 1;
 }
 
+.m-map-locate-btn {
+    top: calc(.8rem + 50px);
+}
+
+.m-map-locate-btn.is-active {
+    color: var(--m-accent-contrast);
+    background: var(--m-accent);
+    border-color: var(--m-accent);
+}
+
+.m-map-locate-error {
+    position: absolute;
+    top: .8rem;
+    left: .8rem;
+    right: 3.6rem;
+    z-index: 900;
+    margin: 0;
+    box-shadow: var(--m-shadow);
+}
+
+.m-map-marker--mi-ubicacion span {
+    display: block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--m-accent);
+    border: 3px solid var(--m-accent-contrast);
+    box-shadow: 0 0 0 2px var(--m-accent), var(--m-shadow);
+}
+
 /* La tarjeta de "Resumen con IA" es la misma vista parcial que usa el panel
    de escritorio (eventos-cecoco/partials/resumen_ia.blade.php) — se reutiliza
    tal cual, así que sus clases Bootstrap se retocan acá para que combinen

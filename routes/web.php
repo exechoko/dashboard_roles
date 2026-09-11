@@ -121,6 +121,11 @@ Route::group(['middleware' => ['auth']], function () {
 
         Route::get('/infraestructura', [App\Http\Controllers\Movil\InfraestructuraController::class, 'index'])->name('infraestructura.index');
 
+        Route::get('/entregas-equipos', [App\Http\Controllers\Movil\EntregaEquipoController::class, 'index'])->name('entregas-equipos.index');
+        Route::get('/entregas-bodycams', [App\Http\Controllers\Movil\EntregaBodycamController::class, 'index'])->name('entregas-bodycams.index');
+        Route::get('/tareas', [App\Http\Controllers\Movil\TareaController::class, 'index'])->name('tareas.index');
+        Route::get('/activaciones-totem', [App\Http\Controllers\Movil\ActivacionTotemController::class, 'index'])->name('activaciones-totem.index');
+
         // Pantalla de verificación de contraseña maestra (sin el middleware para no crear loop)
         Route::get('/password-vault-auth', [App\Http\Controllers\Movil\PasswordVaultController::class, 'masterPasswordForm'])
             ->name('password-vault.master-password');

@@ -23,7 +23,7 @@
         <div class="m-list">
             @can('ver-entrega-equipos')
                 @if($cantEquiposEntregados > 0)
-                    <a href="{{ route('entrega-equipos.index') }}" class="m-card">
+                    <a href="{{ route('movil.entregas-equipos.index') }}" class="m-card">
                         <div class="m-card__title"><i class="fas fa-satellite-dish"></i> Equipos entregados</div>
                         <div class="m-card__subtitle">{{ $cantEquiposEntregados }} sin devolver</div>
                     </a>
@@ -32,7 +32,7 @@
 
             @can('ver-entrega-bodycams')
                 @if($cantBodycamsEntregadas > 0)
-                    <a href="{{ route('entrega-bodycams.index') }}" class="m-card">
+                    <a href="{{ route('movil.entregas-bodycams.index') }}" class="m-card">
                         <div class="m-card__title"><i class="fas fa-mobile-alt"></i> Bodycams entregadas</div>
                         <div class="m-card__subtitle">{{ $cantBodycamsEntregadas }} sin devolver</div>
                     </a>
@@ -41,7 +41,7 @@
 
             @canany(['ver-tarea', 'crear-tarea', 'editar-tarea', 'borrar-tarea'])
                 @if($cantTareasHoy > 0)
-                    <a href="{{ route('tareas.index') }}" class="m-card">
+                    <a href="{{ route('movil.tareas.index') }}" class="m-card">
                         <div class="m-card__title"><i class="fas fa-tasks"></i> Tareas de hoy</div>
                         <div class="m-card__subtitle">{{ $cantTareasHoy }} pendiente(s) o en proceso</div>
                     </a>
@@ -50,7 +50,7 @@
 
             @can('ver-activacion-totem')
                 @if($cantActivacionesTotemPendientes > 0)
-                    <a href="{{ route('activaciones-totem.index') }}" class="m-card">
+                    <a href="{{ route('movil.activaciones-totem.index') }}" class="m-card">
                         <div class="m-card__title"><i class="fas fa-broadcast-tower"></i> Activaciones Tótem pendientes</div>
                         <div class="m-card__subtitle">
                             {{ $cantActivacionesTotemPendientes }} pendiente(s)

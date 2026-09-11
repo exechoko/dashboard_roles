@@ -14,7 +14,9 @@ use App\Services\CecocoModulacionesLocalService;
 use App\Services\ResumenEventoIaService;
 use App\Services\TiempoRespuestaCecocoService;
 use App\Jobs\DescargarEventosCecoco;
+use App\Jobs\PrefetchDetallesCecocoJob;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -240,6 +242,35 @@ class EventoCecocoController extends Controller
 
         return redirect()->route('cecoco.importar')
             ->with('success', 'Importación de eventos de hoy agregada a la cola. La descarga y el procesamiento se ejecutan en segundo plano.');
+    }
+
+    public function prefetchDetalles(Request $request)
+    {
+        $validated = $request->validate([
+            'desde' => 'required|date',
+            'hasta' => 'nullable|date|after_or_equal:desde',
+        ]);
+
+        $desde = Carbon::parse($validated['desde'])->startOfDay();
+        $hasta = isset($validated['hasta'])
+            ? Carbon::parse($validated['hasta'])->endOfDay()
+            : $desde->copy()->endOfDay();
+
+        $hayDatos = EventoCecoco::whereBetween('fecha_hora', [$desde, $hasta])->exists();
+
+        if (!$hayDatos) {
+            return redirect()->route('cecoco.importar')->with(
+                'error',
+                'No hay eventos importados para el rango ' . $desde->format('d/m/Y') . ' - ' . $hasta->format('d/m/Y') . '. Importá los eventos de esa fecha antes de pre-traer los detalles.'
+            );
+        }
+
+        PrefetchDetallesCecocoJob::dispatch($desde->toDateString(), $hasta->toDateString());
+
+        return redirect()->route('cecoco.importar')->with(
+            'success',
+            'Pre-traído de detalles encolado para el rango ' . $desde->format('d/m/Y') . ' - ' . $hasta->format('d/m/Y') . '. Se ejecuta en segundo plano.'
+        );
     }
 
     public function exportarTxt(Request $request)

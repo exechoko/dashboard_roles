@@ -39,6 +39,27 @@
                     </form>
                 </div>
 
+                <div class="alert alert-secondary">
+                    <h6 class="mb-2"><i class="bi bi-database-down"></i> Pre-traer detalles de expedientes</h6>
+                    <p class="mb-2">Descarga y guarda el detalle completo (acciones, recursos, cierre) de los eventos cerrados en el rango de fechas indicado. Verifica primero que existan eventos importados en ese rango.</p>
+                    <form method="POST" action="{{ route('cecoco.importar.prefetch-detalles') }}" class="row g-2 align-items-end mb-0">
+                        @csrf
+                        <div class="col-12 col-sm-5">
+                            <label for="prefetch_desde" class="form-label small mb-1">Desde</label>
+                            <input type="date" class="form-control form-control-sm" id="prefetch_desde" name="desde" required>
+                        </div>
+                        <div class="col-12 col-sm-5">
+                            <label for="prefetch_hasta" class="form-label small mb-1">Hasta</label>
+                            <input type="date" class="form-control form-control-sm" id="prefetch_hasta" name="hasta">
+                        </div>
+                        <div class="col-12 col-sm-2">
+                            <button type="submit" class="btn btn-secondary btn-sm w-100">
+                                <i class="bi bi-download"></i> Pre-traer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
                 <form method="POST" action="{{ route('cecoco.importar.post') }}" enctype="multipart/form-data" id="formImportar">
                     @csrf
                     <div class="mb-3">

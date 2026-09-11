@@ -7,6 +7,7 @@ use App\Models\EventoCecoco;
 use App\Services\CecocoExpedienteService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -42,6 +43,26 @@ class PrefetchDetallesCecoco extends Command
             return self::FAILURE;
         }
 
+        // Lock global (no atado a los parámetros): evita que la corrida diaria
+        // programada (06:45) y un disparo manual desde la vista de importación
+        // pisen la misma sesión compartida de CECOCO si se solapan en el tiempo.
+        $lock = Cache::lock('cecoco:prefetch-detalles:lock', 3600);
+
+        if (!$lock->get()) {
+            $this->warn('Ya hay una corrida de cecoco:prefetch-detalles en curso. Se omite esta ejecución.');
+            Log::warning('cecoco:prefetch-detalles: omitido, ya hay una corrida en curso.');
+            return self::SUCCESS;
+        }
+
+        try {
+            return $this->procesarRango($servicio, $fechaInicio, $fechaFin);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function procesarRango(CecocoExpedienteService $servicio, Carbon $fechaInicio, Carbon $fechaFin): int
+    {
         $pausaMs = max(0, (int) $this->option('pausa'));
         $limite = $this->option('limite') !== null ? max(1, (int) $this->option('limite')) : null;
         $refrescar = (bool) $this->option('refrescar');

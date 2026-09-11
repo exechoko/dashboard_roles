@@ -36,6 +36,13 @@
 
     <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet" type="text/css">
     <link href="{{ asset('assets/css/@fortawesome/fontawesome-free/css/all.css') }}" rel="stylesheet" type="text/css">
+
+    {{-- Sistema de diseño de la PWA (ver docs/design_pwa): tipografía e íconos --}}
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+
     <link href="{{ asset('css/movil.css') }}?v={{ filemtime(public_path('css/movil.css')) }}" rel="stylesheet" type="text/css">
 
     @yield('css')
@@ -45,17 +52,17 @@
 <body class="m-body @hasSection('hideNav') m-body--no-nav @endif">
     <header class="m-topbar">
         @hasSection('back')
-            <a href="@yield('back')" class="m-topbar__back"><i class="fas fa-arrow-left"></i></a>
+            <a href="@yield('back')" class="m-topbar__back"><span class="material-symbols-outlined">arrow_back</span></a>
         @else
             <span class="m-topbar__back"></span>
         @endif
         <h1 class="m-topbar__title">@yield('title', 'C.A.R. 911 Móvil')</h1>
         <button type="button" class="m-topbar__theme" id="mThemeToggle" aria-label="Cambiar tema claro/oscuro">
-            <i class="fas fa-adjust" id="mThemeIcon"></i>
+            <span class="material-symbols-outlined" id="mThemeIcon">contrast</span>
         </button>
         <a href="{{ route('movil.logout') }}" class="m-topbar__theme" id="mLogoutBtn" aria-label="Cerrar sesión"
             onclick="event.preventDefault(); localStorage.clear(); document.getElementById('mLogoutForm').submit();">
-            <i class="fas fa-sign-out-alt"></i>
+            <span class="material-symbols-outlined">logout</span>
         </a>
         <form id="mLogoutForm" action="{{ route('movil.logout') }}" method="POST" class="d-none">
             @csrf
@@ -63,7 +70,7 @@
     </header>
 
     <div class="m-install-banner" id="mInstallBanner" hidden>
-        <i class="fas fa-mobile-alt"></i>
+        <span class="material-symbols-outlined">install_mobile</span>
         <span id="mInstallBannerText">Instalá esta app en tu celular para tenerla a mano.</span>
         <button type="button" id="mInstallBtn" class="m-btn" style="padding:.35rem .8rem; font-size:.82rem; display:none;">Instalar</button>
         <button type="button" id="mInstallDismiss" class="m-install-banner__close" aria-label="Cerrar">&times;</button>
@@ -80,34 +87,24 @@
     @unless ($__env->hasSection('hideNav'))
         <nav class="m-bottomnav">
             <a href="{{ route('movil.index') }}" class="{{ request()->routeIs('movil.index') ? 'is-active' : '' }}">
-                <i class="fas fa-home"></i><span>Inicio</span>
+                <span class="material-symbols-outlined">home</span><span>Inicio</span>
             </a>
             @can('ver-flota')
                 <a href="{{ route('movil.flota.index') }}" class="{{ request()->routeIs('movil.flota.*') ? 'is-active' : '' }}">
-                    <i class="fas fa-satellite-dish"></i><span>Flota</span>
+                    <span class="material-symbols-outlined">local_police</span><span>Flota</span>
                 </a>
             @endcan
             @can('ver-camara')
                 <a href="{{ route('movil.camaras.index') }}" class="{{ request()->routeIs('movil.camaras.*') ? 'is-active' : '' }}">
-                    <i class="fas fa-video"></i><span>Cámaras</span>
+                    <span class="material-symbols-outlined">videocam</span><span>Cámaras</span>
                 </a>
                 <a href="{{ route('movil.mapa.index') }}" class="{{ request()->routeIs('movil.mapa.*') ? 'is-active' : '' }}">
-                    <i class="fas fa-map-marked-alt"></i><span>Mapa</span>
+                    <span class="material-symbols-outlined">map</span><span>Mapa</span>
                 </a>
             @endcan
             @can('ver-analizador-eventos-cecoco')
                 <a href="{{ route('movil.eventos.index') }}" class="{{ request()->routeIs('movil.eventos.*') ? 'is-active' : '' }}">
-                    <i class="fas fa-list-alt"></i><span>Eventos</span>
-                </a>
-            @endcan
-            @can('ver-dependencia')
-                <a href="{{ route('movil.dependencias.index') }}" class="{{ request()->routeIs('movil.dependencias.*') ? 'is-active' : '' }}">
-                    <i class="fas fa-building"></i><span>Dependencias</span>
-                </a>
-            @endcan
-            @can('ver-personal')
-                <a href="{{ route('movil.personal.index') }}" class="{{ request()->routeIs('movil.personal.*') ? 'is-active' : '' }}">
-                    <i class="fas fa-users"></i><span>Personal</span>
+                    <span class="material-symbols-outlined">emergency</span><span>Eventos</span>
                 </a>
             @endcan
         </nav>

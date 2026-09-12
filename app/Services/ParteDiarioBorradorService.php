@@ -55,6 +55,26 @@ class ParteDiarioBorradorService
     ];
 
     /**
+     * Patrones LIKE de `personals.funcion_personal911` que identifican a la
+     * sección del parte (moviles/motos), para acotar el buscador de personal
+     * de dotación/chofer. A diferencia de FUNCIONES, acá el sufijo de guardia
+     * se reemplaza por el comodín `G%` para que matchee las 4 guardias.
+     *
+     * @return list<string>
+     */
+    public static function patronesFuncionSeccion(string $tipo): array
+    {
+        $mapa = self::FUNCIONES[$tipo] ?? [];
+
+        return collect($mapa)
+            ->flatten()
+            ->map(fn (string $f): string => str_replace(['%G%', '%T%'], ['G%', '%'], $f))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
      * @return array{
      *     tipo: string,
      *     guardia: string,

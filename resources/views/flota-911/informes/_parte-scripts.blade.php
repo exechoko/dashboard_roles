@@ -138,10 +138,19 @@
 
             var dot = document.getElementById('dotacion' + rid);
             if (dot && window.jQuery) {
+                (r.dotacion_detalle || []).forEach(function(p) {
+                    if (!dot.querySelector('option[value="' + p.id + '"]')) {
+                        dot.appendChild(new Option(p.text, p.id, true, true));
+                    }
+                });
                 window.jQuery(dot).val((r.dotacion || []).map(String)).trigger('change');
             }
 
-            setSelect2(document.querySelector('select[name="recursos[' + rid + '][chofer_id]"]'), r.chofer_id || '');
+            var choferSel = document.querySelector('select[name="recursos[' + rid + '][chofer_id]"]');
+            if (choferSel && r.chofer_detalle && !choferSel.querySelector('option[value="' + r.chofer_detalle.id + '"]')) {
+                choferSel.appendChild(new Option(r.chofer_detalle.text, r.chofer_detalle.id, true, true));
+            }
+            setSelect2(choferSel, r.chofer_id || '');
         });
     }
 
@@ -184,8 +193,21 @@ document.querySelectorAll('.estado-dia-select').forEach(function(sel) {
 });
 
 $(document).ready(function() {
-    $('.select2-personal').select2({ width: '100%', language: 'es' });
-    $('.select2-chofer').select2({ width: '100%', language: 'es', allowClear: true });
+    var personalAjax = {
+        url: '{{ route('flota-911.informes.parte-diario.personal.buscar') }}',
+        dataType: 'json',
+        delay: 250,
+        data: function(params) {
+            return { tipo: @json($tipo), q: params.term || '' };
+        },
+        processResults: function(data) {
+            return { results: data.results };
+        },
+        cache: true,
+    };
+
+    $('.select2-personal').select2({ width: '100%', language: 'es', ajax: personalAjax, minimumInputLength: 0 });
+    $('.select2-chofer').select2({ width: '100%', language: 'es', allowClear: true, ajax: personalAjax, minimumInputLength: 0 });
 
     $('.select2-novedad-personal').select2({ width: '100%', language: 'es', placeholder: 'Agregar funcionario...' });
     $('.select2-novedad-personal').on('select2:select', function(e) {

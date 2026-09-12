@@ -27,7 +27,7 @@ class VehiculoInformeController extends Controller
 
     public function __construct(private readonly FlotaInformeService $informeService)
     {
-        $this->middleware('can:generar-parte-diario')->only(['parteDiario', 'generarParteDiario', 'preArmarParteDiario', 'parteDesdeUltimaGuardia', 'descargarParteDiario']);
+        $this->middleware('can:generar-parte-diario')->only(['parteDiario', 'generarParteDiario', 'preArmarParteDiario', 'parteDesdeUltimaGuardia', 'descargarParteDiario', 'buscarPersonal']);
         $this->middleware('can:ver-flota-911')->only('estadoFlota');
         $this->middleware('can:generar-estado-flota')->only('generarEstadoFlota');
     }
@@ -86,6 +86,52 @@ class VehiculoInformeController extends Controller
     }
 
     /**
+     * Búsqueda AJAX de personal para los selects de dotación/chofer del parte
+     * diario (Select2). Sin término de búsqueda, devuelve sólo el personal de
+     * la sección del tipo de parte (moviles/motos); con término, busca en
+     * TODO el personal de 911 pero prioriza el de esa sección, para no dejar
+     * a nadie invisible por una función que no matchea el patrón esperado.
+     */
+    public function buscarPersonal(Request $request): JsonResponse
+    {
+        $datos = $request->validate([
+            'tipo' => ['required', 'in:moviles,motos'],
+            'q'    => ['nullable', 'string', 'max:100'],
+        ]);
+
+        $q = trim((string) ($datos['q'] ?? ''));
+        $patrones = ParteDiarioBorradorService::patronesFuncionSeccion($datos['tipo']);
+        $base = Personal::query()->activos()->de911();
+
+        if ($q === '') {
+            $personal = (clone $base)
+                ->conFuncionLike($patrones)
+                ->orderBy('apellido')->orderBy('nombre')
+                ->limit(30)
+                ->get(['id', 'jerarquia', 'apellido', 'nombre', 'lp']);
+        } else {
+            $ordenSeccion = '(CASE WHEN ' .
+                implode(' OR ', array_fill(0, count($patrones), 'funcion_personal911 LIKE ?')) .
+                ' THEN 0 ELSE 1 END)';
+
+            $personal = $base
+                ->where(fn ($w) => $w->where('apellido', 'like', "%{$q}%")
+                    ->orWhere('nombre', 'like', "%{$q}%")
+                    ->orWhere('lp', 'like', "%{$q}%"))
+                ->orderByRaw("{$ordenSeccion}, apellido, nombre", $patrones)
+                ->limit(30)
+                ->get(['id', 'jerarquia', 'apellido', 'nombre', 'lp']);
+        }
+
+        return response()->json([
+            'results' => $personal->map(fn (Personal $p) => [
+                'id'   => $p->id,
+                'text' => $p->getNombreCompletoAttribute(),
+            ])->values(),
+        ]);
+    }
+
+    /**
      * Datos del último parte guardado de la guardia + tipo indicados (recursos
      * que circularon, zona/HT, dotación + chofer, guardia interna, licencias,
      * asignaciones y —en móviles— los 14 rubros de novedades) para precargar el
@@ -102,7 +148,7 @@ class VehiculoInformeController extends Controller
             ->where('destino_id', self::DIVISION_911_ID)
             ->where('tipo', $datos['tipo'])
             ->where('guardia', $datos['guardia'])
-            ->with(['estadosDiarios', 'dotaciones' => fn ($q) => $q->orderBy('orden'), 'asignaciones'])
+            ->with(['estadosDiarios', 'dotaciones' => fn ($q) => $q->orderBy('orden')->with('personal'), 'asignaciones'])
             ->orderByDesc('fecha_inicio')
             ->first();
 
@@ -114,14 +160,25 @@ class VehiculoInformeController extends Controller
         $recursos = [];
 
         foreach ($parte->estadosDiarios as $estado) {
-            $dot = $dotacionPorRecurso->get($estado->recurso_id, collect());
+            $dot = $dotacionPorRecurso->get($estado->recurso_id, collect())->sortBy('orden');
+            $choferRow = $dot->firstWhere('es_chofer', true);
+
             $recursos[$estado->recurso_id] = [
-                'estado_dia' => $estado->estado_dia,
-                'zona'       => $estado->zona ? (string) $estado->zona : '',
-                'ht'         => (string) ($estado->ht ?? ''),
-                'motivo'     => (string) ($estado->motivo ?? ''),
-                'dotacion'   => $dot->sortBy('orden')->pluck('personal_id')->map(fn ($id) => (int) $id)->values(),
-                'chofer_id'  => optional($dot->firstWhere('es_chofer', true))->personal_id,
+                'estado_dia'       => $estado->estado_dia,
+                'zona'             => $estado->zona ? (string) $estado->zona : '',
+                'ht'               => (string) ($estado->ht ?? ''),
+                'motivo'           => (string) ($estado->motivo ?? ''),
+                'dotacion'         => $dot->pluck('personal_id')->map(fn ($id) => (int) $id)->values(),
+                'chofer_id'        => optional($choferRow)->personal_id,
+                // Etiquetas para poder crear las <option> de Select2 (ajax, sin la nómina precargada).
+                'dotacion_detalle' => $dot->map(fn ($d) => [
+                    'id'   => (int) $d->personal_id,
+                    'text' => $d->personal?->getNombreCompletoAttribute() ?? ('#' . $d->personal_id),
+                ])->values(),
+                'chofer_detalle'   => $choferRow ? [
+                    'id'   => (int) $choferRow->personal_id,
+                    'text' => $choferRow->personal?->getNombreCompletoAttribute() ?? ('#' . $choferRow->personal_id),
+                ] : null,
             ];
         }
 

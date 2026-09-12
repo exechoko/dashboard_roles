@@ -82,6 +82,24 @@ class Personal extends Model
     }
 
     /**
+     * Filtra por funciones cuyo nombre matchea alguno de los patrones LIKE dados.
+     *
+     * @param  list<string>  $patrones
+     */
+    public function scopeConFuncionLike($query, array $patrones)
+    {
+        if ($patrones === []) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($patrones) {
+            foreach ($patrones as $patron) {
+                $q->orWhere('funcion_personal911', 'like', $patron);
+            }
+        });
+    }
+
+    /**
      * Peso de la jerarquía para ordenar (0 = más alta). Las desconocidas van al final.
      */
     public static function pesoJerarquia(?string $jerarquia): int

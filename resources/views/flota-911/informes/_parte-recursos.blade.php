@@ -1,4 +1,4 @@
-{{-- Tabla plana de recursos del parte. Espera $recursos, $personal. --}}
+{{-- Tabla plana de recursos del parte. Espera $recursos y $tipo (para el buscador AJAX de personal). --}}
 <div class="table-responsive">
     <table class="table table-modern mb-0">
         <thead>
@@ -19,8 +19,7 @@
                 $estadoDiario = $recurso->estadoDiario->first();
                 $estadoDia = $estadoDiario?->estado_dia ?? 'circula';
                 $vehiculoActual = $recurso->vehiculoActual();
-                $dotacionIds = $recurso->dotaciones->pluck('personal_id')->all();
-                $choferId = $recurso->dotaciones->firstWhere('es_chofer', true)?->personal_id;
+                $choferDotacion = $recurso->dotaciones->firstWhere('es_chofer', true);
             @endphp
             <tr>
                 <td>
@@ -61,21 +60,19 @@
                 <td>
                     <select name="{{ $idx }}[dotacion][]" class="form-control select2-personal"
                         multiple data-placeholder="Buscar personal..." id="dotacion{{ $recurso->id }}">
-                        @foreach($personal as $p)
-                            <option value="{{ $p->id }}" {{ in_array($p->id, $dotacionIds) ? 'selected' : '' }}>
-                                {{ $p->getNombreCompletoAttribute() }}
-                            </option>
+                        @foreach($recurso->dotaciones as $d)
+                            @if($d->personal)
+                                <option value="{{ $d->personal_id }}" selected>{{ $d->personal->getNombreCompletoAttribute() }}</option>
+                            @endif
                         @endforeach
                     </select>
                 </td>
                 <td>
                     <select name="{{ $idx }}[chofer_id]" class="form-control select2-chofer" data-placeholder="Chofer...">
                         <option value="">— Sin chofer —</option>
-                        @foreach($personal as $p)
-                            <option value="{{ $p->id }}" {{ (string)$choferId === (string)$p->id ? 'selected' : '' }}>
-                                {{ $p->getNombreCompletoAttribute() }}
-                            </option>
-                        @endforeach
+                        @if($choferDotacion?->personal)
+                            <option value="{{ $choferDotacion->personal_id }}" selected>{{ $choferDotacion->personal->getNombreCompletoAttribute() }}</option>
+                        @endif
                     </select>
                 </td>
             </tr>

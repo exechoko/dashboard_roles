@@ -158,6 +158,10 @@ class AuditoriaService
             return $valor ? 'true' : 'false';
         }
 
+        if (is_array($valor)) {
+            return Str::limit(json_encode($valor, JSON_UNESCAPED_UNICODE), 300);
+        }
+
         return Str::limit((string) $valor, 300);
     }
 }

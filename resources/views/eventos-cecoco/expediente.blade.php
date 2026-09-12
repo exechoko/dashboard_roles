@@ -20,12 +20,24 @@
             <a href="{{ route('cecoco.exportar.pdf-resumen', $eventoCecoco) }}" target="_blank" class="btn btn-danger">
                 <i class="bi bi-printer"></i> Imprimir Parte de Novedad
             </a>
+            @can('exportar-whatsapp-cecoco')
+                <button type="button" class="btn btn-success" title="Compartir el PDF de la Parte de Novedad"
+                    onclick="compartirPdfEvento('{{ route('cecoco.exportar.pdf-resumen', $eventoCecoco) }}', 'ParteDeNovedad_{{ $eventoCecoco->nro_expediente }}.pdf', this)">
+                    <i class="fab fa-whatsapp"></i>
+                </button>
+            @endcan
             <a href="{{ route('cecoco.exportar.pdf-original', $eventoCecoco) }}" target="_blank" class="btn btn-dark">
                 <i class="bi bi-file-earmark-pdf"></i> PDF Original CECOCO Completo
             </a>
             <a href="{{ route('cecoco.exportar.pdf-interno', $eventoCecoco) }}" target="_blank" class="btn btn-info">
                 <i class="bi bi-file-earmark-text"></i> PDF Interno Completo
             </a>
+            @can('exportar-whatsapp-cecoco')
+                <button type="button" class="btn btn-success" title="Compartir el PDF Interno Completo"
+                    onclick="compartirPdfEvento('{{ route('cecoco.exportar.pdf-interno', $eventoCecoco) }}', 'ReporteInterno_{{ $eventoCecoco->nro_expediente }}.pdf', this)">
+                    <i class="fab fa-whatsapp"></i>
+                </button>
+            @endcan
         </div>
     </div>
 
@@ -224,40 +236,62 @@
             {{-- ===== ACCIONES ===== --}}
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h5 class="mb-0"><i class="bi bi-list-check"></i> Acciones</h5>
-                <small class="text-muted">Total: <strong>{{ $detalle['total_eventos'] ?? 0 }}</strong> eventos</small>
+                <div class="d-flex align-items-center" style="gap:.75rem;">
+                    <small class="text-muted">Total: <strong>{{ $detalle['total_eventos'] ?? 0 }}</strong> eventos</small>
+                    @if(!empty($detalle['timeline']) && count($detalle['timeline']) > 0)
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-toggle="collapse"
+                            data-target="#cronologia-acciones" aria-expanded="true" aria-controls="cronologia-acciones">
+                            <i class="fas fa-eye-slash"></i> Ocultar / mostrar
+                        </button>
+                    @endif
+                </div>
             </div>
 
             @if(!empty($detalle['timeline']) && count($detalle['timeline']) > 0)
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered table-hover mb-0">
-                        <thead class="table-dark">
-                            <tr>
-                                <th style="width:155px;">Fecha - Hora</th>
-                                <th style="width:185px;">Operador</th>
-                                <th>Acción</th>
-                                <th style="width:200px;">Características</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($detalle['timeline'] as $evento)
+                <div id="cronologia-acciones" class="collapse show">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-hover mb-0">
+                            <thead class="table-dark">
                                 <tr>
-                                    <td class="text-nowrap"><small>{{ $evento['fecha_hora'] ?? '-' }}</small></td>
-                                    <td><small>{{ $evento['operador'] ?? '-' }}</small></td>
-                                    <td><small>{{ $evento['descripcion'] ?? '' }}</small></td>
-                                    <td>
-                                        @if(!empty($evento['estado']))
-                                            <small class="text-muted text-wrap text-start">{{ $evento['estado'] }}</small>
-                                        @endif
-                                    </td>
+                                    <th style="width:155px;">Fecha - Hora</th>
+                                    <th style="width:185px;">Operador</th>
+                                    <th>Acción</th>
+                                    <th style="width:200px;">Características</th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                @foreach($detalle['timeline'] as $evento)
+                                    <tr>
+                                        <td class="text-nowrap"><small>{{ $evento['fecha_hora'] ?? '-' }}</small></td>
+                                        <td><small>{{ $evento['operador'] ?? '-' }}</small></td>
+                                        <td><small>{{ \App\Helpers\CecocoAccionTraductor::traducir($evento['descripcion'] ?? '') }}</small></td>
+                                        <td>
+                                            @if(!empty($evento['estado']))
+                                                <small class="text-muted text-wrap text-start">{{ $evento['estado'] }}</small>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             @else
                 <div class="alert alert-warning">
                     <i class="bi bi-exclamation-triangle"></i> No se encontraron eventos en el expediente.
                 </div>
+            @endif
+
+            @if($tiempoRespuesta)
+                <hr class="my-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0"><i class="fas fa-stopwatch"></i> Tiempo de respuesta</h5>
+                </div>
+                <p class="mb-0">
+                    <strong>{{ $tiempoRespuesta['minutos'] }} min</strong> hasta que
+                    <strong>{{ $tiempoRespuesta['recurso'] }}</strong> pasó a "En atención"
+                    (recurso más rápido de {{ $tiempoRespuesta['recursos_totales'] }}).
+                </p>
             @endif
 
             {{-- ===== TRÁMITES ===== --}}
@@ -306,3 +340,50 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+    // Comparte el PDF ya generado como archivo adjunto (no un link) usando el
+    // share sheet nativo, para poder mandarlo por WhatsApp aunque el
+    // destinatario no tenga cuenta en el sistema. Si el navegador no soporta
+    // compartir archivos (desktop sin Web Share API), lo descarga para
+    // adjuntarlo a mano.
+    async function compartirPdfEvento(url, nombreArchivo, boton) {
+        var icono = boton.querySelector('i');
+        var claseOriginal = icono.className;
+        icono.className = 'fas fa-spinner fa-spin';
+        boton.disabled = true;
+
+        try {
+            var respuesta = await fetch(url, { credentials: 'same-origin' });
+            if (!respuesta.ok) {
+                throw new Error('HTTP ' + respuesta.status);
+            }
+
+            var blob = await respuesta.blob();
+            var archivo = new File([blob], nombreArchivo, { type: blob.type || 'application/pdf' });
+
+            if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+                await navigator.share({ files: [archivo] });
+                return;
+            }
+
+            var urlObjeto = URL.createObjectURL(blob);
+            var enlace = document.createElement('a');
+            enlace.href = urlObjeto;
+            enlace.download = nombreArchivo;
+            document.body.appendChild(enlace);
+            enlace.click();
+            document.body.removeChild(enlace);
+            URL.revokeObjectURL(urlObjeto);
+        } catch (e) {
+            if (e.name !== 'AbortError') {
+                alert('No se pudo compartir el PDF: ' + e.message);
+            }
+        } finally {
+            icono.className = claseOriginal;
+            boton.disabled = false;
+        }
+    }
+</script>
+@endpush

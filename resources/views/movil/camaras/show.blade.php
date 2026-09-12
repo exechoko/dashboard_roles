@@ -30,10 +30,66 @@
     </div>
 
     @if ($camara->sitio?->latitud && $camara->sitio?->longitud)
-        <a class="m-btn m-btn--outline" style="width:100%;"
+        <a class="m-btn m-btn--outline" style="width:100%; margin-bottom:.6rem;"
            href="https://www.google.com/maps/search/?api=1&query={{ $camara->sitio->latitud }},{{ $camara->sitio->longitud }}"
            target="_blank" rel="noopener">
             <i class="fas fa-map-marker-alt"></i> Ver ubicación en Google Maps
         </a>
     @endif
+
+    @can('reiniciar-camara')
+        @if ($camara->ip)
+            <button type="button" id="btnReiniciarCamara" class="m-btn m-btn--outline" style="width:100%;">
+                <i class="fas fa-sync-alt"></i> Reiniciar cámara
+            </button>
+            <div id="reiniciarCamaraMensaje" class="m-empty" style="display:none; padding:.6rem 0;"></div>
+        @endif
+    @endcan
 @endsection
+
+@can('reiniciar-camara')
+    @if ($camara->ip)
+        @section('scripts')
+            <script>
+                (function () {
+                    var boton = document.getElementById('btnReiniciarCamara');
+                    var mensaje = document.getElementById('reiniciarCamaraMensaje');
+
+                    boton.addEventListener('click', function () {
+                        if (!confirm('¿Seguro que desea reiniciar la cámara "{{ addslashes($camara->nombre) }}"?')) {
+                            return;
+                        }
+
+                        boton.disabled = true;
+                        var icono = boton.querySelector('i');
+                        icono.className = 'fas fa-hourglass-half fa-spin';
+                        mensaje.style.display = 'none';
+
+                        fetch('{{ route('movil.camaras.reiniciar', $camara->id) }}', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                            },
+                        })
+                            .then(function (r) { return r.json(); })
+                            .then(function (d) {
+                                mensaje.style.display = '';
+                                mensaje.innerHTML = d.ok
+                                    ? '<i class="fas fa-check-circle" style="color:var(--m-success, #22c55e);"></i> Orden de reinicio enviada. La cámara vuelve a estar disponible en unos minutos.'
+                                    : '<i class="fas fa-exclamation-triangle" style="color:var(--m-danger);"></i> ' + (d.error || 'No se pudo reiniciar la cámara.');
+                            })
+                            .catch(function () {
+                                mensaje.style.display = '';
+                                mensaje.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:var(--m-danger);"></i> No se pudo reiniciar la cámara.';
+                            })
+                            .finally(function () {
+                                boton.disabled = false;
+                                icono.className = 'fas fa-sync-alt';
+                            });
+                    });
+                })();
+            </script>
+        @endsection
+    @endif
+@endcan

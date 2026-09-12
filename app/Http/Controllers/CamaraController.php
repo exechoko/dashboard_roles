@@ -23,6 +23,7 @@ class CamaraController extends Controller
         $this->middleware('permission:editar-camara', ['only' => ['edit', 'update']]);
         $this->middleware('permission:borrar-camara', ['only' => ['destroy']]);
         $this->middleware('permission:ver-stream-camara', ['only' => ['snapshot', 'stream', 'testConexion']]);
+        $this->middleware('permission:reiniciar-camara', ['only' => ['reiniciar']]);
     }
 
     public function index(Request $request)

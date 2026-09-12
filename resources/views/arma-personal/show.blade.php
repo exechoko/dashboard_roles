@@ -117,6 +117,40 @@
                 </div>
             </div>
 
+            @can('ver-datos-personales-personal')
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h4><i class="fas fa-address-card"></i> Datos Personales</h4>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-borderless mb-0">
+                                    <tr>
+                                        <th style="width: 20%">Dirección:</th>
+                                        <td>{{ $personal->direccion ?? '-' }}</td>
+                                        <th style="width: 20%">Teléfono:</th>
+                                        <td style="white-space: pre-line;">{{ $personal->telefono ?? '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Email:</th>
+                                        <td>{{ $personal->email ?? '-' }}</td>
+                                        <th>Estado Civil:</th>
+                                        <td>{{ $personal->estado_civil ?? '-' }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Fecha de Nacimiento:</th>
+                                        <td>{{ optional($personal->fecha_nacimiento)->format('d/m/Y') ?? '-' }}</td>
+                                        <th>Edad:</th>
+                                        <td>{{ $personal->edad !== null ? $personal->edad . ' años' : '-' }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endcan
+
             @php($resumenLicencia = $personal->resumen_licencia_actual)
             <div class="row mt-3">
                 <div class="col-md-12">

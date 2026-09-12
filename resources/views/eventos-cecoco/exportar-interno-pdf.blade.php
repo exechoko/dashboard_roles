@@ -1,45 +1,48 @@
-@extends('layouts.print')
-
-@section('content')
-<style>
-    body { font-family: 'Segoe UI', Arial, sans-serif; }
-    .rpt-header { border-bottom: 3px solid #0d3b66; padding-bottom: 12px; margin-bottom: 20px; }
-    .rpt-header h1 { font-size: 19px; margin: 0 0 6px; color: #0d3b66; }
-    .rpt-header .rpt-sub { font-size: 12px; color: #555; }
-    .rpt-badge {
-        display: inline-block;
-        padding: 3px 10px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: bold;
-        color: #fff;
-        background: #0d3b66;
-        vertical-align: middle;
-    }
-    .rpt-section { margin-bottom: 22px; page-break-inside: avoid; }
-    .rpt-section h2 {
-        font-size: 14px;
-        color: #0d3b66;
-        border-bottom: 1px solid #ccc;
-        padding-bottom: 4px;
-        margin-bottom: 8px;
-    }
-    .rpt-grid { display: flex; gap: 20px; }
-    .rpt-grid > div { flex: 1; }
-    table.rpt-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 0; }
-    table.rpt-table th, table.rpt-table td { border: 1px solid #ccc; padding: 5px 7px; text-align: left; }
-    table.rpt-table th { background: #f0f2f5; width: 34%; color: #000; }
-    table.rpt-table thead tr { background: #0d3b66; }
-    .rpt-text-block {
-        border: 1px solid #ddd;
-        background: #f8f9fa;
-        padding: 10px;
-        white-space: pre-wrap;
-        font-size: 12px;
-        border-radius: 4px;
-    }
-    .rpt-footer { margin-top: 30px; font-size: 10px; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
-</style>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte Interno &mdash; Expediente {{ $detalle['nro_expediente'] ?? $eventoCecoco->nro_expediente }}</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #000; }
+        .rpt-header { border-bottom: 3px solid #0d3b66; padding-bottom: 12px; margin-bottom: 20px; }
+        .rpt-header h1 { font-size: 19px; margin: 0 0 6px; color: #0d3b66; }
+        .rpt-header .rpt-sub { font-size: 12px; color: #555; }
+        .rpt-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #fff;
+            background: #0d3b66;
+        }
+        .rpt-section { margin-bottom: 22px; page-break-inside: avoid; }
+        .rpt-section h2 {
+            font-size: 14px;
+            color: #0d3b66;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 4px;
+            margin-bottom: 8px;
+        }
+        table.rpt-grid { width: 100%; border-collapse: collapse; }
+        table.rpt-grid > tbody > tr > td { width: 50%; vertical-align: top; padding: 0 10px 0 0; }
+        table.rpt-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 0; }
+        table.rpt-table th, table.rpt-table td { border: 1px solid #ccc; padding: 5px 7px; text-align: left; }
+        table.rpt-table th { background: #f0f2f5; width: 34%; color: #000; }
+        table.rpt-table thead tr { background: #0d3b66; }
+        .rpt-text-block {
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+            padding: 10px;
+            white-space: pre-wrap;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+        .rpt-footer { margin-top: 30px; font-size: 10px; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+    </style>
+</head>
+<body>
 
 @php
     $nroExpediente = str_replace('Expediente: ', '', $detalle['nro_expediente'] ?? $eventoCecoco->nro_expediente);
@@ -57,57 +60,59 @@
 
 <div class="rpt-section">
     <h2>Datos generales</h2>
-    <div class="rpt-grid">
-        <div>
-            <table class="rpt-table">
-                <tbody>
-                    <tr>
-                        <th>Fecha creaci&oacute;n</th>
-                        <td>{{ $detalle['fecha_hora_inicial'] ?: ($eventoCecoco->fecha_hora ? $eventoCecoco->fecha_hora->format('d/m/Y H:i:s') : '-') }}</td>
-                    </tr>
-                    <tr>
-                        <th>Operador</th>
-                        <td>{{ $detalle['operador_inicial'] ?: ($eventoCecoco->operador ?? '-') }}</td>
-                    </tr>
-                    <tr>
-                        <th>Tel&eacute;fono</th>
-                        <td>{{ $detalle['telefono'] ?: ($eventoCecoco->telefono ?? '-') }}</td>
-                    </tr>
-                    <tr>
-                        <th>Direcci&oacute;n</th>
-                        <td>{{ $detalle['direccion'] ?: ($eventoCecoco->direccion ?? '-') }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-        <div>
-            <table class="rpt-table">
-                <tbody>
-                    @if(!empty($detalle['historial']['puesto']) || $eventoCecoco->box)
+    <table class="rpt-grid">
+        <tr>
+            <td>
+                <table class="rpt-table">
+                    <tbody>
                         <tr>
-                            <th>Puesto</th>
-                            <td>{{ $detalle['historial']['puesto'] ?? $eventoCecoco->box }}</td>
+                            <th>Fecha creaci&oacute;n</th>
+                            <td>{{ $detalle['fecha_hora_inicial'] ?: ($eventoCecoco->fecha_hora ? $eventoCecoco->fecha_hora->format('d/m/Y H:i:s') : '-') }}</td>
                         </tr>
-                    @endif
-                    @if(!empty($detalle['historial']['barrio']))
-                        <tr><th>Barrio</th><td>{{ $detalle['historial']['barrio'] }}</td></tr>
-                    @endif
-                    @if(!empty($detalle['historial']['jurisdiccion']))
-                        <tr><th>Jurisdicci&oacute;n</th><td>{{ $detalle['historial']['jurisdiccion'] }}</td></tr>
-                    @endif
-                    @if(!empty($detalle['historial']['estado']))
-                        <tr><th>Estado</th><td>{{ $detalle['historial']['estado'] }}</td></tr>
-                    @endif
-                    @if(!empty($detalle['historial']['municipio']))
-                        <tr><th>Municipio</th><td>{{ $detalle['historial']['municipio'] }}</td></tr>
-                    @endif
-                    @if(!empty($detalle['historial']['sector']))
-                        <tr><th>Sector</th><td>{{ $detalle['historial']['sector'] }}</td></tr>
-                    @endif
-                </tbody>
-            </table>
-        </div>
-    </div>
+                        <tr>
+                            <th>Operador</th>
+                            <td>{{ $detalle['operador_inicial'] ?: ($eventoCecoco->operador ?? '-') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Tel&eacute;fono</th>
+                            <td>{{ $detalle['telefono'] ?: ($eventoCecoco->telefono ?? '-') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Direcci&oacute;n</th>
+                            <td>{{ $detalle['direccion'] ?: ($eventoCecoco->direccion ?? '-') }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+            <td>
+                <table class="rpt-table">
+                    <tbody>
+                        @if(!empty($detalle['historial']['puesto']) || $eventoCecoco->box)
+                            <tr>
+                                <th>Puesto</th>
+                                <td>{{ $detalle['historial']['puesto'] ?? $eventoCecoco->box }}</td>
+                            </tr>
+                        @endif
+                        @if(!empty($detalle['historial']['barrio']))
+                            <tr><th>Barrio</th><td>{{ $detalle['historial']['barrio'] }}</td></tr>
+                        @endif
+                        @if(!empty($detalle['historial']['jurisdiccion']))
+                            <tr><th>Jurisdicci&oacute;n</th><td>{{ $detalle['historial']['jurisdiccion'] }}</td></tr>
+                        @endif
+                        @if(!empty($detalle['historial']['estado']))
+                            <tr><th>Estado</th><td>{{ $detalle['historial']['estado'] }}</td></tr>
+                        @endif
+                        @if(!empty($detalle['historial']['municipio']))
+                            <tr><th>Municipio</th><td>{{ $detalle['historial']['municipio'] }}</td></tr>
+                        @endif
+                        @if(!empty($detalle['historial']['sector']))
+                            <tr><th>Sector</th><td>{{ $detalle['historial']['sector'] }}</td></tr>
+                        @endif
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
 </div>
 
 @if(!empty($detalle['descripcion_inicial']))
@@ -131,6 +136,19 @@
             </tbody>
         </table>
         <div class="rpt-text-block">{{ $cierre['observaciones'] ?: 'Sin observaciones de cierre.' }}</div>
+    </div>
+@endif
+
+@if($tiempoRespuesta)
+    <div class="rpt-section">
+        <h2>Tiempo de respuesta</h2>
+        <table class="rpt-table" style="width:auto;">
+            <tbody>
+                <tr><th>Recurso m&aacute;s r&aacute;pido</th><td>{{ $tiempoRespuesta['recurso'] }}</td></tr>
+                <tr><th>Minutos hasta atenci&oacute;n</th><td>{{ $tiempoRespuesta['minutos'] }} min</td></tr>
+                <tr><th>Recursos con tiempo calculado</th><td>{{ $tiempoRespuesta['recursos_totales'] }}</td></tr>
+            </tbody>
+        </table>
     </div>
 @endif
 
@@ -193,4 +211,6 @@
 <div class="rpt-footer">
     Reporte generado autom&aacute;ticamente desde el sistema de gesti&oacute;n &mdash; datos obtenidos de CECOCO.
 </div>
-@endsection
+
+</body>
+</html>

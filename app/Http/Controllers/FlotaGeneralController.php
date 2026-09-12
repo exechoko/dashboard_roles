@@ -1279,7 +1279,7 @@ class FlotaGeneralController extends Controller
                 //Cambiar estado al equipo e issi
                 $this->cambiarEstadoAlEquipo($request->equipo, $tipo_de_mov->id, $soloModificaHistorico, $estadoFinal);
                 $this->relevarAccesoriosDelEquipo($request, $request->equipo, $soloModificaHistorico, $historico);
-                if ($request->nuevoIssi) {
+                if ($request->nuevoIssi || $request->nuevoNombreIssi) {
                     $this->cambiarIssiAlEquipo($request, $flota, $soloModificaHistorico, $tipo_de_mov->id);
                 }
             }
@@ -1311,30 +1311,45 @@ class FlotaGeneralController extends Controller
             }
 
             $issi = $request->nuevoIssi;
+            $nombreIssiInput = $request->nuevoNombreIssi;
             if ($e) {
-                $observacionExtra = '';
-                // Caso 1: El equipo no tiene ISSI y se le asigna uno nuevo
-                if (empty($e->issi) && !empty($issi)) {
-                    $fecha = Carbon::parse($request->fecha_asignacion)->format('d/m/Y H:i');
-                    $observacionExtra = "- Fecha de asignación de ISSI: {$fecha}\n";
-                    $observacionExtra .= "* ISSI asignado: {$issi}";
+                $issiAnterior = $e->issi;
+                $nombreIssiAnterior = $e->nombre_issi;
+
+                $issiCambio = !empty($issi) && $issi != $issiAnterior;
+                if ($issiCambio) {
                     $e->issi = $issi;
-                    $e->nombre_issi = $flota ? $flota->recurso->nombre : null;
-                }
-                // Caso 2: El equipo ya tiene ISSI y se cambia por uno nuevo
-                elseif (!empty($e->issi) && !empty($issi) && $e->issi != $issi) {
-                    $fecha = Carbon::parse($request->fecha_asignacion)->format('d/m/Y H:i');
-                    $observacionExtra = "- Fecha de modificación: {$fecha}\n";
-                    $observacionExtra .= "* ISSI anterior: {$e->issi}\n";
-                    $observacionExtra .= "* ISSI nuevo: {$issi}";
-                    $e->issi = $issi;
-                    $e->nombre_issi = $flota ? $flota->recurso->nombre : null;
                 }
 
-                if ($observacionExtra) {
-                    // Concatenar observación nueva a las anteriores (si las hay)
-                    $e->observaciones = trim($e->observaciones ?? '') . "\n\n" . $observacionExtra;
+                // Si no se indicó un ID ISSI explícito, se autocompleta con el
+                // nombre del recurso (comportamiento histórico), pero solo si
+                // el ISSI cambió.
+                $nombreIssiFinal = $nombreIssiInput ?: (($issiCambio && $flota) ? $flota->recurso->nombre : null);
+                $nombreIssiCambio = !empty($nombreIssiFinal) && $nombreIssiFinal != $nombreIssiAnterior;
+                if ($nombreIssiCambio) {
+                    $e->nombre_issi = $nombreIssiFinal;
                 }
+
+                if ($issiCambio || $nombreIssiCambio) {
+                    $fecha = Carbon::parse($request->fecha_asignacion)->format('d/m/Y H:i');
+                    $lineas = ["- Fecha de modificación: {$fecha}"];
+
+                    if ($issiCambio) {
+                        $lineas[] = empty($issiAnterior)
+                            ? "* ISSI asignado: {$issi}"
+                            : "* ISSI anterior: {$issiAnterior}\n* ISSI nuevo: {$issi}";
+                    }
+
+                    if ($nombreIssiCambio) {
+                        $lineas[] = empty($nombreIssiAnterior)
+                            ? "* ID ISSI asignado: {$nombreIssiFinal}"
+                            : "* ID ISSI anterior: {$nombreIssiAnterior}\n* ID ISSI nuevo: {$nombreIssiFinal}";
+                    }
+
+                    // Concatenar observación nueva a las anteriores (si las hay)
+                    $e->observaciones = trim($e->observaciones ?? '') . "\n\n" . implode("\n", $lineas);
+                }
+
                 $e->save();
             }
             DB::commit();

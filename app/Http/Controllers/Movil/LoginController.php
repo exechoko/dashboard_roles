@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Movil;
 
 use App\Http\Controllers\Auth\LoginController as BaseLoginController;
+use Illuminate\Http\Request;
 
 class LoginController extends BaseLoginController
 {
@@ -16,5 +17,16 @@ class LoginController extends BaseLoginController
     public function showLoginForm()
     {
         return view('movil.login');
+    }
+
+    /**
+     * Al cerrar sesión desde /movil/logout (el botón de la app móvil), volver
+     * al login propio de la app móvil en vez del login de escritorio (que es
+     * adónde manda por defecto AuthenticatesUsers::logout() al pegarle a la
+     * ruta compartida /logout).
+     */
+    protected function loggedOut(Request $request)
+    {
+        return redirect()->route('movil.login');
     }
 }

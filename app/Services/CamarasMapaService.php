@@ -64,7 +64,10 @@ class CamarasMapaService
                     'id' => $camara['numero'],
                     'titulo' => $camara['titulo'],
                     'tipo_camara' => $camara['tipo_camara'],
-                    'imagen' => $camara['imagen'],
+                    // URL absoluta: geoJson() se consume desde /movil (rutas
+                    // relativas del valor crudo de la BD romperían ahí, aunque
+                    // "por casualidad" resuelven bien en las páginas de escritorio).
+                    'imagen' => !empty($camara['imagen']) ? asset($camara['imagen']) : null,
                     'sitio' => $camara['sitio'],
                     'dependencia' => $camara['dependencia'],
                     'etapa' => $camara['etapa'] ?? null,

@@ -120,12 +120,53 @@
             if (actualizado) actualizado.textContent = 'Datos de la última sincronización con Personal 911';
         }
 
+        function renderCamarasLibreNms(datos) {
+            var total = document.getElementById('camaras-librenms-total');
+            var boton = document.getElementById('btn-ver-camaras-librenms');
+            var detalle = document.getElementById('camaras-librenms-detalle');
+            var actualizado = document.getElementById('camaras-librenms-actualizado');
+
+            if (!total) return;
+
+            if (!datos || !datos.disponible) {
+                total.textContent = 'sin lectura reciente';
+                total.className = 'badge badge-warning';
+                if (boton) boton.disabled = true;
+                return;
+            }
+
+            var caidas = datos.caidas || 0;
+            total.textContent = caidas > 0 ? (caidas + ' caída' + (caidas === 1 ? '' : 's') + ' de ' + datos.total) : 'las ' + datos.total + ' online';
+            total.className = caidas > 0 ? 'badge badge-danger' : 'badge badge-success';
+
+            if (boton) boton.disabled = caidas === 0;
+
+            if (!detalle) return;
+
+            if (caidas === 0) {
+                detalle.innerHTML = '<div class="alert alert-success mb-0"><i class="fas fa-check-circle mr-2"></i>Todas las cámaras respondiendo.</div>';
+            } else {
+                detalle.innerHTML = (datos.offline || []).map(function(cam) {
+                    return '<div class="d-flex justify-content-between align-items-center border-bottom py-2">'
+                        + '<div><i class="fas fa-video-slash mr-2 text-danger"></i><strong>' + escapar(cam.nombre) + '</strong>'
+                        + (cam.ip ? ' <small class="text-muted">' + escapar(cam.ip) + '</small>' : '') + '</div>'
+                        + '<small class="text-muted">sin responder hace ' + escapar(cam.caida_hace || '?') + '</small>'
+                        + '</div>';
+                }).join('');
+            }
+
+            if (actualizado && datos.consultado_en) {
+                actualizado.textContent = 'Lectura LibreNMS: ' + new Date(datos.consultado_en).toLocaleString('es-AR');
+            }
+        }
+
         function verificar() {
             fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(function(r) { return r.json(); })
                 .then(function(d) {
                     renderConflictosInventario(d.inventario_conflictos);
                     renderDiscrepanciasInventario(d.inventario_discrepancias);
+                    renderCamarasLibreNms(d.camaras_librenms);
 
                     // Tabla jobs no existe aún
                     if (d.error === 'tabla_jobs_inexistente') {

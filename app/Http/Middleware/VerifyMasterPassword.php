@@ -45,7 +45,11 @@ class VerifyMasterPassword
 
         session(['master_password_intended' => $request->fullUrl()]);
 
-        return redirect()->route('password-vault.master-password');
+        $ruta = $request->is('movil/*')
+            ? 'movil.password-vault.master-password'
+            : 'password-vault.master-password';
+
+        return redirect()->route($ruta);
     }
 
     public static function desbloqueoVigente(): bool

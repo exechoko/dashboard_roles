@@ -161,6 +161,12 @@
                                             <input type="text" name="nuevoIssi" class="form-control" value="">
                                         </div>
                                     </div>
+                                    <div class="col-xs-12 col-sm-12 col-md-6" id="nuevoIdIssi">
+                                        <div class="form-group">
+                                            <label for="">Nuevo ID ISSI</label>
+                                            <input type="text" name="nuevoNombreIssi" class="form-control" value="">
+                                        </div>
+                                    </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6" id="estadoEquipo">
                                         <div class="form-group">
                                             <label for="recurso">Estado final del equipo</label>

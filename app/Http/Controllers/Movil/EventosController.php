@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Movil;
 use App\Http\Controllers\Controller;
 use App\Models\EventoCecoco;
 use App\Services\CecocoExpedienteService;
+use App\Services\TiempoRespuestaCecocoService;
 use Illuminate\Http\Request;
 
 class EventosController extends Controller
 {
-    public function __construct(private CecocoExpedienteService $expedienteService)
-    {
+    public function __construct(
+        private CecocoExpedienteService $expedienteService,
+        private TiempoRespuestaCecocoService $tiempoRespuestaService
+    ) {
         $this->middleware('permission:ver-analizador-eventos-cecoco')->only('index');
     }
 
@@ -40,9 +43,11 @@ class EventosController extends Controller
 
         $detalle = null;
         $errorExpediente = null;
+        $tiempoRespuesta = null;
 
         try {
             $detalle = $this->expedienteService->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
+            $tiempoRespuesta = $this->tiempoRespuestaService->calcularDesdeTimeline($detalle['timeline'] ?? []);
         } catch (\Throwable $e) {
             $errorExpediente = 'No se pudo obtener el expediente completo: ' . $e->getMessage();
         }
@@ -54,6 +59,6 @@ class EventosController extends Controller
             ? url()->previous()
             : route('movil.eventos.index');
 
-        return view('movil.eventos.show', compact('eventoCecoco', 'detalle', 'errorExpediente', 'volver'));
+        return view('movil.eventos.show', compact('eventoCecoco', 'detalle', 'errorExpediente', 'tiempoRespuesta', 'volver'));
     }
 }

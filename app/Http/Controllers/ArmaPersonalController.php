@@ -94,13 +94,20 @@ class ArmaPersonalController extends Controller
             ->orderBy('tipo_licencia')
             ->get();
 
+        $totalActivos = Personal::count();
+        $totalDeLicencia = Personal::whereHas('licencias', function (Builder $licencias): void {
+            $licencias->vigentes();
+        })->count();
+
         return view('arma-personal.index', compact(
             'personales',
             'busqueda',
             'ver_eliminados',
             'estadoLicencia',
             'tipoLicencia',
-            'tiposLicencia'
+            'tiposLicencia',
+            'totalActivos',
+            'totalDeLicencia'
         ));
     }
 
@@ -185,6 +192,11 @@ class ArmaPersonalController extends Controller
             $personal->update([
                 'jerarquia' => $data['jerarquia'],
                 'dni' => $data['dni'] ?? null,
+                'direccion' => $data['direccion'] ?? null,
+                'telefono' => $data['telefono'] ?? null,
+                'email' => $data['email'] ?? null,
+                'estado_civil' => $data['estado_civil'] ?? null,
+                'fecha_nacimiento' => $data['fecha_nacimiento'] ?? null,
                 'updated_by' => auth()->id(),
             ]);
         });

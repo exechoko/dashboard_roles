@@ -30,6 +30,7 @@ class Personal911ImportService
             ->leftJoin('jerarquias as j', 'j.Id_Jerarquia', '=', 'f.IdJerarquia_Func')
             ->leftJoin('tipo_estados as te', 'te.Id_TipoEstado', '=', 'f.Id_Estado')
             ->leftJoin('funciones as fn', 'fn.Id_Funcion', '=', 'f.Funcion')
+            ->leftJoin('estcivil as ec', 'ec.Id_ECivil', '=', 'f.Estado_Civil_Func')
             ->select([
                 'f.Id_Func',
                 'f.Ape_Func',
@@ -45,6 +46,12 @@ class Personal911ImportService
                 'ta.Nombre_TipoArma',
                 'j.Nom_JerarquiaNueva',
                 'j.Nom_Jerarquia',
+                'f.Dom_Func',
+                'f.Telefono1_Func',
+                'f.Telefono2_Func',
+                'f.Email_Func',
+                'f.FecNac_Func',
+                'ec.Nom_ECivil',
             ])
             ->where(function ($query): void {
                 $query->where('f.Id_Estado', 2)
@@ -109,6 +116,12 @@ class Personal911ImportService
                 }
 
                 $doc = trim((string) $funcionario->Doc_Func);
+                $direccion = trim((string) $funcionario->Dom_Func);
+                $telefono = collect([trim((string) $funcionario->Telefono1_Func), trim((string) $funcionario->Telefono2_Func)])
+                    ->filter(fn (string $numero): bool => $numero !== '')
+                    ->implode("\n");
+                $email = trim((string) $funcionario->Email_Func);
+                $estadoCivil = trim((string) $funcionario->Nom_ECivil);
 
                 $personal->fill([
                     'personal911_id' => $funcionario->Id_Func,
@@ -121,6 +134,11 @@ class Personal911ImportService
                     'fecha_situacion_personal911' => $funcionario->fecha_situacion_personal911 ?: null,
                     'funcion_personal911' => trim((string) $funcionario->funcion_personal911) ?: null,
                     'observaciones_personal911' => trim((string) $funcionario->observaciones_personal911) ?: null,
+                    'direccion' => $direccion !== '' ? $direccion : $personal->direccion,
+                    'telefono' => $telefono !== '' ? $telefono : $personal->telefono,
+                    'email' => $email !== '' ? $email : $personal->email,
+                    'estado_civil' => $estadoCivil !== '' ? $estadoCivil : $personal->estado_civil,
+                    'fecha_nacimiento' => $funcionario->FecNac_Func ?: $personal->fecha_nacimiento,
                 ]);
                 $personal->deleted_at = null;
                 $personal->save();

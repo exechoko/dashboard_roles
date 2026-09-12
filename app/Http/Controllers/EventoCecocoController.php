@@ -14,6 +14,9 @@ use App\Services\CecocoModulacionesLocalService;
 use App\Services\ResumenEventoIaService;
 use App\Services\TiempoRespuestaCecocoService;
 use App\Jobs\DescargarEventosCecoco;
+use App\Jobs\PrefetchDetallesCecocoJob;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -143,7 +146,11 @@ class EventoCecocoController extends Controller
             'page',
         ]);
 
-        return view('eventos-cecoco.show', compact('eventoCecoco', 'filtros'));
+        $tiempoRespuesta = $this->tiempoRespuestaService->calcularDesdeTimeline(
+            $eventoCecoco->detalle->detalle_json['timeline'] ?? []
+        );
+
+        return view('eventos-cecoco.show', compact('eventoCecoco', 'filtros', 'tiempoRespuesta'));
     }
 
     public function importarForm()
@@ -235,6 +242,55 @@ class EventoCecocoController extends Controller
 
         return redirect()->route('cecoco.importar')
             ->with('success', 'Importación de eventos de hoy agregada a la cola. La descarga y el procesamiento se ejecutan en segundo plano.');
+    }
+
+    public function prefetchDetalles(Request $request)
+    {
+        $validated = $request->validate([
+            'desde' => 'required|date',
+            'hasta' => 'nullable|date|after_or_equal:desde',
+        ]);
+
+        $desde = Carbon::parse($validated['desde'])->startOfDay();
+        $hasta = isset($validated['hasta'])
+            ? Carbon::parse($validated['hasta'])->endOfDay()
+            : $desde->copy()->endOfDay();
+
+        $hayDatos = EventoCecoco::whereBetween('fecha_hora', [$desde, $hasta])->exists();
+
+        if (!$hayDatos) {
+            return redirect()->route('cecoco.importar')->with(
+                'error',
+                'No hay eventos importados para el rango ' . $desde->format('d/m/Y') . ' - ' . $hasta->format('d/m/Y') . '. Importá los eventos de esa fecha antes de pre-traer los detalles.'
+            );
+        }
+
+        PrefetchDetallesCecocoJob::dispatch($desde->toDateString(), $hasta->toDateString());
+
+        return redirect()->route('cecoco.importar')->with(
+            'success',
+            'Pre-traído de detalles encolado para el rango ' . $desde->format('d/m/Y') . ' - ' . $hasta->format('d/m/Y') . '. Se ejecuta en segundo plano.'
+        );
+    }
+
+    public function prefetchDetallesEstado(): JsonResponse
+    {
+        return response()->json(Cache::get('cecoco:prefetch-detalles:progreso') ?? ['en_curso' => false]);
+    }
+
+    public function prefetchDetallesCancelar()
+    {
+        $progreso = Cache::get('cecoco:prefetch-detalles:progreso');
+
+        if (!($progreso['en_curso'] ?? false)) {
+            return redirect()->route('cecoco.importar')->with('error', 'No hay ninguna corrida de pre-traído en curso para cancelar.');
+        }
+
+        // El comando revisa este flag antes de procesar cada expediente, así que
+        // el corte no es instantáneo: termina el que está en curso y ahí para.
+        Cache::put('cecoco:prefetch-detalles:cancelar', true, now()->addHour());
+
+        return redirect()->route('cecoco.importar')->with('success', 'Cancelación solicitada. El proceso se detiene al terminar el expediente actual.');
     }
 
     public function exportarTxt(Request $request)
@@ -375,6 +431,7 @@ class EventoCecocoController extends Controller
 
         try {
             $detalle = $this->expedienteService->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
+            $tiempoRespuesta = $this->tiempoRespuestaService->calcularDesdeTimeline($detalle['timeline'] ?? []);
 
             $filtros = $request->only([
                 'anio',
@@ -392,7 +449,7 @@ class EventoCecocoController extends Controller
                 'page',
             ]);
 
-            return view('eventos-cecoco.expediente', compact('eventoCecoco', 'detalle', 'filtros'));
+            return view('eventos-cecoco.expediente', compact('eventoCecoco', 'detalle', 'filtros', 'tiempoRespuesta'));
 
         } catch (\Exception $e) {
             return redirect()
@@ -458,7 +515,8 @@ class EventoCecocoController extends Controller
 
     /**
      * Exporta el expediente en un formato interno prolijo (propio del sistema),
-     * listo para imprimir/guardar como PDF.
+     * generado como PDF real (dompdf) para poder verlo o compartirlo como
+     * archivo, no solo imprimirlo desde el navegador.
      */
     public function exportarPdfInterno(Request $request, EventoCecoco $eventoCecoco)
     {
@@ -466,8 +524,11 @@ class EventoCecocoController extends Controller
 
         try {
             $detalle = $this->expedienteService->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
+            $tiempoRespuesta = $this->tiempoRespuestaService->calcularDesdeTimeline($detalle['timeline'] ?? []);
 
-            return view('eventos-cecoco.exportar-interno-pdf', compact('eventoCecoco', 'detalle'));
+            $pdf = Pdf::loadView('eventos-cecoco.exportar-interno-pdf', compact('eventoCecoco', 'detalle', 'tiempoRespuesta'));
+
+            return $pdf->stream('ReporteInterno_' . $eventoCecoco->nro_expediente . '.pdf');
         } catch (\Exception $e) {
             return redirect()
                 ->route('cecoco.show', $eventoCecoco)

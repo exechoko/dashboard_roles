@@ -7,6 +7,7 @@ use App\Models\EventoCecoco;
 use App\Services\CecocoExpedienteService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -42,10 +43,36 @@ class PrefetchDetallesCecoco extends Command
             return self::FAILURE;
         }
 
+        // Lock global (no atado a los parámetros): evita que la corrida diaria
+        // programada (06:45) y un disparo manual desde la vista de importación
+        // pisen la misma sesión compartida de CECOCO si se solapan en el tiempo.
+        $lock = Cache::lock('cecoco:prefetch-detalles:lock', 3600);
+
+        if (!$lock->get()) {
+            $this->warn('Ya hay una corrida de cecoco:prefetch-detalles en curso. Se omite esta ejecución.');
+            Log::warning('cecoco:prefetch-detalles: omitido, ya hay una corrida en curso.');
+            return self::SUCCESS;
+        }
+
+        // Descarta un pedido de cancelación de una corrida anterior que haya
+        // quedado sin consumir (no debería pasar, pero así una corrida nueva
+        // nunca arranca ya cancelada).
+        Cache::forget('cecoco:prefetch-detalles:cancelar');
+
+        try {
+            return $this->procesarRango($servicio, $fechaInicio, $fechaFin);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function procesarRango(CecocoExpedienteService $servicio, Carbon $fechaInicio, Carbon $fechaFin): int
+    {
         $pausaMs = max(0, (int) $this->option('pausa'));
         $limite = $this->option('limite') !== null ? max(1, (int) $this->option('limite')) : null;
         $refrescar = (bool) $this->option('refrescar');
         $contexto = $fechaInicio->format('Y-m-d') . '..' . $fechaFin->format('Y-m-d');
+        $rangoLegible = $fechaInicio->format('d/m/Y') . ' - ' . $fechaFin->format('d/m/Y');
 
         $this->line('========================================');
         $this->line('[' . now()->format('Y-m-d H:i:s') . '] cecoco:prefetch-detalles iniciado');
@@ -74,10 +101,32 @@ class PrefetchDetallesCecoco extends Command
         $this->info("Expedientes a procesar: {$total}");
 
         if ($total === 0) {
+            $this->guardarProgreso([
+                'en_curso' => false,
+                'rango' => $rangoLegible,
+                'total' => 0,
+                'procesados' => 0,
+                'ok' => 0,
+                'errores' => 0,
+                'finalizado_en' => now()->toIso8601String(),
+            ]);
             $this->info('Nada pendiente. Fin.');
             $this->line('========================================');
             return self::SUCCESS;
         }
+
+        $iniciadoEn = now()->toIso8601String();
+
+        $this->guardarProgreso([
+            'en_curso' => true,
+            'rango' => $rangoLegible,
+            'total' => $total,
+            'procesados' => 0,
+            'ok' => 0,
+            'errores' => 0,
+            'iniciado_en' => $iniciadoEn,
+            'actualizado_en' => $iniciadoEn,
+        ]);
 
         Log::info('cecoco:prefetch-detalles iniciado', ['rango' => $contexto, 'total' => $total]);
 
@@ -88,6 +137,28 @@ class PrefetchDetallesCecoco extends Command
         $t0 = microtime(true);
 
         foreach ($eventos as $i => $evento) {
+            if (Cache::get('cecoco:prefetch-detalles:cancelar')) {
+                Cache::forget('cecoco:prefetch-detalles:cancelar');
+                $this->warn("Cancelado por el usuario en {$i}/{$total}.");
+                Log::warning('cecoco:prefetch-detalles: cancelado por el usuario', [
+                    'rango' => $contexto,
+                    'procesados' => $i,
+                    'total' => $total,
+                ]);
+                $this->guardarProgreso([
+                    'en_curso' => false,
+                    'cancelado' => true,
+                    'rango' => $rangoLegible,
+                    'total' => $total,
+                    'procesados' => $i,
+                    'ok' => $ok,
+                    'errores' => $errores,
+                    'iniciado_en' => $iniciadoEn,
+                    'finalizado_en' => now()->toIso8601String(),
+                ]);
+                return self::SUCCESS;
+            }
+
             try {
                 $detalle = $servicio->obtenerDetalleExpediente((string) $evento->nro_expediente, $client);
 
@@ -122,8 +193,18 @@ class PrefetchDetallesCecoco extends Command
                 }
             }
 
-            if (($i + 1) % 50 === 0) {
+            if (($i + 1) % 50 === 0 || ($i + 1) === $total) {
                 $this->line('  [' . now()->format('H:i:s') . '] ' . ($i + 1) . "/{$total} (ok: {$ok}, errores: {$errores})");
+                $this->guardarProgreso([
+                    'en_curso' => true,
+                    'rango' => $rangoLegible,
+                    'total' => $total,
+                    'procesados' => $i + 1,
+                    'ok' => $ok,
+                    'errores' => $errores,
+                    'iniciado_en' => $iniciadoEn,
+                    'actualizado_en' => now()->toIso8601String(),
+                ]);
             }
 
             if ($pausaMs > 0) {
@@ -135,6 +216,17 @@ class PrefetchDetallesCecoco extends Command
         $this->info("Listo: {$ok} guardados, {$errores} errores en {$segundos}s.");
         $this->line('========================================');
 
+        $this->guardarProgreso([
+            'en_curso' => false,
+            'rango' => $rangoLegible,
+            'total' => $total,
+            'procesados' => $total,
+            'ok' => $ok,
+            'errores' => $errores,
+            'iniciado_en' => $iniciadoEn,
+            'finalizado_en' => now()->toIso8601String(),
+        ]);
+
         Log::info('cecoco:prefetch-detalles completado', [
             'fecha' => $contexto,
             'ok' => $ok,
@@ -143,5 +235,13 @@ class PrefetchDetallesCecoco extends Command
         ]);
 
         return self::SUCCESS;
+    }
+
+    /**
+     * @param array{en_curso: bool, rango: string, total: int, procesados: int, ok: int, errores: int, cancelado?: bool, iniciado_en?: string, actualizado_en?: string, finalizado_en?: string} $progreso
+     */
+    private function guardarProgreso(array $progreso): void
+    {
+        Cache::put('cecoco:prefetch-detalles:progreso', $progreso, now()->addDay());
     }
 }

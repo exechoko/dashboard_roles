@@ -18,6 +18,12 @@
             <i class="fas fa-filter"></i>
         </button>
 
+        <button type="button" class="m-map-filters-btn m-map-locate-btn" id="mMapLocateBtn" aria-label="Mi ubicación">
+            <i class="fas fa-crosshairs" id="mMapLocateIcon"></i>
+        </button>
+
+        <div class="m-alert m-alert--danger m-map-locate-error" id="mMapLocateError" hidden></div>
+
         <div class="m-map-filters" id="mMapFilters" hidden>
             <div class="m-map-filters__header">
                 <span>Cámaras por tipo</span>
@@ -67,10 +73,48 @@
 
             var mapa = L.map('m-map').setView([-31.75899, -60.47825], 13);
 
-            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            // Mismos tiles que el mapa de escritorio: claro (OSM) u oscuro
+            // (Stadia Maps, nativo, sin filtros CSS) según el tema activo.
+            var tileClaro = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19,
                 attribution: '&copy; OpenStreetMap'
-            }).addTo(mapa);
+            });
+            var tileOscuro = L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; Stadia Maps &copy; OpenMapTiles &copy; OpenStreetMap',
+                maxZoom: 20,
+                tileSize: 256,
+                detectRetina: false,
+                crossOrigin: true
+            });
+
+            var tileActual = null;
+            function aplicarTileSegunTema() {
+                var esOscuro = document.documentElement.getAttribute('data-theme') === 'dark';
+                var nuevoTile = esOscuro ? tileOscuro : tileClaro;
+                if (nuevoTile === tileActual) {
+                    return;
+                }
+                if (tileActual) {
+                    mapa.removeLayer(tileActual);
+                }
+                tileActual = nuevoTile;
+                mapa.addLayer(tileActual);
+            }
+            aplicarTileSegunTema();
+
+            function colorAccent() {
+                return getComputedStyle(document.documentElement).getPropertyValue('--m-accent').trim() || '#0d6efd';
+            }
+
+            new MutationObserver(function () {
+                aplicarTileSegunTema();
+                if (miUbicacionCirculo) {
+                    miUbicacionCirculo.setStyle({ color: colorAccent(), fillColor: colorAccent() });
+                }
+            }).observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['data-theme']
+            });
 
             // Cámaras: agrupadas en clusters, filtrables por tipo.
             var clusters = L.markerClusterGroup();
@@ -99,13 +143,89 @@
                 }
             }
 
+            // ── Ícono + cono de campo de visión por tipo de cámara: réplica
+            // exacta de generateCameraPath()/getOrientationDegrees() del mapa
+            // de escritorio (resources/views/mapa/partials/scripts.blade.php),
+            // usando tipo_camara.imagen, angulo y orientacion. ──
+            function getOrientationDegrees(orientacion) {
+                switch ((orientacion || '').toLowerCase()) {
+                    case 'norte': case 'n': return 0;
+                    case 'noreste': case 'ne': return 45;
+                    case 'este': case 'e': return 90;
+                    case 'sureste': case 'se': return 135;
+                    case 'sur': case 's': return 180;
+                    case 'suroeste': case 'so': case 'sw': return 225;
+                    case 'oeste': case 'o': case 'w': return 270;
+                    case 'noroeste': case 'no': case 'nw': return 315;
+                    default: return 0;
+                }
+            }
+
+            function generateCameraPath(angulo, orientacion) {
+                var radio = 25;
+                if (parseFloat(angulo) === 360) {
+                    return { path: '<circle cx="0" cy="0" r="' + radio + '" fill="rgba(0,255,0,0.3)" />', rotation: 0 };
+                }
+                var anguloApertura = (angulo || 60) / 2;
+                var anguloRad = (anguloApertura * Math.PI) / 180;
+                var orientacionGrados = getOrientationDegrees(orientacion);
+                var x1 = radio * Math.cos(anguloRad);
+                var y1 = -radio * Math.sin(anguloRad);
+                var x2 = radio * Math.cos(-anguloRad);
+                var y2 = -radio * Math.sin(-anguloRad);
+                var path = 'M0,0 L' + x1 + ',' + y1 + ' A' + radio + ',' + radio + ' 0 0,1 ' + x2 + ',' + y2 + ' Z';
+                return { path: path, rotation: orientacionGrados - 90 };
+            }
+
+            function iconoCamara(p) {
+                if (!p.imagen) {
+                    return null;
+                }
+                var tipo = p.tipo_camara || '';
+                var angulo = p.angulo || 60;
+                var geometria = generateCameraPath(angulo, p.orientacion);
+
+                var esOscuro = document.documentElement.getAttribute('data-theme') === 'dark';
+                var strokeColor = esOscuro ? '#ffffff' : '#000000';
+                var strokeWidth = esOscuro ? '2' : '1';
+
+                var fillColor = 'rgba(0,0,255,0.3)';
+                if (tipo.indexOf('Domo') !== -1) {
+                    fillColor = 'rgba(0,255,0,0.4)';
+                } else if (tipo.indexOf('LPR') !== -1) {
+                    fillColor = 'rgba(255,0,0,0.4)';
+                } else if (tipo.indexOf('FR') !== -1) {
+                    fillColor = 'rgba(255,165,0,0.4)';
+                }
+
+                var svgShape = parseFloat(angulo) === 360
+                    ? '<circle cx="0" cy="0" r="20" fill="' + fillColor + '" stroke="' + strokeColor + '" stroke-width="' + strokeWidth + '" />'
+                    : '<path d="' + geometria.path + '" fill="' + fillColor + '" stroke="' + strokeColor + '" stroke-width="' + strokeWidth + '" />';
+
+                return L.divIcon({
+                    className: '',
+                    html:
+                        '<div style="position:relative; width:50px; height:50px;">' +
+                        '<svg width="50" height="50" viewBox="-25 -25 50 50" xmlns="http://www.w3.org/2000/svg" ' +
+                        'style="position:absolute; top:0; left:0; transform: rotate(' + geometria.rotation + 'deg); z-index:0;">' +
+                        svgShape +
+                        '</svg>' +
+                        '<img src="' + p.imagen + '" style="width:50px; height:50px; position:absolute; top:0; left:0; z-index:1;" />' +
+                        '</div>',
+                    iconSize: [50, 50],
+                    iconAnchor: [25, 25],
+                    popupAnchor: [0, -25]
+                });
+            }
+
             fetch('{{ route('movil.mapa.camaras-json') }}')
                 .then(function (r) { return r.json(); })
                 .then(function (geojson) {
                     (geojson.features || []).forEach(function (feature) {
                         var p = feature.properties || {};
                         var coords = feature.geometry.coordinates;
-                        var marker = L.marker([coords[1], coords[0]]);
+                        var icon = iconoCamara(p);
+                        var marker = icon ? L.marker([coords[1], coords[0]], { icon: icon }) : L.marker([coords[1], coords[0]]);
                         var detalleUrl = '{{ url('/movil/camaras') }}/' + p.id;
                         marker.bindPopup(
                             '<strong>' + escapeHtml(p.titulo) + '</strong><br>' +
@@ -210,6 +330,103 @@
                     }
                 });
             }
+
+            // Mi ubicación: marcador + círculo de precisión, actualizados en
+            // vivo con watchPosition mientras el botón esté activo.
+            var locateBtn = document.getElementById('mMapLocateBtn');
+            var locateIcon = document.getElementById('mMapLocateIcon');
+            var locateError = document.getElementById('mMapLocateError');
+            var watchId = null;
+            var miUbicacionMarker = null;
+            var miUbicacionCirculo = null;
+            var primerFix = true;
+
+            function mostrarErrorUbicacion(mensaje) {
+                locateError.textContent = mensaje;
+                locateError.hidden = false;
+                setTimeout(function () { locateError.hidden = true; }, 4000);
+            }
+
+            function detenerUbicacion() {
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+                if (miUbicacionMarker) {
+                    mapa.removeLayer(miUbicacionMarker);
+                    miUbicacionMarker = null;
+                }
+                if (miUbicacionCirculo) {
+                    mapa.removeLayer(miUbicacionCirculo);
+                    miUbicacionCirculo = null;
+                }
+                locateBtn.classList.remove('is-active');
+                locateIcon.classList.remove('fa-spin');
+                primerFix = true;
+            }
+
+            function actualizarUbicacion(posicion) {
+                locateIcon.classList.remove('fa-spin');
+                var lat = posicion.coords.latitude;
+                var lng = posicion.coords.longitude;
+                var precision = posicion.coords.accuracy;
+
+                if (!miUbicacionMarker) {
+                    var icon = L.divIcon({
+                        className: 'm-map-marker m-map-marker--mi-ubicacion',
+                        html: '<span></span>',
+                        iconSize: [18, 18],
+                        iconAnchor: [9, 9]
+                    });
+                    miUbicacionMarker = L.marker([lat, lng], { icon: icon, zIndexOffset: 1000 }).addTo(mapa);
+                    miUbicacionCirculo = L.circle([lat, lng], {
+                        radius: precision,
+                        color: colorAccent(),
+                        fillColor: colorAccent(),
+                        fillOpacity: .15,
+                        weight: 1
+                    }).addTo(mapa);
+                } else {
+                    miUbicacionMarker.setLatLng([lat, lng]);
+                    miUbicacionCirculo.setLatLng([lat, lng]).setRadius(precision);
+                }
+
+                if (primerFix) {
+                    mapa.setView([lat, lng], 16);
+                    primerFix = false;
+                }
+            }
+
+            function errorUbicacion(error) {
+                locateIcon.classList.remove('fa-spin');
+                var mensajes = {
+                    1: 'Permiso de ubicación denegado. Habilitalo en la configuración del navegador.',
+                    2: 'No se pudo determinar la ubicación.',
+                    3: 'Se agotó el tiempo de espera para obtener la ubicación.'
+                };
+                mostrarErrorUbicacion(mensajes[error.code] || 'No se pudo obtener la ubicación.');
+                detenerUbicacion();
+            }
+
+            locateBtn.addEventListener('click', function () {
+                if (!('geolocation' in navigator)) {
+                    mostrarErrorUbicacion('Este dispositivo no soporta geolocalización.');
+                    return;
+                }
+
+                if (watchId !== null) {
+                    detenerUbicacion();
+                    return;
+                }
+
+                locateBtn.classList.add('is-active');
+                locateIcon.classList.add('fa-spin');
+                watchId = navigator.geolocation.watchPosition(actualizarUbicacion, errorUbicacion, {
+                    enableHighAccuracy: true,
+                    maximumAge: 10000,
+                    timeout: 15000
+                });
+            });
 
             // Panel de filtros: se muestra/oculta con el botón flotante.
             var filtersBtn = document.getElementById('mMapFiltersBtn');

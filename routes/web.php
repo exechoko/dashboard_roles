@@ -89,6 +89,7 @@ Auth::routes();
 Route::prefix('movil')->name('movil.')->group(function () {
     Route::get('/ingresar', [App\Http\Controllers\Movil\LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/ingresar', [App\Http\Controllers\Movil\LoginController::class, 'login']);
+    Route::post('/logout', [App\Http\Controllers\Movil\LoginController::class, 'logout'])->name('logout');
 });
 
 // Plataforma de Descargas: link/QR de descarga publica, a proposito fuera
@@ -110,6 +111,7 @@ Route::group(['middleware' => ['auth']], function () {
 
         Route::get('/camaras', [App\Http\Controllers\Movil\CamarasController::class, 'index'])->name('camaras.index');
         Route::get('/camaras/{camara}', [App\Http\Controllers\Movil\CamarasController::class, 'show'])->name('camaras.show');
+        Route::post('/camaras/{camara}/reiniciar', [App\Http\Controllers\Movil\CamarasController::class, 'reiniciar'])->name('camaras.reiniciar');
 
         Route::get('/mapa/camaras.json', [App\Http\Controllers\Movil\MapaController::class, 'camarasJson'])->name('mapa.camaras-json');
         Route::get('/mapa/dependencias.json', [App\Http\Controllers\Movil\MapaController::class, 'dependenciasJson'])->name('mapa.dependencias-json');
@@ -121,6 +123,36 @@ Route::group(['middleware' => ['auth']], function () {
 
         Route::get('/dependencias', [App\Http\Controllers\Movil\DependenciasController::class, 'index'])->name('dependencias.index');
         Route::get('/dependencias/{dependencia}', [App\Http\Controllers\Movil\DependenciasController::class, 'show'])->name('dependencias.show');
+
+        Route::get('/personal', [App\Http\Controllers\Movil\PersonalController::class, 'index'])->name('personal.index');
+        Route::get('/personal/{personal}', [App\Http\Controllers\Movil\PersonalController::class, 'show'])->name('personal.show');
+
+        Route::get('/infraestructura', [App\Http\Controllers\Movil\InfraestructuraController::class, 'index'])->name('infraestructura.index');
+
+        Route::get('/entregas-equipos', [App\Http\Controllers\Movil\EntregaEquipoController::class, 'index'])->name('entregas-equipos.index');
+        Route::get('/entregas-bodycams', [App\Http\Controllers\Movil\EntregaBodycamController::class, 'index'])->name('entregas-bodycams.index');
+        Route::get('/tareas', [App\Http\Controllers\Movil\TareaController::class, 'index'])->name('tareas.index');
+        Route::get('/activaciones-totem', [App\Http\Controllers\Movil\ActivacionTotemController::class, 'index'])->name('activaciones-totem.index');
+
+        Route::get('/historico-movil-gis', [App\Http\Controllers\Movil\HistoricoMovilGisController::class, 'index'])->name('historico-movil-gis.index');
+        Route::post('/historico-movil-gis/consultar', [App\Http\Controllers\Movil\HistoricoMovilGisController::class, 'consultar'])->name('historico-movil-gis.consultar');
+        Route::get('/historico-movil-gis/buscar-recurso', [App\Http\Controllers\Movil\HistoricoMovilGisController::class, 'buscarRecurso'])->name('historico-movil-gis.buscar-recurso');
+        Route::get('/historico-movil-gis/buscar', [App\Http\Controllers\Movil\HistoricoMovilGisController::class, 'buscarHistorial'])->name('historico-movil-gis.buscar');
+        Route::get('/historico-movil-gis/{historial}/cargar', [App\Http\Controllers\Movil\HistoricoMovilGisController::class, 'cargarHistorial'])->name('historico-movil-gis.cargar');
+        Route::delete('/historico-movil-gis/{historial}', [App\Http\Controllers\Movil\HistoricoMovilGisController::class, 'eliminarHistorial'])->name('historico-movil-gis.eliminar');
+        Route::get('/historico-movil-gis/{historial}/pdf', [App\Http\Controllers\Movil\HistoricoMovilGisController::class, 'pdf'])->name('historico-movil-gis.pdf');
+        Route::get('/historico-movil-gis/{historial}/recorrido', [App\Http\Controllers\Movil\HistoricoMovilGisController::class, 'recorrido'])->name('historico-movil-gis.recorrido');
+
+        // Pantalla de verificación de contraseña maestra (sin el middleware para no crear loop)
+        Route::get('/password-vault-auth', [App\Http\Controllers\Movil\PasswordVaultController::class, 'masterPasswordForm'])
+            ->name('password-vault.master-password');
+        Route::post('/password-vault-auth', [App\Http\Controllers\Movil\PasswordVaultController::class, 'verifyMasterPassword'])
+            ->name('password-vault.verify-master-password');
+
+        Route::middleware('master.password')->group(function () {
+            Route::get('/passwords', [App\Http\Controllers\Movil\PasswordVaultController::class, 'index'])->name('password-vault.index');
+            Route::get('/passwords/{passwordVault}', [App\Http\Controllers\Movil\PasswordVaultController::class, 'show'])->name('password-vault.show');
+        });
 
         Route::get('/chat', [App\Http\Controllers\Movil\ChatController::class, 'index'])->name('chat.index');
         Route::get('/chat/{conversacion}', [App\Http\Controllers\Movil\ChatController::class, 'show'])->name('chat.show');
@@ -718,6 +750,9 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/importar/form', [App\Http\Controllers\EventoCecocoController::class, 'importarForm'])->name('importar');
         Route::post('/importar', [App\Http\Controllers\EventoCecocoController::class, 'importar'])->name('importar.post');
         Route::post('/importar/hoy', [App\Http\Controllers\EventoCecocoController::class, 'importarHoy'])->name('importar.hoy');
+        Route::post('/importar/prefetch-detalles', [App\Http\Controllers\EventoCecocoController::class, 'prefetchDetalles'])->name('importar.prefetch-detalles');
+        Route::get('/importar/prefetch-detalles/estado', [App\Http\Controllers\EventoCecocoController::class, 'prefetchDetallesEstado'])->name('importar.prefetch-detalles.estado');
+        Route::post('/importar/prefetch-detalles/cancelar', [App\Http\Controllers\EventoCecocoController::class, 'prefetchDetallesCancelar'])->name('importar.prefetch-detalles.cancelar');
         Route::get('/exportar/txt', [App\Http\Controllers\EventoCecocoController::class, 'exportarTxt'])->name('exportar.txt');
         Route::get('/mapa-gis', [App\Http\Controllers\GisViewerController::class, 'index'])->name('mapa-gis');
         Route::get('/mapa-gis-historico', [App\Http\Controllers\GisViewerController::class, 'indexHistorico'])->name('mapa-gis-historico');

@@ -120,6 +120,7 @@ class SeederTablaPermisos extends Seeder
             'buscar-moviles-recorridos',
             'ver-eventos-cecoco',
             'ver-expediente-cecoco',
+            'exportar-whatsapp-cecoco',
             'ver-mapa-calor-servicios-cecoco',
             'ver-mapa-cecoco-en-vivo',
             'ver-analizador-eventos-cecoco',
@@ -229,6 +230,10 @@ class SeederTablaPermisos extends Seeder
             'editar-personal',
             'borrar-personal',
             'restaurar-personal',
+
+            // Personal (menú aparte)
+            'ver-menu-personal',
+            'ver-datos-personales-personal',
 
             // Control de Armas - Armería (armas secundarias y chalecos)
             'ver-armeria',

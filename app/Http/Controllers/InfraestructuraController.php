@@ -331,6 +331,20 @@ class InfraestructuraController extends Controller
             ];
         }
 
+        $camarasLibreNms = ['disponible' => false];
+        if (request()->user()?->can('ver-infraestructura-librenms')) {
+            $camaras = Cache::get(LibreNmsService::CACHE_KEY_CAMARAS);
+            if (!empty($camaras['total'])) {
+                $camarasLibreNms = [
+                    'disponible'    => true,
+                    'total'         => $camaras['total'],
+                    'caidas'        => count($camaras['offline']),
+                    'offline'       => array_slice($camaras['offline'], 0, 15),
+                    'consultado_en' => $camaras['consultado_en'] ?? null,
+                ];
+            }
+        }
+
         try {
             // Verificar que las tablas existen antes de consultarlas
             if (!DB::getSchemaBuilder()->hasTable('jobs')) {
@@ -339,6 +353,7 @@ class InfraestructuraController extends Controller
                     'mensaje' => 'Ejecutar: php artisan queue:table && php artisan migrate',
                     'inventario_conflictos' => $conflictosInventario,
                     'inventario_discrepancias' => $discrepanciasInventario,
+                    'camaras_librenms' => $camarasLibreNms,
                 ], 200);
             }
 
@@ -460,6 +475,7 @@ class InfraestructuraController extends Controller
             'restauraciones_gps_restauradas' => Cache::get(CecocoExpedienteService::CACHE_KEY_FICHEROS_RESTAURADOS_GPS, []),
             'inventario_conflictos' => $conflictosInventario,
             'inventario_discrepancias' => $discrepanciasInventario,
+            'camaras_librenms' => $camarasLibreNms,
         ]);
     }
 

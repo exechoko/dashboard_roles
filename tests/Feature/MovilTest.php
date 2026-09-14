@@ -37,6 +37,21 @@ class MovilTest extends TestCase
         $this->assertAuthenticatedAs($usuario);
     }
 
+    public function test_un_usuario_sin_acceso_pwa_no_puede_loguearse_desde_movil_ingresar(): void
+    {
+        $usuario = $this->usuarioCon(['ver-flota']);
+        $usuario->update(['acceso_pwa' => false]);
+
+        $response = $this->post(route('movil.login'), [
+            'email' => $usuario->email,
+            'password' => 'password',
+        ]);
+
+        $response->assertRedirect(route('movil.login'));
+        $response->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
+
     public function test_el_formulario_de_login_movil_manda_siempre_remember(): void
     {
         // config/session.php tiene expire_on_close en true a propósito para el

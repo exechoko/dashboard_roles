@@ -43,6 +43,9 @@
                                                     @else
                                                         <span class="badge" style="background-color: #fd7e14; color: white; font-size: 0.7em;">Sin acceso externo</span>
                                                     @endif
+                                                    @unless ($usuario->acceso_pwa)
+                                                        <span class="badge" style="background-color: #6c757d; color: white; font-size: 0.7em;">Sin acceso PWA</span>
+                                                    @endunless
                                                 </td>
                                                 <td>{{ $usuario->lp }}</td>
                                                 <td>

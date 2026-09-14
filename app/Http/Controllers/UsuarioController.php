@@ -94,6 +94,7 @@ class UsuarioController extends Controller
         $input = $request->all();
         $input['password'] = Hash::make($input['password']);
         $input['acceso_externo'] = $request->boolean('acceso_externo');
+        $input['acceso_pwa'] = $request->boolean('acceso_pwa');
 
         $user = User::create($input);
         $user->assignRole($request->input('roles'));
@@ -170,6 +171,7 @@ class UsuarioController extends Controller
         }
 
         $input['acceso_externo'] = $request->boolean('acceso_externo');
+        $input['acceso_pwa'] = $request->boolean('acceso_pwa');
         $input = Arr::except($input, ['confirm_master_password', 'clear_master_password']);
 
         $user = User::find($id);

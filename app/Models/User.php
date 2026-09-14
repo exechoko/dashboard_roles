@@ -33,6 +33,7 @@ class User extends Authenticatable
         'photo',
         'theme',
         'acceso_externo',
+        'acceso_pwa',
         'master_password',
     ];
 

@@ -215,6 +215,11 @@
             z-index: 20;
         }
 
+        /* El "display: flex" de arriba le gana en cascada al "display: none"
+           por defecto del navegador para [hidden] (de menor prioridad, por
+           ser del user-agent). Sin esto, banner.hidden = true no lo ocultaba. */
+        .m-login__install[hidden] { display: none; }
+
         .m-login__install span { flex: 1; min-width: 0; }
 
         .m-login__install-btn {

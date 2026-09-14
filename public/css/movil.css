@@ -472,6 +472,12 @@ a { color: var(--m-accent); text-decoration: none; }
     font-size: .82rem;
 }
 
+/* El "display: flex" de arriba, al ser una regla de autor, le gana en cascada
+   al "display: none" por defecto del navegador para el atributo [hidden]
+   (que es de menor prioridad por ser del user-agent). Sin esto, el JS que
+   hace banner.hidden = true nunca lo ocultaba de verdad. */
+.m-install-banner[hidden] { display: none; }
+
 .m-install-banner span { flex: 1; min-width: 0; }
 .m-install-banner .material-symbols-outlined { flex: 0 0 auto; font-size: 1.2rem; }
 

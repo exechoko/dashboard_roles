@@ -1568,6 +1568,28 @@ class EventoCecocoController extends Controller
                 ->count();
         }
 
+        // ── Tasa de detención por tipificación (aproximada, extraída del texto) ──
+        // Cruza cada categoría (por tipo_servicio o por descripción, según corresponda)
+        // contra menciones de detención/demora en la descripción, para que la superioridad
+        // vea qué proporción de cada tipo de intervención termina con una persona detenida.
+        $tasaDetencionPorCategoria = [];
+        foreach ($this->categoriasParaTasaDetencion() as $etiqueta => $config) {
+            $queryTotal = clone $base;
+            $this->aplicarMatchTexto($queryTotal, $config['total']['campo'], $config['total']['metodo'], $config['total']['patron']);
+            $total = (clone $queryTotal)->count();
+
+            $conDetenido = clone $queryTotal;
+            $this->aplicarMatchTexto($conDetenido, $config['detenido']['campo'], $config['detenido']['metodo'], $config['detenido']['patron']);
+            $conDetenido = $conDetenido->count();
+
+            $tasaDetencionPorCategoria[] = [
+                'categoria' => $etiqueta,
+                'total' => $total,
+                'con_detenido' => $conDetenido,
+                'porcentaje' => $total > 0 ? round($conDetenido / $total * 100, 1) : 0.0,
+            ];
+        }
+
         $eventos = (clone $base)
             ->select(['id', 'nro_expediente', 'fecha_hora', 'descripcion', 'tipo_servicio'])
             ->orderByDesc('fecha_hora')
@@ -1598,6 +1620,7 @@ class EventoCecocoController extends Controller
             'comparativa_actual' => $comparativaActual,
             'comparativa_anterior' => $comparativaAnterior,
             'indicadores_resultado' => $indicadoresResultado,
+            'tasa_detencion_por_categoria' => $tasaDetencionPorCategoria,
             'eventos' => $eventos,
             'eventos_limit' => 100,
         ]);
@@ -1770,6 +1793,74 @@ class EventoCecocoController extends Controller
             'motos_recuperadas' => 'recuper[a-z]*[^.]{0,45}(motoveh|motociclet|\\bmoto\\b)|(motoveh|motociclet|\\bmoto\\b)[^.]{0,45}recuper',
             'vehiculos_recuperados' => 'recuper[a-z]*[^.]{0,45}(\\bveh[ií]culo|autom[oó]vil|\\bauto\\b|camioneta)|(\\bveh[ií]culo|autom[oó]vil|\\bauto\\b|camioneta)[^.]{0,45}recuper',
         ];
+    }
+
+    /**
+     * Regex de texto libre para detectar una intervención en crisis de salud mental.
+     * No existe como tipo_servicio propio en CECOCO: aparece dentro de tipos genéricos
+     * (Aviso Personas, Desorden en la Vía Pública, etc.), por eso se infiere del relato.
+     */
+    private function patronCrisisSaludMental(): string
+    {
+        return 'crisis (de )?(nervios|nerviosa|psiqui[aá]trica|psicol[oó]gica)|paciente psiqui[aá]tric|salud mental|autolesion|tentativa de suicidio|intento de suicidio|ataque de nervios';
+    }
+
+    /**
+     * Regex de texto libre para detectar un desenlace con una persona detenida/demorada,
+     * usado para cruzar contra las categorías de {@see categoriasParaTasaDetencion()}.
+     */
+    private function patronDetencion(): string
+    {
+        return 'detenid[oa]|demorad[oa]|aprehend|aprehensi[oó]n';
+    }
+
+    /**
+     * Tipificaciones que la superioridad quiere ver cruzadas contra "terminó con detenido".
+     * Cada entrada define cómo identificar el universo total de la categoría ('total') y
+     * cómo identificar el subconjunto con detención ('detenido'). Agregar una tipificación
+     * nueva es agregar una entrada acá, sin tocar el resto del cálculo.
+     *
+     * @return array<string, array{total: array{campo: string, metodo: string, patron: string}, detenido: array{campo: string, metodo: string, patron: string}}>
+     */
+    private function categoriasParaTasaDetencion(): array
+    {
+        return [
+            'Crisis de salud mental' => [
+                'total' => ['campo' => 'descripcion', 'metodo' => 'regexp', 'patron' => $this->patronCrisisSaludMental()],
+                'detenido' => ['campo' => 'descripcion', 'metodo' => 'regexp', 'patron' => $this->patronDetencion()],
+            ],
+            'Violencia de género' => [
+                'total' => ['campo' => 'tipo_servicio', 'metodo' => 'like', 'patron' => 'violencia de genero'],
+                'detenido' => ['campo' => 'tipo_servicio', 'metodo' => 'like', 'patron' => 'con detenidos'],
+            ],
+            'Robo' => [
+                'total' => ['campo' => 'tipo_servicio', 'metodo' => 'like', 'patron' => 'robo'],
+                'detenido' => ['campo' => 'descripcion', 'metodo' => 'regexp', 'patron' => $this->patronDetencion()],
+            ],
+            'Hurto' => [
+                'total' => ['campo' => 'tipo_servicio', 'metodo' => 'like', 'patron' => 'hurto'],
+                'detenido' => ['campo' => 'descripcion', 'metodo' => 'regexp', 'patron' => $this->patronDetencion()],
+            ],
+            'Daños' => [
+                'total' => ['campo' => 'tipo_servicio', 'metodo' => 'like', 'patron' => 'daños'],
+                'detenido' => ['campo' => 'descripcion', 'metodo' => 'regexp', 'patron' => $this->patronDetencion()],
+            ],
+        ];
+    }
+
+    /**
+     * Aplica sobre $query un filtro LIKE o REGEXP (case-insensitive) según $metodo.
+     * $campo sólo proviene de {@see categoriasParaTasaDetencion()} (lista fija interna),
+     * nunca de input del usuario.
+     */
+    private function aplicarMatchTexto(Builder $query, string $campo, string $metodo, string $patron): void
+    {
+        if ($metodo === 'like') {
+            $query->whereRaw("LOWER({$campo}) LIKE ?", ['%' . mb_strtolower($patron) . '%']);
+            return;
+        }
+
+        $query->whereNotNull($campo)->whereRaw("{$campo} REGEXP ?", [$patron]);
     }
 }
 

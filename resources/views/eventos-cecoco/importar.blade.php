@@ -235,6 +235,75 @@
         </div>
     </div>
 </div>
+
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-hourglass-split"></i> Expedientes que siguen abiertos</h5>
+                <span class="badge bg-secondary">{{ $expedientesAbiertos->count() }}</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    Según el último estado guardado al consultar CECOCO (<code>historial.estado</code>). Esa foto puede estar
+                    desactualizada si el expediente cerró después en el sistema real: usá "Ver / refrescar" para volver a
+                    consultarlo y traer su estado actual.
+                </p>
+
+                @if($expedientesAbiertos->isEmpty())
+                    <p class="text-muted mb-0"><em>No hay expedientes con detalle consultado que sigan abiertos.</em></p>
+                @else
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm table-hover">
+                            <thead class="sticky-top bg-white">
+                                <tr>
+                                    <th>Expediente</th>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Dirección</th>
+                                    <th>Último estado</th>
+                                    <th>Consultado</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php
+                                    $badgesEstado = [
+                                        'Attending' => 'warning text-dark',
+                                        'Attended' => 'info text-dark',
+                                        'Pending' => 'secondary',
+                                        'Assigned' => 'primary',
+                                        'Displacing' => 'primary',
+                                    ];
+                                @endphp
+                                @foreach($expedientesAbiertos as $evento)
+                                    <tr>
+                                        <td><small>{{ $evento->nro_expediente }}</small></td>
+                                        <td><small>{{ optional($evento->fecha_hora)->format('d/m/Y H:i') }}</small></td>
+                                        <td><small title="{{ $evento->tipo_servicio }}">{{ Str::limit($evento->tipo_servicio, 25) }}</small></td>
+                                        <td><small title="{{ $evento->direccion }}">{{ Str::limit($evento->direccion, 30) }}</small></td>
+                                        <td>
+                                            <span class="badge bg-{{ $badgesEstado[$evento->ultimo_estado] ?? 'secondary' }}">
+                                                {{ $evento->ultimo_estado }}
+                                            </span>
+                                        </td>
+                                        <td><small>{{ $evento->fecha_consulta ? \Carbon\Carbon::parse($evento->fecha_consulta)->format('d/m/Y H:i') : '-' }}</small></td>
+                                        <td>
+                                            <a href="{{ route('cecoco.expediente', ['eventoCecoco' => $evento->id, 'refrescar' => 1]) }}"
+                                               class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener">
+                                                <i class="bi bi-arrow-repeat"></i> Ver / refrescar
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')

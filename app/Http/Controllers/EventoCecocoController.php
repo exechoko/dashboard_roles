@@ -184,12 +184,46 @@ class EventoCecocoController extends Controller
                 ->pluck('total', 'anio');
         });
 
+        $expedientesAbiertos = $this->expedientesAbiertosSegunUltimoEstado();
+
         return view('eventos-cecoco.importar', compact(
             'importaciones',
             'totalArchivosImportados',
             'totalRegistrosEnBd',
-            'aniosCounts'
+            'aniosCounts',
+            'expedientesAbiertos'
         ));
+    }
+
+    /**
+     * Expedientes cuyo último estado consultado en CECOCO (guardado en
+     * detalle_json->historial->estado) todavía no es "Closed". Ese estado es
+     * una foto tomada en fecha_consulta: puede estar desactualizado si el
+     * expediente cerró después en el sistema real, por eso cada fila enlaza
+     * al detalle para refrescarlo bajo demanda en vez de asumir que sigue abierto.
+     *
+     * "Primary Main Server" se descarta: es un texto de error del reporte BIRT
+     * que quedó mal parseado como si fuera el estado, no un estado real.
+     */
+    private function expedientesAbiertosSegunUltimoEstado()
+    {
+        return Cache::remember('cecoco_expedientes_abiertos', 120, function () {
+            return EventoCecoco::query()
+                ->join('detalle_expediente_cecoco', 'detalle_expediente_cecoco.evento_cecoco_id', '=', 'evento_cecoco.id')
+                ->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(detalle_expediente_cecoco.detalle_json, '$.historial.estado')) NOT IN ('Closed', 'Primary Main Server', '')")
+                ->whereNotNull('detalle_expediente_cecoco.detalle_json')
+                ->orderByDesc('evento_cecoco.fecha_hora')
+                ->limit(300)
+                ->get([
+                    'evento_cecoco.id',
+                    'evento_cecoco.nro_expediente',
+                    'evento_cecoco.fecha_hora',
+                    'evento_cecoco.tipo_servicio',
+                    'evento_cecoco.direccion',
+                    DB::raw("JSON_UNQUOTE(JSON_EXTRACT(detalle_expediente_cecoco.detalle_json, '$.historial.estado')) as ultimo_estado"),
+                    'detalle_expediente_cecoco.fecha_consulta',
+                ]);
+        });
     }
 
     public function importar(Request $request)

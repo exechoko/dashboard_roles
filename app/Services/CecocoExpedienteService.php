@@ -207,6 +207,12 @@ class CecocoExpedienteService
                     'fecha_consulta' => now(),
                 ]
             );
+
+            // El listado de "expedientes que siguen abiertos" de importar/form cachea
+            // su query por 2 minutos (ver EventoCecocoController): si no se invalida acá,
+            // un expediente recién refrescado a "Closed" seguiría apareciendo como abierto
+            // hasta que ese cache expire por su cuenta.
+            Cache::forget('cecoco_expedientes_abiertos');
         }
 
         return $detalle;

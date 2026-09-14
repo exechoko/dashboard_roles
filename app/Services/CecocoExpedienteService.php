@@ -204,6 +204,7 @@ class CecocoExpedienteService
                 [
                     'nro_expediente' => $eventoCecoco->nro_expediente,
                     'detalle_json' => $detalle,
+                    'historial_estado' => $detalle['historial']['estado'] ?? null,
                     'fecha_consulta' => now(),
                 ]
             );

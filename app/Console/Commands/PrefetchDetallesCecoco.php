@@ -465,6 +465,7 @@ class PrefetchDetallesCecoco extends Command
                     [
                         'nro_expediente' => $evento->nro_expediente,
                         'detalle_json' => $detalle,
+                        'historial_estado' => $detalle['historial']['estado'] ?? null,
                         'fecha_consulta' => now(),
                     ]
                 );

@@ -16,6 +16,7 @@ class DetalleExpedienteCecoco extends Model
         'evento_cecoco_id',
         'nro_expediente',
         'detalle_json',
+        'historial_estado',
         'fecha_consulta',
         'resumen_ia',
         'resumen_ia_generado_en',

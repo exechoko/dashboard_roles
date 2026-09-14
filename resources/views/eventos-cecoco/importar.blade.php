@@ -78,6 +78,7 @@
                                 </button>
                             </form>
                         </div>
+                        <div id="prefetchEstadoWorkers" class="mt-2" style="display: none;"></div>
                     </div>
                 </div>
 
@@ -396,6 +397,34 @@ document.addEventListener('DOMContentLoaded', function() {
     const erroresEl = document.getElementById('prefetchEstadoErrores');
     const actualizadoEl = document.getElementById('prefetchEstadoActualizado');
     const cancelarForm = document.getElementById('prefetchEstadoCancelarForm');
+    const workersEl = document.getElementById('prefetchEstadoWorkers');
+
+    function renderWorkers(workers) {
+        if (!workersEl) return;
+        if (!Array.isArray(workers) || workers.length < 2) {
+            workersEl.style.display = 'none';
+            workersEl.innerHTML = '';
+            return;
+        }
+
+        workersEl.style.display = 'block';
+        workersEl.innerHTML = workers.map(function(w) {
+            const total = w.total || 0;
+            const procesados = w.procesados || 0;
+            const pct = total > 0 ? Math.round((procesados / total) * 100) : 0;
+            const barClass = 'progress-bar' + (w.en_curso
+                ? ' progress-bar-striped progress-bar-animated'
+                : (w.errores > 0 ? ' bg-warning' : ' bg-success'));
+
+            return '<div class="d-flex align-items-center mb-1">'
+                + '<small class="text-muted me-2" style="width: 60px;">Worker ' + w.worker + '</small>'
+                + '<div class="progress flex-grow-1" style="height: 14px;">'
+                + '<div class="' + barClass + '" style="width: ' + pct + '%; font-size: .7rem;">' + procesados + ' / ' + total + '</div>'
+                + '</div>'
+                + '<small class="text-muted ms-2">ok: ' + (w.ok || 0) + ' err: ' + (w.errores || 0) + '</small>'
+                + '</div>';
+        }).join('');
+    }
 
     function render(d) {
         if (!d || !d.total) {
@@ -428,6 +457,8 @@ document.addEventListener('DOMContentLoaded', function() {
             : '';
 
         if (cancelarForm) cancelarForm.style.display = d.en_curso ? 'block' : 'none';
+
+        renderWorkers(d.workers);
     }
 
     function verificar() {

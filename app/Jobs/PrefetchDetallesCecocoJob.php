@@ -27,9 +27,12 @@ class PrefetchDetallesCecocoJob implements ShouldQueue
     {
         Log::info('PrefetchDetallesCecocoJob: iniciado', ['desde' => $this->desde, 'hasta' => $this->hasta]);
 
+        // 3 sesiones en paralelo si hay cuentas dedicadas configuradas
+        // (CECOCO_USER_PREFETCH_1..3); si no, el comando cae solo a 1 sesión.
         Artisan::call('cecoco:prefetch-detalles', [
             '--desde' => $this->desde,
             '--hasta' => $this->hasta,
+            '--workers' => 3,
         ]);
 
         Log::info('PrefetchDetallesCecocoJob: finalizado', [

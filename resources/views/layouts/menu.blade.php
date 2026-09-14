@@ -314,13 +314,8 @@
                     </a>
                 </li>
             @endcan
-            @can('ver-tiempos-respuesta-cecoco')
-                <li class="{{ request()->routeIs('cecoco.tiempos-respuesta') ? 'active' : '' }}">
-                    <a class="nav-link" href="{{ route('cecoco.tiempos-respuesta') }}">
-                        <i class="fas fa-stopwatch"></i><span>Tiempos de Respuesta</span>
-                    </a>
-                </li>
-            @endcan
+            {{-- "Tiempos de Respuesta" se fusionó dentro de Analítica de Delitos (sección colapsable);
+                 la ruta cecoco.tiempos-respuesta sigue existiendo pero ya no tiene entrada propia en el menú. --}}
             @can('ver-analizador-eventos-cecoco')
                 <li class="{{ request()->routeIs('cecoco.index') || request()->routeIs('cecoco.show') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('cecoco.index') }}">

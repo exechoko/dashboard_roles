@@ -130,6 +130,37 @@
         .tipificaciones-panel .form-check-label {
             font-size: .82rem;
         }
+
+        .panel-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .panel-toggle .panel-chevron {
+            display: inline-block;
+            transition: transform .15s ease;
+            font-size: .8rem;
+        }
+
+        .panel-toggle.is-collapsed .panel-chevron {
+            transform: rotate(-90deg);
+        }
+
+        .cobertura-alerta {
+            border-left: 4px solid #fd7e14;
+            background: rgba(253, 126, 20, .07);
+            border-radius: 0 8px 8px 0;
+            padding: .8rem 1rem;
+        }
+
+        [data-theme="dark"] .cobertura-alerta {
+            background: rgba(253, 126, 20, .13);
+        }
+
+        #tr-tabla-lentos th, #tr-tabla-lentos td {
+            font-size: .85rem;
+            vertical-align: middle;
+        }
     </style>
 @endsection
 
@@ -180,9 +211,14 @@
                     <label class="form-label fw-semibold mb-0" style="font-size:.82rem">TIPIFICACIONES A MOSTRAR</label>
                     <small class="text-muted">Marcá una o varias; con “Todas” no se aplica filtro por tipo.</small>
                 </div>
+                <div class="position-relative mb-2">
+                    <i class="bi bi-search position-absolute text-muted" style="left:.6rem; top:50%; transform:translateY(-50%); font-size:.8rem"></i>
+                    <input type="text" id="tipos-buscar" class="form-control form-control-sm" style="padding-left:1.8rem"
+                        placeholder="Buscar tipificación... (ej. robo, hurto, violencia)" autocomplete="off">
+                </div>
                 <div class="tipificaciones-panel">
                     <div class="row g-2">
-                        <div class="col-12 col-md-6 col-lg-4">
+                        <div class="col-12 col-md-6 col-lg-4" data-tipo-fila="todas">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="tipos-todas" checked>
                                 <label class="form-check-label fw-semibold" for="tipos-todas">Todas las tipificaciones</label>
@@ -190,7 +226,7 @@
                         </div>
                         @foreach($tipos as $index => $tipo)
                             @if($tipo)
-                                <div class="col-12 col-md-6 col-lg-4">
+                                <div class="col-12 col-md-6 col-lg-4" data-tipo-fila="item">
                                     <div class="form-check">
                                         <input class="form-check-input tipo-checkbox" type="checkbox" value="{{ $tipo }}" id="tipo-{{ $index }}">
                                         <label class="form-check-label" for="tipo-{{ $index }}">{{ $tipo }}</label>
@@ -199,6 +235,9 @@
                             @endif
                         @endforeach
                     </div>
+                    <p id="tipos-sin-resultados" class="text-muted text-center mb-0 py-2" hidden>
+                        Ninguna tipificación coincide con la búsqueda.
+                    </p>
                 </div>
             </div>
 
@@ -276,6 +315,20 @@
                     <label class="form-check-label" for="toggle-incidencias">Ranking sectores</label>
                 </div>
             </div>
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="form-check">
+                    <input class="form-check-input dashboard-toggle" type="checkbox" value="detencion" id="toggle-detencion" checked>
+                    <label class="form-check-label" for="toggle-detencion">Tasa de detención</label>
+                </div>
+            </div>
+            @can('ver-tiempos-respuesta-cecoco')
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="form-check">
+                        <input class="form-check-input dashboard-toggle" type="checkbox" value="tiempos-respuesta" id="toggle-tiempos-respuesta" checked>
+                        <label class="form-check-label" for="toggle-tiempos-respuesta">Tiempos de respuesta</label>
+                    </div>
+                </div>
+            @endcan
         </div>
     </div>
 
@@ -339,48 +392,51 @@
 
         {{-- Resultados operativos (estimados desde el texto de las novedades) --}}
         <div class="mb-4" data-dashboard-section="resultados">
-            <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+            <div class="d-flex align-items-center flex-wrap gap-2 mb-2 panel-toggle" data-collapse-toggle="body-resultados">
+                <span class="panel-chevron" aria-hidden="true">▾</span>
                 <h6 class="mb-0 fw-semibold"><i class="bi bi-clipboard2-check me-1 text-primary"></i>Resultados operativos del período</h6>
                 <span class="badge bg-secondary-subtle text-secondary-emphasis border" style="font-size:.7rem">VALORES APROX.</span>
             </div>
-            <p class="text-muted mb-3" style="font-size:.8rem">
-                <i class="bi bi-info-circle me-1"></i>Estimados a partir del texto de las novedades; cuentan eventos cuya
-                descripción coincide, no cantidades exactas. Pueden no reflejar la cifra oficial.
-            </p>
-            <div class="row g-3">
-                <div class="col-6 col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon text-primary"><i class="bi bi-person-fill-lock"></i></div>
-                        <div>
-                            <div class="stat-value" id="stat-demorados">-</div>
-                            <div class="stat-label">Demorados / detenidos</div>
+            <div id="body-resultados">
+                <p class="text-muted mb-3" style="font-size:.8rem">
+                    <i class="bi bi-info-circle me-1"></i>Estimados a partir del texto de las novedades; cuentan eventos cuya
+                    descripción coincide, no cantidades exactas. Pueden no reflejar la cifra oficial.
+                </p>
+                <div class="row g-3">
+                    <div class="col-6 col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-icon text-primary"><i class="bi bi-person-fill-lock"></i></div>
+                            <div>
+                                <div class="stat-value" id="stat-demorados">-</div>
+                                <div class="stat-label">Demorados / detenidos</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon text-danger"><i class="bi bi-bullseye"></i></div>
-                        <div>
-                            <div class="stat-value" id="stat-armas">-</div>
-                            <div class="stat-label">Armas de fuego secuestradas</div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-icon text-danger"><i class="bi bi-bullseye"></i></div>
+                            <div>
+                                <div class="stat-value" id="stat-armas">-</div>
+                                <div class="stat-label">Armas de fuego secuestradas</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon text-warning"><i class="bi bi-bicycle"></i></div>
-                        <div>
-                            <div class="stat-value" id="stat-motos">-</div>
-                            <div class="stat-label">Motovehículos recuperados</div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-icon text-warning"><i class="bi bi-bicycle"></i></div>
+                            <div>
+                                <div class="stat-value" id="stat-motos">-</div>
+                                <div class="stat-label">Motovehículos recuperados</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-6 col-md-3">
-                    <div class="stat-card">
-                        <div class="stat-icon text-success"><i class="bi bi-car-front-fill"></i></div>
-                        <div>
-                            <div class="stat-value" id="stat-vehiculos">-</div>
-                            <div class="stat-label">Vehículos recuperados</div>
+                    <div class="col-6 col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-icon text-success"><i class="bi bi-car-front-fill"></i></div>
+                            <div>
+                                <div class="stat-value" id="stat-vehiculos">-</div>
+                                <div class="stat-label">Vehículos recuperados</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -391,8 +447,12 @@
         <div class="row g-3 mb-4" data-dashboard-section="fecha">
             <div class="col-12">
                 <div class="chart-card">
-                    <h6><i class="bi bi-telephone me-1"></i>Llamadas al 911 por día</h6>
-                    <canvas id="chart-fecha" height="100"></canvas>
+                    <h6 class="panel-toggle d-flex align-items-center" data-collapse-toggle="body-fecha">
+                        <span class="panel-chevron me-1" aria-hidden="true">▾</span><i class="bi bi-telephone me-1"></i>Llamadas al 911 por día
+                    </h6>
+                    <div id="body-fecha">
+                        <canvas id="chart-fecha" height="100"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -401,9 +461,13 @@
         <div class="row g-3 mb-4" data-dashboard-section="comparativa">
             <div class="col-12">
                 <div class="chart-card">
-                    <h6><i class="bi bi-bar-chart-steps me-1 text-primary"></i>Comparativa de Hechos de Relevancia (Período
-                        vs Mismo Periodo Mes Ant.)</h6>
-                    <canvas id="chart-comparativa" height="80"></canvas>
+                    <h6 class="panel-toggle d-flex align-items-center" data-collapse-toggle="body-comparativa">
+                        <span class="panel-chevron me-1" aria-hidden="true">▾</span><i class="bi bi-bar-chart-steps me-1 text-primary"></i>Comparativa de Hechos de Relevancia (Período
+                        vs Mismo Periodo Mes Ant.)
+                    </h6>
+                    <div id="body-comparativa">
+                        <canvas id="chart-comparativa" height="80"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -412,14 +476,22 @@
         <div class="row g-3 mb-4">
             <div class="col-12 col-lg-7" data-dashboard-section="hora">
                 <div class="chart-card h-100">
-                    <h6><i class="bi bi-clock me-1"></i>Eventos por hora del día</h6>
-                    <canvas id="chart-hora" height="200"></canvas>
+                    <h6 class="panel-toggle d-flex align-items-center" data-collapse-toggle="body-hora">
+                        <span class="panel-chevron me-1" aria-hidden="true">▾</span><i class="bi bi-clock me-1"></i>Eventos por hora del día
+                    </h6>
+                    <div id="body-hora">
+                        <canvas id="chart-hora" height="200"></canvas>
+                    </div>
                 </div>
             </div>
             <div class="col-12 col-lg-5" data-dashboard-section="dia">
                 <div class="chart-card h-100">
-                    <h6><i class="bi bi-calendar-week me-1"></i>Eventos por día de semana</h6>
-                    <canvas id="chart-dia" height="200"></canvas>
+                    <h6 class="panel-toggle d-flex align-items-center" data-collapse-toggle="body-dia">
+                        <span class="panel-chevron me-1" aria-hidden="true">▾</span><i class="bi bi-calendar-week me-1"></i>Eventos por día de semana
+                    </h6>
+                    <div id="body-dia">
+                        <canvas id="chart-dia" height="200"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -427,28 +499,178 @@
         <div class="row g-3 mb-4">
             <div class="col-12 col-lg-6" data-dashboard-section="tipos">
                 <div class="chart-card">
-                    <h6><i class="bi bi-list-ul me-1"></i>Top tipificaciones</h6>
-                    <canvas id="chart-tipos" height="280"></canvas>
+                    <h6 class="panel-toggle d-flex align-items-center" data-collapse-toggle="body-tipos">
+                        <span class="panel-chevron me-1" aria-hidden="true">▾</span><i class="bi bi-list-ul me-1"></i>Top tipificaciones
+                    </h6>
+                    <div id="body-tipos">
+                        <canvas id="chart-tipos" height="280"></canvas>
+                    </div>
                 </div>
             </div>
             <div class="col-12 col-lg-6" data-dashboard-section="calles">
                 <div class="chart-card">
-                    <h6><i class="bi bi-signpost-2 me-1"></i>Top calles / sectores con más incidentes</h6>
-                    <canvas id="chart-calles" height="280"></canvas>
+                    <h6 class="panel-toggle d-flex align-items-center" data-collapse-toggle="body-calles">
+                        <span class="panel-chevron me-1" aria-hidden="true">▾</span><i class="bi bi-signpost-2 me-1"></i>Top calles / sectores con más incidentes
+                    </h6>
+                    <div id="body-calles">
+                        <canvas id="chart-calles" height="280"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
 
         {{-- Mayores incidencias en Paraná --}}
         <div class="card mb-4" id="seccion-incidencias" data-dashboard-section="incidencias">
-            <div class="card-header fw-semibold d-flex align-items-center gap-2">
+            <div class="card-header fw-semibold d-flex align-items-center gap-2 panel-toggle" data-collapse-toggle="body-incidencias">
+                <span class="panel-chevron" aria-hidden="true">▾</span>
                 <i class="bi bi-geo-alt-fill text-danger"></i>
                 Sectores con mayor concentración de incidencias — Paraná
             </div>
-            <div class="card-body p-0">
+            <div class="card-body p-0" id="body-incidencias">
                 <div id="tabla-incidencias-container" class="px-3 py-2"></div>
             </div>
         </div>
+
+        {{-- Tasa de detención por tipificación --}}
+        <div class="card mb-4" id="seccion-detencion" data-dashboard-section="detencion">
+            <div class="card-header fw-semibold d-flex align-items-center flex-wrap gap-2 panel-toggle" data-collapse-toggle="body-detencion">
+                <span class="panel-chevron" aria-hidden="true">▾</span>
+                <i class="bi bi-person-fill-lock text-primary"></i>
+                Tasa de detención por tipificación
+                <span class="badge bg-secondary-subtle text-secondary-emphasis border" style="font-size:.7rem">VALORES APROX.</span>
+            </div>
+            <div class="card-body p-0" id="body-detencion">
+                <p class="text-muted px-3 pt-2 mb-1" style="font-size:.8rem">
+                    <i class="bi bi-info-circle me-1"></i>Estimado a partir del texto de las novedades: qué proporción de
+                    cada tipo de intervención terminó con una persona detenida/demorada.
+                </p>
+                <div id="tabla-detencion-container" class="px-3 py-2"></div>
+            </div>
+        </div>
+
+        @can('ver-tiempos-respuesta-cecoco')
+            {{-- Tiempos de respuesta (fusionado desde cecoco.tiempos-respuesta) --}}
+            <div class="card mb-4" id="seccion-tiempos-respuesta" data-dashboard-section="tiempos-respuesta">
+                <div class="card-header fw-semibold d-flex align-items-center gap-2 panel-toggle" data-collapse-toggle="body-tiempos-respuesta">
+                    <span class="panel-chevron" aria-hidden="true">▾</span>
+                    <i class="bi bi-stopwatch-fill text-primary"></i>
+                    Tiempos de respuesta
+                </div>
+                <div class="card-body" id="body-tiempos-respuesta">
+                    <p class="text-muted mb-3" style="font-size:.8rem">
+                        <i class="bi bi-info-circle me-1"></i>Minutos entre que un recurso pasa a "En desplazamiento" y llega
+                        a "En atención", según el timeline de los expedientes ya consultados. Se toma el recurso móvil más
+                        rápido de cada evento; los expedientes sin ese par de marcas para ningún móvil quedan fuera del cálculo.
+                    </p>
+
+                    <div class="cobertura-alerta mb-3" id="tr-alerta-cobertura">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <span id="tr-texto-cobertura">-</span>
+                    </div>
+
+                    <div id="tr-sin-datos" class="text-center text-muted py-4" style="display:none">
+                        <i class="bi bi-emoji-frown" style="font-size:2rem"></i>
+                        <p class="mt-2 mb-0">Ningún expediente consultado en este período tiene datos de recurso asignados.</p>
+                    </div>
+
+                    <div id="tr-contenido-con-datos">
+                        <div class="row g-3 mb-3">
+                            <div class="col-6 col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon text-primary"><i class="bi bi-clock-history"></i></div>
+                                    <div>
+                                        <div class="stat-value" id="tr-stat-promedio">-</div>
+                                        <div class="stat-label">Promedio (min)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon text-info"><i class="bi bi-bar-chart-steps"></i></div>
+                                    <div>
+                                        <div class="stat-value" id="tr-stat-mediana">-</div>
+                                        <div class="stat-label">Mediana (min)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon text-success"><i class="bi bi-lightning-fill"></i></div>
+                                    <div>
+                                        <div class="stat-value" id="tr-stat-minimo">-</div>
+                                        <div class="stat-label">Más rápido (min)</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <div class="stat-card">
+                                    <div class="stat-icon text-danger"><i class="bi bi-hourglass-split"></i></div>
+                                    <div>
+                                        <div class="stat-value" id="tr-stat-maximo">-</div>
+                                        <div class="stat-label">Más lento (min)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12">
+                                <div class="chart-card">
+                                    <h6><i class="bi bi-graph-up me-1"></i>Tiempo de respuesta promedio por día</h6>
+                                    <canvas id="tr-chart-fecha" height="90"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-12 col-lg-6">
+                                <div class="chart-card h-100">
+                                    <h6><i class="bi bi-clock me-1"></i>Promedio por hora de despacho</h6>
+                                    <canvas id="tr-chart-hora" height="220"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-12 col-lg-6">
+                                <div class="chart-card h-100">
+                                    <h6><i class="bi bi-bar-chart me-1"></i>Distribución de tiempos</h6>
+                                    <canvas id="tr-chart-distribucion" height="220"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12 col-lg-6">
+                                <div class="chart-card h-100">
+                                    <h6><i class="bi bi-list-ul me-1"></i>Tipificaciones más lentas (promedio, mín. 3 casos)</h6>
+                                    <canvas id="tr-chart-tipos" height="260"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-12 col-lg-6">
+                                <div class="card h-100">
+                                    <div class="card-header fw-semibold d-flex align-items-center gap-2">
+                                        <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                                        Eventos con mayor tiempo de respuesta
+                                    </div>
+                                    <div class="card-body p-0" style="overflow-x:auto">
+                                        <table class="table table-sm mb-0" id="tr-tabla-lentos">
+                                            <thead>
+                                                <tr>
+                                                    <th>Expediente</th>
+                                                    <th>Fecha</th>
+                                                    <th>Tipificación</th>
+                                                    <th>Recurso</th>
+                                                    <th class="text-end">Minutos</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="tr-tabla-lentos-body"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endcan
 
     </div>
 @endsection
@@ -521,10 +743,17 @@
 
             // ---- Estado ----
             let ultimosDatos = null;
+            let ultimosDatosTiempoRespuesta = null;
             let chartHora = null, chartDia = null, chartTipos = null, chartCalles = null, chartFecha = null, chartComparativa = null;
+            let trChartFecha = null, trChartHora = null, trChartDistribucion = null, trChartTipos = null;
             const dashboardStorageKey = 'cecoco-analitica-dashboard';
-            const chartInstances = () => [chartFecha, chartComparativa, chartHora, chartDia, chartTipos, chartCalles].filter(Boolean);
-            const dashboardDefaults = ['resultados', 'fecha', 'comparativa', 'hora', 'dia', 'tipos', 'calles', 'incidencias'];
+            const tieneTiemposRespuesta = document.getElementById('seccion-tiempos-respuesta') !== null;
+            const chartInstances = () => [
+                chartFecha, chartComparativa, chartHora, chartDia, chartTipos, chartCalles,
+                trChartFecha, trChartHora, trChartDistribucion, trChartTipos,
+            ].filter(Boolean);
+            const dashboardDefaults = ['resultados', 'fecha', 'comparativa', 'hora', 'dia', 'tipos', 'calles', 'incidencias', 'detencion']
+                .concat(tieneTiemposRespuesta ? ['tiempos-respuesta'] : []);
             const chartLabels = {
                 resultados: 'Resultados operativos del período (aprox.)',
                 fecha: 'Llamadas al 911 por día',
@@ -533,7 +762,9 @@
                 dia: 'Eventos por día de semana',
                 tipos: 'Top tipificaciones',
                 calles: 'Top calles / sectores',
-                incidencias: 'Sectores con mayor concentración'
+                incidencias: 'Sectores con mayor concentración',
+                detencion: 'Tasa de detención por tipificación',
+                'tiempos-respuesta': 'Tiempos de respuesta'
             };
 
             function obtenerWidgetsSeleccionados() {
@@ -585,6 +816,26 @@
                 return tipos.length > 0 ? tipos.join(', ') : 'Todas las tipificaciones';
             }
 
+            function normalizarBusqueda(texto) {
+                return (texto || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+            }
+
+            function filtrarTipificaciones() {
+                const consulta = normalizarBusqueda(document.getElementById('tipos-buscar').value);
+                let visibles = 0;
+
+                document.querySelectorAll('[data-tipo-fila="item"]').forEach(fila => {
+                    const label = fila.querySelector('.form-check-label');
+                    const coincide = !consulta || normalizarBusqueda(label ? label.textContent : '').includes(consulta);
+                    fila.hidden = !coincide;
+                    if (coincide) {
+                        visibles++;
+                    }
+                });
+
+                document.getElementById('tipos-sin-resultados').hidden = visibles > 0;
+            }
+
             function sincronizarTipificaciones(event) {
                 const todas = document.getElementById('tipos-todas');
 
@@ -628,6 +879,17 @@
             document.getElementById('tipos-todas').addEventListener('change', sincronizarTipificaciones);
             document.querySelectorAll('.tipo-checkbox').forEach(input => {
                 input.addEventListener('change', sincronizarTipificaciones);
+            });
+            document.getElementById('tipos-buscar').addEventListener('input', filtrarTipificaciones);
+            document.querySelectorAll('.panel-toggle').forEach(toggle => {
+                toggle.addEventListener('click', function () {
+                    const body = document.getElementById(this.dataset.collapseToggle);
+                    if (!body) {
+                        return;
+                    }
+                    body.hidden = !body.hidden;
+                    this.classList.toggle('is-collapsed', body.hidden);
+                });
             });
             document.getElementById('btn-restaurar-dashboard').addEventListener('click', function () {
                 document.querySelectorAll('.dashboard-toggle').forEach(input => input.checked = true);
@@ -904,6 +1166,36 @@
                 el.innerHTML = rows;
             }
 
+            // ---- Tasa de detención por tipificación ----
+            function mostrarTasaDetencion(datos) {
+                const filas = datos.tasa_detencion_por_categoria;
+                const el = document.getElementById('tabla-detencion-container');
+
+                if (!filas || filas.length === 0) {
+                    el.innerHTML = '<p class="text-muted py-2 mb-0">Sin datos suficientes para el período seleccionado.</p>';
+                    return;
+                }
+
+                const rows = filas.map(f => {
+                    const barPct = f.total > 0 ? Math.round(f.con_detenido / f.total * 100) : 0;
+                    return `
+                            <div class="d-flex align-items-center py-2 border-bottom gap-3">
+                                <div class="flex-grow-1" style="min-width:0">
+                                    <div class="fw-semibold text-truncate" style="font-size:.9rem">${f.categoria}</div>
+                                    <div class="progress mt-1" style="height:5px;border-radius:3px">
+                                        <div class="progress-bar bg-primary" style="width:${barPct}%"></div>
+                                    </div>
+                                </div>
+                                <div class="text-end" style="min-width:130px">
+                                    <span class="fw-bold">${f.con_detenido.toLocaleString('es-AR')}</span>
+                                    <span class="text-muted ms-1" style="font-size:.8rem">/ ${f.total.toLocaleString('es-AR')} (${f.porcentaje}%)</span>
+                                </div>
+                            </div>`;
+                }).join('');
+
+                el.innerHTML = rows;
+            }
+
             function rangoAnalizado() {
                 const desde = document.getElementById('filtro-desde').value || '-';
                 const hasta = document.getElementById('filtro-hasta').value || '-';
@@ -1029,6 +1321,162 @@
             }
 
             // ---- Carga de datos ----
+            function fmtTiempoRespuesta(valor) {
+                return valor === null || valor === undefined ? '-' : Number(valor).toLocaleString('es-AR');
+            }
+
+            function renderTablaLentosTiempoRespuesta(eventos) {
+                const body = document.getElementById('tr-tabla-lentos-body');
+                if (!eventos || eventos.length === 0) {
+                    body.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Sin datos.</td></tr>';
+                    return;
+                }
+
+                body.innerHTML = eventos.map(function (ev) {
+                    const url = `{{ url('/cecoco') }}/${ev.id}/expediente`;
+                    return `<tr>
+                        <td><a href="${url}" target="_blank">${ev.nro_expediente}</a></td>
+                        <td>${ev.fecha_hora}</td>
+                        <td>${ev.tipo_servicio}</td>
+                        <td>${ev.recurso}</td>
+                        <td class="text-end fw-semibold">${ev.minutos}</td>
+                    </tr>`;
+                }).join('');
+            }
+
+            function renderChartsTiempoRespuesta(datos) {
+                const isDark = detectTheme();
+                const textColor = isDark ? '#e2e8f0' : '#0f172a';
+                const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.15)';
+                const tooltipStyle = {
+                    backgroundColor: isDark ? 'rgba(30,41,59,0.95)' : 'rgba(255,255,255,0.95)',
+                    titleColor: isDark ? '#f1f5f9' : '#1e293b',
+                    bodyColor: isDark ? '#cbd5e1' : '#475569',
+                    borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
+                    borderWidth: 1, padding: 10, boxPadding: 4, cornerRadius: 8
+                };
+
+                if (trChartFecha) trChartFecha.destroy();
+                const fechaLabels = Object.keys(datos.por_fecha || {});
+                const fechaVals = Object.values(datos.por_fecha || {});
+                trChartFecha = new Chart(document.getElementById('tr-chart-fecha'), {
+                    type: 'line',
+                    data: {
+                        labels: fechaLabels,
+                        datasets: [{
+                            label: 'Minutos promedio',
+                            data: fechaVals,
+                            borderColor: isDark ? '#38bdf8' : 'rgba(13,110,253,0.8)',
+                            backgroundColor: isDark ? 'rgba(56,189,248,0.15)' : 'rgba(13,110,253,0.1)',
+                            fill: true,
+                            tension: 0.35,
+                            pointRadius: fechaLabels.length > 60 ? 0 : 3,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false }, tooltip: tooltipStyle },
+                        scales: {
+                            x: { grid: { color: gridColor, borderDash: [5, 5] }, ticks: { color: textColor, maxTicksLimit: 12, maxRotation: 30 } },
+                            y: { beginAtZero: true, grid: { color: gridColor, borderDash: [5, 5] }, ticks: { color: textColor } }
+                        }
+                    }
+                });
+
+                if (trChartHora) trChartHora.destroy();
+                const horaLabels = Object.keys(datos.por_hora).map(h => String(h).padStart(2, '0') + 'h');
+                const horaVals = Object.values(datos.por_hora).map(v => v === null ? 0 : v);
+                trChartHora = new Chart(document.getElementById('tr-chart-hora'), {
+                    type: 'bar',
+                    data: { labels: horaLabels, datasets: [{ label: 'Minutos promedio', data: horaVals, backgroundColor: isDark ? '#a855f7' : 'rgba(13,110,253,0.6)', borderRadius: 4 }] },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false }, tooltip: tooltipStyle },
+                        scales: {
+                            x: { grid: { color: gridColor, borderDash: [5, 5] }, ticks: { color: textColor, font: { size: 10 } } },
+                            y: { beginAtZero: true, grid: { color: gridColor, borderDash: [5, 5] }, ticks: { color: textColor } }
+                        }
+                    }
+                });
+
+                if (trChartDistribucion) trChartDistribucion.destroy();
+                trChartDistribucion = new Chart(document.getElementById('tr-chart-distribucion'), {
+                    type: 'bar',
+                    data: {
+                        labels: (datos.distribucion || []).map(d => d.banda),
+                        datasets: [{ label: 'Eventos', data: (datos.distribucion || []).map(d => d.total), backgroundColor: isDark ? '#ec4899' : 'rgba(220,53,69,0.6)', borderRadius: 4 }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false }, tooltip: tooltipStyle },
+                        scales: {
+                            x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10 } } },
+                            y: { beginAtZero: true, grid: { color: gridColor, borderDash: [5, 5] }, ticks: { color: textColor, precision: 0 } }
+                        }
+                    }
+                });
+
+                if (trChartTipos) trChartTipos.destroy();
+                trChartTipos = new Chart(document.getElementById('tr-chart-tipos'), {
+                    type: 'bar',
+                    data: {
+                        labels: (datos.top_tipos || []).map(t => t.tipo),
+                        datasets: [{ label: 'Promedio (min)', data: (datos.top_tipos || []).map(t => t.promedio), backgroundColor: isDark ? '#f97316' : 'rgba(253,126,20,0.7)', borderRadius: 4 }]
+                    },
+                    options: {
+                        indexAxis: 'y', responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { ...tooltipStyle, callbacks: { label: item => ` ${item.raw} min (${datos.top_tipos[item.dataIndex].cantidad} casos)` } }
+                        },
+                        scales: {
+                            x: { beginAtZero: true, grid: { color: gridColor, borderDash: [5, 5] }, ticks: { color: textColor } },
+                            y: { grid: { display: false }, ticks: { color: textColor, font: { size: 11 } } }
+                        }
+                    }
+                });
+            }
+
+            function cargarTiemposRespuesta() {
+                document.getElementById('tr-texto-cobertura').textContent = 'Calculando...';
+
+                fetch(`{{ route('api.cecoco.tiempos-respuesta.datos') }}?${construirParametrosAnalisis()}`)
+                    .then(r => r.json().then(payload => {
+                        if (!r.ok) { throw new Error(payload.message || 'No se pudieron obtener los datos.'); }
+                        return payload;
+                    }))
+                    .then(datos => {
+                        ultimosDatosTiempoRespuesta = datos;
+
+                        const textoFaltantes = datos.cobertura < datos.total_eventos_periodo
+                            ? ' El resto tiene su expediente consultado pero su timeline no registra un recurso móvil pasando por "En desplazamiento" y "En atención".'
+                            : '';
+                        document.getElementById('tr-texto-cobertura').textContent =
+                            `${fmtTiempoRespuesta(datos.cobertura)} de ${fmtTiempoRespuesta(datos.total_eventos_periodo)} eventos del período tienen un tiempo de respuesta calculable (${datos.cobertura_pct}% de cobertura).${textoFaltantes}`;
+
+                        if (datos.cobertura === 0) {
+                            document.getElementById('tr-sin-datos').style.display = 'block';
+                            document.getElementById('tr-contenido-con-datos').style.display = 'none';
+                            return;
+                        }
+
+                        document.getElementById('tr-sin-datos').style.display = 'none';
+                        document.getElementById('tr-contenido-con-datos').style.display = 'block';
+
+                        document.getElementById('tr-stat-promedio').textContent = fmtTiempoRespuesta(datos.promedio_minutos);
+                        document.getElementById('tr-stat-mediana').textContent = fmtTiempoRespuesta(datos.mediana_minutos);
+                        document.getElementById('tr-stat-minimo').textContent = fmtTiempoRespuesta(datos.minimo_minutos);
+                        document.getElementById('tr-stat-maximo').textContent = fmtTiempoRespuesta(datos.maximo_minutos);
+
+                        renderChartsTiempoRespuesta(datos);
+                        renderTablaLentosTiempoRespuesta(datos.eventos_lentos);
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        document.getElementById('tr-texto-cobertura').textContent = err.message || 'Error al obtener datos de tiempos de respuesta.';
+                    });
+            }
+
             function cargarDatos() {
                 const desde = document.getElementById('filtro-desde').value;
                 const hasta = document.getElementById('filtro-hasta').value;
@@ -1037,6 +1485,10 @@
 
                 document.getElementById('loading-analitica').style.display = 'block';
                 document.getElementById('contenido-analitica').style.display = 'none';
+
+                if (tieneTiemposRespuesta) {
+                    cargarTiemposRespuesta();
+                }
 
                 const params = construirParametrosAnalisis();
 
@@ -1068,6 +1520,7 @@
 
                         renderCharts(datos);
                         mostrarIncidencias(datos);
+                        mostrarTasaDetencion(datos);
 
                         document.getElementById('loading-analitica').style.display = 'none';
                         document.getElementById('contenido-analitica').style.display = 'block';
@@ -1089,6 +1542,7 @@
                 mutations.forEach(function (mutation) {
                     if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
                         if (ultimosDatos) renderCharts(ultimosDatos);
+                        if (ultimosDatosTiempoRespuesta && ultimosDatosTiempoRespuesta.cobertura > 0) renderChartsTiempoRespuesta(ultimosDatosTiempoRespuesta);
                     }
                 });
             });

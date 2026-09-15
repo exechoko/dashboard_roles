@@ -123,6 +123,10 @@ Route::group(['middleware' => ['auth']], function () {
 
         Route::get('/infraestructura', [App\Http\Controllers\Movil\InfraestructuraController::class, 'index'])->name('infraestructura.index');
 
+        Route::get('/datos-911', [App\Http\Controllers\Movil\Datos911Controller::class, 'index'])->name('datos-911.index');
+        Route::get('/datos-911/datos.json', [App\Http\Controllers\Movil\Datos911Controller::class, 'datosJson'])->name('datos-911.datos-json');
+        Route::get('/datos-911/cecoco.json', [App\Http\Controllers\Movil\Datos911Controller::class, 'cecocoJson'])->name('datos-911.cecoco-json');
+
         Route::get('/entregas-equipos', [App\Http\Controllers\Movil\EntregaEquipoController::class, 'index'])->name('entregas-equipos.index');
         Route::get('/entregas-bodycams', [App\Http\Controllers\Movil\EntregaBodycamController::class, 'index'])->name('entregas-bodycams.index');
         Route::get('/tareas', [App\Http\Controllers\Movil\TareaController::class, 'index'])->name('tareas.index');

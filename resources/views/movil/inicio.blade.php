@@ -103,6 +103,7 @@
         $hayAccesos = auth()->user()->canAny([
             'ver-dependencia', 'ver-personal', 'ver-chat', 'ver-clave',
             'ver-historico-movil-gis-cecoco', 'ver-infraestructura-workers',
+            'ver-datos-911',
         ]);
     @endphp
 
@@ -157,6 +158,14 @@
                 <span class="m-tile-icon m-tile-icon--indigo"><span class="material-symbols-outlined">settings</span></span>
                 <span class="m-home-tile__title">Workers y BD</span>
                 <span class="m-home-tile__subtitle">Estado de procesos y tamaño de bases de datos</span>
+            </a>
+        @endcan
+
+        @can('ver-datos-911')
+            <a href="{{ route('movil.datos-911.index') }}" class="m-home-tile">
+                <span class="m-tile-icon m-tile-icon--teal"><span class="material-symbols-outlined">monitoring</span></span>
+                <span class="m-home-tile__title">Datos del 911</span>
+                <span class="m-home-tile__subtitle">Cámaras, personal, TETRA, patrullaje y CeCoCo</span>
             </a>
         @endcan
         </div>

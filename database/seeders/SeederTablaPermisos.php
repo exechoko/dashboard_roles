@@ -119,6 +119,9 @@ class SeederTablaPermisos extends Seeder
             'ver-menu-chat',
             'ver-menu-configuracion-sistema',
 
+            //Datos del 911 (PWA)
+            'ver-datos-911',
+
             //CeCoCo
             'ver-llamadas-cecoco',
             'ver-moviles-cecoco',

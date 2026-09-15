@@ -97,6 +97,7 @@
                                                     'Equipamientos' => [
                                                         'equipo',
                                                         'terminal',
+                                                        'antena',
                                                         'flota',
                                                         'historico'
                                                     ],
@@ -217,6 +218,9 @@
                                                         'archivos-descargas',
                                                         'logs-descargas',
                                                         'links-publicos',
+                                                    ],
+                                                    'Datos del 911 (PWA)' => [
+                                                        'datos-911',
                                                     ]
                                                 ];
 

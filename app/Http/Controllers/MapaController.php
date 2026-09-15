@@ -103,7 +103,7 @@ class MapaController extends Controller
     /**
      * Antenas (SBS) cargadas desde el ABM de Equipamientos (activas e inactivas).
      *
-     * @return array<int, array{latitud: float, longitud: float, titulo: string, numero: int, activa: bool}>
+     * @return array<int, array{latitud: float, longitud: float, titulo: string, numero: int, activa: bool, altura: ?float, localidad: ?string, observaciones: ?string}>
      */
     private function antenasFijas(): array
     {
@@ -113,6 +113,9 @@ class MapaController extends Controller
                 'latitud',
                 'longitud',
                 'activa',
+                'altura',
+                'localidad',
+                'observaciones',
                 DB::raw('antenas.nombre as titulo'),
                 DB::raw('antenas.id as numero')
             )

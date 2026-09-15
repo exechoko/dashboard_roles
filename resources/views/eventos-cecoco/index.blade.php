@@ -84,6 +84,14 @@
                                 <label class="form-label">Hasta</label>
                                 <input type="datetime-local" name="hasta_datetime" class="form-control" value="{{ request('hasta_datetime') }}">
                             </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input type="checkbox" name="sin_detalle" id="sin_detalle" class="form-check-input" value="1" {{ request()->boolean('sin_detalle') ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="sin_detalle">
+                                        Solo eventos sin detalle (sin expediente traído de CECOCO) en el rango seleccionado
+                                    </label>
+                                </div>
+                            </div>
                         </div>
 
                         {{-- Fila 3b: Orden --}}

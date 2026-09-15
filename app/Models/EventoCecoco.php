@@ -102,7 +102,7 @@ class EventoCecoco extends Model
      * Aplica los filtros de búsqueda de eventos (usado por el buscador de
      * escritorio y por el buscador móvil, para no duplicar la lógica).
      *
-     * @param array{anio?: mixed, mes?: mixed, operador?: mixed, tipo?: mixed, tipos?: mixed, desde_datetime?: mixed, hasta_datetime?: mixed, desde?: mixed, hasta?: mixed, hora_desde?: mixed, hora_hasta?: mixed, buscar?: mixed} $filtros
+     * @param array{anio?: mixed, mes?: mixed, operador?: mixed, tipo?: mixed, tipos?: mixed, desde_datetime?: mixed, hasta_datetime?: mixed, desde?: mixed, hasta?: mixed, hora_desde?: mixed, hora_hasta?: mixed, buscar?: mixed, sin_detalle?: mixed} $filtros
      */
     public function scopeFiltrado($query, array $filtros)
     {
@@ -146,6 +146,12 @@ class EventoCecoco extends Model
 
         if (!empty($filtros['buscar'])) {
             $query->buscar($filtros['buscar']);
+        }
+
+        if (!empty($filtros['sin_detalle'])) {
+            $query->whereDoesntHave('detalle', function ($q) {
+                $q->whereNotNull('detalle_json');
+            });
         }
 
         return $query;

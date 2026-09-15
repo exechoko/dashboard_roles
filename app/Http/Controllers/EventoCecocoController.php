@@ -43,7 +43,7 @@ class EventoCecocoController extends Controller
     {
         $eventos = null;
         $totalResultados = null;
-        $tieneFiltros = $request->hasAny(['anio', 'mes', 'operador', 'tipo', 'tipos', 'desde_datetime', 'hasta_datetime', 'desde', 'hasta', 'buscar']);
+        $tieneFiltros = $request->hasAny(['anio', 'mes', 'operador', 'tipo', 'tipos', 'desde_datetime', 'hasta_datetime', 'desde', 'hasta', 'buscar', 'sin_detalle']);
 
         if ($tieneFiltros) {
             $query = EventoCecoco::select([
@@ -74,6 +74,7 @@ class EventoCecocoController extends Controller
                 'hora_desde' => $request->input('hora_desde'),
                 'hora_hasta' => $request->input('hora_hasta'),
                 'buscar' => $request->input('buscar'),
+                'sin_detalle' => $request->boolean('sin_detalle'),
             ];
 
             $query->filtrado($filtrosConteo);
@@ -143,6 +144,7 @@ class EventoCecocoController extends Controller
             'hora_desde',
             'hora_hasta',
             'buscar',
+            'sin_detalle',
             'page',
         ]);
 
@@ -377,6 +379,12 @@ class EventoCecocoController extends Controller
             $query->buscar($request->buscar);
         }
 
+        if ($request->boolean('sin_detalle')) {
+            $query->whereDoesntHave('detalle', function ($q) {
+                $q->whereNotNull('detalle_json');
+            });
+        }
+
         $filename = 'cecoco_eventos_' . now()->format('Ymd_His') . '.txt';
 
         return response()->streamDownload(function () use ($query) {
@@ -485,6 +493,7 @@ class EventoCecocoController extends Controller
                 'hora_desde',
                 'hora_hasta',
                 'buscar',
+                'sin_detalle',
                 'page',
             ]);
 

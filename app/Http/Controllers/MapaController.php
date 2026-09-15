@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exports\CamarasExport;
+use App\Models\Antena;
 use App\Models\Camara;
 use App\Models\Comisaria;
 use App\Models\Departamental;
@@ -100,21 +101,23 @@ class MapaController extends Controller
     }
 
     /**
-     * Antenas con coordenadas fijas (Paraná + Concordia).
+     * Antenas (SBS) cargadas desde el ABM de Equipamientos (activas e inactivas).
      *
-     * @return array<int, array{latitud: float, longitud: float, titulo: string, numero: int}>
+     * @return array<int, array{latitud: float, longitud: float, titulo: string, numero: int, activa: bool}>
      */
     private function antenasFijas(): array
     {
-        return [
-            // PARANA
-            ['latitud' => -31.72652, 'longitud' => -60.53293, 'titulo' => 'SBS 1', 'numero' => 1],
-            ['latitud' => -31.75109, 'longitud' => -60.48563, 'titulo' => 'SBS 2', 'numero' => 2],
-            ['latitud' => -31.77106, 'longitud' => -60.52482, 'titulo' => 'SBS 3', 'numero' => 3],
-            // CONCORDIA
-            ['latitud' => -31.324043, 'longitud' => -58.012072, 'titulo' => 'SBS 11', 'numero' => 11],
-            ['latitud' => -31.391542, 'longitud' => -58.032703, 'titulo' => 'SBS 12', 'numero' => 12],
-        ];
+        return Antena::whereNotNull('latitud')
+            ->whereNotNull('longitud')
+            ->select(
+                'latitud',
+                'longitud',
+                'activa',
+                DB::raw('antenas.nombre as titulo'),
+                DB::raw('antenas.id as numero')
+            )
+            ->get()
+            ->toArray();
     }
 
     /**

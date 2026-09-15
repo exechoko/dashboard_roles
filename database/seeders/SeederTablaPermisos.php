@@ -34,6 +34,12 @@ class SeederTablaPermisos extends Seeder
             'editar-terminal',
             'borrar-terminal',
 
+            //tabla antenas
+            'ver-antena',
+            'crear-antena',
+            'editar-antena',
+            'borrar-antena',
+
             //tabla dependencia
             'ver-dependencia',
             'crear-dependencia',

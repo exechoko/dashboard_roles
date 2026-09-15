@@ -11,6 +11,7 @@ use App\Http\Controllers\PasswordVaultController;
 use App\Http\Controllers\PatrimonioBienController;
 use App\Http\Controllers\PatrimonioTipoBienController;
 use App\Http\Controllers\TareaController;
+use App\Http\Controllers\AntenaController;
 use Illuminate\Support\Facades\Route;
 //agregamos los controladores
 use App\Http\Controllers\HomeController;
@@ -108,6 +109,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/mapa/camaras.json', [App\Http\Controllers\Movil\MapaController::class, 'camarasJson'])->name('mapa.camaras-json');
         Route::get('/mapa/dependencias.json', [App\Http\Controllers\Movil\MapaController::class, 'dependenciasJson'])->name('mapa.dependencias-json');
         Route::get('/mapa/sitios.json', [App\Http\Controllers\Movil\MapaController::class, 'sitiosJson'])->name('mapa.sitios-json');
+        Route::get('/mapa/antenas.json', [App\Http\Controllers\Movil\MapaController::class, 'antenasJson'])->name('mapa.antenas-json');
         Route::get('/mapa', [App\Http\Controllers\Movil\MapaController::class, 'index'])->name('mapa.index');
 
         Route::get('/eventos', [App\Http\Controllers\Movil\EventosController::class, 'index'])->name('eventos.index');
@@ -235,6 +237,7 @@ Route::group(['middleware' => ['auth']], function () {
         ->middleware('can:ver-equipo');
     Route::resource('equipos', EquipoController::class);
     Route::resource('terminales', TipoTerminalController::class);
+    Route::resource('antenas', AntenaController::class);
     Route::resource('bodycams', BodycamController::class);
     
     // 🔹 PERSONAL EFECTIVO (NUEVO)

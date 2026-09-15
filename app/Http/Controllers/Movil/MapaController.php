@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Movil;
 
 use App\Http\Controllers\Controller;
+use App\Models\Antena;
 use App\Models\Comisaria;
 use App\Models\Sitio;
 use App\Services\CamarasMapaService;
@@ -19,6 +20,7 @@ class MapaController extends Controller
     {
         return view('movil.mapa.index', [
             'puedeVerDependencias' => auth()->user()->can('ver-dependencia'),
+            'puedeVerAntenas' => auth()->user()->can('ver-antena'),
         ]);
     }
 
@@ -69,6 +71,35 @@ class MapaController extends Controller
                     'titulo' => $sitio->nombre,
                     'cartel' => (bool) $sitio->cartel,
                     'observaciones' => $sitio->observaciones,
+                ],
+            ];
+        })->values()->all();
+
+        return response()->json(['type' => 'FeatureCollection', 'features' => $features]);
+    }
+
+    public function antenasJson(): JsonResponse
+    {
+        abort_unless(auth()->user()->can('ver-antena'), 403);
+
+        $antenas = Antena::whereNotNull('latitud')
+            ->whereNotNull('longitud')
+            ->get(['id', 'nombre', 'localidad', 'latitud', 'longitud', 'altura', 'activa', 'observaciones']);
+
+        $features = $antenas->map(function (Antena $antena) {
+            return [
+                'type' => 'Feature',
+                'geometry' => [
+                    'type' => 'Point',
+                    'coordinates' => [(float) $antena->longitud, (float) $antena->latitud],
+                ],
+                'properties' => [
+                    'numero' => $antena->id,
+                    'titulo' => $antena->nombre,
+                    'localidad' => $antena->localidad,
+                    'altura' => $antena->altura,
+                    'activa' => (bool) $antena->activa,
+                    'observaciones' => $antena->observaciones,
                 ],
             ];
         })->values()->all();

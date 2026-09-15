@@ -8,7 +8,7 @@
 
 @can('ver-menu-equipamientos')
     <li
-        class="dropdown {{ request()->is('equipos*') ? 'active' : '' }} {{ request()->is('busqueda-avanzada*') ? 'active' : '' }} {{ request()->is('flota*') ? 'active' : '' }} {{ request()->is('recursos*') ? 'active' : '' }} {{ request()->is('vehiculos*') ? 'active' : '' }} {{ request()->is('terminales*') ? 'active' : '' }}">
+        class="dropdown {{ request()->is('equipos*') ? 'active' : '' }} {{ request()->is('busqueda-avanzada*') ? 'active' : '' }} {{ request()->is('flota*') ? 'active' : '' }} {{ request()->is('recursos*') ? 'active' : '' }} {{ request()->is('vehiculos*') ? 'active' : '' }} {{ request()->is('terminales*') ? 'active' : '' }} {{ request()->is('antenas*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-cog"></i><span>Equipamientos</span>
         </a>
@@ -46,6 +46,13 @@
                 <li class="{{ request()->is('terminales*') ? 'active' : '' }}">
                     <a class="nav-link" href="/terminales">
                         <i class=" fas fa-satellite-dish"></i><span>Tipos de Term.</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-antena')
+                <li class="{{ request()->is('antenas*') ? 'active' : '' }}">
+                    <a class="nav-link" href="/antenas">
+                        <i class="fas fa-broadcast-tower"></i><span>Antenas (SBS)</span>
                     </a>
                 </li>
             @endcan

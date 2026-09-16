@@ -1216,6 +1216,8 @@ class CecocoExpedienteService
             'municipio' => ['municipio:', 'municipio', 'localidad:', 'localidad'],
             'puesto' => ['puesto:', 'puesto', 'box:', 'box'],
             'sector' => ['sector:', 'sector'],
+            'servidor' => ['servidor:', 'servidor'],
+            'llamante_nombre' => ['nombre:', 'nombre'],
         ];
 
         $tablas = $xpath->query('//table');

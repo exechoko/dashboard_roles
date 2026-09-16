@@ -533,27 +533,21 @@ class EventoCecocoController extends Controller
     }
 
     /**
-     * Exporta el PDF nativo del "Parte de novedad general" de CECOCO (el mismo
-     * que genera el botón de impresión dentro del sistema CECOCO), con los datos
-     * básicos del evento y sin la cronología completa de acciones.
+     * Exporta el "Parte de novedad general" del expediente, generado localmente
+     * a partir de los datos ya obtenidos del detalle (report_history), en vez de
+     * pedirle a CECOCO el PDF nativo (report_issues), que sale en blanco cuando
+     * el expediente todavía no fue restaurado desde backup en el sistema CECOCO.
      */
     public function exportarPdfResumen(Request $request, EventoCecoco $eventoCecoco)
     {
         $this->authorize('ver-expediente-cecoco');
 
         try {
-            $cacheKey = 'cecoco_reporte_pdf_resumen_' . $eventoCecoco->nro_expediente;
-            $pdf = $request->boolean('refrescar') ? null : Cache::get($cacheKey);
+            $detalle = $this->expedienteService->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
 
-            if (!$pdf) {
-                $pdf = $this->expedienteService->obtenerReportePdfOriginal($eventoCecoco->nro_expediente);
-                Cache::put($cacheKey, $pdf, 60 * 30);
-            }
+            $pdf = Pdf::loadView('eventos-cecoco.parte-novedad-pdf', compact('eventoCecoco', 'detalle'));
 
-            return response($pdf, 200, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="expediente_' . $eventoCecoco->nro_expediente . '.pdf"',
-            ]);
+            return $pdf->stream('ParteDeNovedad_' . $eventoCecoco->nro_expediente . '.pdf');
         } catch (\Exception $e) {
             return redirect()
                 ->route('cecoco.show', $eventoCecoco)

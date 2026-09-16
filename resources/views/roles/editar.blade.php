@@ -131,6 +131,7 @@
                                                         'recurso-alias-cecoco',
                                                         'ver-reporte-llamadas-central-telefonica',
                                                         'importar-llamadas-central-telefonica',
+                                                        'whatsapp-cecoco',
                                                     ],
                                                     'Entregas' => [
                                                         'entrega-equipos',
@@ -147,7 +148,9 @@
                                                     ],
                                                     'Patrimonio' => [
                                                         'bien',
-                                                        'tipo-bien'
+                                                        'tipo-bien',
+                                                        'patrimonio-cargos',
+                                                        'patrimonio'
                                                     ],
                                                     'Control de Armas' => [
                                                         'menu-armamento',

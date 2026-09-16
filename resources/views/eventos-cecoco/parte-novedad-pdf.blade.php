@@ -7,7 +7,7 @@
         @page { margin: 12mm 15mm; }
         body { font-family: 'Times New Roman', Times, serif; font-size: 11px; color: #000; margin: 0; }
 
-        .pn-logo { width: 165px; height: 60px; margin-bottom: 2px; }
+        .pn-logo { width: 180px; height: auto; margin-bottom: 2px; }
 
         .pn-titulo { font-size: 18px; color: #e8951b; margin: 4px 0 10px; }
 
@@ -66,13 +66,7 @@
     $observacionesCierre = $limpiar($cierre['observaciones'] ?? null);
 @endphp
 
-{{-- Logo CeCoCo reconstruido en SVG (no se dispone del archivo de imagen original) --}}
-<img class="pn-logo" src="data:image/svg+xml;base64,{{ base64_encode('<svg xmlns="http://www.w3.org/2000/svg" width="440" height="160" viewBox="0 0 440 160">
-    <text x="10" y="95" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="80" letter-spacing="-2" fill="#5c6b73">CeCoCo</text>
-    <text x="6" y="91" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="80" letter-spacing="-2" fill="#ffffff" stroke="#8a949a" stroke-width="1.5" paint-order="stroke fill">CeCoCo</text>
-    <path d="M0,128 C50,108 90,144 150,120 C210,96 260,132 320,112 C360,98 400,110 440,102 L440,150 L0,150 Z" fill="#2f7fc1"/>
-    <path d="M0,124 C50,106 90,138 150,116 C210,94 260,126 320,108 C360,96 400,106 440,99" fill="none" stroke="#7fb3dd" stroke-width="3"/>
-</svg>') }}" alt="CeCoCo">
+<img class="pn-logo" src="{{ public_path('img/logo_cecoco_pdf.jpeg') }}" alt="CeCoCo">
 <div class="pn-titulo">Parte de novedad general</div>
 
 <table class="pn-grid">

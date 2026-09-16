@@ -249,7 +249,7 @@ class GrabadorTetraService
      */
     private function esperarResultados(Client $client, string $sessionId, string $searchId, float $limite): array
     {
-        for ($poll = 0; $poll < 20 && microtime(true) < $limite; $poll++) {
+        while (microtime(true) < $limite) {
             usleep(300000);
 
             $resp = $client->get($this->baseUrl . '/', [
@@ -272,7 +272,11 @@ class GrabadorTetraService
 
         Log::warning('GrabadorTetraService: getstatus no terminó a tiempo', ['searchid' => $searchId]);
 
-        return [];
+        // Nunca devolver [] en un timeout: buscarPagina() lo interpretaría como
+        // "hayMas=false" (búsqueda terminada) y el frontend dejaría de paginar,
+        // perdiendo en silencio las páginas más viejas de la ventana (las más
+        // lentas de calcular cuando la ventana es larga).
+        throw new \RuntimeException('El grabador no terminó de procesar la búsqueda a tiempo (searchid ' . $searchId . ').');
     }
 
     /**

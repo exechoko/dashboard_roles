@@ -643,10 +643,12 @@ function cargarPaginaModulaciones(url, acumulado) {
     })
     .then(function(data) {
         if (!data.success) {
-            if (acumulado.modulaciones.length > 0) { renderizarModulaciones(acumulado); return; }
-            document.getElementById('modulaciones-loading').style.display = 'none';
-            document.getElementById('modulaciones-error').style.display   = 'block';
-            document.getElementById('modulaciones-error').textContent     = data.message || 'Error al obtener modulaciones.';
+            document.getElementById('modulaciones-error').style.display = 'block';
+            document.getElementById('modulaciones-error').textContent   =
+                (data.message || 'Error al obtener modulaciones.') +
+                (acumulado.modulaciones.length > 0 ? ' La lista de abajo puede estar incompleta.' : '');
+            if (acumulado.modulaciones.length > 0) { renderizarModulaciones(acumulado); }
+            else { document.getElementById('modulaciones-loading').style.display = 'none'; }
             return;
         }
 
@@ -668,10 +670,12 @@ function cargarPaginaModulaciones(url, acumulado) {
     })
     .catch(function(err) {
         console.error(err);
-        if (acumulado.modulaciones.length > 0) { renderizarModulaciones(acumulado); return; }
-        document.getElementById('modulaciones-loading').style.display = 'none';
-        document.getElementById('modulaciones-error').style.display   = 'block';
-        document.getElementById('modulaciones-error').textContent     = 'Error al obtener modulaciones: ' + (err && err.message ? err.message : 'error de red');
+        document.getElementById('modulaciones-error').style.display = 'block';
+        document.getElementById('modulaciones-error').textContent   =
+            'Error al obtener modulaciones: ' + (err && err.message ? err.message : 'error de red') +
+            (acumulado.modulaciones.length > 0 ? '. La lista de abajo puede estar incompleta.' : '');
+        if (acumulado.modulaciones.length > 0) { renderizarModulaciones(acumulado); }
+        else { document.getElementById('modulaciones-loading').style.display = 'none'; }
     });
 }
 

@@ -188,8 +188,14 @@ class CecocoModulacionesLocalService
 
     /**
      * Escanea el disco sólo en los minutos indicados (prefijos "Ymd_Hi") y
-     * devuelve los archivos de modulación, sin deduplicar. Cachea cada minuto por
-     * separado 90 s para que la paginación del frontend no re-escanee el disco.
+     * devuelve los archivos de modulación, sin deduplicar.
+     *
+     * El escaneo se hace por DÍA, no por minuto: cada pasada tiene que recorrer
+     * igual todas las carpetas de operador del mes (el layout es
+     * {base}\YYYY\YYYY_MM\Operador\, sin subcarpeta por día), así que escanear
+     * minuto por minuto repetía esa recorrida una vez por minuto. Con una ventana
+     * de varias horas eso son cientos de recorridas del árbol del mes sobre un
+     * disco de red, y es lo que agotaba el max_execution_time en producción.
      *
      * @param array<int, string> $prefijos  Minutos a escanear, formato "Ymd_Hi"
      * @return array<int, array<string, mixed>>
@@ -202,22 +208,25 @@ class CecocoModulacionesLocalService
             return [];
         }
 
+        $prefijos = array_unique($prefijos);
+
+        $porDia = [];
+        foreach ($prefijos as $prefijo) {
+            $porDia[substr($prefijo, 0, 8)][] = $prefijo;
+        }
+
         $resultado = [];
 
-        foreach (array_unique($prefijos) as $prefijo) {
-            $cacheKey = 'mod_min_' . md5($this->baseDir) . '_' . $prefijo;
+        foreach ($porDia as $dia => $minutosDelDia) {
+            $delDia = $this->escanearDiaCacheado((string) $dia);
 
-            $delMinuto = \Illuminate\Support\Facades\Cache::remember(
-                $cacheKey,
-                now()->addSeconds(90),
-                fn (): array => $this->escanearMinuto($prefijo)
-            );
-
-            foreach ($delMinuto as $modulacion) {
-                if ($desde && $hasta && !Carbon::parse($modulacion['fechaInicio'])->between($desde, $hasta)) {
-                    continue;
+            foreach ($minutosDelDia as $prefijo) {
+                foreach ($delDia[$prefijo] ?? [] as $modulacion) {
+                    if ($desde && $hasta && !Carbon::parse($modulacion['fechaInicio'])->between($desde, $hasta)) {
+                        continue;
+                    }
+                    $resultado[] = $modulacion;
                 }
-                $resultado[] = $modulacion;
             }
         }
 
@@ -225,43 +234,97 @@ class CecocoModulacionesLocalService
     }
 
     /**
-     * Escanea el disco para un único minuto (prefijo "Ymd_Hi").
+     * Devuelve los archivos de un día agrupados por minuto ("Ymd_Hi"), cacheados
+     * para que las búsquedas siguientes sobre el mismo día no vuelvan a tocar el disco.
      *
-     * @return array<int, array<string, mixed>>
+     * @return array<string, array<int, array<string, mixed>>>
      */
-    private function escanearMinuto(string $prefijo): array
+    private function escanearDiaCacheado(string $dia): array
     {
-        $anio = substr($prefijo, 0, 4);
-        $mes  = substr($prefijo, 4, 2);
+        $cacheKey = 'mod_dia_' . md5($this->baseDir) . '_' . $dia;
+        $cache    = \Illuminate\Support\Facades\Cache::get($cacheKey);
+
+        if (is_array($cache)) {
+            return $cache;
+        }
+
+        $inicio  = microtime(true);
+        $escaneo = $this->escanearDia($dia);
+        $tardo   = microtime(true) - $inicio;
+
+        // Un escaneo incompleto (se acabó el presupuesto) se cachea poco tiempo:
+        // sirve para no repetir la espera en la misma tanda de requests, pero deja
+        // que más adelante se pueda completar.
+        \Illuminate\Support\Facades\Cache::put(
+            $cacheKey,
+            $escaneo['porMinuto'],
+            $escaneo['completo'] ? now()->addMinutes(10) : now()->addSeconds(60)
+        );
+
+        Log::info('CecocoModulacionesLocalService: escaneo de disco', [
+            'dia'       => $dia,
+            'segundos'  => round($tardo, 1),
+            'minutos'   => count($escaneo['porMinuto']),
+            'completo'  => $escaneo['completo'],
+        ]);
+
+        return $escaneo['porMinuto'];
+    }
+
+    /**
+     * Recorre UNA vez las carpetas de operador del mes buscando los audios de un
+     * día y los agrupa por minuto. Corta si se pasa del presupuesto de tiempo,
+     * para que un disco de red lento nunca tumbe el request (las modulaciones sin
+     * .mp3 local se sirven igual por el Replay Server).
+     *
+     * @return array{porMinuto: array<string, array<int, array<string, mixed>>>, completo: bool}
+     */
+    private function escanearDia(string $dia): array
+    {
+        $anio = substr($dia, 0, 4);
+        $mes  = substr($dia, 4, 2);
         $dir  = $this->baseDir . DIRECTORY_SEPARATOR . $anio . DIRECTORY_SEPARATOR . $anio . '_' . $mes;
 
         if (!is_dir($dir)) {
-            return [];
+            return ['porMinuto' => [], 'completo' => true];
         }
 
-        // Patrón por minuto: cualquier audio con el timestamp _YYYYMMDD_HHMM.
-        $pattern  = $dir . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*_' . $prefijo . '*';
-        $archivos = glob($pattern, GLOB_NOSORT) ?: [];
+        $limite    = microtime(true) + (int) config('grabador.escaneo_disco_timeout', 25);
+        $porMinuto = [];
+        $completo  = true;
 
-        $resultado = [];
-        foreach ($archivos as $filepath) {
-            $filename = basename($filepath);
+        $carpetas = glob($dir . DIRECTORY_SEPARATOR . '*', GLOB_ONLYDIR | GLOB_NOSORT) ?: [];
 
-            // Sólo audios y sólo modulaciones (excluir llamadas telefónicas).
-            if (!in_array(strtolower(pathinfo($filename, PATHINFO_EXTENSION)), self::EXTENSIONES_AUDIO, true)) {
-                continue;
+        foreach ($carpetas as $carpeta) {
+            if (microtime(true) >= $limite) {
+                $completo = false;
+                Log::warning('CecocoModulacionesLocalService: escaneo de disco incompleto por tiempo', [
+                    'dia' => $dia,
+                    'dir' => $dir,
+                ]);
+                break;
             }
-            if ($this->marcadorTelefonia !== '' && str_contains($filename, $this->marcadorTelefonia)) {
-                continue;
-            }
 
-            $modulacion = $this->parsearNombreArchivo($filename, $filepath);
-            if ($modulacion) {
-                $resultado[] = $modulacion;
+            foreach (glob($carpeta . DIRECTORY_SEPARATOR . '*_' . $dia . '_*', GLOB_NOSORT) ?: [] as $filepath) {
+                $filename = basename($filepath);
+
+                // Sólo audios y sólo modulaciones (excluir llamadas telefónicas).
+                if (!in_array(strtolower(pathinfo($filename, PATHINFO_EXTENSION)), self::EXTENSIONES_AUDIO, true)) {
+                    continue;
+                }
+                if ($this->marcadorTelefonia !== '' && str_contains($filename, $this->marcadorTelefonia)) {
+                    continue;
+                }
+
+                $modulacion = $this->parsearNombreArchivo($filename, $filepath);
+                if ($modulacion) {
+                    $clave = Carbon::parse($modulacion['fechaInicio'])->format('Ymd_Hi');
+                    $porMinuto[$clave][] = $modulacion;
+                }
             }
         }
 
-        return $resultado;
+        return ['porMinuto' => $porMinuto, 'completo' => $completo];
     }
 
     /**

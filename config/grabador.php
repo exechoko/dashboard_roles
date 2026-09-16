@@ -59,6 +59,12 @@ return [
     // sin dependencias). Si no está disponible, la descarga cae al WAV original.
     'ffmpeg_path' => env('GRABADOR_FFMPEG_PATH', 'ffmpeg'),
 
+    // Presupuesto (en segundos) para escanear el disco de audios al emparejar las
+    // filas del grabador con su .mp3 local. Si se agota, el escaneo corta y esas
+    // modulaciones se sirven por el Replay Server: vale más devolver el listado
+    // que colgar el request esperando un disco de red lento.
+    'escaneo_disco_timeout' => (int) env('GRABADOR_ESCANEO_DISCO_TIMEOUT', 25),
+
     // Tolerancia (en segundos) al emparejar una fila del grabador con un .mp3 del
     // backup local por hora de inicio (las copias de CECOCO arrancan con un pequeño
     // corrimiento respecto del grabador).

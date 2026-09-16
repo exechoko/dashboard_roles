@@ -28,6 +28,10 @@
                                 </div>
                             </form>
 
+                            @foreach ($antenas as $antena)
+                                @include('antenas.modal.detalle')
+                            @endforeach
+
                             <div class="table-responsive">
                                 <table class="table table-striped mt-2">
                                     <thead style="background: linear-gradient(45deg,#6777ef, #35199a)">
@@ -38,7 +42,7 @@
                                         <th style="color:#fff;">Lat / Long</th>
                                         <th style="color:#fff;">Altura</th>
                                         <th style="color:#fff;">Estado</th>
-                                        <th style="color:#fff;">Acciones</th>
+                                        <th style="color:#fff;" class="text-center">Acciones</th>
                                     </thead>
                                     <tbody>
                                         @forelse ($antenas as $antena)
@@ -56,21 +60,28 @@
                                                         <span class="badge badge-danger">Inactiva</span>
                                                     @endif
                                                 </td>
-                                                <td>
-                                                    <form action="{{ route('antenas.destroy', $antena->id) }}"
-                                                        method="POST">
-                                                        @can('editar-antena')
-                                                            <a class="btn btn-info"
-                                                                href="{{ route('antenas.edit', $antena->id) }}">Editar</a>
-                                                        @endcan
-
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        @can('borrar-antena')
-                                                            <button type="submit" onclick="return confirm('Está seguro')"
-                                                                class="btn btn-danger">Borrar</button>
-                                                        @endcan
-                                                    </form>
+                                                <td class="text-center action-td">
+                                                    <a class="action-btn btn-view" data-toggle="modal"
+                                                        data-target="#ModalDetalle{{ $antena->id }}" title="Detalle">
+                                                        <i class="far fa-eye"></i>
+                                                    </a>
+                                                    @can('editar-antena')
+                                                        <a class="action-btn btn-edit"
+                                                            href="{{ route('antenas.edit', $antena->id) }}" title="Editar">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                    @endcan
+                                                    @can('borrar-antena')
+                                                        <form action="{{ route('antenas.destroy', $antena->id) }}"
+                                                            method="POST" class="d-inline">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="action-btn btn-del"
+                                                                onclick="return confirm('Está seguro')" title="Borrar">
+                                                                <i class="far fa-trash-alt"></i>
+                                                            </button>
+                                                        </form>
+                                                    @endcan
                                                 </td>
                                             </tr>
                                         @empty

@@ -20,12 +20,62 @@ Disponible con permiso `ver-expediente-cecoco`.
 4. Usá **Actualizar desde CECOCO** solamente si necesitás refrescar la información desde el sistema fuente.
 5. Si el resumen IA está habilitado, esperá a que pase de pendiente o procesando a completado.
 
-## Escuchar grabaciones o modulaciones
+## Escuchar grabaciones telefónicas
 
 1. Abrí el detalle del evento.
-2. Ingresá a Grabaciones o Modulaciones si contás con el permiso correspondiente.
+2. Ingresá a Grabaciones si contás con el permiso correspondiente.
 3. Revisá la fecha y el contexto antes de reproducir.
 4. Usá los controles de audio del visor.
+
+No compartas ni descargues material fuera de los procedimientos autorizados.
+
+## Escuchar modulaciones de radio
+
+Las modulaciones son las comunicaciones de radio TETRA, distintas de las grabaciones
+telefónicas. Se listan desde el grabador, que es la fuente autoritativa: devuelve una
+fila por modulación real.
+
+Disponible con permiso `escuchar-modulaciones-cecoco`.
+
+1. Abrí el detalle del evento.
+2. Pulsá **Modulaciones**.
+3. Esperá a que termine la búsqueda: muestra el avance y puede tardar varios segundos.
+4. Reproducí con los controles de cada tarjeta o descargá con el botón de descarga.
+
+### Qué ventana de tiempo busca
+
+La ventana se calcula sola a partir del evento y se muestra arriba de la lista:
+
+- **Desde:** 10 minutos antes de la fecha y hora del evento. Ese margen sirve para
+  alcanzar las modulaciones previas al alta del evento, cuando el hecho ya se estaba
+  comunicando por radio.
+- **Hasta:** la fecha de cierre del evento.
+- **Si el evento no tiene fecha de cierre:** hasta 60 minutos después del inicio.
+
+No hay filtro por canal: trae **todo** el tráfico de radio de esa ventana, no solamente
+el de los recursos asignados al evento. Por eso una ventana de varias horas puede tener
+cientos de modulaciones. El tope es de 1000 por búsqueda.
+
+### Cómo leer la lista
+
+- **Resaltadas en verde:** modulaciones de recursos que intervinieron en el evento. Son
+  las que normalmente interesan primero.
+- **Atenuadas:** las que ya escuchaste. Se guardan en tu navegador y por evento, así que
+  no las ven los demás usuarios ni se conservan si cambiás de equipo.
+- **Título de cada tarjeta:** quién moduló y, con una flecha, a quién o a qué grupo.
+- **Etiquetas:** tipo de comunicación, símplex o dúplex, y cuántos operadores de CECOCO
+  la registraron.
+- **Buscador:** filtra por recurso, SSI, canal u hora (por ejemplo `M2231216`, `Cria 904`
+  o `06:16`).
+
+### De dónde sale el audio
+
+Cada modulación se sirve del backup local de audios si existe la copia de ese día; si no,
+se obtiene del grabador. Al descargar se entrega en MP3.
+
+Puede aparecer **Audio no disponible** en una modulación que ningún operador escuchó y que
+además no se puede traer del grabador en ese momento. El listado igual se muestra completo:
+sirve para reconstruir quién moduló y cuándo, aunque el audio no esté.
 
 No compartas ni descargues material fuera de los procedimientos autorizados.
 

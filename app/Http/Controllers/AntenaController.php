@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AntenasExport;
 use App\Http\Requests\AntenaRequest;
 use App\Models\Antena;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AntenaController extends Controller
 {
     function __construct()
     {
-        $this->middleware('permission:ver-antena|crear-antena|editar-antena|borrar-antena')->only('index');
+        $this->middleware('permission:ver-antena|crear-antena|editar-antena|borrar-antena')->only(['index', 'exportarExcel', 'exportarPdf']);
         $this->middleware('permission:crear-antena', ['only' => ['create', 'store']]);
         $this->middleware('permission:editar-antena', ['only' => ['edit', 'update']]);
         $this->middleware('permission:borrar-antena', ['only' => ['destroy']]);
@@ -122,5 +125,25 @@ class AntenaController extends Controller
         $antena->delete();
 
         return redirect()->route('antenas.index');
+    }
+
+    public function exportarExcel(Request $request)
+    {
+        $texto = trim((string) $request->get('texto'));
+
+        return Excel::download(new AntenasExport($texto), 'ListadoAntenas_' . now()->format('Y-m-d_His') . '.xlsx');
+    }
+
+    public function exportarPdf(Request $request)
+    {
+        $texto = trim($request->get('texto'));
+        $antenas = Antena::where('nombre', 'LIKE', '%' . $texto . '%')
+            ->orWhere('localidad', 'LIKE', '%' . $texto . '%')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        $pdf = Pdf::loadView('antenas.pdf', compact('antenas', 'texto'))->setPaper('a4', 'landscape');
+
+        return $pdf->stream('ListadoAntenas_' . now()->format('Y-m-d_His') . '.pdf');
     }
 }

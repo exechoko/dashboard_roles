@@ -11,9 +11,17 @@
                     <div class="card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-3">
-                                @can('crear-antena')
-                                    <a class="btn btn-success" href="{{ route('antenas.create') }}">Nuevo</a>
-                                @endcan
+                                <div>
+                                    @can('crear-antena')
+                                        <a class="btn btn-success" href="{{ route('antenas.create') }}">Nuevo</a>
+                                    @endcan
+                                    <a class="btn btn-outline-success" href="{{ route('antenas.exportar-excel', request()->query()) }}" title="Exportar a Excel">
+                                        <i class="fas fa-file-excel"></i> Excel
+                                    </a>
+                                    <a class="btn btn-outline-danger" href="{{ route('antenas.exportar-pdf', request()->query()) }}" target="_blank" title="Exportar a PDF">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </a>
+                                </div>
                                 <label class="alert alert-dark mb-0" style="float: right;">Registros:
                                     {{ $antenas->total() }}</label>
                             </div>

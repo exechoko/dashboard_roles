@@ -241,6 +241,8 @@ Route::group(['middleware' => ['auth']], function () {
         ->middleware('can:ver-equipo');
     Route::resource('equipos', EquipoController::class);
     Route::resource('terminales', TipoTerminalController::class);
+    Route::get('/antenas/exportar/excel', [AntenaController::class, 'exportarExcel'])->name('antenas.exportar-excel');
+    Route::get('/antenas/exportar/pdf', [AntenaController::class, 'exportarPdf'])->name('antenas.exportar-pdf');
     Route::resource('antenas', AntenaController::class);
     Route::resource('bodycams', BodycamController::class);
     

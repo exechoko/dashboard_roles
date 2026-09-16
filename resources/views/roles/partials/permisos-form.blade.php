@@ -551,10 +551,15 @@
         color: var(--text-primary);
         line-height: 1.6rem;
         cursor: pointer;
+        display: flex;
+        align-items: center;
+        max-width: 100%;
+    }
+    .perm-leaf-switch .custom-control-label .perm-leaf-text {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        display: block;
+        min-width: 0;
     }
     .perm-leaf-switch .custom-control-label::before,
     .perm-leaf-switch .custom-control-label::after {

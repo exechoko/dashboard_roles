@@ -41,7 +41,7 @@
             'id' => 'permission_' . $perm->id,
         ]) }}
         <label class="custom-control-label" for="permission_{{ $perm->id }}">
-            <i class="{{ $icon }} mr-1"></i>{{ $label }}
+            <i class="{{ $icon }} mr-1"></i><span class="perm-leaf-text">{{ $label }}</span>
         </label>
     </div>
 </div>

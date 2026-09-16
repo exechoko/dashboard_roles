@@ -324,7 +324,7 @@
 
     <div class="perm-tree" role="tree">
         @foreach ($tree as $groupName => $group)
-            @php $groupExpanded = $group['stats']['selected'] > 0; @endphp
+            @php $groupExpanded = false; @endphp
             <div class="perm-node perm-node--group" data-default-expanded="{{ $groupExpanded ? 1 : 0 }}">
                 <div class="perm-node-row">
                     <label class="perm-checkbox-wrap" title="Activar/desactivar todo el grupo">
@@ -346,7 +346,7 @@
                         @if ($item['type'] === 'leaf')
                             @include('roles.partials.permiso-leaf', ['item' => $item, 'rolePermissions' => $rolePermissions, 'groupName' => $groupName])
                         @else
-                            @php $moduleExpanded = $item['stats']['selected'] > 0; @endphp
+                            @php $moduleExpanded = false; @endphp
                             <div class="perm-node perm-node--module" data-default-expanded="{{ $moduleExpanded ? 1 : 0 }}">
                                 <div class="perm-node-row">
                                     <label class="perm-checkbox-wrap" title="Activar/desactivar todo el módulo">
@@ -384,30 +384,38 @@
 <style>
     .permissions-toolbar {
         z-index: 10;
-        border-bottom: 1px solid #e9ecef;
+        border-bottom: 1px solid var(--border-color);
         margin-bottom: 15px;
     }
 
     /* --- Árbol --- */
     .perm-tree {
-        border: 1px solid #e9ecef;
+        border: 1px solid var(--border-color);
         border-radius: 8px;
         padding: 6px 10px;
-        background: #fff;
+        background: var(--card-bg);
     }
     .perm-node-children {
         margin-left: 22px;
         padding-left: 14px;
-        border-left: 2px solid #e9ecef;
+        border-left: 2px solid var(--border-color);
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 0 12px;
+        align-items: start;
     }
     .perm-node-children.is-collapsed {
         display: none;
+    }
+    /* Los módulos (con sus propios hijos) ocupan todo el ancho de la grilla */
+    .perm-node--module {
+        grid-column: 1 / -1;
     }
     .perm-node--group > .perm-node-children {
         margin-bottom: 4px;
     }
     .perm-node--group + .perm-node--group {
-        border-top: 1px solid #f1f3f5;
+        border-top: 1px solid var(--border-color);
     }
 
     .perm-node-row {
@@ -418,11 +426,11 @@
     }
     .perm-node--group > .perm-node-row .perm-node-label {
         font-weight: 700;
-        color: #4a4a68;
+        color: var(--text-primary);
     }
     .perm-node--module > .perm-node-row .perm-node-label {
         font-weight: 600;
-        color: #6b6b8a;
+        color: var(--text-secondary);
     }
 
     .perm-node-hit {
@@ -436,7 +444,7 @@
         padding: 2px 6px;
     }
     .perm-node-hit:hover {
-        background-color: #f4f6fb;
+        background-color: var(--bg-tertiary);
     }
     .perm-node-hit:focus-visible {
         outline: 2px solid #86b7fe;
@@ -444,7 +452,7 @@
     }
     .perm-caret-icon {
         font-size: 0.72rem;
-        color: #9aa0ac;
+        color: var(--text-secondary);
         margin-right: 8px;
         transition: transform 0.15s ease;
         flex: 0 0 auto;
@@ -454,7 +462,7 @@
     }
     .perm-node-icon {
         margin-right: 8px;
-        color: #7c8798;
+        color: var(--text-secondary);
         flex: 0 0 auto;
     }
     .perm-node-label {
@@ -467,8 +475,8 @@
         margin-left: auto;
         font-size: 0.72rem;
         font-weight: 600;
-        color: #8a93a3;
-        background: #f1f3f5;
+        color: var(--text-secondary);
+        background: var(--bg-tertiary);
         border-radius: 10px;
         padding: 1px 8px;
         flex: 0 0 auto;
@@ -497,8 +505,8 @@
         width: 19px;
         height: 19px;
         border-radius: 5px;
-        border: 2px solid #c4cad3;
-        background: #fff;
+        border: 2px solid var(--input-border);
+        background: var(--input-bg);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -532,6 +540,7 @@
     /* --- Hojas (permisos individuales) --- */
     .perm-leaf-row {
         padding: 3px 4px;
+        min-width: 0;
     }
     .perm-leaf-switch {
         min-height: 0;
@@ -539,9 +548,13 @@
     }
     .perm-leaf-switch .custom-control-label {
         font-weight: 500;
-        color: #495057;
+        color: var(--text-primary);
         line-height: 1.6rem;
         cursor: pointer;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: block;
     }
     .perm-leaf-switch .custom-control-label::before,
     .perm-leaf-switch .custom-control-label::after {

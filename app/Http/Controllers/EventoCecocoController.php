@@ -1100,29 +1100,24 @@ class EventoCecocoController extends Controller
                     $primeraRondaVacia = $totalPrevio === 0 && empty($modulaciones) && empty($ronda['cola']);
 
                     if (!$primeraRondaVacia) {
-                        $modulaciones = $localService->emparejarConGrabador($modulaciones, $desde, $hasta);
-
                         // Los audios sin .mp3 local se sirven como WAV vía el Replay
-                        // Server: si este servidor no lo tiene y nada tiene respaldo
-                        // local en toda la búsqueda, conviene la búsqueda local directa.
-                        $sinMatch = count(array_filter($modulaciones, fn ($m) => empty($m['path'])));
-                        $busquedaTerminada = empty($ronda['cola']);
-                        if ($totalPrevio === 0 && $sinMatch === count($modulaciones) && $sinMatch > 0 && $busquedaTerminada && !$grabador->replayDisponible()) {
-                            // cae al respaldo local más abajo
-                        } else {
-                            $this->marcarAudiosSinReplay($modulaciones, $grabador);
-                            $this->asignarUrlsDeStream($modulaciones);
+                        // Server; los que tampoco tengan eso quedan marcados como "sin
+                        // audio". El listado del grabador se devuelve siempre: es la
+                        // fuente autoritativa de qué se moduló, y sirve aunque no haya
+                        // backup local de ese día ni Replay Server para reproducirlo.
+                        $modulaciones = $localService->emparejarConGrabador($modulaciones, $desde, $hasta);
+                        $this->marcarAudiosSinReplay($modulaciones, $grabador);
+                        $this->asignarUrlsDeStream($modulaciones);
 
-                            return response()->json([
-                                'success'      => true,
-                                'modulaciones' => $modulaciones,
-                                'total'        => $totalPrevio + count($modulaciones),
-                                'ventana'      => ['desde' => $desde->format('Y-m-d H:i:s'), 'hasta' => $hasta->format('Y-m-d H:i:s')],
-                                'fuente'       => 'grabador',
-                                'cola'         => empty($ronda['cola']) ? null : $this->codificarColaModulaciones($ronda['cola']),
-                                'hayMas'       => !empty($ronda['cola']),
-                            ]);
-                        }
+                        return response()->json([
+                            'success'      => true,
+                            'modulaciones' => $modulaciones,
+                            'total'        => $totalPrevio + count($modulaciones),
+                            'ventana'      => ['desde' => $desde->format('Y-m-d H:i:s'), 'hasta' => $hasta->format('Y-m-d H:i:s')],
+                            'fuente'       => 'grabador',
+                            'cola'         => empty($ronda['cola']) ? null : $this->codificarColaModulaciones($ronda['cola']),
+                            'hayMas'       => !empty($ronda['cola']),
+                        ]);
                     }
                 } catch (\Exception $e) {
                     Log::warning('modulaciones: grabador no disponible, se usa el disco local', [

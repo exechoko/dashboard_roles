@@ -22,9 +22,11 @@ return [
     // Timeout por request HTTP al grabador.
     'timeout'          => (int) env('GRABADOR_TIMEOUT', 30),
 
-    // Presupuesto total para la búsqueda completa (login + búsqueda + paginado).
-    // Debe quedar bien por debajo de los 100 s en que Cloudflare corta la conexión.
-    'timeout_total'    => (int) env('GRABADOR_TIMEOUT_TOTAL', 60),
+    // Presupuesto total para UNA página (login + búsqueda/continuesearch + poll).
+    // Debe quedar por debajo de los ~100 s en que Cloudflare corta la conexión en
+    // producción; ventanas largas (varias horas) pueden tardar bastante en el
+    // grabador, así que se deja poco margen (~10 s) antes de ese corte real.
+    'timeout_total'    => (int) env('GRABADOR_TIMEOUT_TOTAL', 90),
 
     // Ventana de búsqueda alrededor del evento CECOCO: arranca N minutos antes
     // de la fecha/hora del evento y termina en la fecha de cierre del evento.
@@ -35,6 +37,15 @@ return [
 
     // Máximo de modulaciones a traer por búsqueda.
     'max_resultados'   => (int) env('GRABADOR_MAX_RESULTADOS', 500),
+
+    // Al buscar, si la 1ª página de una ventana viene llena (densa), en vez de
+    // esperar al continuesearch asíncrono del grabador (lento y, en ventanas
+    // largas, la causa de búsquedas que se cortaban en silencio) se la parte al
+    // medio y se busca cada mitad por separado con un startsearch propio (rápido
+    // y síncrono). Esto se repite hasta que una ventana entra completa en su 1ª
+    // página o llega a este piso (en cuyo caso sí se agota con continuesearch,
+    // acotado porque la ventana ya es mínima).
+    'bisect_minimo_segundos' => (int) env('GRABADOR_BISECT_MINIMO_SEGUNDOS', 60),
 
     // Audios de modulaciones en disco local (misma estructura que las grabaciones
     // telefónicas: {base}\YYYY\YYYY_MM\Operador\...). Se busca acá primero y, si no

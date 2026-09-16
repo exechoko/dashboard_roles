@@ -656,11 +656,11 @@ function cargarPaginaModulaciones(url, acumulado) {
         if (!acumulado.ventana && data.ventana) { acumulado.ventana = data.ventana; }
         if (!acumulado.fuente && data.fuente)   { acumulado.fuente  = data.fuente; }
 
-        if (data.hayMas && data.searchid) {
+        if (data.hayMas && data.cola) {
             document.getElementById('modulaciones-loading').innerHTML =
                 '<i class="fas fa-sync-alt grabacion-spin"></i> Buscando modulaciones... (' + acumulado.modulaciones.length + ' encontradas)';
             cargarPaginaModulaciones(
-                MOD_URL_BASE + '?searchid=' + encodeURIComponent(data.searchid) + '&skip=' + encodeURIComponent(data.skip || 0),
+                MOD_URL_BASE + '?cola=' + encodeURIComponent(data.cola) + '&total=' + encodeURIComponent(acumulado.modulaciones.length),
                 acumulado
             );
             return;

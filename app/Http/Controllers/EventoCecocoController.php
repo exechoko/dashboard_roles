@@ -1071,65 +1071,57 @@ class EventoCecocoController extends Controller
             ? $eventoCecoco->fecha_cierre->copy()
             : $eventoCecoco->fecha_hora->copy()->addMinutes((int) config('grabador.minutos_despues_sin_cierre', 60));
 
-        $cursor = (string) $request->input('searchid', '');
-        $skip   = max(0, (int) $request->input('skip', 0));
+        // Cola de ventanas pendientes: en la 1ª ronda es solo la ventana completa
+        // del evento; en las siguientes es lo que devolvió la ronda anterior
+        // (ventanas que quedaron por bisecar/agotar). Ver buscarPorVentanas().
+        $cola        = $this->decodificarColaModulaciones((string) $request->input('cola', ''), $desde, $hasta);
+        $totalPrevio = max(0, (int) $request->input('total', 0));
 
         try {
             $localService = new CecocoModulacionesLocalService();
 
-            // Página de continuación de una búsqueda ya iniciada en el grabador.
-            if ($cursor !== '' && preg_match('/^\d+$/', $cursor)) {
-                $grabador = new GrabadorTetraService();
-                $pagina   = $grabador->buscarPagina($desde, $hasta, $cursor, $skip);
-
-                $pagina['modulaciones'] = $localService->emparejarConGrabador($pagina['modulaciones'], $desde, $hasta);
-                $this->marcarAudiosSinReplay($pagina['modulaciones'], $grabador);
-                $this->asignarUrlsDeStream($pagina['modulaciones']);
-
-                return response()->json([
-                    'success'      => true,
-                    'modulaciones' => $pagina['modulaciones'],
-                    'total'        => count($pagina['modulaciones']),
-                    'searchid'     => $pagina['hayMas'] ? $pagina['searchid'] : null,
-                    'skip'         => $pagina['skip'],
-                    'hayMas'       => $pagina['hayMas'],
-                    'fuente'       => 'grabador',
-                ]);
-            }
-
-            $resultado = null;
-            $paginado  = ['searchid' => null, 'skip' => 0, 'hayMas' => false];
-
-            // 1. El grabador es la fuente autoritativa: devuelve una sola fila por
-            //    modulación real (CECOCO en cambio graba una copia por operador que
-            //    escucha). Cada fila se empareja con su .mp3 del backup local por
-            //    hora de inicio y duración para servir el audio desde disco.
+            // El grabador es la fuente autoritativa: devuelve una sola fila por
+            // modulación real (CECOCO en cambio graba una copia por operador que
+            // escucha). Cada fila se empareja con su .mp3 del backup local por
+            // hora de inicio y duración para servir el audio desde disco.
             if (config('grabador.url')) {
                 try {
                     $grabador = new GrabadorTetraService();
-                    $pagina   = $grabador->buscarPagina($desde, $hasta);
+                    $limite   = microtime(true) + (int) config('grabador.timeout_total', 90);
+                    $ronda    = $grabador->buscarPorVentanas($cola, $limite);
 
-                    if (!empty($pagina['modulaciones'])) {
-                        $pagina['modulaciones'] = $localService->emparejarConGrabador($pagina['modulaciones'], $desde, $hasta);
+                    $modulaciones = $ronda['modulaciones'];
+                    $maxTotal     = (int) config('grabador.max_resultados', 500);
+                    if ($totalPrevio + count($modulaciones) > $maxTotal) {
+                        $modulaciones = array_slice($modulaciones, 0, max(0, $maxTotal - $totalPrevio));
+                        $ronda['cola'] = [];
+                    }
+
+                    $primeraRondaVacia = $totalPrevio === 0 && empty($modulaciones) && empty($ronda['cola']);
+
+                    if (!$primeraRondaVacia) {
+                        $modulaciones = $localService->emparejarConGrabador($modulaciones, $desde, $hasta);
 
                         // Los audios sin .mp3 local se sirven como WAV vía el Replay
                         // Server: si este servidor no lo tiene y nada tiene respaldo
-                        // local, conviene la búsqueda local directa.
-                        $sinMatch = count(array_filter($pagina['modulaciones'], fn ($m) => empty($m['path'])));
-                        if ($sinMatch === count($pagina['modulaciones']) && $sinMatch > 0 && !$grabador->replayDisponible() && !$pagina['hayMas']) {
-                            $resultado = null;
+                        // local en toda la búsqueda, conviene la búsqueda local directa.
+                        $sinMatch = count(array_filter($modulaciones, fn ($m) => empty($m['path'])));
+                        $busquedaTerminada = empty($ronda['cola']);
+                        if ($totalPrevio === 0 && $sinMatch === count($modulaciones) && $sinMatch > 0 && $busquedaTerminada && !$grabador->replayDisponible()) {
+                            // cae al respaldo local más abajo
                         } else {
-                            $this->marcarAudiosSinReplay($pagina['modulaciones'], $grabador);
-                            $resultado = [
-                                'modulaciones' => $pagina['modulaciones'],
+                            $this->marcarAudiosSinReplay($modulaciones, $grabador);
+                            $this->asignarUrlsDeStream($modulaciones);
+
+                            return response()->json([
+                                'success'      => true,
+                                'modulaciones' => $modulaciones,
+                                'total'        => $totalPrevio + count($modulaciones),
                                 'ventana'      => ['desde' => $desde->format('Y-m-d H:i:s'), 'hasta' => $hasta->format('Y-m-d H:i:s')],
                                 'fuente'       => 'grabador',
-                            ];
-                            $paginado = [
-                                'searchid' => $pagina['hayMas'] ? $pagina['searchid'] : null,
-                                'skip'     => $pagina['skip'],
-                                'hayMas'   => $pagina['hayMas'],
-                            ];
+                                'cola'         => empty($ronda['cola']) ? null : $this->codificarColaModulaciones($ronda['cola']),
+                                'hayMas'       => !empty($ronda['cola']),
+                            ]);
                         }
                     }
                 } catch (\Exception $e) {
@@ -1137,16 +1129,19 @@ class EventoCecocoController extends Controller
                         'evento_id' => $eventoCecoco->id,
                         'error'     => $e->getMessage(),
                     ]);
-                    $resultado = null;
+
+                    // Ya había resultados del grabador acumulados en rondas anteriores:
+                    // no mezclarlos en silencio con una búsqueda local de otra fuente
+                    // sobre la ventana completa. Mejor mostrar el error (el frontend ya
+                    // sabe renderizar lo acumulado hasta acá) que arriesgar duplicados.
+                    if ($totalPrevio > 0) {
+                        throw $e;
+                    }
                 }
             }
 
-            // 2. Respaldo: búsqueda directa en disco local (deduplicando copias por operador).
-            if ($resultado === null || empty($resultado['modulaciones'])) {
-                $resultado = $localService->buscarModulaciones($desde, $hasta);
-                $paginado  = ['searchid' => null, 'skip' => 0, 'hayMas' => false];
-            }
-
+            // Respaldo: búsqueda directa en disco local (deduplicando copias por operador).
+            $resultado = $localService->buscarModulaciones($desde, $hasta);
             $this->asignarUrlsDeStream($resultado['modulaciones']);
 
             return response()->json([
@@ -1154,10 +1149,9 @@ class EventoCecocoController extends Controller
                 'modulaciones' => $resultado['modulaciones'],
                 'total'        => count($resultado['modulaciones']),
                 'ventana'      => $resultado['ventana'],
-                'fuente'       => $resultado['fuente'] ?? 'grabador',
-                'searchid'     => $paginado['searchid'],
-                'skip'         => $paginado['skip'],
-                'hayMas'       => $paginado['hayMas'],
+                'fuente'       => $resultado['fuente'] ?? 'local',
+                'cola'         => null,
+                'hayMas'       => false,
             ]);
         } catch (\Exception $e) {
             Log::error('modulaciones evento cecoco', [
@@ -1170,6 +1164,50 @@ class EventoCecocoController extends Controller
                 'message' => 'Error al buscar modulaciones: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Decodifica la cola de ventanas pendientes que manda el frontend entre
+     * rondas de búsqueda de modulaciones (ver GrabadorTetraService::buscarPorVentanas).
+     * Sin cola (1ª ronda), la cola es solo la ventana completa del evento.
+     *
+     * @return array<int, array{0: Carbon, 1: Carbon}>
+     */
+    private function decodificarColaModulaciones(string $colaJson, Carbon $desde, Carbon $hasta): array
+    {
+        if ($colaJson === '') {
+            return [[$desde->copy(), $hasta->copy()]];
+        }
+
+        $decodificada = json_decode($colaJson, true);
+        if (!is_array($decodificada)) {
+            return [[$desde->copy(), $hasta->copy()]];
+        }
+
+        $cola = [];
+        foreach ($decodificada as $ventana) {
+            if (!is_array($ventana) || count($ventana) !== 2) {
+                continue;
+            }
+            try {
+                $cola[] = [Carbon::parse($ventana[0]), Carbon::parse($ventana[1])];
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+
+        return $cola;
+    }
+
+    /**
+     * @param array<int, array{0: Carbon, 1: Carbon}> $cola
+     */
+    private function codificarColaModulaciones(array $cola): string
+    {
+        return json_encode(array_map(
+            fn ($ventana) => [$ventana[0]->format('Y-m-d H:i:s'), $ventana[1]->format('Y-m-d H:i:s')],
+            $cola
+        ));
     }
 
     /**

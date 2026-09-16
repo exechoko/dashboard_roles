@@ -545,7 +545,8 @@ class EventoCecocoController extends Controller
         try {
             $detalle = $this->expedienteService->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
 
-            $pdf = Pdf::loadView('eventos-cecoco.parte-novedad-pdf', compact('eventoCecoco', 'detalle'));
+            $pdf = Pdf::loadView('eventos-cecoco.parte-novedad-pdf', compact('eventoCecoco', 'detalle'))
+                ->setPaper('a4', 'landscape');
 
             return $pdf->stream('ParteDeNovedad_' . $eventoCecoco->nro_expediente . '.pdf');
         } catch (\Exception $e) {

@@ -17,7 +17,7 @@
             @php
                 $idx = "recursos[{$recurso->id}]";
                 $estadoDiario = $recurso->estadoDiario->first();
-                $estadoDia = $estadoDiario?->estado_dia ?? 'circula';
+                $estadoDia = $estadoDiario?->estado_dia ?? ($recurso->prestamoActivo ? 'a_presto' : 'circula');
                 $vehiculoActual = $recurso->vehiculoActual();
                 $choferDotacion = $recurso->dotaciones->firstWhere('es_chofer', true);
             @endphp
@@ -30,6 +30,9 @@
                     @else
                         <span class="badge badge-light text-muted">Sin ficha</span>
                     @endif
+                    @if($recurso->prestamoActivo)
+                        <br><span class="badge badge-warning" title="Prestado a {{ optional($recurso->prestamoActivo->destinoDestino)->nombre }}">En préstamo</span>
+                    @endif
                 </td>
                 <td>
                     <select name="{{ $idx }}[estado_dia]" class="form-control form-control-sm estado-dia-select"
@@ -40,7 +43,7 @@
                     </select>
                 </td>
                 <td>
-                    <select name="{{ $idx }}[zona]" class="form-control form-control-sm">
+                    <select name="{{ $idx }}[zona]" class="form-control form-control-sm" style="min-width: 65px">
                         <option value="">—</option>
                         @for($z = 1; $z <= 4; $z++)
                             <option value="{{ $z }}" {{ (string)($estadoDiario?->zona) === (string)$z ? 'selected' : '' }}>{{ $z }}</option>
@@ -48,7 +51,7 @@
                     </select>
                 </td>
                 <td>
-                    <input type="text" name="{{ $idx }}[ht]" class="form-control form-control-sm"
+                    <input type="text" name="{{ $idx }}[ht]" class="form-control form-control-sm" style="min-width: 100px"
                         value="{{ $estadoDiario?->ht }}" maxlength="50" placeholder="HT / MP">
                 </td>
                 <td>
@@ -59,7 +62,8 @@
                 </td>
                 <td>
                     <select name="{{ $idx }}[dotacion][]" class="form-control select2-personal"
-                        multiple data-placeholder="Buscar personal..." id="dotacion{{ $recurso->id }}">
+                        multiple data-placeholder="Buscar personal..." id="dotacion{{ $recurso->id }}"
+                        data-recurso="{{ $recurso->id }}">
                         @foreach($recurso->dotaciones as $d)
                             @if($d->personal)
                                 <option value="{{ $d->personal_id }}" selected>{{ $d->personal->getNombreCompletoAttribute() }}</option>
@@ -68,7 +72,8 @@
                     </select>
                 </td>
                 <td>
-                    <select name="{{ $idx }}[chofer_id]" class="form-control select2-chofer" data-placeholder="Chofer...">
+                    <select name="{{ $idx }}[chofer_id]" class="form-control select2-chofer" data-placeholder="Elegí un integrante de la dotación..."
+                        data-recurso="{{ $recurso->id }}">
                         <option value="">— Sin chofer —</option>
                         @if($choferDotacion?->personal)
                             <option value="{{ $choferDotacion->personal_id }}" selected>{{ $choferDotacion->personal->getNombreCompletoAttribute() }}</option>

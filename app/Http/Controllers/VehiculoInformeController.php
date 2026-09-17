@@ -80,6 +80,7 @@ class VehiculoInformeController extends Controller
                 'vehiculo',
                 'estadoDiario' => fn ($q) => $q->where('fecha_inicio', $fechaInicio),
                 'dotaciones'   => fn ($q) => $q->where('fecha_inicio', $fechaInicio)->orderBy('orden')->with('personal'),
+                'prestamoActivo.destinoDestino',
             ])
             ->orderBy('nombre')
             ->get();

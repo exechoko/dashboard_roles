@@ -206,8 +206,37 @@ $(document).ready(function() {
         cache: true,
     };
 
+    // El chofer tiene que ser uno de los ya cargados en la dotación del mismo
+    // recurso: en vez de buscar contra todo el personal, sus <option> se arman
+    // a partir de lo seleccionado en el select2-personal de esa misma fila.
+    function sincronizarChofer(recursoId) {
+        var dot = document.getElementById('dotacion' + recursoId);
+        var choferSel = document.querySelector('select[name="recursos[' + recursoId + '][chofer_id]"]');
+        if (!dot || !choferSel) { return; }
+
+        var actual = choferSel.value;
+        var seleccionados = window.jQuery(dot).select2('data') || [];
+
+        choferSel.innerHTML = '';
+        choferSel.appendChild(new Option('— Sin chofer —', ''));
+        seleccionados.forEach(function(item) {
+            choferSel.appendChild(new Option(item.text, item.id));
+        });
+
+        var sigueValido = seleccionados.some(function(item) { return String(item.id) === actual; });
+        window.jQuery(choferSel).val(sigueValido ? actual : '').trigger('change');
+    }
+
     $('.select2-personal').select2({ width: '100%', language: 'es', ajax: personalAjax, minimumInputLength: 0 });
-    $('.select2-chofer').select2({ width: '100%', language: 'es', allowClear: true, ajax: personalAjax, minimumInputLength: 0 });
+    $('.select2-chofer').select2({ width: '100%', language: 'es', allowClear: true });
+
+    $('.select2-personal').on('change', function() {
+        var recursoId = $(this).data('recurso');
+        if (recursoId) { sincronizarChofer(recursoId); }
+    }).each(function() {
+        var recursoId = $(this).data('recurso');
+        if (recursoId) { sincronizarChofer(recursoId); }
+    });
 
     $('.select2-novedad-personal').select2({ width: '100%', language: 'es', placeholder: 'Agregar funcionario...' });
     $('.select2-novedad-personal').on('select2:select', function(e) {

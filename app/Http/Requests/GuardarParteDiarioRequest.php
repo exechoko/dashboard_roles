@@ -88,6 +88,21 @@ class GuardarParteDiarioRequest extends FormRequest
                     . 'Cada funcionario puede figurar en la dotación de un solo recurso por parte.'
                 );
             }
+
+            foreach ($this->input('recursos', []) as $indice => $datos) {
+                $choferId = isset($datos['chofer_id']) ? (int) $datos['chofer_id'] : null;
+                if ($choferId === null) {
+                    continue;
+                }
+
+                $dotacion = array_map('intval', $datos['dotacion'] ?? []);
+                if (! in_array($choferId, $dotacion, true)) {
+                    $validator->errors()->add(
+                        "recursos.{$indice}.chofer_id",
+                        'El chofer debe ser uno de los funcionarios cargados en la dotación de ese recurso.'
+                    );
+                }
+            }
         });
     }
 

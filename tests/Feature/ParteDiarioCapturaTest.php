@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Destino;
 use App\Models\ParteDiario;
 use App\Models\ParteDiarioAsignacion;
 use App\Models\ParteDiarioNovedades;
@@ -9,6 +10,7 @@ use App\Models\Personal;
 use App\Models\Recurso;
 use App\Models\RecursoDotacion;
 use App\Models\RecursoEstadoDiario;
+use App\Models\RecursoPrestamo;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -114,6 +116,51 @@ class ParteDiarioCapturaTest extends TestCase
         $this->assertFalse($dotacion[0]->es_chofer);
         $this->assertTrue($dotacion[1]->es_chofer);
         $this->assertSame([0, 1], $dotacion->pluck('orden')->all());
+    }
+
+    public function test_el_chofer_debe_pertenecer_a_la_dotacion_del_mismo_recurso(): void
+    {
+        $this->actingAs($this->usuario());
+        $recurso = $this->recursoDeMoviles();
+        [$p1, $p2] = Personal::query()->take(2)->get()->all();
+
+        $respuesta = $this->post(route('flota-911.informes.parte-diario.generar'), $this->payload([
+            [
+                'id'         => $recurso->id,
+                'estado_dia' => 'circula',
+                'dotacion'   => [$p1->id],
+                'chofer_id'  => $p2->id,
+            ],
+        ]));
+
+        $respuesta->assertSessionHasErrors('recursos.0.chofer_id');
+        $this->assertDatabaseMissing('recurso_estado_diario', [
+            'recurso_id'   => $recurso->id,
+            'fecha_inicio' => '2099-05-20 06:15:00',
+        ]);
+    }
+
+    public function test_recurso_con_prestamo_activo_aparece_a_presto_por_defecto(): void
+    {
+        $user = $this->usuario();
+        $this->actingAs($user);
+        $recurso = $this->recursoDeMoviles();
+        $otroDestino = Destino::where('id', '!=', 42)->firstOrFail();
+
+        RecursoPrestamo::create([
+            'recurso_id'         => $recurso->id,
+            'destino_origen_id'  => 42,
+            'destino_destino_id' => $otroDestino->id,
+            'fecha_salida'       => now(),
+            'user_id_prestamo'   => $user->id,
+            'activo'             => true,
+        ]);
+
+        $respuesta = $this->get(route('flota-911.informes.parte-diario', ['tipo' => 'moviles', 'guardia' => 'guardia_3']));
+
+        $respuesta->assertOk()
+            ->assertSee('En préstamo')
+            ->assertSee('value="a_presto" selected', false);
     }
 
     public function test_guarda_y_reemplaza_las_asignaciones_de_servicios(): void

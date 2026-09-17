@@ -179,10 +179,12 @@
                 banner.hidden = true;
             }
 
-            dismiss.addEventListener('click', function () {
+            function marcarInstalada() {
                 try { localStorage.setItem(LS_KEY, '1'); } catch (e) {}
                 ocultar();
-            });
+            }
+
+            dismiss.addEventListener('click', marcarInstalada);
 
             if (yaInstalada() || fueDescartado()) {
                 // nada que mostrar
@@ -202,7 +204,10 @@
                     });
                 }
 
-                window.addEventListener('appinstalled', ocultar);
+                // Se guarda como "descartado" (no solo se oculta en esta carga) para
+                // que, una vez instalada, no vuelva a aparecer si más adelante se
+                // abre esta misma URL desde el navegador normal en vez del ícono.
+                window.addEventListener('appinstalled', marcarInstalada);
             }
 
             btn.addEventListener('click', function () {

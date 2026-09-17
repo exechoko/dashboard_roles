@@ -22,9 +22,11 @@ return [
     // Timeout por request HTTP al grabador.
     'timeout'          => (int) env('GRABADOR_TIMEOUT', 30),
 
-    // Presupuesto total para la búsqueda completa (login + búsqueda + paginado).
-    // Debe quedar bien por debajo de los 100 s en que Cloudflare corta la conexión.
-    'timeout_total'    => (int) env('GRABADOR_TIMEOUT_TOTAL', 60),
+    // Presupuesto total para UNA página (login + búsqueda/continuesearch + poll).
+    // Debe quedar por debajo de los ~100 s en que Cloudflare corta la conexión en
+    // producción; ventanas largas (varias horas) pueden tardar bastante en el
+    // grabador, así que se deja poco margen (~10 s) antes de ese corte real.
+    'timeout_total'    => (int) env('GRABADOR_TIMEOUT_TOTAL', 90),
 
     // Ventana de búsqueda alrededor del evento CECOCO: arranca N minutos antes
     // de la fecha/hora del evento y termina en la fecha de cierre del evento.
@@ -33,8 +35,19 @@ return [
     // Fallback de minutos después cuando el evento no tiene fecha de cierre.
     'minutos_despues_sin_cierre' => (int) env('GRABADOR_MINUTOS_DESPUES_SIN_CIERRE', 60),
 
-    // Máximo de modulaciones a traer por búsqueda.
-    'max_resultados'   => (int) env('GRABADOR_MAX_RESULTADOS', 500),
+    // Máximo de modulaciones a traer por búsqueda. 1000 es la capacidad natural
+    // de una sola página del grabador (enum MaximumResults=7); con eso alcanza
+    // para prácticamente cualquier evento en un solo search.
+    'max_resultados'   => (int) env('GRABADOR_MAX_RESULTADOS', 1000),
+
+    // Al buscar, si la 1ª página de una ventana viene llena (densa), en vez de
+    // esperar al continuesearch asíncrono del grabador (lento y, en ventanas
+    // largas, la causa de búsquedas que se cortaban en silencio) se la parte al
+    // medio y se busca cada mitad por separado con un startsearch propio (rápido
+    // y síncrono). Esto se repite hasta que una ventana entra completa en su 1ª
+    // página o llega a este piso (en cuyo caso sí se agota con continuesearch,
+    // acotado porque la ventana ya es mínima).
+    'bisect_minimo_segundos' => (int) env('GRABADOR_BISECT_MINIMO_SEGUNDOS', 60),
 
     // Audios de modulaciones en disco local (misma estructura que las grabaciones
     // telefónicas: {base}\YYYY\YYYY_MM\Operador\...). Se busca acá primero y, si no
@@ -45,6 +58,12 @@ return [
     // lame.exe (en servidores viejos tipo 2012 R2 usar lame, que es un único .exe
     // sin dependencias). Si no está disponible, la descarga cae al WAV original.
     'ffmpeg_path' => env('GRABADOR_FFMPEG_PATH', 'ffmpeg'),
+
+    // Presupuesto (en segundos) para escanear el disco de audios al emparejar las
+    // filas del grabador con su .mp3 local. Si se agota, el escaneo corta y esas
+    // modulaciones se sirven por el Replay Server: vale más devolver el listado
+    // que colgar el request esperando un disco de red lento.
+    'escaneo_disco_timeout' => (int) env('GRABADOR_ESCANEO_DISCO_TIMEOUT', 25),
 
     // Tolerancia (en segundos) al emparejar una fila del grabador con un .mp3 del
     // backup local por hora de inicio (las copias de CECOCO arrancan con un pequeño

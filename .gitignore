@@ -16,6 +16,7 @@ yarn-error.log
 /.idea
 /.vscode
 /.playwright-mcp
+.DS_Store
 
 # Agents & Skills
 /.agents

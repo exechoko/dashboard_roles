@@ -197,10 +197,62 @@
         }
 
         .m-login__errors div + div { margin-top: 4px; }
+
+        .m-login__install {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            padding: .65rem 1rem;
+            padding-top: max(.65rem, env(safe-area-inset-top));
+            background: linear-gradient(135deg, var(--auth-cyan), var(--auth-violet));
+            color: #04121f;
+            font-size: .82rem;
+            font-weight: 600;
+            z-index: 20;
+        }
+
+        /* El "display: flex" de arriba le gana en cascada al "display: none"
+           por defecto del navegador para [hidden] (de menor prioridad, por
+           ser del user-agent). Sin esto, banner.hidden = true no lo ocultaba. */
+        .m-login__install[hidden] { display: none; }
+
+        .m-login__install span { flex: 1; min-width: 0; }
+
+        .m-login__install-btn {
+            flex: 0 0 auto;
+            border: 0;
+            border-radius: 10px;
+            background: rgba(4, 18, 31, .85);
+            color: #ffffff;
+            padding: .35rem .8rem;
+            font-size: .8rem;
+            font-weight: 700;
+        }
+
+        .m-login__install-close {
+            flex: 0 0 auto;
+            background: transparent;
+            border: 0;
+            color: inherit;
+            font-size: 1.2rem;
+            line-height: 1;
+            padding: 0 .2rem;
+        }
     </style>
 </head>
 
 <body>
+    <div class="m-login__install" id="mLoginInstallBanner" hidden>
+        <i class="fas fa-mobile-screen-button"></i>
+        <span id="mLoginInstallText">Instalá esta app en tu celular para tenerla a mano.</span>
+        <button type="button" id="mLoginInstallBtn" class="m-login__install-btn" style="display:none;">Instalar</button>
+        <button type="button" id="mLoginInstallDismiss" class="m-login__install-close" aria-label="Cerrar">&times;</button>
+    </div>
+
     <div class="m-login">
         <div class="m-login__logo">
             <img src="{{ asset('img/logo.png') }}" alt="C.A.R. 911">
@@ -262,6 +314,81 @@
             field.setAttribute('type', isPassword ? 'text' : 'password');
             icon.className = isPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
         });
+    </script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js', { scope: '/movil' }).catch(function () {});
+            });
+        }
+    </script>
+
+    <script>
+        // Mismo banner de "Instalar app" que el resto de la PWA (ver
+        // layouts/movil.blade.php), acá en el login para que se pueda instalar
+        // sin necesidad de tener una sesión activa.
+        (function () {
+            var LS_KEY = 'movil-install-dismissed';
+            var banner = document.getElementById('mLoginInstallBanner');
+            var btn = document.getElementById('mLoginInstallBtn');
+            var text = document.getElementById('mLoginInstallText');
+            var dismiss = document.getElementById('mLoginInstallDismiss');
+            var deferredPrompt = null;
+
+            function yaInstalada() {
+                return window.matchMedia('(display-mode: standalone)').matches
+                    || window.navigator.standalone === true;
+            }
+
+            function fueDescartado() {
+                try { return localStorage.getItem(LS_KEY) === '1'; } catch (e) { return false; }
+            }
+
+            function ocultar() {
+                banner.hidden = true;
+            }
+
+            function marcarInstalada() {
+                try { localStorage.setItem(LS_KEY, '1'); } catch (e) {}
+                ocultar();
+            }
+
+            dismiss.addEventListener('click', marcarInstalada);
+
+            if (yaInstalada() || fueDescartado()) {
+                // nada que mostrar
+            } else {
+                var esIOS = /iP(hone|od|ad)/.test(navigator.userAgent) && !window.MSStream;
+
+                if (esIOS) {
+                    // iOS Safari no dispara beforeinstallprompt: instalación manual.
+                    text.textContent = 'Para instalarla: tocá Compartir y elegí "Agregar a inicio".';
+                    banner.hidden = false;
+                } else {
+                    window.addEventListener('beforeinstallprompt', function (e) {
+                        e.preventDefault();
+                        deferredPrompt = e;
+                        btn.style.display = '';
+                        banner.hidden = false;
+                    });
+                }
+
+                // Se guarda como "descartado" (no solo se oculta en esta carga) para
+                // que, una vez instalada, no vuelva a aparecer si más adelante se
+                // abre esta misma URL desde el navegador normal en vez del ícono.
+                window.addEventListener('appinstalled', marcarInstalada);
+            }
+
+            btn.addEventListener('click', function () {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.finally(function () {
+                    deferredPrompt = null;
+                    ocultar();
+                });
+            });
+        })();
     </script>
 </body>
 

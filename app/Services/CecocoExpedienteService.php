@@ -204,9 +204,16 @@ class CecocoExpedienteService
                 [
                     'nro_expediente' => $eventoCecoco->nro_expediente,
                     'detalle_json' => $detalle,
+                    'historial_estado' => $detalle['historial']['estado'] ?? null,
                     'fecha_consulta' => now(),
                 ]
             );
+
+            // El listado de "expedientes que siguen abiertos" de importar/form cachea
+            // su query por 2 minutos (ver EventoCecocoController): si no se invalida acá,
+            // un expediente recién refrescado a "Closed" seguiría apareciendo como abierto
+            // hasta que ese cache expire por su cuenta.
+            Cache::forget('cecoco_expedientes_abiertos');
         }
 
         return $detalle;
@@ -216,11 +223,26 @@ class CecocoExpedienteService
      * Devuelve un cliente HTTP con sesión CECOCO iniciada, para reutilizarlo en
      * procesos por lote que consultan muchos expedientes seguidos.
      *
+     * Si se indica $workerIndex, loguea con la cuenta dedicada configurada en
+     * cecoco.prefetch_workers (1-based) en vez de la cuenta general, para poder
+     * correr varias sesiones en paralelo sin pisarse (CECOCO permite una sola
+     * sesión activa por usuario).
+     *
      * @return \Illuminate\Http\Client\PendingRequest
      */
-    public function iniciarSesionCompartida()
+    public function iniciarSesionCompartida(?int $workerIndex = null)
     {
-        return $this->iniciarSesion();
+        if ($workerIndex === null) {
+            return $this->iniciarSesion();
+        }
+
+        $credenciales = config('cecoco.prefetch_workers', [])[$workerIndex - 1] ?? null;
+
+        if (!$credenciales) {
+            throw new Exception("No hay cuenta dedicada configurada para el worker de prefetch #{$workerIndex}. Configure CECOCO_USER_PREFETCH_{$workerIndex} y CECOCO_PASSWORD_PREFETCH_{$workerIndex} en .env.");
+        }
+
+        return $this->iniciarSesion($credenciales['user'], $credenciales['password']);
     }
 
     /**
@@ -284,8 +306,11 @@ class CecocoExpedienteService
         return $pdf;
     }
 
-    private function iniciarSesion()
+    private function iniciarSesion(?string $usuario = null, ?string $password = null)
     {
+        $usuario ??= $this->cecocoUser;
+        $password ??= $this->cecocoPassword;
+
         try {
             $cookieJar = new \GuzzleHttp\Cookie\CookieJar();
 
@@ -297,8 +322,8 @@ class CecocoExpedienteService
             $client->timeout($this->timeout)->get($this->baseUrl);
 
             $loginData = [
-                'LoginForm:Usuario' => $this->cecocoUser,
-                'LoginForm:Password' => $this->cecocoPassword,
+                'LoginForm:Usuario' => $usuario,
+                'LoginForm:Password' => $password,
             ];
 
             $response = $client->asForm()->post(
@@ -1191,6 +1216,8 @@ class CecocoExpedienteService
             'municipio' => ['municipio:', 'municipio', 'localidad:', 'localidad'],
             'puesto' => ['puesto:', 'puesto', 'box:', 'box'],
             'sector' => ['sector:', 'sector'],
+            'servidor' => ['servidor:', 'servidor'],
+            'llamante_nombre' => ['nombre:', 'nombre'],
         ];
 
         $tablas = $xpath->query('//table');

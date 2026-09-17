@@ -1273,9 +1273,54 @@
                         completado.</li>
                 </ol>
 
-                <p><strong>Grabaciones y modulaciones</strong></p>
-                <p>Desde el detalle del evento, si tenés el permiso correspondiente, entrás a Grabaciones o
-                    Modulaciones. Revisá la fecha y el contexto antes de reproducir.</p>
+                <p><strong>Grabaciones telefónicas</strong></p>
+                <p>Desde el detalle del evento, si tenés el permiso correspondiente, entrás a Grabaciones.
+                    Revisá la fecha y el contexto antes de reproducir.</p>
+
+                <p><strong>Modulaciones de radio</strong></p>
+                <p class="gate"><span class="gate-label">Requiere</span> <span class="perm">escuchar-modulaciones-cecoco</span></p>
+                <p>Las modulaciones son las comunicaciones de radio TETRA, distintas de las grabaciones
+                    telefónicas. Desde el detalle del evento pulsás <strong>Modulaciones</strong> y el sistema
+                    las busca en el grabador. La búsqueda muestra el avance y puede tardar varios segundos.</p>
+
+                <p><strong>Qué ventana de tiempo busca</strong></p>
+                <p>La ventana se calcula sola a partir del evento y aparece arriba de la lista:</p>
+                <ul>
+                    <li><strong>Desde:</strong> 10 minutos antes de la fecha y hora del evento. Ese margen sirve
+                        para alcanzar las modulaciones previas al alta del evento, cuando el hecho ya se estaba
+                        comunicando por radio.</li>
+                    <li><strong>Hasta:</strong> la fecha de cierre del evento.</li>
+                    <li><strong>Si el evento no tiene fecha de cierre:</strong> hasta 60 minutos después del
+                        inicio.</li>
+                </ul>
+                <p>No hay filtro por canal: trae <strong>todo</strong> el tráfico de radio de esa ventana, no
+                    solo el de los recursos asignados al evento. Por eso una ventana de varias horas puede
+                    tener cientos de modulaciones. El tope es de 1000 por búsqueda.</p>
+
+                <p><strong>Cómo leer la lista</strong></p>
+                <ul>
+                    <li><strong>Resaltadas en verde:</strong> modulaciones de recursos que intervinieron en el
+                        evento. Son las que normalmente interesan primero.</li>
+                    <li><strong>Atenuadas:</strong> las que ya escuchaste. Se guardan en tu navegador y por
+                        evento, así que no las ven los demás usuarios ni se conservan si cambiás de equipo.</li>
+                    <li><strong>Título de cada tarjeta:</strong> quién moduló y, con una flecha, a quién o a qué
+                        grupo.</li>
+                    <li><strong>Etiquetas:</strong> tipo de comunicación, símplex o dúplex, y cuántos operadores
+                        de CeCoCo la registraron.</li>
+                    <li><strong>Buscador:</strong> filtra por recurso, SSI, canal u hora (por ejemplo
+                        <em>M2231216</em>, <em>Cria 904</em> o <em>06:16</em>).</li>
+                </ul>
+
+                <p><strong>De dónde sale el audio</strong></p>
+                <p>Cada modulación se sirve del backup local de audios si existe la copia de ese día; si no, se
+                    obtiene del grabador. Al descargar se entrega en MP3.</p>
+                <div class="note">
+                    <span class="note-label">Audio no disponible</span>
+                    <p>Puede aparecer en una modulación que ningún operador escuchó y que además no se puede
+                        traer del grabador en ese momento. El listado igual se muestra completo: sirve para
+                        reconstruir quién moduló y cuándo, aunque el audio no esté.</p>
+                </div>
+
                 <div class="note warn">
                     <span class="note-label">Material sensible</span>
                     <p>No compartas ni descargues audio fuera de los procedimientos autorizados.</p>

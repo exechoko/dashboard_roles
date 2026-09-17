@@ -34,6 +34,12 @@ class SeederTablaPermisos extends Seeder
             'editar-terminal',
             'borrar-terminal',
 
+            //tabla antenas
+            'ver-antena',
+            'crear-antena',
+            'editar-antena',
+            'borrar-antena',
+
             //tabla dependencia
             'ver-dependencia',
             'crear-dependencia',
@@ -112,6 +118,9 @@ class SeederTablaPermisos extends Seeder
             'ver-menu-herramientas',
             'ver-menu-chat',
             'ver-menu-configuracion-sistema',
+
+            //Datos del 911 (PWA)
+            'ver-datos-911',
 
             //CeCoCo
             'ver-llamadas-cecoco',

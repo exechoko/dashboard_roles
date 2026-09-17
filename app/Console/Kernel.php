@@ -81,8 +81,10 @@ class Kernel extends ConsoleKernel
             });
 
         // Pre-trae y guarda el detalle completo (acciones/recursos/cierre) de los eventos
-        // del día anterior. Corre después del import (06:00) reutilizando una sola sesión.
-        $schedule->command('cecoco:prefetch-detalles')->dailyAt('06:45')
+        // del día anterior. Corre después del import (06:00). --workers=3 solo tiene efecto
+        // si están configuradas las 3 cuentas dedicadas (CECOCO_USER_PREFETCH_1..3 en .env);
+        // si faltan, cae automáticamente a una sola sesión sin romper nada.
+        $schedule->command('cecoco:prefetch-detalles --workers=3')->dailyAt('06:45')
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/cecoco_prefetch_detalles.log'))
             ->onSuccess(function () {

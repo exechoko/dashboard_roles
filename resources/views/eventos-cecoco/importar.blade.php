@@ -78,6 +78,7 @@
                                 </button>
                             </form>
                         </div>
+                        <div id="prefetchEstadoWorkers" class="mt-2" style="display: none;"></div>
                     </div>
                 </div>
 
@@ -235,6 +236,75 @@
         </div>
     </div>
 </div>
+
+<div class="row g-3 mt-1">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-hourglass-split"></i> Expedientes que siguen abiertos</h5>
+                <span class="badge bg-secondary">{{ $expedientesAbiertos->count() }}</span>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    Según el último estado guardado al consultar CECOCO (<code>historial.estado</code>). Esa foto puede estar
+                    desactualizada si el expediente cerró después en el sistema real: usá "Ver / refrescar" para volver a
+                    consultarlo y traer su estado actual.
+                </p>
+
+                @if($expedientesAbiertos->isEmpty())
+                    <p class="text-muted mb-0"><em>No hay expedientes con detalle consultado que sigan abiertos.</em></p>
+                @else
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm table-hover">
+                            <thead class="sticky-top bg-white">
+                                <tr>
+                                    <th>Expediente</th>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Dirección</th>
+                                    <th>Último estado</th>
+                                    <th>Consultado</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php
+                                    $badgesEstado = [
+                                        'Attending' => 'warning text-dark',
+                                        'Attended' => 'info text-dark',
+                                        'Pending' => 'secondary',
+                                        'Assigned' => 'primary',
+                                        'Displacing' => 'primary',
+                                    ];
+                                @endphp
+                                @foreach($expedientesAbiertos as $evento)
+                                    <tr>
+                                        <td><small>{{ $evento->nro_expediente }}</small></td>
+                                        <td><small>{{ optional($evento->fecha_hora)->format('d/m/Y H:i') }}</small></td>
+                                        <td><small title="{{ $evento->tipo_servicio }}">{{ Str::limit($evento->tipo_servicio, 25) }}</small></td>
+                                        <td><small title="{{ $evento->direccion }}">{{ Str::limit($evento->direccion, 30) }}</small></td>
+                                        <td>
+                                            <span class="badge bg-{{ $badgesEstado[$evento->ultimo_estado] ?? 'secondary' }}">
+                                                {{ $evento->ultimo_estado }}
+                                            </span>
+                                        </td>
+                                        <td><small>{{ $evento->fecha_consulta ? \Carbon\Carbon::parse($evento->fecha_consulta)->format('d/m/Y H:i') : '-' }}</small></td>
+                                        <td>
+                                            <a href="{{ route('cecoco.expediente', ['eventoCecoco' => $evento->id, 'refrescar' => 1]) }}"
+                                               class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener">
+                                                <i class="bi bi-arrow-repeat"></i> Ver / refrescar
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -327,6 +397,34 @@ document.addEventListener('DOMContentLoaded', function() {
     const erroresEl = document.getElementById('prefetchEstadoErrores');
     const actualizadoEl = document.getElementById('prefetchEstadoActualizado');
     const cancelarForm = document.getElementById('prefetchEstadoCancelarForm');
+    const workersEl = document.getElementById('prefetchEstadoWorkers');
+
+    function renderWorkers(workers) {
+        if (!workersEl) return;
+        if (!Array.isArray(workers) || workers.length < 2) {
+            workersEl.style.display = 'none';
+            workersEl.innerHTML = '';
+            return;
+        }
+
+        workersEl.style.display = 'block';
+        workersEl.innerHTML = workers.map(function(w) {
+            const total = w.total || 0;
+            const procesados = w.procesados || 0;
+            const pct = total > 0 ? Math.round((procesados / total) * 100) : 0;
+            const barClass = 'progress-bar' + (w.en_curso
+                ? ' progress-bar-striped progress-bar-animated'
+                : (w.errores > 0 ? ' bg-warning' : ' bg-success'));
+
+            return '<div class="d-flex align-items-center mb-1">'
+                + '<small class="text-muted me-2" style="width: 60px;">Worker ' + w.worker + '</small>'
+                + '<div class="progress flex-grow-1" style="height: 14px;">'
+                + '<div class="' + barClass + '" style="width: ' + pct + '%; font-size: .7rem;">' + procesados + ' / ' + total + '</div>'
+                + '</div>'
+                + '<small class="text-muted ms-2">ok: ' + (w.ok || 0) + ' err: ' + (w.errores || 0) + '</small>'
+                + '</div>';
+        }).join('');
+    }
 
     function render(d) {
         if (!d || !d.total) {
@@ -359,6 +457,8 @@ document.addEventListener('DOMContentLoaded', function() {
             : '';
 
         if (cancelarForm) cancelarForm.style.display = d.en_curso ? 'block' : 'none';
+
+        renderWorkers(d.workers);
     }
 
     function verificar() {

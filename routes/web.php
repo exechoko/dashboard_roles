@@ -11,6 +11,7 @@ use App\Http\Controllers\PasswordVaultController;
 use App\Http\Controllers\PatrimonioBienController;
 use App\Http\Controllers\PatrimonioTipoBienController;
 use App\Http\Controllers\TareaController;
+use App\Http\Controllers\AntenaController;
 use Illuminate\Support\Facades\Route;
 //agregamos los controladores
 use App\Http\Controllers\HomeController;
@@ -116,6 +117,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/mapa/camaras.json', [App\Http\Controllers\Movil\MapaController::class, 'camarasJson'])->name('mapa.camaras-json');
         Route::get('/mapa/dependencias.json', [App\Http\Controllers\Movil\MapaController::class, 'dependenciasJson'])->name('mapa.dependencias-json');
         Route::get('/mapa/sitios.json', [App\Http\Controllers\Movil\MapaController::class, 'sitiosJson'])->name('mapa.sitios-json');
+        Route::get('/mapa/antenas.json', [App\Http\Controllers\Movil\MapaController::class, 'antenasJson'])->name('mapa.antenas-json');
         Route::get('/mapa', [App\Http\Controllers\Movil\MapaController::class, 'index'])->name('mapa.index');
 
         Route::get('/eventos', [App\Http\Controllers\Movil\EventosController::class, 'index'])->name('eventos.index');
@@ -128,6 +130,10 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/personal/{personal}', [App\Http\Controllers\Movil\PersonalController::class, 'show'])->name('personal.show');
 
         Route::get('/infraestructura', [App\Http\Controllers\Movil\InfraestructuraController::class, 'index'])->name('infraestructura.index');
+
+        Route::get('/datos-911', [App\Http\Controllers\Movil\Datos911Controller::class, 'index'])->name('datos-911.index');
+        Route::get('/datos-911/datos.json', [App\Http\Controllers\Movil\Datos911Controller::class, 'datosJson'])->name('datos-911.datos-json');
+        Route::get('/datos-911/cecoco.json', [App\Http\Controllers\Movil\Datos911Controller::class, 'cecocoJson'])->name('datos-911.cecoco-json');
 
         Route::get('/entregas-equipos', [App\Http\Controllers\Movil\EntregaEquipoController::class, 'index'])->name('entregas-equipos.index');
         Route::get('/entregas-bodycams', [App\Http\Controllers\Movil\EntregaBodycamController::class, 'index'])->name('entregas-bodycams.index');
@@ -243,6 +249,9 @@ Route::group(['middleware' => ['auth']], function () {
         ->middleware('can:ver-equipo');
     Route::resource('equipos', EquipoController::class);
     Route::resource('terminales', TipoTerminalController::class);
+    Route::get('/antenas/exportar/excel', [AntenaController::class, 'exportarExcel'])->name('antenas.exportar-excel');
+    Route::get('/antenas/exportar/pdf', [AntenaController::class, 'exportarPdf'])->name('antenas.exportar-pdf');
+    Route::resource('antenas', AntenaController::class);
     Route::resource('bodycams', BodycamController::class);
     
     // 🔹 PERSONAL EFECTIVO (NUEVO)

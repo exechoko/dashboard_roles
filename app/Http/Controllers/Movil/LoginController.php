@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Movil;
 
 use App\Http\Controllers\Auth\LoginController as BaseLoginController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class LoginController extends BaseLoginController
 {
@@ -17,6 +18,34 @@ class LoginController extends BaseLoginController
     public function showLoginForm()
     {
         return view('movil.login');
+    }
+
+    /**
+     * Además del chequeo de red externa del login de escritorio, la app
+     * móvil (PWA) tiene su propio permiso: un usuario puede tener acceso al
+     * sistema pero no a la PWA (por ejemplo, si no le corresponde para su
+     * puesto).
+     */
+    protected function authenticated(Request $request, $user)
+    {
+        if ($response = parent::authenticated($request, $user)) {
+            return $response;
+        }
+
+        // El super administrador siempre puede acceder
+        if ($user->email === 'admin@gmail.com') {
+            return;
+        }
+
+        if (!$user->acceso_pwa) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('movil.login')->withErrors([
+                $this->username() => 'Su cuenta no tiene permiso para acceder a la aplicación móvil (PWA).',
+            ]);
+        }
     }
 
     /**

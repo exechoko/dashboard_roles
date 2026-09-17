@@ -858,17 +858,34 @@ function loadAntenasMarkers() {
     @foreach ($antenas as $marcador)
         var numero = @json($marcador['numero']);
         var tituloAntena = @json($marcador['titulo']);
-        var antenaIcon = L.icon({
+        var antenaActiva = @json($marcador['activa'] ?? true);
+        var localidadAntena = @json($marcador['localidad'] ?? null);
+        var alturaAntena = @json($marcador['altura'] ?? null);
+        var observacionesAntena = @json($marcador['observaciones'] ?? null);
+
+        var antenaIcon = antenaActiva ? L.icon({
             iconUrl: "/img/antena_icon.png",
             iconSize: [40, 40],
             iconAnchor: [15, 15],
             popupAnchor: [0, -15]
+        }) : L.divIcon({
+            className: 'transparent',
+            popupAnchor: [0, -15],
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+            html: '<div style="width: 30px; height: 30px; background-color: #dc3545; border: 2px solid #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"><i class="fas fa-broadcast-tower" style="color: white; font-size: 14px;"></i></div>'
         });
+
+        var popupAntena = '<strong>' + escapeHtml(tituloAntena) + '</strong>' +
+            (antenaActiva ? '' : '<br><strong>Estado:</strong> <span style="color: #dc3545;">INACTIVA</span>') +
+            (localidadAntena ? '<br>' + escapeHtml(localidadAntena) : '') +
+            (alturaAntena ? '<br><strong>Altura:</strong> ' + escapeHtml(alturaAntena) + ' m' : '') +
+            (observacionesAntena ? '<br>' + escapeHtml(observacionesAntena) : '');
 
         var marker = L.marker([@json($marcador['latitud']), @json($marcador['longitud'])], {
             icon: antenaIcon
         }).addTo(capa3)
-            .bindPopup(escapeHtml(tituloAntena));
+            .bindPopup(popupAntena);
     @endforeach
 }
 

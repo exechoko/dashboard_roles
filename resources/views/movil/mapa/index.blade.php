@@ -55,6 +55,13 @@
                 <input type="checkbox" id="mMapToggleSitios">
                 <span>Sitios inactivos</span>
             </label>
+
+            @if ($puedeVerAntenas)
+                <label class="m-map-filters__toggle">
+                    <input type="checkbox" id="mMapToggleAntenas">
+                    <span>Antenas (SBS)</span>
+                </label>
+            @endif
         </div>
     </div>
 @endsection
@@ -327,6 +334,53 @@
                         mapa.addLayer(sitiosLayer);
                     } else {
                         mapa.removeLayer(sitiosLayer);
+                    }
+                });
+            }
+
+            // Antenas (SBS): idem, capa aparte cargada a demanda. Las inactivas
+            // se muestran en rojo, igual que en el mapa de escritorio.
+            var antenasLayer = L.layerGroup();
+            var antenasCargadas = false;
+
+            function cargarAntenas() {
+                if (antenasCargadas) {
+                    return;
+                }
+                antenasCargadas = true;
+                fetch('{{ route('movil.mapa.antenas-json') }}')
+                    .then(function (r) { return r.json(); })
+                    .then(function (geojson) {
+                        (geojson.features || []).forEach(function (feature) {
+                            var p = feature.properties || {};
+                            var coords = feature.geometry.coordinates;
+                            var icon = L.divIcon({
+                                className: 'm-map-marker m-map-marker--antena' + (p.activa ? '' : ' m-map-marker--antena-inactiva'),
+                                html: '<i class="fas fa-broadcast-tower"></i>',
+                                iconSize: [26, 26],
+                                iconAnchor: [13, 13]
+                            });
+                            var marker = L.marker([coords[1], coords[0]], { icon: icon })
+                                .bindPopup(
+                                    '<strong>' + escapeHtml(p.titulo) + '</strong><br>' +
+                                    (p.activa ? '' : '<span style="color:#dc3545;">INACTIVA</span><br>') +
+                                    (p.localidad ? escapeHtml(p.localidad) + '<br>' : '') +
+                                    (p.altura ? 'Altura: ' + escapeHtml(p.altura) + ' m<br>' : '') +
+                                    (p.observaciones ? escapeHtml(p.observaciones) : '')
+                                );
+                            antenasLayer.addLayer(marker);
+                        });
+                    });
+            }
+
+            var toggleAntenas = document.getElementById('mMapToggleAntenas');
+            if (toggleAntenas) {
+                toggleAntenas.addEventListener('change', function (e) {
+                    if (e.target.checked) {
+                        cargarAntenas();
+                        mapa.addLayer(antenasLayer);
+                    } else {
+                        mapa.removeLayer(antenasLayer);
                     }
                 });
             }

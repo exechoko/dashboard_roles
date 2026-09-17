@@ -43,7 +43,7 @@ class EventoCecocoController extends Controller
     {
         $eventos = null;
         $totalResultados = null;
-        $tieneFiltros = $request->hasAny(['anio', 'mes', 'operador', 'tipo', 'tipos', 'desde_datetime', 'hasta_datetime', 'desde', 'hasta', 'buscar']);
+        $tieneFiltros = $request->hasAny(['anio', 'mes', 'operador', 'tipo', 'tipos', 'desde_datetime', 'hasta_datetime', 'desde', 'hasta', 'buscar', 'sin_detalle']);
 
         if ($tieneFiltros) {
             $query = EventoCecoco::select([
@@ -74,6 +74,7 @@ class EventoCecocoController extends Controller
                 'hora_desde' => $request->input('hora_desde'),
                 'hora_hasta' => $request->input('hora_hasta'),
                 'buscar' => $request->input('buscar'),
+                'sin_detalle' => $request->boolean('sin_detalle'),
             ];
 
             $query->filtrado($filtrosConteo);
@@ -143,6 +144,7 @@ class EventoCecocoController extends Controller
             'hora_desde',
             'hora_hasta',
             'buscar',
+            'sin_detalle',
             'page',
         ]);
 
@@ -184,12 +186,51 @@ class EventoCecocoController extends Controller
                 ->pluck('total', 'anio');
         });
 
+        $expedientesAbiertos = $this->expedientesAbiertosSegunUltimoEstado();
+
         return view('eventos-cecoco.importar', compact(
             'importaciones',
             'totalArchivosImportados',
             'totalRegistrosEnBd',
-            'aniosCounts'
+            'aniosCounts',
+            'expedientesAbiertos'
         ));
+    }
+
+    /**
+     * Expedientes cuyo último estado consultado en CECOCO (columna
+     * historial_estado, copia de detalle_json->historial->estado guardada al
+     * traer el detalle) todavía no es "Closed". Ese estado es una foto tomada
+     * en fecha_consulta: puede estar desactualizada si el expediente cerró
+     * después en el sistema real, por eso cada fila enlaza al detalle para
+     * refrescarlo bajo demanda en vez de asumir que sigue abierto.
+     *
+     * Se filtra por la columna (indexada) y no con JSON_EXTRACT en la consulta:
+     * sobre las 40k+ filas de detalle_expediente_cecoco esto último forzaba un
+     * full scan + filesort de varios segundos en cada carga de la página.
+     *
+     * "Primary Main Server" se descarta: es un texto de error del reporte BIRT
+     * que quedó mal parseado como si fuera el estado, no un estado real.
+     */
+    private function expedientesAbiertosSegunUltimoEstado()
+    {
+        return Cache::remember('cecoco_expedientes_abiertos', 120, function () {
+            return EventoCecoco::query()
+                ->join('detalle_expediente_cecoco', 'detalle_expediente_cecoco.evento_cecoco_id', '=', 'evento_cecoco.id')
+                ->whereNotNull('detalle_expediente_cecoco.historial_estado')
+                ->whereNotIn('detalle_expediente_cecoco.historial_estado', ['Closed', 'Primary Main Server', ''])
+                ->orderByDesc('evento_cecoco.fecha_hora')
+                ->limit(300)
+                ->get([
+                    'evento_cecoco.id',
+                    'evento_cecoco.nro_expediente',
+                    'evento_cecoco.fecha_hora',
+                    'evento_cecoco.tipo_servicio',
+                    'evento_cecoco.direccion',
+                    'detalle_expediente_cecoco.historial_estado as ultimo_estado',
+                    'detalle_expediente_cecoco.fecha_consulta',
+                ]);
+        });
     }
 
     public function importar(Request $request)
@@ -338,6 +379,12 @@ class EventoCecocoController extends Controller
             $query->buscar($request->buscar);
         }
 
+        if ($request->boolean('sin_detalle')) {
+            $query->whereDoesntHave('detalle', function ($q) {
+                $q->whereNotNull('detalle_json');
+            });
+        }
+
         $filename = 'cecoco_eventos_' . now()->format('Ymd_His') . '.txt';
 
         return response()->streamDownload(function () use ($query) {
@@ -446,6 +493,7 @@ class EventoCecocoController extends Controller
                 'hora_desde',
                 'hora_hasta',
                 'buscar',
+                'sin_detalle',
                 'page',
             ]);
 
@@ -485,27 +533,22 @@ class EventoCecocoController extends Controller
     }
 
     /**
-     * Exporta el PDF nativo del "Parte de novedad general" de CECOCO (el mismo
-     * que genera el botón de impresión dentro del sistema CECOCO), con los datos
-     * básicos del evento y sin la cronología completa de acciones.
+     * Exporta el "Parte de novedad general" del expediente, generado localmente
+     * a partir de los datos ya obtenidos del detalle (report_history), en vez de
+     * pedirle a CECOCO el PDF nativo (report_issues), que sale en blanco cuando
+     * el expediente todavía no fue restaurado desde backup en el sistema CECOCO.
      */
     public function exportarPdfResumen(Request $request, EventoCecoco $eventoCecoco)
     {
         $this->authorize('ver-expediente-cecoco');
 
         try {
-            $cacheKey = 'cecoco_reporte_pdf_resumen_' . $eventoCecoco->nro_expediente;
-            $pdf = $request->boolean('refrescar') ? null : Cache::get($cacheKey);
+            $detalle = $this->expedienteService->obtenerDetalleExpedienteCacheado($eventoCecoco, $request->boolean('refrescar'));
 
-            if (!$pdf) {
-                $pdf = $this->expedienteService->obtenerReportePdfOriginal($eventoCecoco->nro_expediente);
-                Cache::put($cacheKey, $pdf, 60 * 30);
-            }
+            $pdf = Pdf::loadView('eventos-cecoco.parte-novedad-pdf', compact('eventoCecoco', 'detalle'))
+                ->setPaper('a4', 'landscape');
 
-            return response($pdf, 200, [
-                'Content-Type' => 'application/pdf',
-                'Content-Disposition' => 'inline; filename="expediente_' . $eventoCecoco->nro_expediente . '.pdf"',
-            ]);
+            return $pdf->stream('ParteDeNovedad_' . $eventoCecoco->nro_expediente . '.pdf');
         } catch (\Exception $e) {
             return redirect()
                 ->route('cecoco.show', $eventoCecoco)
@@ -1028,82 +1071,72 @@ class EventoCecocoController extends Controller
             ? $eventoCecoco->fecha_cierre->copy()
             : $eventoCecoco->fecha_hora->copy()->addMinutes((int) config('grabador.minutos_despues_sin_cierre', 60));
 
-        $cursor = (string) $request->input('searchid', '');
-        $skip   = max(0, (int) $request->input('skip', 0));
+        // Cola de ventanas pendientes: en la 1ª ronda es solo la ventana completa
+        // del evento; en las siguientes es lo que devolvió la ronda anterior
+        // (ventanas que quedaron por bisecar/agotar). Ver buscarPorVentanas().
+        $cola        = $this->decodificarColaModulaciones((string) $request->input('cola', ''), $desde, $hasta);
+        $totalPrevio = max(0, (int) $request->input('total', 0));
 
         try {
             $localService = new CecocoModulacionesLocalService();
 
-            // Página de continuación de una búsqueda ya iniciada en el grabador.
-            if ($cursor !== '' && preg_match('/^\d+$/', $cursor)) {
-                $grabador = new GrabadorTetraService();
-                $pagina   = $grabador->buscarPagina($desde, $hasta, $cursor, $skip);
-
-                $pagina['modulaciones'] = $localService->emparejarConGrabador($pagina['modulaciones'], $desde, $hasta);
-                $this->marcarAudiosSinReplay($pagina['modulaciones'], $grabador);
-                $this->asignarUrlsDeStream($pagina['modulaciones']);
-
-                return response()->json([
-                    'success'      => true,
-                    'modulaciones' => $pagina['modulaciones'],
-                    'total'        => count($pagina['modulaciones']),
-                    'searchid'     => $pagina['hayMas'] ? $pagina['searchid'] : null,
-                    'skip'         => $pagina['skip'],
-                    'hayMas'       => $pagina['hayMas'],
-                    'fuente'       => 'grabador',
-                ]);
-            }
-
-            $resultado = null;
-            $paginado  = ['searchid' => null, 'skip' => 0, 'hayMas' => false];
-
-            // 1. El grabador es la fuente autoritativa: devuelve una sola fila por
-            //    modulación real (CECOCO en cambio graba una copia por operador que
-            //    escucha). Cada fila se empareja con su .mp3 del backup local por
-            //    hora de inicio y duración para servir el audio desde disco.
+            // El grabador es la fuente autoritativa: devuelve una sola fila por
+            // modulación real (CECOCO en cambio graba una copia por operador que
+            // escucha). Cada fila se empareja con su .mp3 del backup local por
+            // hora de inicio y duración para servir el audio desde disco.
             if (config('grabador.url')) {
                 try {
                     $grabador = new GrabadorTetraService();
-                    $pagina   = $grabador->buscarPagina($desde, $hasta);
+                    $limite   = microtime(true) + (int) config('grabador.timeout_total', 90);
+                    $ronda    = $grabador->buscarPorVentanas($cola, $limite);
 
-                    if (!empty($pagina['modulaciones'])) {
-                        $pagina['modulaciones'] = $localService->emparejarConGrabador($pagina['modulaciones'], $desde, $hasta);
+                    $modulaciones = $ronda['modulaciones'];
+                    $maxTotal     = (int) config('grabador.max_resultados', 500);
+                    if ($totalPrevio + count($modulaciones) > $maxTotal) {
+                        $modulaciones = array_slice($modulaciones, 0, max(0, $maxTotal - $totalPrevio));
+                        $ronda['cola'] = [];
+                    }
 
+                    $primeraRondaVacia = $totalPrevio === 0 && empty($modulaciones) && empty($ronda['cola']);
+
+                    if (!$primeraRondaVacia) {
                         // Los audios sin .mp3 local se sirven como WAV vía el Replay
-                        // Server: si este servidor no lo tiene y nada tiene respaldo
-                        // local, conviene la búsqueda local directa.
-                        $sinMatch = count(array_filter($pagina['modulaciones'], fn ($m) => empty($m['path'])));
-                        if ($sinMatch === count($pagina['modulaciones']) && $sinMatch > 0 && !$grabador->replayDisponible() && !$pagina['hayMas']) {
-                            $resultado = null;
-                        } else {
-                            $this->marcarAudiosSinReplay($pagina['modulaciones'], $grabador);
-                            $resultado = [
-                                'modulaciones' => $pagina['modulaciones'],
-                                'ventana'      => ['desde' => $desde->format('Y-m-d H:i:s'), 'hasta' => $hasta->format('Y-m-d H:i:s')],
-                                'fuente'       => 'grabador',
-                            ];
-                            $paginado = [
-                                'searchid' => $pagina['hayMas'] ? $pagina['searchid'] : null,
-                                'skip'     => $pagina['skip'],
-                                'hayMas'   => $pagina['hayMas'],
-                            ];
-                        }
+                        // Server; los que tampoco tengan eso quedan marcados como "sin
+                        // audio". El listado del grabador se devuelve siempre: es la
+                        // fuente autoritativa de qué se moduló, y sirve aunque no haya
+                        // backup local de ese día ni Replay Server para reproducirlo.
+                        $modulaciones = $localService->emparejarConGrabador($modulaciones, $desde, $hasta);
+                        $this->marcarAudiosSinReplay($modulaciones, $grabador);
+                        $this->asignarUrlsDeStream($modulaciones);
+
+                        return response()->json([
+                            'success'      => true,
+                            'modulaciones' => $modulaciones,
+                            'total'        => $totalPrevio + count($modulaciones),
+                            'ventana'      => ['desde' => $desde->format('Y-m-d H:i:s'), 'hasta' => $hasta->format('Y-m-d H:i:s')],
+                            'fuente'       => 'grabador',
+                            'cola'         => empty($ronda['cola']) ? null : $this->codificarColaModulaciones($ronda['cola']),
+                            'hayMas'       => !empty($ronda['cola']),
+                        ]);
                     }
                 } catch (\Exception $e) {
                     Log::warning('modulaciones: grabador no disponible, se usa el disco local', [
                         'evento_id' => $eventoCecoco->id,
                         'error'     => $e->getMessage(),
                     ]);
-                    $resultado = null;
+
+                    // Ya había resultados del grabador acumulados en rondas anteriores:
+                    // no mezclarlos en silencio con una búsqueda local de otra fuente
+                    // sobre la ventana completa. Mejor mostrar el error (el frontend ya
+                    // sabe renderizar lo acumulado hasta acá) que arriesgar duplicados.
+                    if ($totalPrevio > 0) {
+                        throw $e;
+                    }
                 }
             }
 
-            // 2. Respaldo: búsqueda directa en disco local (deduplicando copias por operador).
-            if ($resultado === null || empty($resultado['modulaciones'])) {
-                $resultado = $localService->buscarModulaciones($desde, $hasta);
-                $paginado  = ['searchid' => null, 'skip' => 0, 'hayMas' => false];
-            }
-
+            // Respaldo: búsqueda directa en disco local (deduplicando copias por operador).
+            $resultado = $localService->buscarModulaciones($desde, $hasta);
             $this->asignarUrlsDeStream($resultado['modulaciones']);
 
             return response()->json([
@@ -1111,10 +1144,9 @@ class EventoCecocoController extends Controller
                 'modulaciones' => $resultado['modulaciones'],
                 'total'        => count($resultado['modulaciones']),
                 'ventana'      => $resultado['ventana'],
-                'fuente'       => $resultado['fuente'] ?? 'grabador',
-                'searchid'     => $paginado['searchid'],
-                'skip'         => $paginado['skip'],
-                'hayMas'       => $paginado['hayMas'],
+                'fuente'       => $resultado['fuente'] ?? 'local',
+                'cola'         => null,
+                'hayMas'       => false,
             ]);
         } catch (\Exception $e) {
             Log::error('modulaciones evento cecoco', [
@@ -1127,6 +1159,50 @@ class EventoCecocoController extends Controller
                 'message' => 'Error al buscar modulaciones: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Decodifica la cola de ventanas pendientes que manda el frontend entre
+     * rondas de búsqueda de modulaciones (ver GrabadorTetraService::buscarPorVentanas).
+     * Sin cola (1ª ronda), la cola es solo la ventana completa del evento.
+     *
+     * @return array<int, array{0: Carbon, 1: Carbon}>
+     */
+    private function decodificarColaModulaciones(string $colaJson, Carbon $desde, Carbon $hasta): array
+    {
+        if ($colaJson === '') {
+            return [[$desde->copy(), $hasta->copy()]];
+        }
+
+        $decodificada = json_decode($colaJson, true);
+        if (!is_array($decodificada)) {
+            return [[$desde->copy(), $hasta->copy()]];
+        }
+
+        $cola = [];
+        foreach ($decodificada as $ventana) {
+            if (!is_array($ventana) || count($ventana) !== 2) {
+                continue;
+            }
+            try {
+                $cola[] = [Carbon::parse($ventana[0]), Carbon::parse($ventana[1])];
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+
+        return $cola;
+    }
+
+    /**
+     * @param array<int, array{0: Carbon, 1: Carbon}> $cola
+     */
+    private function codificarColaModulaciones(array $cola): string
+    {
+        return json_encode(array_map(
+            fn ($ventana) => [$ventana[0]->format('Y-m-d H:i:s'), $ventana[1]->format('Y-m-d H:i:s')],
+            $cola
+        ));
     }
 
     /**
@@ -1529,6 +1605,28 @@ class EventoCecocoController extends Controller
                 ->count();
         }
 
+        // ── Tasa de detención por tipificación (aproximada, extraída del texto) ──
+        // Cruza cada categoría (por tipo_servicio o por descripción, según corresponda)
+        // contra menciones de detención/demora en la descripción, para que la superioridad
+        // vea qué proporción de cada tipo de intervención termina con una persona detenida.
+        $tasaDetencionPorCategoria = [];
+        foreach ($this->categoriasParaTasaDetencion() as $etiqueta => $config) {
+            $queryTotal = clone $base;
+            $this->aplicarMatchTexto($queryTotal, $config['total']['campo'], $config['total']['metodo'], $config['total']['patron']);
+            $total = (clone $queryTotal)->count();
+
+            $conDetenido = clone $queryTotal;
+            $this->aplicarMatchTexto($conDetenido, $config['detenido']['campo'], $config['detenido']['metodo'], $config['detenido']['patron']);
+            $conDetenido = $conDetenido->count();
+
+            $tasaDetencionPorCategoria[] = [
+                'categoria' => $etiqueta,
+                'total' => $total,
+                'con_detenido' => $conDetenido,
+                'porcentaje' => $total > 0 ? round($conDetenido / $total * 100, 1) : 0.0,
+            ];
+        }
+
         $eventos = (clone $base)
             ->select(['id', 'nro_expediente', 'fecha_hora', 'descripcion', 'tipo_servicio'])
             ->orderByDesc('fecha_hora')
@@ -1559,6 +1657,7 @@ class EventoCecocoController extends Controller
             'comparativa_actual' => $comparativaActual,
             'comparativa_anterior' => $comparativaAnterior,
             'indicadores_resultado' => $indicadoresResultado,
+            'tasa_detencion_por_categoria' => $tasaDetencionPorCategoria,
             'eventos' => $eventos,
             'eventos_limit' => 100,
         ]);
@@ -1731,6 +1830,74 @@ class EventoCecocoController extends Controller
             'motos_recuperadas' => 'recuper[a-z]*[^.]{0,45}(motoveh|motociclet|\\bmoto\\b)|(motoveh|motociclet|\\bmoto\\b)[^.]{0,45}recuper',
             'vehiculos_recuperados' => 'recuper[a-z]*[^.]{0,45}(\\bveh[ií]culo|autom[oó]vil|\\bauto\\b|camioneta)|(\\bveh[ií]culo|autom[oó]vil|\\bauto\\b|camioneta)[^.]{0,45}recuper',
         ];
+    }
+
+    /**
+     * Regex de texto libre para detectar una intervención en crisis de salud mental.
+     * No existe como tipo_servicio propio en CECOCO: aparece dentro de tipos genéricos
+     * (Aviso Personas, Desorden en la Vía Pública, etc.), por eso se infiere del relato.
+     */
+    private function patronCrisisSaludMental(): string
+    {
+        return 'crisis (de )?(nervios|nerviosa|psiqui[aá]trica|psicol[oó]gica)|paciente psiqui[aá]tric|salud mental|autolesion|tentativa de suicidio|intento de suicidio|ataque de nervios';
+    }
+
+    /**
+     * Regex de texto libre para detectar un desenlace con una persona detenida/demorada,
+     * usado para cruzar contra las categorías de {@see categoriasParaTasaDetencion()}.
+     */
+    private function patronDetencion(): string
+    {
+        return 'detenid[oa]|demorad[oa]|aprehend|aprehensi[oó]n';
+    }
+
+    /**
+     * Tipificaciones que la superioridad quiere ver cruzadas contra "terminó con detenido".
+     * Cada entrada define cómo identificar el universo total de la categoría ('total') y
+     * cómo identificar el subconjunto con detención ('detenido'). Agregar una tipificación
+     * nueva es agregar una entrada acá, sin tocar el resto del cálculo.
+     *
+     * @return array<string, array{total: array{campo: string, metodo: string, patron: string}, detenido: array{campo: string, metodo: string, patron: string}}>
+     */
+    private function categoriasParaTasaDetencion(): array
+    {
+        return [
+            'Crisis de salud mental' => [
+                'total' => ['campo' => 'descripcion', 'metodo' => 'regexp', 'patron' => $this->patronCrisisSaludMental()],
+                'detenido' => ['campo' => 'descripcion', 'metodo' => 'regexp', 'patron' => $this->patronDetencion()],
+            ],
+            'Violencia de género' => [
+                'total' => ['campo' => 'tipo_servicio', 'metodo' => 'like', 'patron' => 'violencia de genero'],
+                'detenido' => ['campo' => 'tipo_servicio', 'metodo' => 'like', 'patron' => 'con detenidos'],
+            ],
+            'Robo' => [
+                'total' => ['campo' => 'tipo_servicio', 'metodo' => 'like', 'patron' => 'robo'],
+                'detenido' => ['campo' => 'descripcion', 'metodo' => 'regexp', 'patron' => $this->patronDetencion()],
+            ],
+            'Hurto' => [
+                'total' => ['campo' => 'tipo_servicio', 'metodo' => 'like', 'patron' => 'hurto'],
+                'detenido' => ['campo' => 'descripcion', 'metodo' => 'regexp', 'patron' => $this->patronDetencion()],
+            ],
+            'Daños' => [
+                'total' => ['campo' => 'tipo_servicio', 'metodo' => 'like', 'patron' => 'daños'],
+                'detenido' => ['campo' => 'descripcion', 'metodo' => 'regexp', 'patron' => $this->patronDetencion()],
+            ],
+        ];
+    }
+
+    /**
+     * Aplica sobre $query un filtro LIKE o REGEXP (case-insensitive) según $metodo.
+     * $campo sólo proviene de {@see categoriasParaTasaDetencion()} (lista fija interna),
+     * nunca de input del usuario.
+     */
+    private function aplicarMatchTexto(Builder $query, string $campo, string $metodo, string $patron): void
+    {
+        if ($metodo === 'like') {
+            $query->whereRaw("LOWER({$campo}) LIKE ?", ['%' . mb_strtolower($patron) . '%']);
+            return;
+        }
+
+        $query->whereNotNull($campo)->whereRaw("{$campo} REGEXP ?", [$patron]);
     }
 }
 

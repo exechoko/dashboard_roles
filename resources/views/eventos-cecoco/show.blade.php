@@ -643,10 +643,12 @@ function cargarPaginaModulaciones(url, acumulado) {
     })
     .then(function(data) {
         if (!data.success) {
-            if (acumulado.modulaciones.length > 0) { renderizarModulaciones(acumulado); return; }
-            document.getElementById('modulaciones-loading').style.display = 'none';
-            document.getElementById('modulaciones-error').style.display   = 'block';
-            document.getElementById('modulaciones-error').textContent     = data.message || 'Error al obtener modulaciones.';
+            document.getElementById('modulaciones-error').style.display = 'block';
+            document.getElementById('modulaciones-error').textContent   =
+                (data.message || 'Error al obtener modulaciones.') +
+                (acumulado.modulaciones.length > 0 ? ' La lista de abajo puede estar incompleta.' : '');
+            if (acumulado.modulaciones.length > 0) { renderizarModulaciones(acumulado); }
+            else { document.getElementById('modulaciones-loading').style.display = 'none'; }
             return;
         }
 
@@ -654,11 +656,11 @@ function cargarPaginaModulaciones(url, acumulado) {
         if (!acumulado.ventana && data.ventana) { acumulado.ventana = data.ventana; }
         if (!acumulado.fuente && data.fuente)   { acumulado.fuente  = data.fuente; }
 
-        if (data.hayMas && data.searchid) {
+        if (data.hayMas && data.cola) {
             document.getElementById('modulaciones-loading').innerHTML =
                 '<i class="fas fa-sync-alt grabacion-spin"></i> Buscando modulaciones... (' + acumulado.modulaciones.length + ' encontradas)';
             cargarPaginaModulaciones(
-                MOD_URL_BASE + '?searchid=' + encodeURIComponent(data.searchid) + '&skip=' + encodeURIComponent(data.skip || 0),
+                MOD_URL_BASE + '?cola=' + encodeURIComponent(data.cola) + '&total=' + encodeURIComponent(acumulado.modulaciones.length),
                 acumulado
             );
             return;
@@ -668,10 +670,12 @@ function cargarPaginaModulaciones(url, acumulado) {
     })
     .catch(function(err) {
         console.error(err);
-        if (acumulado.modulaciones.length > 0) { renderizarModulaciones(acumulado); return; }
-        document.getElementById('modulaciones-loading').style.display = 'none';
-        document.getElementById('modulaciones-error').style.display   = 'block';
-        document.getElementById('modulaciones-error').textContent     = 'Error al obtener modulaciones: ' + (err && err.message ? err.message : 'error de red');
+        document.getElementById('modulaciones-error').style.display = 'block';
+        document.getElementById('modulaciones-error').textContent   =
+            'Error al obtener modulaciones: ' + (err && err.message ? err.message : 'error de red') +
+            (acumulado.modulaciones.length > 0 ? '. La lista de abajo puede estar incompleta.' : '');
+        if (acumulado.modulaciones.length > 0) { renderizarModulaciones(acumulado); }
+        else { document.getElementById('modulaciones-loading').style.display = 'none'; }
     });
 }
 

@@ -472,6 +472,12 @@ a { color: var(--m-accent); text-decoration: none; }
     font-size: .82rem;
 }
 
+/* El "display: flex" de arriba, al ser una regla de autor, le gana en cascada
+   al "display: none" por defecto del navegador para el atributo [hidden]
+   (que es de menor prioridad por ser del user-agent). Sin esto, el JS que
+   hace banner.hidden = true nunca lo ocultaba de verdad. */
+.m-install-banner[hidden] { display: none; }
+
 .m-install-banner span { flex: 1; min-width: 0; }
 .m-install-banner .material-symbols-outlined { flex: 0 0 auto; font-size: 1.2rem; }
 
@@ -816,6 +822,30 @@ a { color: var(--m-accent); text-decoration: none; }
     transform: translate(-50%, -50%);
     font-size: .8rem;
     line-height: 1;
+}
+
+.m-map-marker--antena {
+    position: relative;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--m-accent);
+    color: var(--m-accent-contrast);
+    box-shadow: var(--m-shadow);
+}
+
+.m-map-marker--antena i {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: .78rem;
+    line-height: 1;
+}
+
+.m-map-marker--antena.m-map-marker--antena-inactiva {
+    background: var(--m-danger);
+    color: #fff;
 }
 
 .m-map-locate-btn {

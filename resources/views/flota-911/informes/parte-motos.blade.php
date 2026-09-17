@@ -20,6 +20,10 @@
             </div>
         @endif
 
+        @if($configurables)
+            @include('flota-911.informes._parte-config-recursos', ['tipo' => 'motos', 'configurables' => $configurables])
+        @endif
+
         <form action="{{ route('flota-911.informes.parte-diario.generar') }}" method="POST" id="formParteDiario">
             @csrf
             <input type="hidden" name="tipo" value="motos">

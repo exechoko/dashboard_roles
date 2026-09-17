@@ -308,6 +308,7 @@ Route::group(['middleware' => ['auth']], function () {
         Route::patch('/recursos/{recurso}/reactivar-transferencia', [RecursoTransferenciaController::class, 'reactivar'])->name('transferencias.reactivar');
 
         // Informes
+        Route::post('/parte-diario/configuracion', [VehiculoInformeController::class, 'guardarConfiguracionParteDiario'])->name('informes.parte-diario.configuracion.guardar');
         Route::get('/parte-diario/personal/buscar', [VehiculoInformeController::class, 'buscarPersonal'])->name('informes.parte-diario.personal.buscar');
         Route::post('/parte-diario/pre-armar', [VehiculoInformeController::class, 'preArmarParteDiario'])->name('informes.parte-diario.pre-armar');
         Route::get('/parte-diario/desde-ultima-guardia', [VehiculoInformeController::class, 'parteDesdeUltimaGuardia'])->name('informes.parte-diario.desde-guardia');

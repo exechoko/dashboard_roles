@@ -24,6 +24,7 @@ class SeederPermisosFlota911 extends Seeder
             'asignar-vehiculo-a-recurso',
             'confirmar-transferencia-recurso',
             'moderar-bitacora-flota-911',
+            'configurar-parte-diario',
         ];
 
         foreach ($permisos as $nombre) {

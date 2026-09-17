@@ -13,7 +13,8 @@ class Recurso extends Model
     protected $table = 'recursos';
 
     protected $casts = [
-        'fecha_transferencia' => 'datetime',
+        'fecha_transferencia'      => 'datetime',
+        'incluir_en_parte_diario'  => 'boolean',
     ];
 
     public function vehiculo(): BelongsTo
@@ -50,6 +51,11 @@ class Recurso extends Model
     public function scopeTransferidos($query)
     {
         return $query->whereNotNull('fecha_transferencia');
+    }
+
+    public function scopeParaParteDiario($query)
+    {
+        return $query->where('incluir_en_parte_diario', true);
     }
 
     public function estaTransferido(): bool

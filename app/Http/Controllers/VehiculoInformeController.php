@@ -30,6 +30,7 @@ class VehiculoInformeController extends Controller
         $this->middleware('can:generar-parte-diario')->only(['parteDiario', 'generarParteDiario', 'preArmarParteDiario', 'parteDesdeUltimaGuardia', 'descargarParteDiario', 'buscarPersonal']);
         $this->middleware('can:ver-flota-911')->only('estadoFlota');
         $this->middleware('can:generar-estado-flota')->only('generarEstadoFlota');
+        $this->middleware('can:configurar-parte-diario')->only('guardarConfiguracionParteDiario');
     }
 
     /**
@@ -59,9 +60,13 @@ class VehiculoInformeController extends Controller
             ? ParteDiarioNovedades::firstWhere(['fecha' => $fecha, 'guardia' => $guardia])
             : null;
 
+        $configurables = $request->user()?->can('configurar-parte-diario')
+            ? $this->recursosConfigurables($tipo)
+            : null;
+
         return view('flota-911.informes.parte-' . $tipo, compact(
             'tipo', 'fecha', 'guardia', 'horario', 'fechaInicio', 'fechaFin',
-            'recursos', 'personal', 'consignas', 'parte', 'novedades'
+            'recursos', 'personal', 'consignas', 'parte', 'novedades', 'configurables'
         ));
     }
 
@@ -75,6 +80,7 @@ class VehiculoInformeController extends Controller
         return Recurso::query()
             ->whereIn('destino_id', config('flota911.parte.destinos_' . $tipo, []))
             ->activos()
+            ->paraParteDiario()
             ->when($tipo === ParteDiario::TIPO_MOVILES, fn ($q) => $q->whereNotNull('vehiculo_id'))
             ->with([
                 'vehiculo',
@@ -84,6 +90,53 @@ class VehiculoInformeController extends Controller
             ])
             ->orderBy('nombre')
             ->get();
+    }
+
+    /**
+     * Tilda/destilda qué recursos de UN tipo (moviles o motos) aparecen en el
+     * listado del parte diario. Se llama desde la sección plegable incluida en
+     * cada vista de parte (parte-moviles / parte-motos). No afecta a ninguna
+     * otra pantalla del sistema: los recursos excluidos siguen existiendo
+     * normalmente en el resto de Flota 911, sólo se los salta en este listado.
+     */
+    public function guardarConfiguracionParteDiario(Request $request)
+    {
+        $datos = $request->validate([
+            'tipo'        => ['required', 'in:moviles,motos'],
+            'incluidos'   => ['nullable', 'array'],
+            'incluidos.*' => ['integer', 'exists:recursos,id'],
+        ]);
+
+        $incluidos = collect($datos['incluidos'] ?? [])->map(fn ($id) => (int) $id)->all();
+        $recursos = $this->recursosConfigurables($datos['tipo']);
+
+        foreach ($recursos as $recurso) {
+            $debeIncluirse = in_array($recurso->id, $incluidos, true);
+            if ($recurso->incluir_en_parte_diario !== $debeIncluirse) {
+                $recurso->incluir_en_parte_diario = $debeIncluirse;
+                $recurso->save();
+            }
+        }
+
+        return redirect()
+            ->back()
+            ->with('success', 'Configuración del parte diario actualizada.');
+    }
+
+    /**
+     * Recursos candidatos a aparecer en el parte diario de ese tipo (mismos
+     * filtros que recursosDelParte(), salvo el propio flag de inclusión: acá
+     * necesitamos ver también a los excluidos, para poder re-incluirlos).
+     */
+    private function recursosConfigurables(string $tipo)
+    {
+        return Recurso::query()
+            ->whereIn('destino_id', config('flota911.parte.destinos_' . $tipo, []))
+            ->activos()
+            ->when($tipo === ParteDiario::TIPO_MOVILES, fn ($q) => $q->whereNotNull('vehiculo_id'))
+            ->with('vehiculo:id,dominio')
+            ->orderBy('nombre')
+            ->get(['id', 'nombre', 'vehiculo_id', 'destino_id', 'incluir_en_parte_diario']);
     }
 
     /**

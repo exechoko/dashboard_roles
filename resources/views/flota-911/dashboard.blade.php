@@ -79,12 +79,14 @@
 
         {{-- Accesos rápidos --}}
         <div class="row mb-4">
-            @can('generar-parte-diario')
+            @can('generar-parte-diario-moviles')
             <div class="col-auto">
                 <a href="{{ route('flota-911.informes.parte-diario', 'moviles') }}" class="btn btn-primary">
                     <i class="fas fa-file-alt mr-1"></i> Parte de Móviles
                 </a>
             </div>
+            @endcan
+            @can('generar-parte-diario-motos')
             <div class="col-auto">
                 <a href="{{ route('flota-911.informes.parte-diario', 'motos') }}" class="btn btn-primary">
                     <i class="fas fa-motorcycle mr-1"></i> Parte de Motopatrullas
@@ -98,7 +100,7 @@
                 </a>
             </div>
             @endcan
-            @can('gestionar-flota-911')
+            @can('ver-prestamos-flota-911')
             <div class="col-auto">
                 <a href="{{ route('flota-911.prestamos.index') }}" class="btn btn-warning">
                     <i class="fas fa-exchange-alt mr-1"></i> Préstamos
@@ -191,11 +193,13 @@
                                        class="action-btn btn-view" title="Bitácora del recurso">
                                         <i class="fas fa-history"></i>
                                     </a>
-                                    @can('gestionar-flota-911')
+                                    @can('editar-estado-flota-911')
                                     <button class="action-btn btn-edit" title="Cambiar estado"
                                         data-toggle="modal" data-target="#modalEstado{{ $recurso->id }}">
                                         <i class="fas fa-sliders-h"></i>
                                     </button>
+                                    @endcan
+                                    @can('reportar-transferencia-recurso')
                                     @if($recurso->transferenciaPendiente)
                                         <span class="action-btn text-warning" title="Transferencia reportada, pendiente de confirmar">
                                             <i class="fas fa-truck-moving"></i>
@@ -217,9 +221,10 @@
         </div>
 
         {{-- Modales de estado por recurso --}}
-        @can('gestionar-flota-911')
+        @canany(['editar-estado-flota-911', 'reportar-transferencia-recurso'])
         @foreach($seccion->recursos as $recurso)
         @php $estadoActual = $recurso->estadoSeccion; @endphp
+        @can('editar-estado-flota-911')
         <div class="modal fade" id="modalEstado{{ $recurso->id }}" tabindex="-1">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -257,7 +262,9 @@
                 </div>
             </div>
         </div>
+        @endcan
 
+        @can('reportar-transferencia-recurso')
         @unless($recurso->transferenciaPendiente)
         <div class="modal fade" id="modalTransferir{{ $recurso->id }}" tabindex="-1">
             <div class="modal-dialog">
@@ -314,8 +321,9 @@
             </div>
         </div>
         @endunless
-        @endforeach
         @endcan
+        @endforeach
+        @endcanany
         @endforeach
 
         {{-- Préstamos activos --}}

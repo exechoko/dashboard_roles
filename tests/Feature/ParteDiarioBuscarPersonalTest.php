@@ -12,7 +12,7 @@ class ParteDiarioBuscarPersonalTest extends TestCase
 {
     use DatabaseTransactions;
 
-    private function usuario(string $permiso = 'generar-parte-diario'): User
+    private function usuario(string|array $permiso = ['generar-parte-diario-moviles', 'generar-parte-diario-motos']): User
     {
         $user = User::factory()->create();
         $user->givePermissionTo($permiso);

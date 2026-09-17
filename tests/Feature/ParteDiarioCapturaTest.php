@@ -22,7 +22,7 @@ class ParteDiarioCapturaTest extends TestCase
     private function usuario(): User
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('generar-parte-diario');
+        $user->givePermissionTo(['generar-parte-diario-moviles', 'generar-parte-diario-motos']);
 
         return $user;
     }

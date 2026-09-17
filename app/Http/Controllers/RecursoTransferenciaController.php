@@ -15,8 +15,8 @@ class RecursoTransferenciaController extends Controller
 
     public function __construct()
     {
-        $this->middleware('can:ver-flota-911')->only('index');
-        $this->middleware('can:gestionar-flota-911')->only('store');
+        $this->middleware('can:ver-transferencias-flota-911')->only('index');
+        $this->middleware('can:reportar-transferencia-recurso')->only('store');
         $this->middleware('can:confirmar-transferencia-recurso')->only(['confirmar', 'rechazar', 'reactivar']);
     }
 

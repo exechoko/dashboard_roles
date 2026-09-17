@@ -44,7 +44,7 @@
         <div class="row">
             {{-- Nueva entrada --}}
             <div class="col-lg-4">
-                @can('gestionar-flota-911')
+                @can('registrar-bitacora-flota-911')
                 <div class="card shadow-sm border-0 mb-4">
                     <div class="card-header-modern">
                         <div class="card-header-left">
@@ -166,7 +166,7 @@
                         @endif
 
                         @if($e->estado === 'abierto')
-                            @can('gestionar-flota-911')
+                            @can('registrar-bitacora-flota-911')
                             <button class="btn btn-sm btn-outline-success mb-2" data-toggle="modal" data-target="#modalCerrar{{ $e->id }}">
                                 <i class="fas fa-undo mr-1"></i> Registrar devolución
                             </button>
@@ -196,7 +196,7 @@
                         </div>
                         @endif
 
-                        @can('gestionar-flota-911')
+                        @can('registrar-bitacora-flota-911')
                         <form action="{{ route('flota-911.bitacora.seguimientos.store', $e->id) }}" method="POST"
                               enctype="multipart/form-data" class="mt-2">
                             @csrf
@@ -212,7 +212,7 @@
                 </div>
 
                 {{-- Modales de la entrada --}}
-                @can('gestionar-flota-911')
+                @can('registrar-bitacora-flota-911')
                 <div class="modal fade" id="modalCerrar{{ $e->id }}" tabindex="-1">
                     <div class="modal-dialog"><div class="modal-content">
                         <div class="modal-header"><h5 class="modal-title">Registrar devolución</h5>

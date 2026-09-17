@@ -12,7 +12,7 @@ class ParteDiarioDesdeGuardiaTest extends TestCase
 {
     use DatabaseTransactions;
 
-    private function usuario(string $permiso = 'generar-parte-diario'): User
+    private function usuario(string $permiso = 'generar-parte-diario-moviles'): User
     {
         $user = User::factory()->create();
         $user->givePermissionTo($permiso);

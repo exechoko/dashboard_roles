@@ -26,7 +26,7 @@ class ParteDiarioHistorialTest extends TestCase
         $recurso = Recurso::whereNotNull('vehiculo_id')->firstOrFail();
         $personal = Personal::query()->take(2)->pluck('id')->all();
 
-        $this->actingAs($this->usuario('generar-parte-diario'))
+        $this->actingAs($this->usuario('generar-parte-diario-moviles'))
             ->post(route('flota-911.informes.parte-diario.generar'), array_merge([
                 'tipo'         => 'moviles',
                 'fecha'        => $fecha,

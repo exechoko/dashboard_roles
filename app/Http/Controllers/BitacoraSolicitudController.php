@@ -12,7 +12,8 @@ class BitacoraSolicitudController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:moderar-bitacora-flota-911');
+        $this->middleware('can:ver-bitacora-solicitudes-flota-911')->only('index');
+        $this->middleware('can:moderar-bitacora-flota-911')->only(['aprobar', 'rechazar']);
     }
 
     public function index(): View

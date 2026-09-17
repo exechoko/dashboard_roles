@@ -19,7 +19,7 @@ class FlotaParteDiarioTurnosTest extends TestCase
     private function usuarioConPermiso(): User
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('generar-parte-diario');
+        $user->givePermissionTo('generar-parte-diario-moviles');
 
         return $user;
     }

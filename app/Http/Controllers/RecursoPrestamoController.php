@@ -13,7 +13,8 @@ class RecursoPrestamoController extends Controller
 
     public function __construct()
     {
-        $this->middleware('can:gestionar-flota-911');
+        $this->middleware('can:ver-prestamos-flota-911')->only('index');
+        $this->middleware('can:editar-prestamos-flota-911')->only(['store', 'devolver']);
     }
 
     public function index()

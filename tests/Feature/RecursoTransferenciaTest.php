@@ -41,7 +41,7 @@ class RecursoTransferenciaTest extends TestCase
         $recurso = $this->recursoActivoDe911();
         $vehiculoIdOriginal = $recurso->vehiculo_id;
 
-        $this->actingAs($this->usuario('gestionar-flota-911'))
+        $this->actingAs($this->usuario('reportar-transferencia-recurso'))
             ->post(route('flota-911.transferencias.store', $recurso->id), [
                 'fecha_transferencia' => '2099-03-01',
                 'observaciones'       => 'Reemplazado por unidad nueva',
@@ -72,7 +72,7 @@ class RecursoTransferenciaTest extends TestCase
     public function test_no_se_puede_reportar_dos_veces_el_mismo_recurso(): void
     {
         $recurso = $this->recursoActivoDe911();
-        $gestor = $this->usuario('gestionar-flota-911');
+        $gestor = $this->usuario('reportar-transferencia-recurso');
 
         $payload = ['fecha_transferencia' => '2099-03-01'];
 
@@ -93,7 +93,7 @@ class RecursoTransferenciaTest extends TestCase
             'vehiculo_id'         => $recurso->vehiculo_id,
             'fecha_transferencia' => '2099-03-01',
             'estado'              => RecursoTransferencia::ESTADO_PENDIENTE,
-            'user_id_reporte'     => $this->usuario('gestionar-flota-911')->id,
+            'user_id_reporte'     => $this->usuario('reportar-transferencia-recurso')->id,
         ]);
 
         $this->actingAs($this->usuario('confirmar-transferencia-recurso'))
@@ -120,7 +120,7 @@ class RecursoTransferenciaTest extends TestCase
             'recurso_id'          => $recurso->id,
             'fecha_transferencia' => '2099-03-01',
             'estado'              => RecursoTransferencia::ESTADO_PENDIENTE,
-            'user_id_reporte'     => $this->usuario('gestionar-flota-911')->id,
+            'user_id_reporte'     => $this->usuario('reportar-transferencia-recurso')->id,
         ]);
 
         $this->actingAs($this->usuario('confirmar-transferencia-recurso'))
@@ -178,7 +178,7 @@ class RecursoTransferenciaTest extends TestCase
             'destino_transferencia_id' => $division->id,
             'fecha_transferencia'      => '2099-03-01',
             'estado'                   => RecursoTransferencia::ESTADO_CONFIRMADA,
-            'user_id_reporte'          => $this->usuario('gestionar-flota-911')->id,
+            'user_id_reporte'          => $this->usuario('reportar-transferencia-recurso')->id,
         ]);
 
         $esperado = Destino::with('padre.padre.padre.padre')->find($division->id)->rutaJerarquicaTexto();
@@ -195,10 +195,10 @@ class RecursoTransferenciaTest extends TestCase
             'recurso_id'          => $recurso->id,
             'fecha_transferencia' => '2099-03-01',
             'estado'              => RecursoTransferencia::ESTADO_PENDIENTE,
-            'user_id_reporte'     => $this->usuario('gestionar-flota-911')->id,
+            'user_id_reporte'     => $this->usuario('reportar-transferencia-recurso')->id,
         ]);
 
-        $this->actingAs($this->usuario('ver-flota-911', 'confirmar-transferencia-recurso'))
+        $this->actingAs($this->usuario('ver-transferencias-flota-911'))
             ->get(route('flota-911.transferencias.index'))
             ->assertOk()
             ->assertSee(' › ', false)

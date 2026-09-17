@@ -30,20 +30,20 @@ class ParteDiarioConfiguracionTest extends TestCase
     public function test_solo_quien_tiene_el_permiso_ve_la_seccion_de_configuracion(): void
     {
         $admin = $this->usuario();
-        $admin->givePermissionTo('generar-parte-diario');
+        $admin->givePermissionTo('generar-parte-diario-motos');
 
         $conPermiso = $this->actingAs($admin)
             ->get(route('flota-911.informes.parte-diario', ['tipo' => 'motos']));
         $conPermiso->assertOk()->assertSee('Configurar recursos de este parte');
 
-        $sinPermiso = $this->actingAs($this->usuario('generar-parte-diario'))
+        $sinPermiso = $this->actingAs($this->usuario('generar-parte-diario-motos'))
             ->get(route('flota-911.informes.parte-diario', ['tipo' => 'motos']));
         $sinPermiso->assertOk()->assertDontSee('Configurar recursos de este parte');
     }
 
     public function test_sin_permiso_no_puede_guardar_la_configuracion(): void
     {
-        $this->actingAs($this->usuario('generar-parte-diario'))
+        $this->actingAs($this->usuario('generar-parte-diario-motos'))
             ->post(route('flota-911.informes.parte-diario.configuracion.guardar'), [
                 'tipo'      => 'motos',
                 'incluidos' => [],
@@ -69,7 +69,7 @@ class ParteDiarioConfiguracionTest extends TestCase
 
         $this->assertFalse($recurso->fresh()->incluir_en_parte_diario);
 
-        $respuesta = $this->actingAs($this->usuario('generar-parte-diario'))
+        $respuesta = $this->actingAs($this->usuario('generar-parte-diario-motos'))
             ->get(route('flota-911.informes.parte-diario', ['tipo' => 'motos']));
 
         $respuesta->assertOk()->assertDontSee($recurso->nombre, false);

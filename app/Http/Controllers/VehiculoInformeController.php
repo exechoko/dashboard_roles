@@ -27,10 +27,23 @@ class VehiculoInformeController extends Controller
 
     public function __construct(private readonly FlotaInformeService $informeService)
     {
-        $this->middleware('can:generar-parte-diario')->only(['parteDiario', 'generarParteDiario', 'preArmarParteDiario', 'parteDesdeUltimaGuardia', 'descargarParteDiario', 'buscarPersonal']);
+        // El permiso de parte diario está partido por tipo (generar-parte-diario-moviles /
+        // -motos): parteDiario/generarParteDiario/etc. sirven a los dos tipos con el mismo
+        // método, así que el chequeo se hace adentro de cada uno (autorizarTipoParte()) en
+        // vez de con este middleware genérico.
         $this->middleware('can:ver-flota-911')->only('estadoFlota');
         $this->middleware('can:generar-estado-flota')->only('generarEstadoFlota');
         $this->middleware('can:configurar-parte-diario')->only('guardarConfiguracionParteDiario');
+    }
+
+    /**
+     * generar-parte-diario-moviles / generar-parte-diario-motos: el permiso
+     * varía según el tipo, así que no puede resolverse con el middleware
+     * "can:" (no interpola el route param en el nombre del permiso).
+     */
+    private function autorizarTipoParte(Request $request, string $tipo): void
+    {
+        abort_unless($request->user()?->can('generar-parte-diario-' . $tipo), 403);
     }
 
     /**
@@ -39,6 +52,8 @@ class VehiculoInformeController extends Controller
      */
     public function parteDiario(Request $request, string $tipo)
     {
+        $this->autorizarTipoParte($request, $tipo);
+
         $fecha = $request->get('fecha', today()->toDateString());
         $guardia = $request->get('guardia');
         $horario = $request->get('horario', '06_18');
@@ -152,6 +167,7 @@ class VehiculoInformeController extends Controller
             'tipo' => ['required', 'in:moviles,motos'],
             'q'    => ['nullable', 'string', 'max:100'],
         ]);
+        $this->autorizarTipoParte($request, $datos['tipo']);
 
         $q = trim((string) ($datos['q'] ?? ''));
         $patrones = ParteDiarioBorradorService::patronesFuncionSeccion($datos['tipo']);
@@ -197,6 +213,7 @@ class VehiculoInformeController extends Controller
             'tipo'    => ['required', 'in:moviles,motos'],
             'guardia' => ['required', 'in:guardia_1,guardia_2,guardia_3,guardia_4'],
         ]);
+        $this->autorizarTipoParte($request, $datos['tipo']);
 
         $parte = ParteDiario::query()
             ->where('destino_id', self::DIVISION_911_ID)
@@ -268,6 +285,7 @@ class VehiculoInformeController extends Controller
             'guardia'      => ['required', 'in:guardia_1,guardia_2,guardia_3,guardia_4'],
             'fecha_inicio' => ['required', 'date'],
         ]);
+        $this->autorizarTipoParte($request, $datos['tipo']);
 
         $borrador = $borradorService->armar($datos['tipo'], $datos['guardia'], Carbon::parse($datos['fecha_inicio']));
 
@@ -334,6 +352,8 @@ class VehiculoInformeController extends Controller
 
     public function descargarParteDiario(Request $request, string $tipo, ParteDiarioDocxService $docxService)
     {
+        $this->autorizarTipoParte($request, $tipo);
+
         $datos = $request->validate([
             'fecha_inicio' => ['required', 'date'],
         ]);

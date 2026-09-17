@@ -14,17 +14,36 @@ class SeederPermisosFlota911 extends Seeder
 {
     public function run(): void
     {
-        $permisos = [
-            'ver-flota-911',
+        // Reemplazados por permisos más granulares (ver comentarios abajo) o
+        // sin ningún uso en el código (gestionar-ficha-vehiculo,
+        // asignar-vehiculo-a-recurso).
+        $obsoletos = [
             'gestionar-flota-911',
             'generar-parte-diario',
-            'ver-historial-parte-diario',
-            'generar-estado-flota',
             'gestionar-ficha-vehiculo',
             'asignar-vehiculo-a-recurso',
-            'confirmar-transferencia-recurso',
-            'moderar-bitacora-flota-911',
+        ];
+
+        foreach ($obsoletos as $nombre) {
+            Permission::where('name', $nombre)->where('guard_name', 'web')->delete();
+        }
+
+        $permisos = [
+            'ver-flota-911',
+            'generar-parte-diario-moviles',
+            'generar-parte-diario-motos',
+            'ver-historial-parte-diario',
             'configurar-parte-diario',
+            'generar-estado-flota',
+            'ver-prestamos-flota-911',
+            'editar-prestamos-flota-911',
+            'ver-transferencias-flota-911',
+            'reportar-transferencia-recurso',
+            'confirmar-transferencia-recurso',
+            'editar-estado-flota-911',
+            'ver-bitacora-solicitudes-flota-911',
+            'registrar-bitacora-flota-911',
+            'moderar-bitacora-flota-911',
         ];
 
         foreach ($permisos as $nombre) {

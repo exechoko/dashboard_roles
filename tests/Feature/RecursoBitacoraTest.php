@@ -46,7 +46,7 @@ class RecursoBitacoraTest extends TestCase
     {
         $recurso = $this->recurso();
 
-        $this->actingAs($this->usuario('gestionar-flota-911'))
+        $this->actingAs($this->usuario('registrar-bitacora-flota-911'))
             ->post(route('flota-911.estado-flota.bitacora.store', $recurso->id), $this->payload())
             ->assertRedirect();
 
@@ -69,7 +69,7 @@ class RecursoBitacoraTest extends TestCase
         $recurso = $this->recurso();
         RecursoEstadoSeccion::where('recurso_id', $recurso->id)->delete();
 
-        $this->actingAs($this->usuario('gestionar-flota-911'))
+        $this->actingAs($this->usuario('registrar-bitacora-flota-911'))
             ->post(route('flota-911.estado-flota.bitacora.store', $recurso->id), $this->payload([
                 'estado'          => 'abierto',
                 'poner_en_taller' => '1',
@@ -82,7 +82,7 @@ class RecursoBitacoraTest extends TestCase
     public function test_cerrar_una_entrada_registra_la_devolucion(): void
     {
         $recurso = $this->recurso();
-        $user = $this->usuario('gestionar-flota-911');
+        $user = $this->usuario('registrar-bitacora-flota-911');
         RecursoEstadoSeccion::updateOrCreate(['recurso_id' => $recurso->id], ['estado' => 'en_taller', 'user_id' => $user->id]);
 
         $entrada = RecursoBitacora::factory()->abierta()->create(['recurso_id' => $recurso->id, 'user_id' => $user->id]);
@@ -120,7 +120,7 @@ class RecursoBitacoraTest extends TestCase
     {
         Storage::fake('public');
         $recurso = $this->recurso();
-        $user = $this->usuario('gestionar-flota-911');
+        $user = $this->usuario('registrar-bitacora-flota-911');
         $entrada = RecursoBitacora::factory()->create(['recurso_id' => $recurso->id, 'user_id' => $user->id]);
 
         $this->actingAs($user)
@@ -138,7 +138,7 @@ class RecursoBitacoraTest extends TestCase
     public function test_solicitud_de_edicion_no_toca_la_entrada_hasta_que_un_moderador_aprueba(): void
     {
         $recurso = $this->recurso();
-        $operador = $this->usuario('gestionar-flota-911');
+        $operador = $this->usuario('registrar-bitacora-flota-911');
         $moderador = $this->usuario('moderar-bitacora-flota-911');
         $entrada = RecursoBitacora::factory()->create([
             'recurso_id' => $recurso->id, 'user_id' => $operador->id, 'descripcion' => 'Texto original',
@@ -168,7 +168,7 @@ class RecursoBitacoraTest extends TestCase
     public function test_solicitud_de_eliminacion_aprobada_borra_la_entrada(): void
     {
         $recurso = $this->recurso();
-        $operador = $this->usuario('gestionar-flota-911');
+        $operador = $this->usuario('registrar-bitacora-flota-911');
         $moderador = $this->usuario('moderar-bitacora-flota-911');
         $entrada = RecursoBitacora::factory()->create(['recurso_id' => $recurso->id, 'user_id' => $operador->id]);
 
@@ -185,7 +185,7 @@ class RecursoBitacoraTest extends TestCase
     public function test_rechazar_solicitud_exige_motivo_y_no_aplica_cambios(): void
     {
         $recurso = $this->recurso();
-        $operador = $this->usuario('gestionar-flota-911');
+        $operador = $this->usuario('registrar-bitacora-flota-911');
         $moderador = $this->usuario('moderar-bitacora-flota-911');
         $entrada = RecursoBitacora::factory()->create([
             'recurso_id' => $recurso->id, 'user_id' => $operador->id, 'descripcion' => 'Original',
@@ -207,15 +207,32 @@ class RecursoBitacoraTest extends TestCase
         $this->assertSame(RecursoBitacoraSolicitud::ESTADO_RECHAZADA, $solicitud->fresh()->estado);
     }
 
-    public function test_solo_un_moderador_ve_las_solicitudes(): void
+    public function test_ver_las_solicitudes_y_moderarlas_son_permisos_distintos(): void
     {
-        $this->actingAs($this->usuario('gestionar-flota-911'))
+        $this->actingAs($this->usuario('registrar-bitacora-flota-911'))
             ->get(route('flota-911.bitacora.solicitudes.index'))
             ->assertForbidden();
 
-        $this->actingAs($this->usuario('moderar-bitacora-flota-911'))
+        $this->actingAs($this->usuario('ver-bitacora-solicitudes-flota-911'))
             ->get(route('flota-911.bitacora.solicitudes.index'))
             ->assertOk();
+
+        // Ver el listado no alcanza para aprobar/rechazar: eso sigue exigiendo moderar-bitacora-flota-911.
+        $recurso = $this->recurso();
+        $autor = $this->usuario('registrar-bitacora-flota-911');
+        $entrada = RecursoBitacora::factory()->create(['recurso_id' => $recurso->id, 'user_id' => $autor->id]);
+        $this->actingAs($autor)->post(route('flota-911.bitacora.solicitudes.store', $entrada->id), [
+            'tipo' => 'eliminacion', 'motivo' => 'Duplicada',
+        ]);
+        $solicitud = RecursoBitacoraSolicitud::where('bitacora_id', $entrada->id)->firstOrFail();
+
+        $this->actingAs($this->usuario('ver-bitacora-solicitudes-flota-911'))
+            ->patch(route('flota-911.bitacora.solicitudes.aprobar', $solicitud->id))
+            ->assertForbidden();
+
+        $this->actingAs($this->usuario('moderar-bitacora-flota-911'))
+            ->patch(route('flota-911.bitacora.solicitudes.aprobar', $solicitud->id))
+            ->assertRedirect();
     }
 
     public function test_estado_flota_ahora_lo_ve_quien_tiene_ver_flota_911(): void
@@ -230,7 +247,7 @@ class RecursoBitacoraTest extends TestCase
         $recurso = $this->recurso();
         RecursoBitacora::factory()->create([
             'recurso_id' => $recurso->id,
-            'user_id'    => $this->usuario('gestionar-flota-911')->id,
+            'user_id'    => $this->usuario('registrar-bitacora-flota-911')->id,
             'fecha_hora' => now()->subDay(),
             'categoria'  => 'gomeria',
             'descripcion' => 'Se pinchó la rueda trasera izquierda.',
@@ -251,7 +268,7 @@ class RecursoBitacoraTest extends TestCase
     public function test_los_recursos_con_novedades_nuevas_van_primero(): void
     {
         [$conNuevas, $sinNuevas] = Recurso::query()->whereNotNull('vehiculo_id')->take(2)->get()->all();
-        $autor = $this->usuario('gestionar-flota-911');
+        $autor = $this->usuario('registrar-bitacora-flota-911');
         $lector = $this->usuario('ver-flota-911');
 
         // "sinNuevas": el lector ya lo vio después de la entrada

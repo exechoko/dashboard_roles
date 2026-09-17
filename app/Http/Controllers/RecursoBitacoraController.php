@@ -24,7 +24,7 @@ class RecursoBitacoraController extends Controller
     public function __construct()
     {
         $this->middleware('can:ver-flota-911')->only(['show', 'descargarAdjunto']);
-        $this->middleware('can:gestionar-flota-911')->only(['store', 'cerrar', 'storeSeguimiento', 'solicitarCambio']);
+        $this->middleware('can:registrar-bitacora-flota-911')->only(['store', 'cerrar', 'storeSeguimiento', 'solicitarCambio']);
         $this->middleware('can:moderar-bitacora-flota-911')->only(['destroyAdjunto']);
     }
 

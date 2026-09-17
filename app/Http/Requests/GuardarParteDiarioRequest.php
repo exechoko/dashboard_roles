@@ -12,7 +12,13 @@ class GuardarParteDiarioRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can('generar-parte-diario') ?? false;
+        $tipo = $this->input('tipo');
+
+        if (! in_array($tipo, ['moviles', 'motos'], true)) {
+            return false;
+        }
+
+        return $this->user()?->can('generar-parte-diario-' . $tipo) ?? false;
     }
 
     /**

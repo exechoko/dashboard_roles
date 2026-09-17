@@ -10,7 +10,7 @@ class RecursoEstadoSeccionController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('can:gestionar-flota-911');
+        $this->middleware('can:editar-estado-flota-911');
     }
 
     public function update(Request $request, Recurso $recurso)

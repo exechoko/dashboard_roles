@@ -50,7 +50,9 @@
                                 <th>Repartición destino</th>
                                 <th>Fecha</th>
                                 <th>Reportó</th>
+                                @can('confirmar-transferencia-recurso')
                                 <th class="text-center">Acciones</th>
+                                @endcan
                             </tr>
                         </thead>
                         <tbody>
@@ -61,6 +63,7 @@
                                 <td><small>{{ $t->reparticionDestinoNombre() }}</small></td>
                                 <td><small>{{ $t->fecha_transferencia->format('d/m/Y') }}</small></td>
                                 <td><small>{{ $t->usuarioReporte?->name }} {{ $t->usuarioReporte?->apellido }}</small></td>
+                                @can('confirmar-transferencia-recurso')
                                 <td class="text-center">
                                     <button class="btn btn-sm btn-success" data-toggle="modal"
                                         data-target="#modalConfirmar{{ $t->id }}">
@@ -71,6 +74,7 @@
                                         <i class="fas fa-times mr-1"></i> Rechazar
                                     </button>
                                 </td>
+                                @endcan
                             </tr>
                             @endforeach
                         </tbody>
@@ -146,6 +150,7 @@
 </section>
 
 {{-- Modales confirmar / rechazar --}}
+@can('confirmar-transferencia-recurso')
 @foreach($pendientes as $t)
 <div class="modal fade" id="modalConfirmar{{ $t->id }}" tabindex="-1">
     <div class="modal-dialog">
@@ -220,6 +225,7 @@
     </div>
 </div>
 @endforeach
+@endcan
 @endsection
 
 @push('scripts')

@@ -39,7 +39,9 @@
                     <table class="table table-modern mb-0">
                         <thead><tr>
                             <th>Recurso</th><th>Tipo</th><th>Propuesta</th><th>Solicita</th><th>Fecha</th>
+                            @can('moderar-bitacora-flota-911')
                             <th class="text-center">Acciones</th>
+                            @endcan
                         </tr></thead>
                         <tbody>
                         @foreach($pendientes as $s)
@@ -63,6 +65,7 @@
                             </small></td>
                             <td><small>{{ $s->usuario?->name }} {{ $s->usuario?->apellido }}</small></td>
                             <td><small>{{ $s->created_at->format('d/m/Y H:i') }}</small></td>
+                            @can('moderar-bitacora-flota-911')
                             <td class="text-center" style="white-space:nowrap">
                                 <form action="{{ route('flota-911.bitacora.solicitudes.aprobar', $s->id) }}" method="POST" class="d-inline"
                                       onsubmit="return confirm('¿Aprobar y aplicar el cambio?');">
@@ -73,6 +76,7 @@
                                     <i class="fas fa-times"></i>
                                 </button>
                             </td>
+                            @endcan
                         </tr>
                         @endforeach
                         </tbody>
@@ -120,6 +124,7 @@
     </div>
 </section>
 
+@can('moderar-bitacora-flota-911')
 @foreach($pendientes as $s)
 <div class="modal fade" id="rechazar{{ $s->id }}" tabindex="-1">
     <div class="modal-dialog"><div class="modal-content">
@@ -141,4 +146,5 @@
     </div></div>
 </div>
 @endforeach
+@endcan
 @endsection

@@ -21,7 +21,7 @@
         @endif
 
         <div class="row">
-            <div class="col-lg-8">
+            <div class="{{ auth()->user()->can('editar-prestamos-flota-911') ? 'col-lg-8' : 'col-12' }}">
 
                 {{-- Préstamos activos --}}
                 <div class="card shadow-sm border-0 mb-4">
@@ -47,7 +47,9 @@
                                         <th>Origen</th>
                                         <th>Destino</th>
                                         <th>Desde</th>
+                                        @can('editar-prestamos-flota-911')
                                         <th class="text-center">Acción</th>
+                                        @endcan
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -58,12 +60,14 @@
                                         <td><small>{{ $prestamo->destinoOrigen->nombre }}</small></td>
                                         <td><small>{{ $prestamo->destinoDestino->nombre }}</small></td>
                                         <td><small>{{ $prestamo->fecha_salida->format('d/m/Y H:i') }}</small></td>
+                                        @can('editar-prestamos-flota-911')
                                         <td class="text-center">
                                             <button class="btn btn-sm btn-success" data-toggle="modal"
                                                 data-target="#modalDevolver{{ $prestamo->id }}">
                                                 <i class="fas fa-undo mr-1"></i> Devolver
                                             </button>
                                         </td>
+                                        @endcan
                                     </tr>
                                     @endforeach
                                 </tbody>
@@ -117,6 +121,7 @@
             </div>
 
             {{-- Formulario nuevo préstamo --}}
+            @can('editar-prestamos-flota-911')
             <div class="col-lg-4">
                 <div class="card shadow-sm border-0">
                     <div class="card-header-modern">
@@ -174,18 +179,21 @@
                         </form>
                     </div>
                 </div>
-                <div class="mt-3">
-                    <a href="{{ route('flota-911.dashboard') }}" class="btn btn-outline-secondary btn-block">
-                        <i class="fas fa-arrow-left mr-1"></i> Volver al dashboard
-                    </a>
-                </div>
             </div>
+            @endcan
+        </div>
+
+        <div class="mt-3">
+            <a href="{{ route('flota-911.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left mr-1"></i> Volver al dashboard
+            </a>
         </div>
 
     </div>
 </section>
 
 {{-- Modales devolución --}}
+@can('editar-prestamos-flota-911')
 @foreach($prestamos as $prestamo)
 <div class="modal fade" id="modalDevolver{{ $prestamo->id }}" tabindex="-1">
     <div class="modal-dialog">
@@ -219,6 +227,7 @@
     </div>
 </div>
 @endforeach
+@endcan
 @endsection
 
 @push('scripts')

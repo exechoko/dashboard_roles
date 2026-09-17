@@ -198,11 +198,29 @@ class RecursoTransferenciaTest extends TestCase
             'user_id_reporte'     => $this->usuario('reportar-transferencia-recurso')->id,
         ]);
 
-        $this->actingAs($this->usuario('ver-transferencias-flota-911'))
+        $this->actingAs($this->usuario('ver-transferencias-flota-911', 'confirmar-transferencia-recurso'))
             ->get(route('flota-911.transferencias.index'))
             ->assertOk()
             ->assertSee(' › ', false)
             ->assertSee('select2-destino', false);
+    }
+
+    public function test_sin_permiso_de_confirmar_no_ve_el_modal_de_confirmacion(): void
+    {
+        $recurso = $this->recursoActivoDe911();
+
+        $transferencia = RecursoTransferencia::create([
+            'recurso_id'          => $recurso->id,
+            'fecha_transferencia' => '2099-03-01',
+            'estado'              => RecursoTransferencia::ESTADO_PENDIENTE,
+            'user_id_reporte'     => $this->usuario('reportar-transferencia-recurso')->id,
+        ]);
+
+        $this->actingAs($this->usuario('ver-transferencias-flota-911'))
+            ->get(route('flota-911.transferencias.index'))
+            ->assertOk()
+            ->assertDontSee('id="modalConfirmar' . $transferencia->id . '"', false)
+            ->assertDontSee('data-target="#modalConfirmar', false);
     }
 
     public function test_el_listado_de_recursos_oculta_los_transferidos_salvo_con_el_filtro(): void

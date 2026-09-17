@@ -132,6 +132,7 @@
                                     Cambio solicitado — pendiente
                                 </span>
                             @endif
+                            @can('registrar-bitacora-flota-911')
                             <span class="dropdown ml-auto">
                                 <button class="btn btn-sm btn-link text-muted" data-toggle="dropdown">⋮</button>
                                 <div class="dropdown-menu dropdown-menu-right">
@@ -143,6 +144,7 @@
                                     @endif
                                 </div>
                             </span>
+                            @endcan
                         </div>
 
                         <p class="mb-2" style="white-space:pre-line">{{ $e->descripcion }}</p>

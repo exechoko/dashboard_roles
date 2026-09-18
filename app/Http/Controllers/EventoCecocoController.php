@@ -1082,8 +1082,11 @@ class EventoCecocoController extends Controller
 
             // El grabador es la fuente autoritativa: devuelve una sola fila por
             // modulación real (CECOCO en cambio graba una copia por operador que
-            // escucha). Cada fila se empareja con su .mp3 del backup local por
-            // hora de inicio y duración para servir el audio desde disco.
+            // escucha), y su audio (servido por itemid vía el Replay Server) nunca
+            // puede confundir canales. El disco local sólo se usa como respaldo
+            // cuando el Replay Server no está disponible: ahí sí hay que emparejar
+            // cada fila con su .mp3 por hora+duración, con el riesgo de ambigüedad
+            // que eso implica (ver CecocoModulacionesLocalService::emparejarConGrabador).
             if (config('grabador.url')) {
                 try {
                     $grabador = new GrabadorTetraService();
@@ -1100,13 +1103,16 @@ class EventoCecocoController extends Controller
                     $primeraRondaVacia = $totalPrevio === 0 && empty($modulaciones) && empty($ronda['cola']);
 
                     if (!$primeraRondaVacia) {
-                        // Los audios sin .mp3 local se sirven como WAV vía el Replay
-                        // Server; los que tampoco tengan eso quedan marcados como "sin
-                        // audio". El listado del grabador se devuelve siempre: es la
-                        // fuente autoritativa de qué se moduló, y sirve aunque no haya
-                        // backup local de ese día ni Replay Server para reproducirlo.
-                        $modulaciones = $localService->emparejarConGrabador($modulaciones, $desde, $hasta);
-                        $this->marcarAudiosSinReplay($modulaciones, $grabador);
+                        // El listado del grabador se devuelve siempre: es la fuente
+                        // autoritativa de qué se moduló, y sirve aunque no haya backup
+                        // local de ese día ni Replay Server para reproducirlo. El audio
+                        // en sí se pide siempre al grabador (por itemid, sin ambigüedad)
+                        // salvo que el Replay Server no esté disponible, en cuyo caso se
+                        // cae al disco local como respaldo.
+                        if (!$grabador->replayDisponible()) {
+                            $modulaciones = $localService->emparejarConGrabador($modulaciones, $desde, $hasta);
+                            $this->marcarAudiosSinReplay($modulaciones, $grabador);
+                        }
                         $this->asignarUrlsDeStream($modulaciones);
 
                         return response()->json([

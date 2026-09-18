@@ -55,6 +55,8 @@ use App\Http\Controllers\ArmaTipoController;
 use App\Http\Controllers\ArmaPersonalController;
 use App\Http\Controllers\ArmeriaArmaController;
 use App\Http\Controllers\ArmeriaChalecoController;
+use App\Http\Controllers\DominioAlertaController;
+use App\Http\Controllers\PersonaAlertaController;
 use App\Http\Controllers\DescargaController;
 use App\Http\Controllers\DescargaAdminController;
 
@@ -682,6 +684,37 @@ Route::group(['middleware' => ['auth']], function () {
                 Route::post('{armeriaChaleco}/adjuntos', [ArmeriaChalecoController::class, 'adjuntar'])->name('adjuntos.store');
                 Route::delete('{armeriaChaleco}/adjuntos/{adjunto}', [ArmeriaChalecoController::class, 'destroyAdjunto'])->name('adjuntos.destroy');
             });
+        });
+    });
+
+    // ── Alertas de Video: Dominios y Personas de interés para el sistema de video ──
+    Route::prefix('alertas-video')->name('alertas-video.')->group(function () {
+        Route::prefix('dominios')->name('dominios.')->group(function () {
+            Route::get('/', [DominioAlertaController::class, 'index'])->name('index');
+            Route::get('create', [DominioAlertaController::class, 'create'])->name('create');
+            Route::post('/', [DominioAlertaController::class, 'store'])->name('store');
+            Route::get('importar', [DominioAlertaController::class, 'importarForm'])->name('importar');
+            Route::post('importar', [DominioAlertaController::class, 'importar'])->name('importar.post');
+            Route::get('{dominioAlerta}', [DominioAlertaController::class, 'show'])->name('show');
+            Route::get('{dominioAlerta}/edit', [DominioAlertaController::class, 'edit'])->name('edit');
+            Route::put('{dominioAlerta}', [DominioAlertaController::class, 'update'])->name('update');
+            Route::delete('{dominioAlerta}', [DominioAlertaController::class, 'destroy'])->name('destroy');
+            Route::post('{dominioAlerta}/activo', [DominioAlertaController::class, 'cambiarActivo'])->name('activo');
+            Route::post('{dominioAlerta}/comentario', [DominioAlertaController::class, 'comentario'])->name('comentario');
+        });
+
+        Route::prefix('personas')->name('personas.')->group(function () {
+            Route::get('/', [PersonaAlertaController::class, 'index'])->name('index');
+            Route::get('create', [PersonaAlertaController::class, 'create'])->name('create');
+            Route::post('/', [PersonaAlertaController::class, 'store'])->name('store');
+            Route::get('importar', [PersonaAlertaController::class, 'importarForm'])->name('importar');
+            Route::post('importar', [PersonaAlertaController::class, 'importar'])->name('importar.post');
+            Route::get('{personaAlerta}', [PersonaAlertaController::class, 'show'])->name('show');
+            Route::get('{personaAlerta}/edit', [PersonaAlertaController::class, 'edit'])->name('edit');
+            Route::put('{personaAlerta}', [PersonaAlertaController::class, 'update'])->name('update');
+            Route::delete('{personaAlerta}', [PersonaAlertaController::class, 'destroy'])->name('destroy');
+            Route::post('{personaAlerta}/activo', [PersonaAlertaController::class, 'cambiarActivo'])->name('activo');
+            Route::post('{personaAlerta}/comentario', [PersonaAlertaController::class, 'comentario'])->name('comentario');
         });
     });
 

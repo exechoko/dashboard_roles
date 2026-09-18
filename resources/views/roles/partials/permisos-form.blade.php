@@ -22,6 +22,7 @@
             'menu-gestor-claves',
             'menu-patrimonio',
             'menu-armamento',
+            'menu-alertas-video',
             'menu-personal',
             'menu-incidencias-911',
             'menu-plano-edificio',
@@ -115,6 +116,11 @@
             'arma-motivo',
             'arma-tipo',
             'armeria',
+        ],
+        'Alertas de Video (Dominios y Personas)' => [
+            'menu-alertas-video',
+            'alerta-dominio',
+            'alerta-persona',
         ],
         'Personal' => [
             'personal',

@@ -12,12 +12,15 @@
                 <i class="bi bi-file-text"></i> Ver resumen
             </a>
             <a href="{{ route('cecoco.expediente', array_merge($filtros ?? [], ['eventoCecoco' => $eventoCecoco, 'refrescar' => 1])) }}"
-                class="btn btn-outline-success">
+                class="btn btn-outline-success" id="btnActualizarCecoco">
                 <i class="bi bi-arrow-clockwise"></i> Actualizar desde CECOCO
             </a>
+            <button type="button" class="btn btn-outline-info" id="btnVerTutorialExpediente" onclick="iniciarTutorialPagina()">
+                <i class="bi bi-question-circle"></i> Ver tutorial
+            </button>
         </div>
         <div class="d-flex flex-wrap align-items-center" style="gap:.5rem;">
-            <a href="{{ route('cecoco.exportar.pdf-resumen', $eventoCecoco) }}" target="_blank" class="btn btn-danger">
+            <a href="{{ route('cecoco.exportar.pdf-resumen', $eventoCecoco) }}" target="_blank" class="btn btn-danger" id="btnParteNovedadExpediente">
                 <i class="bi bi-printer"></i> Imprimir Parte de Novedad
             </a>
             @can('exportar-whatsapp-cecoco')
@@ -26,10 +29,10 @@
                     <i class="fab fa-whatsapp"></i>
                 </button>
             @endcan
-            <a href="{{ route('cecoco.exportar.pdf-original', $eventoCecoco) }}" target="_blank" class="btn btn-dark">
+            <a href="{{ route('cecoco.exportar.pdf-original', $eventoCecoco) }}" target="_blank" class="btn btn-dark" id="btnPdfOriginalExpediente">
                 <i class="bi bi-file-earmark-pdf"></i> PDF Original CECOCO Completo
             </a>
-            <a href="{{ route('cecoco.exportar.pdf-interno', $eventoCecoco) }}" target="_blank" class="btn btn-info">
+            <a href="{{ route('cecoco.exportar.pdf-interno', $eventoCecoco) }}" target="_blank" class="btn btn-info" id="btnPdfInternoExpediente">
                 <i class="bi bi-file-earmark-text"></i> PDF Interno Completo
             </a>
             @can('exportar-whatsapp-cecoco')
@@ -103,7 +106,7 @@
                 }
             @endphp
             <span
-                class="badge badge-{{ $badgeClass }}">{{ $detalle['tipo_servicio'] ?: ($eventoCecoco->tipo_servicio ?? '') }}</span>
+                class="badge badge-{{ $badgeClass }}" id="badgeTipoServicioExpediente">{{ $detalle['tipo_servicio'] ?: ($eventoCecoco->tipo_servicio ?? '') }}</span>
         </div>
 
         <div class="card-body">
@@ -387,3 +390,41 @@
     }
 </script>
 @endpush
+
+@php
+    $tutorialPasos = [
+        [
+            'id' => 'badgeTipoServicioExpediente',
+            'titulo' => 'Gravedad del evento',
+            'texto' => 'Este color clasifica el evento según su Tipo de Servicio: '
+                . '<b style="color:#dc3545">rojo</b> = crítico, '
+                . '<b style="color:#fd7e14">naranja</b> = urgente, '
+                . '<b style="color:#17a2b8">celeste</b> = importante, '
+                . '<b style="color:#6c757d">gris</b> = moderado, '
+                . '<b style="color:#28a745">verde</b> = leve.',
+        ],
+        [
+            'id' => 'btnActualizarCecoco',
+            'titulo' => 'Actualizar desde CECOCO',
+            'texto' => 'Vuelve a traer el expediente desde el sistema fuente. Usalo solo si necesitás refrescar '
+                . 'información que cambió en CECOCO — el detalle guardado ya se muestra sin volver a pedirlo.',
+        ],
+        [
+            'id' => 'btnParteNovedadExpediente',
+            'titulo' => 'Parte de Novedad',
+            'texto' => 'Genera un PDF resumen de una sola hoja. Es el más confiable: no depende de que CECOCO esté disponible.',
+        ],
+        [
+            'id' => 'btnPdfOriginalExpediente',
+            'titulo' => 'PDF Original CECOCO',
+            'texto' => 'Pide el reporte original directo a CECOCO. Puede fallar o salir en blanco si el sistema no responde '
+                . '— en ese caso usá el Parte de Novedad.',
+        ],
+        [
+            'id' => 'btnPdfInternoExpediente',
+            'titulo' => 'PDF Interno Completo',
+            'texto' => 'Versión detallada, incluye el cálculo de tiempo de respuesta de los recursos.',
+        ],
+    ];
+@endphp
+@include('partials.tutorial', ['tutorialPasos' => $tutorialPasos, 'tutorialStorageKey' => 'tutorial_expediente_cecoco_visto'])

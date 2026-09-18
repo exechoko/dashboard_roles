@@ -3,11 +3,16 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0">Registro de Eventos CECOCO</h2>
-    @can('importar-eventos')
-    <a href="{{ route('cecoco.importar') }}" class="btn btn-primary">
-        <i class="bi bi-cloud-upload"></i> Importar
-    </a>
-    @endcan
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-info" id="btnVerTutorialBusqueda" onclick="iniciarTutorialPagina()">
+            <i class="bi bi-question-circle"></i> Ver tutorial
+        </button>
+        @can('importar-eventos')
+        <a href="{{ route('cecoco.importar') }}" class="btn btn-primary">
+            <i class="bi bi-cloud-upload"></i> Importar
+        </a>
+        @endcan
+    </div>
 </div>
 
 @if($eventos !== null)
@@ -36,17 +41,17 @@
                         
                         {{-- Fila 1: Búsqueda general --}}
                         <div class="row g-3 mb-3">
-                            <div class="col-12">
+                            <div class="col-12" id="filtroBuscarWrap">
                                 <label class="form-label">Buscar</label>
-                                <input type="text" name="buscar" class="form-control" 
-                                    placeholder="Expediente, dirección, teléfono..." 
+                                <input type="text" name="buscar" class="form-control"
+                                    placeholder="Expediente, dirección, teléfono..."
                                     value="{{ request('buscar') }}">
                             </div>
                         </div>
 
                         {{-- Fila 2: Tipo y Operador --}}
                         <div class="row g-3 mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-6" id="filtroTipoWrap">
                                 <label class="form-label">Tipo Servicio</label>
                                 <select name="tipo" class="form-select select2">
                                     <option value="">Todos</option>
@@ -75,7 +80,7 @@
                         </div>
 
                         {{-- Fila 3: Rango Fecha/Hora --}}
-                        <div class="row g-3 mb-3">
+                        <div class="row g-3 mb-3" id="filtroFechasWrap">
                             <div class="col-12 col-md-6">
                                 <label class="form-label">Desde</label>
                                 <input type="datetime-local" name="desde_datetime" class="form-control" value="{{ request('desde_datetime') }}">
@@ -118,14 +123,14 @@
                         {{-- Fila 4: Botones de acción --}}
                         <div class="row g-2">
                             <div class="col-12 d-flex gap-2 flex-wrap">
-                                <button type="submit" class="btn btn-primary">
+                                <button type="submit" class="btn btn-primary" id="btnBuscarEventos">
                                     <i class="bi bi-search"></i> Buscar
                                 </button>
                                 <a href="{{ route('cecoco.index') }}" class="btn btn-outline-secondary">
                                     <i class="bi bi-x-circle"></i> Limpiar
                                 </a>
-                                <a href="{{ route('cecoco.exportar.txt') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" 
-                                class="btn btn-outline-success ms-auto">
+                                <a href="{{ route('cecoco.exportar.txt') }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}"
+                                class="btn btn-outline-success ms-auto" id="btnExportarTxtEventos">
                                     <i class="bi bi-download"></i> Exportar TXT
                                 </a>
                             </div>
@@ -245,23 +250,23 @@
                                             $badgeClass = 'success';
                                         }
                                     @endphp
-                                    <span class="badge badge-{{ $badgeClass }} text-wrap" style="max-width: 150px; font-size: 0.85rem;">
+                                    <span class="badge badge-{{ $badgeClass }} text-wrap" style="max-width: 150px; font-size: 0.85rem;" @if($loop->first) id="badgeEjemploResultados" @endif>
                                         {{ Str::limit($evento->tipo_servicio, 30) }}
                                     </span>
                                 </td>
                                 <td class="d-none d-lg-table-cell">
                                     <small>{{ $evento->periodo }}</small>
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center" @if($loop->first) id="filaAccionesEjemplo" @endif>
                                     <div class="btn-group" role="group">
-                                        <a href="{{ route('cecoco.show', $evento) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" 
-                                           class="btn btn-sm btn-outline-primary" 
+                                        <a href="{{ route('cecoco.show', $evento) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}"
+                                           class="btn btn-sm btn-outline-primary"
                                            title="Ver resumen">
                                             <i class="bi bi-eye"></i><span class="d-none d-lg-inline"> Ver</span>
                                         </a>
                                         @can('ver-expediente-cecoco')
-                                        <a href="{{ route('cecoco.expediente', $evento) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" 
-                                           class="btn btn-sm btn-outline-success" 
+                                        <a href="{{ route('cecoco.expediente', $evento) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}"
+                                           class="btn btn-sm btn-outline-success"
                                            title="Ver detalle completo del expediente">
                                             <i class="bi bi-file-earmark-text"></i><span class="d-none d-lg-inline"> Detalle</span>
                                         </a>
@@ -291,6 +296,53 @@
     </div>
 </div>
 @endsection
+
+@php
+    $tutorialPasos = [
+        [
+            'id' => 'filtroBuscarWrap',
+            'titulo' => 'Búsqueda general',
+            'texto' => 'Buscá por número de expediente, dirección o teléfono.',
+        ],
+        [
+            'id' => 'filtroTipoWrap',
+            'titulo' => 'Tipo de servicio',
+            'texto' => 'Filtrá solo por un tipo de servicio en particular (ej. Detención Policial, Robo, Accidente).',
+        ],
+        [
+            'id' => 'filtroFechasWrap',
+            'titulo' => 'Rango de fecha y hora',
+            'texto' => 'Por rendimiento, el sistema pide al menos un filtro para traer resultados — no se puede buscar "todo".',
+        ],
+        [
+            'id' => 'btnBuscarEventos',
+            'titulo' => 'Buscar',
+            'texto' => 'Ejecuta la búsqueda con los filtros cargados. Los resultados salen del evento más reciente al más viejo.',
+        ],
+        [
+            'id' => 'btnExportarTxtEventos',
+            'titulo' => 'Exportar TXT',
+            'texto' => 'Exporta el listado actual (con los mismos filtros aplicados) a un archivo de texto.',
+        ],
+        [
+            'id' => 'badgeEjemploResultados',
+            'titulo' => 'Gravedad del evento',
+            'texto' => 'Este color clasifica el evento según su Tipo de Servicio: '
+                . '<b style="color:#dc3545">rojo</b> = crítico, '
+                . '<b style="color:#fd7e14">naranja</b> = urgente, '
+                . '<b style="color:#17a2b8">celeste</b> = importante, '
+                . '<b style="color:#6c757d">gris</b> = moderado, '
+                . '<b style="color:#28a745">verde</b> = leve.',
+        ],
+        [
+            'id' => 'filaAccionesEjemplo',
+            'titulo' => 'Ver / Detalle',
+            'texto' => '<b>Ver</b> abre el resumen rápido del evento. <b>Detalle</b> abre el expediente completo, con la '
+                . 'descripción del hecho, el historial y los reportes en PDF.',
+        ],
+    ];
+@endphp
+@include('partials.tutorial', ['tutorialPasos' => $tutorialPasos, 'tutorialStorageKey' => 'tutorial_busqueda_cecoco_visto'])
 
 @section('js')
 <script>

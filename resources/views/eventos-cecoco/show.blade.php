@@ -7,7 +7,7 @@
             <i class="fas fa-arrow-left"></i> Volver al listado
         </a>
         @can('ver-expediente-cecoco')
-        <a href="{{ route('cecoco.expediente', $eventoCecoco) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-success">
+        <a href="{{ route('cecoco.expediente', $eventoCecoco) }}{{ request()->getQueryString() ? '?' . request()->getQueryString() : '' }}" class="btn btn-success" id="btnVerDetalle">
             <i class="fas fa-file-alt"></i> Ver Detalle Completo
         </a>
         @endcan
@@ -21,10 +21,13 @@
             <i class="fas fa-broadcast-tower"></i> Modulaciones
         </button>
         @endcan
+        <button type="button" class="btn btn-outline-info" id="btnVerTutorial" onclick="iniciarTutorialPagina()">
+            <i class="fas fa-question-circle"></i> Ver tutorial
+        </button>
     </div>
     @can('ver-expediente-cecoco')
     <div class="d-flex flex-wrap align-items-center" style="gap:.5rem;">
-        <a href="{{ route('cecoco.exportar.pdf-resumen', $eventoCecoco) }}" target="_blank" class="btn btn-danger">
+        <a href="{{ route('cecoco.exportar.pdf-resumen', $eventoCecoco) }}" target="_blank" class="btn btn-danger" id="btnParteNovedad">
             <i class="fas fa-print"></i> Imprimir Parte de Novedad
         </a>
         @can('exportar-whatsapp-cecoco')
@@ -33,10 +36,10 @@
                 <i class="fab fa-whatsapp"></i>
             </button>
         @endcan
-        <a href="{{ route('cecoco.exportar.pdf-original', $eventoCecoco) }}" target="_blank" class="btn btn-dark">
+        <a href="{{ route('cecoco.exportar.pdf-original', $eventoCecoco) }}" target="_blank" class="btn btn-dark" id="btnPdfOriginal">
             <i class="fas fa-file-pdf"></i> PDF Original CECOCO Completo
         </a>
-        <a href="{{ route('cecoco.exportar.pdf-interno', $eventoCecoco) }}" target="_blank" class="btn btn-info">
+        <a href="{{ route('cecoco.exportar.pdf-interno', $eventoCecoco) }}" target="_blank" class="btn btn-info" id="btnPdfInterno">
             <i class="fas fa-file-invoice"></i> PDF Interno Completo
         </a>
         @can('exportar-whatsapp-cecoco')
@@ -108,7 +111,7 @@
                 $badgeClass = 'success';
             }
         @endphp
-        <span class="badge badge-{{ $badgeClass }}">{{ $eventoCecoco->tipo_servicio }}</span>
+        <span class="badge badge-{{ $badgeClass }}" id="badgeTipoServicio">{{ $eventoCecoco->tipo_servicio }}</span>
     </div>
     <div class="card-body">
         <div class="row">
@@ -1016,5 +1019,53 @@ $('#modalModulaciones').on('hide.bs.modal', function() {
 [data-theme="dark"] #modulaciones-loading { color: var(--text-secondary, #9fb6c9) !important; }
 </style>
 @endpush
+
+@php
+    $tutorialPasos = [
+        [
+            'id' => 'badgeTipoServicio',
+            'titulo' => 'Gravedad del evento',
+            'texto' => 'Este color clasifica el evento según su Tipo de Servicio: '
+                . '<b style="color:#dc3545">rojo</b> = crítico, '
+                . '<b style="color:#fd7e14">naranja</b> = urgente, '
+                . '<b style="color:#17a2b8">celeste</b> = importante, '
+                . '<b style="color:#6c757d">gris</b> = moderado, '
+                . '<b style="color:#28a745">verde</b> = leve.',
+        ],
+        [
+            'id' => 'btnVerDetalle',
+            'titulo' => 'Detalle completo',
+            'texto' => 'Abre el expediente completo: descripción del hecho, historial y datos del cierre.',
+        ],
+        [
+            'id' => 'btnGrabaciones',
+            'titulo' => 'Grabaciones de llamada',
+            'texto' => 'Escuchá las llamadas telefónicas (911/BRI) asociadas a este evento.',
+        ],
+        [
+            'id' => 'btnModulaciones',
+            'titulo' => 'Modulaciones de radio',
+            'texto' => 'Escuchá las comunicaciones de radio de los móviles que intervinieron. '
+                . 'Las filas verdes son de los recursos que respondieron a este evento.',
+        ],
+        [
+            'id' => 'btnParteNovedad',
+            'titulo' => 'Parte de Novedad',
+            'texto' => 'Genera un PDF resumen de una sola hoja. Es el más confiable: no depende de que CECOCO esté disponible.',
+        ],
+        [
+            'id' => 'btnPdfOriginal',
+            'titulo' => 'PDF Original CECOCO',
+            'texto' => 'Pide el reporte original directo a CECOCO. Puede fallar o salir en blanco si el sistema no responde '
+                . '— en ese caso usá el Parte de Novedad.',
+        ],
+        [
+            'id' => 'btnPdfInterno',
+            'titulo' => 'PDF Interno Completo',
+            'texto' => 'Versión detallada, incluye el cálculo de tiempo de respuesta de los recursos.',
+        ],
+    ];
+@endphp
+@include('partials.tutorial', ['tutorialPasos' => $tutorialPasos, 'tutorialStorageKey' => 'tutorial_evento_cecoco_visto'])
 
 @endcan

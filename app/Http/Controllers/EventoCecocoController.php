@@ -1213,13 +1213,15 @@ class EventoCecocoController extends Controller
      */
     private function marcarAudiosSinReplay(array &$modulaciones, GrabadorTetraService $grabador): void
     {
-        $haySinMatch = array_filter($modulaciones, fn ($m) => empty($m['path']));
+        // Con candidatos ambiguos (ver CecocoModulacionesLocalService::emparejarConGrabador)
+        // sí hay audio local disponible para elegir, aunque no haya un 'path' único.
+        $haySinMatch = array_filter($modulaciones, fn ($m) => empty($m['path']) && empty($m['candidatosAudio']));
         if (empty($haySinMatch) || $grabador->replayDisponible()) {
             return;
         }
 
         foreach ($modulaciones as &$m) {
-            if (empty($m['path'])) {
+            if (empty($m['path']) && empty($m['candidatosAudio'])) {
                 $m['audioDisponible'] = false;
             }
         }
@@ -1228,13 +1230,23 @@ class EventoCecocoController extends Controller
 
     /**
      * Asigna a cada modulación la URL del proxy de audio (mp3 local o WAV del grabador)
-     * y quita la ruta física para no exponerla al cliente.
+     * y quita la ruta física para no exponerla al cliente. Cuando el emparejado con
+     * disco quedó ambiguo entre canales, también arma la URL de cada candidato para
+     * que el usuario elija cuál corresponde (ver CecocoModulacionesLocalService).
      *
      * @param array<int, array<string, mixed>> $modulaciones
      */
     private function asignarUrlsDeStream(array &$modulaciones): void
     {
         foreach ($modulaciones as &$m) {
+            if (!empty($m['candidatosAudio'])) {
+                foreach ($m['candidatosAudio'] as &$c) {
+                    $c['url'] = route('api.cecoco.modulacion.stream', ['path' => base64_encode($c['path'])]);
+                    unset($c['path']);
+                }
+                unset($c);
+            }
+
             if (!empty($m['path'])) {
                 $m['url'] = route('api.cecoco.modulacion.stream', ['path' => base64_encode($m['path'])]);
                 unset($m['path']);

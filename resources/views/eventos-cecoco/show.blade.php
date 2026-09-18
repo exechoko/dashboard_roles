@@ -786,6 +786,28 @@ function renderizarModulaciones(data) {
                       '<i class="fas fa-download"></i>' +
                   '</a>';
 
+            // Si el emparejado con el disco local quedó ambiguo entre dos o más
+            // canales (ver CecocoModulacionesLocalService), no se adivina cuál es:
+            // se ofrecen todos los candidatos para que el usuario elija escuchando.
+            var candidatosHtml = '';
+            if (m.candidatosAudio && m.candidatosAudio.length > 1) {
+                card.classList.add('mod-ambiguo');
+                candidatosHtml =
+                    '<div class="mod-candidatos">' +
+                        '<div class="mod-candidatos-aviso"><i class="fas fa-question-circle"></i> ' +
+                            'No se pudo identificar con certeza el canal del audio local — elegí cuál corresponde:</div>' +
+                        m.candidatosAudio.map(function(c) {
+                            return '<div class="mod-candidato">' +
+                                '<span class="mod-candidato-canal">' + escHtml(c.canal || 'Canal desconocido') + '</span>' +
+                                '<audio class="mod-audio" controls preload="none"><source src="' + c.url + '"></audio>' +
+                                '<a href="' + c.url + '&download=1" class="btn btn-sm btn-outline-secondary mod-dl" download title="Descargar audio">' +
+                                    '<i class="fas fa-download"></i>' +
+                                '</a>' +
+                            '</div>';
+                        }).join('') +
+                    '</div>';
+            }
+
             card.innerHTML =
                 '<div class="mod-info">' +
                     '<div class="mod-titulo">' +
@@ -803,32 +825,30 @@ function renderizarModulaciones(data) {
                         (sub ? '<span title="Canal"><i class="fas fa-signal"></i> ' + sub + '</span>' : '') +
                     '</div>' +
                 '</div>' +
-                audioHtml;
+                audioHtml +
+                candidatosHtml;
             lista.appendChild(card);
 
-            // Si el navegador no logra cargar el audio (ej. el proxy devuelve un
-            // error), se reemplaza el player por un aviso claro.
-            var sourceEl = card.querySelector('audio source');
-            if (sourceEl) {
-                sourceEl.addEventListener('error', function() {
-                    var audioEl = card.querySelector('audio');
-                    if (audioEl) {
+            // Si el navegador no logra cargar alguno de los audios de la tarjeta (ej.
+            // el proxy devuelve un error), se reemplaza ese player por un aviso claro.
+            card.querySelectorAll('audio').forEach(function(audioEl) {
+                var sourceEl = audioEl.querySelector('source');
+                if (sourceEl) {
+                    sourceEl.addEventListener('error', function() {
                         var aviso = document.createElement('span');
                         aviso.className = 'mod-audio mod-audio-error badge badge-warning';
                         aviso.innerHTML = '<i class="fas fa-volume-mute"></i> Audio no disponible';
                         audioEl.replaceWith(aviso);
-                    }
-                });
-            }
+                    });
+                }
 
-            // Marcar como escuchada al reproducir (queda guardado en el navegador).
-            var playerEl = card.querySelector('audio');
-            if (playerEl) {
-                playerEl.addEventListener('play', function() {
+                // Marcar como escuchada al reproducir cualquiera de los audios
+                // (queda guardado en el navegador).
+                audioEl.addEventListener('play', function() {
                     card.classList.add('mod-escuchada');
                     guardarEscuchada(claveAudio);
                 });
-            }
+            });
         });
 
         var delEventoEl = document.getElementById('mod-del-evento');
@@ -929,6 +949,41 @@ $('#modalModulaciones').on('hide.bs.modal', function() {
     .modulacion-card .mod-audio { flex: 1 1 100%; max-width: none; }
 }
 
+/* Ambiguo entre canales: la tarjeta pasa a varias filas para listar candidatos. */
+.modulacion-card.mod-ambiguo {
+    flex-wrap: wrap;
+    border-left-color: #ffc107;
+}
+.mod-candidatos {
+    flex: 1 1 100%;
+    border-top: 1px dashed var(--bs-border-color, #dee2e6);
+    margin-top: .35rem;
+    padding-top: .35rem;
+}
+.mod-candidatos-aviso {
+    font-size: .72rem;
+    color: #997404;
+    margin-bottom: .3rem;
+}
+.mod-candidato {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: .3rem;
+}
+.mod-candidato:last-child { margin-bottom: 0; }
+.mod-candidato-canal {
+    flex: 0 0 auto;
+    font-size: .72rem;
+    font-weight: 600;
+    min-width: 90px;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.mod-candidato .mod-audio { flex: 1 1 auto; height: 30px; max-width: 380px; }
+
 /* Modo oscuro */
 [data-theme="dark"] .modulacion-card {
     background: var(--bg-secondary, #0b1b31) !important;
@@ -954,6 +1009,8 @@ $('#modalModulaciones').on('hide.bs.modal', function() {
 [data-theme="dark"] .modulacion-card .mod-meta,
 [data-theme="dark"] .modulacion-card .mod-flecha { color: var(--text-secondary, #9fb6c9); }
 [data-theme="dark"] .modulacion-card .mod-audio { color-scheme: dark; }
+[data-theme="dark"] .mod-candidatos { border-top-color: var(--border-color, rgba(255, 255, 255, .15)); }
+[data-theme="dark"] .mod-candidatos-aviso { color: #e0b03e; }
 [data-theme="dark"] #modulaciones-empty,
 [data-theme="dark"] #modulaciones-sin-filtro,
 [data-theme="dark"] #modulaciones-loading { color: var(--text-secondary, #9fb6c9) !important; }

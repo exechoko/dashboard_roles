@@ -67,6 +67,71 @@ class CecocoModulacionesLocalServiceTest extends TestCase
         $this->assertArrayNotHasKey('path', $modulaciones[1]);
     }
 
+    public function test_prioriza_la_duracion_por_sobre_el_delta_de_tiempo_para_no_cruzar_canales(): void
+    {
+        config(['grabador.tolerancia_emparejado' => 5]);
+
+        // Dos canales activos casi al mismo segundo: GRUPO 1 arranca justo en el
+        // segundo de la fila del grabador (delta=0, el más "cercano") pero dura 9s;
+        // GRUPO 2 arranca 3s después (dentro de la tolerancia) y dura 8s, exactamente
+        // lo que reportó el grabador. La duración identifica mejor la transmisión
+        // correcta que la cercanía en el tiempo — si el emparejado sólo mirara el
+        // delta, elegiría por error el archivo de GRUPO 1 (de otro canal).
+        $this->crearAudio('OPERADOR A', 'GRUPO 1 (TETRA)', '20260912', '063208', 9);
+        $this->crearAudio('OPERADOR A', 'GRUPO 2 (TETRA)', '20260912', '063211', 8);
+
+        $modulaciones = (new CecocoModulacionesLocalService())->emparejarConGrabador(
+            [['fechaInicio' => '2026-09-12 06:32:08', 'duracion' => '00:08']],
+            Carbon::parse('2026-09-12 06:00:00'),
+            Carbon::parse('2026-09-12 07:00:00')
+        );
+
+        $this->assertStringContainsString('GRUPO 2', $modulaciones[0]['path']);
+    }
+
+    public function test_no_adivina_cuando_dos_canales_empatan_en_duracion_y_ofrece_ambos_candidatos(): void
+    {
+        config(['grabador.tolerancia_emparejado' => 5]);
+
+        // Dos canales distintos, misma duración exacta (8s), ambos dentro de la
+        // tolerancia de tiempo: no hay forma confiable de saber cuál es la
+        // transmisión correcta -> no adivinar, ofrecer los dos para que el usuario
+        // elija escuchando (en vez de dejarla sin audio local).
+        $this->crearAudio('OPERADOR A', 'GRUPO 1 (TETRA)', '20260912', '063206', 8);
+        $this->crearAudio('OPERADOR A', 'GRUPO 2 (TETRA)', '20260912', '063210', 8);
+
+        $modulaciones = (new CecocoModulacionesLocalService())->emparejarConGrabador(
+            [['fechaInicio' => '2026-09-12 06:32:08', 'duracion' => '00:08']],
+            Carbon::parse('2026-09-12 06:00:00'),
+            Carbon::parse('2026-09-12 07:00:00')
+        );
+
+        $this->assertArrayNotHasKey('path', $modulaciones[0]);
+        $this->assertCount(2, $modulaciones[0]['candidatosAudio']);
+        $canales = array_column($modulaciones[0]['candidatosAudio'], 'canal');
+        sort($canales);
+        $this->assertSame(['GRUPO 1 (TETRA)', 'GRUPO 2 (TETRA)'], $canales);
+    }
+
+    public function test_un_solo_candidato_por_canal_empata_pero_no_es_ambiguo_y_se_empareja(): void
+    {
+        config(['grabador.tolerancia_emparejado' => 5]);
+
+        // Dos copias (dos operadores) del MISMO canal, misma duración: no es
+        // ambigüedad real (es la misma transmisión), así que sí se empareja.
+        $this->crearAudio('OPERADOR A', 'GRUPO 1 (TETRA)', '20260912', '063206', 8);
+        $this->crearAudio('OPERADOR B', 'GRUPO 1 (TETRA)', '20260912', '063206', 8);
+
+        $modulaciones = (new CecocoModulacionesLocalService())->emparejarConGrabador(
+            [['fechaInicio' => '2026-09-12 06:32:06', 'duracion' => '00:08']],
+            Carbon::parse('2026-09-12 06:00:00'),
+            Carbon::parse('2026-09-12 07:00:00')
+        );
+
+        $this->assertArrayHasKey('path', $modulaciones[0]);
+        $this->assertArrayNotHasKey('candidatosAudio', $modulaciones[0]);
+    }
+
     public function test_no_empareja_una_fila_cuya_duracion_no_coincide(): void
     {
         $this->crearAudio('OPERADOR A', 'GENERAL (Grupo) (TETRA)', '20260912', '063205', 60);

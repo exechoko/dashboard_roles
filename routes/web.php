@@ -695,6 +695,7 @@ Route::group(['middleware' => ['auth']], function () {
             Route::post('/', [DominioAlertaController::class, 'store'])->name('store');
             Route::get('importar', [DominioAlertaController::class, 'importarForm'])->name('importar');
             Route::post('importar', [DominioAlertaController::class, 'importar'])->name('importar.post');
+            Route::get('buscar-coincidencias', [DominioAlertaController::class, 'buscarCoincidencias'])->name('buscar-coincidencias');
             Route::get('{dominioAlerta}', [DominioAlertaController::class, 'show'])->name('show');
             Route::get('{dominioAlerta}/edit', [DominioAlertaController::class, 'edit'])->name('edit');
             Route::put('{dominioAlerta}', [DominioAlertaController::class, 'update'])->name('update');
@@ -709,6 +710,7 @@ Route::group(['middleware' => ['auth']], function () {
             Route::post('/', [PersonaAlertaController::class, 'store'])->name('store');
             Route::get('importar', [PersonaAlertaController::class, 'importarForm'])->name('importar');
             Route::post('importar', [PersonaAlertaController::class, 'importar'])->name('importar.post');
+            Route::get('buscar-coincidencias', [PersonaAlertaController::class, 'buscarCoincidencias'])->name('buscar-coincidencias');
             Route::get('{personaAlerta}', [PersonaAlertaController::class, 'show'])->name('show');
             Route::get('{personaAlerta}/edit', [PersonaAlertaController::class, 'edit'])->name('edit');
             Route::put('{personaAlerta}', [PersonaAlertaController::class, 'update'])->name('update');

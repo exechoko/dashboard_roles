@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
 class PersonaAlerta extends Model
@@ -92,5 +93,59 @@ class PersonaAlerta extends Model
         $dni = preg_replace('/[.\s]+/', '', $dni);
 
         return $dni === '' ? null : $dni;
+    }
+
+    /**
+     * Busca personas ya cargadas que puedan ser la misma que se está
+     * por cargar, aunque no se tenga el D.N.I.: por D.N.I. exacto y/o
+     * por coincidencia de palabras del apellido y nombre (nombre
+     * completo o parcial, en cualquier orden).
+     *
+     * @return Collection<int, self>
+     */
+    public static function buscarCoincidencias(?string $dni, ?string $nombre, int $limite = 8): Collection
+    {
+        $dniNormalizado = self::normalizarDni($dni);
+
+        $palabras = collect(preg_split('/\s+/', mb_strtoupper(trim((string) $nombre))))
+            ->filter(fn ($palabra) => mb_strlen($palabra) >= 3)
+            ->unique()
+            ->values();
+
+        if ($dniNormalizado === null && $palabras->isEmpty()) {
+            return collect();
+        }
+
+        $candidatos = static::query()
+            ->where(function ($query) use ($dniNormalizado, $palabras) {
+                if ($dniNormalizado !== null) {
+                    $query->orWhere('dni', $dniNormalizado);
+                }
+
+                foreach ($palabras as $palabra) {
+                    $query->orWhereRaw('UPPER(apellido_nombre) LIKE ?', ['%' . $palabra . '%']);
+                }
+            })
+            ->limit(50)
+            ->get();
+
+        return $candidatos
+            ->map(function (self $persona) use ($dniNormalizado, $palabras) {
+                $score = ($dniNormalizado !== null && $persona->dni === $dniNormalizado) ? 100 : 0;
+                $nombreUpper = mb_strtoupper($persona->apellido_nombre);
+
+                foreach ($palabras as $palabra) {
+                    if (str_contains($nombreUpper, $palabra)) {
+                        $score++;
+                    }
+                }
+
+                $persona->coincidencia_score = $score;
+
+                return $persona;
+            })
+            ->sortByDesc('coincidencia_score')
+            ->take($limite)
+            ->values();
     }
 }

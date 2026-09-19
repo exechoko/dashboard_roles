@@ -81,7 +81,8 @@ class DominioAlertaTest extends TestCase
             'dominio' => 'CD456EF',
         ]);
 
-        $response->assertSessionHasErrors(['marca', 'color', 'solicitado_por', 'funcionario_carga', 'notificar_a']);
+        $response->assertSessionHasErrors(['marca', 'solicitado_por', 'funcionario_carga', 'notificar_a']);
+        $response->assertSessionDoesntHaveErrors('color');
         $this->assertNull(DominioAlerta::where('dominio', 'CD456EF')->first());
     }
 
@@ -139,6 +140,45 @@ class DominioAlertaTest extends TestCase
 
         $response->assertSessionHasErrors('motivo_eliminacion');
         $this->assertNotNull(DominioAlerta::find($dominio->id));
+    }
+
+    public function test_encuentra_coincidencia_exacta_de_dominio(): void
+    {
+        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $dominio = DominioAlerta::factory()->create(['dominio' => 'XY123ZW']);
+
+        $response = $this->actingAs($admin)->get(route('alertas-video.dominios.buscar-coincidencias', [
+            'dominio' => 'xy123zw',
+        ]));
+
+        $response->assertOk();
+        $response->assertJsonFragment(['id' => $dominio->id]);
+    }
+
+    public function test_encuentra_coincidencia_de_dominio_parcial_dentro_de_uno_completo(): void
+    {
+        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $parcial = DominioAlerta::factory()->create(['dominio' => 'AB123', 'parcial' => true]);
+
+        $response = $this->actingAs($admin)->get(route('alertas-video.dominios.buscar-coincidencias', [
+            'dominio' => 'AB123CD',
+        ]));
+
+        $response->assertOk();
+        $response->assertJsonFragment(['id' => $parcial->id]);
+    }
+
+    public function test_no_devuelve_coincidencias_de_dominio_sin_datos_suficientes(): void
+    {
+        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        DominioAlerta::factory()->create(['dominio' => 'ZZ111ZZ']);
+
+        $response = $this->actingAs($admin)->get(route('alertas-video.dominios.buscar-coincidencias', [
+            'dominio' => 'ZZ',
+        ]));
+
+        $response->assertOk();
+        $response->assertJson(['coincidencias' => []]);
     }
 
     /**

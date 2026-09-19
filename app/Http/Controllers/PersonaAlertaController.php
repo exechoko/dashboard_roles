@@ -7,6 +7,7 @@ use App\Http\Requests\UpdatePersonaAlertaRequest;
 use App\Imports\PersonaAlertaImport;
 use App\Models\PersonaAlerta;
 use App\Services\AlertaVideoService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -17,7 +18,7 @@ class PersonaAlertaController extends Controller
     public function __construct(private AlertaVideoService $service)
     {
         $this->middleware('permission:ver-alerta-persona|crear-alerta-persona|editar-alerta-persona|borrar-alerta-persona', ['only' => ['index', 'show']]);
-        $this->middleware('permission:crear-alerta-persona', ['only' => ['create', 'store', 'importarForm', 'importar']]);
+        $this->middleware('permission:crear-alerta-persona', ['only' => ['create', 'store', 'importarForm', 'importar', 'buscarCoincidencias']]);
         $this->middleware('permission:editar-alerta-persona', ['only' => ['edit', 'update', 'cambiarActivo', 'comentario']]);
         $this->middleware('permission:borrar-alerta-persona', ['only' => ['destroy']]);
     }
@@ -59,11 +60,37 @@ class PersonaAlertaController extends Controller
         return view('alertas-video.personas.crear');
     }
 
+    public function buscarCoincidencias(Request $request): JsonResponse
+    {
+        $request->validate([
+            'nombre' => 'nullable|string|max:150',
+            'dni' => 'nullable|string|max:20',
+        ]);
+
+        $coincidencias = PersonaAlerta::buscarCoincidencias($request->query('dni'), $request->query('nombre'))
+            ->map(fn (PersonaAlerta $persona) => [
+                'id' => $persona->id,
+                'apellido_nombre' => $persona->apellido_nombre,
+                'dni' => $persona->dni,
+                'direccion' => $persona->direccion,
+                'motivo' => $persona->motivo,
+                'activo' => $persona->activo,
+                'estado_label' => $persona->estado_label,
+                'foto_url' => $persona->foto_url,
+                'url_show' => route('alertas-video.personas.show', $persona),
+                'url_edit' => route('alertas-video.personas.edit', $persona),
+            ])
+            ->values();
+
+        return response()->json(['coincidencias' => $coincidencias]);
+    }
+
     public function store(StorePersonaAlertaRequest $request): RedirectResponse
     {
         $datos = $request->validated();
         $datos['identificado'] = $request->boolean('identificado');
         $datos['finalizado'] = $request->boolean('finalizado');
+        $datos['activo'] = $request->boolean('activo', true);
         unset($datos['foto']);
 
         $this->service->crear(PersonaAlerta::class, $datos, $request->file('foto'));
@@ -90,7 +117,14 @@ class PersonaAlertaController extends Controller
         $datos['finalizado'] = $request->boolean('finalizado');
         unset($datos['foto']);
 
+        $nuevoActivo = $request->boolean('activo', true);
+        $comentario = $request->input('comentario');
+
         $this->service->actualizar($personaAlerta, $datos, $request->file('foto'));
+
+        if ($nuevoActivo !== (bool) $personaAlerta->activo) {
+            $this->service->cambiarActivo($personaAlerta, $nuevoActivo, $comentario);
+        }
 
         return redirect()->route('alertas-video.personas.show', $personaAlerta)->with('success', 'Persona actualizada correctamente.');
     }

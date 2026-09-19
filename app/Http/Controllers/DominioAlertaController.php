@@ -8,6 +8,7 @@ use App\Imports\DominioAlertaImport;
 use App\Models\Camara;
 use App\Models\DominioAlerta;
 use App\Services\AlertaVideoService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -19,7 +20,7 @@ class DominioAlertaController extends Controller
     public function __construct(private AlertaVideoService $service)
     {
         $this->middleware('permission:ver-alerta-dominio|crear-alerta-dominio|editar-alerta-dominio|borrar-alerta-dominio', ['only' => ['index', 'show']]);
-        $this->middleware('permission:crear-alerta-dominio', ['only' => ['create', 'store', 'importarForm', 'importar']]);
+        $this->middleware('permission:crear-alerta-dominio', ['only' => ['create', 'store', 'importarForm', 'importar', 'buscarCoincidencias']]);
         $this->middleware('permission:editar-alerta-dominio', ['only' => ['edit', 'update', 'cambiarActivo', 'comentario']]);
         $this->middleware('permission:borrar-alerta-dominio', ['only' => ['destroy']]);
     }
@@ -62,6 +63,30 @@ class DominioAlertaController extends Controller
         $camaras = $this->camarasDisponibles();
 
         return view('alertas-video.dominios.crear', compact('camaras'));
+    }
+
+    public function buscarCoincidencias(Request $request): JsonResponse
+    {
+        $request->validate([
+            'dominio' => 'nullable|string|max:15',
+        ]);
+
+        $coincidencias = DominioAlerta::buscarCoincidencias($request->query('dominio'))
+            ->map(fn (DominioAlerta $dominio) => [
+                'id' => $dominio->id,
+                'dominio' => $dominio->dominio,
+                'parcial' => $dominio->parcial,
+                'marca' => $dominio->marca,
+                'modelo' => $dominio->modelo,
+                'motivo' => $dominio->motivo,
+                'activo' => $dominio->activo,
+                'estado_label' => $dominio->estado_label,
+                'url_show' => route('alertas-video.dominios.show', $dominio),
+                'url_edit' => route('alertas-video.dominios.edit', $dominio),
+            ])
+            ->values();
+
+        return response()->json(['coincidencias' => $coincidencias]);
     }
 
     public function store(StoreDominioAlertaRequest $request): RedirectResponse

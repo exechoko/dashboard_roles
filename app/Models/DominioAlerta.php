@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
 class DominioAlerta extends Model
 {
@@ -87,5 +88,41 @@ class DominioAlerta extends Model
     public static function normalizar(mixed $dominio): string
     {
         return strtoupper(preg_replace('/[\s\-]+/', '', trim((string) $dominio)));
+    }
+
+    /**
+     * Busca dominios ya cargados que puedan ser el mismo que se está por
+     * cargar: coincidencia exacta, o que uno contenga al otro (para
+     * detectar cuando ya existe la patente completa y se está cargando
+     * una parcial, o viceversa).
+     *
+     * @return Collection<int, self>
+     */
+    public static function buscarCoincidencias(?string $dominio, int $limite = 8): Collection
+    {
+        $normalizado = self::normalizar($dominio);
+
+        if (mb_strlen($normalizado) < 3) {
+            return collect();
+        }
+
+        $candidatos = static::query()
+            ->where('dominio', 'like', '%' . $normalizado . '%')
+            ->orWhere(function ($query) use ($normalizado) {
+                $query->where('parcial', true)
+                    ->whereRaw('? LIKE CONCAT(\'%\', dominio, \'%\')', [$normalizado]);
+            })
+            ->limit(50)
+            ->get();
+
+        return $candidatos
+            ->map(function (self $item) use ($normalizado) {
+                $item->coincidencia_score = $item->dominio === $normalizado ? 100 : 50;
+
+                return $item;
+            })
+            ->sortByDesc('coincidencia_score')
+            ->take($limite)
+            ->values();
     }
 }

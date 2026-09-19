@@ -20,6 +20,8 @@ class PersonaAlertaFactory extends Factory
             'direccion' => $this->faker->address(),
             'motivo' => $this->faker->sentence(),
             'solicitado_por' => $this->faker->name(),
+            'funcionario_carga' => $this->faker->name(),
+            'notificar_a' => $this->faker->name(),
             'identificado' => false,
             'finalizado' => false,
             'fecha_carga' => now()->toDateString(),

@@ -15,6 +15,16 @@
             </div>
         </div>
     </div>
+    @if (!isset($dominioAlerta))
+        <div class="col-md-12">
+            <div id="coincidencias-panel" class="alert alert-warning" style="display: none;">
+                <strong><i class="fas fa-exclamation-triangle"></i> Posibles coincidencias encontradas.</strong>
+                Revise si alguno de estos dominios ya está cargado. Si es así, elíjalo para editarlo y completar sus
+                datos en lugar de cargar un registro duplicado.
+                <div id="coincidencias-lista" class="list-group mt-2"></div>
+            </div>
+        </div>
+    @endif
     <div class="col-md-3">
         <div class="form-group">
             <label for="marca">Marca <span class="text-danger">*</span></label>
@@ -38,9 +48,9 @@
     <div class="col-md-3">
         @php $colorActual = old('color', $dominioAlerta->color ?? ''); @endphp
         <div class="form-group">
-            <label for="color">Color <span class="text-danger">*</span></label>
+            <label for="color">Color</label>
             <select name="color" id="color" class="form-control select2 @error('color') is-invalid @enderror"
-                    data-placeholder="Seleccione o escriba un color" required>
+                    data-placeholder="Seleccione o escriba un color">
                 <option value=""></option>
                 @if ($colorActual !== '' && !in_array($colorActual, \App\Models\DominioAlerta::COLORES))
                     <option value="{{ $colorActual }}" selected>{{ $colorActual }}</option>
@@ -192,3 +202,73 @@ $(document).ready(function () {
 });
 </script>
 @endpush
+
+@if (!isset($dominioAlerta))
+    @push('scripts')
+    <script>
+    $(document).ready(function () {
+        var $panel = $('#coincidencias-panel');
+        var $lista = $('#coincidencias-lista');
+        var timeoutId = null;
+
+        function buscarCoincidencias() {
+            var dominio = $('#dominio').val().trim();
+
+            if (dominio.length < 3) {
+                $panel.hide();
+                return;
+            }
+
+            $.get('{{ route('alertas-video.dominios.buscar-coincidencias') }}', { dominio: dominio })
+                .done(function (respuesta) {
+                    var coincidencias = respuesta.coincidencias || [];
+
+                    if (coincidencias.length === 0) {
+                        $panel.hide();
+                        return;
+                    }
+
+                    $lista.empty();
+                    coincidencias.forEach(function (item) {
+                        var estadoBadge = item.activo
+                            ? '<span class="badge badge-alerta-activo">' + item.estado_label + '</span>'
+                            : '<span class="badge badge-alerta-inactivo">' + item.estado_label + '</span>';
+                        var parcialBadge = item.parcial ? ' <span class="badge badge-alerta-no">Parcial</span>' : '';
+
+                        var $item = $(
+                            '<div class="list-group-item d-flex justify-content-between align-items-center">' +
+                                '<div>' +
+                                    '<strong>' + $('<div>').text(item.dominio).html() + '</strong>' + parcialBadge + ' ' + estadoBadge + '<br>' +
+                                    '<small class="text-muted">' +
+                                        $('<div>').text((item.marca || '') + ' ' + (item.modelo || '')).html() +
+                                        ' &mdash; ' + $('<div>').text(item.motivo || 'Sin motivo cargado').html() +
+                                    '</small>' +
+                                '</div>' +
+                                '<div>' +
+                                    '<a href="' + item.url_show + '" target="_blank" class="btn btn-sm btn-outline-secondary" title="Ver detalle">' +
+                                        '<i class="fas fa-eye"></i>' +
+                                    '</a> ' +
+                                    '<a href="' + item.url_edit + '" class="btn btn-sm btn-primary">' +
+                                        '<i class="fas fa-edit"></i> Es este, editar' +
+                                    '</a>' +
+                                '</div>' +
+                            '</div>'
+                        );
+                        $lista.append($item);
+                    });
+
+                    $panel.show();
+                })
+                .fail(function () {
+                    $panel.hide();
+                });
+        }
+
+        $('#dominio').on('input', function () {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(buscarCoincidencias, 500);
+        });
+    });
+    </script>
+    @endpush
+@endif

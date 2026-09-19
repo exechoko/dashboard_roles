@@ -4,17 +4,23 @@
     .badge-alerta-si { background-color: #0d9488; color: #fff; }
     .badge-alerta-no { background-color: #94a3b8; color: #fff; }
 
-    .alerta-stat-card {
+    .alerta-stat-card,
+    .alerta-stat-card:link,
+    .alerta-stat-card:visited {
         display: block;
         border-radius: .5rem;
-        color: #fff;
+        color: #fff !important;
         padding: 1rem;
         text-decoration: none;
         border: 3px solid transparent;
         transition: transform .1s ease, border-color .1s ease;
     }
+    .alerta-stat-card .small,
+    .alerta-stat-card .h3 {
+        color: #fff !important;
+    }
     a.alerta-stat-card:hover {
-        color: #fff;
+        color: #fff !important;
         text-decoration: none;
         transform: translateY(-2px);
     }

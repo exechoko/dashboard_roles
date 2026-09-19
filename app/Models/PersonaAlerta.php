@@ -22,6 +22,7 @@ class PersonaAlerta extends Model
         'motivo',
         'solicitado_por',
         'funcionario_carga',
+        'notificar_a',
         'identificado',
         'finalizado',
         'foto',

@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreDominioAlertaRequest;
 use App\Http\Requests\UpdateDominioAlertaRequest;
 use App\Imports\DominioAlertaImport;
+use App\Models\Camara;
 use App\Models\DominioAlerta;
 use App\Services\AlertaVideoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -57,7 +59,9 @@ class DominioAlertaController extends Controller
 
     public function create(): View
     {
-        return view('alertas-video.dominios.crear');
+        $camaras = $this->camarasDisponibles();
+
+        return view('alertas-video.dominios.crear', compact('camaras'));
     }
 
     public function store(StoreDominioAlertaRequest $request): RedirectResponse
@@ -79,7 +83,9 @@ class DominioAlertaController extends Controller
 
     public function edit(DominioAlerta $dominioAlerta): View
     {
-        return view('alertas-video.dominios.editar', compact('dominioAlerta'));
+        $camaras = $this->camarasDisponibles();
+
+        return view('alertas-video.dominios.editar', compact('dominioAlerta', 'camaras'));
     }
 
     public function update(UpdateDominioAlertaRequest $request, DominioAlerta $dominioAlerta): RedirectResponse
@@ -159,5 +165,18 @@ class DominioAlertaController extends Controller
         } catch (\Exception $e) {
             return redirect()->route('alertas-video.dominios.importar')->with('error', 'Error al importar: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * @return Collection<int, string>
+     */
+    private function camarasDisponibles(): Collection
+    {
+        return Camara::whereNull('fecha_desintalacion')
+            ->whereNotNull('nombre')
+            ->orderBy('nombre')
+            ->pluck('nombre')
+            ->unique()
+            ->values();
     }
 }

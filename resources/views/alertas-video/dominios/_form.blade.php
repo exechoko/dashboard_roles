@@ -17,9 +17,9 @@
     </div>
     <div class="col-md-3">
         <div class="form-group">
-            <label for="marca">Marca</label>
+            <label for="marca">Marca <span class="text-danger">*</span></label>
             <input type="text" name="marca" id="marca" class="form-control @error('marca') is-invalid @enderror"
-                   value="{{ old('marca', $dominioAlerta->marca ?? '') }}">
+                   value="{{ old('marca', $dominioAlerta->marca ?? '') }}" required>
             @error('marca')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
@@ -36,10 +36,19 @@
         </div>
     </div>
     <div class="col-md-3">
+        @php $colorActual = old('color', $dominioAlerta->color ?? ''); @endphp
         <div class="form-group">
-            <label for="color">Color</label>
-            <input type="text" name="color" id="color" class="form-control @error('color') is-invalid @enderror"
-                   value="{{ old('color', $dominioAlerta->color ?? '') }}">
+            <label for="color">Color <span class="text-danger">*</span></label>
+            <select name="color" id="color" class="form-control select2 @error('color') is-invalid @enderror"
+                    data-placeholder="Seleccione o escriba un color" required>
+                <option value=""></option>
+                @if ($colorActual !== '' && !in_array($colorActual, \App\Models\DominioAlerta::COLORES))
+                    <option value="{{ $colorActual }}" selected>{{ $colorActual }}</option>
+                @endif
+                @foreach (\App\Models\DominioAlerta::COLORES as $color)
+                    <option value="{{ $color }}" {{ $colorActual === $color ? 'selected' : '' }}>{{ $color }}</option>
+                @endforeach
+            </select>
             @error('color')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
@@ -50,9 +59,9 @@
 <div class="row">
     <div class="col-md-4">
         <div class="form-group">
-            <label for="solicitado_por">Solicitado por</label>
+            <label for="solicitado_por">Solicitado por <span class="text-danger">*</span></label>
             <input type="text" name="solicitado_por" id="solicitado_por" class="form-control @error('solicitado_por') is-invalid @enderror"
-                   value="{{ old('solicitado_por', $dominioAlerta->solicitado_por ?? '') }}" placeholder="Nombre o cargo de quien solicitó la carga">
+                   value="{{ old('solicitado_por', $dominioAlerta->solicitado_por ?? '') }}" placeholder="Nombre o cargo de quien solicitó la carga" required>
             @error('solicitado_por')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
@@ -60,9 +69,9 @@
     </div>
     <div class="col-md-4">
         <div class="form-group">
-            <label for="funcionario_carga">Funcionario que carga</label>
+            <label for="funcionario_carga">Funcionario que carga <span class="text-danger">*</span></label>
             <input type="text" name="funcionario_carga" id="funcionario_carga" class="form-control @error('funcionario_carga') is-invalid @enderror"
-                   value="{{ old('funcionario_carga', $dominioAlerta->funcionario_carga ?? '') }}">
+                   value="{{ old('funcionario_carga', $dominioAlerta->funcionario_carga ?? '') }}" required>
             @error('funcionario_carga')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
@@ -84,6 +93,20 @@
 <div class="row">
     <div class="col-md-6">
         <div class="form-group">
+            <label for="notificar_a">Notificar / Avisar a <span class="text-danger">*</span></label>
+            <input type="text" name="notificar_a" id="notificar_a" class="form-control @error('notificar_a') is-invalid @enderror"
+                   value="{{ old('notificar_a', $dominioAlerta->notificar_a ?? '') }}"
+                   placeholder="Persona, área o contacto a avisar si el sistema detecta el dominio" required>
+            @error('notificar_a')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="form-group">
             <label for="motivo">Hecho relacionado</label>
             <textarea name="motivo" id="motivo" class="form-control @error('motivo') is-invalid @enderror" rows="3"
                       placeholder="Ej: Robo calle Mitre 21/08/2022...">{{ old('motivo', $dominioAlerta->motivo ?? '') }}</textarea>
@@ -93,12 +116,24 @@
         </div>
     </div>
     <div class="col-md-6">
+        @php $camaraTextoActual = old('camara_texto', $dominioAlerta->camara_texto ?? ''); @endphp
         <div class="form-group">
-            <label for="camara_texto">Cámara / Detecciones LPR</label>
-            <textarea name="camara_texto" id="camara_texto" class="form-control @error('camara_texto') is-invalid @enderror" rows="3"
-                      placeholder="Cámara, ubicación y fechas donde fue detectado (si se conoce)">{{ old('camara_texto', $dominioAlerta->camara_texto ?? '') }}</textarea>
+            <label for="camara_texto_select">Cámara / Detecciones LPR</label>
+            <select id="camara_texto_select" multiple class="form-control select2 @error('camara_texto') is-invalid @enderror"
+                    data-placeholder="Seleccione una o más cámaras, o escriba el detalle">
+                @if ($camaraTextoActual !== '')
+                    <option value="{{ $camaraTextoActual }}" selected>{{ $camaraTextoActual }}</option>
+                @endif
+                @foreach ($camaras ?? [] as $nombreCamara)
+                    @if ($nombreCamara !== $camaraTextoActual)
+                        <option value="{{ $nombreCamara }}">{{ $nombreCamara }}</option>
+                    @endif
+                @endforeach
+            </select>
+            <input type="hidden" name="camara_texto" id="camara_texto" value="{{ $camaraTextoActual }}">
+            <small class="form-text text-muted">Elija una o más cámaras de la lista, o escriba texto libre (fecha, ubicación, detalle) y presione Enter.</small>
             @error('camara_texto')
-                <div class="invalid-feedback">{{ $message }}</div>
+                <div class="invalid-feedback d-block">{{ $message }}</div>
             @enderror
         </div>
         <div class="form-group">
@@ -122,3 +157,38 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+$(document).ready(function () {
+    $('#color').select2({
+        width: '100%',
+        placeholder: 'Seleccione o escriba un color',
+        allowClear: true,
+        tags: true
+    });
+
+    var $camaraSelect = $('#camara_texto_select');
+    var $camaraHidden = $('#camara_texto');
+
+    $camaraSelect.select2({
+        width: '100%',
+        placeholder: 'Seleccione una o más cámaras, o escriba el detalle',
+        tags: true
+    });
+
+    $camaraSelect.on('change', function () {
+        $camaraHidden.val(($(this).val() || []).join(', '));
+    });
+
+    $(document).on('select2:open', () => {
+        setTimeout(() => {
+            let select2Field = document.querySelector('.select2-container--open .select2-search__field');
+            if (select2Field) {
+                select2Field.focus();
+            }
+        }, 0);
+    });
+});
+</script>
+@endpush

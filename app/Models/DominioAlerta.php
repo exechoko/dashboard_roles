@@ -12,6 +12,16 @@ class DominioAlerta extends Model
 {
     use HasFactory, SoftDeletes;
 
+    /**
+     * Lista de colores habituales para la carga rápida (select2 con
+     * posibilidad de escribir uno distinto si no está en la lista).
+     */
+    public const COLORES = [
+        'Blanco', 'Negro', 'Gris', 'Plata', 'Rojo', 'Azul', 'Verde',
+        'Amarillo', 'Naranja', 'Marrón', 'Beige', 'Bordo', 'Violeta',
+        'Celeste', 'Dorado', 'Multicolor',
+    ];
+
     protected $table = 'dominios_alerta';
 
     protected $fillable = [
@@ -23,6 +33,7 @@ class DominioAlerta extends Model
         'motivo',
         'solicitado_por',
         'funcionario_carga',
+        'notificar_a',
         'camara_texto',
         'fecha_hecho',
         'fecha_carga',

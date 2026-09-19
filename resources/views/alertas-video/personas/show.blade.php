@@ -76,6 +76,10 @@
                                             <td>{{ $personaAlerta->funcionario_carga ?? '-' }}</td>
                                         </tr>
                                         <tr>
+                                            <th>Notificar / Avisar a:</th>
+                                            <td colspan="3">{{ $personaAlerta->notificar_a ?? '-' }}</td>
+                                        </tr>
+                                        <tr>
                                             <th>Fecha del hecho:</th>
                                             <td colspan="3">{{ $personaAlerta->fecha_hecho?->format('d/m/Y') ?? '-' }}</td>
                                         </tr>
@@ -87,13 +91,15 @@
                                             <th>Observaciones:</th>
                                             <td colspan="3">{{ $personaAlerta->observaciones ?? '-' }}</td>
                                         </tr>
-                                        <tr>
-                                            <th>Cargada por:</th>
-                                            <td colspan="3">
-                                                {{ $personaAlerta->creadoPor ? trim($personaAlerta->creadoPor->apellido . ' ' . $personaAlerta->creadoPor->name) : 'Sistema' }}
-                                                el {{ $personaAlerta->created_at->format('d/m/Y H:i') }}
-                                            </td>
-                                        </tr>
+                                        @hasrole('Super Administrador')
+                                            <tr>
+                                                <th>Cargada por:</th>
+                                                <td colspan="3">
+                                                    {{ $personaAlerta->creadoPor ? trim($personaAlerta->creadoPor->apellido . ' ' . $personaAlerta->creadoPor->name) : 'Sistema' }}
+                                                    el {{ $personaAlerta->created_at->format('d/m/Y H:i') }}
+                                                </td>
+                                            </tr>
+                                        @endhasrole
                                     </table>
                                 </div>
                             </div>

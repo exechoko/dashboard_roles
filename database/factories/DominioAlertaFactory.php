@@ -21,6 +21,8 @@ class DominioAlertaFactory extends Factory
             'color' => $this->faker->safeColorName(),
             'motivo' => $this->faker->sentence(),
             'solicitado_por' => $this->faker->name(),
+            'funcionario_carga' => $this->faker->name(),
+            'notificar_a' => $this->faker->name(),
             'fecha_carga' => now()->toDateString(),
             'activo' => true,
         ];

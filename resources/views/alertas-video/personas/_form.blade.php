@@ -108,6 +108,20 @@
 </div>
 
 <div class="row">
+    <div class="col-md-6">
+        <div class="form-group">
+            <label for="notificar_a">Notificar / Avisar a</label>
+            <input type="text" name="notificar_a" id="notificar_a" class="form-control @error('notificar_a') is-invalid @enderror"
+                   value="{{ old('notificar_a', $persona->notificar_a ?? '') }}"
+                   placeholder="Persona, área o contacto a avisar si el sistema detecta a esta persona">
+            @error('notificar_a')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+    </div>
+</div>
+
+<div class="row">
     <div class="col-md-12">
         <div class="form-group">
             <label for="motivo">Hecho relacionado</label>

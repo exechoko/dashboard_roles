@@ -31,6 +31,7 @@ class StorePersonaAlertaRequest extends FormRequest
             'motivo' => 'nullable|string|max:1000',
             'solicitado_por' => 'nullable|string|max:150',
             'funcionario_carga' => 'nullable|string|max:150',
+            'notificar_a' => 'nullable|string|max:255',
             'identificado' => 'nullable|boolean',
             'finalizado' => 'nullable|boolean',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:4096',

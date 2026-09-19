@@ -34,11 +34,11 @@ class DominioAlertaTest extends TestCase
     {
         $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
 
-        $response = $this->actingAs($admin)->post(route('alertas-video.dominios.store'), [
+        $response = $this->actingAs($admin)->post(route('alertas-video.dominios.store'), $this->datosBase([
             'dominio' => 'zz999zz',
             'marca' => 'Ford',
             'motivo' => 'Robo denunciado',
-        ]);
+        ]));
 
         $dominio = DominioAlerta::where('dominio', 'ZZ999ZZ')->firstOrFail();
         $response->assertRedirect(route('alertas-video.dominios.index'));
@@ -53,9 +53,9 @@ class DominioAlertaTest extends TestCase
     {
         $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
 
-        $this->actingAs($admin)->post(route('alertas-video.dominios.store'), [
+        $this->actingAs($admin)->post(route('alertas-video.dominios.store'), $this->datosBase([
             'dominio' => ' aa-123 bb ',
-        ]);
+        ]));
 
         $this->assertNotNull(DominioAlerta::where('dominio', 'AA123BB')->first());
     }
@@ -64,13 +64,25 @@ class DominioAlertaTest extends TestCase
     {
         $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
 
-        $this->actingAs($admin)->post(route('alertas-video.dominios.store'), [
+        $this->actingAs($admin)->post(route('alertas-video.dominios.store'), $this->datosBase([
             'dominio' => 'AB123',
             'parcial' => '1',
-        ]);
+        ]));
 
         $dominio = DominioAlerta::where('dominio', 'AB123')->firstOrFail();
         $this->assertTrue($dominio->parcial);
+    }
+
+    public function test_no_permite_cargar_un_dominio_sin_los_campos_obligatorios(): void
+    {
+        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+
+        $response = $this->actingAs($admin)->post(route('alertas-video.dominios.store'), [
+            'dominio' => 'CD456EF',
+        ]);
+
+        $response->assertSessionHasErrors(['marca', 'color', 'solicitado_por', 'funcionario_carga', 'notificar_a']);
+        $this->assertNull(DominioAlerta::where('dominio', 'CD456EF')->first());
     }
 
     public function test_el_listado_solo_muestra_activos_por_defecto(): void
@@ -127,5 +139,20 @@ class DominioAlertaTest extends TestCase
 
         $response->assertSessionHasErrors('motivo_eliminacion');
         $this->assertNotNull(DominioAlerta::find($dominio->id));
+    }
+
+    /**
+     * @param array<string, mixed> $overrides
+     * @return array<string, mixed>
+     */
+    private function datosBase(array $overrides = []): array
+    {
+        return array_merge([
+            'marca' => 'Ford',
+            'color' => 'Blanco',
+            'solicitado_por' => 'Juan Perez',
+            'funcionario_carga' => 'Ana Gomez',
+            'notificar_a' => 'Guardia CECOCO',
+        ], $overrides);
     }
 }

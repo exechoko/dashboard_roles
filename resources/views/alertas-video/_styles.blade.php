@@ -64,11 +64,32 @@
     }
     .alerta-timeline-content {
         background: #f8fafc;
+        color: #1e293b;
         border: 1px solid #e2e8f0;
         border-left-width: 3px;
         border-left-color: #64748b;
         border-radius: .375rem;
         padding: .6rem .9rem;
+    }
+    .alerta-timeline-content h6 {
+        color: #1e293b;
+    }
+    .alerta-timeline-content .bg-white {
+        background: #fff !important;
+        color: #1e293b;
+    }
+    [data-theme="dark"] .alerta-timeline-content {
+        background: var(--bg-secondary) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+    [data-theme="dark"] .alerta-timeline-content h6 {
+        color: var(--text-primary) !important;
+    }
+    [data-theme="dark"] .alerta-timeline-content .bg-white {
+        background: var(--card-bg) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
     }
 
     .alerta-foto-preview {

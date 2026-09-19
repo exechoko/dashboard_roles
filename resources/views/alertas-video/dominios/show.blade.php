@@ -60,6 +60,10 @@
                                     <td>{{ $dominioAlerta->funcionario_carga ?? '-' }}</td>
                                 </tr>
                                 <tr>
+                                    <th>Notificar / Avisar a:</th>
+                                    <td colspan="3">{{ $dominioAlerta->notificar_a ?? '-' }}</td>
+                                </tr>
+                                <tr>
                                     <th>Fecha del hecho:</th>
                                     <td>{{ $dominioAlerta->fecha_hecho?->format('d/m/Y') ?? '-' }}</td>
                                     <th>Cámara / Detecciones LPR:</th>
@@ -73,13 +77,15 @@
                                     <th>Procedimiento / Observaciones:</th>
                                     <td colspan="3">{{ $dominioAlerta->observaciones ?? '-' }}</td>
                                 </tr>
-                                <tr>
-                                    <th>Cargado por:</th>
-                                    <td colspan="3">
-                                        {{ $dominioAlerta->creadoPor ? trim($dominioAlerta->creadoPor->apellido . ' ' . $dominioAlerta->creadoPor->name) : 'Sistema' }}
-                                        el {{ $dominioAlerta->created_at->format('d/m/Y H:i') }}
-                                    </td>
-                                </tr>
+                                @hasrole('Super Administrador')
+                                    <tr>
+                                        <th>Cargado por:</th>
+                                        <td colspan="3">
+                                            {{ $dominioAlerta->creadoPor ? trim($dominioAlerta->creadoPor->apellido . ' ' . $dominioAlerta->creadoPor->name) : 'Sistema' }}
+                                            el {{ $dominioAlerta->created_at->format('d/m/Y H:i') }}
+                                        </td>
+                                    </tr>
+                                @endhasrole
                             </table>
                         </div>
                     </div>

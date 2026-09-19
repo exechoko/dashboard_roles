@@ -11,6 +11,7 @@ use App\Jobs\RestaurarBackupBaseDatos;
 use App\Services\AuditoriaService;
 use App\Services\BackupBaseDatosService;
 use App\Services\EnvEditorService;
+use App\Services\GrabadorTetraService;
 use App\Support\ConfiguracionCatalogo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -52,6 +53,8 @@ class ConfiguracionSistemaController extends Controller
         $this->middleware('permission:descargar-configuracion-backup')->only(['backupDescargar']);
         $this->middleware('permission:restaurar-configuracion-backup')->only(['backupRestaurar']);
         $this->middleware('permission:borrar-configuracion-backup')->only(['backupEliminar']);
+        $this->middleware('permission:ver-configuracion-grabador')->only(['grabador']);
+        $this->middleware('permission:reiniciar-configuracion-grabador')->only(['grabadorReplayReiniciar']);
     }
 
     public function index(): View
@@ -190,6 +193,27 @@ class ConfiguracionSistemaController extends Controller
         AuditoriaService::registrar('BORRAR', 'configuracion_sistema_workers', 'purgar jobs fallidos');
 
         return back()->with('success', 'Se eliminó el historial de jobs fallidos.');
+    }
+
+    public function grabador(GrabadorTetraService $grabador): View
+    {
+        return view('configuracion.grabador', [
+            'replayDisponible' => $grabador->replayDisponible(),
+            'servicio'         => config('grabador.replay_service_name'),
+        ]);
+    }
+
+    public function grabadorReplayReiniciar(GrabadorTetraService $grabador): RedirectResponse
+    {
+        $resultado = $grabador->reiniciarReplayServer();
+
+        AuditoriaService::registrar(
+            'ACTUALIZAR',
+            'configuracion_sistema_grabador',
+            'reiniciar Replay Server: ' . ($resultado['success'] ? 'ok' : 'error — ' . $resultado['mensaje'])
+        );
+
+        return back()->with($resultado['success'] ? 'success' : 'error', $resultado['mensaje']);
     }
 
     public function backups(BackupBaseDatosService $backups): View

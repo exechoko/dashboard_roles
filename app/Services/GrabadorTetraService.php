@@ -30,6 +30,9 @@ class GrabadorTetraService
 
     private const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:115.0) Gecko/20100101 Firefox/115.0';
 
+    /** Cache key: circuit breaker para no reintentar mientras el Replay Server está colgado. */
+    private const REPLAY_HUNG_CACHE_KEY = 'grabador_replay_hung';
+
     /** Ids de descriptores TETRA devueltos por el grabador en cada fila. */
     private const F_INICIO         = '1';
     private const F_FIN            = '14';
@@ -296,34 +299,66 @@ class GrabadorTetraService
             throw new \InvalidArgumentException('itemid de modulación inválido.');
         }
 
-        $sessionId = $this->autenticar();
+        // El Replay Server queda colgado (deja de responder, sin cerrar la
+        // conexión) durante ~1 minuto tras un timeout real. Sin este corte,
+        // cada escucha durante ese lapso repetiría la espera completa de 30s
+        // en vano.
+        if (Cache::get(self::REPLAY_HUNG_CACHE_KEY)) {
+            throw new \RuntimeException('El Replay Server no está respondiendo. Probá de nuevo en un minuto.');
+        }
 
-        // El Replay Server usa "+" como separador de parámetros (no "&"), por eso
-        // se arma la query string a mano. Los valores son seguros (validados/propios).
-        $query = implode('+', [
-            'address=' . $this->recorderAddress,
-            'databaseid=0',
-            'sessionid=' . $sessionId,
-            'langid=' . $this->langId,
-            'replaymode=0',
-            'itemid=' . $itemid,
-        ]);
+        // El Replay Server está pensado para atender a un solo navegador (el de
+        // cada operador), pero acá corre centralizado en el servidor y atiende a
+        // todos los operadores del dashboard. Pedidos concurrentes lo cuelgan
+        // (deja de responder y cada request agota los 30s de timeout sin recibir
+        // nada) hasta que alguien lo reinicia a mano. Serializar el acceso evita
+        // que dos escuchas simultáneas lo saturen.
+        $lock = Cache::lock('grabador_replay_download', $this->timeout + 10);
 
-        $client = $this->httpClient();
+        try {
+            $lock->block($this->timeout);
+        } catch (\Illuminate\Contracts\Cache\LockTimeoutException $e) {
+            throw new \RuntimeException('El Replay Server está ocupado reproduciendo otro audio, intentá de nuevo en unos segundos.');
+        }
 
-        $resp = $client->get($this->replayUrl . '/replay/?' . $query, [
-            'headers' => [
-                'Referer' => $this->baseUrl . '/',
-                'Origin'  => $this->baseUrl,
-                'Accept'  => '*/*',
-            ],
-        ]);
+        try {
+            $sessionId = $this->autenticar();
 
-        return new \GuzzleHttp\Psr7\Response(
-            $resp->getStatusCode(),
-            $resp->getHeaders(),
-            (string) $resp->getBody()
-        );
+            // El Replay Server usa "+" como separador de parámetros (no "&"), por eso
+            // se arma la query string a mano. Los valores son seguros (validados/propios).
+            $query = implode('+', [
+                'address=' . $this->recorderAddress,
+                'databaseid=0',
+                'sessionid=' . $sessionId,
+                'langid=' . $this->langId,
+                'replaymode=0',
+                'itemid=' . $itemid,
+            ]);
+
+            $client = $this->httpClient();
+
+            try {
+                $resp = $client->get($this->replayUrl . '/replay/?' . $query, [
+                    'headers' => [
+                        'Referer' => $this->baseUrl . '/',
+                        'Origin'  => $this->baseUrl,
+                        'Accept'  => '*/*',
+                    ],
+                ]);
+            } catch (\GuzzleHttp\Exception\ConnectException $e) {
+                Cache::put(self::REPLAY_HUNG_CACHE_KEY, true, now()->addMinute());
+
+                throw $e;
+            }
+
+            return new \GuzzleHttp\Psr7\Response(
+                $resp->getStatusCode(),
+                $resp->getHeaders(),
+                (string) $resp->getBody()
+            );
+        } finally {
+            $lock->release();
+        }
     }
 
     /**
@@ -423,9 +458,18 @@ class GrabadorTetraService
      * Verifica si el Replay Server (que sirve los WAV) es alcanzable desde este
      * servidor. Está instalado como aplicación local: en máquinas sin él los WAV
      * del grabador no se pueden reproducir. Resultado cacheado 5 minutos.
+     *
+     * El Replay Server puede quedar colgado (acepta la conexión TCP pero nunca
+     * responde) sin que el chequeo de socket lo note: si el circuit breaker de
+     * descargarAudio() lo marcó como colgado, se lo reporta como no disponible
+     * para que el caller caiga al respaldo de disco local.
      */
     public function replayDisponible(): bool
     {
+        if (Cache::get(self::REPLAY_HUNG_CACHE_KEY)) {
+            return false;
+        }
+
         $cacheKey = 'grabador_replay_ok_' . md5($this->replayUrl);
 
         return (bool) Cache::remember($cacheKey, now()->addMinutes(5), function (): bool {
@@ -449,6 +493,89 @@ class GrabadorTetraService
 
             return true;
         });
+    }
+
+    /**
+     * Reinicia el servicio de Windows del Replay Server ("Red Box Replay
+     * Service") cuando quedó colgado por uso concurrente de varios operadores
+     * (ver descargarAudio()). Requiere que la cuenta con la que corre Apache
+     * tenga permiso para controlar puntualmente ese servicio (no admin completo):
+     *   sc sdset RedBoxReplayService "D:(A;;RPWPDT;;;<SID-de-la-cuenta>)..."
+     * o correr Apache con una cuenta que ya sea Administradora local.
+     *
+     * @return array{success: bool, mensaje: string, salida: string}
+     */
+    public function reiniciarReplayServer(): array
+    {
+        $servicio = (string) config('grabador.replay_service_name', 'RedBoxReplayService');
+
+        $proceso = new \Symfony\Component\Process\Process([
+            'powershell',
+            '-NoProfile',
+            '-NonInteractive',
+            '-Command',
+            "Restart-Service -Name '{$servicio}' -Force",
+        ]);
+        $proceso->setTimeout(60);
+        $proceso->setEnv($this->entornoProceso());
+
+        try {
+            $proceso->run();
+        } catch (\Exception $e) {
+            Log::error('GrabadorTetraService: error al reiniciar Replay Server', [
+                'servicio' => $servicio,
+                'error'    => $e->getMessage(),
+            ]);
+
+            return ['success' => false, 'mensaje' => $e->getMessage(), 'salida' => ''];
+        }
+
+        $salida = trim($proceso->getErrorOutput() . $proceso->getOutput());
+
+        if (!$proceso->isSuccessful()) {
+            Log::error('GrabadorTetraService: Restart-Service falló', [
+                'servicio' => $servicio,
+                'salida'   => $salida,
+            ]);
+
+            return [
+                'success' => false,
+                'mensaje' => 'No se pudo reiniciar el servicio "' . $servicio . '": ' . ($salida ?: 'sin salida del comando.'),
+                'salida'  => $salida,
+            ];
+        }
+
+        // Limpiar el circuit breaker y el chequeo TCP cacheado: el servicio
+        // recién levantado ya puede volver a considerarse disponible.
+        Cache::forget(self::REPLAY_HUNG_CACHE_KEY);
+        Cache::forget('grabador_replay_ok_' . md5($this->replayUrl));
+
+        Log::info('GrabadorTetraService: Replay Server reiniciado', ['servicio' => $servicio]);
+
+        return ['success' => true, 'mensaje' => 'Replay Server reiniciado correctamente.', 'salida' => $salida];
+    }
+
+    /**
+     * Entorno explícito para procesos hijos en Windows: bajo el servidor
+     * embebido de PHP (`php -S`, usado en desarrollo) `proc_open()` a veces no
+     * hereda `SystemRoot`, y sin él comandos como PowerShell fallan al iniciar.
+     *
+     * @return array<string, string>
+     */
+    private function entornoProceso(): array
+    {
+        $entorno = [];
+        foreach (getenv() as $clave => $valor) {
+            if (is_string($valor)) {
+                $entorno[$clave] = $valor;
+            }
+        }
+
+        if (PHP_OS_FAMILY === 'Windows' && !isset($entorno['SystemRoot'])) {
+            $entorno['SystemRoot'] = getenv('SystemRoot') ?: getenv('windir') ?: 'C:\\Windows';
+        }
+
+        return $entorno;
     }
 
     /**

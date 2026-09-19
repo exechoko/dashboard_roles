@@ -350,6 +350,8 @@ class SeederTablaPermisos extends Seeder
             'descargar-configuracion-backup',
             'restaurar-configuracion-backup',
             'borrar-configuracion-backup',
+            'ver-configuracion-grabador',
+            'reiniciar-configuracion-grabador',
         ];
 
         // Crear permisos si no existen

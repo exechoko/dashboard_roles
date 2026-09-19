@@ -842,6 +842,11 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/backups/{archivo}/descargar', [ConfiguracionSistemaController::class, 'backupDescargar'])->name('backups.descargar');
         Route::post('/backups/{archivo}/restaurar', [ConfiguracionSistemaController::class, 'backupRestaurar'])->name('backups.restaurar');
         Route::delete('/backups/{archivo}', [ConfiguracionSistemaController::class, 'backupEliminar'])->name('backups.eliminar');
+
+        Route::get('/grabador', [ConfiguracionSistemaController::class, 'grabador'])->name('grabador');
+        Route::post('/grabador/replay/reiniciar', [ConfiguracionSistemaController::class, 'grabadorReplayReiniciar'])
+            ->middleware('throttle:6,1')
+            ->name('grabador.replay.reiniciar');
     });
 
     // Herramientas

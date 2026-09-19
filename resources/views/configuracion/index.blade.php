@@ -82,6 +82,21 @@
                         </div>
                     </div>
                 @endcan
+
+                @can('ver-configuracion-grabador')
+                    <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-headphones-alt fa-3x text-secondary mb-3"></i>
+                                <h5>Grabador TETRA</h5>
+                                <p class="text-muted">Estado y reinicio del Replay Server de modulaciones.</p>
+                                <a href="{{ route('configuracion.grabador') }}" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-arrow-right"></i> Ir a Grabador TETRA
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                @endcan
             </div>
         </div>
     </section>

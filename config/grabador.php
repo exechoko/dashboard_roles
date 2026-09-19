@@ -17,6 +17,11 @@ return [
     // Replay Server local (sirve el audio WAV). No es la IP del grabador.
     'replay_url'       => env('GRABADOR_REPLAY_URL', 'http://localhost:8880'),
 
+    // Nombre del servicio de Windows del Replay Server (confirmado en
+    // producción con `Get-CimInstance Win32_Service`), usado para reiniciarlo
+    // desde Configuración del Sistema cuando queda colgado por uso concurrente.
+    'replay_service_name' => env('GRABADOR_REPLAY_SERVICE_NAME', 'RedBoxReplayService'),
+
     'lang_id'          => env('GRABADOR_LANG_ID', 'es'),
 
     // Timeout por request HTTP al grabador.

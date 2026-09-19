@@ -4,7 +4,10 @@
     <section class="section">
         <div class="section-header d-flex justify-content-between align-items-center">
             <h3 class="page__heading">Alertas de Video &mdash; Dominios</h3>
-            <div>
+            <div id="alertaDominiosAccionesWrap">
+                <button type="button" class="btn btn-outline-info" id="btnVerTutorialAlertaDominios" onclick="iniciarTutorialPagina()">
+                    <i class="fas fa-question-circle"></i> Ver tutorial
+                </button>
                 @can('crear-alerta-dominio')
                     <a href="{{ route('alertas-video.dominios.importar') }}" class="btn btn-info">
                         <i class="fas fa-upload"></i> Importar
@@ -31,7 +34,7 @@
             @endif
 
             @php $activoFiltro = request('activo', '1'); @endphp
-            <div class="row">
+            <div class="row" id="alertaDominiosStatsWrap">
                 <div class="col-md-4 col-6 mb-3">
                     <a href="{{ route('alertas-video.dominios.index', ['busqueda' => request('busqueda'), 'activo' => 'todos']) }}"
                        class="alerta-stat-card bg-slate {{ $activoFiltro === 'todos' ? 'active' : '' }}">
@@ -57,7 +60,7 @@
 
             <div class="card">
                 <div class="card-body">
-                    <form method="GET" action="{{ route('alertas-video.dominios.index') }}" class="mb-3">
+                    <form method="GET" action="{{ route('alertas-video.dominios.index') }}" class="mb-3" id="alertaDominiosBuscarForm">
                         <input type="hidden" name="activo" value="{{ $activoFiltro }}">
                         <div class="row">
                             <div class="col-md-8">
@@ -75,7 +78,7 @@
                         </div>
                     </form>
 
-                    <div class="table-responsive">
+                    <div class="table-responsive" id="alertaDominiosTabla">
                         <table class="table table-striped align-middle">
                             <thead>
                                 <tr>
@@ -134,3 +137,30 @@
 @push('styles')
     @include('alertas-video._styles')
 @endpush
+
+@php
+    $tutorialPasos = [
+        [
+            'id' => 'alertaDominiosStatsWrap',
+            'titulo' => 'Total, Activos e Inactivos',
+            'texto' => 'Hacé clic en cualquiera de las tres tarjetas para filtrar el listado por ese estado.',
+        ],
+        [
+            'id' => 'alertaDominiosBuscarForm',
+            'titulo' => 'Buscar un dominio',
+            'texto' => 'Buscá por patente, marca, modelo o motivo de la alerta.',
+        ],
+        [
+            'id' => 'alertaDominiosAccionesWrap',
+            'titulo' => 'Cargar o importar',
+            'texto' => '"Cargar Dominio" da de alta una alerta individual. "Importar" carga varias desde un archivo. Ambos requieren permiso de creación.',
+        ],
+        [
+            'id' => 'alertaDominiosTabla',
+            'titulo' => 'Ver y editar',
+            'texto' => 'Desde cada fila podés ver el detalle de la alerta o, si tenés permiso, editarla. Una patente marcada "Parcial" significa que está incompleta.',
+            'side' => 'top',
+        ],
+    ];
+@endphp
+@include('partials.tutorial', ['tutorialPasos' => $tutorialPasos, 'tutorialStorageKey' => 'tutorial_alertas_dominios_visto'])

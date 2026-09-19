@@ -4,7 +4,10 @@
     <section class="section">
         <div class="section-header d-flex justify-content-between align-items-center">
             <h3 class="page__heading">Alertas de Video &mdash; Personas</h3>
-            <div>
+            <div id="alertaPersonasAccionesWrap">
+                <button type="button" class="btn btn-outline-info" id="btnVerTutorialAlertaPersonas" onclick="iniciarTutorialPagina()">
+                    <i class="fas fa-question-circle"></i> Ver tutorial
+                </button>
                 @can('crear-alerta-persona')
                     <a href="{{ route('alertas-video.personas.importar') }}" class="btn btn-info">
                         <i class="fas fa-upload"></i> Importar
@@ -31,7 +34,7 @@
             @endif
 
             @php $activoFiltro = request('activo', '1'); @endphp
-            <div class="row">
+            <div class="row" id="alertaPersonasStatsWrap">
                 <div class="col-md-4 col-6 mb-3">
                     <a href="{{ route('alertas-video.personas.index', ['busqueda' => request('busqueda'), 'activo' => 'todos']) }}"
                        class="alerta-stat-card bg-slate {{ $activoFiltro === 'todos' ? 'active' : '' }}">
@@ -57,7 +60,7 @@
 
             <div class="card">
                 <div class="card-body">
-                    <form method="GET" action="{{ route('alertas-video.personas.index') }}" class="mb-3">
+                    <form method="GET" action="{{ route('alertas-video.personas.index') }}" class="mb-3" id="alertaPersonasBuscarForm">
                         <input type="hidden" name="activo" value="{{ $activoFiltro }}">
                         <div class="row">
                             <div class="col-md-8">
@@ -75,7 +78,7 @@
                         </div>
                     </form>
 
-                    <div class="table-responsive">
+                    <div class="table-responsive" id="alertaPersonasTabla">
                         <table class="table table-striped align-middle">
                             <thead>
                                 <tr>
@@ -137,3 +140,30 @@
 @push('styles')
     @include('alertas-video._styles')
 @endpush
+
+@php
+    $tutorialPasos = [
+        [
+            'id' => 'alertaPersonasStatsWrap',
+            'titulo' => 'Total, Activos e Inactivos',
+            'texto' => 'Hacé clic en cualquiera de las tres tarjetas para filtrar el listado por ese estado.',
+        ],
+        [
+            'id' => 'alertaPersonasBuscarForm',
+            'titulo' => 'Buscar una persona',
+            'texto' => 'Buscá por D.N.I., apellido y nombre o motivo de la alerta.',
+        ],
+        [
+            'id' => 'alertaPersonasAccionesWrap',
+            'titulo' => 'Cargar o importar',
+            'texto' => '"Cargar Persona" da de alta una alerta individual. "Importar" carga varias desde un archivo. Ambos requieren permiso de creación.',
+        ],
+        [
+            'id' => 'alertaPersonasTabla',
+            'titulo' => 'Ver y editar',
+            'texto' => 'Desde cada fila podés ver el detalle de la alerta o, si tenés permiso, editarla.',
+            'side' => 'top',
+        ],
+    ];
+@endphp
+@include('partials.tutorial', ['tutorialPasos' => $tutorialPasos, 'tutorialStorageKey' => 'tutorial_alertas_personas_visto'])

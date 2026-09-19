@@ -82,6 +82,7 @@
                                     <th>Dominio</th>
                                     <th>Marca / Modelo</th>
                                     <th>Motivo</th>
+                                    <th>Fecha de carga</th>
                                     <th>Estado</th>
                                     <th class="text-right">Acciones</th>
                                 </tr>
@@ -97,6 +98,7 @@
                                         </td>
                                         <td>{{ trim(($dominio->marca ?? '') . ' ' . ($dominio->modelo ?? '')) ?: '-' }}</td>
                                         <td class="text-truncate" style="max-width: 320px;">{{ $dominio->motivo ?? '-' }}</td>
+                                        <td>{{ $dominio->fecha_carga?->format('d/m/Y') ?? '-' }}</td>
                                         <td>
                                             <span class="badge badge-alerta-{{ $dominio->activo ? 'activo' : 'inactivo' }}">
                                                 {{ $dominio->estado_label }}
@@ -115,7 +117,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted py-4">No hay dominios registrados.</td>
+                                        <td colspan="6" class="text-center text-muted py-4">No hay dominios registrados.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

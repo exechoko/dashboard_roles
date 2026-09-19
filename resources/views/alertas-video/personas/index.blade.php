@@ -83,6 +83,7 @@
                                     <th>D.N.I.</th>
                                     <th>Apellido y Nombre</th>
                                     <th>Motivo</th>
+                                    <th>Fecha de carga</th>
                                     <th>Estado</th>
                                     <th class="text-right">Acciones</th>
                                 </tr>
@@ -100,6 +101,7 @@
                                         <td>{{ $persona->dni ?? '-' }}</td>
                                         <td><strong>{{ $persona->apellido_nombre }}</strong></td>
                                         <td class="text-truncate" style="max-width: 320px;">{{ $persona->motivo ?? '-' }}</td>
+                                        <td>{{ $persona->fecha_carga?->format('d/m/Y') ?? '-' }}</td>
                                         <td>
                                             <span class="badge badge-alerta-{{ $persona->activo ? 'activo' : 'inactivo' }}">
                                                 {{ $persona->estado_label }}
@@ -118,7 +120,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center text-muted py-4">No hay personas registradas.</td>
+                                        <td colspan="7" class="text-center text-muted py-4">No hay personas registradas.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

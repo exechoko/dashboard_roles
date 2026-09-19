@@ -38,7 +38,7 @@
                                     <p class="mb-0">
                                         El archivo debe tener una hoja llamada <strong>"Personas"</strong> con el encabezado
                                         Nro / D.N.I. / Apellido y Nombre / Direccion / Solicitado por / Fecha de carga /
-                                        Funcionario que carga / Hecho relacionado / Activo / Identificado / Finalizado, en la fila 3.
+                                        Funcionario que carga / Hecho relacionado / Activo / Identificado, en la fila 3.
                                     </p>
                                 </div>
 

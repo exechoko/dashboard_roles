@@ -23,7 +23,6 @@ class PersonaAlertaFactory extends Factory
             'funcionario_carga' => $this->faker->name(),
             'notificar_a' => $this->faker->name(),
             'identificado' => false,
-            'finalizado' => false,
             'fecha_carga' => now()->toDateString(),
             'activo' => true,
         ];

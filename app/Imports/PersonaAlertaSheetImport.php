@@ -82,7 +82,6 @@ class PersonaAlertaSheetImport implements ToCollection, WithHeadingRow, WithLimi
                     'motivo' => $this->limpiar($valores[7] ?? null),
                     'activo' => $this->esActivo($valores[8] ?? null),
                     'identificado' => $this->esSi($valores[9] ?? null),
-                    'finalizado' => $this->esSi($valores[10] ?? null),
                     'comentario' => 'Importado desde la planilla de Dominios y Personas.',
                 ]);
 

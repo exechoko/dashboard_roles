@@ -107,12 +107,6 @@
                    {{ old('identificado', $persona->identificado ?? false) ? 'checked' : '' }}>
             <label class="form-check-label" for="identificado">Identificado</label>
         </div>
-        <div class="form-check form-check-inline mt-2">
-            <input type="hidden" name="finalizado" value="0">
-            <input type="checkbox" name="finalizado" id="finalizado" class="form-check-input" value="1"
-                   {{ old('finalizado', $persona->finalizado ?? false) ? 'checked' : '' }}>
-            <label class="form-check-label" for="finalizado">Finalizado</label>
-        </div>
         <input type="hidden" name="activo" id="activo_hidden" value="{{ old('activo', ($persona->activo ?? true) ? 1 : 0) }}">
     </div>
 </div>
@@ -170,24 +164,24 @@
 @push('scripts')
 <script>
 $(document).ready(function () {
-    var $finalizado = $('#finalizado');
+    var $identificado = $('#identificado');
     var $activoHidden = $('#activo_hidden');
     var $comentario = $('#comentario');
-    var estabaFinalizado = $finalizado.is(':checked');
+    var estabaIdentificado = $identificado.is(':checked');
 
-    $finalizado.on('change', function () {
+    $identificado.on('change', function () {
         if (!$(this).is(':checked')) {
-            estabaFinalizado = false;
+            estabaIdentificado = false;
             return;
         }
 
-        if (estabaFinalizado) {
+        if (estabaIdentificado) {
             return;
         }
 
         Swal.fire({
-            title: 'Caso marcado como Finalizado',
-            text: '¿Desea que la búsqueda siga activa en el sistema?',
+            title: 'Persona identificada',
+            text: '¿Desea desactivar la búsqueda en el sistema?',
             icon: 'question',
             showDenyButton: true,
             showCancelButton: true,
@@ -196,17 +190,34 @@ $(document).ready(function () {
             cancelButtonText: 'Cancelar',
         }).then(function (result) {
             if (result.isConfirmed) {
-                estabaFinalizado = true;
+                estabaIdentificado = true;
                 $activoHidden.val(1);
-                $comentario.prop('required', true)
-                    .attr('placeholder', 'Explique por qué la búsqueda sigue activa a pesar de estar finalizado el caso...')
-                    .focus();
             } else if (result.isDenied) {
-                estabaFinalizado = true;
-                $activoHidden.val(0);
-                $comentario.prop('required', false);
+                Swal.fire({
+                    title: 'Detalle de la identificación',
+                    text: 'Indique cómo se identificó a la persona (móvil que la identificó, si estaba sin novedad, etc.). Esta nota quedará en el historial.',
+                    input: 'textarea',
+                    inputPlaceholder: 'Ej: Identificada por móvil 12, sin novedad...',
+                    inputAttributes: { maxlength: 500 },
+                    showCancelButton: true,
+                    confirmButtonText: 'Guardar y desactivar',
+                    cancelButtonText: 'Volver',
+                    inputValidator: function (value) {
+                        if (!value || !value.trim()) {
+                            return 'Debe indicar una nota.';
+                        }
+                    },
+                }).then(function (notaResult) {
+                    if (notaResult.isConfirmed) {
+                        estabaIdentificado = true;
+                        $activoHidden.val(0);
+                        $comentario.val(notaResult.value.trim());
+                    } else {
+                        $identificado.prop('checked', false);
+                    }
+                });
             } else {
-                $finalizado.prop('checked', false);
+                $identificado.prop('checked', false);
             }
         });
     });

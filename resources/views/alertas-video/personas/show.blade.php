@@ -62,18 +62,12 @@
                                                     {{ $personaAlerta->identificado ? 'Sí' : 'No' }}
                                                 </span>
                                             </td>
-                                            <th>Finalizado:</th>
-                                            <td>
-                                                <span class="badge badge-alerta-{{ $personaAlerta->finalizado ? 'si' : 'no' }}">
-                                                    {{ $personaAlerta->finalizado ? 'Sí' : 'No' }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        <tr>
                                             <th>Solicitado por:</th>
                                             <td>{{ $personaAlerta->solicitado_por ?? '-' }}</td>
+                                        </tr>
+                                        <tr>
                                             <th>Funcionario que carga:</th>
-                                            <td>{{ $personaAlerta->funcionario_carga ?? '-' }}</td>
+                                            <td colspan="3">{{ $personaAlerta->funcionario_carga ?? '-' }}</td>
                                         </tr>
                                         <tr>
                                             <th>Notificar / Avisar a:</th>

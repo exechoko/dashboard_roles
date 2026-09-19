@@ -195,7 +195,7 @@ class PersonaAlertaTest extends TestCase
 
         $this->actingAs($admin)->post(route('alertas-video.personas.store'), $this->datosBase([
             'apellido_nombre' => 'Caso Cerrado',
-            'finalizado' => '1',
+            'identificado' => '1',
             'activo' => '0',
         ]));
 
@@ -214,9 +214,9 @@ class PersonaAlertaTest extends TestCase
 
         $this->actingAs($admin)->put(route('alertas-video.personas.update', $persona), $this->datosBase([
             'apellido_nombre' => $persona->apellido_nombre,
-            'finalizado' => '1',
+            'identificado' => '1',
             'activo' => '0',
-            'comentario' => 'Finalizado, se desactiva la busqueda.',
+            'comentario' => 'Identificada por movil 12, sin novedad.',
         ]));
 
         $this->assertFalse($persona->fresh()->activo);

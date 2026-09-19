@@ -89,7 +89,6 @@ class PersonaAlertaController extends Controller
     {
         $datos = $request->validated();
         $datos['identificado'] = $request->boolean('identificado');
-        $datos['finalizado'] = $request->boolean('finalizado');
         $datos['activo'] = $request->boolean('activo', true);
         unset($datos['foto']);
 
@@ -114,7 +113,6 @@ class PersonaAlertaController extends Controller
     {
         $datos = $request->validated();
         $datos['identificado'] = $request->boolean('identificado');
-        $datos['finalizado'] = $request->boolean('finalizado');
         unset($datos['foto']);
 
         $nuevoActivo = $request->boolean('activo', true);

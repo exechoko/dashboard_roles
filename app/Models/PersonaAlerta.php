@@ -25,7 +25,6 @@ class PersonaAlerta extends Model
         'funcionario_carga',
         'notificar_a',
         'identificado',
-        'finalizado',
         'foto',
         'fecha_hecho',
         'fecha_carga',
@@ -38,7 +37,6 @@ class PersonaAlerta extends Model
     protected $casts = [
         'activo' => 'boolean',
         'identificado' => 'boolean',
-        'finalizado' => 'boolean',
         'fecha_hecho' => 'date',
         'fecha_carga' => 'date',
     ];

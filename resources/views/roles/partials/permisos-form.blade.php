@@ -178,6 +178,7 @@
             'infraestructura-workers',
             'infraestructura-notificaciones',
             'infraestructura',
+            'configuracion-grabador',
         ],
         'Descargas' => [
             'plataforma-descargas',

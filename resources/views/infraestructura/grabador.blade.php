@@ -3,7 +3,7 @@
 @section('content')
     <section class="section">
         <div class="section-header">
-            <h3 class="page__heading">Configuración del Sistema — Grabador TETRA (Modulaciones)</h3>
+            <h3 class="page__heading">Infraestructura &mdash; Grabador TETRA (Modulaciones)</h3>
         </div>
 
         <div class="section-body">
@@ -39,8 +39,8 @@
                         @endif
                     </p>
 
-                    @can('reiniciar-configuracion-grabador')
-                        <form action="{{ route('configuracion.grabador.replay.reiniciar') }}" method="POST"
+                    @can('reiniciar-infraestructura-grabador')
+                        <form action="{{ route('infraestructura.grabador.replay.reiniciar') }}" method="POST"
                             onsubmit="return confirm('Esto corta por unos segundos el audio de modulaciones para todos los operadores que lo estén usando. ¿Reiniciar de todas formas?');">
                             @csrf
                             <button type="submit" class="btn btn-warning">

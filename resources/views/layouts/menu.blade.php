@@ -604,6 +604,13 @@
                     </a>
                 </li>
             @endcan
+            @can('ver-infraestructura-grabador')
+                <li class="{{ request()->is('infraestructura/grabador*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('infraestructura.grabador') }}">
+                        <i class="fas fa-headphones-alt"></i><span>Grabador TETRA</span>
+                    </a>
+                </li>
+            @endcan
         </ul>
     </li>
 @endcan

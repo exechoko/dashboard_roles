@@ -795,6 +795,11 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/librenms', [InfraestructuraController::class, 'librenms'])->name('librenms');
         Route::get('/central-telefonica', [InfraestructuraController::class, 'centralTelefonica'])->name('central-telefonica');
         Route::get('/workers', [InfraestructuraController::class, 'workers'])->name('workers');
+
+        Route::get('/grabador', [InfraestructuraController::class, 'grabador'])->name('grabador');
+        Route::post('/grabador/replay/reiniciar', [InfraestructuraController::class, 'grabadorReplayReiniciar'])
+            ->middleware('throttle:6,1')
+            ->name('grabador.replay.reiniciar');
     });
 
     Route::prefix('api/infraestructura')->name('api.infraestructura.')->group(function () {
@@ -842,11 +847,6 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/backups/{archivo}/descargar', [ConfiguracionSistemaController::class, 'backupDescargar'])->name('backups.descargar');
         Route::post('/backups/{archivo}/restaurar', [ConfiguracionSistemaController::class, 'backupRestaurar'])->name('backups.restaurar');
         Route::delete('/backups/{archivo}', [ConfiguracionSistemaController::class, 'backupEliminar'])->name('backups.eliminar');
-
-        Route::get('/grabador', [ConfiguracionSistemaController::class, 'grabador'])->name('grabador');
-        Route::post('/grabador/replay/reiniciar', [ConfiguracionSistemaController::class, 'grabadorReplayReiniciar'])
-            ->middleware('throttle:6,1')
-            ->name('grabador.replay.reiniciar');
     });
 
     // Herramientas

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\DispositivoEdificio;
 use App\Models\User;
+use App\Services\GrabadorTetraService;
 use App\Services\SnmpService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Cache;
@@ -49,7 +50,63 @@ class InfraestructuraTest extends TestCase
             'librenms' => ['infraestructura.librenms', 'ver-infraestructura-librenms'],
             'central-telefonica' => ['infraestructura.central-telefonica', 'ver-infraestructura-central-telefonica'],
             'workers' => ['infraestructura.workers', 'ver-infraestructura-workers'],
+            'grabador' => ['infraestructura.grabador', 'ver-infraestructura-grabador'],
         ];
+    }
+
+    // ── Grabador TETRA: reinicio del Replay Server ──────────────────────
+
+    public function test_reiniciar_replay_server_exitoso_muestra_mensaje_de_exito(): void
+    {
+        $this->mockearReinicioReplayServer(['success' => true, 'mensaje' => 'Replay Server reiniciado correctamente.', 'salida' => '']);
+
+        $usuario = $this->usuarioConPermiso('reiniciar-infraestructura-grabador');
+
+        $this->actingAs($usuario)
+            ->post(route('infraestructura.grabador.replay.reiniciar'))
+            ->assertSessionHas('success', 'Replay Server reiniciado correctamente.');
+    }
+
+    public function test_reiniciar_replay_server_con_error_muestra_mensaje_de_error(): void
+    {
+        $this->mockearReinicioReplayServer(['success' => false, 'mensaje' => 'No se pudo reiniciar el servicio.', 'salida' => 'Access is denied']);
+
+        $usuario = $this->usuarioConPermiso('reiniciar-infraestructura-grabador');
+
+        $this->actingAs($usuario)
+            ->post(route('infraestructura.grabador.replay.reiniciar'))
+            ->assertSessionHas('error', 'No se pudo reiniciar el servicio.');
+    }
+
+    public function test_reiniciar_replay_server_sin_permiso_es_403(): void
+    {
+        $usuario = User::factory()->create();
+
+        $this->actingAs($usuario)
+            ->post(route('infraestructura.grabador.replay.reiniciar'))
+            ->assertForbidden();
+    }
+
+    /**
+     * @param  array{success: bool, mensaje: string, salida: string}  $resultado
+     */
+    private function mockearReinicioReplayServer(array $resultado): void
+    {
+        $this->app->bind(GrabadorTetraService::class, fn () => new class($resultado) extends GrabadorTetraService {
+            public function __construct(private array $resultado)
+            {
+            }
+
+            public function replayDisponible(): bool
+            {
+                return true;
+            }
+
+            public function reiniciarReplayServer(): array
+            {
+                return $this->resultado;
+            }
+        });
     }
 
     // ── estadoGrupo ──────────────────────────────────────────────────────

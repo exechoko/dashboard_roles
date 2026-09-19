@@ -336,6 +336,8 @@ class SeederTablaPermisos extends Seeder
             'ver-infraestructura-workers',
             'ver-infraestructura-notificaciones',
             'refrescar-infraestructura',
+            'ver-infraestructura-grabador',
+            'reiniciar-infraestructura-grabador',
 
             // Configuración del Sistema
             'ver-configuracion-env',
@@ -350,8 +352,6 @@ class SeederTablaPermisos extends Seeder
             'descargar-configuracion-backup',
             'restaurar-configuracion-backup',
             'borrar-configuracion-backup',
-            'ver-configuracion-grabador',
-            'reiniciar-configuracion-grabador',
         ];
 
         // Crear permisos si no existen

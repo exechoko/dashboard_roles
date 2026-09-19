@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AnaliticaEventoCecocoRequest;
+use App\Models\DetalleExpedienteCecoco;
 use App\Models\EventoCecoco;
 use App\Models\Importacion;
 use App\Services\EventoCecocoParser;
 use App\Services\CecocoExpedienteService;
 use App\Services\CecocoGrabacionesService;
 use App\Services\CecocoGrabacionesLocalService;
+use App\Services\CecocoUnidadIntervinienteService;
 use App\Services\GrabadorTetraService;
 use App\Services\CecocoModulacionesLocalService;
 use App\Services\ResumenEventoIaService;
@@ -26,6 +28,14 @@ use Illuminate\Support\Facades\Log;
 
 class EventoCecocoController extends Controller
 {
+    /**
+     * Tope de eventos por categoría para calcular el cruce "por dependencia
+     * interviniente" en el mismo request. Por arriba de esto se omite: trae cada
+     * evento con su detalle de trámites y los resuelve uno por uno en PHP, y para
+     * rangos muy amplios eso puede tardar más de lo razonable para un request web.
+     */
+    private const MAX_EVENTOS_CRUCE_DEPENDENCIA = 10000;
+
     private EventoCecocoParser $parser;
     private CecocoExpedienteService $expedienteService;
 
@@ -33,7 +43,8 @@ class EventoCecocoController extends Controller
         EventoCecocoParser $parser,
         CecocoExpedienteService $expedienteService,
         private ResumenEventoIaService $resumenIaService,
-        private TiempoRespuestaCecocoService $tiempoRespuestaService
+        private TiempoRespuestaCecocoService $tiempoRespuestaService,
+        private CecocoUnidadIntervinienteService $unidadIntervinienteService
     ) {
         $this->parser = $parser;
         $this->expedienteService = $expedienteService;
@@ -1450,7 +1461,9 @@ class EventoCecocoController extends Controller
         // Normalizar y deduplicar para el filtro
         $tipos = $tipos->filter()->map(fn($t) => self::normalizarTipo($t))->unique()->sort()->values();
 
-        return view('eventos-cecoco.analitica', compact('tipos'));
+        $dependencias = $this->unidadIntervinienteService->dependenciasDisponibles();
+
+        return view('eventos-cecoco.analitica', compact('tipos', 'dependencias'));
     }
 
     public function analiticaDatos(AnaliticaEventoCecocoRequest $request): JsonResponse
@@ -1627,6 +1640,17 @@ class EventoCecocoController extends Controller
         // Cruza cada categoría (por tipo_servicio o por descripción, según corresponda)
         // contra menciones de detención/demora en la descripción, para que la superioridad
         // vea qué proporción de cada tipo de intervención termina con una persona detenida.
+        $dependenciaId = $validated['dependencia_id'] ?? null;
+        $dependenciaSeleccionada = null;
+        $idsDependencia = [];
+
+        if ($dependenciaId) {
+            $dependenciaSeleccionada = \App\Models\Destino::find($dependenciaId);
+            if ($dependenciaSeleccionada) {
+                $idsDependencia = $this->unidadIntervinienteService->idsDependencia($dependenciaId);
+            }
+        }
+
         $tasaDetencionPorCategoria = [];
         foreach ($this->categoriasParaTasaDetencion() as $etiqueta => $config) {
             $queryTotal = clone $base;
@@ -1637,12 +1661,31 @@ class EventoCecocoController extends Controller
             $this->aplicarMatchTexto($conDetenido, $config['detenido']['campo'], $config['detenido']['metodo'], $config['detenido']['patron']);
             $conDetenido = $conDetenido->count();
 
-            $tasaDetencionPorCategoria[] = [
+            $fila = [
                 'categoria' => $etiqueta,
                 'total' => $total,
                 'con_detenido' => $conDetenido,
                 'porcentaje' => $total > 0 ? round($conDetenido / $total * 100, 1) : 0.0,
             ];
+
+            if ($dependenciaSeleccionada && $total > 0) {
+                if ($total > self::MAX_EVENTOS_CRUCE_DEPENDENCIA) {
+                    // Cruce demasiado costoso para calcular en el mismo request (trae cada
+                    // evento y su detalle de trámites para resolverlo en PHP). Se omite en
+                    // vez de arriesgar el timeout de todo el endpoint; el usuario puede
+                    // acotar el período para verlo.
+                    $fila['cruce_omitido'] = true;
+                } else {
+                    $cruce = $this->cruzarConDependencia(clone $queryTotal, $idsDependencia, $config['detenido']);
+                    $fila['con_dependencia'] = $cruce['con_dependencia'];
+                    $fila['con_dependencia_detenido'] = $cruce['con_dependencia_detenido'];
+                    $fila['porcentaje_dependencia'] = $cruce['con_dependencia'] > 0
+                        ? round($cruce['con_dependencia_detenido'] / $cruce['con_dependencia'] * 100, 1)
+                        : 0.0;
+                }
+            }
+
+            $tasaDetencionPorCategoria[] = $fila;
         }
 
         $eventos = (clone $base)
@@ -1676,6 +1719,7 @@ class EventoCecocoController extends Controller
             'comparativa_anterior' => $comparativaAnterior,
             'indicadores_resultado' => $indicadoresResultado,
             'tasa_detencion_por_categoria' => $tasaDetencionPorCategoria,
+            'dependencia_seleccionada' => $dependenciaSeleccionada?->nombre,
             'eventos' => $eventos,
             'eventos_limit' => 100,
         ]);
@@ -1916,6 +1960,71 @@ class EventoCecocoController extends Controller
         }
 
         $query->whereNotNull($campo)->whereRaw("{$campo} REGEXP ?", [$patron]);
+    }
+
+    /**
+     * Cruza el universo total de una categoría (ya filtrado por texto y fechas) contra
+     * la dependencia elegida: para cada evento con detalle de trámites cacheado, resuelve
+     * qué dependencia intervino y cuenta cuántos coinciden con $idsDependencia, y de esos,
+     * cuántos terminaron con detenido/demorado/aprehendido.
+     *
+     * Solo usa detalle ya cacheado (detalle_expediente_cecoco): no consulta CECOCO en vivo
+     * desde un endpoint web. Los expedientes sin detalle cacheado quedan fuera del cruce.
+     *
+     * @param array<int, int> $idsDependencia
+     * @param array{campo: string, metodo: string, patron: string} $configDetenido
+     * @return array{con_dependencia: int, con_dependencia_detenido: int}
+     */
+    private function cruzarConDependencia(Builder $queryTotal, array $idsDependencia, array $configDetenido): array
+    {
+        if ($idsDependencia === []) {
+            return ['con_dependencia' => 0, 'con_dependencia_detenido' => 0];
+        }
+
+        $eventos = $queryTotal->get(['id', 'descripcion', 'tipo_servicio']);
+
+        if ($eventos->isEmpty()) {
+            return ['con_dependencia' => 0, 'con_dependencia_detenido' => 0];
+        }
+
+        $detalles = DetalleExpedienteCecoco::whereIn('evento_cecoco_id', $eventos->pluck('id'))
+            ->pluck('detalle_json', 'evento_cecoco_id');
+
+        $aliasActivos = $this->unidadIntervinienteService->aliasActivos();
+        $conDependencia = 0;
+        $conDependenciaDetenido = 0;
+
+        foreach ($eventos as $evento) {
+            $detalleJson = $detalles->get($evento->id);
+            if (!$detalleJson) {
+                continue;
+            }
+
+            $destinos = $this->unidadIntervinienteService->destinosIntervinientes($detalleJson, $aliasActivos);
+            if (array_intersect($destinos, $idsDependencia) === []) {
+                continue;
+            }
+
+            $conDependencia++;
+            $valorCampo = $evento->{$configDetenido['campo']};
+            if ($valorCampo && $this->textoMatchea($valorCampo, $configDetenido['metodo'], $configDetenido['patron'])) {
+                $conDependenciaDetenido++;
+            }
+        }
+
+        return ['con_dependencia' => $conDependencia, 'con_dependencia_detenido' => $conDependenciaDetenido];
+    }
+
+    /**
+     * Igual que {@see aplicarMatchTexto()} pero sobre un string en PHP en vez de una query.
+     */
+    private function textoMatchea(string $texto, string $metodo, string $patron): bool
+    {
+        if ($metodo === 'like') {
+            return mb_stripos($texto, $patron) !== false;
+        }
+
+        return (bool) preg_match('/' . $patron . '/ui', $texto);
     }
 }
 

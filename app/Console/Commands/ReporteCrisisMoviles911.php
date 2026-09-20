@@ -124,50 +124,56 @@ class ReporteCrisisMoviles911 extends Command
             $ok = 0;
             $consecutivos = 0;
 
-            foreach ($aProcesar->values() as $i => $evento) {
-                try {
-                    $detalleJson = $servicio->obtenerDetalleExpediente((string) $evento->nro_expediente, $client);
+            try {
+                foreach ($aProcesar->values() as $i => $evento) {
+                    try {
+                        $detalleJson = $servicio->obtenerDetalleExpediente((string) $evento->nro_expediente, $client);
 
-                    $registro = DetalleExpedienteCecoco::updateOrCreate(
-                        ['evento_cecoco_id' => $evento->id],
-                        [
-                            'nro_expediente' => $evento->nro_expediente,
-                            'detalle_json' => $detalleJson,
-                            'fecha_consulta' => now(),
-                        ]
-                    );
+                        $registro = DetalleExpedienteCecoco::updateOrCreate(
+                            ['evento_cecoco_id' => $evento->id],
+                            [
+                                'nro_expediente' => $evento->nro_expediente,
+                                'detalle_json' => $detalleJson,
+                                'fecha_consulta' => now(),
+                            ]
+                        );
 
-                    $detalles->put($evento->id, $registro);
-                    $ok++;
-                    $consecutivos = 0;
-                } catch (\Throwable $e) {
-                    $consecutivos++;
-                    $mensaje = $e->getMessage();
-                    $erroresPorTipo[$mensaje] = ($erroresPorTipo[$mensaje] ?? 0) + 1;
-
-                    Log::warning('cecoco:crisis-moviles-911: error consultando expediente', [
-                        'expediente' => $evento->nro_expediente,
-                        'error' => $mensaje,
-                    ]);
-
-                    if ($consecutivos >= 3) {
-                        $this->warn('  Reiniciando sesion CECOCO tras fallos consecutivos...');
-                        try {
-                            $client = $servicio->iniciarSesionCompartida();
-                        } catch (\Throwable $e2) {
-                            Log::error('cecoco:crisis-moviles-911: no se pudo reiniciar sesion', ['error' => $e2->getMessage()]);
-                        }
+                        $detalles->put($evento->id, $registro);
+                        $ok++;
                         $consecutivos = 0;
+                    } catch (\Throwable $e) {
+                        $consecutivos++;
+                        $mensaje = $e->getMessage();
+                        $erroresPorTipo[$mensaje] = ($erroresPorTipo[$mensaje] ?? 0) + 1;
+
+                        Log::warning('cecoco:crisis-moviles-911: error consultando expediente', [
+                            'expediente' => $evento->nro_expediente,
+                            'error' => $mensaje,
+                        ]);
+
+                        if ($consecutivos >= 3) {
+                            $this->warn('  Reiniciando sesion CECOCO tras fallos consecutivos...');
+                            try {
+                                $client = $servicio->iniciarSesionCompartida();
+                            } catch (\Throwable $e2) {
+                                Log::error('cecoco:crisis-moviles-911: no se pudo reiniciar sesion', ['error' => $e2->getMessage()]);
+                            }
+                            $consecutivos = 0;
+                        }
+                    }
+
+                    if (($i + 1) % 50 === 0) {
+                        $this->line('  [' . now()->format('H:i:s') . '] ' . ($i + 1) . "/{$totalAProcesar} (ok: {$ok})");
+                    }
+
+                    if ($pausaMs > 0) {
+                        usleep($pausaMs * 1000);
                     }
                 }
-
-                if (($i + 1) % 50 === 0) {
-                    $this->line('  [' . now()->format('H:i:s') . '] ' . ($i + 1) . "/{$totalAProcesar} (ok: {$ok})");
-                }
-
-                if ($pausaMs > 0) {
-                    usleep($pausaMs * 1000);
-                }
+            } finally {
+                // Sin esto la cuenta dedicada queda "en sesión" en CECOCO hasta que el
+                // server la expire por timeout, y el próximo run choca con eso.
+                $servicio->cerrarSesion($client);
             }
 
             $this->info("Consultas en vivo: {$ok} ok, " . array_sum($erroresPorTipo) . ' con error.');

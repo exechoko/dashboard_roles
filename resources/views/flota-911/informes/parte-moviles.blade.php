@@ -96,9 +96,14 @@
                 <a href="{{ route('flota-911.dashboard') }}" class="btn btn-outline-secondary">
                     <i class="fas fa-arrow-left mr-1"></i> Volver
                 </a>
-                <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="fas fa-save mr-1"></i> Guardar parte
-                </button>
+                <div>
+                    <button type="submit" name="accion" value="guardar" class="btn btn-outline-primary btn-lg mr-2">
+                        <i class="fas fa-save mr-1"></i> Guardar
+                    </button>
+                    <button type="submit" name="accion" value="imprimir" class="btn btn-primary btn-lg">
+                        <i class="fas fa-print mr-1"></i> Guardar e imprimir
+                    </button>
+                </div>
             </div>
         </form>
 

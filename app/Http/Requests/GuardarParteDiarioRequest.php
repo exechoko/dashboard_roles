@@ -30,6 +30,7 @@ class GuardarParteDiarioRequest extends FormRequest
 
         return [
             'tipo'         => ['required', 'in:moviles,motos'],
+            'accion'       => ['nullable', 'in:guardar,imprimir'],
             'fecha'        => ['required', 'date'],
             'guardia'      => ['required', 'in:guardia_1,guardia_2,guardia_3,guardia_4'],
             'horario'      => ['required', 'in:06_18,18_06'],

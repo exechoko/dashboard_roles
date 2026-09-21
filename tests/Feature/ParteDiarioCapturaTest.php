@@ -87,6 +87,32 @@ class ParteDiarioCapturaTest extends TestCase
         );
     }
 
+    public function test_accion_imprimir_agrega_parametro_imprimir_al_redirect(): void
+    {
+        $this->actingAs($this->usuario());
+        $movil = $this->recursoDeMoviles();
+
+        $response = $this->post(route('flota-911.informes.parte-diario.generar'), $this->payload(
+            [['id' => $movil->id, 'estado_dia' => 'circula']],
+            ['accion' => 'imprimir'],
+        ))->assertRedirect();
+
+        $this->assertStringContainsString('imprimir=1', $response->headers->get('Location'));
+    }
+
+    public function test_accion_guardar_no_agrega_parametro_imprimir_al_redirect(): void
+    {
+        $this->actingAs($this->usuario());
+        $movil = $this->recursoDeMoviles();
+
+        $response = $this->post(route('flota-911.informes.parte-diario.generar'), $this->payload(
+            [['id' => $movil->id, 'estado_dia' => 'circula']],
+            ['accion' => 'guardar'],
+        ))->assertRedirect();
+
+        $this->assertStringNotContainsString('imprimir', $response->headers->get('Location'));
+    }
+
     public function test_guarda_zona_ht_y_marca_al_chofer_en_la_dotacion(): void
     {
         $this->actingAs($this->usuario());

@@ -338,15 +338,21 @@ class VehiculoInformeController extends Controller
 
         $this->guardarPreferencias($request, $userId);
 
+        $parametrosRedirect = [
+            'tipo'         => $tipo,
+            'fecha'        => $fecha,
+            'guardia'      => $guardia,
+            'horario'      => $horario,
+            'fecha_inicio' => $fechaInicio->format('Y-m-d\TH:i'),
+            'fecha_fin'    => $fechaFin->format('Y-m-d\TH:i'),
+        ];
+
+        if ($request->input('accion') === 'imprimir') {
+            $parametrosRedirect['imprimir'] = 1;
+        }
+
         return redirect()
-            ->route('flota-911.informes.parte-diario', [
-                'tipo'         => $tipo,
-                'fecha'        => $fecha,
-                'guardia'      => $guardia,
-                'horario'      => $horario,
-                'fecha_inicio' => $fechaInicio->format('Y-m-d\TH:i'),
-                'fecha_fin'    => $fechaFin->format('Y-m-d\TH:i'),
-            ])
+            ->route('flota-911.informes.parte-diario', $parametrosRedirect)
             ->with('success', 'Parte guardado. Descargá el .docx desde el botón de abajo.');
     }
 

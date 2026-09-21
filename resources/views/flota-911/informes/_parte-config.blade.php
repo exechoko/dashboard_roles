@@ -74,9 +74,14 @@
         </p>
         @if($parte)
         <a href="{{ route('flota-911.informes.parte-diario.docx', ['tipo' => $tipo, 'fecha_inicio' => $fechaInicio->format('Y-m-d\TH:i')]) }}"
-           class="btn btn-success btn-sm mt-3">
+           class="btn btn-success btn-sm mt-3" id="linkDescargarParte">
             <i class="fas fa-file-word mr-1"></i> Descargar parte de {{ $tipo === 'motos' ? 'motopatrullas' : 'móviles' }} (.docx)
         </a>
+        @if(request()->boolean('imprimir'))
+        <script>
+            document.getElementById('linkDescargarParte').click();
+        </script>
+        @endif
         @endif
     </div>
 </div>

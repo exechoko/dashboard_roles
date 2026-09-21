@@ -132,8 +132,7 @@ class CecocoModulacionesLocalService
             }
 
             $durGrabador = $this->duracionASegundos((string) ($m['duracion'] ?? ''));
-            $mejor       = null;
-            $mejorDelta  = PHP_INT_MAX;
+            $candidatos  = [];
 
             for ($delta = -$this->toleranciaEmparejado; $delta <= $this->toleranciaEmparejado; $delta++) {
                 foreach ($porSegundo[$ts + $delta] ?? [] as $i) {
@@ -141,10 +140,53 @@ class CecocoModulacionesLocalService
                     if ($durGrabador !== null && $durArchivo !== null && abs($durGrabador - $durArchivo) > 2) {
                         continue;
                     }
-                    if (abs($delta) < $mejorDelta) {
-                        $mejorDelta = abs($delta);
-                        $mejor      = $archivos[$i];
+                    $candidatos[] = [
+                        'i'       => $i,
+                        'delta'   => abs($delta),
+                        'durDiff' => ($durGrabador !== null && $durArchivo !== null) ? abs($durGrabador - $durArchivo) : PHP_INT_MAX,
+                    ];
+                }
+            }
+
+            $mejor = null;
+
+            if (!empty($candidatos)) {
+                // Con varios canales activos casi al mismo segundo, el candidato con
+                // el delta de tiempo más chico puede ser de OTRO canal: dos
+                // transmisiones simultáneas casi nunca duran lo mismo, así que la
+                // duración (autoritativa, viene del grabador) identifica la
+                // transmisión correcta mejor que la cercanía en el tiempo sola. Se
+                // prioriza duración; el delta de tiempo solo desempata.
+                usort($candidatos, fn ($a, $b) => $a['durDiff'] <=> $b['durDiff'] ?: $a['delta'] <=> $b['delta']);
+                $mejorDurDiff = $candidatos[0]['durDiff'];
+
+                // Si más de un candidato empata en la duración más cercana y son de
+                // canales distintos, no hay forma confiable de saber cuál es la
+                // transmisión correcta: en vez de adivinar, se ofrecen todos como
+                // candidatos para que el usuario elija por contexto (a quién le
+                // habla, contenido del audio) — un representante por canal (el de
+                // menor delta de tiempo dentro de ese canal).
+                $porCanal = [];
+                foreach ($candidatos as $c) {
+                    if ($c['durDiff'] !== $mejorDurDiff) {
+                        continue;
                     }
+                    $canal = $archivos[$c['i']]['canal'];
+                    if (!isset($porCanal[$canal]) || $c['delta'] < $porCanal[$canal]['delta']) {
+                        $porCanal[$canal] = $c;
+                    }
+                }
+
+                if (count($porCanal) === 1) {
+                    $mejor = $archivos[reset($porCanal)['i']];
+                } else {
+                    $m['candidatosAudio'] = array_values(array_map(
+                        fn ($c) => [
+                            'path'  => $archivos[$c['i']]['path'],
+                            'canal' => $archivos[$c['i']]['canal'],
+                        ],
+                        $porCanal
+                    ));
                 }
             }
 

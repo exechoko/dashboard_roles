@@ -6,15 +6,19 @@ use App\Jobs\ConsultarTamanoRestauracionesCecoco;
 use App\Models\DispositivoEdificio;
 use App\Models\InventarioConflicto;
 use App\Models\InventarioDiscrepancia;
+use App\Services\AuditoriaService;
 use App\Services\CecocoExpedienteService;
 use App\Services\CentralTelefonicaTroncalesService;
 use App\Services\GeocodificacionService;
+use App\Services\GrabadorTetraService;
 use App\Services\LibreNmsService;
 use App\Services\SnmpService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class InfraestructuraController extends Controller
 {
@@ -43,6 +47,8 @@ class InfraestructuraController extends Controller
         $this->middleware('permission:ver-infraestructura-workers')->only([
             'workers', 'workersStatus', 'refreshRestauracionesCache', 'refreshRestauracionesGpsCache',
         ]);
+        $this->middleware('permission:ver-infraestructura-grabador')->only(['grabador']);
+        $this->middleware('permission:reiniciar-infraestructura-grabador')->only(['grabadorReplayReiniciar']);
         $this->middleware(['permission:ver-infraestructura-pcs|ver-infraestructura-servidores|ver-infraestructura-camaras|ver-infraestructura-red'])
             ->only(['estadoGrupo']);
         $this->middleware('permission:refrescar-infraestructura')->only(['refrescarDispositivo', 'toggleMonitoreo']);
@@ -97,6 +103,27 @@ class InfraestructuraController extends Controller
     public function workers()
     {
         return view('infraestructura.workers');
+    }
+
+    public function grabador(GrabadorTetraService $grabador): View
+    {
+        return view('infraestructura.grabador', [
+            'replayDisponible' => $grabador->replayDisponible(),
+            'servicio'         => config('grabador.replay_service_name'),
+        ]);
+    }
+
+    public function grabadorReplayReiniciar(GrabadorTetraService $grabador): RedirectResponse
+    {
+        $resultado = $grabador->reiniciarReplayServer();
+
+        AuditoriaService::registrar(
+            'ACTUALIZAR',
+            'infraestructura_grabador',
+            'reiniciar Replay Server: ' . ($resultado['success'] ? 'ok' : 'error — ' . $resultado['mensaje'])
+        );
+
+        return back()->with($resultado['success'] ? 'success' : 'error', $resultado['mensaje']);
     }
 
     /**

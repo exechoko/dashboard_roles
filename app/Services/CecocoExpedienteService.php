@@ -15,6 +15,8 @@ class CecocoExpedienteService
     private string $baseUrl;
     private string $cecocoUser;
     private string $cecocoPassword;
+    private string $cecocoUserPrefetch;
+    private string $cecocoPasswordPrefetch;
     private string $cecocoUserMonitor;
     private string $cecocoPasswordMonitor;
     private string $gpsBaseUrl;
@@ -29,6 +31,11 @@ class CecocoExpedienteService
         $this->baseUrl = config('cecoco.url', 'http://172.26.100.34:8080') . '/CECOCO_webapp';
         $this->cecocoUser = config('cecoco.user', '');
         $this->cecocoPassword = config('cecoco.password', '');
+        // Cuenta dedicada a los lotes de consulta en vivo (prefetch-detalles,
+        // crisis-moviles-911): así no chocan con la sesión de la cuenta general
+        // mientras el lote corre, a veces durante horas.
+        $this->cecocoUserPrefetch = config('cecoco.user_prefetch', '');
+        $this->cecocoPasswordPrefetch = config('cecoco.password_prefetch', '');
         // Credenciales separadas para el monitoreo del dashboard (login JSF completo).
         // Si no están configuradas, caemos a las generales — útil en entornos donde
         // todavía no se creó el usuario dedicado.
@@ -173,6 +180,12 @@ class CecocoExpedienteService
                 'error' => $e->getMessage()
             ]);
             throw $e;
+        } finally {
+            // En modo lote la sesión es del que llama (ver iniciarSesionCompartida):
+            // no cerrarla acá, se reutiliza para el resto del lote.
+            if (!$modoLote && $client !== null) {
+                $this->cerrarSesion($client);
+            }
         }
     }
 
@@ -221,28 +234,40 @@ class CecocoExpedienteService
 
     /**
      * Devuelve un cliente HTTP con sesión CECOCO iniciada, para reutilizarlo en
-     * procesos por lote que consultan muchos expedientes seguidos.
+     * procesos por lote que consultan muchos expedientes seguidos (prefetch-detalles,
+     * crisis-moviles-911).
      *
-     * Si se indica $workerIndex, loguea con la cuenta dedicada configurada en
-     * cecoco.prefetch_workers (1-based) en vez de la cuenta general, para poder
-     * correr varias sesiones en paralelo sin pisarse (CECOCO permite una sola
-     * sesión activa por usuario).
+     * Usa la cuenta dedicada de cecoco.user_prefetch si está configurada, para no
+     * pisar la sesión de la cuenta general mientras el lote corre (a veces durante
+     * horas); si no está configurada, cae a la cuenta general con un aviso en el log.
      *
      * @return \Illuminate\Http\Client\PendingRequest
      */
-    public function iniciarSesionCompartida(?int $workerIndex = null)
+    public function iniciarSesionCompartida()
     {
-        if ($workerIndex === null) {
+        if ($this->cecocoUserPrefetch === '') {
+            Log::warning('iniciarSesionCompartida: no hay cuenta dedicada (CECOCO_USER_PREFETCH_1) configurada, se usa la cuenta general.');
             return $this->iniciarSesion();
         }
 
-        $credenciales = config('cecoco.prefetch_workers', [])[$workerIndex - 1] ?? null;
+        return $this->iniciarSesion($this->cecocoUserPrefetch, $this->cecocoPasswordPrefetch);
+    }
 
-        if (!$credenciales) {
-            throw new Exception("No hay cuenta dedicada configurada para el worker de prefetch #{$workerIndex}. Configure CECOCO_USER_PREFETCH_{$workerIndex} y CECOCO_PASSWORD_PREFETCH_{$workerIndex} en .env.");
+    /**
+     * Cierra una sesión CECOCO abierta con iniciarSesion()/iniciarSesionCompartida().
+     * Best-effort: si falla no rompe el llamante, la sesión igual va a timeoutear en
+     * el server; pero sin esto la cuenta queda "en sesión" indefinidamente y el
+     * próximo login choca con eso hasta que el server la expire por timeout.
+     *
+     * @param \Illuminate\Http\Client\PendingRequest $client
+     */
+    public function cerrarSesion($client): void
+    {
+        try {
+            $client->get($this->baseUrl . '/app/login/Logout.jsp');
+        } catch (\Throwable $e) {
+            Log::info('Logout CECOCO falló (best-effort)', ['error' => $e->getMessage()]);
         }
-
-        return $this->iniciarSesion($credenciales['user'], $credenciales['password']);
     }
 
     /**
@@ -256,7 +281,11 @@ class CecocoExpedienteService
 
         $client = $this->iniciarSesion();
 
-        return $this->obtenerReporteHTML($client, $nroExpediente);
+        try {
+            return $this->obtenerReporteHTML($client, $nroExpediente);
+        } finally {
+            $this->cerrarSesion($client);
+        }
     }
 
     /**
@@ -271,39 +300,43 @@ class CecocoExpedienteService
 
         $client = $this->iniciarSesion();
 
-        $params = [
-            '__report' => 'reports/issues/report_issues.rptdesign',
-            '__format' => 'pdf',
-            'p_time_format' => 'HH:mm',
-            '__isnull' => 'p_shift_interval',
-            'p_activa_mostrar_informacion_duplicidad' => 'false',
-            'p_dbrestore_namedb' => 'bdrestauraciones',
-            'p_date_format' => 'dd/MM/yyyy HH:mm:ss',
-            'p_shift' => 'false',
-            'p_shift_time_min' => '00:00:00',
-            'p_dbworking_namedb' => 'bdmatriz',
-            'p_shift_time_max' => '23:59:59',
-            '__rtl' => 'false',
-            'p_id' => $nroExpediente,
-            '__overwrite' => 'false',
-            '__locale' => 'es',
-            '__designer' => 'false',
-            '__dpi' => '96',
-            '__pageoverflow' => '0',
-        ];
+        try {
+            $params = [
+                '__report' => 'reports/issues/report_issues.rptdesign',
+                '__format' => 'pdf',
+                'p_time_format' => 'HH:mm',
+                '__isnull' => 'p_shift_interval',
+                'p_activa_mostrar_informacion_duplicidad' => 'false',
+                'p_dbrestore_namedb' => 'bdrestauraciones',
+                'p_date_format' => 'dd/MM/yyyy HH:mm:ss',
+                'p_shift' => 'false',
+                'p_shift_time_min' => '00:00:00',
+                'p_dbworking_namedb' => 'bdmatriz',
+                'p_shift_time_max' => '23:59:59',
+                '__rtl' => 'false',
+                'p_id' => $nroExpediente,
+                '__overwrite' => 'false',
+                '__locale' => 'es',
+                '__designer' => 'false',
+                '__dpi' => '96',
+                '__pageoverflow' => '0',
+            ];
 
-        $response = $client->get($this->baseUrl . '/output', $params);
+            $response = $client->get($this->baseUrl . '/output', $params);
 
-        if (!$response->successful()) {
-            throw new Exception('Error al obtener el PDF original del expediente: ' . $response->status());
+            if (!$response->successful()) {
+                throw new Exception('Error al obtener el PDF original del expediente: ' . $response->status());
+            }
+
+            $pdf = $response->body();
+            if (strlen($pdf) < 100 || !str_starts_with($pdf, '%PDF')) {
+                throw new Exception("CECOCO no devolvió un PDF válido para el expediente {$nroExpediente}");
+            }
+
+            return $pdf;
+        } finally {
+            $this->cerrarSesion($client);
         }
-
-        $pdf = $response->body();
-        if (strlen($pdf) < 100 || !str_starts_with($pdf, '%PDF')) {
-            throw new Exception("CECOCO no devolvió un PDF válido para el expediente {$nroExpediente}");
-        }
-
-        return $pdf;
     }
 
     private function iniciarSesion(?string $usuario = null, ?string $password = null)

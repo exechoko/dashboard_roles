@@ -1,0 +1,128 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
+
+class DominioAlerta extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    /**
+     * Lista de colores habituales para la carga rápida (select2 con
+     * posibilidad de escribir uno distinto si no está en la lista).
+     */
+    public const COLORES = [
+        'Blanco', 'Negro', 'Gris', 'Plata', 'Rojo', 'Azul', 'Verde',
+        'Amarillo', 'Naranja', 'Marrón', 'Beige', 'Bordo', 'Violeta',
+        'Celeste', 'Dorado', 'Multicolor',
+    ];
+
+    protected $table = 'dominios_alerta';
+
+    protected $fillable = [
+        'dominio',
+        'parcial',
+        'marca',
+        'modelo',
+        'color',
+        'motivo',
+        'solicitado_por',
+        'funcionario_carga',
+        'notificar_a',
+        'camara_texto',
+        'fecha_hecho',
+        'fecha_carga',
+        'activo',
+        'observaciones',
+        'created_by',
+        'updated_by',
+    ];
+
+    protected $casts = [
+        'activo' => 'boolean',
+        'parcial' => 'boolean',
+        'fecha_hecho' => 'date',
+        'fecha_carga' => 'date',
+    ];
+
+    public function creadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function actualizadoPor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function movimientos(): MorphMany
+    {
+        return $this->morphMany(AlertaMovimiento::class, 'movable')->orderByDesc('created_at');
+    }
+
+    public function scopeActivos($query)
+    {
+        return $query->where('activo', true);
+    }
+
+    public function scopeInactivos($query)
+    {
+        return $query->where('activo', false);
+    }
+
+    public function getEstadoLabelAttribute(): string
+    {
+        return $this->activo ? 'Activo' : 'Inactivo';
+    }
+
+    /**
+     * Normaliza el dominio (patente) a mayúsculas y sin espacios ni
+     * guiones, para que la detección de duplicados sea confiable.
+     */
+    public static function normalizar(mixed $dominio): string
+    {
+        return strtoupper(preg_replace('/[\s\-]+/', '', trim((string) $dominio)));
+    }
+
+    /**
+     * Busca dominios ya cargados que puedan ser el mismo que se está por
+     * cargar: coincidencia exacta, o que uno contenga al otro (para
+     * detectar cuando ya existe la patente completa y se está cargando
+     * una parcial, o viceversa).
+     *
+     * @return Collection<int, self>
+     */
+    public static function buscarCoincidencias(?string $dominio, int $limite = 8): Collection
+    {
+        $normalizado = self::normalizar($dominio);
+
+        if (mb_strlen($normalizado) < 3) {
+            return collect();
+        }
+
+        $candidatos = static::query()
+            ->where('dominio', 'like', '%' . $normalizado . '%')
+            ->orWhere(function ($query) use ($normalizado) {
+                $query->where('parcial', true)
+                    ->whereRaw('? LIKE CONCAT(\'%\', dominio, \'%\')', [$normalizado]);
+            })
+            ->limit(50)
+            ->get();
+
+        return $candidatos
+            ->map(function (self $item) use ($normalizado) {
+                $item->coincidencia_score = $item->dominio === $normalizado ? 100 : 50;
+
+                return $item;
+            })
+            ->sortByDesc('coincidencia_score')
+            ->take($limite)
+            ->values();
+    }
+}

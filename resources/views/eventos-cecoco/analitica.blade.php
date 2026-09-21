@@ -171,7 +171,12 @@
         </a>
     </div>
 
-    <h4 class="mb-1"><i class="bi bi-bar-chart-line-fill me-2 text-primary"></i>Analítica de eventos CECOCO</h4>
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1">
+        <h4 class="mb-1"><i class="bi bi-bar-chart-line-fill me-2 text-primary"></i>Analítica de eventos CECOCO</h4>
+        <button type="button" class="btn btn-outline-info btn-sm" id="btnVerTutorialAnalitica" onclick="iniciarTutorialPagina()">
+            <i class="bi bi-question-circle"></i> Ver tutorial
+        </button>
+    </div>
     <p class="text-muted mb-3" style="font-size:.9rem">Analizá patrones temporales y geográficos para optimizar el
         patrullaje.</p>
 
@@ -202,6 +207,18 @@
                         <option value="mes" selected>Mes anterior</option>
                         <option value="semana">Semana anterior</option>
                         <option value="anio">Año anterior</option>
+                    </select>
+                </div>
+                <div class="col-12 col-lg-3 col-xl-3" id="filtroDependenciaWrap">
+                    <label class="form-label fw-semibold mb-1" style="font-size:.82rem">
+                        DEPENDENCIA INTERVINIENTE
+                        <i class="bi bi-info-circle text-muted" title="Cruza cada tipificación contra el móvil o moto que intervino según los Trámites de CECOCO. Solo cuenta expedientes con detalle ya consultado."></i>
+                    </label>
+                    <select id="filtro-dependencia" class="form-select form-select-sm" style="width:100%">
+                        <option value="">Todas (sin cruzar por interviniente)</option>
+                        @foreach($dependencias as $dependencia)
+                            <option value="{{ $dependencia->id }}">{{ $dependencia->nombre }}</option>
+                        @endforeach
                     </select>
                 </div>
             </div>
@@ -675,6 +692,33 @@
     </div>
 @endsection
 
+@php
+    $tutorialPasos = [
+        [
+            'id' => 'filtro-desde',
+            'titulo' => 'Elegí el período',
+            'texto' => 'Definí desde/hasta (o usá un período rápido) y, si querés, las tipificaciones a incluir.',
+        ],
+        [
+            'id' => 'filtroDependenciaWrap',
+            'titulo' => 'Filtrar por dependencia interviniente',
+            'texto' => 'Elegí una dependencia (hoy, División 911 y Videovigilancia) para cruzar cada tipificación contra el móvil o moto que efectivamente intervino, según los Trámites de CECOCO. Con "Todas" no se aplica ese cruce y los totales son solo por texto/tipificación, sin importar quién respondió.',
+        ],
+        [
+            'id' => 'btn-analizar',
+            'titulo' => 'Analizar',
+            'texto' => 'Aplicá los filtros elegidos y esperá a que carguen los datos.',
+        ],
+        [
+            'id' => 'seccion-detencion',
+            'titulo' => 'Tasa de detención por tipificación',
+            'texto' => 'Con una dependencia seleccionada, cada fila suma cuántos casos tuvieron un móvil/moto de esa dependencia y, de esos, cuántos terminaron con detenido/demorado/aprehendido. Solo cuenta expedientes con el detalle de trámites ya consultado a CECOCO: si faltan muchos, el número puede estar subestimado.',
+            'side' => 'top',
+        ],
+    ];
+@endphp
+@include('partials.tutorial', ['tutorialPasos' => $tutorialPasos, 'tutorialStorageKey' => 'tutorial_analitica_cecoco_visto'])
+
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script>
@@ -701,6 +745,12 @@
         $(function () {
             // Select2 para filtro comparar
             $('#filtro-comparar').select2({
+                width: '100%',
+                minimumResultsForSearch: Infinity
+            });
+
+            // Select2 para filtro de dependencia interviniente
+            $('#filtro-dependencia').select2({
                 width: '100%',
                 minimumResultsForSearch: Infinity
             });
@@ -1176,8 +1226,27 @@
                     return;
                 }
 
+                const tieneDependencia = datos.dependencia_seleccionada
+                    && filas.some(f => f.con_dependencia !== undefined || f.cruce_omitido);
+
                 const rows = filas.map(f => {
                     const barPct = f.total > 0 ? Math.round(f.con_detenido / f.total * 100) : 0;
+                    let filaDependencia = '';
+                    if (f.cruce_omitido) {
+                        filaDependencia = `
+                                <div class="text-end ms-3 text-muted" style="min-width:150px;font-size:.78rem">
+                                    No calculado: acotá el período (demasiados eventos para cruzar en vivo).
+                                </div>`;
+                    } else if (f.con_dependencia !== undefined) {
+                        filaDependencia = `
+                                <div class="text-end ms-3" style="min-width:150px">
+                                    <span class="fw-bold">${f.con_dependencia.toLocaleString('es-AR')}</span>
+                                    <span class="text-muted ms-1" style="font-size:.8rem">con ${datos.dependencia_seleccionada}</span>
+                                    <div class="text-muted" style="font-size:.78rem">
+                                        de esos, ${f.con_dependencia_detenido.toLocaleString('es-AR')} con detenido (${f.porcentaje_dependencia}%)
+                                    </div>
+                                </div>`;
+                    }
                     return `
                             <div class="d-flex align-items-center py-2 border-bottom gap-3">
                                 <div class="flex-grow-1" style="min-width:0">
@@ -1190,10 +1259,17 @@
                                     <span class="fw-bold">${f.con_detenido.toLocaleString('es-AR')}</span>
                                     <span class="text-muted ms-1" style="font-size:.8rem">/ ${f.total.toLocaleString('es-AR')} (${f.porcentaje}%)</span>
                                 </div>
+                                ${filaDependencia}
                             </div>`;
                 }).join('');
 
-                el.innerHTML = rows;
+                const encabezado = tieneDependencia
+                    ? `<p class="text-muted mb-2" style="font-size:.8rem" id="tabla-detencion-dependencia-nota">
+                            <i class="bi bi-signpost-split me-1"></i>Cruce contra <strong>${datos.dependencia_seleccionada}</strong>: solo cuenta expedientes con detalle de trámites ya consultado a CECOCO.
+                       </p>`
+                    : '';
+
+                el.innerHTML = encabezado + rows;
             }
 
             function rangoAnalizado() {
@@ -1210,7 +1286,12 @@
                 const desde = document.getElementById('filtro-desde').value;
                 const hasta = document.getElementById('filtro-hasta').value;
                 const compararCon = document.getElementById('filtro-comparar').value;
+                const dependenciaId = document.getElementById('filtro-dependencia').value;
                 const params = new URLSearchParams({ desde, hasta, comparar_con: compararCon });
+
+                if (dependenciaId) {
+                    params.append('dependencia_id', dependenciaId);
+                }
 
                 obtenerTiposSeleccionados().forEach(tipo => {
                     params.append('tipos[]', tipo);

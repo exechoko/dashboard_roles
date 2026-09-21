@@ -257,6 +257,30 @@
     </li>
 @endcan
 
+@can('ver-menu-alertas-video')
+    <li class="dropdown {{ request()->is('alertas-video*') ? 'active' : '' }}">
+        <a class="nav-link has-dropdown" href="#">
+            <i class="fas fa-user-shield"></i><span>Alertas de Video</span>
+        </a>
+        <ul class="dropdown-menu">
+            @can('ver-alerta-dominio')
+                <li class="{{ request()->is('alertas-video/dominios*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('alertas-video.dominios.index') }}">
+                        <i class="fas fa-car"></i><span>Dominios</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-alerta-persona')
+                <li class="{{ request()->is('alertas-video/personas*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('alertas-video.personas.index') }}">
+                        <i class="fas fa-user-tag"></i><span>Personas</span>
+                    </a>
+                </li>
+            @endcan
+        </ul>
+    </li>
+@endcan
+
 @can('ver-menu-tareas')
     <li class="dropdown {{ request()->is('tareas*') || request()->is('incidencias/tickets-pg*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
@@ -577,6 +601,13 @@
                 <li class="{{ request()->is('infraestructura/workers*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('infraestructura.workers') }}">
                         <i class="fas fa-database"></i><span>Workers y Bases de Datos</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-infraestructura-grabador')
+                <li class="{{ request()->is('infraestructura/grabador*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('infraestructura.grabador') }}">
+                        <i class="fas fa-headphones-alt"></i><span>Grabador TETRA</span>
                     </a>
                 </li>
             @endcan

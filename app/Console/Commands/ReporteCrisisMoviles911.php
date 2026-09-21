@@ -28,7 +28,8 @@ class ReporteCrisisMoviles911 extends Command
     protected $signature = 'cecoco:crisis-moviles-911
                             {--desde=2024-05-30 : Fecha de inicio (Y-m-d)}
                             {--hasta= : Fecha de fin (Y-m-d), default hoy}
-                            {--palabras=crisis : Palabras clave a buscar en la descripcion, separadas por coma}
+                            {--palabras=crisis : Palabras clave a buscar en la descripcion (LIKE), separadas por coma}
+                            {--regex : Ignora --palabras y usa el patron regex de crisis de salud mental ya validado en EventoCecocoController (mas completo: nerviosa, psiquiatrica, autolesion, suicidio, etc.)}
                             {--prefijos=p,mp : Prefijos de "Unidad" CECOCO que se consideran moviles del 911, separados por coma}
                             {--pausa=200 : Milisegundos de pausa entre consultas en vivo a CECOCO}
                             {--limite= : Maximo de expedientes a consultar en vivo (para probar en lotes chicos)}
@@ -44,13 +45,15 @@ class ReporteCrisisMoviles911 extends Command
             ? Carbon::parse($this->option('hasta'))->endOfDay()
             : now()->endOfDay();
 
+        $usarRegex = (bool) $this->option('regex');
+
         $palabras = collect(explode(',', (string) $this->option('palabras')))
             ->map(fn ($p) => trim($p))
             ->filter()
             ->values();
 
-        if ($palabras->isEmpty()) {
-            $this->error('Debe indicar al menos una palabra clave con --palabras.');
+        if (!$usarRegex && $palabras->isEmpty()) {
+            $this->error('Debe indicar al menos una palabra clave con --palabras (o usar --regex).');
             return self::FAILURE;
         }
 
@@ -65,7 +68,11 @@ class ReporteCrisisMoviles911 extends Command
         $rutaExportar = $this->option('exportar');
 
         $this->line('========================================');
-        $this->info("Rango: {$desde->format('d/m/Y')} a {$hasta->format('d/m/Y')} | Palabras: " . $palabras->implode(', ') . ' | Prefijos 911: ' . $prefijos911->implode(', '));
+        $this->info(
+            "Rango: {$desde->format('d/m/Y')} a {$hasta->format('d/m/Y')} | "
+            . ($usarRegex ? 'Patron: ' . $this->patronCrisisSaludMental() : 'Palabras: ' . $palabras->implode(', '))
+            . ' | Prefijos 911: ' . $prefijos911->implode(', ')
+        );
 
         // 1) Universo de moviles del 911: alias CECOCO ya mapeados en cecoco_recurso_aliases
         // (ver comando cecoco:generar-alias-911 y /cecoco/recursos-alias/ para mantenerlos).
@@ -79,11 +86,15 @@ class ReporteCrisisMoviles911 extends Command
         // 2) Candidatos: eventos cuya descripcion menciona alguna de las palabras clave.
         $candidatos = EventoCecoco::query()
             ->whereBetween('fecha_hora', [$desde, $hasta])
-            ->where(function ($q) use ($palabras) {
-                foreach ($palabras as $palabra) {
-                    $q->orWhere('descripcion', 'LIKE', "%{$palabra}%");
-                }
-            })
+            ->when(
+                $usarRegex,
+                fn ($q) => $q->whereNotNull('descripcion')->whereRaw('descripcion REGEXP ?', [$this->patronCrisisSaludMental()]),
+                fn ($q) => $q->where(function ($q) use ($palabras) {
+                    foreach ($palabras as $palabra) {
+                        $q->orWhere('descripcion', 'LIKE', "%{$palabra}%");
+                    }
+                })
+            )
             ->orderBy('fecha_hora')
             ->get(['id', 'nro_expediente', 'fecha_hora', 'descripcion']);
 
@@ -113,50 +124,56 @@ class ReporteCrisisMoviles911 extends Command
             $ok = 0;
             $consecutivos = 0;
 
-            foreach ($aProcesar->values() as $i => $evento) {
-                try {
-                    $detalleJson = $servicio->obtenerDetalleExpediente((string) $evento->nro_expediente, $client);
+            try {
+                foreach ($aProcesar->values() as $i => $evento) {
+                    try {
+                        $detalleJson = $servicio->obtenerDetalleExpediente((string) $evento->nro_expediente, $client);
 
-                    $registro = DetalleExpedienteCecoco::updateOrCreate(
-                        ['evento_cecoco_id' => $evento->id],
-                        [
-                            'nro_expediente' => $evento->nro_expediente,
-                            'detalle_json' => $detalleJson,
-                            'fecha_consulta' => now(),
-                        ]
-                    );
+                        $registro = DetalleExpedienteCecoco::updateOrCreate(
+                            ['evento_cecoco_id' => $evento->id],
+                            [
+                                'nro_expediente' => $evento->nro_expediente,
+                                'detalle_json' => $detalleJson,
+                                'fecha_consulta' => now(),
+                            ]
+                        );
 
-                    $detalles->put($evento->id, $registro);
-                    $ok++;
-                    $consecutivos = 0;
-                } catch (\Throwable $e) {
-                    $consecutivos++;
-                    $mensaje = $e->getMessage();
-                    $erroresPorTipo[$mensaje] = ($erroresPorTipo[$mensaje] ?? 0) + 1;
-
-                    Log::warning('cecoco:crisis-moviles-911: error consultando expediente', [
-                        'expediente' => $evento->nro_expediente,
-                        'error' => $mensaje,
-                    ]);
-
-                    if ($consecutivos >= 3) {
-                        $this->warn('  Reiniciando sesion CECOCO tras fallos consecutivos...');
-                        try {
-                            $client = $servicio->iniciarSesionCompartida();
-                        } catch (\Throwable $e2) {
-                            Log::error('cecoco:crisis-moviles-911: no se pudo reiniciar sesion', ['error' => $e2->getMessage()]);
-                        }
+                        $detalles->put($evento->id, $registro);
+                        $ok++;
                         $consecutivos = 0;
+                    } catch (\Throwable $e) {
+                        $consecutivos++;
+                        $mensaje = $e->getMessage();
+                        $erroresPorTipo[$mensaje] = ($erroresPorTipo[$mensaje] ?? 0) + 1;
+
+                        Log::warning('cecoco:crisis-moviles-911: error consultando expediente', [
+                            'expediente' => $evento->nro_expediente,
+                            'error' => $mensaje,
+                        ]);
+
+                        if ($consecutivos >= 3) {
+                            $this->warn('  Reiniciando sesion CECOCO tras fallos consecutivos...');
+                            try {
+                                $client = $servicio->iniciarSesionCompartida();
+                            } catch (\Throwable $e2) {
+                                Log::error('cecoco:crisis-moviles-911: no se pudo reiniciar sesion', ['error' => $e2->getMessage()]);
+                            }
+                            $consecutivos = 0;
+                        }
+                    }
+
+                    if (($i + 1) % 50 === 0) {
+                        $this->line('  [' . now()->format('H:i:s') . '] ' . ($i + 1) . "/{$totalAProcesar} (ok: {$ok})");
+                    }
+
+                    if ($pausaMs > 0) {
+                        usleep($pausaMs * 1000);
                     }
                 }
-
-                if (($i + 1) % 50 === 0) {
-                    $this->line('  [' . now()->format('H:i:s') . '] ' . ($i + 1) . "/{$totalAProcesar} (ok: {$ok})");
-                }
-
-                if ($pausaMs > 0) {
-                    usleep($pausaMs * 1000);
-                }
+            } finally {
+                // Sin esto la cuenta dedicada queda "en sesión" en CECOCO hasta que el
+                // server la expire por timeout, y el próximo run choca con eso.
+                $servicio->cerrarSesion($client);
             }
 
             $this->info("Consultas en vivo: {$ok} ok, " . array_sum($erroresPorTipo) . ' con error.');
@@ -269,6 +286,15 @@ class ReporteCrisisMoviles911 extends Command
         }
 
         return array_unique($encontrados);
+    }
+
+    /**
+     * Mismo patron que EventoCecocoController::patronCrisisSaludMental(), para que
+     * --regex sea consistente con el indicador "Crisis de salud mental" del dashboard.
+     */
+    private function patronCrisisSaludMental(): string
+    {
+        return 'crisis (de )?(nervios|nerviosa|psiqui[aá]trica|psicol[oó]gica)|paciente psiqui[aá]tric|salud mental|autolesion|tentativa de suicidio|intento de suicidio|ataque de nervios';
     }
 
     /**

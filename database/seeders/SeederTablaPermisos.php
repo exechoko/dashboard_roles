@@ -250,6 +250,17 @@ class SeederTablaPermisos extends Seeder
             'editar-armeria',
             'borrar-armeria',
 
+            // Alertas de Video: Dominios y Personas de interés (LPR / reconocimiento facial)
+            'ver-menu-alertas-video',
+            'ver-alerta-dominio',
+            'crear-alerta-dominio',
+            'editar-alerta-dominio',
+            'borrar-alerta-dominio',
+            'ver-alerta-persona',
+            'crear-alerta-persona',
+            'editar-alerta-persona',
+            'borrar-alerta-persona',
+
             //Acciones varias
             'reiniciar-camara',
             'herramientas-mapa',
@@ -325,6 +336,8 @@ class SeederTablaPermisos extends Seeder
             'ver-infraestructura-workers',
             'ver-infraestructura-notificaciones',
             'refrescar-infraestructura',
+            'ver-infraestructura-grabador',
+            'reiniciar-infraestructura-grabador',
 
             // Configuración del Sistema
             'ver-configuracion-env',

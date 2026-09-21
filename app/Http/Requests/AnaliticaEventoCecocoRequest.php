@@ -23,6 +23,7 @@ class AnaliticaEventoCecocoRequest extends FormRequest
             'tipos' => ['nullable', 'array'],
             'tipos.*' => ['string', 'max:255'],
             'comparar_con' => ['nullable', 'in:semana,mes,anio'],
+            'dependencia_id' => ['nullable', 'integer', 'exists:destino,id'],
         ];
     }
 

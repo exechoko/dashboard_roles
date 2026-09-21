@@ -7,6 +7,7 @@ use App\Models\PersonalSeccion;
 use App\Models\PersonalSeccionNota;
 use App\Models\PersonalSeccionNotaComparticion;
 use App\Models\User;
+use App\Services\Personal911DetalleService;
 use App\Services\Personal911ImportService;
 use App\Services\PersonalSeccionSyncService;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +19,7 @@ class PersonalSeccionController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:ver-personal-secciones')->only(['index']);
+        $this->middleware('permission:ver-personal-secciones')->only(['index', 'show']);
         $this->middleware('permission:crear-personal-seccion-nota')->only(['storeNota', 'compartirNota', 'compartirTodasNotas']);
         $this->middleware('permission:sincronizar-personal-secciones')->only(['sincronizar']);
     }
@@ -94,6 +95,34 @@ class PersonalSeccionController extends Controller
             'estado' => $estado,
             'ultimaSincronizacion' => PersonalSeccionSyncService::ultimaSincronizacion(),
             'minutosParaProximaSync' => PersonalSeccionSyncService::minutosParaProximaSyncManual(),
+            'usuariosParaCompartir' => $usuariosParaCompartir,
+        ]);
+    }
+
+    public function show(int $personalId, Personal911DetalleService $detalleService): View
+    {
+        $personal = Personal::withTrashed()->findOrFail($personalId);
+        $seccion = PersonalSeccion::where('personal_id', $personal->id)->first();
+        $usuarioActual = auth()->user();
+
+        $detalle = $personal->personal911_id !== null
+            ? $detalleService->obtener((int) $personal->personal911_id)
+            : null;
+
+        $notas = $personal->notasSeccion()
+            ->visiblesPara($usuarioActual)
+            ->with(['autor', 'compartidas.usuario'])
+            ->get();
+
+        $usuariosParaCompartir = User::where('id', '!=', $usuarioActual->id)
+            ->orderBy('name')
+            ->get(['id', 'name', 'apellido']);
+
+        return view('personal-secciones.show', [
+            'personal' => $personal,
+            'seccion' => $seccion,
+            'detalle' => $detalle,
+            'notas' => $notas,
             'usuariosParaCompartir' => $usuariosParaCompartir,
         ]);
     }

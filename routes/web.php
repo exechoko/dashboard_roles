@@ -854,6 +854,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::prefix('personal-secciones')->name('personal-secciones.')->group(function () {
         Route::get('/', [PersonalSeccionController::class, 'index'])->name('index');
         Route::post('/sincronizar', [PersonalSeccionController::class, 'sincronizar'])->name('sincronizar');
+        Route::get('/{personalId}', [PersonalSeccionController::class, 'show'])->whereNumber('personalId')->name('show');
         Route::post('/{personalId}/notas', [PersonalSeccionController::class, 'storeNota'])->name('notas.store');
         Route::post('/notas/{notaId}/compartir', [PersonalSeccionController::class, 'compartirNota'])->name('notas.compartir');
         Route::post('/{personalId}/notas/compartir-todas', [PersonalSeccionController::class, 'compartirTodasNotas'])->name('notas.compartir-todas');

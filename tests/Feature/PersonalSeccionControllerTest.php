@@ -41,6 +41,49 @@ class PersonalSeccionControllerTest extends TestCase
         return $personal;
     }
 
+    public function test_show_requiere_permiso(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $personal = $this->crearFuncionarioEnSeccion('Sección Violencia de Género');
+
+        $this->get(route('personal-secciones.show', $personal->id))->assertForbidden();
+    }
+
+    public function test_show_muestra_los_datos_locales_cuando_no_hay_detalle_en_personal911(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->actingAs($user);
+
+        $personal = $this->crearFuncionarioEnSeccion('Sección Judiciales y Gestión de Calidad');
+
+        $response = $this->get(route('personal-secciones.show', $personal->id));
+
+        $response->assertOk();
+        $response->assertSee($personal->apellido);
+        $response->assertSee('No se pudo traer el detalle completo');
+    }
+
+    public function test_show_incluye_anotaciones_visibles_para_el_usuario(): void
+    {
+        $autor = User::factory()->create();
+        $autor->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+
+        $personal = $this->crearFuncionarioEnSeccion('Sección Violencia de Género');
+        PersonalSeccionNota::create([
+            'personal_id' => $personal->id,
+            'user_id' => $autor->id,
+            'texto' => 'Nota visible en el detalle.',
+        ]);
+
+        $this->actingAs($autor);
+        $this->get(route('personal-secciones.show', $personal->id))
+            ->assertOk()
+            ->assertSee('Nota visible en el detalle.');
+    }
+
     public function test_index_requiere_permiso(): void
     {
         $user = User::factory()->create();

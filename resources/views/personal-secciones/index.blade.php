@@ -110,7 +110,9 @@
                                         <td>{{ $r->seccion }}</td>
                                         <td>{{ $p->jerarquia }}</td>
                                         <td>
-                                            <strong>{{ $p->apellido }}</strong>, {{ $p->nombre }}
+                                            <a href="{{ route('personal-secciones.show', $p->id) }}">
+                                                <strong>{{ $p->apellido }}</strong>, {{ $p->nombre }}
+                                            </a>
                                             @if($p->trashed())
                                                 <span class="badge badge-dark">Baja policial</span>
                                             @endif

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\PersonalSeccionesExport;
 use App\Models\Personal;
 use App\Models\PersonalSeccion;
 use App\Models\PersonalSeccionNota;
@@ -13,29 +14,91 @@ use App\Services\PersonalSeccionSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class PersonalSeccionController extends Controller
 {
+    private const POR_PAGINA = 30;
+
     public function __construct()
     {
-        $this->middleware('permission:ver-personal-secciones')->only(['index', 'show']);
+        $this->middleware('permission:ver-personal-secciones')->only(['index', 'show', 'export']);
         $this->middleware('permission:crear-personal-seccion-nota')->only(['storeNota', 'compartirNota', 'compartirTodasNotas']);
         $this->middleware('permission:sincronizar-personal-secciones')->only(['sincronizar']);
     }
 
-    public function index(Request $request): View
+    public function index(Request $request, Personal911DetalleService $detalleService): View
     {
         $usuarioActual = $request->user();
+        $todos = $this->registrosFiltrados($request, $usuarioActual, $detalleService);
+
+        $pagina = LengthAwarePaginator::resolveCurrentPage();
+        $registrosPagina = $todos->forPage($pagina, self::POR_PAGINA)->values();
+
+        // Las notas se cargan recién acá, solo para la página que se va a
+        // mostrar: cada una arma un modal completo en la vista y con el
+        // padrón real (~450 funcionarios) cargarlas todas de una vuelve la
+        // página inutilizable.
+        $registrosPagina->load(['personal.notasSeccion' => function ($q) use ($usuarioActual) {
+            $q->visiblesPara($usuarioActual)->with(['autor', 'compartidas.usuario']);
+        }]);
+
+        $registros = new LengthAwarePaginator(
+            $registrosPagina,
+            $todos->count(),
+            self::POR_PAGINA,
+            $pagina,
+            ['path' => LengthAwarePaginator::resolveCurrentPath(), 'query' => $request->query()]
+        );
+
+        $todasLasSecciones = PersonalSeccion::query()
+            ->whereNotNull('seccion')
+            ->distinct()
+            ->orderBy('seccion')
+            ->pluck('seccion');
+
+        $usuariosParaCompartir = User::where('id', '!=', $usuarioActual->id)
+            ->orderBy('name')
+            ->get(['id', 'name', 'apellido']);
+
+        return view('personal-secciones.index', [
+            'registros' => $registros,
+            'todasLasSecciones' => $todasLasSecciones,
+            'seccionesSeleccionadas' => array_filter((array) $request->get('secciones', [])),
+            'busqueda' => trim((string) $request->get('busqueda', '')),
+            'estado' => $request->get('estado', 'todos'),
+            'orden' => $request->get('orden', 'jerarquia'),
+            'ultimaSincronizacion' => PersonalSeccionSyncService::ultimaSincronizacion(),
+            'minutosParaProximaSync' => PersonalSeccionSyncService::minutosParaProximaSyncManual(),
+            'usuariosParaCompartir' => $usuariosParaCompartir,
+        ]);
+    }
+
+    public function export(Request $request, Personal911DetalleService $detalleService): BinaryFileResponse
+    {
+        $registros = $this->registrosFiltrados($request, $request->user(), $detalleService);
+
+        return Excel::download(
+            new PersonalSeccionesExport($registros),
+            'PersonalPorSeccion_'.now()->format('Y-m-d_His').'.xlsx'
+        );
+    }
+
+    /**
+     * Aplica los filtros de la request (búsqueda, secciones, estado) y el
+     * orden elegido sobre `personal_secciones`. La usan tanto index() como
+     * export(), para que el Excel respete exactamente lo que se está viendo.
+     */
+    private function registrosFiltrados(Request $request, User $usuarioActual, Personal911DetalleService $detalleService): Collection
+    {
         $busqueda = trim((string) $request->get('busqueda', ''));
         $secciones = array_filter((array) $request->get('secciones', []));
         $estado = $request->get('estado', 'todos'); // todos | activos | en_licencia | bajas
+        $orden = $request->get('orden', 'jerarquia'); // jerarquia | novedades
 
-        // Se cargan primero sin notas (livianas: solo hacen falta para
-        // ordenar/contar). Las notas se piden aparte, solo para la página
-        // que se va a mostrar, porque cada una arma un modal completo en la
-        // vista y con el padrón real (~450 funcionarios) cargarlas todas de
-        // una vuelve la página inutilizable.
         $todos = PersonalSeccion::query()
             ->with(['personal' => fn ($q) => $q->withTrashed()])
             ->enSecciones($secciones)
@@ -54,49 +117,65 @@ class PersonalSeccionController extends Controller
             })
             ->get()
             ->filter(fn (PersonalSeccion $r) => $r->personal !== null)
-            ->sortBy([
-                fn ($a, $b) => $b->activo <=> $a->activo,
-                fn ($a, $b) => strcmp((string) $a->seccion, (string) $b->seccion),
-                fn ($a, $b) => strcmp((string) $a->personal->apellido, (string) $b->personal->apellido),
-            ])
             ->values();
 
-        $porPagina = 30;
-        $pagina = LengthAwarePaginator::resolveCurrentPage();
-        $registrosPagina = $todos->forPage($pagina, $porPagina)->values();
+        return $orden === 'novedades'
+            ? $this->ordenarPorNovedades($todos, $usuarioActual)
+            : $this->ordenarPorJerarquia($todos, $detalleService);
+    }
 
-        $registrosPagina->load(['personal.notasSeccion' => function ($q) use ($usuarioActual) {
-            $q->visiblesPara($usuarioActual)->with(['autor', 'compartidas.usuario']);
-        }]);
+    private function ordenarPorJerarquia(Collection $registros, Personal911DetalleService $detalleService): Collection
+    {
+        $personal911Ids = $registros->map(fn (PersonalSeccion $r) => $r->personal->personal911_id)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
 
-        $registros = new LengthAwarePaginator(
-            $registrosPagina,
-            $todos->count(),
-            $porPagina,
-            $pagina,
-            ['path' => LengthAwarePaginator::resolveCurrentPath(), 'query' => $request->query()]
-        );
+        $fechasIngreso = $detalleService->obtenerFechasIngresoMasivo($personal911Ids);
 
-        $todasLasSecciones = PersonalSeccion::query()
-            ->whereNotNull('seccion')
-            ->distinct()
-            ->orderBy('seccion')
-            ->pluck('seccion');
+        return $registros->sortBy([
+            fn ($a, $b) => $b->activo <=> $a->activo,
+            fn ($a, $b) => strcmp((string) $a->seccion, (string) $b->seccion),
+            fn ($a, $b) => Personal::pesoJerarquia($a->personal->jerarquia) <=> Personal::pesoJerarquia($b->personal->jerarquia),
+            function ($a, $b) use ($fechasIngreso) {
+                $fechaA = $fechasIngreso[$a->personal->personal911_id ?? 0] ?? null;
+                $fechaB = $fechasIngreso[$b->personal->personal911_id ?? 0] ?? null;
 
-        $usuariosParaCompartir = User::where('id', '!=', $usuarioActual->id)
-            ->orderBy('name')
-            ->get(['id', 'name', 'apellido']);
+                // El más antiguo (fecha de ingreso más chica) va primero. Sin
+                // fecha disponible (falla personal911, o dato no cargado) va
+                // al final del grupo en vez de romper el orden.
+                return match (true) {
+                    $fechaA === $fechaB => 0,
+                    $fechaA === null => 1,
+                    $fechaB === null => -1,
+                    default => $fechaA <=> $fechaB,
+                };
+            },
+            fn ($a, $b) => strcmp((string) $a->personal->apellido, (string) $b->personal->apellido),
+        ])->values();
+    }
 
-        return view('personal-secciones.index', [
-            'registros' => $registros,
-            'todasLasSecciones' => $todasLasSecciones,
-            'seccionesSeleccionadas' => $secciones,
-            'busqueda' => $busqueda,
-            'estado' => $estado,
-            'ultimaSincronizacion' => PersonalSeccionSyncService::ultimaSincronizacion(),
-            'minutosParaProximaSync' => PersonalSeccionSyncService::minutosParaProximaSyncManual(),
-            'usuariosParaCompartir' => $usuariosParaCompartir,
-        ]);
+    private function ordenarPorNovedades(Collection $registros, User $usuarioActual): Collection
+    {
+        $personalIds = $registros->pluck('personal_id')->all();
+        $ultimas = PersonalSeccionNota::ultimasPorPersonal($personalIds, $usuarioActual);
+
+        return $registros->sortBy([
+            fn ($a, $b) => $b->activo <=> $a->activo,
+            function ($a, $b) use ($ultimas) {
+                $fechaA = $ultimas[$a->personal_id] ?? null;
+                $fechaB = $ultimas[$b->personal_id] ?? null;
+
+                return match (true) {
+                    $fechaA === null && $fechaB === null => 0,
+                    $fechaA === null => 1,
+                    $fechaB === null => -1,
+                    default => $fechaB->timestamp <=> $fechaA->timestamp, // más reciente primero
+                };
+            },
+            fn ($a, $b) => strcmp((string) $a->personal->apellido, (string) $b->personal->apellido),
+        ])->values();
     }
 
     public function show(int $personalId, Personal911DetalleService $detalleService): View

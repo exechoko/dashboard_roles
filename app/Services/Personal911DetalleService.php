@@ -55,4 +55,31 @@ class Personal911DetalleService
             return null;
         }
     }
+
+    /**
+     * Fecha de ingreso laboral (antigüedad como funcionario) de varios a la
+     * vez, para poder desempatar por antigüedad al ordenar por jerarquía sin
+     * hacer una consulta por fila. Devuelve [] si personal911 no responde.
+     *
+     * @param  list<int>  $personal911Ids
+     * @return array<int, string|null> Id_Func => FecIng_Func ('Y-m-d' o null)
+     */
+    public function obtenerFechasIngresoMasivo(array $personal911Ids): array
+    {
+        if ($personal911Ids === []) {
+            return [];
+        }
+
+        try {
+            return DB::connection('personal911')
+                ->table('funcionarios')
+                ->whereIn('Id_Func', $personal911Ids)
+                ->pluck('FecIng_Func', 'Id_Func')
+                ->all();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return [];
+        }
+    }
 }

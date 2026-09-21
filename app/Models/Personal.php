@@ -20,6 +20,37 @@ class Personal extends Model
 
     protected $table = 'personals';
 
+    /**
+     * Jerarquías policiales ordenadas de la más alta a la más baja, tal
+     * como aparecen en `personals.jerarquia`. Coincide exactamente con el
+     * orden de `personal911.jerarquias` (Id_Jerarquia 1 a 18).
+     *
+     * @var list<string>
+     */
+    public const JERARQUIAS_ORDEN = [
+        'Crio. General', 'Crio. Mayor', 'Crio. Inspector', 'Crio. Principal',
+        'Comisario', 'Subcomisario',
+        'Of. Principal', 'Of. Inspector', 'Of. SubInsp.', 'Of. Ayudante',
+        'Subof. Mayor', 'Subof. Ppal.', 'Sgto. Ayudante', 'Sgto. Primero',
+        'Sargento', 'Cabo Primero', 'Cabo', 'Agente',
+    ];
+
+    /**
+     * Peso de la jerarquía para ordenar (0 = más alta). Las desconocidas
+     * van al final.
+     */
+    public static function pesoJerarquia(?string $jerarquia): int
+    {
+        $indice = array_search(trim((string) $jerarquia), self::JERARQUIAS_ORDEN, true);
+
+        return $indice === false ? count(self::JERARQUIAS_ORDEN) + 1 : $indice;
+    }
+
+    public function getPesoJerarquiaAttribute(): int
+    {
+        return self::pesoJerarquia($this->jerarquia);
+    }
+
     protected $fillable = [
         'personal911_id',
         'nombre',

@@ -2,26 +2,6 @@
 
 @section('content')
     <section class="section">
-        <div class="section-header d-flex justify-content-between align-items-center flex-wrap">
-            <h3 class="page__heading">Personal por Sección</h3>
-            @can('sincronizar-personal-secciones')
-                <div class="text-right">
-                    <form action="{{ route('personal-secciones.sincronizar') }}" method="POST" class="d-inline"
-                          onsubmit="return confirm('Esto trae los datos actuales de Personal 911 (personal, funciones, armas, chalecos y licencias). ¿Continuar?');">
-                        @csrf
-                        <button type="submit" class="btn btn-outline-primary" {{ $minutosParaProximaSync > 0 ? 'disabled' : '' }}>
-                            <i class="fas fa-sync-alt"></i>
-                            {{ $minutosParaProximaSync > 0 ? "Disponible en {$minutosParaProximaSync} min" : 'Actualizar desde Personal 911' }}
-                        </button>
-                    </form>
-                    <div class="small text-muted mt-1">
-                        Última actualización:
-                        {{ $ultimaSincronizacion ? $ultimaSincronizacion->format('d/m/Y H:i') : 'nunca (se sincroniza automáticamente todos los días a las 05:30)' }}
-                    </div>
-                </div>
-            @endcan
-        </div>
-
         <div class="section-body">
             @if (session('success'))
                 <div class="alert alert-success alert-dismissible fade show">
@@ -36,14 +16,52 @@
                 </div>
             @endif
 
-            <div class="card">
-                <div class="card-body">
+            <div class="card shadow-sm border-0">
+                <div class="card-header-modern">
+                    <div class="card-header-left">
+                        <div class="header-icon"><i class="fas fa-sitemap"></i></div>
+                        <div>
+                            <h5 class="header-title">Personal por Sección</h5>
+                            <small class="text-muted">
+                                <span class="badge-total">{{ $registros->total() }}</span> resultados
+                                @if($busqueda) &mdash; buscando <strong>"{{ $busqueda }}"</strong> @endif
+                            </small>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <a href="{{ route('personal-secciones.export', request()->query()) }}" class="btn btn-nuevo">
+                            <i class="fas fa-file-excel mr-1"></i> Exportar Excel
+                        </a>
+                        @can('sincronizar-personal-secciones')
+                            <form action="{{ route('personal-secciones.sincronizar') }}" method="POST" class="d-inline"
+                                  onsubmit="return confirm('Esto trae los datos actuales de Personal 911 (personal, funciones, armas, chalecos y licencias). ¿Continuar?');">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-primary" {{ $minutosParaProximaSync > 0 ? 'disabled' : '' }}>
+                                    <i class="fas fa-sync-alt"></i>
+                                    {{ $minutosParaProximaSync > 0 ? "Disponible en {$minutosParaProximaSync} min" : 'Actualizar desde Personal 911' }}
+                                </button>
+                            </form>
+                            <div class="small text-muted mt-1">
+                                Última actualización:
+                                {{ $ultimaSincronizacion ? $ultimaSincronizacion->format('d/m/Y H:i') : 'nunca (se sincroniza automáticamente todos los días a las 05:30)' }}
+                            </div>
+                        @endcan
+                    </div>
+                </div>
+
+                <div class="card-body pt-3">
                     <form method="GET" action="{{ route('personal-secciones.index') }}" class="mb-3">
                         <div class="row align-items-end">
                             <div class="col-md-4">
                                 <label for="busqueda">Buscar funcionario</label>
-                                <input type="text" name="busqueda" id="busqueda" class="form-control"
-                                       placeholder="Apellido, nombre, LP o DNI..." value="{{ $busqueda }}">
+                                <div class="search-wrapper">
+                                    <div class="search-icon-left"><i class="fas fa-search"></i></div>
+                                    <input type="text" name="busqueda" id="busqueda" class="search-input"
+                                           placeholder="Apellido, nombre, LP o DNI..." value="{{ $busqueda }}" autocomplete="off">
+                                    @if($busqueda)
+                                        <a href="{{ route('personal-secciones.index') }}" class="search-clear"><i class="fas fa-times"></i></a>
+                                    @endif
+                                </div>
                             </div>
                             <div class="col-md-3">
                                 <label for="estado">Estado</label>
@@ -55,12 +73,16 @@
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <button type="submit" class="btn btn-primary mb-1">
+                                <label for="orden">Ordenar por</label>
+                                <select name="orden" id="orden" class="form-control">
+                                    <option value="jerarquia" {{ $orden === 'jerarquia' ? 'selected' : '' }}>Jerarquía (y antigüedad)</option>
+                                    <option value="novedades" {{ $orden === 'novedades' ? 'selected' : '' }}>Novedades más recientes</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-search btn-block mb-1">
                                     <i class="fas fa-search"></i> Buscar
                                 </button>
-                                <a href="{{ route('personal-secciones.index') }}" class="btn btn-secondary mb-1">
-                                    <i class="fas fa-times"></i> Limpiar
-                                </a>
                             </div>
                         </div>
 
@@ -85,7 +107,7 @@
                     </form>
 
                     <div class="table-responsive">
-                        <table class="table table-striped align-middle">
+                        <table class="table table-modern">
                             <thead>
                                 <tr>
                                     <th>Sección</th>
@@ -98,6 +120,9 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @php
+                                    $paletaSecciones = ['primary', 'info', 'success', 'warning', 'danger', 'secondary', 'dark'];
+                                @endphp
                                 @forelse ($registros as $r)
                                     @php
                                         $p = $r->personal;
@@ -105,10 +130,15 @@
                                         $badgeClase = !$r->activo
                                             ? ($r->motivo_baja === \App\Models\PersonalSeccion::MOTIVO_BAJA_POLICIAL ? 'badge-dark' : 'badge-danger')
                                             : ($r->en_licencia ? 'badge-warning' : 'badge-success');
+                                        $colorSeccion = $paletaSecciones[crc32((string) $r->seccion) % count($paletaSecciones)];
+                                        $esOficial = \App\Models\Personal::pesoJerarquia($p->jerarquia) < 10;
                                     @endphp
                                     <tr class="{{ !$r->activo ? 'table-light text-muted' : '' }}">
-                                        <td>{{ $r->seccion }}</td>
-                                        <td>{{ $p->jerarquia }}</td>
+                                        <td><span class="badge badge-{{ $colorSeccion }}">{{ $r->seccion }}</span></td>
+                                        <td>
+                                            <i class="fas {{ $esOficial ? 'fa-star text-warning' : 'fa-shield-alt text-secondary' }} mr-1" title="{{ $esOficial ? 'Oficial' : 'Suboficial / Tropa' }}"></i>
+                                            {{ $p->jerarquia }}
+                                        </td>
                                         <td>
                                             <a href="{{ route('personal-secciones.show', $p->id) }}">
                                                 <strong>{{ $p->apellido }}</strong>, {{ $p->nombre }}

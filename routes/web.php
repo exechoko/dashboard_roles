@@ -53,6 +53,7 @@ use App\Http\Controllers\ArmaRetencionController;
 use App\Http\Controllers\ArmaMotivoController;
 use App\Http\Controllers\ArmaTipoController;
 use App\Http\Controllers\ArmaPersonalController;
+use App\Http\Controllers\PersonalSeccionController;
 use App\Http\Controllers\ArmeriaArmaController;
 use App\Http\Controllers\ArmeriaChalecoController;
 use App\Http\Controllers\DominioAlertaController;
@@ -847,6 +848,15 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/backups/{archivo}/descargar', [ConfiguracionSistemaController::class, 'backupDescargar'])->name('backups.descargar');
         Route::post('/backups/{archivo}/restaurar', [ConfiguracionSistemaController::class, 'backupRestaurar'])->name('backups.restaurar');
         Route::delete('/backups/{archivo}', [ConfiguracionSistemaController::class, 'backupEliminar'])->name('backups.eliminar');
+    });
+
+    // Personal por Sección (visualizador general de dotación por sección de 911, con anotaciones)
+    Route::prefix('personal-secciones')->name('personal-secciones.')->group(function () {
+        Route::get('/', [PersonalSeccionController::class, 'index'])->name('index');
+        Route::post('/sincronizar', [PersonalSeccionController::class, 'sincronizar'])->name('sincronizar');
+        Route::post('/{personalId}/notas', [PersonalSeccionController::class, 'storeNota'])->name('notas.store');
+        Route::post('/notas/{notaId}/compartir', [PersonalSeccionController::class, 'compartirNota'])->name('notas.compartir');
+        Route::post('/{personalId}/notas/compartir-todas', [PersonalSeccionController::class, 'compartirTodasNotas'])->name('notas.compartir-todas');
     });
 
     // Herramientas

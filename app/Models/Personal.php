@@ -114,6 +114,16 @@ class Personal extends Model
         return $this->hasMany(PersonalLicencia::class)->vigentes();
     }
 
+    public function seccion(): HasOne
+    {
+        return $this->hasOne(PersonalSeccion::class);
+    }
+
+    public function notasSeccion(): HasMany
+    {
+        return $this->hasMany(PersonalSeccionNota::class)->orderByDesc('created_at');
+    }
+
     public function getResumenLicenciaActualAttribute(): ?array
     {
         $licencias = $this->relationLoaded('licencias')

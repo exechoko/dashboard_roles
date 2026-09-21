@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\Personal911ImportService;
+use App\Services\PersonalSeccionSyncService;
 use Illuminate\Console\Command;
 
 class ImportarInventarioPersonal911 extends Command
@@ -24,9 +25,10 @@ class ImportarInventarioPersonal911 extends Command
     /**
      * Execute the console command.
      */
-    public function handle(Personal911ImportService $service): int
+    public function handle(Personal911ImportService $service, PersonalSeccionSyncService $seccionSyncService): int
     {
         $resultado = $service->importar();
+        $resultadoSecciones = $seccionSyncService->sincronizar();
 
         $this->info("Funcionarios procesados: {$resultado['procesados']}");
         $this->info("Armas sincronizadas: {$resultado['armas']}");
@@ -34,6 +36,7 @@ class ImportarInventarioPersonal911 extends Command
         $this->info("Registros de licencia sincronizados: {$resultado['licencias']}");
         $this->info("Funcionarios actualmente de licencia: {$resultado['funcionarios_de_licencia']}");
         $this->info("Funcionarios en situación de baja: {$resultado['bajas']}");
+        $this->info("Secciones: {$resultadoSecciones['activos']} altas/actualizados, {$resultadoSecciones['en_licencia']} en licencia, {$resultadoSecciones['bajas']} dejaron su sección");
 
         if ($resultado['conflictos_armas'] !== []) {
             $this->warn('Armas duplicadas sin asignar:');

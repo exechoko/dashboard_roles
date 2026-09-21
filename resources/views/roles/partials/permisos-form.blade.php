@@ -125,6 +125,8 @@
         'Personal' => [
             'personal',
             'datos-personales-personal',
+            'personal-secciones',
+            'personal-seccion-nota',
         ],
         'Incidencias 911' => [
             'periodo-911',

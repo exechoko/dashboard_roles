@@ -1,13 +1,5 @@
 @extends('layouts.app')
 
-@php
-    $rubros = $novedades
-        ? $novedades->rubrosCompletos()
-        : collect(\App\Models\ParteDiarioNovedades::RUBROS)
-            ->map(fn ($et) => ['etiqueta' => $et, 'valor' => \App\Models\ParteDiarioNovedades::SIN_NOVEDAD])
-            ->all();
-@endphp
-
 @section('content')
 <section class="section">
     <div class="section-header">

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ParteDiarioBorradorService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -77,6 +78,40 @@ class ParteDiario extends Model
             'fecha'   => $this->fecha->toDateString(),
             'guardia' => $this->guardia,
         ]);
+    }
+
+    /**
+     * El parte de MÓVILES de la misma división/turno (mismo fecha_inicio),
+     * exista o no todavía. Los rubros de NOVEDADES sobre el estado de los
+     * móviles (QAP, fuera de servicio, etc.) siempre salen de ahí, sin
+     * importar si $this es el parte de móviles o el de motos.
+     */
+    public function parteMoviles(): ?self
+    {
+        if ($this->tipo === self::TIPO_MOVILES) {
+            return $this;
+        }
+
+        return self::query()
+            ->where('destino_id', $this->destino_id)
+            ->where('tipo', self::TIPO_MOVILES)
+            ->where('fecha_inicio', $this->fecha_inicio)
+            ->first();
+    }
+
+    /**
+     * Los 14 rubros de la hoja NOVEDADES de la División, mezclando el texto
+     * manual (personal, moviles_prever) con los rubros de móviles calculados
+     * a partir de los estado_dia del turno (ver ParteDiarioNovedades::RUBROS_ESTADO_RECURSO).
+     *
+     * @return array<string, array{etiqueta: string, valor: string}>
+     */
+    public function rubrosNovedades(?ParteDiarioNovedades $novedades = null): array
+    {
+        $estados = $this->parteMoviles()?->estadosDiarios()->with('recurso')->get() ?? collect();
+        $computados = ParteDiarioBorradorService::novedadesDesdeEstados($estados);
+
+        return ($novedades ?? $this->novedades() ?? new ParteDiarioNovedades())->rubrosCompletos($computados);
     }
 
     public function guardiaLabel(): string

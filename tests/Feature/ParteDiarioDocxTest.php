@@ -110,6 +110,38 @@ class ParteDiarioDocxTest extends TestCase
         $this->assertStringContainsString('MÓVIL DE TRASLADO: Sin Novedad', $texto);
     }
 
+    public function test_movil_qap_sin_dotacion_no_aparece_en_el_cuerpo_pero_si_en_novedades(): void
+    {
+        $parte = $this->parte('%Patrulla%');
+
+        $recursoQap = Recurso::query()
+            ->where('destino_id', $parte->destino_id)
+            ->whereNotNull('vehiculo_id')
+            ->whereNotIn('id', $parte->estadosDiarios->pluck('recurso_id'))
+            ->firstOrFail();
+
+        RecursoEstadoDiario::create([
+            'parte_diario_id' => $parte->id,
+            'recurso_id'      => $recursoQap->id,
+            'guardia'         => 'guardia_3',
+            'horario'         => '06_18',
+            'fecha_inicio'    => $parte->fecha_inicio,
+            'fecha_fin'       => $parte->fecha_fin,
+            'estado_dia'      => 'qap_playon',
+            'user_id'         => $parte->user_id,
+        ]);
+
+        $parte = $parte->fresh(['seccion', 'estadosDiarios.recurso.vehiculo', 'dotaciones.personal', 'asignaciones']);
+        $texto = $this->textoDelDocx($this->docx->generar($parte, null));
+
+        $nombreUpper = mb_strtoupper($recursoQap->nombre, 'UTF-8');
+        $this->assertStringNotContainsString(
+            $nombreUpper . ':', $texto,
+            'Un móvil QAP sin dotación no debe listarse individualmente en el cuerpo del oficio.'
+        );
+        $this->assertStringContainsString('MÓVILES Q.A.P. (PLAYÓN 911): ' . $recursoQap->nombre, $texto);
+    }
+
     public function test_el_parte_de_motos_tiene_guardia_nomina_y_asignacion_de_servicios(): void
     {
         $parte = $this->parte('%Motorizada%');

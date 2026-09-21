@@ -79,9 +79,13 @@ class VehiculoInformeController extends Controller
             ? $this->recursosConfigurables($tipo)
             : null;
 
+        $rubrosCalculados = $tipo === ParteDiario::TIPO_MOVILES
+            ? ($parte?->rubrosNovedades($novedades) ?? (new ParteDiarioNovedades())->rubrosCompletos())
+            : [];
+
         return view('flota-911.informes.parte-' . $tipo, compact(
             'tipo', 'fecha', 'guardia', 'horario', 'fechaInicio', 'fechaFin',
-            'recursos', 'personal', 'consignas', 'parte', 'novedades', 'configurables'
+            'recursos', 'personal', 'consignas', 'parte', 'novedades', 'configurables', 'rubrosCalculados'
         ));
     }
 
@@ -460,6 +464,7 @@ class VehiculoInformeController extends Controller
         int $userId
     ): void {
         $contenido = collect($request->input('novedades', []))
+            ->except(ParteDiarioNovedades::RUBROS_ESTADO_RECURSO)
             ->map(fn ($valor) => trim((string) $valor))
             ->filter()
             ->all();

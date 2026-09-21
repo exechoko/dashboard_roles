@@ -80,8 +80,9 @@ class ParteDiarioHistorialController extends Controller
             ->values();
 
         $novedades = $parte->novedades();
+        $rubros = $parte->rubrosNovedades($novedades);
 
-        return view('flota-911.partes-diarios.show', compact('parte', 'recursos', 'novedades'));
+        return view('flota-911.partes-diarios.show', compact('parte', 'recursos', 'novedades', 'rubros'));
     }
 
     public function descargar(ParteDiario $parte, ParteDiarioDocxService $docxService)

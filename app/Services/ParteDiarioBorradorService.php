@@ -120,7 +120,7 @@ class ParteDiarioBorradorService
      * @param  \Illuminate\Support\Collection<int, RecursoEstadoDiario>  $estados
      * @return array<string, string>
      */
-    public function novedadesDesdeEstados(Collection $estados): array
+    public static function novedadesDesdeEstados(Collection $estados): array
     {
         $porEstado = fn (array $claves): string => $estados
             ->filter(fn (RecursoEstadoDiario $e) => in_array($e->estado_dia, $claves, true))

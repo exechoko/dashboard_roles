@@ -78,10 +78,11 @@ class ParteDiarioDocxService
 
         foreach ($parte->estadosDiarios as $estado) {
             $tripulacion = ($dotacionesPorRecurso->get($estado->recurso_id) ?? collect())->sortBy('orden');
-            $estadoDia = $estado->estado_dia ?? 'circula';
 
-            // Un móvil que "circula" sin dotación cargada no se reporta.
-            if ($estadoDia === 'circula' && $tripulacion->isEmpty()) {
+            // Un móvil sin dotación cargada no se reporta individualmente en
+            // el cuerpo del oficio: si no circula, ya queda resumido en el
+            // rubro correspondiente de la hoja NOVEDADES.
+            if ($tripulacion->isEmpty()) {
                 continue;
             }
 
@@ -120,7 +121,7 @@ class ParteDiarioDocxService
         $this->membrete($sn, config('flota911.membrete.novedades'));
         $this->titulo($sn, 'NOVEDADES', 12, true);
         $sn->addTextBreak(1);
-        foreach (($novedades?->rubrosCompletos() ?? $this->rubrosVacios()) as $rubro) {
+        foreach ($parte->rubrosNovedades($novedades) as $rubro) {
             $texto = $sn->addTextRun();
             $texto->addText($rubro['etiqueta'] . ': ', ['bold' => true, 'size' => 10, 'name' => self::FONT]);
             $texto->addText($rubro['valor'], ['size' => 10, 'name' => self::FONT]);
@@ -405,19 +406,6 @@ class ParteDiarioDocxService
         $s->addTextBreak(4);
         $s->addText('_______________________________', ['size' => 10, 'name' => self::FONT], ['alignment' => 'center']);
         $s->addText('Firma y aclaración', ['size' => 9, 'name' => self::FONT], ['alignment' => 'center']);
-    }
-
-    /**
-     * @return array<string, array{etiqueta: string, valor: string}>
-     */
-    private function rubrosVacios(): array
-    {
-        $salida = [];
-        foreach (ParteDiarioNovedades::RUBROS as $clave => $etiqueta) {
-            $salida[$clave] = ['etiqueta' => $etiqueta, 'valor' => ParteDiarioNovedades::SIN_NOVEDAD];
-        }
-
-        return $salida;
     }
 
     private function crearDocumento(): PhpWord

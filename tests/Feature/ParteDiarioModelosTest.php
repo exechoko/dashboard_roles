@@ -36,6 +36,18 @@ class ParteDiarioModelosTest extends TestCase
         $this->assertSame(ParteDiarioNovedades::SIN_NOVEDAD, $rubros['movil_traslado']['valor']);
     }
 
+    public function test_rubros_de_estado_recurso_ignoran_el_contenido_manual_y_usan_los_computados(): void
+    {
+        $novedades = new ParteDiarioNovedades([
+            'contenido' => ['sala_armas' => 'SGTO. PEREZ JUAN', 'moviles_qap' => 'texto viejo tipeado a mano'],
+        ]);
+
+        $rubros = $novedades->rubrosCompletos(['moviles_qap' => 'Móvil 1002 - Móvil 1003']);
+
+        $this->assertSame('SGTO. PEREZ JUAN', $rubros['sala_armas']['valor'], 'Los rubros de personal siguen viniendo del contenido manual.');
+        $this->assertSame('Móvil 1002 - Móvil 1003', $rubros['moviles_qap']['valor'], 'moviles_qap ignora el contenido manual y usa el computado.');
+    }
+
     public function test_parte_diario_relaciona_estados_dotaciones_y_asignaciones(): void
     {
         $seccion = Destino::where('parent_id', self::DIVISION_911_ID)->firstOrFail();

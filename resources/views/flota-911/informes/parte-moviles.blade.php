@@ -68,10 +68,19 @@
                     @php $contenidoNovedades = optional($novedades)->contenido ?? []; @endphp
                     <div class="row">
                         @foreach(\App\Models\ParteDiarioNovedades::RUBROS as $clave => $etiqueta)
-                        @php $esPersonal = in_array($clave, \App\Models\ParteDiarioNovedades::RUBROS_PERSONAL, true); @endphp
+                        @php
+                            $esPersonal = in_array($clave, \App\Models\ParteDiarioNovedades::RUBROS_PERSONAL, true);
+                            $esAutomatico = in_array($clave, \App\Models\ParteDiarioNovedades::RUBROS_ESTADO_RECURSO, true);
+                        @endphp
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label class="small font-weight-bold mb-1">{{ $etiqueta }}</label>
+                                @if($esAutomatico)
+                                <p class="form-control form-control-sm bg-light text-muted mb-1" style="min-height: calc(1.5em + .5rem + 2px);">
+                                    {{ $rubrosCalculados[$clave]['valor'] ?? \App\Models\ParteDiarioNovedades::SIN_NOVEDAD }}
+                                </p>
+                                <small class="text-muted">Se calcula solo según el estado cargado arriba en cada móvil.</small>
+                                @else
                                 @if($esPersonal)
                                 <select class="form-control form-control-sm select2-novedad-personal mb-1"
                                     data-rubro="{{ $clave }}" data-placeholder="Agregar funcionario...">
@@ -85,6 +94,7 @@
                                 @endif
                                 <textarea name="novedades[{{ $clave }}]" class="form-control form-control-sm"
                                     rows="{{ $esPersonal ? 2 : 1 }}" maxlength="2000">{{ $contenidoNovedades[$clave] ?? '' }}</textarea>
+                                @endif
                             </div>
                         </div>
                         @endforeach

@@ -232,6 +232,21 @@ class ParteDiarioCapturaTest extends TestCase
         $this->assertArrayNotHasKey('movil_traslado', $novedades->first()->contenido);
     }
 
+    public function test_los_rubros_de_estado_de_movil_no_se_guardan_aunque_se_envien_a_mano(): void
+    {
+        $this->actingAs($this->usuario());
+        $recurso = $this->recursoDeMoviles();
+
+        $this->post(route('flota-911.informes.parte-diario.generar'), $this->payload(
+            [['id' => $recurso->id, 'estado_dia' => 'circula']],
+            ['novedades' => ['sala_armas' => 'SGTO. PEREZ', 'moviles_qap' => 'texto tipeado a mano que no debe persistir']],
+        ))->assertRedirect();
+
+        $novedades = ParteDiarioNovedades::where(['fecha' => '2099-05-20', 'guardia' => 'guardia_3'])->firstOrFail();
+        $this->assertArrayNotHasKey('moviles_qap', $novedades->contenido);
+        $this->assertSame('SGTO. PEREZ', $novedades->contenido['sala_armas']);
+    }
+
     public function test_sin_novedades_no_se_crea_registro(): void
     {
         $this->actingAs($this->usuario());

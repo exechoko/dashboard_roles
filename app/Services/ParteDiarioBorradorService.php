@@ -133,7 +133,7 @@ class ParteDiarioBorradorService
 
         return [
             'moviles_fuera_servicio' => $porEstado(['fuera_de_servicio']),
-            'moviles_qap'            => $porEstado(['qap_playon', 'reserva']),
+            'moviles_qap'            => $porEstado(['qap_playon']),
             'movil_presto'           => $porEstado(['a_presto']),
             'movil_traslado'         => $porEstado(['de_traslado']),
             'movil_comision'         => $porEstado(['en_comision']),

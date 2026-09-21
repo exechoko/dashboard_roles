@@ -18,7 +18,6 @@ class RecursoEstadoDiario extends Model
 
     public static array $estados = [
         'circula'           => 'Circula',
-        'reserva'           => 'Reserva',
         'qap_playon'        => 'Q.A.P. (Playón 911)',
         'a_presto'          => 'A presto',
         'de_traslado'       => 'De traslado',
@@ -63,7 +62,7 @@ class RecursoEstadoDiario extends Model
     {
         return match ($this->estado_dia) {
             'circula'           => 'success',
-            'reserva'           => 'info',
+            'qap_playon'        => 'info',
             'fuera_de_servicio' => 'danger',
             'otro'              => 'secondary',
             default             => 'light',

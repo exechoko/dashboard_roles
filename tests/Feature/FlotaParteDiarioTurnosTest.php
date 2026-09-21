@@ -54,7 +54,7 @@ class FlotaParteDiarioTurnosTest extends TestCase
         $recurso = Recurso::whereNotNull('vehiculo_id')->firstOrFail();
 
         $this->post(route('flota-911.informes.parte-diario.generar'), $this->payloadTurno([
-            'recursos' => [['id' => $recurso->id, 'estado_dia' => 'reserva', 'motivo' => 'En taller']],
+            'recursos' => [['id' => $recurso->id, 'estado_dia' => 'qap_playon', 'motivo' => 'En taller']],
         ]))->assertRedirect();
 
         $this->post(route('flota-911.informes.parte-diario.generar'), $this->payloadTurno([
@@ -72,7 +72,7 @@ class FlotaParteDiarioTurnosTest extends TestCase
 
         $this->assertCount(2, $estados);
         $this->assertSame(['guardia_1', 'guardia_2'], $estados->pluck('guardia')->all());
-        $this->assertSame(['reserva', 'circula'], $estados->pluck('estado_dia')->all());
+        $this->assertSame(['qap_playon', 'circula'], $estados->pluck('estado_dia')->all());
     }
 
     public function test_reguardar_el_mismo_turno_actualiza_en_lugar_de_duplicar(): void

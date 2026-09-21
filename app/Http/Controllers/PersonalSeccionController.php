@@ -134,9 +134,12 @@ class PersonalSeccionController extends Controller
 
         $fechasIngreso = $detalleService->obtenerFechasIngresoMasivo($personal911Ids);
 
+        // Ojo: la sección NO entra en el orden acá a propósito. Con varias
+        // secciones tildadas, el escalafón manda por sobre todo: los dos
+        // subcomisarios van primero (sean de V.G. o de Judiciales), después
+        // el oficial principal, etc. — quedan mezclados entre secciones.
         return $registros->sortBy([
             fn ($a, $b) => $b->activo <=> $a->activo,
-            fn ($a, $b) => strcmp((string) $a->seccion, (string) $b->seccion),
             fn ($a, $b) => Personal::pesoJerarquia($a->personal->jerarquia) <=> Personal::pesoJerarquia($b->personal->jerarquia),
             function ($a, $b) use ($fechasIngreso) {
                 $fechaA = $fechasIngreso[$a->personal->personal911_id ?? 0] ?? null;

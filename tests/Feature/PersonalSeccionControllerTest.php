@@ -17,11 +17,15 @@ class PersonalSeccionControllerTest extends TestCase
 
     private function crearFuncionarioEnSeccion(string $seccion, bool $activo = true, bool $enLicencia = false, string $jerarquia = 'Sargento', ?string $apellido = null): Personal
     {
+        do {
+            $lp = (string) random_int(10000, 99999);
+        } while (Personal::withTrashed()->where('lp', $lp)->exists());
+
         $personal = Personal::create([
             'personal911_id' => random_int(900000, 999999),
             'nombre' => 'Funcionario',
             'apellido' => $apellido ?? 'De Prueba '.uniqid(),
-            'lp' => (string) random_int(10000, 99999),
+            'lp' => $lp,
             'jerarquia' => $jerarquia,
             'funcion_personal911' => 'Monitoreo V.G. G1',
         ]);
@@ -323,6 +327,41 @@ class PersonalSeccionControllerTest extends TestCase
         $this->assertNotFalse($posAgente);
         $this->assertLessThan($posSargento, $posComisario, 'Comisario debe listarse antes que Sargento');
         $this->assertLessThan($posAgente, $posSargento, 'Sargento debe listarse antes que Agente');
+    }
+
+    public function test_orden_por_jerarquia_mezcla_secciones_en_vez_de_agruparlas(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->actingAs($user);
+
+        // El comisario es de V.G. pero con apellido "Zzz" (última letra) para
+        // que, si el código agrupara por sección primero, apareciera recién
+        // después de TODO Judiciales. Si en cambio aparece primero de todos
+        // (como corresponde por jerarquía), confirma que la sección no pesa.
+        $comisarioVG = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', jerarquia: 'Comisario', apellido: 'ZzzTestComisario');
+        $sargentoJudiciales = $this->crearFuncionarioEnSeccion('Sección Judiciales y Gestión de Calidad', jerarquia: 'Sargento', apellido: 'AaaTestSargento');
+        $agenteVG = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', jerarquia: 'Agente', apellido: 'BbbTestAgente');
+
+        // Se filtra por "Test" (compartido por los 3 apellidos sintéticos)
+        // para no depender de en qué página cae cada uno entre el padrón
+        // real ya sincronizado.
+        $response = $this->get(route('personal-secciones.index', [
+            'busqueda' => 'Test',
+            'secciones' => ['Sección Violencia de Género', 'Sección Judiciales y Gestión de Calidad'],
+            'orden' => 'jerarquia',
+        ]));
+
+        $html = $response->getContent();
+        $posComisario = strpos($html, $comisarioVG->apellido);
+        $posSargento = strpos($html, $sargentoJudiciales->apellido);
+        $posAgente = strpos($html, $agenteVG->apellido);
+
+        $this->assertNotFalse($posComisario);
+        $this->assertNotFalse($posSargento);
+        $this->assertNotFalse($posAgente);
+        $this->assertLessThan($posSargento, $posComisario, 'El comisario de V.G. debe listarse antes que el sargento de Judiciales, aunque sea de otra sección');
+        $this->assertLessThan($posAgente, $posSargento, 'El sargento de Judiciales debe listarse antes que el agente de V.G.');
     }
 
     public function test_orden_por_novedades_prioriza_la_anotacion_mas_reciente(): void

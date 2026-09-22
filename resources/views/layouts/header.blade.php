@@ -473,7 +473,7 @@
                     @endif
                 </a>
                 <a href="{{ url('logout') }}" class="dropdown-item has-icon text-danger"
-                    onclick="event.preventDefault(); localStorage.clear();  document.getElementById('logout-form').submit();">
+                    onclick="event.preventDefault(); try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('tutorial_') !== 0) { localStorage.removeItem(k); } }); } catch (e) {} document.getElementById('logout-form').submit();">
                     <i class="fas fa-sign-out-alt"></i> Salir
                 </a>
                 <form id="logout-form" action="{{ url('/logout') }}" method="POST" class="d-none">

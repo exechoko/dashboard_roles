@@ -633,15 +633,12 @@ Route::group(['middleware' => ['auth']], function () {
             ->parameters(['tipos' => 'armaTipo'])
             ->except(['show']);
 
-        // Personal
+        // Personal (identidad y alta/baja los maneja el sync diario de personal911;
+        // acá solo se corrige localmente el arma/chaleco cuando personal911 lo tiene mal)
         Route::get('personal', [ArmaPersonalController::class, 'index'])->name('personal.index');
-        Route::get('personal/create', [ArmaPersonalController::class, 'create'])->name('personal.create');
-        Route::post('personal', [ArmaPersonalController::class, 'store'])->name('personal.store');
         Route::get('personal/{personal}', [ArmaPersonalController::class, 'show'])->name('personal.show');
         Route::get('personal/{personal}/edit', [ArmaPersonalController::class, 'edit'])->name('personal.edit');
         Route::put('personal/{personal}', [ArmaPersonalController::class, 'update'])->name('personal.update');
-        Route::delete('personal/{personal}', [ArmaPersonalController::class, 'destroy'])->name('personal.destroy');
-        Route::post('personal/{id}/restaurar', [ArmaPersonalController::class, 'restore'])->name('personal.restore');
 
         // Armería (armas secundarias y chalecos, movimientos entre División 911 y Jefatura Central)
         Route::prefix('armeria')->name('armeria.')->group(function () {

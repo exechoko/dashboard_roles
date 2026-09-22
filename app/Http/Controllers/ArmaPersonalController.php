@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreArmaPersonalRequest;
 use App\Http\Requests\UpdateArmaPersonalRequest;
 use App\Models\ArmaTipo;
 use App\Models\Personal;
@@ -17,11 +16,8 @@ class ArmaPersonalController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:ver-personal|crear-personal|editar-personal|borrar-personal|restaurar-personal', ['only' => ['index', 'show']]);
-        $this->middleware('permission:crear-personal', ['only' => ['create', 'store']]);
+        $this->middleware('permission:ver-personal|editar-personal', ['only' => ['index', 'show']]);
         $this->middleware('permission:editar-personal', ['only' => ['edit', 'update']]);
-        $this->middleware('permission:borrar-personal', ['only' => ['destroy']]);
-        $this->middleware('permission:restaurar-personal', ['only' => ['restore']]);
     }
 
     public function index(Request $request): View
@@ -134,36 +130,6 @@ class ArmaPersonalController extends Controller
         return view('arma-personal.show', compact('personal', 'estadoFiltro'));
     }
 
-    public function create(): View
-    {
-        $armaTipos = ArmaTipo::activos()->orderBy('nombre')->get();
-
-        return view('arma-personal.crear', compact('armaTipos'));
-    }
-
-    public function store(StoreArmaPersonalRequest $request): RedirectResponse
-    {
-        $data = $request->validated();
-        $data['created_by'] = auth()->id();
-        $numeracionArma = $data['numeracion_arma'];
-        $armaTipoId = (int) $data['arma_tipo_id'];
-        $numeroChaleco = $data['nro_chaleco'] ?? null;
-        unset($data['numeracion_arma'], $data['arma_tipo_id'], $data['nro_chaleco']);
-
-        DB::transaction(function () use ($data, $numeracionArma, $armaTipoId, $numeroChaleco): void {
-            $personal = Personal::create($data);
-            $personal->cambiarArma(
-                $numeracionArma,
-                $armaTipoId,
-                $numeroChaleco,
-                now()->toDateString(),
-                'Asignación inicial'
-            );
-        });
-
-        return redirect()->route('armas.personal.index')->with('success', 'Funcionario creado correctamente.');
-    }
-
     public function edit(Personal $personal): View
     {
         $armaTipos = ArmaTipo::activos()->orderBy('nombre')->get();
@@ -174,48 +140,19 @@ class ArmaPersonalController extends Controller
     public function update(UpdateArmaPersonalRequest $request, Personal $personal): RedirectResponse
     {
         $data = $request->validated();
-        $data['updated_by'] = auth()->id();
 
         DB::transaction(function () use ($data, $personal): void {
-            if (!empty($data['cambiar_arma']) && !empty($data['numeracion_arma']) && !empty($data['arma_tipo_id'])) {
-                $personal->cambiarArma(
-                    $data['numeracion_arma'],
-                    $data['arma_tipo_id'],
-                    $data['nro_chaleco'] ?? null,
-                    now()->toDateString(),
-                    $data['motivo_cambio'] ?? 'Cambio por administración',
-                    $personal->personal911_id !== null,
-                    auth()->id()
-                );
-            }
-
-            $personal->update([
-                'jerarquia' => $data['jerarquia'],
-                'dni' => $data['dni'] ?? null,
-                'direccion' => $data['direccion'] ?? null,
-                'telefono' => $data['telefono'] ?? null,
-                'email' => $data['email'] ?? null,
-                'estado_civil' => $data['estado_civil'] ?? null,
-                'fecha_nacimiento' => $data['fecha_nacimiento'] ?? null,
-                'updated_by' => auth()->id(),
-            ]);
+            $personal->cambiarArma(
+                $data['numeracion_arma'],
+                $data['arma_tipo_id'],
+                $data['nro_chaleco'] ?? null,
+                now()->toDateString(),
+                $data['motivo_cambio'],
+                $personal->personal911_id !== null,
+                auth()->id()
+            );
         });
 
-        return redirect()->route('armas.personal.index')->with('success', 'Funcionario actualizado correctamente.');
-    }
-
-    public function destroy(Personal $personal): RedirectResponse
-    {
-        $personal->delete();
-
-        return redirect()->route('armas.personal.index')->with('success', 'Funcionario eliminado correctamente.');
-    }
-
-    public function restore(int $id): RedirectResponse
-    {
-        $personal = Personal::onlyTrashed()->findOrFail($id);
-        $personal->restore();
-
-        return redirect()->route('armas.personal.index')->with('success', 'Funcionario restaurado correctamente.');
+        return redirect()->route('armas.personal.index')->with('success', 'Arma/chaleco corregido correctamente.');
     }
 }

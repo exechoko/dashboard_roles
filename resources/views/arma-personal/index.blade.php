@@ -4,11 +4,6 @@
     <section class="section">
         <div class="section-header d-flex justify-content-between align-items-center">
             <h3 class="page__heading">Personal</h3>
-            @can('crear-personal')
-                <a href="{{ route('armas.personal.create') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Nuevo Funcionario
-                </a>
-            @endcan
         </div>
 
         <div class="section-body">
@@ -185,36 +180,16 @@
                                             @endif
                                         </td>
                                         <td class="text-right">
-                                            @if($personal->trashed())
-                                                @can('restaurar-personal')
-                                                    <form action="{{ route('armas.personal.restore', $personal->id) }}" method="POST" class="d-inline"
-                                                          onsubmit="return confirm('¿Restaurar este funcionario?');">
-                                                        @csrf
-                                                        <button type="submit" class="btn btn-sm btn-success" title="Restaurar">
-                                                            <i class="fas fa-undo"></i>
-                                                        </button>
-                                                    </form>
-                                                @endcan
-                                            @else
+                                            @if(!$personal->trashed())
                                                 @can('ver-personal')
                                                     <a href="{{ route('armas.personal.show', $personal) }}" class="btn btn-sm btn-info" title="Ver">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
                                                 @endcan
                                                 @can('editar-personal')
-                                                    <a href="{{ route('armas.personal.edit', $personal) }}" class="btn btn-sm btn-primary" title="Editar">
-                                                        <i class="fas fa-edit"></i>
+                                                    <a href="{{ route('armas.personal.edit', $personal) }}" class="btn btn-sm btn-primary" title="Corregir arma/chaleco">
+                                                        <i class="fas fa-gun"></i>
                                                     </a>
-                                                @endcan
-                                                @can('borrar-personal')
-                                                    <form action="{{ route('armas.personal.destroy', $personal) }}" method="POST" class="d-inline"
-                                                          onsubmit="return confirm('¿Está seguro de eliminar este funcionario?');">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    </form>
                                                 @endcan
                                             @endif
                                         </td>

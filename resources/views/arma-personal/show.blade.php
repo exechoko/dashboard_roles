@@ -10,7 +10,7 @@
                 </a>
                 @can('editar-personal')
                     <a href="{{ route('armas.personal.edit', $personal) }}" class="btn btn-primary">
-                        <i class="fas fa-edit"></i> Editar
+                        <i class="fas fa-gun"></i> Corregir arma/chaleco
                     </a>
                 @endcan
             </div>

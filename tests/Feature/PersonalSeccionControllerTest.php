@@ -465,4 +465,58 @@ class PersonalSeccionControllerTest extends TestCase
         $this->assertSame('11223344', $fila['dni']);
         $this->assertSame('test@example.com', $fila['email']);
     }
+
+    public function test_export_no_incluye_fechas_por_defecto_y_permite_columna_firma_en_blanco(): void
+    {
+        $personal = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', apellido: 'SinFechasPorDefecto');
+
+        $registro = \App\Models\PersonalSeccion::where('personal_id', $personal->id)->with('personal')->first();
+
+        // Sin pedir columnas extra: las fechas NO deben aparecer en los
+        // encabezados (el pedido del usuario fue que no vengan tildadas
+        // por defecto, ya que "no sirven mucho" en el uso más común).
+        $exportSinExtras = new \App\Exports\PersonalSeccionesExport(collect([$registro]));
+        $this->assertNotContains('Fecha de ingreso a la división', $exportSinExtras->headings());
+        $this->assertNotContains('Fecha baja de sección', $exportSinExtras->headings());
+
+        // Pidiendo "firma": aparece como columna, siempre vacía (es a
+        // propósito, para imprimir y firmar a mano).
+        $exportConFirma = new \App\Exports\PersonalSeccionesExport(collect([$registro]), ['firma']);
+        $this->assertContains('Firma', $exportConFirma->headings());
+        $this->assertSame('', $exportConFirma->collection()->first()['firma']);
+    }
+
+    public function test_export_incluye_columnas_personalizadas_vacias(): void
+    {
+        $personal = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', apellido: 'ConColumnaCustom');
+        $registro = \App\Models\PersonalSeccion::where('personal_id', $personal->id)->with('personal')->first();
+
+        $export = new \App\Exports\PersonalSeccionesExport(collect([$registro]), [], [], ['Aclaración', 'Sello']);
+
+        $this->assertSame(
+            ['NRO', 'Sección', 'Jerarquía', 'Apellido', 'Nombre', 'L.P.', 'Función', 'Estado', 'Aclaración', 'Sello'],
+            $export->headings()
+        );
+
+        $fila = $export->collection()->first();
+        $this->assertSame('', $fila['custom_0']);
+        $this->assertSame('', $fila['custom_1']);
+    }
+
+    public function test_export_sanitiza_las_columnas_personalizadas_del_query_string(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->actingAs($user);
+
+        $this->crearFuncionarioEnSeccion('Sección Violencia de Género');
+
+        $nombreLargo = str_repeat('X', 100);
+        $response = $this->get(route('personal-secciones.export', [
+            'columnas_custom' => ['Aclaración', '   ', $nombreLargo, 'Aclaración'],
+        ]));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
 }

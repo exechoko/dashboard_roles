@@ -84,11 +84,33 @@ class PersonalSeccionController extends Controller
             (array) $request->get('columnas', []),
             array_keys(PersonalSeccionesExport::COLUMNAS_EXTRA)
         ));
+        $detalles911 = $detalleService->obtenerMasivo($this->idsPersonal911($registros));
+        $columnasCustom = $this->columnasCustomSanitizadas($request);
 
         return Excel::download(
-            new PersonalSeccionesExport($registros, $columnasExtra),
+            new PersonalSeccionesExport($registros, $columnasExtra, $detalles911, $columnasCustom),
             'PersonalPorSeccion_'.now()->format('Y-m-d_His').'.xlsx'
         );
+    }
+
+    /**
+     * Nombres de columnas "en blanco" que el operador arma al vuelo (ej.
+     * "Aclaración", "Sello") solo para esta descarga — nunca se guardan.
+     * Se acotan en cantidad y largo para no dejar armar una planilla
+     * absurda desde un query string manipulado a mano.
+     *
+     * @return list<string>
+     */
+    private function columnasCustomSanitizadas(Request $request): array
+    {
+        return collect((array) $request->get('columnas_custom', []))
+            ->map(fn ($nombre) => trim((string) $nombre))
+            ->filter(fn ($nombre) => $nombre !== '')
+            ->map(fn ($nombre) => mb_substr($nombre, 0, 40))
+            ->unique()
+            ->take(10)
+            ->values()
+            ->all();
     }
 
     /**
@@ -99,15 +121,33 @@ class PersonalSeccionController extends Controller
     public function exportPreview(Request $request, Personal911DetalleService $detalleService): View
     {
         $registros = $this->registrosFiltrados($request, $request->user(), $detalleService);
+        $detalles911 = $detalleService->obtenerMasivo($this->idsPersonal911($registros));
 
         $filas = $registros->values()->map(
-            fn (PersonalSeccion $r, int $key) => PersonalSeccionesExport::mapearFila($r, $key + 1)
+            fn (PersonalSeccion $r, int $key) => PersonalSeccionesExport::mapearFila(
+                $r,
+                $key + 1,
+                $detalles911[$r->personal->personal911_id ?? 0] ?? null
+            )
         );
 
         return view('personal-secciones.partials.export-preview', [
             'filas' => $filas,
             'columnasExtraDisponibles' => PersonalSeccionesExport::COLUMNAS_EXTRA,
+            'grupos' => PersonalSeccionesExport::GRUPOS,
         ]);
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function idsPersonal911(Collection $registros): array
+    {
+        return $registros->map(fn (PersonalSeccion $r) => $r->personal->personal911_id)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**
@@ -149,13 +189,7 @@ class PersonalSeccionController extends Controller
 
     private function ordenarPorJerarquia(Collection $registros, Personal911DetalleService $detalleService): Collection
     {
-        $personal911Ids = $registros->map(fn (PersonalSeccion $r) => $r->personal->personal911_id)
-            ->filter()
-            ->unique()
-            ->values()
-            ->all();
-
-        $fechasIngreso = $detalleService->obtenerFechasIngresoMasivo($personal911Ids);
+        $fechasIngreso = $detalleService->obtenerFechasIngresoMasivo($this->idsPersonal911($registros));
 
         // Ojo: la sección NO entra en el orden acá a propósito. Con varias
         // secciones tildadas, el escalafón manda por sobre todo: los dos

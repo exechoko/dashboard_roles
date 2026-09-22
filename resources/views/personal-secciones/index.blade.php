@@ -326,6 +326,10 @@
             var modal = document.getElementById('modalExportarExcel');
             var contenido = document.getElementById('contenidoExportarExcel');
             var cargado = false;
+            // Columnas "en blanco" armadas al vuelo (ej. Aclaración, Sello).
+            // Viven solo en memoria del navegador: nunca se guardan en el
+            // servidor, se arman de nuevo cada vez que se abre el modal.
+            var columnasCustom = [];
 
             function actualizarLinkDescarga() {
                 var link = document.getElementById('btnDescargarExcel');
@@ -333,11 +337,75 @@
 
                 var params = new URLSearchParams(window.location.search);
                 params.delete('columnas[]');
+                params.delete('columnas_custom[]');
+
                 document.querySelectorAll('.col-extra-toggle:checked').forEach(function (chk) {
                     params.append('columnas[]', chk.value);
                 });
+                columnasCustom.forEach(function (nombre) {
+                    params.append('columnas_custom[]', nombre);
+                });
 
                 link.href = '{{ route('personal-secciones.export') }}?' + params.toString();
+            }
+
+            function renderizarColumnasCustom() {
+                var tabla = document.getElementById('tablaPreviewExport');
+                if (!tabla) return;
+
+                // Se borran y arman de nuevo desde cero: más simple y menos
+                // frágil que llevar índices de columna sincronizados a mano.
+                tabla.querySelectorAll('.col-custom').forEach(function (el) { el.remove(); });
+
+                var headRow = tabla.querySelector('thead tr');
+                columnasCustom.forEach(function (nombre) {
+                    var th = document.createElement('th');
+                    th.className = 'col-custom';
+
+                    var span = document.createElement('span');
+                    span.textContent = nombre;
+
+                    var boton = document.createElement('button');
+                    boton.type = 'button';
+                    boton.className = 'btn btn-link btn-sm p-0 ml-1 text-danger btn-quitar-columna-custom';
+                    boton.dataset.nombre = nombre;
+                    boton.title = 'Quitar columna';
+                    boton.innerHTML = '<i class="fas fa-times"></i>';
+
+                    th.appendChild(span);
+                    th.appendChild(boton);
+                    headRow.appendChild(th);
+                });
+
+                tabla.querySelectorAll('tbody tr').forEach(function (tr) {
+                    if (!tr.querySelector('td')) return; // fila de "sin resultados"
+                    columnasCustom.forEach(function () {
+                        var td = document.createElement('td');
+                        td.className = 'col-custom';
+                        tr.appendChild(td);
+                    });
+                });
+            }
+
+            function agregarColumnaCustom(nombre) {
+                nombre = (nombre || '').trim();
+                if (!nombre || columnasCustom.indexOf(nombre) !== -1) return;
+                if (columnasCustom.length >= 10) {
+                    if (window.iziToast) {
+                        iziToast.warning({ title: 'Límite alcanzado', message: 'Máximo 10 columnas personalizadas por exportación', position: 'topRight' });
+                    }
+                    return;
+                }
+
+                columnasCustom.push(nombre);
+                renderizarColumnasCustom();
+                actualizarLinkDescarga();
+            }
+
+            function quitarColumnaCustom(nombre) {
+                columnasCustom = columnasCustom.filter(function (n) { return n !== nombre; });
+                renderizarColumnasCustom();
+                actualizarLinkDescarga();
             }
 
             // Bootstrap 4 dispara sus eventos (show.bs.modal, etc.) por
@@ -345,6 +413,7 @@
             // nunca los recibe. Hay que engancharse con $(...).on(...).
             $('#modalExportarExcel').on('show.bs.modal', function () {
                 if (cargado) {
+                    renderizarColumnasCustom();
                     actualizarLinkDescarga();
                     return;
                 }
@@ -354,6 +423,7 @@
                     .then(function (html) {
                         contenido.innerHTML = html;
                         cargado = true;
+                        renderizarColumnasCustom();
                         actualizarLinkDescarga();
                     })
                     .catch(function () {
@@ -373,7 +443,29 @@
                 actualizarLinkDescarga();
             });
 
+            modal.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && e.target && e.target.id === 'inputColumnaCustom') {
+                    e.preventDefault();
+                    agregarColumnaCustom(e.target.value);
+                    e.target.value = '';
+                }
+            });
+
             modal.addEventListener('click', function (e) {
+                var botonAgregarCol = e.target.closest('#btnAgregarColumnaCustom');
+                if (botonAgregarCol) {
+                    var input = document.getElementById('inputColumnaCustom');
+                    agregarColumnaCustom(input.value);
+                    input.value = '';
+                    return;
+                }
+
+                var botonQuitarCol = e.target.closest('.btn-quitar-columna-custom');
+                if (botonQuitarCol) {
+                    quitarColumnaCustom(botonQuitarCol.dataset.nombre);
+                    return;
+                }
+
                 var boton = e.target.closest('#btnCopiarTablaExport');
                 if (!boton) return;
 

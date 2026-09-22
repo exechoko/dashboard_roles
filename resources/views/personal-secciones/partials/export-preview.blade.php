@@ -3,13 +3,33 @@
     (botón "Copiar tabla") y pegarla directo en otra planilla, o descargar el archivo Excel con lo que hayas elegido.
 </p>
 
-<div class="d-flex flex-wrap mb-3" style="gap: .25rem 1rem">
-    @foreach ($columnasExtraDisponibles as $clave => $etiqueta)
-        <div class="form-check form-check-inline">
-            <input class="form-check-input col-extra-toggle" type="checkbox" value="{{ $clave }}" id="col-extra-{{ $clave }}">
-            <label class="form-check-label" for="col-extra-{{ $clave }}">{{ $etiqueta }}</label>
+<div class="mb-3">
+    @foreach ($grupos as $nombreGrupo => $claves)
+        <div class="mb-2">
+            <strong class="d-block small text-uppercase text-muted mb-1">{{ $nombreGrupo }}</strong>
+            <div class="d-flex flex-wrap" style="gap: .25rem 1rem">
+                @foreach ($claves as $clave)
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input col-extra-toggle" type="checkbox" value="{{ $clave }}" id="col-extra-{{ $clave }}">
+                        <label class="form-check-label" for="col-extra-{{ $clave }}">{{ $columnasExtraDisponibles[$clave] }}</label>
+                    </div>
+                @endforeach
+            </div>
         </div>
     @endforeach
+</div>
+
+<div class="mb-3">
+    <strong class="d-block small text-uppercase text-muted mb-1">Agregar columna personalizada (en blanco, solo para esta exportación)</strong>
+    <div class="input-group input-group-sm" style="max-width: 420px">
+        <input type="text" id="inputColumnaCustom" class="form-control" maxlength="40"
+               placeholder="Ej: Aclaración, Sello...">
+        <div class="input-group-append">
+            <button type="button" id="btnAgregarColumnaCustom" class="btn btn-outline-primary">
+                <i class="fas fa-plus"></i> Agregar
+            </button>
+        </div>
+    </div>
 </div>
 
 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -35,8 +55,6 @@
                 <th>L.P.</th>
                 <th>Función</th>
                 <th>Estado</th>
-                <th>Fecha alta sección</th>
-                <th>Fecha baja sección</th>
                 @foreach ($columnasExtraDisponibles as $clave => $etiqueta)
                     <th class="col-extra col-extra-{{ $clave }}" hidden>{{ $etiqueta }}</th>
                 @endforeach
@@ -52,15 +70,13 @@
                     <td>{{ $fila['lp'] }}</td>
                     <td>{{ $fila['funcion'] }}</td>
                     <td>{{ $fila['estado'] }}</td>
-                    <td>{{ $fila['fecha_alta'] }}</td>
-                    <td>{{ $fila['fecha_baja'] }}</td>
                     @foreach ($columnasExtraDisponibles as $clave => $etiqueta)
                         <td class="col-extra col-extra-{{ $clave }}" hidden>{{ $fila['extra'][$clave] ?? '' }}</td>
                     @endforeach
                 </tr>
             @empty
                 <tr>
-                    <td colspan="{{ 9 + count($columnasExtraDisponibles) }}" class="text-center text-muted py-3">
+                    <td colspan="{{ 7 + count($columnasExtraDisponibles) }}" class="text-center text-muted py-3">
                         No hay funcionarios para exportar con estos filtros.
                     </td>
                 </tr>

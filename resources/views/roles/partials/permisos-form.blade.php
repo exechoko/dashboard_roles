@@ -24,6 +24,8 @@
             'menu-armamento',
             'menu-alertas-video',
             'menu-personal',
+            'menu-armeria',
+            'menu-personal-secciones',
             'menu-incidencias-911',
             'menu-plano-edificio',
             'menu-manuales',
@@ -125,8 +127,10 @@
         'Personal' => [
             'personal',
             'datos-personales-personal',
+            'menu-armeria',
             'personal-secciones',
             'personal-seccion-nota',
+            'menu-personal-secciones',
         ],
         'Incidencias 911' => [
             'periodo-911',

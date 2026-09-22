@@ -249,20 +249,20 @@
     </li>
 @endcan
 
-@canany(['ver-menu-personal', 'ver-personal-secciones'])
+@canany(['ver-menu-personal', 'ver-menu-armeria', 'ver-menu-personal-secciones'])
     <li class="dropdown {{ request()->is('armas/personal*') ? 'active' : '' }} {{ request()->is('personal-secciones*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-users"></i><span>Personal</span>
         </a>
         <ul class="dropdown-menu">
-            @can('ver-menu-personal')
+            @can('ver-menu-armeria')
                 <li class="{{ request()->is('armas/personal*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('armas.personal.index') }}">
                         <i class="fas fa-shield-alt"></i><span>Armería</span>
                     </a>
                 </li>
             @endcan
-            @can('ver-personal-secciones')
+            @can('ver-menu-personal-secciones')
                 <li class="{{ request()->is('personal-secciones*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('personal-secciones.index') }}">
                         <i class="fas fa-sitemap"></i><span>Por Sección</span>

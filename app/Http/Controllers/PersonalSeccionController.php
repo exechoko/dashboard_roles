@@ -84,9 +84,10 @@ class PersonalSeccionController extends Controller
             (array) $request->get('columnas', []),
             array_keys(PersonalSeccionesExport::COLUMNAS_EXTRA)
         ));
+        $fechasIngreso911 = $detalleService->obtenerFechasIngreso911Masivo($this->idsPersonal911($registros));
 
         return Excel::download(
-            new PersonalSeccionesExport($registros, $columnasExtra),
+            new PersonalSeccionesExport($registros, $columnasExtra, $fechasIngreso911),
             'PersonalPorSeccion_'.now()->format('Y-m-d_His').'.xlsx'
         );
     }
@@ -99,15 +100,32 @@ class PersonalSeccionController extends Controller
     public function exportPreview(Request $request, Personal911DetalleService $detalleService): View
     {
         $registros = $this->registrosFiltrados($request, $request->user(), $detalleService);
+        $fechasIngreso911 = $detalleService->obtenerFechasIngreso911Masivo($this->idsPersonal911($registros));
 
         $filas = $registros->values()->map(
-            fn (PersonalSeccion $r, int $key) => PersonalSeccionesExport::mapearFila($r, $key + 1)
+            fn (PersonalSeccion $r, int $key) => PersonalSeccionesExport::mapearFila(
+                $r,
+                $key + 1,
+                $fechasIngreso911[$r->personal->personal911_id ?? 0] ?? null
+            )
         );
 
         return view('personal-secciones.partials.export-preview', [
             'filas' => $filas,
             'columnasExtraDisponibles' => PersonalSeccionesExport::COLUMNAS_EXTRA,
         ]);
+    }
+
+    /**
+     * @return list<int>
+     */
+    private function idsPersonal911(Collection $registros): array
+    {
+        return $registros->map(fn (PersonalSeccion $r) => $r->personal->personal911_id)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
     /**
@@ -149,13 +167,7 @@ class PersonalSeccionController extends Controller
 
     private function ordenarPorJerarquia(Collection $registros, Personal911DetalleService $detalleService): Collection
     {
-        $personal911Ids = $registros->map(fn (PersonalSeccion $r) => $r->personal->personal911_id)
-            ->filter()
-            ->unique()
-            ->values()
-            ->all();
-
-        $fechasIngreso = $detalleService->obtenerFechasIngresoMasivo($personal911Ids);
+        $fechasIngreso = $detalleService->obtenerFechasIngresoMasivo($this->idsPersonal911($registros));
 
         // Ojo: la sección NO entra en el orden acá a propósito. Con varias
         // secciones tildadas, el escalafón manda por sobre todo: los dos

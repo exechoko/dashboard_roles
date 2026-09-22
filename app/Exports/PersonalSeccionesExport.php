@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\PersonalSeccion;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -35,9 +36,13 @@ class PersonalSeccionesExport implements FromCollection, WithHeadings, WithEvent
     /**
      * @param  Collection<int, PersonalSeccion>  $registros
      * @param  list<string>  $columnasExtra  claves de self::COLUMNAS_EXTRA a incluir además de las base
+     * @param  array<int, string|null>  $fechasIngreso911  personal911_id => Fec_Ing911, precalculado en lote (ver Personal911DetalleService::obtenerFechasIngreso911Masivo)
      */
-    public function __construct(private Collection $registros, private array $columnasExtra = [])
-    {
+    public function __construct(
+        private Collection $registros,
+        private array $columnasExtra = [],
+        private array $fechasIngreso911 = []
+    ) {
     }
 
     /**
@@ -45,11 +50,18 @@ class PersonalSeccionesExport implements FromCollection, WithHeadings, WithEvent
      * bajo la clave 'extra') a partir de un registro. La usan tanto el
      * Excel como la vista previa del modal, para no duplicar el mapeo.
      *
-     * @return array{nro: int, seccion: ?string, jerarquia: ?string, apellido: string, nombre: string, lp: ?string, funcion: ?string, estado: string, fecha_alta: string, fecha_baja: string, extra: array<string, string>}
+     * `$fechaIngreso911` viene de personal911 (Fec_Ing911) — NO es la fecha
+     * de alta en esta sección puntual (eso `personal911` no lo trackea),
+     * es el ingreso a la División 911 en general.
+     *
+     * @return array{nro: int, seccion: ?string, jerarquia: ?string, apellido: string, nombre: string, lp: ?string, funcion: ?string, estado: string, ingreso_division_911: string, fecha_baja: string, extra: array<string, string>}
      */
-    public static function mapearFila(PersonalSeccion $r, int $nro): array
+    public static function mapearFila(PersonalSeccion $r, int $nro, ?string $fechaIngreso911 = null): array
     {
         $p = $r->personal;
+        $fechaIngreso911Valida = $fechaIngreso911 && !str_starts_with($fechaIngreso911, '0000')
+            ? Carbon::parse($fechaIngreso911)->format('d/m/Y')
+            : '';
 
         return [
             'nro' => $nro,
@@ -60,7 +72,7 @@ class PersonalSeccionesExport implements FromCollection, WithHeadings, WithEvent
             'lp' => $p->lp,
             'funcion' => $r->funcion_actual,
             'estado' => $r->estadoLabel(),
-            'fecha_alta' => optional($r->fecha_alta)->format('d/m/Y') ?? '',
+            'ingreso_division_911' => $fechaIngreso911Valida,
             'fecha_baja' => optional($r->fecha_baja)->format('d/m/Y') ?? '',
             'extra' => [
                 'dni' => (string) $p->dni,
@@ -79,7 +91,8 @@ class PersonalSeccionesExport implements FromCollection, WithHeadings, WithEvent
     public function collection()
     {
         $filas = $this->registros->values()->map(function (PersonalSeccion $r, int $key) {
-            $fila = self::mapearFila($r, $key + 1);
+            $fechaIngreso911 = $this->fechasIngreso911[$r->personal->personal911_id ?? 0] ?? null;
+            $fila = self::mapearFila($r, $key + 1, $fechaIngreso911);
             $extra = $fila['extra'];
             unset($fila['extra']);
 
@@ -101,7 +114,7 @@ class PersonalSeccionesExport implements FromCollection, WithHeadings, WithEvent
 
         return array_merge([
             'NRO', 'Sección', 'Jerarquía', 'Apellido', 'Nombre', 'L.P.',
-            'Función', 'Estado', 'Fecha alta en sección', 'Fecha baja de sección',
+            'Función', 'Estado', 'Fecha de ingreso a la división', 'Fecha baja de sección',
         ], $extra);
     }
 

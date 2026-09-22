@@ -82,4 +82,33 @@ class Personal911DetalleService
             return [];
         }
     }
+
+    /**
+     * Fecha de ingreso a la División 911 (Fec_Ing911) de varios a la vez,
+     * para listados/exportaciones sin una consulta por fila. Ojo: NO es la
+     * fecha de alta en una sección específica (V.G., Judiciales, etc.) —
+     * personal911 no trackea eso a ese nivel, es el ingreso a la División
+     * 911 en general.
+     *
+     * @param  list<int>  $personal911Ids
+     * @return array<int, string|null> Id_Func => Fec_Ing911 ('Y-m-d' o null)
+     */
+    public function obtenerFechasIngreso911Masivo(array $personal911Ids): array
+    {
+        if ($personal911Ids === []) {
+            return [];
+        }
+
+        try {
+            return DB::connection('personal911')
+                ->table('funcionarios')
+                ->whereIn('Id_Func', $personal911Ids)
+                ->pluck('Fec_Ing911', 'Id_Func')
+                ->all();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return [];
+        }
+    }
 }

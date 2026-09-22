@@ -35,7 +35,7 @@
                 <th>L.P.</th>
                 <th>Función</th>
                 <th>Estado</th>
-                <th>Fecha alta sección</th>
+                <th>Fecha de ingreso a la división</th>
                 <th>Fecha baja sección</th>
                 @foreach ($columnasExtraDisponibles as $clave => $etiqueta)
                     <th class="col-extra col-extra-{{ $clave }}" hidden>{{ $etiqueta }}</th>
@@ -52,7 +52,7 @@
                     <td>{{ $fila['lp'] }}</td>
                     <td>{{ $fila['funcion'] }}</td>
                     <td>{{ $fila['estado'] }}</td>
-                    <td>{{ $fila['fecha_alta'] }}</td>
+                    <td>{{ $fila['ingreso_division_911'] }}</td>
                     <td>{{ $fila['fecha_baja'] }}</td>
                     @foreach ($columnasExtraDisponibles as $clave => $etiqueta)
                         <td class="col-extra col-extra-{{ $clave }}" hidden>{{ $fila['extra'][$clave] ?? '' }}</td>

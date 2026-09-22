@@ -465,4 +465,24 @@ class PersonalSeccionControllerTest extends TestCase
         $this->assertSame('11223344', $fila['dni']);
         $this->assertSame('test@example.com', $fila['email']);
     }
+
+    public function test_export_no_incluye_fechas_por_defecto_y_permite_columna_firma_en_blanco(): void
+    {
+        $personal = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', apellido: 'SinFechasPorDefecto');
+
+        $registro = \App\Models\PersonalSeccion::where('personal_id', $personal->id)->with('personal')->first();
+
+        // Sin pedir columnas extra: las fechas NO deben aparecer en los
+        // encabezados (el pedido del usuario fue que no vengan tildadas
+        // por defecto, ya que "no sirven mucho" en el uso más común).
+        $exportSinExtras = new \App\Exports\PersonalSeccionesExport(collect([$registro]));
+        $this->assertNotContains('Fecha de ingreso a la división', $exportSinExtras->headings());
+        $this->assertNotContains('Fecha baja de sección', $exportSinExtras->headings());
+
+        // Pidiendo "firma": aparece como columna, siempre vacía (es a
+        // propósito, para imprimir y firmar a mano).
+        $exportConFirma = new \App\Exports\PersonalSeccionesExport(collect([$registro]), ['firma']);
+        $this->assertContains('Firma', $exportConFirma->headings());
+        $this->assertSame('', $exportConFirma->collection()->first()['firma']);
+    }
 }

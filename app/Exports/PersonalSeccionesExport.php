@@ -15,13 +15,17 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 class PersonalSeccionesExport implements FromCollection, WithHeadings, WithEvents, ShouldAutoSize
 {
     /**
-     * Columnas opcionales que el operador puede sumar además de las base,
-     * tanto en el Excel como en la vista previa. Todas ya están disponibles
-     * localmente en `Personal` (sin consultar personal911 en vivo por fila).
+     * Columnas opcionales, todas destildadas por defecto — el operador arma
+     * la planilla a gusto según para qué la necesite. Las de fecha y las de
+     * datos personales salen de `Personal`/personal911 (ya calculadas al
+     * armar la fila); "firma" es una columna en blanco a propósito, para
+     * imprimir y que cada funcionario firme a mano (notificaciones, etc.).
      *
      * @var array<string, string>
      */
     public const COLUMNAS_EXTRA = [
+        'ingreso_division_911' => 'Fecha de ingreso a la división',
+        'fecha_baja_seccion' => 'Fecha baja de sección',
         'dni' => 'DNI',
         'telefono' => 'Teléfono',
         'email' => 'Email',
@@ -31,6 +35,7 @@ class PersonalSeccionesExport implements FromCollection, WithHeadings, WithEvent
         'direccion' => 'Domicilio',
         'situacion_personal911' => 'Situación',
         'observaciones' => 'Observaciones',
+        'firma' => 'Firma',
     ];
 
     /**
@@ -54,7 +59,7 @@ class PersonalSeccionesExport implements FromCollection, WithHeadings, WithEvent
      * de alta en esta sección puntual (eso `personal911` no lo trackea),
      * es el ingreso a la División 911 en general.
      *
-     * @return array{nro: int, seccion: ?string, jerarquia: ?string, apellido: string, nombre: string, lp: ?string, funcion: ?string, estado: string, ingreso_division_911: string, fecha_baja: string, extra: array<string, string>}
+     * @return array{nro: int, seccion: ?string, jerarquia: ?string, apellido: string, nombre: string, lp: ?string, funcion: ?string, estado: string, extra: array<string, string>}
      */
     public static function mapearFila(PersonalSeccion $r, int $nro, ?string $fechaIngreso911 = null): array
     {
@@ -72,9 +77,9 @@ class PersonalSeccionesExport implements FromCollection, WithHeadings, WithEvent
             'lp' => $p->lp,
             'funcion' => $r->funcion_actual,
             'estado' => $r->estadoLabel(),
-            'ingreso_division_911' => $fechaIngreso911Valida,
-            'fecha_baja' => optional($r->fecha_baja)->format('d/m/Y') ?? '',
             'extra' => [
+                'ingreso_division_911' => $fechaIngreso911Valida,
+                'fecha_baja_seccion' => optional($r->fecha_baja)->format('d/m/Y') ?? '',
                 'dni' => (string) $p->dni,
                 'telefono' => str_replace("\n", ' / ', (string) $p->telefono),
                 'email' => (string) $p->email,
@@ -84,6 +89,7 @@ class PersonalSeccionesExport implements FromCollection, WithHeadings, WithEvent
                 'direccion' => (string) $p->direccion,
                 'situacion_personal911' => (string) $p->situacion_personal911,
                 'observaciones' => (string) $p->observaciones_personal911,
+                'firma' => '',
             ],
         ];
     }
@@ -113,8 +119,7 @@ class PersonalSeccionesExport implements FromCollection, WithHeadings, WithEvent
         $extra = array_values(array_intersect_key(self::COLUMNAS_EXTRA, array_flip($this->columnasExtra)));
 
         return array_merge([
-            'NRO', 'Sección', 'Jerarquía', 'Apellido', 'Nombre', 'L.P.',
-            'Función', 'Estado', 'Fecha de ingreso a la división', 'Fecha baja de sección',
+            'NRO', 'Sección', 'Jerarquía', 'Apellido', 'Nombre', 'L.P.', 'Función', 'Estado',
         ], $extra);
     }
 

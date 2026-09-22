@@ -35,8 +35,6 @@
                 <th>L.P.</th>
                 <th>Función</th>
                 <th>Estado</th>
-                <th>Fecha de ingreso a la división</th>
-                <th>Fecha baja sección</th>
                 @foreach ($columnasExtraDisponibles as $clave => $etiqueta)
                     <th class="col-extra col-extra-{{ $clave }}" hidden>{{ $etiqueta }}</th>
                 @endforeach
@@ -52,15 +50,13 @@
                     <td>{{ $fila['lp'] }}</td>
                     <td>{{ $fila['funcion'] }}</td>
                     <td>{{ $fila['estado'] }}</td>
-                    <td>{{ $fila['ingreso_division_911'] }}</td>
-                    <td>{{ $fila['fecha_baja'] }}</td>
                     @foreach ($columnasExtraDisponibles as $clave => $etiqueta)
                         <td class="col-extra col-extra-{{ $clave }}" hidden>{{ $fila['extra'][$clave] ?? '' }}</td>
                     @endforeach
                 </tr>
             @empty
                 <tr>
-                    <td colspan="{{ 9 + count($columnasExtraDisponibles) }}" class="text-center text-muted py-3">
+                    <td colspan="{{ 7 + count($columnasExtraDisponibles) }}" class="text-center text-muted py-3">
                         No hay funcionarios para exportar con estos filtros.
                     </td>
                 </tr>

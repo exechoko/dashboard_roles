@@ -75,4 +75,28 @@ class PersonalSeccionNota extends Model
             ? $this->compartidas->isEmpty()
             : $this->compartidas()->doesntExist();
     }
+
+    /**
+     * Fecha de la anotación más reciente por funcionario, entre las que
+     * $usuario puede ver — para poder ordenar el listado por "novedades
+     * recientes" sin filtrar información que ese usuario no debería ver.
+     *
+     * @param  list<int>  $personalIds
+     * @return array<int, \Illuminate\Support\Carbon> personal_id => fecha
+     */
+    public static function ultimasPorPersonal(array $personalIds, User $usuario): array
+    {
+        if ($personalIds === []) {
+            return [];
+        }
+
+        return self::query()
+            ->visiblesPara($usuario)
+            ->whereIn('personal_id', $personalIds)
+            ->selectRaw('personal_id, MAX(created_at) as ultima')
+            ->groupBy('personal_id')
+            ->pluck('ultima', 'personal_id')
+            ->map(fn ($fecha) => \Illuminate\Support\Carbon::parse($fecha))
+            ->all();
+    }
 }

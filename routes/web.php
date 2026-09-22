@@ -853,7 +853,10 @@ Route::group(['middleware' => ['auth']], function () {
     // Personal por Sección (visualizador general de dotación por sección de 911, con anotaciones)
     Route::prefix('personal-secciones')->name('personal-secciones.')->group(function () {
         Route::get('/', [PersonalSeccionController::class, 'index'])->name('index');
+        Route::get('/exportar', [PersonalSeccionController::class, 'export'])->name('export');
+        Route::get('/exportar/preview', [PersonalSeccionController::class, 'exportPreview'])->name('export.preview');
         Route::post('/sincronizar', [PersonalSeccionController::class, 'sincronizar'])->name('sincronizar');
+        Route::get('/{personalId}', [PersonalSeccionController::class, 'show'])->whereNumber('personalId')->name('show');
         Route::post('/{personalId}/notas', [PersonalSeccionController::class, 'storeNota'])->name('notas.store');
         Route::post('/notas/{notaId}/compartir', [PersonalSeccionController::class, 'compartirNota'])->name('notas.compartir');
         Route::post('/{personalId}/notas/compartir-todas', [PersonalSeccionController::class, 'compartirTodasNotas'])->name('notas.compartir-todas');

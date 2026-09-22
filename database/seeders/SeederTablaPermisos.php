@@ -244,7 +244,11 @@ class SeederTablaPermisos extends Seeder
             'ver-menu-personal',
             'ver-datos-personales-personal',
 
+            // Personal - submenú Armería (visibilidad del link; el acceso real a la página lo sigue dando ver-personal)
+            'ver-menu-armeria',
+
             // Personal - Por Sección (visualizador general con anotaciones)
+            'ver-menu-personal-secciones',
             'ver-personal-secciones',
             'crear-personal-seccion-nota',
             'sincronizar-personal-secciones',

@@ -15,14 +15,18 @@ class PersonalSeccionControllerTest extends TestCase
 {
     use DatabaseTransactions;
 
-    private function crearFuncionarioEnSeccion(string $seccion, bool $activo = true, bool $enLicencia = false): Personal
+    private function crearFuncionarioEnSeccion(string $seccion, bool $activo = true, bool $enLicencia = false, string $jerarquia = 'Sargento', ?string $apellido = null): Personal
     {
+        do {
+            $lp = (string) random_int(10000, 99999);
+        } while (Personal::withTrashed()->where('lp', $lp)->exists());
+
         $personal = Personal::create([
             'personal911_id' => random_int(900000, 999999),
             'nombre' => 'Funcionario',
-            'apellido' => 'De Prueba '.uniqid(),
-            'lp' => (string) random_int(10000, 99999),
-            'jerarquia' => 'Sargento',
+            'apellido' => $apellido ?? 'De Prueba '.uniqid(),
+            'lp' => $lp,
+            'jerarquia' => $jerarquia,
             'funcion_personal911' => 'Monitoreo V.G. G1',
         ]);
 
@@ -39,6 +43,49 @@ class PersonalSeccionControllerTest extends TestCase
         ]);
 
         return $personal;
+    }
+
+    public function test_show_requiere_permiso(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $personal = $this->crearFuncionarioEnSeccion('Sección Violencia de Género');
+
+        $this->get(route('personal-secciones.show', $personal->id))->assertForbidden();
+    }
+
+    public function test_show_muestra_los_datos_locales_cuando_no_hay_detalle_en_personal911(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->actingAs($user);
+
+        $personal = $this->crearFuncionarioEnSeccion('Sección Judiciales y Gestión de Calidad');
+
+        $response = $this->get(route('personal-secciones.show', $personal->id));
+
+        $response->assertOk();
+        $response->assertSee($personal->apellido);
+        $response->assertSee('No se pudo traer el detalle completo');
+    }
+
+    public function test_show_incluye_anotaciones_visibles_para_el_usuario(): void
+    {
+        $autor = User::factory()->create();
+        $autor->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+
+        $personal = $this->crearFuncionarioEnSeccion('Sección Violencia de Género');
+        PersonalSeccionNota::create([
+            'personal_id' => $personal->id,
+            'user_id' => $autor->id,
+            'texto' => 'Nota visible en el detalle.',
+        ]);
+
+        $this->actingAs($autor);
+        $this->get(route('personal-secciones.show', $personal->id))
+            ->assertOk()
+            ->assertSee('Nota visible en el detalle.');
     }
 
     public function test_index_requiere_permiso(): void
@@ -250,5 +297,172 @@ class PersonalSeccionControllerTest extends TestCase
             'nota_id' => $notaAjena->id,
             'user_id' => $destinatario->id,
         ]);
+    }
+
+    public function test_orden_por_jerarquia_respeta_el_escalafon_policial(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->actingAs($user);
+
+        // Apellidos a propósito en orden alfabético INVERSO a la jerarquía:
+        // si el test pasa igual, es porque ordena por escalafón y no por
+        // apellido (que sería el fallback incorrecto).
+        $comisario = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', jerarquia: 'Comisario', apellido: 'Zzzultimo');
+        $sargento = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', jerarquia: 'Sargento', apellido: 'Mmedio');
+        $agente = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', jerarquia: 'Agente', apellido: 'Aaaprimero');
+
+        $response = $this->get(route('personal-secciones.index', [
+            'secciones' => ['Sección Violencia de Género'],
+            'orden' => 'jerarquia',
+        ]));
+
+        $html = $response->getContent();
+        $posComisario = strpos($html, $comisario->apellido);
+        $posSargento = strpos($html, $sargento->apellido);
+        $posAgente = strpos($html, $agente->apellido);
+
+        $this->assertNotFalse($posComisario);
+        $this->assertNotFalse($posSargento);
+        $this->assertNotFalse($posAgente);
+        $this->assertLessThan($posSargento, $posComisario, 'Comisario debe listarse antes que Sargento');
+        $this->assertLessThan($posAgente, $posSargento, 'Sargento debe listarse antes que Agente');
+    }
+
+    public function test_orden_por_jerarquia_mezcla_secciones_en_vez_de_agruparlas(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->actingAs($user);
+
+        // El comisario es de V.G. pero con apellido "Zzz" (última letra) para
+        // que, si el código agrupara por sección primero, apareciera recién
+        // después de TODO Judiciales. Si en cambio aparece primero de todos
+        // (como corresponde por jerarquía), confirma que la sección no pesa.
+        $comisarioVG = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', jerarquia: 'Comisario', apellido: 'ZzzTestComisario');
+        $sargentoJudiciales = $this->crearFuncionarioEnSeccion('Sección Judiciales y Gestión de Calidad', jerarquia: 'Sargento', apellido: 'AaaTestSargento');
+        $agenteVG = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', jerarquia: 'Agente', apellido: 'BbbTestAgente');
+
+        // Se filtra por "Test" (compartido por los 3 apellidos sintéticos)
+        // para no depender de en qué página cae cada uno entre el padrón
+        // real ya sincronizado.
+        $response = $this->get(route('personal-secciones.index', [
+            'busqueda' => 'Test',
+            'secciones' => ['Sección Violencia de Género', 'Sección Judiciales y Gestión de Calidad'],
+            'orden' => 'jerarquia',
+        ]));
+
+        $html = $response->getContent();
+        $posComisario = strpos($html, $comisarioVG->apellido);
+        $posSargento = strpos($html, $sargentoJudiciales->apellido);
+        $posAgente = strpos($html, $agenteVG->apellido);
+
+        $this->assertNotFalse($posComisario);
+        $this->assertNotFalse($posSargento);
+        $this->assertNotFalse($posAgente);
+        $this->assertLessThan($posSargento, $posComisario, 'El comisario de V.G. debe listarse antes que el sargento de Judiciales, aunque sea de otra sección');
+        $this->assertLessThan($posAgente, $posSargento, 'El sargento de Judiciales debe listarse antes que el agente de V.G.');
+    }
+
+    public function test_orden_por_novedades_prioriza_la_anotacion_mas_reciente(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->actingAs($user);
+
+        $sinNota = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', apellido: 'SinNotaAAA');
+        $notaVieja = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', apellido: 'NotaViejaZZZ');
+        $notaReciente = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', apellido: 'NotaRecienteMMM');
+
+        $nota1 = PersonalSeccionNota::create(['personal_id' => $notaVieja->id, 'user_id' => $user->id, 'texto' => 'Nota vieja']);
+        $nota1->created_at = now()->subDays(10);
+        $nota1->save();
+
+        $nota2 = PersonalSeccionNota::create(['personal_id' => $notaReciente->id, 'user_id' => $user->id, 'texto' => 'Nota reciente']);
+        $nota2->created_at = now();
+        $nota2->save();
+
+        $response = $this->get(route('personal-secciones.index', [
+            'secciones' => ['Sección Violencia de Género'],
+            'orden' => 'novedades',
+        ]));
+
+        $html = $response->getContent();
+        $posReciente = strpos($html, $notaReciente->apellido);
+        $posVieja = strpos($html, $notaVieja->apellido);
+        $posSinNota = strpos($html, $sinNota->apellido);
+
+        $this->assertNotFalse($posReciente);
+        $this->assertNotFalse($posVieja);
+        $this->assertNotFalse($posSinNota);
+        $this->assertLessThan($posVieja, $posReciente, 'La nota más reciente debe listarse primero');
+        $this->assertLessThan($posSinNota, $posVieja, 'Cualquier anotación gana a no tener ninguna');
+    }
+
+    public function test_export_requiere_permiso(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $this->get(route('personal-secciones.export'))->assertForbidden();
+    }
+
+    public function test_export_devuelve_un_archivo_excel_respetando_el_filtro_de_seccion(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->actingAs($user);
+
+        $this->crearFuncionarioEnSeccion('Sección Violencia de Género');
+        $this->crearFuncionarioEnSeccion('Sección Patrullas 911');
+
+        $response = $this->get(route('personal-secciones.export', ['secciones' => ['Sección Violencia de Género']]));
+
+        $response->assertOk();
+        $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+
+    public function test_export_preview_requiere_permiso(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $this->get(route('personal-secciones.export.preview'))->assertForbidden();
+    }
+
+    public function test_export_preview_muestra_la_tabla_con_los_datos_filtrados(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->actingAs($user);
+
+        $personal = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', apellido: 'PreviewTest');
+        $personal->update(['dni' => '99998888']);
+
+        $response = $this->get(route('personal-secciones.export.preview', ['secciones' => ['Sección Violencia de Género']]));
+
+        $response->assertOk();
+        $response->assertSee('PreviewTest');
+        // El DNI está en el HTML aunque la columna arranque oculta (hidden
+        // es un atributo visual, no borra el dato del markup).
+        $response->assertSee('99998888');
+        $response->assertSee('Copiar tabla');
+    }
+
+    public function test_export_con_columnas_extra_las_incluye_en_encabezados_y_filas(): void
+    {
+        $personal = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', apellido: 'ConColumnasExtra');
+        $personal->update(['dni' => '11223344', 'email' => 'test@example.com']);
+
+        $registro = \App\Models\PersonalSeccion::where('personal_id', $personal->id)->with('personal')->first();
+
+        $export = new \App\Exports\PersonalSeccionesExport(collect([$registro]), ['dni', 'email']);
+
+        $this->assertContains('DNI', $export->headings());
+        $this->assertContains('Email', $export->headings());
+
+        $fila = $export->collection()->first();
+        $this->assertSame('11223344', $fila['dni']);
+        $this->assertSame('test@example.com', $fila['email']);
     }
 }

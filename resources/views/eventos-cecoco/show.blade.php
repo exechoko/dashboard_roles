@@ -492,6 +492,17 @@ $('#modalGrabaciones').on('hide.bs.modal', function() {
     });
 });
 
+function duracionASegundos(duracion) {
+    duracion = String(duracion || '').trim();
+    if (!duracion) return null;
+    if (/^\d+$/.test(duracion)) return parseInt(duracion, 10);
+    var m = duracion.match(/^(?:(\d+):)?(\d{1,2}):(\d{2})$/);
+    if (m) {
+        return (parseInt(m[1] || '0', 10) * 3600) + (parseInt(m[2], 10) * 60) + parseInt(m[3], 10);
+    }
+    return null;
+}
+
 function calcularDuracion(inicio, fin) {
     try {
         var diff = Math.round((new Date(fin) - new Date(inicio)) / 1000);
@@ -723,9 +734,8 @@ function renderizarModulaciones(data) {
         var delEvento  = 0;
 
         data.modulaciones.forEach(function(m) {
-            var streamUrl   = m.url;
-            var downloadUrl = streamUrl + '&download=1';
-            var hora        = (m.fechaInicio || '').split(' ')[1] || (m.fechaInicio || '—');
+            var streamUrl = m.url;
+            var hora      = (m.fechaInicio || '').split(' ')[1] || (m.fechaInicio || '—');
 
             // Quién moduló: SSI llamante del grabador; si el recurso ya lo contiene
             // (ej. "Cria 904 (M2230904)") se usa esa etiqueta, que es más clara.
@@ -734,6 +744,16 @@ function renderizarModulaciones(data) {
             if (llamante && m.recurso && m.recurso.indexOf(llamante) === -1) {
                 quien = m.recurso + ' (' + llamante + ')';
             }
+
+            // El nombre de descarga lleva el recurso, la hora y la duración para
+            // que se pueda identificar el audio sin tener que abrirlo (el itemid
+            // del grabador es opaco: no dice quién moduló, cuándo ni cuánto duró).
+            var horaArchivo    = (m.fechaInicio || '').replace(/[-:]/g, '').replace(' ', '_');
+            var duracionSeg    = duracionASegundos(m.duracion);
+            var downloadUrl    = streamUrl + '&download=1'
+                + '&recurso=' + encodeURIComponent(quien !== '—' ? quien : '')
+                + '&hora=' + encodeURIComponent(horaArchivo)
+                + (duracionSeg !== null ? '&duracion=' + duracionSeg : '');
 
             // A quién moduló: SSI llamado, o el grupo si fue una llamada de grupo.
             var destino = m.ssiLlamado || m.grupo || '';

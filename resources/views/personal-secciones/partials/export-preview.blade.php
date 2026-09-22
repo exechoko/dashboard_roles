@@ -3,11 +3,18 @@
     (botón "Copiar tabla") y pegarla directo en otra planilla, o descargar el archivo Excel con lo que hayas elegido.
 </p>
 
-<div class="d-flex flex-wrap mb-3" style="gap: .25rem 1rem">
-    @foreach ($columnasExtraDisponibles as $clave => $etiqueta)
-        <div class="form-check form-check-inline">
-            <input class="form-check-input col-extra-toggle" type="checkbox" value="{{ $clave }}" id="col-extra-{{ $clave }}">
-            <label class="form-check-label" for="col-extra-{{ $clave }}">{{ $etiqueta }}</label>
+<div class="mb-3">
+    @foreach ($grupos as $nombreGrupo => $claves)
+        <div class="mb-2">
+            <strong class="d-block small text-uppercase text-muted mb-1">{{ $nombreGrupo }}</strong>
+            <div class="d-flex flex-wrap" style="gap: .25rem 1rem">
+                @foreach ($claves as $clave)
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input col-extra-toggle" type="checkbox" value="{{ $clave }}" id="col-extra-{{ $clave }}">
+                        <label class="form-check-label" for="col-extra-{{ $clave }}">{{ $columnasExtraDisponibles[$clave] }}</label>
+                    </div>
+                @endforeach
+            </div>
         </div>
     @endforeach
 </div>

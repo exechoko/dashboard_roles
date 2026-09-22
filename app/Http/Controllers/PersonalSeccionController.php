@@ -84,10 +84,10 @@ class PersonalSeccionController extends Controller
             (array) $request->get('columnas', []),
             array_keys(PersonalSeccionesExport::COLUMNAS_EXTRA)
         ));
-        $fechasIngreso911 = $detalleService->obtenerFechasIngreso911Masivo($this->idsPersonal911($registros));
+        $detalles911 = $detalleService->obtenerMasivo($this->idsPersonal911($registros));
 
         return Excel::download(
-            new PersonalSeccionesExport($registros, $columnasExtra, $fechasIngreso911),
+            new PersonalSeccionesExport($registros, $columnasExtra, $detalles911),
             'PersonalPorSeccion_'.now()->format('Y-m-d_His').'.xlsx'
         );
     }
@@ -100,19 +100,20 @@ class PersonalSeccionController extends Controller
     public function exportPreview(Request $request, Personal911DetalleService $detalleService): View
     {
         $registros = $this->registrosFiltrados($request, $request->user(), $detalleService);
-        $fechasIngreso911 = $detalleService->obtenerFechasIngreso911Masivo($this->idsPersonal911($registros));
+        $detalles911 = $detalleService->obtenerMasivo($this->idsPersonal911($registros));
 
         $filas = $registros->values()->map(
             fn (PersonalSeccion $r, int $key) => PersonalSeccionesExport::mapearFila(
                 $r,
                 $key + 1,
-                $fechasIngreso911[$r->personal->personal911_id ?? 0] ?? null
+                $detalles911[$r->personal->personal911_id ?? 0] ?? null
             )
         );
 
         return view('personal-secciones.partials.export-preview', [
             'filas' => $filas,
             'columnasExtraDisponibles' => PersonalSeccionesExport::COLUMNAS_EXTRA,
+            'grupos' => PersonalSeccionesExport::GRUPOS,
         ]);
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -9,46 +10,16 @@ use Illuminate\Support\Facades\DB;
  * `Personal911ImportService` no persiste localmente (grupo sanguíneo, sexo,
  * CUIL, legajo contable, cuerpo, función D.P.3, domicilio laboral, fecha y
  * norma de ingreso a la División 911). No se guarda nada en `personals`:
- * es solo para la vista de detalle, así no hace falta tocar el import
- * existente (usado también por Armería) ni duplicar todo el padrón.
+ * es solo para la vista de detalle y la exportación, así no hace falta
+ * tocar el import existente (usado también por Armería) ni duplicar todo
+ * el padrón.
  */
 class Personal911DetalleService
 {
     public function obtener(int $personal911Id): ?object
     {
         try {
-            return DB::connection('personal911')
-                ->table('funcionarios as f')
-                ->leftJoin('funciones as fn', 'fn.Id_Funcion', '=', 'f.Funcion')
-                ->leftJoin('funciones_dp3 as fdp3', 'fdp3.Id_Funcion_DP3', '=', 'f.Funcion_DP3')
-                ->leftJoin('jerarquias as j', 'j.Id_Jerarquia', '=', 'f.IdJerarquia_Func')
-                ->leftJoin('cuerpos as c', 'c.Id_Cuerpo', '=', 'f.IdCuerpo_Func')
-                ->leftJoin('sexo_func as sx', 'sx.Id_SexoFunc', '=', 'f.Sexo_Func')
-                ->leftJoin('estcivil as ec', 'ec.Id_ECivil', '=', 'f.Estado_Civil_Func')
-                ->leftJoin('tipo_armas as ta', 'ta.Id_TipoArma', '=', 'f.Tipo_Arma_Func')
-                ->leftJoin('tipo_estados as te', 'te.Id_TipoEstado', '=', 'f.Id_Estado')
-                ->leftJoin('domicilio_laboral as dl', 'dl.Id_DomLab', '=', 'f.Dom_FuncLab')
-                ->leftJoin('lugares as lg', 'lg.Id_lugar', '=', 'f.Lugar_Func')
-                ->leftJoin('gruposang as gs', 'gs.Id_GrupoSang', '=', 'f.GS_Func')
-                ->where('f.Id_Func', $personal911Id)
-                ->select([
-                    'f.Ape_Func', 'f.Nom_Func', 'f.Doc_Func', 'f.Dom_Func',
-                    'f.FecNac_Func', 'gs.Nom_GrupoSang', 'f.Telefono1_Func', 'f.Telefono2_Func',
-                    'f.Cuil_Func', 'f.Email_Func',
-                    'f.LgjC_Func', 'f.FecIng_Func', 'f.Nro_Arma_Func', 'f.Obs_Func',
-                    'f.Fec_Estado', 'f.Obs_Estado', 'f.Fec_Ing911', 'f.Norma_Ing911',
-                    'fn.Nom_Funcion',
-                    'fdp3.Nombre_Funcion as funcion_dp3',
-                    'j.Nom_Jerarquia', 'j.Nom_JerarquiaNueva',
-                    'c.Nom_Cuerpo',
-                    'sx.Nombre_SexoFunc',
-                    'ec.Nom_ECivil',
-                    'ta.Nombre_TipoArma',
-                    'te.Nom_Estado',
-                    'dl.Nombre_DomLab',
-                    'lg.Nom_Lugar',
-                ])
-                ->first();
+            return $this->consultaBase()->where('f.Id_Func', $personal911Id)->first();
         } catch (\Throwable $e) {
             report($e);
 
@@ -57,9 +28,74 @@ class Personal911DetalleService
     }
 
     /**
+     * Mismo detalle que obtener(), para varios funcionarios en una sola
+     * consulta — pensado para exportar sin hacer una query por fila. Solo
+     * se usa al exportar (no en el listado general), porque este join es
+     * más pesado que el que hace falta para ordenar por jerarquía.
+     *
+     * @param  list<int>  $personal911Ids
+     * @return array<int, object> Id_Func => fila con los mismos campos que obtener()
+     */
+    public function obtenerMasivo(array $personal911Ids): array
+    {
+        if ($personal911Ids === []) {
+            return [];
+        }
+
+        try {
+            return $this->consultaBase()
+                ->whereIn('f.Id_Func', $personal911Ids)
+                ->get()
+                ->keyBy('Id_Func')
+                ->all();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return [];
+        }
+    }
+
+    private function consultaBase(): Builder
+    {
+        return DB::connection('personal911')
+            ->table('funcionarios as f')
+            ->leftJoin('funciones as fn', 'fn.Id_Funcion', '=', 'f.Funcion')
+            ->leftJoin('funciones_dp3 as fdp3', 'fdp3.Id_Funcion_DP3', '=', 'f.Funcion_DP3')
+            ->leftJoin('jerarquias as j', 'j.Id_Jerarquia', '=', 'f.IdJerarquia_Func')
+            ->leftJoin('cuerpos as c', 'c.Id_Cuerpo', '=', 'f.IdCuerpo_Func')
+            ->leftJoin('sexo_func as sx', 'sx.Id_SexoFunc', '=', 'f.Sexo_Func')
+            ->leftJoin('estcivil as ec', 'ec.Id_ECivil', '=', 'f.Estado_Civil_Func')
+            ->leftJoin('tipo_armas as ta', 'ta.Id_TipoArma', '=', 'f.Tipo_Arma_Func')
+            ->leftJoin('tipo_estados as te', 'te.Id_TipoEstado', '=', 'f.Id_Estado')
+            ->leftJoin('domicilio_laboral as dl', 'dl.Id_DomLab', '=', 'f.Dom_FuncLab')
+            ->leftJoin('lugares as lg', 'lg.Id_lugar', '=', 'f.Lugar_Func')
+            ->leftJoin('gruposang as gs', 'gs.Id_GrupoSang', '=', 'f.GS_Func')
+            ->select([
+                'f.Id_Func',
+                'f.Ape_Func', 'f.Nom_Func', 'f.Doc_Func', 'f.Dom_Func',
+                'f.FecNac_Func', 'gs.Nom_GrupoSang', 'f.Telefono1_Func', 'f.Telefono2_Func',
+                'f.Cuil_Func', 'f.Email_Func',
+                'f.LgjC_Func', 'f.FecIng_Func', 'f.Nro_Arma_Func', 'f.Obs_Func',
+                'f.Fec_Estado', 'f.Obs_Estado', 'f.Fec_Ing911', 'f.Norma_Ing911',
+                'fn.Nom_Funcion',
+                'fdp3.Nombre_Funcion as funcion_dp3',
+                'j.Nom_Jerarquia', 'j.Nom_JerarquiaNueva',
+                'c.Nom_Cuerpo',
+                'sx.Nombre_SexoFunc',
+                'ec.Nom_ECivil',
+                'ta.Nombre_TipoArma',
+                'te.Nom_Estado',
+                'dl.Nombre_DomLab',
+                'lg.Nom_Lugar',
+            ]);
+    }
+
+    /**
      * Fecha de ingreso laboral (antigüedad como funcionario) de varios a la
      * vez, para poder desempatar por antigüedad al ordenar por jerarquía sin
-     * hacer una consulta por fila. Devuelve [] si personal911 no responde.
+     * hacer una consulta por fila. Liviana a propósito (un solo campo, sin
+     * los 11 joins de consultaBase) porque se calcula en CADA visita al
+     * listado, no solo al exportar. Devuelve [] si personal911 no responde.
      *
      * @param  list<int>  $personal911Ids
      * @return array<int, string|null> Id_Func => FecIng_Func ('Y-m-d' o null)
@@ -75,35 +111,6 @@ class Personal911DetalleService
                 ->table('funcionarios')
                 ->whereIn('Id_Func', $personal911Ids)
                 ->pluck('FecIng_Func', 'Id_Func')
-                ->all();
-        } catch (\Throwable $e) {
-            report($e);
-
-            return [];
-        }
-    }
-
-    /**
-     * Fecha de ingreso a la División 911 (Fec_Ing911) de varios a la vez,
-     * para listados/exportaciones sin una consulta por fila. Ojo: NO es la
-     * fecha de alta en una sección específica (V.G., Judiciales, etc.) —
-     * personal911 no trackea eso a ese nivel, es el ingreso a la División
-     * 911 en general.
-     *
-     * @param  list<int>  $personal911Ids
-     * @return array<int, string|null> Id_Func => Fec_Ing911 ('Y-m-d' o null)
-     */
-    public function obtenerFechasIngreso911Masivo(array $personal911Ids): array
-    {
-        if ($personal911Ids === []) {
-            return [];
-        }
-
-        try {
-            return DB::connection('personal911')
-                ->table('funcionarios')
-                ->whereIn('Id_Func', $personal911Ids)
-                ->pluck('Fec_Ing911', 'Id_Func')
                 ->all();
         } catch (\Throwable $e) {
             report($e);

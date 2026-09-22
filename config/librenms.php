@@ -38,4 +38,9 @@ return [
     // Cantidad de cámaras 911 caídas a partir de la cual la notificación
     // resumen se marca como crítica (nivel "danger") en vez de "warning".
     'umbral_camaras_criticas' => (int) env('LIBRENMS_UMBRAL_CAMARAS_CRITICAS', 10),
+
+    // Apaga los monitoreos programados de LibreNMS (CPU de operadores de video
+    // y cámaras 911), cada 5 min (Configuración del Sistema > Variables de
+    // Entorno > Infraestructura).
+    'monitoreo_enabled' => env('LIBRENMS_MONITOREO_ENABLED', true),
 ];

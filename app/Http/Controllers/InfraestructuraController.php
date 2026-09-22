@@ -108,8 +108,10 @@ class InfraestructuraController extends Controller
     public function grabador(GrabadorTetraService $grabador): View
     {
         return view('infraestructura.grabador', [
-            'replayDisponible' => $grabador->replayDisponible(),
-            'servicio'         => config('grabador.replay_service_name'),
+            'replayDisponible'   => $grabador->replayDisponible(),
+            'servicio'           => config('grabador.replay_service_name'),
+            'monitoreoHabilitado' => config('grabador.monitoreo_replay_enabled'),
+            'ultimoChequeo'       => Cache::get(\App\Console\Commands\MonitorearReplayServer::CACHE_ULTIMO_CHEQUEO),
         ]);
     }
 

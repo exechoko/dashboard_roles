@@ -345,8 +345,17 @@ class GrabadorTetraService
                         'Accept'  => '*/*',
                     ],
                 ]);
-            } catch (\GuzzleHttp\Exception\ConnectException $e) {
+            } catch (\GuzzleHttp\Exception\GuzzleException $e) {
+                // No solo ConnectException: el colgado real es que acepta la conexión y
+                // nunca responde, lo que Guzzle reporta como timeout de la request
+                // (RequestException), no como fallo de conexión.
                 Cache::put(self::REPLAY_HUNG_CACHE_KEY, true, now()->addMinute());
+
+                // No esperar al próximo watchdog programado (hasta 5 min): el operador
+                // que disparó este error está mirando la lista de modulaciones y va a
+                // seguir clickeando. Reiniciar ya mismo acota el problema a ESTE click,
+                // no a los siguientes 5 minutos de esa sesión.
+                $this->autoRepararReplayServer();
 
                 throw $e;
             }
@@ -496,6 +505,98 @@ class GrabadorTetraService
     }
 
     /**
+     * Prueba activamente el Replay Server con un pedido de audio real (item
+     * inexistente, sólo para forzar una respuesta), a diferencia de
+     * replayDisponible() que sólo verifica el socket TCP: el colgado real es que
+     * acepta la conexión pero nunca responde, algo que un connect a secas no
+     * detecta. Pensada para un comando de watchdog programado, que así puede
+     * reiniciar el servicio antes de que lo note un operador.
+     *
+     * Si el lock de descargarAudio() está tomado (alguien escuchando audio de
+     * verdad ahora mismo), no espera ni concluye nada: se asume que está ocupado,
+     * no colgado, y se deja para la próxima corrida.
+     */
+    public function probarReplayServer(int $timeoutSegundos = 8): bool
+    {
+        if (Cache::get(self::REPLAY_HUNG_CACHE_KEY)) {
+            return false;
+        }
+
+        $lock = Cache::lock('grabador_replay_download', $timeoutSegundos + 5);
+
+        try {
+            $lock->block(3);
+        } catch (\Illuminate\Contracts\Cache\LockTimeoutException $e) {
+            return true;
+        }
+
+        try {
+            $sessionId = $this->autenticar();
+
+            $query = implode('+', [
+                'address=' . $this->recorderAddress,
+                'databaseid=0',
+                'sessionid=' . $sessionId,
+                'langid=' . $this->langId,
+                'replaymode=0',
+                'itemid=1_1',
+            ]);
+
+            $client = new Client([
+                'timeout'         => $timeoutSegundos,
+                'connect_timeout' => 5,
+                'http_errors'     => false,
+                'verify'          => false,
+                'headers'         => ['User-Agent' => self::USER_AGENT],
+            ]);
+
+            $client->get($this->replayUrl . '/replay/?' . $query, [
+                'headers' => [
+                    'Referer' => $this->baseUrl . '/',
+                    'Origin'  => $this->baseUrl,
+                    'Accept'  => '*/*',
+                ],
+            ]);
+
+            return true;
+        } catch (\GuzzleHttp\Exception\GuzzleException $e) {
+            Cache::put(self::REPLAY_HUNG_CACHE_KEY, true, now()->addMinute());
+
+            Log::warning('GrabadorTetraService: Replay Server no respondió a la prueba del watchdog', [
+                'error' => $e->getMessage(),
+            ]);
+
+            return false;
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
+     * Dispara reiniciarReplayServer() apenas se detecta el colgado (ver
+     * descargarAudio()), en vez de esperar al próximo watchdog programado. Con
+     * lock no bloqueante propio: si varios operadores pisan el colgado casi a la
+     * vez, solo el primero dispara el reinicio real; los demás ya vienen con el
+     * circuit breaker puesto y ni siquiera llegan a intentar la request.
+     */
+    private function autoRepararReplayServer(): void
+    {
+        $lock = Cache::lock('grabador_replay_auto_reparar', 60);
+
+        if (!$lock->get()) {
+            return;
+        }
+
+        try {
+            Log::warning('GrabadorTetraService: Replay Server colgado, reiniciando automáticamente');
+
+            $this->reiniciarReplayServer();
+        } finally {
+            $lock->release();
+        }
+    }
+
+    /**
      * Reinicia el servicio de Windows del Replay Server ("Red Box Replay
      * Service") cuando quedó colgado por uso concurrente de varios operadores
      * (ver descargarAudio()). Requiere que la cuenta con la que corre Apache
@@ -592,6 +693,16 @@ class GrabadorTetraService
 
         $client = $this->httpClient();
 
+        // El SessionID se cachea 15 min, pero el grabador nunca se entera de que
+        // dejamos de usarlo: sin este cierre, cada renovación deja una sesión
+        // colgada más, indefinidamente, mientras la app esté corriendo. Se guarda
+        // aparte (con más vida que la cache "activa") sólo para poder cerrarla acá.
+        $anteriorKey = $cacheKey . '_ultima';
+        $sessionAnterior = Cache::get($anteriorKey);
+        if (is_string($sessionAnterior) && $sessionAnterior !== '') {
+            $this->cerrarSesion($client, $sessionAnterior);
+        }
+
         $resp = $client->post($this->baseUrl . '/', [
             'form_params' => [
                 'id'                          => 'login',
@@ -618,8 +729,32 @@ class GrabadorTetraService
 
         $sessionId = $m[1];
         Cache::put($cacheKey, $sessionId, now()->addMinutes(15));
+        Cache::put($anteriorKey, $sessionId, now()->addDay());
 
         return $sessionId;
+    }
+
+    /**
+     * Cierra una sesión del grabador que ya dejamos de usar (ver autenticar()).
+     * Best-effort: si falla, no debe romper el login nuevo que sigue después.
+     */
+    private function cerrarSesion(Client $client, string $sessionId): void
+    {
+        try {
+            $client->get($this->baseUrl . '/', [
+                'query' => [
+                    'id'            => 'bulkexport',
+                    'action'        => 'logout',
+                    'SessionID'     => $sessionId,
+                    'isajaxrequest' => '1',
+                ],
+                'headers' => ['Cookie' => 'quantifysession=' . $sessionId],
+            ]);
+        } catch (\GuzzleHttp\Exception\GuzzleException $e) {
+            Log::info('GrabadorTetraService: no se pudo cerrar la sesión anterior del grabador', [
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

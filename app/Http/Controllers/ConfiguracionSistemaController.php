@@ -11,11 +11,13 @@ use App\Jobs\RestaurarBackupBaseDatos;
 use App\Services\AuditoriaService;
 use App\Services\BackupBaseDatosService;
 use App\Services\EnvEditorService;
+use App\Services\LogViewerService;
 use App\Support\ConfiguracionCatalogo;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -52,6 +54,7 @@ class ConfiguracionSistemaController extends Controller
         $this->middleware('permission:descargar-configuracion-backup')->only(['backupDescargar']);
         $this->middleware('permission:restaurar-configuracion-backup')->only(['backupRestaurar']);
         $this->middleware('permission:borrar-configuracion-backup')->only(['backupEliminar']);
+        $this->middleware('permission:ver-configuracion-logs')->only(['logs', 'logsDescargar']);
     }
 
     public function index(): View
@@ -267,6 +270,53 @@ class ConfiguracionSistemaController extends Controller
         AuditoriaService::registrar('BORRAR', 'configuracion_sistema_backup', "archivo: {$archivo}");
 
         return back()->with('success', 'Backup eliminado.');
+    }
+
+    public function logs(Request $request, LogViewerService $logs): View
+    {
+        $archivos = $logs->archivosDisponibles();
+
+        $archivo = $request->get('archivo') ?: ($archivos[0]['nombre'] ?? null);
+        $nivel = $request->get('nivel');
+        $texto = trim((string) $request->get('texto'));
+
+        $entradas = $archivo
+            ? $logs->leerEntradas($archivo, $nivel ?: null, $texto ?: null)
+            : collect();
+
+        $porPagina = 25;
+        $pagina = (int) $request->get('page', 1);
+
+        $entradasPaginadas = new LengthAwarePaginator(
+            $entradas->forPage($pagina, $porPagina),
+            $entradas->count(),
+            $porPagina,
+            $pagina,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return view('configuracion.logs', [
+            'archivos'  => $archivos,
+            'archivo'   => $archivo,
+            'nivel'     => $nivel,
+            'texto'     => $texto,
+            'niveles'   => LogViewerService::NIVELES,
+            'entradas'  => $entradasPaginadas,
+        ]);
+    }
+
+    public function logsDescargar(string $archivo): BinaryFileResponse
+    {
+        $nombre = basename($archivo);
+        $ruta = storage_path('logs' . DIRECTORY_SEPARATOR . $nombre);
+
+        if (!str_ends_with($nombre, '.log') || !is_file($ruta)) {
+            abort(404);
+        }
+
+        AuditoriaService::registrar('VER', 'configuracion_sistema_logs', "descarga: {$nombre}");
+
+        return response()->download($ruta);
     }
 
     /**

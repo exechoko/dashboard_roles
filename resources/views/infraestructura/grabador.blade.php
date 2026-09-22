@@ -30,12 +30,39 @@
                         colgado (acepta la conexión pero deja de responder) hasta que se reinicia.
                     </p>
 
-                    <p class="mb-4">
+                    <p class="mb-2">
                         Estado actual:
                         @if ($replayDisponible)
                             <span class="badge badge-success"><i class="fas fa-check"></i> Disponible</span>
                         @else
                             <span class="badge badge-danger"><i class="fas fa-times"></i> No disponible / colgado</span>
+                        @endif
+                    </p>
+
+                    <p class="mb-2">
+                        Monitoreo automático (watchdog cada 5 min):
+                        @if ($monitoreoHabilitado)
+                            <span class="badge badge-success"><i class="fas fa-play-circle"></i> Activo</span>
+                        @else
+                            <span class="badge badge-secondary"><i class="fas fa-pause-circle"></i> Apagado</span>
+                        @endif
+                        <small class="text-muted d-block mt-1">
+                            Se activa/desactiva desde
+                            <a href="{{ route('configuracion.env') }}">Configuración del Sistema &gt; Variables de Entorno &gt; Infraestructura</a>.
+                        </small>
+                    </p>
+
+                    <p class="mb-4">
+                        Último chequeo del watchdog:
+                        @if ($ultimoChequeo)
+                            {{ \Carbon\Carbon::parse($ultimoChequeo['hora'])->diffForHumans() }}
+                            @if ($ultimoChequeo['ok'])
+                                <span class="badge badge-success">OK</span>
+                            @else
+                                <span class="badge badge-warning">Detectó colgado</span>
+                            @endif
+                        @else
+                            <span class="text-muted">sin datos todavía</span>
                         @endif
                     </p>
 

@@ -47,6 +47,7 @@
             'configuracion-ia',
             'configuracion-workers',
             'configuracion-backup',
+            'configuracion-logs',
         ],
         'Dependencias' => [
             'dependencia'

@@ -181,6 +181,7 @@ class Kernel extends ConsoleKernel
         // (grupo CCTV) y alerta por Telegram cuando un equipo supera el umbral.
         $schedule->command('librenms:monitorear-cpu')
             ->everyFiveMinutes()
+            ->when(fn () => config('librenms.monitoreo_enabled'))
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/librenms_cpu.log'));
 
@@ -188,6 +189,7 @@ class Kernel extends ConsoleKernel
         // (con hace cuánto no responden) para el dashboard y el bot.
         $schedule->command('librenms:monitorear-camaras')
             ->everyFiveMinutes()
+            ->when(fn () => config('librenms.monitoreo_enabled'))
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/librenms_camaras.log'));
 
@@ -196,6 +198,7 @@ class Kernel extends ConsoleKernel
         // recupera (riesgo de corte de comunicaciones del 911).
         $schedule->command('central-telefonica:monitorear-troncales')
             ->everyFiveMinutes()
+            ->when(fn () => config('central_telefonica.monitoreo_enabled'))
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/central_telefonica_troncales.log'));
 
@@ -206,6 +209,15 @@ class Kernel extends ConsoleKernel
             ->everyFiveMinutes()
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/infraestructura.log'));
+
+        // Prueba el Replay Server del grabador TETRA (localhost:8880, atiende un
+        // solo cliente a la vez) y lo reinicia solo si detecta que quedó colgado,
+        // antes de que lo sufra un operador escuchando modulaciones.
+        $schedule->command('grabador:monitorear-replay')
+            ->everyFiveMinutes()
+            ->when(fn () => config('grabador.monitoreo_replay_enabled'))
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/grabador_replay.log'));
 
         // Avisa por mail si quedaron mensajes de chat sin leer hace más de 30 minutos.
         // No repite el aviso hasta que el usuario vuelva a leer esa conversación.
@@ -234,11 +246,17 @@ class Kernel extends ConsoleKernel
         // dispara desde el botón "refrescar ahora" de la pantalla Workers.
         $schedule->call(function () {
             \App\Jobs\ConsultarTamanoRestauracionesCecoco::dispatchSync();
-        })->name('cache-cecoco-tamano-restauraciones')->hourly()->withoutOverlapping();
+        })->name('cache-cecoco-tamano-restauraciones')
+            ->hourly()
+            ->when(fn () => config('cecoco.monitoreo_restauraciones_enabled'))
+            ->withoutOverlapping();
 
         $schedule->call(function () {
             \App\Jobs\ConsultarTamanoRestauracionesCecoco::dispatchSync(true);
-        })->name('cache-cecoco-gps-tamano-restauraciones')->hourly()->withoutOverlapping();
+        })->name('cache-cecoco-gps-tamano-restauraciones')
+            ->hourly()
+            ->when(fn () => config('cecoco.monitoreo_restauraciones_enabled'))
+            ->withoutOverlapping();
 
         // Limpia los archivos ZIP temporales de la Plataforma de Descargas que han expirado.
         // Se ejecuta cada hora para liberar espacio en disco.

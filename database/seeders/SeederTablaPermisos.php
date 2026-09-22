@@ -361,6 +361,7 @@ class SeederTablaPermisos extends Seeder
             'descargar-configuracion-backup',
             'restaurar-configuracion-backup',
             'borrar-configuracion-backup',
+            'ver-configuracion-logs',
         ];
 
         // Crear permisos si no existen

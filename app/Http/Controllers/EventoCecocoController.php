@@ -1311,7 +1311,7 @@ class EventoCecocoController extends Controller
 
             $contenido   = $response->getBody()->getContents();
             $disposition = $request->boolean('download') ? 'attachment' : 'inline';
-            $nombre      = 'modulacion_' . $itemid . '.wav';
+            $nombre      = $this->nombreArchivoModulacion($request, $itemid) . '.wav';
             $mime        = 'audio/wav';
 
             // Al descargar se convierte a MP3 (mucho más liviano); si ffmpeg no
@@ -1320,7 +1320,7 @@ class EventoCecocoController extends Controller
                 $mp3 = $servicio->convertirWavAMp3($contenido);
                 if ($mp3 !== null) {
                     $contenido = $mp3;
-                    $nombre    = 'modulacion_' . $itemid . '.mp3';
+                    $nombre    = $this->nombreArchivoModulacion($request, $itemid) . '.mp3';
                     $mime      = 'audio/mpeg';
                 }
             }
@@ -1336,6 +1336,39 @@ class EventoCecocoController extends Controller
 
             return response()->json(['success' => false, 'message' => 'No se pudo acceder al audio de la modulación.'], 404);
         }
+    }
+
+    /**
+     * Arma un nombre de archivo legible para la descarga de una modulación del
+     * grabador: incluye el recurso (móvil) y la hora si el frontend los envía
+     * (ya los tiene calculados para mostrar en la tarjeta), y si no, cae al
+     * itemid crudo para no perder la descarga.
+     */
+    private function nombreArchivoModulacion(Request $request, string $itemid): string
+    {
+        $recurso  = trim((string) $request->input('recurso', ''));
+        $hora     = trim((string) $request->input('hora', ''));
+        $duracion = trim((string) $request->input('duracion', ''));
+
+        $limpiar = static function (string $valor): string {
+            $valor = preg_replace('/[^\p{L}\p{N} ._-]+/u', '', $valor) ?? '';
+            $valor = preg_replace('/\s+/', '_', trim($valor)) ?? '';
+            return trim($valor, '_');
+        };
+
+        // La hora va primero para que, al ordenar por nombre de archivo, las
+        // descargas queden ordenadas cronológicamente.
+        $partes = array_filter([$limpiar($hora), $limpiar($recurso)]);
+
+        if (ctype_digit($duracion)) {
+            $partes[] = $duracion . 's';
+        }
+
+        if (empty($partes)) {
+            return 'modulacion_' . $itemid;
+        }
+
+        return 'modulacion_' . implode('_', $partes);
     }
 
     /**

@@ -25,7 +25,7 @@ class PersonalSeccionController extends Controller
 
     public function __construct()
     {
-        $this->middleware('permission:ver-personal-secciones')->only(['index', 'show', 'export']);
+        $this->middleware('permission:ver-personal-secciones')->only(['index', 'show', 'export', 'exportPreview']);
         $this->middleware('permission:crear-personal-seccion-nota')->only(['storeNota', 'compartirNota', 'compartirTodasNotas']);
         $this->middleware('permission:sincronizar-personal-secciones')->only(['sincronizar']);
     }
@@ -80,11 +80,34 @@ class PersonalSeccionController extends Controller
     public function export(Request $request, Personal911DetalleService $detalleService): BinaryFileResponse
     {
         $registros = $this->registrosFiltrados($request, $request->user(), $detalleService);
+        $columnasExtra = array_values(array_intersect(
+            (array) $request->get('columnas', []),
+            array_keys(PersonalSeccionesExport::COLUMNAS_EXTRA)
+        ));
 
         return Excel::download(
-            new PersonalSeccionesExport($registros),
+            new PersonalSeccionesExport($registros, $columnasExtra),
             'PersonalPorSeccion_'.now()->format('Y-m-d_His').'.xlsx'
         );
+    }
+
+    /**
+     * Vista previa (tabla completa + selector de columnas extra) que se
+     * carga por AJAX dentro del modal de exportar, para no cargar el padrón
+     * entero en cada visita a index() cuando la mayoría no va a exportar.
+     */
+    public function exportPreview(Request $request, Personal911DetalleService $detalleService): View
+    {
+        $registros = $this->registrosFiltrados($request, $request->user(), $detalleService);
+
+        $filas = $registros->values()->map(
+            fn (PersonalSeccion $r, int $key) => PersonalSeccionesExport::mapearFila($r, $key + 1)
+        );
+
+        return view('personal-secciones.partials.export-preview', [
+            'filas' => $filas,
+            'columnasExtraDisponibles' => PersonalSeccionesExport::COLUMNAS_EXTRA,
+        ]);
     }
 
     /**

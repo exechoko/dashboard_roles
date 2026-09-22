@@ -421,4 +421,48 @@ class PersonalSeccionControllerTest extends TestCase
         $response->assertOk();
         $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     }
+
+    public function test_export_preview_requiere_permiso(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $this->get(route('personal-secciones.export.preview'))->assertForbidden();
+    }
+
+    public function test_export_preview_muestra_la_tabla_con_los_datos_filtrados(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->actingAs($user);
+
+        $personal = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', apellido: 'PreviewTest');
+        $personal->update(['dni' => '99998888']);
+
+        $response = $this->get(route('personal-secciones.export.preview', ['secciones' => ['Sección Violencia de Género']]));
+
+        $response->assertOk();
+        $response->assertSee('PreviewTest');
+        // El DNI está en el HTML aunque la columna arranque oculta (hidden
+        // es un atributo visual, no borra el dato del markup).
+        $response->assertSee('99998888');
+        $response->assertSee('Copiar tabla');
+    }
+
+    public function test_export_con_columnas_extra_las_incluye_en_encabezados_y_filas(): void
+    {
+        $personal = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', apellido: 'ConColumnasExtra');
+        $personal->update(['dni' => '11223344', 'email' => 'test@example.com']);
+
+        $registro = \App\Models\PersonalSeccion::where('personal_id', $personal->id)->with('personal')->first();
+
+        $export = new \App\Exports\PersonalSeccionesExport(collect([$registro]), ['dni', 'email']);
+
+        $this->assertContains('DNI', $export->headings());
+        $this->assertContains('Email', $export->headings());
+
+        $fila = $export->collection()->first();
+        $this->assertSame('11223344', $fila['dni']);
+        $this->assertSame('test@example.com', $fila['email']);
+    }
 }

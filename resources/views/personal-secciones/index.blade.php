@@ -29,9 +29,9 @@
                         </div>
                     </div>
                     <div class="text-right">
-                        <a href="{{ route('personal-secciones.export', request()->query()) }}" class="btn btn-nuevo">
+                        <button type="button" class="btn btn-nuevo" data-toggle="modal" data-target="#modalExportarExcel">
                             <i class="fas fa-file-excel mr-1"></i> Exportar Excel
-                        </a>
+                        </button>
                         @can('sincronizar-personal-secciones')
                             <form action="{{ route('personal-secciones.sincronizar') }}" method="POST" class="d-inline"
                                   onsubmit="return confirm('Esto trae los datos actuales de Personal 911 (personal, funciones, armas, chalecos y licencias). ¿Continuar?');">
@@ -272,6 +272,22 @@
                 </div>
             </div>
     @endforeach
+
+    <div class="modal fade" id="modalExportarExcel" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-file-excel mr-1"></i> Vista previa de exportación</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body" id="contenidoExportarExcel">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando vista previa...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -305,5 +321,82 @@
                 textarea.remove();
             });
         });
+
+        (function () {
+            var modal = document.getElementById('modalExportarExcel');
+            var contenido = document.getElementById('contenidoExportarExcel');
+            var cargado = false;
+
+            function actualizarLinkDescarga() {
+                var link = document.getElementById('btnDescargarExcel');
+                if (!link) return;
+
+                var params = new URLSearchParams(window.location.search);
+                params.delete('columnas[]');
+                document.querySelectorAll('.col-extra-toggle:checked').forEach(function (chk) {
+                    params.append('columnas[]', chk.value);
+                });
+
+                link.href = '{{ route('personal-secciones.export') }}?' + params.toString();
+            }
+
+            // Bootstrap 4 dispara sus eventos (show.bs.modal, etc.) por
+            // jQuery, no como CustomEvent nativo: un addEventListener común
+            // nunca los recibe. Hay que engancharse con $(...).on(...).
+            $('#modalExportarExcel').on('show.bs.modal', function () {
+                if (cargado) {
+                    actualizarLinkDescarga();
+                    return;
+                }
+
+                fetch('{{ route('personal-secciones.export.preview') }}?{!! http_build_query(request()->query()) !!}')
+                    .then(function (resp) { return resp.text(); })
+                    .then(function (html) {
+                        contenido.innerHTML = html;
+                        cargado = true;
+                        actualizarLinkDescarga();
+                    })
+                    .catch(function () {
+                        contenido.innerHTML = '<div class="alert alert-danger">No se pudo cargar la vista previa.</div>';
+                    });
+            });
+
+            // Delegación: los checkboxes/botones se inyectan por AJAX, así
+            // que los listeners van en el modal (siempre presente en el DOM).
+            modal.addEventListener('change', function (e) {
+                if (!e.target.classList.contains('col-extra-toggle')) return;
+
+                var clave = e.target.value;
+                document.querySelectorAll('.col-extra-' + clave).forEach(function (el) {
+                    el.hidden = !e.target.checked;
+                });
+                actualizarLinkDescarga();
+            });
+
+            modal.addEventListener('click', function (e) {
+                var boton = e.target.closest('#btnCopiarTablaExport');
+                if (!boton) return;
+
+                var tabla = document.getElementById('tablaPreviewExport');
+                if (!tabla) return;
+
+                var range = document.createRange();
+                range.selectNode(tabla);
+                var seleccion = window.getSelection();
+                seleccion.removeAllRanges();
+                seleccion.addRange(range);
+
+                try {
+                    document.execCommand('copy');
+                    if (window.iziToast) {
+                        iziToast.success({ title: 'Copiado', message: 'Tabla copiada — pegala en Excel o donde la necesites', position: 'topRight' });
+                    }
+                } catch (err) {
+                    // sin soporte de copiado en este navegador
+                }
+
+                seleccion.removeAllRanges();
+            });
+        })();
     </script>
 @endpush

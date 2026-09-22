@@ -848,6 +848,9 @@ Route::group(['middleware' => ['auth']], function () {
         Route::get('/backups/{archivo}/descargar', [ConfiguracionSistemaController::class, 'backupDescargar'])->name('backups.descargar');
         Route::post('/backups/{archivo}/restaurar', [ConfiguracionSistemaController::class, 'backupRestaurar'])->name('backups.restaurar');
         Route::delete('/backups/{archivo}', [ConfiguracionSistemaController::class, 'backupEliminar'])->name('backups.eliminar');
+
+        Route::get('/logs', [ConfiguracionSistemaController::class, 'logs'])->name('logs');
+        Route::get('/logs/{archivo}/descargar', [ConfiguracionSistemaController::class, 'logsDescargar'])->name('logs.descargar');
     });
 
     // Personal por Sección (visualizador general de dotación por sección de 911, con anotaciones)

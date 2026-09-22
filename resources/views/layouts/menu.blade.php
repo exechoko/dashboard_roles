@@ -821,7 +821,7 @@
     </li>
 @endcanany
 
-@canany(['ver-menu-auditoria', 'ver-configuracion-env', 'ver-configuracion-ia', 'ver-configuracion-workers', 'ver-configuracion-backup'])
+@canany(['ver-menu-auditoria', 'ver-configuracion-env', 'ver-configuracion-ia', 'ver-configuracion-workers', 'ver-configuracion-backup', 'ver-configuracion-logs'])
     <li class="dropdown {{ request()->is('auditoria*') || request()->is('configuracion*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-sliders-h"></i><span>Configuración del Sistema</span>
@@ -859,6 +859,13 @@
                 <li class="{{ request()->is('configuracion/backups*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('configuracion.backups') }}">
                         <i class="fas fa-database"></i><span>Backups de Base de Datos</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-configuracion-logs')
+                <li class="{{ request()->is('configuracion/logs*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('configuracion.logs') }}">
+                        <i class="fas fa-file-medical-alt"></i><span>Logs</span>
                     </a>
                 </li>
             @endcan

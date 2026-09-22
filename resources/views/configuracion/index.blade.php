@@ -82,6 +82,21 @@
                         </div>
                     </div>
                 @endcan
+
+                @can('ver-configuracion-logs')
+                    <div class="col-lg-4 col-md-6 col-sm-12 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-file-medical-alt fa-3x text-secondary mb-3"></i>
+                                <h5>Logs</h5>
+                                <p class="text-muted">Errores, excepciones y eventos registrados por la aplicación.</p>
+                                <a href="{{ route('configuracion.logs') }}" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-arrow-right"></i> Ir a Logs
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                @endcan
             </div>
         </div>
     </section>

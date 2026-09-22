@@ -23,7 +23,7 @@
                                     <div class="col-md-6 mb-3">
                                         <label>Búsqueda general</label>
                                         <input type="text" name="texto" class="form-control"
-                                               placeholder="Buscar en acción o cambios..."
+                                               placeholder="Buscar en los cambios (mín. 3 letras por palabra)..."
                                                value="{{ $texto }}">
                                     </div>
 
@@ -35,6 +35,19 @@
                                             @foreach($tablas as $t)
                                                 <option value="{{ $t }}" {{ $tabla == $t ? 'selected' : '' }}>
                                                     {{ $t }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <!-- Filtro por acción -->
+                                    <div class="col-md-4 mb-3">
+                                        <label>Acción</label>
+                                        <select name="accion" class="form-control">
+                                            <option value="">Todas las acciones</option>
+                                            @foreach($acciones as $a)
+                                                <option value="{{ $a }}" {{ $accion == $a ? 'selected' : '' }}>
+                                                    {{ $a }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -54,14 +67,14 @@
                                     </div>
 
                                     <!-- Fecha desde -->
-                                    <div class="col-md-4 mb-3">
+                                    <div class="col-md-2 mb-3">
                                         <label>Fecha desde</label>
                                         <input type="date" name="fecha_desde" class="form-control"
                                                value="{{ $fecha_desde }}">
                                     </div>
 
                                     <!-- Fecha hasta -->
-                                    <div class="col-md-4 mb-3">
+                                    <div class="col-md-2 mb-3">
                                         <label>Fecha hasta</label>
                                         <input type="date" name="fecha_hasta" class="form-control"
                                                value="{{ $fecha_hasta }}">

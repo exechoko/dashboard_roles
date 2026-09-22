@@ -80,11 +80,13 @@ class PersonalSeccionesExport implements FromCollection, WithHeadings, WithEvent
      * @param  Collection<int, PersonalSeccion>  $registros
      * @param  list<string>  $columnasExtra  claves de self::COLUMNAS_EXTRA a incluir además de las base
      * @param  array<int, object>  $detalles911  personal911_id => fila de Personal911DetalleService::obtenerMasivo()
+     * @param  list<string>  $columnasCustom  nombres de columnas armadas al vuelo por el operador (siempre vacías, ej. "Aclaración", "Sello" — de un solo uso, no se guardan en ningún catálogo)
      */
     public function __construct(
         private Collection $registros,
         private array $columnasExtra = [],
-        private array $detalles911 = []
+        private array $detalles911 = [],
+        private array $columnasCustom = []
     ) {
     }
 
@@ -161,6 +163,11 @@ class PersonalSeccionesExport implements FromCollection, WithHeadings, WithEvent
                 }
             }
 
+            // Columnas custom: siempre vacías, solo para imprimir y completar a mano.
+            foreach (array_keys($this->columnasCustom) as $indice) {
+                $fila['custom_'.$indice] = '';
+            }
+
             return $fila;
         });
 
@@ -173,7 +180,7 @@ class PersonalSeccionesExport implements FromCollection, WithHeadings, WithEvent
 
         return array_merge([
             'NRO', 'Sección', 'Jerarquía', 'Apellido', 'Nombre', 'L.P.', 'Función', 'Estado',
-        ], $extra);
+        ], $extra, $this->columnasCustom);
     }
 
     public function registerEvents(): array

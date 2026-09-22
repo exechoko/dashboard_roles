@@ -85,11 +85,32 @@ class PersonalSeccionController extends Controller
             array_keys(PersonalSeccionesExport::COLUMNAS_EXTRA)
         ));
         $detalles911 = $detalleService->obtenerMasivo($this->idsPersonal911($registros));
+        $columnasCustom = $this->columnasCustomSanitizadas($request);
 
         return Excel::download(
-            new PersonalSeccionesExport($registros, $columnasExtra, $detalles911),
+            new PersonalSeccionesExport($registros, $columnasExtra, $detalles911, $columnasCustom),
             'PersonalPorSeccion_'.now()->format('Y-m-d_His').'.xlsx'
         );
+    }
+
+    /**
+     * Nombres de columnas "en blanco" que el operador arma al vuelo (ej.
+     * "Aclaración", "Sello") solo para esta descarga — nunca se guardan.
+     * Se acotan en cantidad y largo para no dejar armar una planilla
+     * absurda desde un query string manipulado a mano.
+     *
+     * @return list<string>
+     */
+    private function columnasCustomSanitizadas(Request $request): array
+    {
+        return collect((array) $request->get('columnas_custom', []))
+            ->map(fn ($nombre) => trim((string) $nombre))
+            ->filter(fn ($nombre) => $nombre !== '')
+            ->map(fn ($nombre) => mb_substr($nombre, 0, 40))
+            ->unique()
+            ->take(10)
+            ->values()
+            ->all();
     }
 
     /**

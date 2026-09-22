@@ -19,6 +19,19 @@
     @endforeach
 </div>
 
+<div class="mb-3">
+    <strong class="d-block small text-uppercase text-muted mb-1">Agregar columna personalizada (en blanco, solo para esta exportación)</strong>
+    <div class="input-group input-group-sm" style="max-width: 420px">
+        <input type="text" id="inputColumnaCustom" class="form-control" maxlength="40"
+               placeholder="Ej: Aclaración, Sello...">
+        <div class="input-group-append">
+            <button type="button" id="btnAgregarColumnaCustom" class="btn btn-outline-primary">
+                <i class="fas fa-plus"></i> Agregar
+            </button>
+        </div>
+    </div>
+</div>
+
 <div class="d-flex justify-content-between align-items-center mb-2">
     <span class="text-muted small">{{ $filas->count() }} funcionario(s) en esta vista previa</span>
     <div>

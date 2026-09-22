@@ -850,6 +850,17 @@ function renderizarModulaciones(data) {
                 audioEl.addEventListener('play', function() {
                     card.classList.add('mod-escuchada');
                     guardarEscuchada(claveAudio);
+
+                    // Pausar cualquier otro audio de la lista: además de confuso
+                    // escuchar dos a la vez, cada uno pega contra el mismo Replay
+                    // Server del grabador (atiende un solo pedido a la vez), así
+                    // que evitar la superposición ahorra la espera del lock.
+                    document.querySelectorAll('#modulaciones-lista audio').forEach(function(otroAudio) {
+                        if (otroAudio !== audioEl && !otroAudio.paused) {
+                            otroAudio.pause();
+                            otroAudio.currentTime = 0;
+                        }
+                    });
                 });
             });
         });

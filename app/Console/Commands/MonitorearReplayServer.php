@@ -17,11 +17,19 @@ class MonitorearReplayServer extends Command
 
     private const CACHE_FLAG_REINICIO_FALLIDO = 'grabador.replay_reinicio_fallido';
 
+    /** Cache key: último chequeo del watchdog, para mostrarlo en Infraestructura > Grabador. */
+    public const CACHE_ULTIMO_CHEQUEO = 'grabador.replay_watchdog_ultimo_chequeo';
+
     public function handle(GrabadorTetraService $grabador, TelegramService $telegram): int
     {
         $simulacro = (bool) $this->option('sin-telegram');
 
         $ok = $grabador->probarReplayServer();
+
+        Cache::put(self::CACHE_ULTIMO_CHEQUEO, [
+            'hora' => now()->toDateTimeString(),
+            'ok'   => $ok,
+        ], now()->addHours(2));
 
         if ($ok) {
             $this->info('✅ Replay Server responde con normalidad.');

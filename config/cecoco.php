@@ -30,4 +30,8 @@ return [
     // Tamaño (MB) de la BD de restauraciones (CECOCO y GPS) a partir del cual
     // se dispara una notificación/alerta por Telegram.
     'umbral_restauraciones_mb' => (int) env('CECOCO_UMBRAL_RESTAURACIONES_MB', 4000),
+
+    // Apaga la consulta horaria programada del tamaño de BD de restauraciones
+    // (Configuración del Sistema > Variables de Entorno > Infraestructura).
+    'monitoreo_restauraciones_enabled' => env('CECOCO_MONITOREO_RESTAURACIONES_ENABLED', true),
 ];

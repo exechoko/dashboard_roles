@@ -99,6 +99,11 @@ return [
                 'CENTRAL_TELEFONICA_PASSWORD' => ['label' => 'Contraseña Central Telefónica', 'tipo' => 'password'],
                 'CAMARA_USER' => ['label' => 'Usuario de cámaras', 'tipo' => 'text'],
                 'CAMARA_PASS' => ['label' => 'Contraseña de cámaras', 'tipo' => 'password'],
+
+                'GRABADOR_MONITOREO_REPLAY_ENABLED'      => ['label' => 'Monitoreo activo: Grabador TETRA (Replay Server)', 'tipo' => 'bool', 'ayuda' => 'Watchdog cada 5 min que reinicia solo el Replay Server cuando se cuelga.'],
+                'LIBRENMS_MONITOREO_ENABLED'             => ['label' => 'Monitoreo activo: LibreNMS (CPU operadores y cámaras 911)', 'tipo' => 'bool'],
+                'CENTRAL_TELEFONICA_MONITOREO_ENABLED'   => ['label' => 'Monitoreo activo: Central telefónica (troncales SIP)', 'tipo' => 'bool'],
+                'CECOCO_MONITOREO_RESTAURACIONES_ENABLED' => ['label' => 'Monitoreo activo: Restauraciones CECOCO', 'tipo' => 'bool'],
             ],
         ],
 

@@ -7,4 +7,8 @@ return [
     'user' => env('CENTRAL_TELEFONICA_USER', ''),
     'password' => env('CENTRAL_TELEFONICA_PASSWORD', ''),
     'timeout' => env('CENTRAL_TELEFONICA_TIMEOUT', 60),
+
+    // Apaga el monitoreo programado de los troncales SIP, cada 5 min
+    // (Configuración del Sistema > Variables de Entorno > Infraestructura).
+    'monitoreo_enabled' => env('CENTRAL_TELEFONICA_MONITOREO_ENABLED', true),
 ];

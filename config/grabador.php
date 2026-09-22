@@ -79,4 +79,9 @@ return [
     // Las telefónicas se identifican por este marcador en el nombre; el resto
     // (TETRA, Multiconferencia, Escucha, etc.) se considera modulación.
     'marcador_telefonia' => env('GRABADOR_MARCADOR_TELEFONIA', '(RDSI)'),
+
+    // Apaga el watchdog programado (grabador:monitorear-replay, cada 5 min) que
+    // reinicia solo el Replay Server cuando se cuelga (Configuración del Sistema
+    // > Variables de Entorno > Infraestructura).
+    'monitoreo_replay_enabled' => env('GRABADOR_MONITOREO_REPLAY_ENABLED', true),
 ];

@@ -61,7 +61,7 @@
             <span class="material-symbols-outlined" id="mThemeIcon">contrast</span>
         </button>
         <a href="{{ route('movil.logout') }}" class="m-topbar__theme" id="mLogoutBtn" aria-label="Cerrar sesión"
-            onclick="event.preventDefault(); localStorage.clear(); document.getElementById('mLogoutForm').submit();">
+            onclick="event.preventDefault(); try { Object.keys(localStorage).forEach(function (k) { if (k.indexOf('tutorial_') !== 0) { localStorage.removeItem(k); } }); } catch (e) {} document.getElementById('mLogoutForm').submit();">
             <span class="material-symbols-outlined">logout</span>
         </a>
         <form id="mLogoutForm" action="{{ route('movil.logout') }}" method="POST" class="d-none">

@@ -1356,7 +1356,9 @@ class EventoCecocoController extends Controller
             return trim($valor, '_');
         };
 
-        $partes = array_filter([$limpiar($recurso), $limpiar($hora)]);
+        // La hora va primero para que, al ordenar por nombre de archivo, las
+        // descargas queden ordenadas cronológicamente.
+        $partes = array_filter([$limpiar($hora), $limpiar($recurso)]);
 
         if (ctype_digit($duracion)) {
             $partes[] = $duracion . 's';

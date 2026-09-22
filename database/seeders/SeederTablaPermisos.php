@@ -235,10 +235,7 @@ class SeederTablaPermisos extends Seeder
             'editar-arma-tipo',
             'borrar-arma-tipo',
             'ver-personal',
-            'crear-personal',
             'editar-personal',
-            'borrar-personal',
-            'restaurar-personal',
 
             // Personal (menú aparte)
             'ver-menu-personal',

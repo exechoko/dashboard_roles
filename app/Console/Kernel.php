@@ -207,6 +207,14 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->appendOutputTo(storage_path('logs/infraestructura.log'));
 
+        // Prueba el Replay Server del grabador TETRA (localhost:8880, atiende un
+        // solo cliente a la vez) y lo reinicia solo si detecta que quedó colgado,
+        // antes de que lo sufra un operador escuchando modulaciones.
+        $schedule->command('grabador:monitorear-replay')
+            ->everyFiveMinutes()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/grabador_replay.log'));
+
         // Avisa por mail si quedaron mensajes de chat sin leer hace más de 30 minutos.
         // No repite el aviso hasta que el usuario vuelva a leer esa conversación.
         $schedule->command('chat:avisar-no-leidos')

@@ -30,10 +30,7 @@ class SeederPermisosArmaRetencion extends Seeder
             'editar-arma-tipo',
             'borrar-arma-tipo',
             'ver-personal',
-            'crear-personal',
             'editar-personal',
-            'borrar-personal',
-            'restaurar-personal',
             'ver-menu-personal',
             'ver-datos-personales-personal',
         ];

@@ -10,7 +10,7 @@
                 </a>
                 @can('editar-personal')
                     <a href="{{ route('armas.personal.edit', $personal) }}" class="btn btn-primary">
-                        <i class="fas fa-edit"></i> Editar
+                        <i class="fas fa-tools"></i> Corregir arma/chaleco
                     </a>
                 @endcan
             </div>
@@ -89,7 +89,7 @@
                 <div class="col-md-6">
                     <div class="card">
                         <div class="card-header">
-                            <h4><i class="fas fa-gun"></i> Arma Asignada</h4>
+                            <h4><i class="fas fa-tools"></i> Arma Asignada</h4>
                         </div>
                         <div class="card-body">
                             @if($personal->tieneArmaAsignada())

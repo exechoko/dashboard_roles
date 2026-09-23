@@ -258,7 +258,7 @@
             @can('ver-menu-armeria')
                 <li class="{{ request()->is('armas/personal*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('armas.personal.index') }}">
-                        <i class="fas fa-shield-alt"></i><span>Armería</span>
+                        <i class="fas fa-id-card"></i><span>General</span>
                     </a>
                 </li>
             @endcan

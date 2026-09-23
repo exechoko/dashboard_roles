@@ -83,6 +83,45 @@ class PersonalSeccionSyncService
     }
 
     /**
+     * Sincronización manual completa (funcionarios, armas, chalecos,
+     * licencias y secciones) disparada desde un botón de la web, con el
+     * mismo throttle que la sincronización de "Personal por Sección". Pensado
+     * para reusarse desde cualquier pantalla que necesite este mismo botón
+     * (Armería, Por Sección), sin duplicar el intento/catch ni el mensaje.
+     *
+     * @return array{ok: bool, mensaje: string}
+     */
+    public function sincronizarManualmente(Personal911ImportService $importService): array
+    {
+        $minutosRestantes = self::minutosParaProximaSyncManual();
+
+        if ($minutosRestantes > 0) {
+            return [
+                'ok' => false,
+                'mensaje' => "Ya se sincronizó hace poco. Esperá {$minutosRestantes} min antes de volver a intentarlo.",
+            ];
+        }
+
+        try {
+            $resultado = $importService->importar();
+            $resultadoSecciones = $this->sincronizar();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return [
+                'ok' => false,
+                'mensaje' => 'No se pudo sincronizar con Personal 911: '.$e->getMessage(),
+            ];
+        }
+
+        return [
+            'ok' => true,
+            'mensaje' => "Sincronización completa: {$resultado['procesados']} funcionarios procesados, "
+                ."{$resultadoSecciones['bajas']} dejaron su sección, {$resultadoSecciones['en_licencia']} en licencia.",
+        ];
+    }
+
+    /**
      * Minutos que faltan para poder volver a disparar una sincronización
      * manual, o 0 si ya se puede.
      */

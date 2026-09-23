@@ -268,29 +268,11 @@ class PersonalSeccionController extends Controller
 
     public function sincronizar(Personal911ImportService $importService, PersonalSeccionSyncService $seccionSyncService): RedirectResponse
     {
-        $minutosRestantes = PersonalSeccionSyncService::minutosParaProximaSyncManual();
-
-        if ($minutosRestantes > 0) {
-            return redirect()
-                ->route('personal-secciones.index')
-                ->with('error', "Ya se sincronizó hace poco. Esperá {$minutosRestantes} min antes de volver a intentarlo.");
-        }
-
-        try {
-            $resultado = $importService->importar();
-            $resultadoSecciones = $seccionSyncService->sincronizar();
-        } catch (\Throwable $e) {
-            report($e);
-
-            return redirect()
-                ->route('personal-secciones.index')
-                ->with('error', 'No se pudo sincronizar con Personal 911: '.$e->getMessage());
-        }
+        $resultado = $seccionSyncService->sincronizarManualmente($importService);
 
         return redirect()
             ->route('personal-secciones.index')
-            ->with('success', "Sincronización completa: {$resultado['procesados']} funcionarios procesados, "
-                ."{$resultadoSecciones['bajas']} dejaron su sección, {$resultadoSecciones['en_licencia']} en licencia.");
+            ->with($resultado['ok'] ? 'success' : 'error', $resultado['mensaje']);
     }
 
     public function storeNota(Request $request, int $personalId): RedirectResponse

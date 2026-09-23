@@ -2,62 +2,46 @@
 
 @section('content')
     <div class="section">
-        <div class="section-header">
-            <h1>Personal Efectivo</h1>
-        </div>
-
         <div class="section-body">
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
+            <div class="card shadow-sm border-0">
+                <div class="card-header-modern">
+                    <div class="card-header-left">
+                        <div class="header-icon"><i class="fas fa-microchip"></i></div>
+                        <div>
+                            <h5 class="header-title">Personal Efectivo — {{ \App\Http\Controllers\PersonalController::SECCION_TECNICA }}</h5>
+                            <small class="text-muted">
+                                <span class="badge-total" id="total-funcionarios">0</span> funcionarios activos
+                            </small>
+                        </div>
+                    </div>
+                </div>
 
-                            <h4 class="mb-4">Informe de Personal - Sección Técnica</h4>
+                <div class="card-body pt-3">
+                    <div class="row">
+                        {{-- 🔵 IZQUIERDA: funcionarios y sus horarios --}}
+                        <div class="col-lg-7">
+                            <div id="funcionarios-list"></div>
 
-                            <div class="row">
+                            <button class="btn btn-nuevo mt-2" onclick="generarMensaje()">
+                                <i class="fas fa-comment-dots mr-1"></i> Generar Mensaje
+                            </button>
+                        </div>
 
-                                {{-- 🔵 IZQUIERDA --}}
-                                <div class="col-md-6">
+                        {{-- 🔵 DERECHA: mensaje generado --}}
+                        <div class="col-lg-5">
+                            <label class="d-block mb-2">Mensaje generado</label>
+                            <textarea id="mensaje" class="form-control mb-3"
+                                style="height: 55vh; resize: vertical; overflow:auto;"></textarea>
 
-                                    <h5>Funcionarios</h5>
+                            <button id="whatsapp-web-btn" class="btn btn-success mr-2"
+                                style="display:none;" onclick="enviarWhatsAppWeb()">
+                                <i class="fab fa-whatsapp mr-1"></i> WhatsApp Web
+                            </button>
 
-                                        @can('crear-personal')
-                                        <button class="btn btn-sm btn-primary mb-3"
-                                            data-toggle="modal" data-target="#modalPersonal">
-                                            + Agregar Funcionario
-                                        </button>
-                                        @endcan
-
-                                    <div id="funcionarios-list"></div>
-
-                                    <button class="btn btn-success mt-3" onclick="generarMensaje()">
-                                        Generar Mensaje
-                                    </button>
-
-                                </div>
-
-                                {{-- 🔵 DERECHA --}}
-                                <div class="col-md-6">
-
-                                    <h5>Mensaje Generado</h5>
-
-                                    <textarea id="mensaje" class="form-control mb-3"
-                                        style="height: 50vh; resize: vertical; overflow:auto;"></textarea>
-
-                                    <button id="whatsapp-web-btn" class="btn btn-success me-2"
-                                        style="display:none;" onclick="enviarWhatsAppWeb()">
-                                        WhatsApp Web
-                                    </button>
-
-                                    <button id="whatsapp-desktop-btn" class="btn btn-secondary"
-                                        style="display:none;" onclick="enviarWhatsAppDesktop()">
-                                        WhatsApp Desktop
-                                    </button>
-
-                                </div>
-
-                            </div>
-
+                            <button id="whatsapp-desktop-btn" class="btn btn-outline-success"
+                                style="display:none;" onclick="enviarWhatsAppDesktop()">
+                                <i class="fab fa-whatsapp mr-1"></i> WhatsApp Desktop
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -65,66 +49,75 @@
         </div>
     </div>
 
-    {{-- 🪟 MODAL --}}
-    @can('crear-personal')
-        <div id="modalPersonal" class="modal fade" data-backdrop="false" role="dialog">
-            <div class="modal-dialog modal-md">
-                <div class="modal-content">
-
-                    <div class="modal-header bg-primary">
-                        <h5 class="modal-title text-white">Nuevo Funcionario</h5>
-                        <button type="button" class="close" data-dismiss="modal">
-                            <span>&times;</span>
-                        </button>
-                    </div>
-
-                    <div class="modal-body" style="min-height: 200px">
-
-                        <div class="form-group">
-                            <label>Nombre</label>
-                            <input type="text" id="nombre" class="form-control">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Apellido</label>
-                            <input type="text" id="apellido" class="form-control">
-                        </div>
-
-                        <div class="form-group">
-                            <label>LP</label>
-                            <input type="text" id="lp" class="form-control" maxlength="5">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Jerarquía</label>
-                            <input type="text" id="jerarquia" class="form-control">
-                        </div>
-
-                    </div>
-
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
-                        <button class="btn btn-primary" onclick="guardarFuncionario()">Guardar</button>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    @endcan
-    @php
-        $puedeEditar = auth()->user()->can('editar-personal');
-        $puedeBorrar = auth()->user()->can('borrar-personal');
-    @endphp
+    @push('styles')
+    <style>
+        .funcionario-card {
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: .9rem 1rem;
+            margin-bottom: 1rem;
+            background: var(--bg-secondary);
+        }
+        .funcionario-card-header {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: .5rem;
+            margin-bottom: .75rem;
+        }
+        .jerarquia-chip {
+            background: linear-gradient(135deg, #6777ef, #35199a);
+            color: #fff;
+            border-radius: 20px;
+            padding: .15rem .7rem;
+            font-size: .78rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .funcionario-nombre { color: var(--text-primary); font-weight: 700; }
+        .badge-en-licencia {
+            background: #f6c23e;
+            color: #212529;
+            border-radius: 20px;
+            padding: .15rem .6rem;
+            font-size: .75rem;
+            font-weight: 600;
+        }
+        .horarios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: .5rem;
+        }
+        .horario-chip {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            padding: .45rem .65rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 0;
+            font-size: .83rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            background: var(--input-bg, transparent);
+            transition: background .15s, border-color .15s;
+        }
+        .horario-chip:hover { background: rgba(103, 119, 239, .08); }
+        .horario-chip:has(input:checked) {
+            border-color: #6777ef;
+            background: rgba(103, 119, 239, .12);
+            font-weight: 600;
+        }
+        .horario-chip input { flex-shrink: 0; }
+        .turno-manana { border-left: 4px solid #f6c23e; }
+        .turno-tarde  { border-left: 4px solid #6777ef; }
+        .turno-mixto  { border-left: 4px solid #36b9cc; }
+        .turno-12h    { border-left: 4px solid #e74a3b; }
+    </style>
+    @endpush
 
     @push('scripts')
     <script>
-        const puedeEditar = {{ $puedeEditar ? 'true' : 'false' }};
-        const puedeBorrar = {{ $puedeBorrar ? 'true' : 'false' }};
-    </script>
-
-    <script>
-        let editandoId = null;
-
         const horarios = [
             { nombre: "Personal turno de 12 horas (07:30 hs. a 19:30 hs.)", tipo: "12h" },
             { nombre: "Personal turno mañana (07:30 hs. a 13:00 hs.)", tipo: "manana" },
@@ -136,7 +129,7 @@
             { nombre: "Personal turno (09:00 hs. a 11:00 hs.)", tipo: "manana" }
         ];
 
-        // 🔵 CARGAR FUNCIONARIOS
+        // 🔵 CARGAR FUNCIONARIOS (vienen de personal911, vía personal_secciones)
         window.cargarFuncionarios = async function () {
 
             const res = await fetch('/tareas/personal-efectivo', {
@@ -145,6 +138,8 @@
 
             const data = await res.json();
 
+            document.getElementById("total-funcionarios").textContent = data.length;
+
             const div = document.getElementById("funcionarios-list");
             div.innerHTML = "";
 
@@ -152,33 +147,21 @@
 
                 const f = `${p.jerarquia} ${p.apellido}, ${p.nombre}, L.P. Nº ${p.lp}`;
 
-                const container = document.createElement("div");
-                container.className = "funcionario-box mb-3";
+                const card = document.createElement("div");
+                card.className = "funcionario-card";
 
-                const title = document.createElement("div");
-                title.innerHTML = `<strong>${f}</strong>`;
-                container.appendChild(title);
+                const header = document.createElement("div");
+                header.className = "funcionario-card-header";
+                header.innerHTML = `
+                    <span class="jerarquia-chip">${p.jerarquia}</span>
+                    <span class="funcionario-nombre">${p.apellido}, ${p.nombre}</span>
+                    <span class="text-muted small">L.P. Nº ${p.lp}</span>
+                    ${p.en_licencia ? '<span class="badge-en-licencia"><i class="fas fa-plane-departure mr-1"></i>En licencia</span>' : ''}
+                `;
+                card.appendChild(header);
 
-                const btnContainer = document.createElement("div");
-                btnContainer.className = "d-flex gap-2 mb-2";
-
-                if (puedeEditar) {
-                    const btnEdit = document.createElement("button");
-                    btnEdit.className = "btn btn-sm btn-warning mr-2";
-                    btnEdit.textContent = "Editar";
-                    btnEdit.onclick = () => editarFuncionario(p);
-                    btnContainer.appendChild(btnEdit);
-                }
-
-                if (puedeBorrar) {
-                    const btnDelete = document.createElement("button");
-                    btnDelete.className = "btn btn-sm btn-danger";
-                    btnDelete.textContent = "Eliminar";
-                    btnDelete.onclick = () => eliminarFuncionario(p.id);
-                    btnContainer.appendChild(btnDelete);
-                }
-
-                container.appendChild(btnContainer);
+                const grid = document.createElement("div");
+                grid.className = "horarios-grid";
 
                 horarios.forEach(h => {
 
@@ -188,98 +171,20 @@
                     else if (h.tipo === "mixto") clase = "turno-mixto";
                     else if (h.tipo === "12h") clase = "turno-12h";
 
-                    const item = document.createElement("div");
-                    item.className = `turno-box ${clase}`;
-
-                    item.innerHTML = `
-                        <label class="mb-0">
-                            <input type="checkbox" class="asignacion"
+                    const chip = document.createElement("label");
+                    chip.className = `horario-chip ${clase}`;
+                    chip.innerHTML = `
+                        <input type="checkbox" class="asignacion"
                             data-funcionario="${f}" value="${h.nombre}">
-                            ${h.nombre}
-                        </label>
-                        <span class="contador" id="count-${h.nombre.replace(/\s/g, '')}">0</span>
+                        <span>${h.nombre}</span>
                     `;
 
-                    container.appendChild(item);
+                    grid.appendChild(chip);
                 });
 
-                div.appendChild(container);
+                card.appendChild(grid);
+                div.appendChild(card);
             });
-        };
-
-        // EDITAR
-        window.editarFuncionario = function (p) {
-            editandoId = p.id;
-
-            document.getElementById("nombre").value = p.nombre;
-            document.getElementById("apellido").value = p.apellido;
-            document.getElementById("lp").value = p.lp;
-            document.getElementById("jerarquia").value = p.jerarquia;
-
-            $('#modalPersonal').modal('show');
-        };
-
-        // GUARDAR
-        window.guardarFuncionario = async function () {
-
-            const data = {
-                nombre: nombre.value,
-                apellido: apellido.value,
-                lp: lp.value,
-                jerarquia: jerarquia.value
-            };
-
-            let url = '/tareas/personal-efectivo';
-            let method = 'POST';
-
-            if (editandoId !== null) {
-                url = `/tareas/personal-efectivo/${editandoId}`;
-                method = 'PUT';
-            }
-
-            const res = await fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify(data)
-            });
-
-            if (res.ok) {
-                cargarFuncionarios();
-                $('#modalPersonal').modal('hide');
-
-                nombre.value = "";
-                apellido.value = "";
-                lp.value = "";
-                jerarquia.value = "";
-
-                editandoId = null;
-            } else {
-                alert("Error al guardar");
-            }
-        };
-
-        // ELIMINAR
-        window.eliminarFuncionario = async function (id) {
-
-            if (!confirm("¿Eliminar funcionario?")) return;
-
-            const res = await fetch(`/tareas/personal-efectivo/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                }
-            });
-
-            if (res.ok) {
-                cargarFuncionarios();
-            } else {
-                alert("Error al eliminar");
-            }
         };
 
         // MENSAJE
@@ -301,7 +206,7 @@
                 horarioCount[h]++;
             });
 
-            let msg = `Buenos días:\nFuerza efectiva del Personal de la Sección Técnica ${new Date().toLocaleDateString('es-AR')}:\n\n`;
+            let msg = `Buenos días:\nFuerza efectiva del Personal de la Sección Técnica y Desarrollo ${new Date().toLocaleDateString('es-AR')}:\n\n`;
 
             msg += "Funcionarios:\n";
             funcionarios.forEach(f => msg += `• ${f}\n`);

@@ -255,7 +255,7 @@ class Kernel extends ConsoleKernel
             \App\Jobs\ConsultarTamanoRestauracionesCecoco::dispatchSync(true);
         })->name('cache-cecoco-gps-tamano-restauraciones')
             ->hourly()
-            ->when(fn () => config('cecoco.monitoreo_restauraciones_enabled'))
+            ->when(fn () => config('cecoco.monitoreo_restauraciones_gps_enabled'))
             ->withoutOverlapping();
 
         // Limpia los archivos ZIP temporales de la Plataforma de Descargas que han expirado.

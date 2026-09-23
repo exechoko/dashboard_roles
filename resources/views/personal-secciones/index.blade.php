@@ -28,7 +28,10 @@
                             </small>
                         </div>
                     </div>
-                    <div class="text-right">
+                    <div class="text-right" id="personalSeccionesAccionesWrap">
+                        <button type="button" class="btn btn-outline-info" id="btnVerTutorialPersonalSecciones" onclick="iniciarTutorialPagina()">
+                            <i class="fas fa-question-circle"></i> Ver tutorial
+                        </button>
                         <button type="button" class="btn btn-nuevo" data-toggle="modal" data-target="#modalExportarExcel">
                             <i class="fas fa-file-excel mr-1"></i> Exportar Excel
                         </button>
@@ -50,7 +53,7 @@
                 </div>
 
                 <div class="card-body pt-3">
-                    <form method="GET" action="{{ route('personal-secciones.index') }}" class="mb-3">
+                    <form method="GET" action="{{ route('personal-secciones.index') }}" class="mb-3" id="personalSeccionesBuscarForm">
                         <div class="row align-items-end">
                             <div class="col-md-4">
                                 <label for="busqueda">Buscar funcionario</label>
@@ -106,7 +109,7 @@
                         </div>
                     </form>
 
-                    <div class="table-responsive">
+                    <div class="table-responsive" id="personalSeccionesTabla">
                         <table class="table table-modern">
                             <thead>
                                 <tr>
@@ -199,7 +202,7 @@
                         </div>
                         <div class="modal-body">
                             @forelse ($p->notasSeccion as $nota)
-                                @php($esAutor = $nota->esAutor($usuarioActual))
+                                @php $esAutor = $nota->esAutor($usuarioActual); @endphp
                                 <div class="border-left pl-3 mb-3" style="border-color:#dee2e6 !important">
                                     <div class="text-muted small d-flex flex-wrap align-items-center" style="gap:.4rem">
                                         <span><i class="far fa-clock mr-1"></i>{{ $nota->created_at->format('d/m/Y H:i') }}</span>
@@ -289,6 +292,37 @@
         </div>
     </div>
 @endsection
+
+@php
+    $tutorialPasos = [
+        [
+            'id' => 'personalSeccionesAccionesWrap',
+            'titulo' => 'Total y exportación',
+            'texto' => 'El total refleja los filtros aplicados. El botón de Excel arma una planilla con las columnas que elijas.',
+        ],
+    ];
+    if (auth()->user()->can('sincronizar-personal-secciones')) {
+        $tutorialPasos[] = [
+            'id' => 'personalSeccionesAccionesWrap',
+            'titulo' => 'Actualizar desde Personal 911',
+            'texto' => 'Se sincroniza solo todos los días a las 05:30. Este botón fuerza una actualización manual, con límite de frecuencia.',
+        ];
+    }
+    $tutorialPasos = array_merge($tutorialPasos, [
+        [
+            'id' => 'personalSeccionesBuscarForm',
+            'titulo' => 'Buscar y filtrar',
+            'texto' => 'Buscá por apellido, nombre, LP o DNI. Filtrá por estado y ordená por jerarquía o novedades. Tildá secciones y aplicá el filtro para acotar el listado.',
+        ],
+        [
+            'id' => 'personalSeccionesTabla',
+            'titulo' => 'Ver, copiar y anotar',
+            'texto' => 'Hacé clic en un nombre para ver su detalle. El ícono de copiar pasa sus datos al portapapeles, y el de anotaciones deja agregar notas privadas o compartirlas con otros usuarios.',
+            'side' => 'top',
+        ],
+    ]);
+@endphp
+@include('partials.tutorial', ['tutorialPasos' => $tutorialPasos, 'tutorialStorageKey' => 'tutorial_personal_secciones_visto'])
 
 @push('scripts')
     <script>

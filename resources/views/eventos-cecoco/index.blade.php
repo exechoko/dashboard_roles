@@ -83,11 +83,11 @@
                         <div class="row g-3 mb-3" id="filtroFechasWrap">
                             <div class="col-12 col-md-6">
                                 <label class="form-label">Desde</label>
-                                <input type="datetime-local" name="desde_datetime" class="form-control" lang="en-GB" value="{{ request('desde_datetime', now()->subDay()->startOfDay()->format('Y-m-d\TH:i')) }}">
+                                <input type="text" name="desde_datetime" class="form-control cecoco-datetime" autocomplete="off" value="{{ request('desde_datetime', now()->subDay()->startOfDay()->format('Y-m-d H:i')) }}">
                             </div>
                             <div class="col-12 col-md-6">
                                 <label class="form-label">Hasta</label>
-                                <input type="datetime-local" name="hasta_datetime" class="form-control" lang="en-GB" value="{{ request('hasta_datetime', now()->subDay()->setTime(23, 59)->format('Y-m-d\TH:i')) }}">
+                                <input type="text" name="hasta_datetime" class="form-control cecoco-datetime" autocomplete="off" value="{{ request('hasta_datetime', now()->subDay()->setTime(23, 59)->format('Y-m-d H:i')) }}">
                             </div>
                             <div class="col-12">
                                 <div class="form-check">
@@ -344,12 +344,26 @@
 @endphp
 @include('partials.tutorial', ['tutorialPasos' => $tutorialPasos, 'tutorialStorageKey' => 'tutorial_busqueda_cecoco_visto'])
 
-@section('js')
+@push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+@endpush
+
+@section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
     $(document).ready(function() {
         $('.select2').select2({
             width: '100%',
             allowClear: true
+        });
+
+        // Selector de fecha/hora con formato 24hs forzado (los inputs datetime-local
+        // nativos muestran AM/PM en algunos navegadores según el locale del SO/Chrome).
+        flatpickr('.cecoco-datetime', {
+            enableTime: true,
+            time_24hr: true,
+            dateFormat: 'Y-m-d H:i',
+            allowInput: true,
         });
 
         // Forzar el foco en el campo de búsqueda cuando se abre el Select2

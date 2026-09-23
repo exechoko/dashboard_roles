@@ -636,6 +636,7 @@ Route::group(['middleware' => ['auth']], function () {
         // Personal (identidad y alta/baja los maneja el sync diario de personal911;
         // acá solo se corrige localmente el arma/chaleco cuando personal911 lo tiene mal)
         Route::get('personal', [ArmaPersonalController::class, 'index'])->name('personal.index');
+        Route::post('personal/sincronizar', [ArmaPersonalController::class, 'sincronizar'])->name('personal.sincronizar');
         Route::get('personal/{personal}', [ArmaPersonalController::class, 'show'])->name('personal.show');
         Route::get('personal/{personal}/edit', [ArmaPersonalController::class, 'edit'])->name('personal.edit');
         Route::put('personal/{personal}', [ArmaPersonalController::class, 'update'])->name('personal.update');

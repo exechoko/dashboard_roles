@@ -6,6 +6,8 @@ use App\Http\Requests\UpdateArmaPersonalRequest;
 use App\Models\ArmaTipo;
 use App\Models\Personal;
 use App\Models\PersonalLicencia;
+use App\Services\Personal911ImportService;
+use App\Services\PersonalSeccionSyncService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,6 +20,7 @@ class ArmaPersonalController extends Controller
     {
         $this->middleware('permission:ver-personal|editar-personal', ['only' => ['index', 'show']]);
         $this->middleware('permission:editar-personal', ['only' => ['edit', 'update']]);
+        $this->middleware('permission:sincronizar-personal-secciones', ['only' => ['sincronizar']]);
     }
 
     public function index(Request $request): View
@@ -104,7 +107,19 @@ class ArmaPersonalController extends Controller
             'tiposLicencia',
             'totalActivos',
             'totalDeLicencia'
-        ));
+        ) + [
+            'ultimaSincronizacion' => PersonalSeccionSyncService::ultimaSincronizacion(),
+            'minutosParaProximaSync' => PersonalSeccionSyncService::minutosParaProximaSyncManual(),
+        ]);
+    }
+
+    public function sincronizar(Personal911ImportService $importService, PersonalSeccionSyncService $seccionSyncService): RedirectResponse
+    {
+        $resultado = $seccionSyncService->sincronizarManualmente($importService);
+
+        return redirect()
+            ->route('armas.personal.index')
+            ->with($resultado['ok'] ? 'success' : 'error', $resultado['mensaje']);
     }
 
     public function show(Request $request, Personal $personal): View

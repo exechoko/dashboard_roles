@@ -4,6 +4,22 @@
     <section class="section">
         <div class="section-header d-flex justify-content-between align-items-center">
             <h3 class="page__heading">Personal</h3>
+            @can('sincronizar-personal-secciones')
+                <div class="text-right">
+                    <form action="{{ route('armas.personal.sincronizar') }}" method="POST" class="d-inline"
+                          onsubmit="return confirm('Esto trae los datos actuales de Personal 911 (personal, funciones, armas, chalecos y licencias). ¿Continuar?');">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-primary" {{ $minutosParaProximaSync > 0 ? 'disabled' : '' }}>
+                            <i class="fas fa-sync-alt"></i>
+                            {{ $minutosParaProximaSync > 0 ? "Disponible en {$minutosParaProximaSync} min" : 'Actualizar desde Personal 911' }}
+                        </button>
+                    </form>
+                    <div class="small text-muted mt-1">
+                        Última actualización:
+                        {{ $ultimaSincronizacion ? $ultimaSincronizacion->format('d/m/Y H:i') : 'nunca (se sincroniza automáticamente todos los días a las 05:30)' }}
+                    </div>
+                </div>
+            @endcan
         </div>
 
         <div class="section-body">

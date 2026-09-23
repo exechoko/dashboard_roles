@@ -3,7 +3,9 @@
 namespace Tests\Unit;
 
 use App\Models\PersonalSeccion;
+use App\Services\Personal911ImportService;
 use App\Services\PersonalSeccionSyncService;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class PersonalSeccionSyncServiceTest extends TestCase
@@ -85,5 +87,18 @@ class PersonalSeccionSyncServiceTest extends TestCase
 
         $this->assertSame('baja', $resultado['estado']);
         $this->assertSame(PersonalSeccion::MOTIVO_CAMBIO_SECCION, $resultado['motivo']);
+    }
+
+    public function test_sincronizar_manualmente_respeta_el_throttle_sin_tocar_personal911(): void
+    {
+        Cache::forever(PersonalSeccionSyncService::CACHE_KEY_ULTIMA_SINCRONIZACION, now());
+
+        $importService = $this->createMock(Personal911ImportService::class);
+        $importService->expects($this->never())->method('importar');
+
+        $resultado = (new PersonalSeccionSyncService())->sincronizarManualmente($importService);
+
+        $this->assertFalse($resultado['ok']);
+        $this->assertStringContainsString('Ya se sincronizó hace poco', $resultado['mensaje']);
     }
 }

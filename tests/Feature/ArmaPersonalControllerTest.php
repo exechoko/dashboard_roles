@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\ArmaTipo;
 use App\Models\Personal;
 use App\Models\User;
+use App\Services\PersonalSeccionSyncService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Cache;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -99,5 +101,41 @@ class ArmaPersonalControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertDontSee('Nuevo Funcionario');
+    }
+
+    public function test_index_no_muestra_el_boton_de_sincronizar_sin_el_permiso(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::findOrCreate('ver-personal', 'web'));
+        $this->actingAs($user);
+
+        $response = $this->get('/armas/personal');
+
+        $response->assertOk();
+        $response->assertDontSee('Actualizar desde Personal 911');
+    }
+
+    public function test_sincronizar_requiere_permiso(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::findOrCreate('ver-personal', 'web'));
+        $this->actingAs($user);
+
+        $this->post('/armas/personal/sincronizar')->assertForbidden();
+    }
+
+    public function test_sincronizar_respeta_el_throttle_sin_tocar_personal911(): void
+    {
+        Cache::forever(PersonalSeccionSyncService::CACHE_KEY_ULTIMA_SINCRONIZACION, now());
+
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::findOrCreate('sincronizar-personal-secciones', 'web'));
+        $this->actingAs($user);
+
+        $response = $this->post('/armas/personal/sincronizar');
+
+        $response->assertRedirect(route('armas.personal.index'));
+        $response->assertSessionHas('error');
+        $this->assertStringContainsString('Ya se sincronizó hace poco', session('error'));
     }
 }

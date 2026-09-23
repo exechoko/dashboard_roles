@@ -83,11 +83,11 @@
                         <div class="row g-3 mb-3" id="filtroFechasWrap">
                             <div class="col-12 col-md-6">
                                 <label class="form-label">Desde</label>
-                                <input type="datetime-local" name="desde_datetime" class="form-control" value="{{ request('desde_datetime') }}">
+                                <input type="datetime-local" name="desde_datetime" class="form-control" lang="en-GB" value="{{ request('desde_datetime', now()->subDay()->startOfDay()->format('Y-m-d\TH:i')) }}">
                             </div>
                             <div class="col-12 col-md-6">
                                 <label class="form-label">Hasta</label>
-                                <input type="datetime-local" name="hasta_datetime" class="form-control" value="{{ request('hasta_datetime') }}">
+                                <input type="datetime-local" name="hasta_datetime" class="form-control" lang="en-GB" value="{{ request('hasta_datetime', now()->subDay()->setTime(23, 59)->format('Y-m-d\TH:i')) }}">
                             </div>
                             <div class="col-12">
                                 <div class="form-check">
@@ -360,6 +360,23 @@
                     select2Field.focus();
                 }
             }, 0);
+        });
+
+        // Bloquear el envío del formulario si no hay ningún filtro aplicado,
+        // para no traer potencialmente millones de registros.
+        $('#btnBuscarEventos').closest('form').on('submit', function(e) {
+            const $form = $(this);
+            const sinFiltros = !$form.find('[name="buscar"]').val()
+                && !$form.find('[name="tipo"]').val()
+                && !$form.find('[name="operador"]').val()
+                && !$form.find('[name="desde_datetime"]').val()
+                && !$form.find('[name="hasta_datetime"]').val()
+                && !$form.find('[name="sin_detalle"]').is(':checked');
+
+            if (sinFiltros) {
+                alert('Debés establecer al menos un filtro para poder buscar.');
+                e.preventDefault();
+            }
         });
     });
 </script>

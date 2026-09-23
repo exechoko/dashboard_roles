@@ -54,7 +54,7 @@ class EventoCecocoController extends Controller
     {
         $eventos = null;
         $totalResultados = null;
-        $tieneFiltros = $request->hasAny(['anio', 'mes', 'operador', 'tipo', 'tipos', 'desde_datetime', 'hasta_datetime', 'desde', 'hasta', 'buscar', 'sin_detalle']);
+        $tieneFiltros = $request->anyFilled(['anio', 'mes', 'operador', 'tipo', 'tipos', 'desde_datetime', 'hasta_datetime', 'desde', 'hasta', 'buscar', 'sin_detalle']);
 
         if ($tieneFiltros) {
             $query = EventoCecoco::select([
@@ -347,6 +347,12 @@ class EventoCecocoController extends Controller
 
     public function exportarTxt(Request $request)
     {
+        $tieneFiltros = $request->anyFilled(['anio', 'mes', 'operador', 'tipo', 'tipos', 'desde_datetime', 'hasta_datetime', 'desde', 'hasta', 'buscar', 'sin_detalle']);
+
+        if (!$tieneFiltros) {
+            return redirect()->route('cecoco.index')->with('error', 'Debés aplicar al menos un filtro antes de exportar.');
+        }
+
         $query = EventoCecoco::query();
 
         if ($request->filled('anio')) {

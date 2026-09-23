@@ -4,8 +4,11 @@
     <section class="section">
         <div class="section-header d-flex justify-content-between align-items-center">
             <h3 class="page__heading">Personal</h3>
-            @can('sincronizar-personal-secciones')
-                <div class="text-right">
+            <div id="personalGeneralAccionesWrap" class="text-right">
+                <button type="button" class="btn btn-outline-info" id="btnVerTutorialPersonalGeneral" onclick="iniciarTutorialPagina()">
+                    <i class="fas fa-question-circle"></i> Ver tutorial
+                </button>
+                @can('sincronizar-personal-secciones')
                     <form action="{{ route('armas.personal.sincronizar') }}" method="POST" class="d-inline"
                           onsubmit="return confirm('Esto trae los datos actuales de Personal 911 (personal, funciones, armas, chalecos y licencias). ¿Continuar?');">
                         @csrf
@@ -18,8 +21,8 @@
                         Última actualización:
                         {{ $ultimaSincronizacion ? $ultimaSincronizacion->format('d/m/Y H:i') : 'nunca (se sincroniza automáticamente todos los días a las 05:30)' }}
                     </div>
-                </div>
-            @endcan
+                @endcan
+            </div>
         </div>
 
         <div class="section-body">
@@ -36,7 +39,7 @@
                 </div>
             @endif
 
-            <div class="row mb-4">
+            <div class="row mb-4" id="personalGeneralStatsWrap">
                 <div class="col-6 col-md-3">
                     <div class="card card-statistic-1">
                         <div class="card-icon bg-success"><i class="fas fa-user-check"></i></div>
@@ -59,7 +62,7 @@
 
             <div class="card">
                 <div class="card-body">
-                    <form method="GET" action="{{ route('armas.personal.index') }}" class="mb-3">
+                    <form method="GET" action="{{ route('armas.personal.index') }}" class="mb-3" id="personalGeneralBuscarForm">
                         <div class="row align-items-end">
                             <div class="col-md-4">
                                 <label for="busqueda">Buscar funcionario o licencia</label>
@@ -114,7 +117,7 @@
                         </div>
                     </form>
 
-                    <div class="table-responsive">
+                    <div class="table-responsive" id="personalGeneralTabla">
                         <table class="table table-striped align-middle">
                             <thead>
                                 <tr>
@@ -131,7 +134,7 @@
                             </thead>
                             <tbody>
                                 @forelse ($personales as $personal)
-                                    @php($resumenLicencia = $personal->resumen_licencia_actual)
+                                    @php $resumenLicencia = $personal->resumen_licencia_actual; @endphp
                                     <tr class="{{ $personal->trashed() ? 'table-danger' : '' }}">
                                         <td>
                                             <strong>{{ $personal->apellido }}</strong>
@@ -231,3 +234,34 @@
         </div>
     </section>
 @endsection
+
+@php
+    $tutorialPasos = [
+        [
+            'id' => 'personalGeneralStatsWrap',
+            'titulo' => 'Personal Activo y de Licencia',
+            'texto' => 'Contadores del personal sincronizado desde Personal 911.',
+        ],
+    ];
+    if (auth()->user()->can('sincronizar-personal-secciones')) {
+        $tutorialPasos[] = [
+            'id' => 'personalGeneralAccionesWrap',
+            'titulo' => 'Actualizar desde Personal 911',
+            'texto' => 'Se sincroniza solo todos los días a las 05:30. Este botón fuerza una actualización manual, con límite de frecuencia.',
+        ];
+    }
+    $tutorialPasos = array_merge($tutorialPasos, [
+        [
+            'id' => 'personalGeneralBuscarForm',
+            'titulo' => 'Buscar y filtrar',
+            'texto' => 'Buscá por apellido, nombre, LP o licencia. Filtrá por estado o tipo de licencia, y por Activos/Eliminados/Todos con los botones de abajo.',
+        ],
+        [
+            'id' => 'personalGeneralTabla',
+            'titulo' => 'Ver y corregir',
+            'texto' => 'Desde cada fila podés ver el detalle del funcionario o, si tenés permiso, corregir el arma/chaleco asignado.',
+            'side' => 'top',
+        ],
+    ]);
+@endphp
+@include('partials.tutorial', ['tutorialPasos' => $tutorialPasos, 'tutorialStorageKey' => 'tutorial_personal_general_visto'])

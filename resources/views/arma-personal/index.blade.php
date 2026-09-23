@@ -204,7 +204,7 @@
                                                 @endcan
                                                 @can('editar-personal')
                                                     <a href="{{ route('armas.personal.edit', $personal) }}" class="btn btn-sm btn-primary" title="Corregir arma/chaleco">
-                                                        <i class="fas fa-gun"></i>
+                                                        <i class="fas fa-tools"></i>
                                                     </a>
                                                 @endcan
                                             @endif

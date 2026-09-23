@@ -1014,17 +1014,4 @@ Route::group(['middleware' => ['auth']], function () {
         // API
         Route::get('/api/ponderacion',        [App\Http\Controllers\PeriodoFacturaController::class, 'apiPonderacion'])->name('api.ponderacion');
     });
-
-    //Optimizar sistema
-    Route::get('optimizar', function () {
-        Artisan::call('optimize:clear');
-        Artisan::call('config:cache');
-        Artisan::call('route:cache');
-        Artisan::call('view:cache');
-
-        Auth::logout();
-
-        return redirect()->route('login.view')
-            ->with('status', '✅ Optimización completada correctamente');
-    });
 });

@@ -350,6 +350,7 @@
 
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 <script>
     $(document).ready(function() {
         $('.select2').select2({
@@ -360,6 +361,7 @@
         // Selector de fecha/hora con formato 24hs forzado (los inputs datetime-local
         // nativos muestran AM/PM en algunos navegadores según el locale del SO/Chrome).
         flatpickr('.cecoco-datetime', {
+            locale: 'es',
             enableTime: true,
             time_24hr: true,
             dateFormat: 'Y-m-d H:i',

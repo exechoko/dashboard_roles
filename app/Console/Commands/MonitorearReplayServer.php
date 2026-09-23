@@ -39,7 +39,7 @@ class MonitorearReplayServer extends Command
 
         $this->warn('⚠️ El Replay Server no respondió, reiniciando el servicio...');
 
-        $resultado = $grabador->reiniciarReplayServer();
+        $resultado = $grabador->reiniciarReplayServer(['origen' => 'watchdog']);
 
         if ($simulacro) {
             $this->info($resultado['success']
@@ -80,7 +80,7 @@ class MonitorearReplayServer extends Command
             'nivel'     => $exito ? 'warning' : 'danger',
             'titulo'    => $exito ? 'Replay Server reiniciado automáticamente' : 'Replay Server: reinicio automático falló',
             'mensaje'   => $mensaje,
-            'datos'     => ['servicio' => config('grabador.replay_service_name')],
+            'datos'     => ['origen' => 'watchdog', 'servicio' => config('grabador.replay_service_name')],
         ]);
     }
 

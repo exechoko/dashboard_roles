@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Notificacion;
 use Carbon\Carbon;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Cache;
@@ -293,7 +294,12 @@ class GrabadorTetraService
      *
      * @param string $itemid Formato "rowid_horaInicio" (solo dígitos y un guion bajo).
      */
-    public function descargarAudio(string $itemid): \GuzzleHttp\Psr7\Response
+    /**
+     * @param array{usuario?: array{email?: string, nombre?: string, apellido?: string}|null, evento?: array{id?: mixed, nro_expediente?: string, fecha_creacion?: string}, modulacion?: array{itemid?: string, recurso?: string, hora?: string, duracion?: string}} $contexto
+     *   Quién escuchaba y qué evento/modulación, para poder identificar el disparador
+     *   si el Replay Server queda colgado y hay que auto-repararlo (ver autoRepararReplayServer()).
+     */
+    public function descargarAudio(string $itemid, array $contexto = []): \GuzzleHttp\Psr7\Response
     {
         if (!preg_match('/^\d+_\d+$/', $itemid)) {
             throw new \InvalidArgumentException('itemid de modulación inválido.');
@@ -355,7 +361,7 @@ class GrabadorTetraService
                 // que disparó este error está mirando la lista de modulaciones y va a
                 // seguir clickeando. Reiniciar ya mismo acota el problema a ESTE click,
                 // no a los siguientes 5 minutos de esa sesión.
-                $this->autoRepararReplayServer();
+                $this->autoRepararReplayServer($contexto);
 
                 throw $e;
             }
@@ -578,8 +584,10 @@ class GrabadorTetraService
      * lock no bloqueante propio: si varios operadores pisan el colgado casi a la
      * vez, solo el primero dispara el reinicio real; los demás ya vienen con el
      * circuit breaker puesto y ni siquiera llegan a intentar la request.
+     *
+     * @param array{usuario?: array{email?: string, nombre?: string, apellido?: string}|null, evento?: array{id?: mixed, nro_expediente?: string, fecha_creacion?: string}, modulacion?: array{itemid?: string, recurso?: string, hora?: string, duracion?: string}} $contexto
      */
-    private function autoRepararReplayServer(): void
+    private function autoRepararReplayServer(array $contexto = []): void
     {
         $lock = Cache::lock('grabador_replay_auto_reparar', 60);
 
@@ -588,12 +596,48 @@ class GrabadorTetraService
         }
 
         try {
-            Log::warning('GrabadorTetraService: Replay Server colgado, reiniciando automáticamente');
+            Log::warning('GrabadorTetraService: Replay Server colgado, reiniciando automáticamente', $contexto);
 
-            $this->reiniciarReplayServer();
+            $resultado = $this->reiniciarReplayServer(array_merge($contexto, ['origen' => 'modal_modulaciones']));
+
+            $this->registrarNotificacionReinicio($resultado, $contexto);
         } finally {
             $lock->release();
         }
+    }
+
+    /**
+     * Deja constancia en el panel de notificaciones (Infraestructura) del reinicio
+     * disparado en vivo mientras un operador escuchaba una modulación, con quién
+     * estaba escuchando y sobre qué evento/modulación, algo que el watchdog
+     * programado (MonitorearReplayServer) no puede saber porque corre sin esa
+     * información.
+     *
+     * @param array{success: bool, mensaje: string, salida: string} $resultado
+     * @param array{usuario?: array{email?: string, nombre?: string, apellido?: string}|null, evento?: array{id?: mixed, nro_expediente?: string, fecha_creacion?: string}, modulacion?: array{itemid?: string, recurso?: string, hora?: string, duracion?: string}} $contexto
+     */
+    private function registrarNotificacionReinicio(array $resultado, array $contexto): void
+    {
+        $usuario = $contexto['usuario'] ?? null;
+        $quien = $usuario
+            ? trim(($usuario['nombre'] ?? '') . ' ' . ($usuario['apellido'] ?? '')) . ' (' . ($usuario['email'] ?? 'sin email') . ')'
+            : 'un operador no identificado';
+
+        Notificacion::create([
+            'categoria' => Notificacion::CATEGORIA_INFRAESTRUCTURA,
+            'tipo'      => $resultado['success'] ? Notificacion::TIPO_RECUPERACION : Notificacion::TIPO_ALERTA,
+            'nivel'     => $resultado['success'] ? 'warning' : 'danger',
+            'titulo'    => $resultado['success']
+                ? 'Replay Server reiniciado automáticamente (escucha de modulación)'
+                : 'Replay Server: reinicio automático falló (escucha de modulación)',
+            'mensaje'   => $resultado['success']
+                ? "Se detectó colgado mientras {$quien} escuchaba una modulación y se reinició automáticamente."
+                : "Se detectó colgado mientras {$quien} escuchaba una modulación, pero el reinicio automático falló: {$resultado['mensaje']}",
+            'datos'     => array_merge($contexto, [
+                'origen'   => 'modal_modulaciones',
+                'servicio' => config('grabador.replay_service_name'),
+            ]),
+        ]);
     }
 
     /**
@@ -604,9 +648,13 @@ class GrabadorTetraService
      *   sc sdset RedBoxReplayService "D:(A;;RPWPDT;;;<SID-de-la-cuenta>)..."
      * o correr Apache con una cuenta que ya sea Administradora local.
      *
+     * @param array<string, mixed> $contexto Datos de quién/qué disparó el reinicio
+     *   (origen: 'modal_modulaciones'|'watchdog'|'manual', y opcionalmente usuario/evento/modulacion),
+     *   solo para enriquecer los logs — no cambia el comportamiento del reinicio en sí.
+     *
      * @return array{success: bool, mensaje: string, salida: string}
      */
-    public function reiniciarReplayServer(): array
+    public function reiniciarReplayServer(array $contexto = []): array
     {
         $servicio = (string) config('grabador.replay_service_name', 'RedBoxReplayService');
 
@@ -623,10 +671,10 @@ class GrabadorTetraService
         try {
             $proceso->run();
         } catch (\Exception $e) {
-            Log::error('GrabadorTetraService: error al reiniciar Replay Server', [
+            Log::error('GrabadorTetraService: error al reiniciar Replay Server', array_merge($contexto, [
                 'servicio' => $servicio,
                 'error'    => $e->getMessage(),
-            ]);
+            ]));
 
             return ['success' => false, 'mensaje' => $e->getMessage(), 'salida' => ''];
         }
@@ -634,10 +682,10 @@ class GrabadorTetraService
         $salida = trim($proceso->getErrorOutput() . $proceso->getOutput());
 
         if (!$proceso->isSuccessful()) {
-            Log::error('GrabadorTetraService: Restart-Service falló', [
+            Log::error('GrabadorTetraService: Restart-Service falló', array_merge($contexto, [
                 'servicio' => $servicio,
                 'salida'   => $salida,
-            ]);
+            ]));
 
             return [
                 'success' => false,
@@ -651,7 +699,7 @@ class GrabadorTetraService
         Cache::forget(self::REPLAY_HUNG_CACHE_KEY);
         Cache::forget('grabador_replay_ok_' . md5($this->replayUrl));
 
-        Log::info('GrabadorTetraService: Replay Server reiniciado', ['servicio' => $servicio]);
+        Log::info('GrabadorTetraService: Replay Server reiniciado', array_merge($contexto, ['servicio' => $servicio]));
 
         return ['success' => true, 'mensaje' => 'Replay Server reiniciado correctamente.', 'salida' => $salida];
     }

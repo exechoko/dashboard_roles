@@ -1130,7 +1130,7 @@ class EventoCecocoController extends Controller
                             $modulaciones = $localService->emparejarConGrabador($modulaciones, $desde, $hasta);
                             $this->marcarAudiosSinReplay($modulaciones, $grabador);
                         }
-                        $this->asignarUrlsDeStream($modulaciones);
+                        $this->asignarUrlsDeStream($modulaciones, $eventoCecoco);
 
                         return response()->json([
                             'success'      => true,
@@ -1160,7 +1160,7 @@ class EventoCecocoController extends Controller
 
             // Respaldo: búsqueda directa en disco local (deduplicando copias por operador).
             $resultado = $localService->buscarModulaciones($desde, $hasta);
-            $this->asignarUrlsDeStream($resultado['modulaciones']);
+            $this->asignarUrlsDeStream($resultado['modulaciones'], $eventoCecoco);
 
             return response()->json([
                 'success'      => true,
@@ -1259,22 +1259,32 @@ class EventoCecocoController extends Controller
      *
      * @param array<int, array<string, mixed>> $modulaciones
      */
-    private function asignarUrlsDeStream(array &$modulaciones): void
+    private function asignarUrlsDeStream(array &$modulaciones, EventoCecoco $eventoCecoco): void
     {
+        // Datos del evento embebidos en la URL de cada modulación: si al pedir el
+        // audio el Replay Server queda colgado y hay que auto-repararlo, permiten
+        // dejar registrado sobre qué evento se estaba escuchando (ver
+        // GrabadorTetraService::descargarAudio()) sin necesidad de otra consulta.
+        $contextoEvento = [
+            'evento_id'             => $eventoCecoco->id,
+            'nro_expediente'        => $eventoCecoco->nro_expediente,
+            'evento_fecha_creacion' => optional($eventoCecoco->created_at)->format('Y-m-d H:i:s'),
+        ];
+
         foreach ($modulaciones as &$m) {
             if (!empty($m['candidatosAudio'])) {
                 foreach ($m['candidatosAudio'] as &$c) {
-                    $c['url'] = route('api.cecoco.modulacion.stream', ['path' => base64_encode($c['path'])]);
+                    $c['url'] = route('api.cecoco.modulacion.stream', array_merge(['path' => base64_encode($c['path'])], $contextoEvento));
                     unset($c['path']);
                 }
                 unset($c);
             }
 
             if (!empty($m['path'])) {
-                $m['url'] = route('api.cecoco.modulacion.stream', ['path' => base64_encode($m['path'])]);
+                $m['url'] = route('api.cecoco.modulacion.stream', array_merge(['path' => base64_encode($m['path'])], $contextoEvento));
                 unset($m['path']);
             } else {
-                $m['url'] = route('api.cecoco.modulacion.stream', ['itemid' => $m['itemid']]);
+                $m['url'] = route('api.cecoco.modulacion.stream', array_merge(['itemid' => $m['itemid']], $contextoEvento));
             }
         }
         unset($m);
@@ -1299,8 +1309,29 @@ class EventoCecocoController extends Controller
         }
 
         try {
+            $usuario = $request->user();
+
+            $contexto = [
+                'usuario' => $usuario ? [
+                    'email'    => $usuario->email,
+                    'nombre'   => $usuario->name,
+                    'apellido' => $usuario->apellido,
+                ] : null,
+                'evento' => [
+                    'id'             => $request->input('evento_id'),
+                    'nro_expediente' => $request->input('nro_expediente'),
+                    'fecha_creacion' => $request->input('evento_fecha_creacion'),
+                ],
+                'modulacion' => [
+                    'itemid'   => $itemid,
+                    'recurso'  => $request->input('recurso'),
+                    'hora'     => $request->input('hora'),
+                    'duracion' => $request->input('duracion'),
+                ],
+            ];
+
             $servicio = new GrabadorTetraService();
-            $response = $servicio->descargarAudio($itemid);
+            $response = $servicio->descargarAudio($itemid, $contexto);
 
             $statusCode  = $response->getStatusCode();
             $contentType = $response->getHeaderLine('Content-Type');

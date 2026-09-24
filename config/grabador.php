@@ -65,6 +65,13 @@ return [
     // sin dependencias). Si no está disponible, la descarga cae al WAV original.
     'ffmpeg_path' => env('GRABADOR_FFMPEG_PATH', 'ffmpeg'),
 
+    // LAME no decodifica GSM ni OGG (solo WAV/PCM). Cuando ffmpeg_path apunta a
+    // lame.exe, esta ruta opcional a un decodificador (ej. sox.exe) se usa para
+    // pasar esos formatos a WAV antes de codificarlos con LAME. Usado por
+    // ConversorAudioService (Herramientas > Conversor de Audio). Si no está
+    // configurado, GSM/OGG quedan deshabilitados con LAME.
+    'decoder_path' => env('GRABADOR_DECODER_PATH'),
+
     // Presupuesto (en segundos) para escanear el disco de audios al emparejar las
     // filas del grabador con su .mp3 local. Si se agota, el escaneo corta y esas
     // modulaciones se sirven por el Replay Server: vale más devolver el listado

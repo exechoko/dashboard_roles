@@ -20,10 +20,11 @@ class ConversorAudioController extends Controller
         $this->middleware('permission:ver-conversor-audio');
     }
 
-    public function index(): View
+    public function index(ConversorAudioService $service): View
     {
         return view('herramientas.conversor-audio', [
             'maxArchivos' => (int) config('conversor_audio.max_archivos', 20),
+            'formatosSoportados' => $service->formatosSoportados(),
             'historial' => $this->historial(),
         ]);
     }
@@ -52,7 +53,9 @@ class ConversorAudioController extends Controller
         $tmpMp3 = $service->convertirAMp3($archivo);
 
         if ($tmpMp3 === null) {
-            $mensajeError = 'No se pudo convertir "' . $archivo->getClientOriginalName() . '".';
+            $mensajeError = in_array($extension, $service->formatosSoportados(), true)
+                ? 'No se pudo convertir "' . $archivo->getClientOriginalName() . '".'
+                : 'Formato ' . strtoupper($extension) . ' no soportado en este servidor (el conversor instalado no lo decodifica).';
             $item = $usuario instanceof User
                 ? $this->registrarHistorial($usuario, $archivo->getClientOriginalName(), $extension, false, $mensajeError)
                 : null;

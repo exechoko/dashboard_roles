@@ -82,14 +82,21 @@
                         </div>
                         <div class="card-body">
                             <p class="text-muted">
-                                Seleccioná o arrastrá hasta {{ $maxArchivos }} archivos GSM, OGG o WAV. Se convierten
-                                con FFmpeg de a uno; si es uno solo se descarga el MP3, si son varios se descarga un ZIP.
+                                Seleccioná o arrastrá hasta {{ $maxArchivos }} archivos {{ implode(', ', array_map('strtoupper', $formatosSoportados)) }}.
+                                Se convierten de a uno; si es uno solo se descarga el MP3, si son varios se descarga un ZIP.
                             </p>
+
+                            @if(count($formatosSoportados) < 3)
+                                <div class="alert alert-warning">
+                                    Este servidor solo puede convertir {{ implode(', ', array_map('strtoupper', $formatosSoportados)) }}
+                                    (el conversor instalado no decodifica los demás formatos).
+                                </div>
+                            @endif
 
                             <form id="audio-form">
                                 <div id="audio-drop-zone" class="audio-drop-zone p-4 text-center" role="button" tabindex="0"
                                     aria-controls="archivos" aria-label="Seleccionar archivos de audio">
-                                    <input type="file" id="archivos" class="d-none" multiple accept=".gsm,.ogg,.wav">
+                                    <input type="file" id="archivos" class="d-none" multiple accept="{{ implode(',', array_map(fn ($ext) => '.' . $ext, $formatosSoportados)) }}">
                                     <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
                                     <h5>Arrastrá los archivos aquí</h5>
                                     <p class="text-muted mb-3">o hacé clic para buscarlos en tu equipo</p>
@@ -129,7 +136,7 @@
                         <div class="card-body">
                             <div class="audio-feature mb-4">
                                 <h6>Formatos aceptados</h6>
-                                <p class="text-muted mb-0">GSM, OGG y WAV. La conversión se hace con FFmpeg en el servidor, el mismo que se usa para las modulaciones del grabador TETRA.</p>
+                                <p class="text-muted mb-0">{{ implode(', ', array_map('strtoupper', $formatosSoportados)) }}. La conversión se hace con el mismo conversor configurado en el servidor para las modulaciones del grabador TETRA.</p>
                             </div>
                             <div class="audio-feature mb-4">
                                 <h6>Hasta {{ $maxArchivos }} archivos por tanda</h6>

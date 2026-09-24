@@ -278,6 +278,16 @@ class Kernel extends ConsoleKernel
                 app(TelegramService::class)->notificarScheduleFallido('descargas:limpiar-chunks-huerfanos', 'El comando finalizó con error.');
             });
 
+        // Limpia los lotes del Conversor de Audio (Herramientas) abandonados
+        // antes de descargar el ZIP final.
+        $schedule->command('conversor-audio:limpiar-lotes-huerfanos')
+            ->hourly()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/conversor_audio_limpiar_lotes.log'))
+            ->onFailure(function () {
+                app(TelegramService::class)->notificarScheduleFallido('conversor-audio:limpiar-lotes-huerfanos', 'El comando finalizó con error.');
+            });
+
         // Backup diario de la base de datos principal (Configuración del Sistema > Backups).
         // Desactivado por defecto: descomentar cuando se quiera automatizar.
         // $schedule->command('configuracion:backup-bd')->dailyAt('04:00')

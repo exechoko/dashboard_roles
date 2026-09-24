@@ -682,7 +682,7 @@
     </li>
 @endcanany
 
-@canany(['ver-menu-herramientas', 'ver-hash-archivo', 'ver-visor-mails', 'administrar-visor-mails'])
+@canany(['ver-menu-herramientas', 'ver-hash-archivo', 'ver-visor-mails', 'administrar-visor-mails', 'ver-conversor-audio'])
     <li class="dropdown {{ request()->is('herramientas*') ? 'active' : '' }}">
         <a class="nav-link has-dropdown" href="#">
             <i class="fas fa-tools"></i><span>Herramientas</span>
@@ -692,6 +692,13 @@
                 <li class="{{ request()->routeIs('herramientas.hash.*') ? 'active' : '' }}">
                     <a class="nav-link" href="{{ route('herramientas.hash.index') }}">
                         <i class="fas fa-fingerprint"></i><span>Hashear Archivo</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-conversor-audio')
+                <li class="{{ request()->routeIs('herramientas.conversor-audio.*') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('herramientas.conversor-audio.index') }}">
+                        <i class="fas fa-file-audio"></i><span>Conversor de Audio</span>
                     </a>
                 </li>
             @endcan

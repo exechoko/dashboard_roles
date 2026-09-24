@@ -307,6 +307,7 @@ class SeederTablaPermisos extends Seeder
             'ver-hash-archivo',
             'ver-visor-mails',
             'administrar-visor-mails',
+            'ver-conversor-audio',
 
             //Plataforma de Descargas
             'ver-menu-descargas',

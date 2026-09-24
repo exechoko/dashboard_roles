@@ -864,6 +864,14 @@ Route::group(['middleware' => ['auth']], function () {
         Route::post('/hash-archivo', [ArchivoHashController::class, 'calcular'])->name('hash.calcular');
         Route::post('/hash-archivo/historial', [ArchivoHashController::class, 'registrar'])->name('hash.historial.registrar');
 
+        Route::get('/conversor-audio', [App\Http\Controllers\ConversorAudioController::class, 'index'])->name('conversor-audio.index');
+        Route::post('/conversor-audio/lote/{token}/archivo', [App\Http\Controllers\ConversorAudioController::class, 'convertirEnLote'])
+            ->where('token', '[a-zA-Z0-9]{16,64}')
+            ->name('conversor-audio.lote.archivo');
+        Route::get('/conversor-audio/lote/{token}/descargar', [App\Http\Controllers\ConversorAudioController::class, 'descargarLote'])
+            ->where('token', '[a-zA-Z0-9]{16,64}')
+            ->name('conversor-audio.lote.descargar');
+
         // Visor de Correos (backups .mbox por oficina). El grupo "buzones" va
         // primero para que rutas literales como /mails/buzones no caigan en
         // /mails/{mensaje} (Laravel matchea por orden de registro).

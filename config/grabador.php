@@ -41,9 +41,10 @@ return [
     'minutos_despues_sin_cierre' => (int) env('GRABADOR_MINUTOS_DESPUES_SIN_CIERRE', 60),
 
     // Máximo de modulaciones a traer por búsqueda. 1000 es la capacidad natural
-    // de una sola página del grabador (enum MaximumResults=7); con eso alcanza
-    // para prácticamente cualquier evento en un solo search.
-    'max_resultados'   => (int) env('GRABADOR_MAX_RESULTADOS', 1000),
+    // de una sola página del grabador (enum MaximumResults=7); por encima de eso
+    // ya hacen falta páginas adicionales (continuesearch/nueva ventana), que el
+    // frontend pide solas mientras "hayMas" siga en true.
+    'max_resultados'   => (int) env('GRABADOR_MAX_RESULTADOS', 2000),
 
     // Al buscar, si la 1ª página de una ventana viene llena (densa), en vez de
     // esperar al continuesearch asíncrono del grabador (lento y, en ventanas

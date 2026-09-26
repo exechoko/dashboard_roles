@@ -19,6 +19,9 @@ class GeocodificacionService
     private int $nominatimDelayMs;
     private int $reverseBatchMax;
     private string $nominatimContexto;
+    private int $nominatimTimeoutSeconds;
+    private int $reverseBatchBudgetSeconds;
+    private int $reverseBatchMaxFallosSeguidos;
 
     /** @var array<string, array> Caché en memoria de geometrías de calles por nombre */
     private array $cacheGeometriasCalles = [];
@@ -39,6 +42,9 @@ class GeocodificacionService
         $this->nominatimDelayMs = (int) config('services.nominatim.delay_ms', 1100);
         $this->reverseBatchMax = (int) config('services.nominatim.reverse_batch_max', 50);
         $this->nominatimContexto = (string) config('services.nominatim.contexto', ', Paraná');
+        $this->nominatimTimeoutSeconds = (int) config('services.nominatim.timeout_seconds', 4);
+        $this->reverseBatchBudgetSeconds = (int) config('services.nominatim.reverse_batch_budget_seconds', 200);
+        $this->reverseBatchMaxFallosSeguidos = (int) config('services.nominatim.reverse_batch_max_fallos_seguidos', 6);
     }
 
     /**
@@ -855,7 +861,7 @@ class GeocodificacionService
     {
         try {
             $resp = Http::withHeaders(['User-Agent' => 'DashboardRoles/1.0 (geocodificacion inversa)'])
-                ->timeout(8)
+                ->timeout($this->nominatimTimeoutSeconds)
                 ->get($this->nominatimBaseUrl . '/reverse', [
                     'lat'    => $lat,
                     'lon'    => $lng,
@@ -913,7 +919,7 @@ class GeocodificacionService
     private function consultarReverseGeoref(float $lat, float $lng): ?string
     {
         try {
-            $resp = Http::timeout(8)->get('https://apis.datos.gob.ar/georef/api/ubicacion', [
+            $resp = Http::timeout($this->nominatimTimeoutSeconds)->get('https://apis.datos.gob.ar/georef/api/ubicacion', [
                 'lat' => $lat,
                 'lon' => $lng,
             ]);
@@ -947,17 +953,32 @@ class GeocodificacionService
      * resultados en `geocodificacion_inversa`. Las coordenadas que excedan el tope
      * quedan en null y se resolverán en consultas posteriores desde el caché en base.
      *
+     * Corta antes por dos motivos adicionales, para nunca acercarse al
+     * `max_execution_time` de PHP (300s): presupuesto de tiempo total agotado
+     * (`reverseBatchBudgetSeconds`) o racha de fallos consecutivos que sugiere un
+     * problema sistémico (`reverseBatchMaxFallosSeguidos`). En ambos casos lo que
+     * queda sin resolver simplemente no se guarda y se reintenta en el próximo request.
+     *
      * @param array<string,?string>           $resultado  Mapa acumulado clave → dirección.
      * @param array<string,array{0:float,1:float}> $pendientes Coordenadas sin resolver.
      * @return array<string,?string>
      */
     private function reverseGeocodeBatchNominatim(array $resultado, array $pendientes): array
     {
-        $nuevos    = [];
+        $nuevos = [];
         $resueltos = 0;
+        $fallosSeguidos = 0;
+        $inicio = microtime(true);
+        $limiteBatch = $inicio + $this->reverseBatchBudgetSeconds;
+        $motivoCorte = null;
 
         foreach ($pendientes as $clave => [$lat, $lng]) {
             if ($resueltos >= $this->reverseBatchMax) {
+                break;
+            }
+
+            if (microtime(true) >= $limiteBatch) {
+                $motivoCorte = 'presupuesto_tiempo_agotado';
                 break;
             }
 
@@ -971,6 +992,16 @@ class GeocodificacionService
                 'updated_at' => now(),
             ];
             $resueltos++;
+
+            $fallosSeguidos = $direccion === null ? $fallosSeguidos + 1 : 0;
+            if ($fallosSeguidos >= $this->reverseBatchMaxFallosSeguidos) {
+                $motivoCorte = 'circuit_breaker_fallos_consecutivos';
+                Log::warning('Reverse-geocode Nominatim: corte por circuit breaker, posible problema sistémico', [
+                    'fallos_seguidos' => $fallosSeguidos,
+                    'resueltos'       => $resueltos,
+                ]);
+                break;
+            }
 
             if ($this->nominatimDelayMs > 0 && $resueltos < $this->reverseBatchMax) {
                 usleep($this->nominatimDelayMs * 1000);
@@ -989,9 +1020,11 @@ class GeocodificacionService
         }
 
         Log::info('Reverse-geocode batch Nominatim', [
-            'resueltos'    => $resueltos,
-            'sin_resolver' => count($pendientes) - $resueltos,
-            'tope'         => $this->reverseBatchMax,
+            'resueltos'       => $resueltos,
+            'sin_resolver'    => count($pendientes) - $resueltos,
+            'tope'            => $this->reverseBatchMax,
+            'segundos_usados' => round(microtime(true) - $inicio, 1),
+            'motivo_corte'    => $motivoCorte,
         ]);
 
         return $resultado;

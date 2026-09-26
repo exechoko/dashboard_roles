@@ -93,6 +93,21 @@ return [
         // el timeout de Cloudflare (100s). El resto se resuelve en consultas
         // posteriores a medida que el caché en base se va llenando.
         'reverse_batch_max' => (int) env('NOMINATIM_REVERSE_BATCH_MAX', 50),
+        // Timeout por request HTTP (Nominatim y fallback Georef). Con la instancia
+        // self-hosted respondiendo en ~20ms, 8s era excesivo: multiplicaba el costo
+        // de cualquier fallo transitorio y ayudó a agotar el max_execution_time de
+        // PHP (300s) el 25/09/2026.
+        'timeout_seconds' => (int) env('NOMINATIM_TIMEOUT_SECONDS', 4),
+        // Presupuesto de tiempo total (segundos) para el batch de reverse-geocode
+        // secuencial. Corta el loop antes de acercarse al max_execution_time de PHP
+        // (300s) y devuelve resultados parciales; lo pendiente se resuelve en
+        // requests posteriores.
+        'reverse_batch_budget_seconds' => (int) env('NOMINATIM_REVERSE_BATCH_BUDGET_SECONDS', 200),
+        // Circuit breaker: si se acumulan esta cantidad de fallos consecutivos
+        // (Nominatim y Georef fallan para el mismo punto), se corta el batch en
+        // vez de seguir agotando timeouts uno por uno — señal de problema
+        // sistémico (red, DNS, servidor caído) más que de puntos puntuales sin dirección.
+        'reverse_batch_max_fallos_seguidos' => (int) env('NOMINATIM_REVERSE_MAX_FALLOS_SEGUIDOS', 6),
     ],
 
     'open_route_service' => [

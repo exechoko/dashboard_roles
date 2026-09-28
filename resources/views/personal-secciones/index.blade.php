@@ -149,12 +149,24 @@
                                             {{ $p->jerarquia }}
                                         </td>
                                         <td>
-                                            <a href="{{ route('personal-secciones.show', $p->id) }}">
-                                                <strong>{{ $p->apellido }}</strong>, {{ $p->nombre }}
-                                            </a>
-                                            @if($p->trashed())
-                                                <span class="badge badge-dark">Baja policial</span>
-                                            @endif
+                                            <div class="d-flex align-items-center">
+                                                @if($p->tieneFotoPersonal911())
+                                                    <img src="{{ route('personal.foto', $p) }}"
+                                                         alt="Foto de {{ $p->apellido }}, {{ $p->nombre }}"
+                                                         class="rounded-circle mr-2" style="width:32px;height:32px;object-fit:cover;cursor:pointer;"
+                                                         data-toggle="modal" data-target="#personalSeccionFotoModal{{ $p->id }}">
+                                                @else
+                                                    <i class="fas fa-user-circle text-muted mr-2" style="font-size:1.6rem;"></i>
+                                                @endif
+                                                <div>
+                                                    <a href="{{ route('personal-secciones.show', $p->id) }}">
+                                                        <strong>{{ $p->apellido }}</strong>, {{ $p->nombre }}
+                                                    </a>
+                                                    @if($p->trashed())
+                                                        <span class="badge badge-dark">Baja policial</span>
+                                                    @endif
+                                                </div>
+                                            </div>
                                         </td>
                                         <td>{{ $p->lp }}</td>
                                         <td>{{ $r->funcion_actual ?? '-' }}</td>
@@ -199,6 +211,23 @@
             $puedoAnotar = $usuarioActual->can('crear-personal-seccion-nota');
             $tengoNotasPropias = $p->notasSeccion->contains(fn ($n) => $n->esAutor($usuarioActual));
         @endphp
+            @if($p->tieneFotoPersonal911())
+                <div class="modal fade" id="personalSeccionFotoModal{{ $p->id }}" tabindex="-1" role="dialog">
+                    <div class="modal-dialog modal-dialog-centered" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">{{ $p->jerarquia }} {{ $p->apellido }}, {{ $p->nombre }}</h5>
+                                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <img src="{{ route('personal.foto', $p) }}"
+                                     alt="Foto de {{ $p->apellido }}, {{ $p->nombre }}"
+                                     class="img-fluid rounded">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
             <div class="modal fade" id="modalNotas{{ $p->id }}" tabindex="-1" role="dialog">
                 <div class="modal-dialog modal-dialog-scrollable" role="document">
                     <div class="modal-content">

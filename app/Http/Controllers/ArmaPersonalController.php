@@ -20,7 +20,8 @@ class ArmaPersonalController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:ver-personal|editar-personal', ['only' => ['index', 'show', 'foto']]);
+        $this->middleware('permission:ver-personal|editar-personal', ['only' => ['index', 'show']]);
+        $this->middleware('permission:ver-personal|editar-personal|ver-personal-secciones', ['only' => ['foto']]);
         $this->middleware('permission:editar-personal', ['only' => ['edit', 'update']]);
         $this->middleware('permission:sincronizar-personal-secciones', ['only' => ['sincronizar']]);
     }

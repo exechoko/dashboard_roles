@@ -80,11 +80,29 @@ class EnvEditorService
             }
         }
 
-        if (file_put_contents($this->envPath, implode("\n", $lineas) . "\n") === false) {
-            throw new RuntimeException("No se pudo escribir el archivo .env: {$this->envPath}");
-        }
+        $this->escribirAtomicamente(implode("\n", $lineas) . "\n");
 
         Artisan::call('config:clear');
+    }
+
+    /**
+     * Escribe el contenido en un archivo temporal en la misma carpeta y lo
+     * mueve encima del .env con rename(), que en NTFS reemplaza el destino
+     * de forma atómica. Así un request concurrente nunca llega a leer el
+     * archivo a medio escribir (lo que dispara MissingAppKeyException).
+     */
+    private function escribirAtomicamente(string $contenido): void
+    {
+        $temporal = $this->envPath . '.tmp-' . uniqid();
+
+        if (file_put_contents($temporal, $contenido) === false) {
+            throw new RuntimeException("No se pudo escribir el archivo temporal: {$temporal}");
+        }
+
+        if (!rename($temporal, $this->envPath)) {
+            @unlink($temporal);
+            throw new RuntimeException("No se pudo reemplazar el archivo .env: {$this->envPath}");
+        }
     }
 
     private function respaldar(): void

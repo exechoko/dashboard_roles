@@ -117,7 +117,16 @@ class InfraestructuraController extends Controller
 
     public function grabadorReplayReiniciar(GrabadorTetraService $grabador): RedirectResponse
     {
-        $resultado = $grabador->reiniciarReplayServer();
+        $usuario = auth()->user();
+
+        $resultado = $grabador->reiniciarReplayServer([
+            'origen'  => 'manual',
+            'usuario' => $usuario ? [
+                'email'    => $usuario->email,
+                'nombre'   => $usuario->name,
+                'apellido' => $usuario->apellido,
+            ] : null,
+        ]);
 
         AuditoriaService::registrar(
             'ACTUALIZAR',

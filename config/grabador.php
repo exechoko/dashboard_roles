@@ -41,9 +41,10 @@ return [
     'minutos_despues_sin_cierre' => (int) env('GRABADOR_MINUTOS_DESPUES_SIN_CIERRE', 60),
 
     // Máximo de modulaciones a traer por búsqueda. 1000 es la capacidad natural
-    // de una sola página del grabador (enum MaximumResults=7); con eso alcanza
-    // para prácticamente cualquier evento en un solo search.
-    'max_resultados'   => (int) env('GRABADOR_MAX_RESULTADOS', 1000),
+    // de una sola página del grabador (enum MaximumResults=7); por encima de eso
+    // ya hacen falta páginas adicionales (continuesearch/nueva ventana), que el
+    // frontend pide solas mientras "hayMas" siga en true.
+    'max_resultados'   => (int) env('GRABADOR_MAX_RESULTADOS', 2000),
 
     // Al buscar, si la 1ª página de una ventana viene llena (densa), en vez de
     // esperar al continuesearch asíncrono del grabador (lento y, en ventanas
@@ -63,6 +64,13 @@ return [
     // lame.exe (en servidores viejos tipo 2012 R2 usar lame, que es un único .exe
     // sin dependencias). Si no está disponible, la descarga cae al WAV original.
     'ffmpeg_path' => env('GRABADOR_FFMPEG_PATH', 'ffmpeg'),
+
+    // LAME no decodifica GSM ni OGG (solo WAV/PCM). Cuando ffmpeg_path apunta a
+    // lame.exe, esta ruta opcional a un decodificador (ej. sox.exe) se usa para
+    // pasar esos formatos a WAV antes de codificarlos con LAME. Usado por
+    // ConversorAudioService (Herramientas > Conversor de Audio). Si no está
+    // configurado, GSM/OGG quedan deshabilitados con LAME.
+    'decoder_path' => env('GRABADOR_DECODER_PATH'),
 
     // Presupuesto (en segundos) para escanear el disco de audios al emparejar las
     // filas del grabador con su .mp3 local. Si se agota, el escaneo corta y esas

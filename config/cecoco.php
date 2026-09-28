@@ -32,6 +32,11 @@ return [
     'umbral_restauraciones_mb' => (int) env('CECOCO_UMBRAL_RESTAURACIONES_MB', 4000),
 
     // Apaga la consulta horaria programada del tamaño de BD de restauraciones
-    // (Configuración del Sistema > Variables de Entorno > Infraestructura).
+    // de eventos CECOCO (Configuración del Sistema > Variables de Entorno >
+    // Infraestructura). La de GPS se apaga por separado, ver abajo.
     'monitoreo_restauraciones_enabled' => env('CECOCO_MONITOREO_RESTAURACIONES_ENABLED', true),
+
+    // Igual que la anterior, pero para la consulta horaria del tamaño de BD de
+    // restauraciones GPS (fuente/servidor distinto vía gps_url).
+    'monitoreo_restauraciones_gps_enabled' => env('CECOCO_GPS_MONITOREO_RESTAURACIONES_ENABLED', true),
 ];

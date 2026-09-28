@@ -745,15 +745,17 @@ function renderizarModulaciones(data) {
                 quien = m.recurso + ' (' + llamante + ')';
             }
 
-            // El nombre de descarga lleva el recurso, la hora y la duración para
-            // que se pueda identificar el audio sin tener que abrirlo (el itemid
-            // del grabador es opaco: no dice quién moduló, cuándo ni cuánto duró).
+            // El recurso, la hora y la duración van tanto en la reproducción como en
+            // la descarga: para la descarga arman el nombre del archivo (el itemid
+            // del grabador es opaco), y para la reproducción quedan disponibles si
+            // el backend tiene que auto-reparar el Replay Server mientras se escucha.
             var horaArchivo    = (m.fechaInicio || '').replace(/[-:]/g, '').replace(' ', '_');
             var duracionSeg    = duracionASegundos(m.duracion);
-            var downloadUrl    = streamUrl + '&download=1'
+            streamUrl = streamUrl
                 + '&recurso=' + encodeURIComponent(quien !== '—' ? quien : '')
                 + '&hora=' + encodeURIComponent(horaArchivo)
                 + (duracionSeg !== null ? '&duracion=' + duracionSeg : '');
+            var downloadUrl = streamUrl + '&download=1';
 
             // A quién moduló: SSI llamado, o el grupo si fue una llamada de grupo.
             var destino = m.ssiLlamado || m.grupo || '';

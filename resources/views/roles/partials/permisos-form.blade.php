@@ -158,6 +158,7 @@
         'Herramientas' => [
             'hash-archivo',
             'visor-mails',
+            'conversor-audio',
         ],
         'Operaciones' => [
             'buscar-moviles-parados',

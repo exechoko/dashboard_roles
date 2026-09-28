@@ -102,7 +102,7 @@ class InfraestructuraTest extends TestCase
                 return true;
             }
 
-            public function reiniciarReplayServer(): array
+            public function reiniciarReplayServer(array $contexto = []): array
             {
                 return $this->resultado;
             }

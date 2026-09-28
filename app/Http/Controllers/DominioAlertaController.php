@@ -39,6 +39,14 @@ class DominioAlertaController extends Controller
             });
         }
 
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha_carga', '>=', $request->query('fecha_desde'));
+        }
+
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha_carga', '<=', $request->query('fecha_hasta'));
+        }
+
         $activo = $request->query('activo', '1');
 
         if ($activo === '1') {
@@ -47,7 +55,7 @@ class DominioAlertaController extends Controller
             $query->where('activo', false);
         }
 
-        $dominios = $query->orderByDesc('id')->paginate(15)->withQueryString();
+        $dominios = $query->orderByDesc('fecha_carga')->orderByDesc('id')->paginate(15)->withQueryString();
 
         $contadores = [
             'total' => DominioAlerta::count(),
@@ -55,7 +63,9 @@ class DominioAlertaController extends Controller
             'inactivos' => DominioAlerta::inactivos()->count(),
         ];
 
-        return view('alertas-video.dominios.index', compact('dominios', 'contadores'));
+        $ultimosCargados = DominioAlerta::activos()->orderByDesc('created_at')->take(5)->get();
+
+        return view('alertas-video.dominios.index', compact('dominios', 'contadores', 'ultimosCargados'));
     }
 
     public function create(): View

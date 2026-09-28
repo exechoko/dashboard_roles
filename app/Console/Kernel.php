@@ -255,7 +255,7 @@ class Kernel extends ConsoleKernel
             \App\Jobs\ConsultarTamanoRestauracionesCecoco::dispatchSync(true);
         })->name('cache-cecoco-gps-tamano-restauraciones')
             ->hourly()
-            ->when(fn () => config('cecoco.monitoreo_restauraciones_enabled'))
+            ->when(fn () => config('cecoco.monitoreo_restauraciones_gps_enabled'))
             ->withoutOverlapping();
 
         // Limpia los archivos ZIP temporales de la Plataforma de Descargas que han expirado.
@@ -276,6 +276,16 @@ class Kernel extends ConsoleKernel
             ->appendOutputTo(storage_path('logs/descargas_limpiar_chunks.log'))
             ->onFailure(function () {
                 app(TelegramService::class)->notificarScheduleFallido('descargas:limpiar-chunks-huerfanos', 'El comando finalizó con error.');
+            });
+
+        // Limpia los lotes del Conversor de Audio (Herramientas) abandonados
+        // antes de descargar el ZIP final.
+        $schedule->command('conversor-audio:limpiar-lotes-huerfanos')
+            ->hourly()
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/conversor_audio_limpiar_lotes.log'))
+            ->onFailure(function () {
+                app(TelegramService::class)->notificarScheduleFallido('conversor-audio:limpiar-lotes-huerfanos', 'El comando finalizó con error.');
             });
 
         // Backup diario de la base de datos principal (Configuración del Sistema > Backups).

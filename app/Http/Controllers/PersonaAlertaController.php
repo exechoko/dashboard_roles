@@ -36,6 +36,14 @@ class PersonaAlertaController extends Controller
             });
         }
 
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha_carga', '>=', $request->query('fecha_desde'));
+        }
+
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha_carga', '<=', $request->query('fecha_hasta'));
+        }
+
         $activo = $request->query('activo', '1');
 
         if ($activo === '1') {
@@ -44,7 +52,7 @@ class PersonaAlertaController extends Controller
             $query->where('activo', false);
         }
 
-        $personas = $query->orderByDesc('id')->paginate(15)->withQueryString();
+        $personas = $query->orderByDesc('fecha_carga')->orderByDesc('id')->paginate(15)->withQueryString();
 
         $contadores = [
             'total' => PersonaAlerta::count(),
@@ -52,7 +60,9 @@ class PersonaAlertaController extends Controller
             'inactivos' => PersonaAlerta::inactivos()->count(),
         ];
 
-        return view('alertas-video.personas.index', compact('personas', 'contadores'));
+        $ultimosCargados = PersonaAlerta::activos()->orderByDesc('created_at')->take(5)->get();
+
+        return view('alertas-video.personas.index', compact('personas', 'contadores', 'ultimosCargados'));
     }
 
     public function create(): View

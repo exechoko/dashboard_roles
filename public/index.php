@@ -2,6 +2,7 @@
 
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Env;
 
 define('LARAVEL_START', microtime(true));
 
@@ -32,6 +33,22 @@ if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php'))
 */
 
 require __DIR__.'/../vendor/autoload.php';
+
+/*
+|--------------------------------------------------------------------------
+| Evita que putenv() filtre variables de entorno entre requests
+|--------------------------------------------------------------------------
+|
+| Apache en Windows corre PHP en un único proceso multihilo (MPM WinNT).
+| putenv() escribe el entorno del proceso y PHP lo deshace al terminar
+| cada request. Si el request A carga el .env y el B arranca en paralelo,
+| B ve APP_KEY "ya definida" (immutable) y no la copia a $_ENV; cuando A
+| termina y la borra, B queda sin APP_KEY/DB_*: 500 aleatorios. Sin
+| putenv, cada request lee sólo sus propios $_ENV/$_SERVER.
+|
+*/
+
+Env::disablePutenv();
 
 /*
 |--------------------------------------------------------------------------

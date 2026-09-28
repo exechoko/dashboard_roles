@@ -41,7 +41,8 @@ class PersonalSeccionController extends Controller
         // Las notas se cargan recién acá, solo para la página que se va a
         // mostrar: cada una arma un modal completo en la vista y con el
         // padrón real (~450 funcionarios) cargarlas todas de una vuelve la
-        // página inutilizable.
+        // página inutilizable. Las licencias (para el badge "De licencia")
+        // ya vienen cargadas desde registrosFiltrados().
         $registrosPagina->load(['personal.notasSeccion' => function ($q) use ($usuarioActual) {
             $q->visiblesPara($usuarioActual)->with(['autor', 'compartidas.usuario']);
         }]);
@@ -54,11 +55,7 @@ class PersonalSeccionController extends Controller
             ['path' => LengthAwarePaginator::resolveCurrentPath(), 'query' => $request->query()]
         );
 
-        $todasLasSecciones = PersonalSeccion::query()
-            ->whereNotNull('seccion')
-            ->distinct()
-            ->orderBy('seccion')
-            ->pluck('seccion');
+        $todasLasSecciones = collect($this->seccionesPermitidasPara($usuarioActual))->sort()->values();
 
         $usuariosParaCompartir = User::where('id', '!=', $usuarioActual->id)
             ->orderBy('name')
@@ -139,6 +136,25 @@ class PersonalSeccionController extends Controller
     }
 
     /**
+     * Secciones (texto libre, viene de `personal_secciones.seccion`) que el
+     * usuario puede ver, según qué permisos `ver-seccion-*` tiene su rol.
+     * Un usuario sin ninguno de esos permisos no ve ninguna sección, aunque
+     * tenga `ver-personal-secciones` (acceso a la pantalla, no a los datos).
+     *
+     * @return list<string>
+     */
+    private function seccionesPermitidasPara(User $usuario): array
+    {
+        return PersonalSeccion::query()
+            ->whereNotNull('seccion')
+            ->distinct()
+            ->pluck('seccion')
+            ->filter(fn (string $seccion) => $usuario->can(PersonalSeccion::permisoVisibilidad($seccion)))
+            ->values()
+            ->all();
+    }
+
+    /**
      * @return list<int>
      */
     private function idsPersonal911(Collection $registros): array
@@ -162,11 +178,26 @@ class PersonalSeccionController extends Controller
         $estado = $request->get('estado', 'todos'); // todos | activos | en_licencia | bajas
         $orden = $request->get('orden', 'jerarquia'); // jerarquia | novedades
 
+        // La visibilidad por sección SIEMPRE se acota a lo que el usuario
+        // tiene permitido (permisos `ver-seccion-*`), sin importar qué pida
+        // el query string: si no tildó secciones ve las que tiene permitidas,
+        // y si tildó algunas se intersectan con las permitidas.
+        $seccionesPermitidas = $this->seccionesPermitidasPara($usuarioActual);
+        $seccionesFiltro = $secciones === []
+            ? $seccionesPermitidas
+            : array_values(array_intersect($secciones, $seccionesPermitidas));
+
+        // "En licencia" sale de las licencias reales vigentes (personal_licencias,
+        // mismo criterio que Armería/General), no del flag `en_licencia` de
+        // PersonalSeccion (que refleja otra cosa: función neutra vigente en
+        // personal911, usado internamente para no perder la sección real).
+        $tieneLicenciaVigente = fn ($q) => $q->whereHas('licencias', fn ($qq) => $qq->vigentes());
+
         $todos = PersonalSeccion::query()
-            ->with(['personal' => fn ($q) => $q->withTrashed()])
-            ->enSecciones($secciones)
-            ->when($estado === 'activos', fn ($q) => $q->where('activo', true)->where('en_licencia', false))
-            ->when($estado === 'en_licencia', fn ($q) => $q->where('activo', true)->where('en_licencia', true))
+            ->with(['personal' => fn ($q) => $q->withTrashed()->with('licencias')])
+            ->whereIn('seccion', $seccionesFiltro)
+            ->when($estado === 'activos', fn ($q) => $q->where('activo', true)->whereDoesntHave('personal', $tieneLicenciaVigente))
+            ->when($estado === 'en_licencia', fn ($q) => $q->where('activo', true)->whereHas('personal', $tieneLicenciaVigente))
             ->when($estado === 'bajas', fn ($q) => $q->where('activo', false))
             ->when($busqueda !== '', function ($q) use ($busqueda) {
                 $q->whereHas('personal', function ($qq) use ($busqueda) {
@@ -243,6 +274,10 @@ class PersonalSeccionController extends Controller
         $personal = Personal::withTrashed()->findOrFail($personalId);
         $seccion = PersonalSeccion::where('personal_id', $personal->id)->first();
         $usuarioActual = auth()->user();
+
+        if ($seccion !== null && !$usuarioActual->can(PersonalSeccion::permisoVisibilidad($seccion->seccion))) {
+            abort(403, 'No tenés acceso a la sección de este funcionario.');
+        }
 
         $detalle = $personal->personal911_id !== null
             ? $detalleService->obtener((int) $personal->personal911_id)

@@ -92,6 +92,20 @@
         background: rgba(255, 255, 255, .1);
     }
 
+    body:not(.sidebar-mini) #sidebar-wrapper .sidebar-menu li a {
+        height: 40px;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        margin-top: 2px !important;
+        margin-bottom: 2px !important;
+    }
+
+    body:not(.sidebar-mini) #sidebar-wrapper .sidebar-menu li ul.dropdown-menu li a {
+        height: 30px;
+        margin-top: 1px !important;
+        margin-bottom: 1px !important;
+    }
+
     .sidebar-logo-orbit {
         position: relative;
         width: 54px;

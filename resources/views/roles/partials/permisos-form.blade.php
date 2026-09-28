@@ -198,6 +198,34 @@
         ]
     ];
 
+    // Los permisos `ver-seccion-*` se generan dinámicamente (uno por cada
+    // sección real de personal911, ver SeederPermisosVisibilidadSecciones) y
+    // no se pueden hardcodear en $mainGroups como el resto de los módulos:
+    // se arma el grupo acá mismo, leyendo lo que exista en este momento.
+    $permisosSeccion = $permission->filter(fn ($perm) => str_starts_with($perm->name, 'ver-seccion-'))
+        ->map(fn ($perm) => substr($perm->name, strlen('ver-')))
+        ->unique()
+        ->sort()
+        ->values()
+        ->all();
+
+    if ($permisosSeccion !== []) {
+        $mainGroups['Personal - Secciones Visibles'] = $permisosSeccion;
+    }
+
+    // El slug del permiso pierde acentos y mayúsculas (ej. "genero" en vez de
+    // "Género"); para no confundir secciones con nombres parecidos se muestra
+    // el nombre real tal como está en `personal_secciones.seccion`. La clave
+    // se arma con el mismo método que generó el permiso, para no duplicar la
+    // lógica de slug acá (ver `PersonalSeccion::permisoVisibilidad()`).
+    $nombreSeccionPorSlug = \App\Models\PersonalSeccion::query()
+        ->whereNotNull('seccion')
+        ->distinct()
+        ->pluck('seccion')
+        ->mapWithKeys(fn (string $seccion) => [
+            substr(\App\Models\PersonalSeccion::permisoVisibilidad($seccion), strlen('ver-')) => $seccion,
+        ]);
+
     $groupedPermissions = [];
     $assignedPermissionIds = [];
 
@@ -274,7 +302,9 @@
                         $moduleLeaves[] = [
                             'perm' => $perm,
                             'action' => $action,
-                            'label' => ucfirst($action) . ' - ' . ucfirst(str_replace('-', ' ', $module)),
+                            'label' => $nombreSeccionPorSlug->has($module)
+                                ? $nombreSeccionPorSlug[$module]
+                                : ucfirst($action) . ' - ' . ucfirst(str_replace('-', ' ', $module)),
                         ];
                     }
                 }

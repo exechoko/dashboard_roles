@@ -45,6 +45,11 @@ class PersonalSeccionControllerTest extends TestCase
         return $personal;
     }
 
+    private function permitirVerSeccion(User $usuario, string $seccion): void
+    {
+        $usuario->givePermissionTo(Permission::findOrCreate(PersonalSeccion::permisoVisibilidad($seccion), 'web'));
+    }
+
     public function test_show_requiere_permiso(): void
     {
         $user = User::factory()->create();
@@ -59,6 +64,7 @@ class PersonalSeccionControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->permitirVerSeccion($user, 'Sección Judiciales y Gestión de Calidad');
         $this->actingAs($user);
 
         $personal = $this->crearFuncionarioEnSeccion('Sección Judiciales y Gestión de Calidad');
@@ -74,6 +80,7 @@ class PersonalSeccionControllerTest extends TestCase
     {
         $autor = User::factory()->create();
         $autor->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->permitirVerSeccion($autor, 'Sección Violencia de Género');
 
         $personal = $this->crearFuncionarioEnSeccion('Sección Violencia de Género');
         PersonalSeccionNota::create([
@@ -100,6 +107,7 @@ class PersonalSeccionControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->permitirVerSeccion($user, 'Sección Violencia de Género');
         $this->actingAs($user);
 
         $vg = $this->crearFuncionarioEnSeccion('Sección Violencia de Género');
@@ -118,6 +126,7 @@ class PersonalSeccionControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->permitirVerSeccion($user, 'Sección Judiciales y Gestión de Calidad');
         $this->actingAs($user);
 
         $dejoLaSeccion = $this->crearFuncionarioEnSeccion('Sección Judiciales y Gestión de Calidad', activo: false);
@@ -166,9 +175,11 @@ class PersonalSeccionControllerTest extends TestCase
         $autor = User::factory()->create();
         $autor->givePermissionTo(Permission::findOrCreate('crear-personal-seccion-nota', 'web'));
         $autor->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->permitirVerSeccion($autor, 'Sección Violencia de Género');
 
         $otroUsuario = User::factory()->create();
         $otroUsuario->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->permitirVerSeccion($otroUsuario, 'Sección Violencia de Género');
 
         $personal = $this->crearFuncionarioEnSeccion('Sección Violencia de Género');
         PersonalSeccionNota::create([
@@ -194,6 +205,7 @@ class PersonalSeccionControllerTest extends TestCase
         $admin = User::factory()->create();
         $admin->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
         $admin->assignRole(Role::findOrCreate('Administrador', 'web'));
+        $this->permitirVerSeccion($admin, 'Sección Judiciales y Gestión de Calidad');
 
         $personal = $this->crearFuncionarioEnSeccion('Sección Judiciales y Gestión de Calidad');
         PersonalSeccionNota::create([
@@ -215,6 +227,7 @@ class PersonalSeccionControllerTest extends TestCase
 
         $destinatario = User::factory()->create();
         $destinatario->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->permitirVerSeccion($destinatario, 'Sección Violencia de Género');
 
         $personal = $this->crearFuncionarioEnSeccion('Sección Violencia de Género');
         $nota = PersonalSeccionNota::create([
@@ -303,6 +316,7 @@ class PersonalSeccionControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->permitirVerSeccion($user, 'Sección Violencia de Género');
         $this->actingAs($user);
 
         // Apellidos a propósito en orden alfabético INVERSO a la jerarquía:
@@ -333,6 +347,8 @@ class PersonalSeccionControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->permitirVerSeccion($user, 'Sección Violencia de Género');
+        $this->permitirVerSeccion($user, 'Sección Judiciales y Gestión de Calidad');
         $this->actingAs($user);
 
         // El comisario es de V.G. pero con apellido "Zzz" (última letra) para
@@ -368,6 +384,7 @@ class PersonalSeccionControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->permitirVerSeccion($user, 'Sección Violencia de Género');
         $this->actingAs($user);
 
         $sinNota = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', apellido: 'SinNotaAAA');
@@ -411,6 +428,7 @@ class PersonalSeccionControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->permitirVerSeccion($user, 'Sección Violencia de Género');
         $this->actingAs($user);
 
         $this->crearFuncionarioEnSeccion('Sección Violencia de Género');
@@ -434,6 +452,7 @@ class PersonalSeccionControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $user->givePermissionTo(Permission::findOrCreate('ver-personal-secciones', 'web'));
+        $this->permitirVerSeccion($user, 'Sección Violencia de Género');
         $this->actingAs($user);
 
         $personal = $this->crearFuncionarioEnSeccion('Sección Violencia de Género', apellido: 'PreviewTest');

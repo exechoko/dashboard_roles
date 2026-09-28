@@ -121,6 +121,7 @@
                         <table class="table table-striped align-middle">
                             <thead>
                                 <tr>
+                                    <th>Foto</th>
                                     <th>Apellido</th>
                                     <th>Nombre</th>
                                     <th>LP</th>
@@ -136,6 +137,16 @@
                                 @forelse ($personales as $personal)
                                     @php $resumenLicencia = $personal->resumen_licencia_actual; @endphp
                                     <tr class="{{ $personal->trashed() ? 'table-danger' : '' }}">
+                                        <td class="text-center">
+                                            @if($personal->tieneFotoPersonal911())
+                                                <img src="{{ route('personal.foto', $personal) }}"
+                                                     alt="Foto de {{ $personal->apellido }}, {{ $personal->nombre }}"
+                                                     class="rounded-circle" style="width:40px;height:40px;object-fit:cover;cursor:pointer;"
+                                                     data-toggle="modal" data-target="#personalFotoModal{{ $personal->id }}">
+                                            @else
+                                                <i class="fas fa-user-circle text-muted" style="font-size:1.8rem;"></i>
+                                            @endif
+                                        </td>
                                         <td>
                                             <strong>{{ $personal->apellido }}</strong>
                                             @if($personal->trashed())
@@ -215,7 +226,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="text-center text-muted py-4">
+                                        <td colspan="10" class="text-center text-muted py-4">
                                             @if($ver_eliminados === 'eliminados')
                                                 No hay funcionarios eliminados.
                                             @else
@@ -233,6 +244,26 @@
             </div>
         </div>
     </section>
+
+    @foreach ($personales as $personal)
+        @if($personal->tieneFotoPersonal911())
+            <div class="modal fade" id="personalFotoModal{{ $personal->id }}" tabindex="-1" role="dialog">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">{{ $personal->apellido }}, {{ $personal->nombre }}</h5>
+                            <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <img src="{{ route('personal.foto', $personal) }}"
+                                 alt="Foto de {{ $personal->apellido }}, {{ $personal->nombre }}"
+                                 class="img-fluid rounded">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endforeach
 @endsection
 
 @php

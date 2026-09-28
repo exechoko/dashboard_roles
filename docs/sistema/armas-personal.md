@@ -44,7 +44,7 @@ El estado inicial es **En armería** y el sistema calcula los días restantes se
 3. Filtrá por licencias, estado o tipo.
 4. Abrí el detalle para consultar arma, chaleco, licencias, asignaciones anteriores y retenciones.
 
-El detalle también muestra la foto del funcionario importada desde Personal911 (cuando el archivo existe en el disco compartido del servidor), visible para cualquiera que pueda ver el detalle de personal.
+El listado y el detalle también muestran la foto del funcionario importada desde Personal911 (cuando el archivo existe en el disco compartido del servidor), visible para cualquiera que pueda ver personal. En el listado, tocar la miniatura la agranda en una ventana.
 
 ## Cambiar arma o chaleco
 

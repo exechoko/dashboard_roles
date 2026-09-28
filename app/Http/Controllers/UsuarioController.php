@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use App\Http\Middleware\VerifyMasterPassword;
+use App\Models\Auditoria;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 class UsuarioController extends Controller
 {
@@ -97,7 +100,24 @@ class UsuarioController extends Controller
         $input['acceso_pwa'] = $request->boolean('acceso_pwa');
 
         $user = User::create($input);
-        $user->assignRole($request->input('roles'));
+        $roles = (array) $request->input('roles');
+        $user->assignRole($roles);
+
+        Auditoria::create([
+            'user_id' => Auth::id(),
+            'usuario_modificado_id' => $user->id,
+            'nombre_tabla' => 'model_has_roles',
+            'accion' => 'ASIGNAR ROL',
+            'cambios' => sprintf(
+                'Usuario: %s %s (id: %d) - Roles asignados: %s',
+                $user->name,
+                $user->apellido,
+                $user->id,
+                implode(', ', $roles)
+            ),
+            'ip_address' => request()->ip(),
+            'user_agent' => Str::limit((string) request()->userAgent(), 255, ''),
+        ]);
 
         return redirect()->route('usuarios.index');
     }
@@ -175,12 +195,53 @@ class UsuarioController extends Controller
         $input = Arr::except($input, ['confirm_master_password', 'clear_master_password']);
 
         $user = User::find($id);
+        $rolesAnteriores = $user->roles->pluck('name')->all();
+
         $user->update($input);
         DB::table('model_has_roles')->where('model_id', $id)->delete();
 
-        $user->assignRole($request->input('roles'));
+        $rolesNuevos = (array) $request->input('roles');
+        $user->assignRole($rolesNuevos);
+
+        $this->auditarCambioRoles($user, $rolesAnteriores, $rolesNuevos);
 
         return redirect()->route('usuarios.index');
+    }
+
+    /**
+     * Registra en la auditoría los roles agregados/quitados de un usuario.
+     *
+     * @param  array<int, string>  $rolesAnteriores
+     * @param  array<int, string>  $rolesNuevos
+     */
+    private function auditarCambioRoles(User $user, array $rolesAnteriores, array $rolesNuevos): void
+    {
+        $agregados = array_values(array_diff($rolesNuevos, $rolesAnteriores));
+        $quitados = array_values(array_diff($rolesAnteriores, $rolesNuevos));
+
+        if (empty($agregados) && empty($quitados)) {
+            return;
+        }
+
+        $detalle = sprintf('Usuario: %s %s (id: %d)', $user->name, $user->apellido, $user->id);
+
+        if (!empty($agregados)) {
+            $detalle .= ' - Roles agregados: ' . implode(', ', $agregados);
+        }
+
+        if (!empty($quitados)) {
+            $detalle .= ' - Roles quitados: ' . implode(', ', $quitados);
+        }
+
+        Auditoria::create([
+            'user_id' => Auth::id(),
+            'usuario_modificado_id' => $user->id,
+            'nombre_tabla' => 'model_has_roles',
+            'accion' => 'ASIGNAR ROL',
+            'cambios' => $detalle,
+            'ip_address' => request()->ip(),
+            'user_agent' => Str::limit((string) request()->userAgent(), 255, ''),
+        ]);
     }
 
     /**

@@ -135,6 +135,7 @@
                                                     @switch($auditoria->nombre_tabla)
                                                         @case('user')
                                                         @case('users')
+                                                        @case('model_has_roles')
                                                             @if (!is_null($auditoria->usuarioModificado))
                                                                 {{ $auditoria->usuarioModificado->name }}
                                                             @else
@@ -192,6 +193,12 @@
                                                             @break
                                                         @case('MAIL_ENVIADO')
                                                             <span class="badge badge-info">Mail enviado</span>
+                                                            @break
+                                                        @case('ASIGNAR PERMISOS')
+                                                            <span class="badge badge-primary">Permisos de rol</span>
+                                                            @break
+                                                        @case('ASIGNAR ROL')
+                                                            <span class="badge badge-primary">Rol de usuario</span>
                                                             @break
                                                         @default
                                                             <span class="badge badge-secondary">{{ $auditoria->accion }}</span>

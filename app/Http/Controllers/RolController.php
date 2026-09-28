@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\DB;
+use App\Services\AuditoriaService;
 
 class RolController extends Controller
 {
@@ -51,7 +52,14 @@ class RolController extends Controller
         //dd($request);
         $this->validate($request, ['name' => 'required', 'permission' => 'required']);
         $role = Role::create(['name' => $request->input('name')]);
-        $role->syncPermissions($this->permissionNamesFromRequest($request));
+        $permisos = $this->permissionNamesFromRequest($request);
+        $role->syncPermissions($permisos);
+
+        AuditoriaService::registrar(
+            'ASIGNAR PERMISOS',
+            'role_has_permissions',
+            sprintf('Rol: %s (id: %d) - Permisos asignados: %s', $role->name, $role->id, implode(', ', $permisos))
+        );
 
         return redirect()->route('roles.index');
 
@@ -100,12 +108,45 @@ class RolController extends Controller
         ]);
 
         $role = Role::find($id);
+        $permisosAnteriores = $role->permissions()->pluck('name')->all();
+
         $role->name = $request->input('name');
         $role->save();
 
-        $role->syncPermissions($this->permissionNamesFromRequest($request));
+        $permisosNuevos = $this->permissionNamesFromRequest($request);
+        $role->syncPermissions($permisosNuevos);
+
+        $this->auditarCambioPermisos($role, $permisosAnteriores, $permisosNuevos);
 
         return redirect()->route('roles.index');
+    }
+
+    /**
+     * Registra en la auditoría los permisos agregados/quitados de un rol.
+     *
+     * @param  array<int, string>  $permisosAnteriores
+     * @param  array<int, string>  $permisosNuevos
+     */
+    private function auditarCambioPermisos(Role $role, array $permisosAnteriores, array $permisosNuevos): void
+    {
+        $agregados = array_values(array_diff($permisosNuevos, $permisosAnteriores));
+        $quitados = array_values(array_diff($permisosAnteriores, $permisosNuevos));
+
+        if (empty($agregados) && empty($quitados)) {
+            return;
+        }
+
+        $detalle = sprintf('Rol: %s (id: %d)', $role->name, $role->id);
+
+        if (!empty($agregados)) {
+            $detalle .= ' - Permisos agregados: ' . implode(', ', $agregados);
+        }
+
+        if (!empty($quitados)) {
+            $detalle .= ' - Permisos quitados: ' . implode(', ', $quitados);
+        }
+
+        AuditoriaService::registrar('ASIGNAR PERMISOS', 'role_has_permissions', $detalle);
     }
 
     /**

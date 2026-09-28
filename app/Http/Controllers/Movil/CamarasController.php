@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Movil;
 
 use App\Http\Controllers\Controller;
 use App\Models\Camara;
+use App\Services\CamaraReinicioService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 
 class CamarasController extends Controller
 {
@@ -57,33 +57,17 @@ class CamarasController extends Controller
      * al equipo desde el servidor (no desde el navegador del celular) para no
      * depender de que el dispositivo móvil tenga alcance de red a la cámara.
      */
-    public function reiniciar(Camara $camara): JsonResponse
+    public function reiniciar(Camara $camara, CamaraReinicioService $camaraReinicioService): JsonResponse
     {
-        $ip = $camara->ip;
+        $camara->loadMissing('tipoCamara');
 
-        if (empty($ip)) {
-            return response()->json(['ok' => false, 'error' => 'La cámara no tiene IP cargada.'], 422);
+        $resultado = $camaraReinicioService->reiniciar($camara);
+
+        if ($resultado['ok']) {
+            return response()->json(['ok' => true]);
         }
 
-        $user = config('services.camaras.user');
-        $pass = config('services.camaras.pass');
-
-        try {
-            $respuesta = Http::withOptions([
-                'auth'            => [$user, $pass, 'digest'],
-                'timeout'         => 6,
-                'connect_timeout' => 3,
-                'verify'          => false,
-            ])->get("http://{$ip}/cgi-bin/magicBox.cgi?action=reboot");
-
-            if ($respuesta->successful()) {
-                return response()->json(['ok' => true]);
-            }
-
-            return response()->json(['ok' => false, 'error' => "La cámara respondió HTTP {$respuesta->status()}."], 502);
-        } catch (\Exception $e) {
-            return response()->json(['ok' => false, 'error' => 'No se pudo contactar la cámara.'], 502);
-        }
+        return response()->json(['ok' => false, 'error' => $resultado['mensaje']], $resultado['status'] === null ? 422 : 502);
     }
 
     /**

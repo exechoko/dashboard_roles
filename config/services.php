@@ -64,6 +64,8 @@ return [
     'camaras' => [
         'user' => env('CAMARA_USER'),
         'pass' => env('CAMARA_PASS'),
+        'bde_user' => env('CAMARA_BDE_USER'),
+        'bde_pass' => env('CAMARA_BDE_PASS'),
     ],
 
     'google' => [

@@ -8,6 +8,7 @@ use App\Models\Camara;
 use App\Models\Destino;
 use App\Models\Sitio;
 use App\Models\TipoCamara;
+use App\Services\CamaraReinicioService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -450,34 +451,13 @@ class CamaraController extends Controller
         ]);
     }
 
-    public function reiniciar($id)
+    public function reiniciar($id, CamaraReinicioService $camaraReinicioService)
     {
-        $camara = Camara::findOrFail($id);
-        $ip = $camara->ip;
+        $camara = Camara::with('tipoCamara')->findOrFail($id);
 
-        if (empty($ip)) {
-            return back()->with('error', 'La cámara no tiene IP cargada.');
-        }
+        $resultado = $camaraReinicioService->reiniciar($camara);
 
-        $user = config('services.camaras.user');
-        $pass = config('services.camaras.pass');
-
-        try {
-            $respuesta = Http::withOptions([
-                'auth'            => [$user, $pass, 'digest'],
-                'timeout'         => 6,
-                'connect_timeout' => 3,
-                'verify'          => false,
-            ])->get("http://{$ip}/cgi-bin/magicBox.cgi?action=reboot");
-
-            if ($respuesta->successful()) {
-                return back()->with('success', 'Cámara reiniciada correctamente.');
-            }
-
-            return back()->with('error', "La cámara respondió HTTP {$respuesta->status()}.");
-        } catch (\Exception $e) {
-            return back()->with('error', 'No se pudo contactar la cámara.');
-        }
+        return back()->with($resultado['ok'] ? 'success' : 'error', $resultado['mensaje']);
     }
 
     public function importExcel(Request $request)

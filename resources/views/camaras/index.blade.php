@@ -256,10 +256,4 @@
     </script>
     @endcan
 
-    {{-- Script para abrir nueva pestaña cuando se reinicia cámara --}}
-    @if(session('open_url'))
-        <script>
-            window.open('{{ session('open_url') }}', '_blank');
-        </script>
-    @endif
 @endsection

@@ -455,16 +455,29 @@ class CamaraController extends Controller
         $camara = Camara::findOrFail($id);
         $ip = $camara->ip;
 
+        if (empty($ip)) {
+            return back()->with('error', 'La cámara no tiene IP cargada.');
+        }
+
         $user = config('services.camaras.user');
         $pass = config('services.camaras.pass');
 
-        $url = "http://{$user}:{$pass}@{$ip}/cgi-bin/magicBox.cgi?action=reboot";
+        try {
+            $respuesta = Http::withOptions([
+                'auth'            => [$user, $pass, 'digest'],
+                'timeout'         => 6,
+                'connect_timeout' => 3,
+                'verify'          => false,
+            ])->get("http://{$ip}/cgi-bin/magicBox.cgi?action=reboot");
 
-        // Retornar con la URL para abrir en nueva pestaña
-        return back()->with([
-            'success' => 'Abriendo pestaña para reiniciar cámara...',
-            'open_url' => $url
-        ]);
+            if ($respuesta->successful()) {
+                return back()->with('success', 'Cámara reiniciada correctamente.');
+            }
+
+            return back()->with('error', "La cámara respondió HTTP {$respuesta->status()}.");
+        } catch (\Exception $e) {
+            return back()->with('error', 'No se pudo contactar la cámara.');
+        }
     }
 
     public function importExcel(Request $request)

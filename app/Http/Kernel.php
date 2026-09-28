@@ -68,5 +68,6 @@ class Kernel extends HttpKernel
         'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
         'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         'master.password' => \App\Http\Middleware\VerifyMasterPassword::class,
+        'track.online' => \App\Http\Middleware\RegistrarUsuarioConectado::class,
     ];
 }

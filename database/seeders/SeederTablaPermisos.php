@@ -27,6 +27,7 @@ class SeederTablaPermisos extends Seeder
             'crear-usuario',
             'editar-usuario',
             'borrar-usuario',
+            'ver-usuarios-conectados',
 
             //tabla terminales
             'ver-terminal',

@@ -39,6 +39,7 @@
         'Administración' => [
             'rol',
             'usuario',
+            'usuarios-conectados',
             'auditoria'
         ],
         'Configuración del Sistema' => [

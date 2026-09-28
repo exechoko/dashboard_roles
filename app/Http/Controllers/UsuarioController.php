@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
+use App\Http\Middleware\RegistrarUsuarioConectado;
 use App\Http\Middleware\VerifyMasterPassword;
 use App\Models\Auditoria;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Arr;
@@ -22,6 +24,7 @@ class UsuarioController extends Controller
         $this->middleware('permission:crear-usuario')->only(['create', 'store']);
         $this->middleware('permission:editar-usuario')->only(['edit', 'update']);
         $this->middleware('permission:borrar-usuario')->only(['destroy']);
+        $this->middleware('permission:ver-usuarios-conectados')->only(['conectados']);
     }
 
     /**
@@ -56,6 +59,30 @@ class UsuarioController extends Controller
             ->get();
 
         return response()->json($usuarios);
+    }
+
+    /**
+     * Panel de usuarios conectados en este momento (últimos
+     * RegistrarUsuarioConectado::MINUTOS_VIGENCIA minutos de actividad).
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function conectados()
+    {
+        $conectados = collect(Cache::get(RegistrarUsuarioConectado::CACHE_KEY, []));
+
+        $usuarios = User::whereIn('id', $conectados->keys())
+            ->get()
+            ->map(function (User $usuario) use ($conectados) {
+                $datos = $conectados->get($usuario->id);
+                $usuario->visto_en = \Illuminate\Support\Carbon::parse($datos['visto_en']);
+                $usuario->ruta_actual = $datos['ruta'];
+                return $usuario;
+            })
+            ->sortByDesc('visto_en')
+            ->values();
+
+        return view('usuarios.conectados', compact('usuarios'));
     }
 
     /**

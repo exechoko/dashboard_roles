@@ -98,7 +98,7 @@ Route::prefix('descargas')->name('descargas.')->group(function () {
     Route::get('/qr/{token}', [DescargaController::class, 'descargarConQr'])->name('qr.descargar');
 });
 
-Route::group(['middleware' => ['auth']], function () {
+Route::group(['middleware' => ['auth', 'track.online']], function () {
     Route::prefix('movil')->name('movil.')->group(function () {
         Route::get('/', [App\Http\Controllers\Movil\InicioController::class, 'index'])->name('index');
 
@@ -231,6 +231,7 @@ Route::group(['middleware' => ['auth']], function () {
 
     Route::resource('roles', RolController::class);
     Route::get('/usuarios/json', [UsuarioController::class, 'json'])->name('usuarios.json');
+    Route::get('/usuarios/conectados', [UsuarioController::class, 'conectados'])->name('usuarios.conectados');
     Route::resource('usuarios', UsuarioController::class);
     Route::resource('blogs', BlogController::class);
     Route::get('/equipos/estadisticas', [App\Http\Controllers\DashboardController::class, 'equipamientoEstadisticas'])

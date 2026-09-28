@@ -475,9 +475,16 @@
         </a>
         <ul class="dropdown-menu">
             @can('ver-usuario')
-                <li class="{{ request()->is('usuarios*') ? 'active' : '' }}">
+                <li class="{{ request()->is('usuarios') || request()->is('usuarios/*') && !request()->is('usuarios/conectados') ? 'active' : '' }}">
                     <a class="nav-link" href="/usuarios">
                         <i class="fas fa-cog"></i><span>Administración</span>
+                    </a>
+                </li>
+            @endcan
+            @can('ver-usuarios-conectados')
+                <li class="{{ request()->is('usuarios/conectados') ? 'active' : '' }}">
+                    <a class="nav-link" href="{{ route('usuarios.conectados') }}">
+                        <i class="fas fa-signal"></i><span>Conectados</span>
                     </a>
                 </li>
             @endcan

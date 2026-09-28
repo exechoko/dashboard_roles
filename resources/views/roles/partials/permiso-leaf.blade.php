@@ -25,6 +25,7 @@
         'escuchar' => 'fas fa-headphones text-info',
         'generar' => 'fas fa-magic text-primary',
         'enviar' => 'fas fa-paper-plane text-primary',
+        'conectados' => 'fas fa-signal text-success',
     ];
 
     $perm = $item['perm'];

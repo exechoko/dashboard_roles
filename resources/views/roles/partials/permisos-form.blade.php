@@ -39,7 +39,6 @@
         'Administración' => [
             'rol',
             'usuario',
-            'usuarios-conectados',
             'auditoria'
         ],
         'Configuración del Sistema' => [
@@ -228,6 +227,13 @@
             substr(\App\Models\PersonalSeccion::permisoVisibilidad($seccion), strlen('ver-')) => $seccion,
         ]);
 
+    // Etiquetas a medida para permisos cuyo nombre no sigue el patrón
+    // acción-módulo (ver `ver-usuarios-conectados` más abajo), para no mostrar
+    // la etiqueta genérica "Conectados - Usuario".
+    $labelOverridesPorPermiso = [
+        'ver-usuarios-conectados' => 'Usuarios conectados',
+    ];
+
     $groupedPermissions = [];
     $assignedPermissionIds = [];
 
@@ -254,6 +260,16 @@
                 }
             }
         }
+    }
+
+    // `ver-usuarios-conectados` no sigue el patrón acción-módulo (ver-usuario,
+    // crear-usuario...) porque no es un CRUD sino una vista extra sobre el
+    // mismo recurso; se inyecta a mano como hoja del módulo 'usuario' para que
+    // aparezca dentro de esa rama en vez de suelto o en "Otros".
+    $permUsuariosConectados = $permission->firstWhere('name', 'ver-usuarios-conectados');
+    if ($permUsuariosConectados && !in_array($permUsuariosConectados->id, $assignedPermissionIds)) {
+        $groupedPermissions['Administración']['usuario']['conectados'][] = $permUsuariosConectados;
+        $assignedPermissionIds[] = $permUsuariosConectados->id;
     }
 
     // Agregar permisos no asignados en "Otros"
@@ -304,9 +320,10 @@
                         $moduleLeaves[] = [
                             'perm' => $perm,
                             'action' => $action,
-                            'label' => $nombreSeccionPorSlug->has($module)
-                                ? $nombreSeccionPorSlug[$module]
-                                : ucfirst($action) . ' - ' . ucfirst(str_replace('-', ' ', $module)),
+                            'label' => $labelOverridesPorPermiso[$perm->name]
+                                ?? ($nombreSeccionPorSlug->has($module)
+                                    ? $nombreSeccionPorSlug[$module]
+                                    : ucfirst($action) . ' - ' . ucfirst(str_replace('-', ' ', $module))),
                         ];
                     }
                 }

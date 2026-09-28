@@ -113,11 +113,13 @@
                                             <th style="color:#fff; width: 12%;">Tabla</th>
                                             <th style="color:#fff; width: 12%;">Item</th>
                                             <th style="color:#fff; width: 10%;">Acción</th>
-                                            <th style="color:#fff; width: 23%;">Cambios</th>
+                                            <th style="color:#fff; width: 20%;">Cambios</th>
+                                            <th style="color:#fff; width: 3%;">Detalle</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @forelse ($auditorias as $auditoria)
+                                            @include('auditoria.modal.detalle')
                                             <tr>
                                                 <td><span class="badge badge-light">{{ $auditoria->id }}</span></td>
                                                 <td>
@@ -216,10 +218,18 @@
                                                         {{ Str::limit($auditoria->cambios, 100) }}
                                                     </small>
                                                 </td>
+                                                <td class="text-center">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                                            data-toggle="modal"
+                                                            data-target="#ModalDetalleAuditoria{{ $auditoria->id }}"
+                                                            title="Ver detalle completo">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                </td>
                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="8" class="text-center text-muted">
+                                                <td colspan="9" class="text-center text-muted">
                                                     <i class="fas fa-inbox fa-3x mb-3"></i><br>
                                                     No se encontraron registros con los filtros aplicados
                                                 </td>

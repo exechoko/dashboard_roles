@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class PersonalSeccion extends Model
 {
@@ -36,6 +37,24 @@ class PersonalSeccion extends Model
     public function personal(): BelongsTo
     {
         return $this->belongsTo(Personal::class)->withTrashed();
+    }
+
+    /**
+     * Nombre del permiso Spatie que habilita ver una sección puntual dentro
+     * del módulo "Personal -> Por Sección". Se genera a partir del nombre de
+     * la sección (viene de `personal911.lugares`, es texto libre) para que
+     * un rol pueda quedar limitado a un subconjunto de secciones en vez de
+     * ver la dotación completa de la División.
+     */
+    public static function permisoVisibilidad(string $seccion): string
+    {
+        // La mayoría de los nombres reales ya arrancan con "Sección ..."
+        // (viene de personal911.lugares); se saca ese prefijo antes de
+        // armar el slug para no terminar con permisos redundantes como
+        // "ver-seccion-seccion-violencia-de-genero".
+        $sinPrefijo = preg_replace('/^secci[oó]n\s+/iu', '', trim($seccion));
+
+        return 'ver-seccion-'.Str::slug($sinPrefijo !== '' ? $sinPrefijo : $seccion);
     }
 
     public function scopeActivos(Builder $query): Builder

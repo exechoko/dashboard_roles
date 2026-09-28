@@ -130,9 +130,15 @@
                                     @php
                                         $p = $r->personal;
                                         $textoCopiar = trim(($p->getNombreCompletoAttribute() ?? '') . ' - ' . ($r->funcion_actual ?? $r->seccion));
+                                        // Mismo criterio que Armería/General: "de licencia" sale de las
+                                        // licencias reales vigentes (personal_licencias), no del flag
+                                        // `en_licencia` del sync (que refleja otra cosa: función neutra
+                                        // vigente en personal911, usado para no perder la sección real).
+                                        $resumenLicencia = $p->resumen_licencia_actual;
                                         $badgeClase = !$r->activo
                                             ? ($r->motivo_baja === \App\Models\PersonalSeccion::MOTIVO_BAJA_POLICIAL ? 'badge-dark' : 'badge-danger')
-                                            : ($r->en_licencia ? 'badge-warning' : 'badge-success');
+                                            : ($resumenLicencia ? 'badge-warning' : 'badge-success');
+                                        $estadoTexto = $r->activo && $resumenLicencia ? 'De licencia' : $r->estadoLabel();
                                         $colorSeccion = $paletaSecciones[crc32((string) $r->seccion) % count($paletaSecciones)];
                                         $esOficial = \App\Models\Personal::pesoJerarquia($p->jerarquia) < 10;
                                     @endphp
@@ -153,7 +159,7 @@
                                         <td>{{ $p->lp }}</td>
                                         <td>{{ $r->funcion_actual ?? '-' }}</td>
                                         <td>
-                                            <span class="badge {{ $badgeClase }}">{{ $r->estadoLabel() }}</span>
+                                            <span class="badge {{ $badgeClase }}" @if($resumenLicencia) title="{{ $resumenLicencia['fecha_inicio']->format('d/m/Y') }} al {{ $resumenLicencia['fecha_fin']->format('d/m/Y') }}" @endif>{{ $estadoTexto }}</span>
                                             @if(!$r->activo && $r->fecha_baja)
                                                 <div class="small text-muted mt-1">desde {{ $r->fecha_baja->format('d/m/Y') }}</div>
                                             @endif

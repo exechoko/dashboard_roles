@@ -7,6 +7,9 @@ use App\Models\PersonalSeccion;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Mantiene `personal_secciones` al día con la sección real de cada
@@ -52,6 +55,8 @@ class PersonalSeccionSyncService
         $mapaFuncionLugar = $this->mapaFuncionLugar();
         $mapaLugares = $this->mapaLugares();
         $hoy = Carbon::today()->toDateString();
+
+        $this->asegurarPermisosDeSeccion($mapaLugares);
 
         $resultado = ['activos' => 0, 'en_licencia' => 0, 'bajas' => 0, 'sin_cambios' => 0];
 
@@ -238,6 +243,43 @@ class PersonalSeccionSyncService
         $registro->save();
 
         return 'bajas';
+    }
+
+    /**
+     * Crea al vuelo el permiso `ver-seccion-*` (ver
+     * `PersonalSeccion::permisoVisibilidad()`) de cualquier sección que
+     * aparezca en `personal911.lugares` y todavía no tenga uno — así una
+     * sección nueva (dada de alta en personal911) queda visualizable sin
+     * tener que correr `SeederPermisosVisibilidadSecciones` a mano. Solo
+     * Administrador y Super Administrador la reciben automáticamente,
+     * mismo criterio que ese seeder; cualquier otro rol la ve recién
+     * cuando un administrador se la asigna manualmente desde Editar Rol.
+     *
+     * @param  array<int, string>  $mapaLugares
+     */
+    private function asegurarPermisosDeSeccion(array $mapaLugares): void
+    {
+        $rolesConAccesoTotal = null;
+        $huboPermisosNuevos = false;
+
+        foreach ($mapaLugares as $seccion) {
+            $permiso = Permission::firstOrCreate([
+                'name' => PersonalSeccion::permisoVisibilidad($seccion),
+                'guard_name' => 'web',
+            ]);
+
+            if (!$permiso->wasRecentlyCreated) {
+                continue;
+            }
+
+            $huboPermisosNuevos = true;
+            $rolesConAccesoTotal ??= Role::whereIn('name', ['Administrador', 'Super Administrador'])->get();
+            $rolesConAccesoTotal->each(fn (Role $rol) => $rol->givePermissionTo($permiso));
+        }
+
+        if ($huboPermisosNuevos) {
+            app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        }
     }
 
     /**

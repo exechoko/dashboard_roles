@@ -109,6 +109,11 @@ class PersonalSeccionesExport implements FromCollection, WithHeadings, WithEvent
             ? Carbon::parse($valor)->format('d/m/Y')
             : '';
 
+        // Mismo criterio que la pantalla y que Armería/General: "de licencia"
+        // sale de las licencias reales vigentes (personal_licencias), no del
+        // flag `en_licencia` del sync (ver PersonalSeccionController).
+        $estado = $r->activo && $p->resumen_licencia_actual ? 'De licencia' : $r->estadoLabel();
+
         return [
             'nro' => $nro,
             'seccion' => $r->seccion,
@@ -117,7 +122,7 @@ class PersonalSeccionesExport implements FromCollection, WithHeadings, WithEvent
             'nombre' => $p->nombre,
             'lp' => $p->lp,
             'funcion' => $r->funcion_actual,
-            'estado' => $r->estadoLabel(),
+            'estado' => $estado,
             'extra' => [
                 'dni' => (string) ($detalle911->Doc_Func ?? $p->dni ?? ''),
                 'sexo' => (string) ($detalle911->Nombre_SexoFunc ?? ''),

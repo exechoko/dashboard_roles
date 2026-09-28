@@ -9,13 +9,71 @@
             <div class="row">
                 <div class="col-lg-12">
                     <div class="card">
+                        <div class="card-header">
+                            <h4>Filtros de búsqueda</h4>
+                            <div class="card-header-action">
+                                <label class="badge badge-dark">Registros: {{ $usuarios->total() }}</label>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <form action="{{ route('usuarios.index') }}" method="get">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label>Búsqueda general</label>
+                                        <input type="text" name="texto" class="form-control"
+                                               placeholder="Nombre, apellido, L.P., DNI o e-mail..."
+                                               value="{{ $texto }}">
+                                    </div>
+
+                                    <div class="col-md-3 mb-3">
+                                        <label>Rol</label>
+                                        <select name="rol" class="form-control">
+                                            <option value="">Todos los roles</option>
+                                            @foreach ($roles as $r)
+                                                <option value="{{ $r }}" {{ $rol == $r ? 'selected' : '' }}>
+                                                    {{ $r }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-2 mb-3">
+                                        <label>Acceso externo</label>
+                                        <select name="acceso_externo" class="form-control">
+                                            <option value="">Todos</option>
+                                            <option value="1" {{ $accesoExterno === '1' ? 'selected' : '' }}>Con acceso</option>
+                                            <option value="0" {{ $accesoExterno === '0' ? 'selected' : '' }}>Sin acceso</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-2 mb-3">
+                                        <label>WebApp</label>
+                                        <select name="acceso_pwa" class="form-control">
+                                            <option value="">Todos</option>
+                                            <option value="1" {{ $accesoPwa === '1' ? 'selected' : '' }}>Con WebApp</option>
+                                            <option value="0" {{ $accesoPwa === '0' ? 'selected' : '' }}>Sin WebApp</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-1 mb-3 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary mr-1" title="Buscar">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <a href="{{ route('usuarios.index') }}" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-times"></i> Limpiar filtros
+                                </a>
+                            </form>
+                        </div>
+
                         <div class="card-body">
                             <div class="">
                                 @can('crear-usuario')
                                     <a class="btn btn-success" href="{{ route('usuarios.create') }}">Nuevo</a>
                                 @endcan
-                                <label class="alert alert-dark mb-0" style="float: right;">Registros:
-                                    {{ $usuarios->total() }}</label>
                             </div>
 
                             <div class="table-responsive">

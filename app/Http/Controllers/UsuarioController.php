@@ -34,15 +34,33 @@ class UsuarioController extends Controller
      */
     public function index(Request $request)
     {
-        //Sin paginación
-        /* $usuarios = User::all();
-        return view('usuarios.index',compact('usuarios')); */
+        $texto = trim((string) $request->get('texto'));
+        $rol = $request->get('rol');
+        $accesoExterno = $request->get('acceso_externo');
+        $accesoPwa = $request->get('acceso_pwa');
 
-        //Con paginación
         $usuarios = User::query()
             ->with('ultimaConstanciaCredencial')
-            ->paginate(100);
-        return view('usuarios.index', compact('usuarios'));
+            ->when($texto !== '', function ($query) use ($texto) {
+                $query->where(function ($query) use ($texto) {
+                    $query->where('name', 'like', "%{$texto}%")
+                        ->orWhere('apellido', 'like', "%{$texto}%")
+                        ->orWhere('lp', 'like', "%{$texto}%")
+                        ->orWhere('dni', 'like', "%{$texto}%")
+                        ->orWhere('email', 'like', "%{$texto}%");
+                });
+            })
+            ->when($rol, fn ($query) => $query->whereHas('roles', fn ($query) => $query->where('name', $rol)))
+            ->when($accesoExterno !== null && $accesoExterno !== '', fn ($query) => $query->where('acceso_externo', $accesoExterno))
+            ->when($accesoPwa !== null && $accesoPwa !== '', fn ($query) => $query->where('acceso_pwa', $accesoPwa))
+            ->orderBy('apellido')
+            ->orderBy('name')
+            ->paginate(100)
+            ->appends($request->query());
+
+        $roles = Role::pluck('name', 'name')->all();
+
+        return view('usuarios.index', compact('usuarios', 'roles', 'texto', 'rol', 'accesoExterno', 'accesoPwa'));
 
         //al usar esta paginacion, recordar poner en el el index.blade.php este codigo  {!! $usuarios->links() !!}
     }

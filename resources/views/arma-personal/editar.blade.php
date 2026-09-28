@@ -52,7 +52,7 @@
                         </div>
                     </div>
 
-                    <form action="{{ route('armas.personal.update', $personal) }}" method="POST">
+                    <form action="{{ route('personal.update', $personal) }}" method="POST">
                         @csrf
                         @method('PUT')
 
@@ -111,7 +111,7 @@
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-save"></i> Guardar corrección
                                 </button>
-                                <a href="{{ route('armas.personal.show', $personal) }}" class="btn btn-secondary">
+                                <a href="{{ route('personal.show', $personal) }}" class="btn btn-secondary">
                                     <i class="fas fa-times"></i> Cancelar
                                 </a>
                             </div>

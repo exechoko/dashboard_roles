@@ -39,10 +39,12 @@ El estado inicial es **En armería** y el sistema calcula los días restantes se
 
 ## Personal e inventario
 
-1. Abrí [Personal de armas](/armas/personal).
+1. Abrí [Personal de armas](/personal).
 2. Buscá por identidad funcional, situación, función, observaciones o licencia.
 3. Filtrá por licencias, estado o tipo.
 4. Abrí el detalle para consultar arma, chaleco, licencias, asignaciones anteriores y retenciones.
+
+El detalle también muestra la foto del funcionario importada desde Personal911 (cuando el archivo existe en el disco compartido del servidor), visible para cualquiera que pueda ver el detalle de personal.
 
 ## Cambiar arma o chaleco
 

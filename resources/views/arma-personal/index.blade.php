@@ -9,7 +9,7 @@
                     <i class="fas fa-question-circle"></i> Ver tutorial
                 </button>
                 @can('sincronizar-personal-secciones')
-                    <form action="{{ route('armas.personal.sincronizar') }}" method="POST" class="d-inline"
+                    <form action="{{ route('personal.sincronizar') }}" method="POST" class="d-inline"
                           onsubmit="return confirm('Esto trae los datos actuales de Personal 911 (personal, funciones, armas, chalecos y licencias). ¿Continuar?');">
                         @csrf
                         <button type="submit" class="btn btn-outline-primary" {{ $minutosParaProximaSync > 0 ? 'disabled' : '' }}>
@@ -62,7 +62,7 @@
 
             <div class="card">
                 <div class="card-body">
-                    <form method="GET" action="{{ route('armas.personal.index') }}" class="mb-3" id="personalGeneralBuscarForm">
+                    <form method="GET" action="{{ route('personal.index') }}" class="mb-3" id="personalGeneralBuscarForm">
                         <div class="row align-items-end">
                             <div class="col-md-4">
                                 <label for="busqueda">Buscar funcionario o licencia</label>
@@ -92,7 +92,7 @@
                                 <button type="submit" class="btn btn-primary mb-1">
                                     <i class="fas fa-search"></i> Buscar
                                 </button>
-                                <a href="{{ route('armas.personal.index') }}" class="btn btn-secondary mb-1">
+                                <a href="{{ route('personal.index') }}" class="btn btn-secondary mb-1">
                                     <i class="fas fa-times"></i> Limpiar
                                 </a>
                             </div>
@@ -100,15 +100,15 @@
                         <div class="row mt-3">
                             <div class="col-12">
                                 <div class="btn-group" role="group" aria-label="Estado del funcionario">
-                                    <a href="{{ route('armas.personal.index', array_merge(request()->except(['ver_eliminados', 'page']), ['ver_eliminados' => 'activos'])) }}"
+                                    <a href="{{ route('personal.index', array_merge(request()->except(['ver_eliminados', 'page']), ['ver_eliminados' => 'activos'])) }}"
                                        class="btn btn-sm {{ $ver_eliminados === 'activos' ? 'btn-primary' : 'btn-outline-primary' }}">
                                         <i class="fas fa-user-check"></i> Activos
                                     </a>
-                                    <a href="{{ route('armas.personal.index', array_merge(request()->except(['ver_eliminados', 'page']), ['ver_eliminados' => 'eliminados'])) }}"
+                                    <a href="{{ route('personal.index', array_merge(request()->except(['ver_eliminados', 'page']), ['ver_eliminados' => 'eliminados'])) }}"
                                        class="btn btn-sm {{ $ver_eliminados === 'eliminados' ? 'btn-danger' : 'btn-outline-danger' }}">
                                         <i class="fas fa-user-slash"></i> Eliminados
                                     </a>
-                                    <a href="{{ route('armas.personal.index', array_merge(request()->except(['ver_eliminados', 'page']), ['ver_eliminados' => 'todos'])) }}"
+                                    <a href="{{ route('personal.index', array_merge(request()->except(['ver_eliminados', 'page']), ['ver_eliminados' => 'todos'])) }}"
                                        class="btn btn-sm {{ $ver_eliminados === 'todos' ? 'btn-secondary' : 'btn-outline-secondary' }}">
                                         <i class="fas fa-users"></i> Todos
                                     </a>
@@ -201,12 +201,12 @@
                                         <td class="text-right">
                                             @if(!$personal->trashed())
                                                 @can('ver-personal')
-                                                    <a href="{{ route('armas.personal.show', $personal) }}" class="btn btn-sm btn-info" title="Ver">
+                                                    <a href="{{ route('personal.show', $personal) }}" class="btn btn-sm btn-info" title="Ver">
                                                         <i class="fas fa-eye"></i>
                                                     </a>
                                                 @endcan
                                                 @can('editar-personal')
-                                                    <a href="{{ route('armas.personal.edit', $personal) }}" class="btn btn-sm btn-primary" title="Corregir arma/chaleco">
+                                                    <a href="{{ route('personal.edit', $personal) }}" class="btn btn-sm btn-primary" title="Corregir arma/chaleco">
                                                         <i class="fas fa-tools"></i>
                                                     </a>
                                                 @endcan

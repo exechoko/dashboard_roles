@@ -5,11 +5,11 @@
         <div class="section-header d-flex justify-content-between align-items-center">
             <h3 class="page__heading">Detalle de Funcionario</h3>
             <div>
-                <a href="{{ route('armas.personal.index') }}" class="btn btn-secondary">
+                <a href="{{ route('personal.index') }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Volver
                 </a>
                 @can('editar-personal')
-                    <a href="{{ route('armas.personal.edit', $personal) }}" class="btn btn-primary">
+                    <a href="{{ route('personal.edit', $personal) }}" class="btn btn-primary">
                         <i class="fas fa-tools"></i> Corregir arma/chaleco
                     </a>
                 @endcan
@@ -31,6 +31,13 @@
                             <h4>Información del Funcionario</h4>
                         </div>
                         <div class="card-body">
+                            @if($personal->tieneFotoPersonal911())
+                                <div class="text-center mb-3">
+                                    <img src="{{ route('personal.foto', $personal) }}"
+                                         alt="Foto de {{ $personal->apellido }}, {{ $personal->nombre }}"
+                                         class="img-thumbnail" style="max-height: 220px;">
+                                </div>
+                            @endif
                             <table class="table table-borderless">
                                 <tr>
                                     <th style="width: 35%">Apellido:</th>
@@ -234,19 +241,19 @@
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h4>Historial de Retenciones</h4>
                             <div class="btn-group btn-group-sm" role="group">
-                                <a href="{{ route('armas.personal.show', ['personal' => $personal]) }}"
+                                <a href="{{ route('personal.show', ['personal' => $personal]) }}"
                                    class="btn {{ !$estadoFiltro ? 'btn-primary' : 'btn-outline-primary' }}">
                                     Todas
                                 </a>
-                                <a href="{{ route('armas.personal.show', ['personal' => $personal, 'estado' => 'EN_ARMERIA']) }}"
+                                <a href="{{ route('personal.show', ['personal' => $personal, 'estado' => 'EN_ARMERIA']) }}"
                                    class="btn {{ $estadoFiltro === 'EN_ARMERIA' ? 'btn-warning' : 'btn-outline-warning' }}">
                                     En Armería
                                 </a>
-                                <a href="{{ route('armas.personal.show', ['personal' => $personal, 'estado' => 'EN_JEF_CENTRAL']) }}"
+                                <a href="{{ route('personal.show', ['personal' => $personal, 'estado' => 'EN_JEF_CENTRAL']) }}"
                                    class="btn {{ $estadoFiltro === 'EN_JEF_CENTRAL' ? 'btn-info' : 'btn-outline-info' }}">
                                     En Jef. Central
                                 </a>
-                                <a href="{{ route('armas.personal.show', ['personal' => $personal, 'estado' => 'DEVUELTA']) }}"
+                                <a href="{{ route('personal.show', ['personal' => $personal, 'estado' => 'DEVUELTA']) }}"
                                    class="btn {{ $estadoFiltro === 'DEVUELTA' ? 'btn-success' : 'btn-outline-success' }}">
                                     Devueltas
                                 </a>

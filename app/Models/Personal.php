@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -62,6 +63,7 @@ class Personal extends Model
         'fecha_situacion_personal911',
         'funcion_personal911',
         'observaciones_personal911',
+        'foto_personal911',
         'direccion',
         'telefono',
         'email',
@@ -103,6 +105,12 @@ class Personal extends Model
     public function indicaLicenciaEnFuncion(): bool
     {
         return Str::contains(Str::lower((string) $this->funcion_personal911), 'licencia');
+    }
+
+    public function tieneFotoPersonal911(): bool
+    {
+        return $this->foto_personal911 !== null
+            && Storage::disk('personal911_fotos')->exists($this->foto_personal911);
     }
 
     public function retenciones(): HasMany

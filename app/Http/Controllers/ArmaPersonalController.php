@@ -12,13 +12,15 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ArmaPersonalController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:ver-personal|editar-personal', ['only' => ['index', 'show']]);
+        $this->middleware('permission:ver-personal|editar-personal', ['only' => ['index', 'show', 'foto']]);
         $this->middleware('permission:editar-personal', ['only' => ['edit', 'update']]);
         $this->middleware('permission:sincronizar-personal-secciones', ['only' => ['sincronizar']]);
     }
@@ -118,7 +120,7 @@ class ArmaPersonalController extends Controller
         $resultado = $seccionSyncService->sincronizarManualmente($importService);
 
         return redirect()
-            ->route('armas.personal.index')
+            ->route('personal.index')
             ->with($resultado['ok'] ? 'success' : 'error', $resultado['mensaje']);
     }
 
@@ -145,6 +147,15 @@ class ArmaPersonalController extends Controller
         return view('arma-personal.show', compact('personal', 'estadoFiltro'));
     }
 
+    public function foto(Personal $personal): BinaryFileResponse
+    {
+        abort_unless($personal->tieneFotoPersonal911(), 404);
+
+        return response()->file(
+            Storage::disk('personal911_fotos')->path($personal->foto_personal911)
+        );
+    }
+
     public function edit(Personal $personal): View
     {
         $armaTipos = ArmaTipo::activos()->orderBy('nombre')->get();
@@ -168,6 +179,6 @@ class ArmaPersonalController extends Controller
             );
         });
 
-        return redirect()->route('armas.personal.index')->with('success', 'Arma/chaleco corregido correctamente.');
+        return redirect()->route('personal.index')->with('success', 'Arma/chaleco corregido correctamente.');
     }
 }

@@ -635,14 +635,6 @@ Route::group(['middleware' => ['auth', 'track.online']], function () {
             ->parameters(['tipos' => 'armaTipo'])
             ->except(['show']);
 
-        // Personal (identidad y alta/baja los maneja el sync diario de personal911;
-        // acá solo se corrige localmente el arma/chaleco cuando personal911 lo tiene mal)
-        Route::get('personal', [ArmaPersonalController::class, 'index'])->name('personal.index');
-        Route::post('personal/sincronizar', [ArmaPersonalController::class, 'sincronizar'])->name('personal.sincronizar');
-        Route::get('personal/{personal}', [ArmaPersonalController::class, 'show'])->name('personal.show');
-        Route::get('personal/{personal}/edit', [ArmaPersonalController::class, 'edit'])->name('personal.edit');
-        Route::put('personal/{personal}', [ArmaPersonalController::class, 'update'])->name('personal.update');
-
         // Armería (armas secundarias y chalecos, movimientos entre División 911 y Jefatura Central)
         Route::prefix('armeria')->name('armeria.')->group(function () {
             Route::prefix('armas')->name('armas.')->group(function () {
@@ -681,6 +673,17 @@ Route::group(['middleware' => ['auth', 'track.online']], function () {
                 Route::delete('{armeriaChaleco}/adjuntos/{adjunto}', [ArmeriaChalecoController::class, 'destroyAdjunto'])->name('adjuntos.destroy');
             });
         });
+    });
+
+    // ── Personal (identidad y alta/baja los maneja el sync diario de personal911;
+    // acá solo se corrige localmente el arma/chaleco cuando personal911 lo tiene mal) ──
+    Route::prefix('personal')->name('personal.')->group(function () {
+        Route::get('/', [ArmaPersonalController::class, 'index'])->name('index');
+        Route::post('sincronizar', [ArmaPersonalController::class, 'sincronizar'])->name('sincronizar');
+        Route::get('{personal}', [ArmaPersonalController::class, 'show'])->name('show');
+        Route::get('{personal}/foto', [ArmaPersonalController::class, 'foto'])->name('foto');
+        Route::get('{personal}/edit', [ArmaPersonalController::class, 'edit'])->name('edit');
+        Route::put('{personal}', [ArmaPersonalController::class, 'update'])->name('update');
     });
 
     // ── Alertas de Video: Dominios y Personas de interés para el sistema de video ──

@@ -241,7 +241,7 @@ $(function () {
         '/cecoco', '/cecoco/analitica', '/cecoco/mapa-calor', '/cecoco/historico-movil',
         '/cecoco/historico-movil-gis', '/cecoco/recursos-alias', '/cecoco/mapa-gis',
         '/cecoco/mapa-gis-historico', '/indexMapaCecocoEnVivo', '/get-eventos',
-        '/transcribir', '/rag', '/armas/retenciones', '/armas/personal',
+        '/transcribir', '/rag', '/armas/retenciones', '/personal',
         '/armas/motivos', '/armas/tipos', '/armas/armeria/armas', '/armas/armeria/chalecos',
         '/incidencias/periodos', '/incidencias/tickets-pg',
         '/web-admin/contadores', '/web-admin/textos', '/noticias',

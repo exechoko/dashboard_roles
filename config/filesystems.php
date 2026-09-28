@@ -55,6 +55,12 @@ return [
             'visibility' => 'private',
         ],
 
+        'personal911_fotos' => [
+            'driver' => 'local',
+            'root' => env('PERSONAL911_FOTOS_PATH', storage_path('app/personal911_fotos')),
+            'visibility' => 'private',
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

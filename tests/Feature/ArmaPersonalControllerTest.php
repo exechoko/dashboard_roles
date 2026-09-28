@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\PersonalSeccionSyncService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
@@ -38,10 +39,10 @@ class ArmaPersonalControllerTest extends TestCase
 
         $personal = $this->crearFuncionario();
 
-        $this->get('/armas/personal/create')->assertNotFound();
-        $this->post('/armas/personal', ['nombre' => 'X'])->assertMethodNotAllowed();
-        $this->delete("/armas/personal/{$personal->id}")->assertMethodNotAllowed();
-        $this->post("/armas/personal/{$personal->id}/restaurar")->assertNotFound();
+        $this->get('/personal/create')->assertNotFound();
+        $this->post('/personal', ['nombre' => 'X'])->assertMethodNotAllowed();
+        $this->delete("/personal/{$personal->id}")->assertMethodNotAllowed();
+        $this->post("/personal/{$personal->id}/restaurar")->assertNotFound();
     }
 
     public function test_update_solo_corrige_arma_y_chaleco_no_datos_de_identidad(): void
@@ -54,7 +55,7 @@ class ArmaPersonalControllerTest extends TestCase
         $jerarquiaOriginal = $personal->jerarquia;
         $tipo = ArmaTipo::query()->activos()->first() ?? ArmaTipo::create(['nombre' => 'Pistola de prueba', 'activo' => true]);
 
-        $response = $this->put("/armas/personal/{$personal->id}", [
+        $response = $this->put("/personal/{$personal->id}", [
             'numeracion_arma' => 'ABC123',
             'arma_tipo_id' => $tipo->id,
             'nro_chaleco' => 'CH-1',
@@ -64,7 +65,7 @@ class ArmaPersonalControllerTest extends TestCase
             'dni' => '99999999',
         ]);
 
-        $response->assertRedirect(route('armas.personal.index'));
+        $response->assertRedirect(route('personal.index'));
 
         $personal->refresh();
         $this->assertSame('ABC123', $personal->numeracion_arma);
@@ -83,7 +84,7 @@ class ArmaPersonalControllerTest extends TestCase
         $personal = $this->crearFuncionario();
         $tipo = ArmaTipo::query()->activos()->first() ?? ArmaTipo::create(['nombre' => 'Pistola de prueba', 'activo' => true]);
 
-        $response = $this->put("/armas/personal/{$personal->id}", [
+        $response = $this->put("/personal/{$personal->id}", [
             'numeracion_arma' => 'ABC123',
             'arma_tipo_id' => $tipo->id,
         ]);
@@ -97,7 +98,7 @@ class ArmaPersonalControllerTest extends TestCase
         $user->givePermissionTo(Permission::findOrCreate('ver-personal', 'web'));
         $this->actingAs($user);
 
-        $response = $this->get('/armas/personal');
+        $response = $this->get('/personal');
 
         $response->assertOk();
         $response->assertDontSee('Nuevo Funcionario');
@@ -109,7 +110,7 @@ class ArmaPersonalControllerTest extends TestCase
         $user->givePermissionTo(Permission::findOrCreate('ver-personal', 'web'));
         $this->actingAs($user);
 
-        $response = $this->get('/armas/personal');
+        $response = $this->get('/personal');
 
         $response->assertOk();
         $response->assertDontSee('Actualizar desde Personal 911');
@@ -121,7 +122,43 @@ class ArmaPersonalControllerTest extends TestCase
         $user->givePermissionTo(Permission::findOrCreate('ver-personal', 'web'));
         $this->actingAs($user);
 
-        $this->post('/armas/personal/sincronizar')->assertForbidden();
+        $this->post('/personal/sincronizar')->assertForbidden();
+    }
+
+    public function test_foto_requiere_algun_permiso_de_personal(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        $personal = $this->crearFuncionario();
+
+        $this->get("/personal/{$personal->id}/foto")->assertForbidden();
+    }
+
+    public function test_foto_devuelve_404_si_no_hay_archivo_importado(): void
+    {
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::findOrCreate('ver-personal', 'web'));
+        $this->actingAs($user);
+
+        $personal = $this->crearFuncionario();
+
+        $this->get("/personal/{$personal->id}/foto")->assertNotFound();
+    }
+
+    public function test_foto_sirve_el_archivo_a_cualquiera_que_vea_personal(): void
+    {
+        Storage::fake('personal911_fotos');
+        Storage::disk('personal911_fotos')->put('123_456.jpeg', 'contenido-de-prueba');
+
+        $user = User::factory()->create();
+        $user->givePermissionTo(Permission::findOrCreate('ver-personal', 'web'));
+        $this->actingAs($user);
+
+        $personal = $this->crearFuncionario();
+        $personal->update(['foto_personal911' => '123_456.jpeg']);
+
+        $this->get("/personal/{$personal->id}/foto")->assertOk();
     }
 
     public function test_sincronizar_respeta_el_throttle_sin_tocar_personal911(): void
@@ -132,9 +169,9 @@ class ArmaPersonalControllerTest extends TestCase
         $user->givePermissionTo(Permission::findOrCreate('sincronizar-personal-secciones', 'web'));
         $this->actingAs($user);
 
-        $response = $this->post('/armas/personal/sincronizar');
+        $response = $this->post('/personal/sincronizar');
 
-        $response->assertRedirect(route('armas.personal.index'));
+        $response->assertRedirect(route('personal.index'));
         $response->assertSessionHas('error');
         $this->assertStringContainsString('Ya se sincronizó hace poco', session('error'));
     }

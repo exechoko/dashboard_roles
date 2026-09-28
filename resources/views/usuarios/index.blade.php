@@ -74,6 +74,9 @@
                                 @can('crear-usuario')
                                     <a class="btn btn-success" href="{{ route('usuarios.create') }}">Nuevo</a>
                                 @endcan
+                                <a class="btn btn-outline-success" href="{{ route('usuarios.exportar-excel', request()->query()) }}" title="Exportar a Excel">
+                                    <i class="fas fa-file-excel"></i> Excel
+                                </a>
                             </div>
 
                             <div class="table-responsive">

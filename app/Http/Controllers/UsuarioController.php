@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
+use App\Exports\UsuariosExport;
 use App\Http\Middleware\RegistrarUsuarioConectado;
 use App\Http\Middleware\VerifyMasterPassword;
 use App\Models\Auditoria;
 use App\Models\User;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -20,7 +22,7 @@ class UsuarioController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:ver-usuario')->only(['index', 'show']);
+        $this->middleware('permission:ver-usuario')->only(['index', 'show', 'exportarExcel']);
         $this->middleware('permission:crear-usuario')->only(['create', 'store']);
         $this->middleware('permission:editar-usuario')->only(['edit', 'update']);
         $this->middleware('permission:borrar-usuario')->only(['destroy']);
@@ -63,6 +65,24 @@ class UsuarioController extends Controller
         return view('usuarios.index', compact('usuarios', 'roles', 'texto', 'rol', 'accesoExterno', 'accesoPwa'));
 
         //al usar esta paginacion, recordar poner en el el index.blade.php este codigo  {!! $usuarios->links() !!}
+    }
+
+    /**
+     * Exporta a Excel el listado de usuarios, respetando los mismos filtros
+     * aplicados en el index.
+     *
+     * @return \Symfony\Component\HttpFoundation\BinaryFileResponse
+     */
+    public function exportarExcel(Request $request)
+    {
+        $export = new UsuariosExport(
+            $request->get('texto'),
+            $request->get('rol'),
+            $request->get('acceso_externo'),
+            $request->get('acceso_pwa'),
+        );
+
+        return Excel::download($export, 'ListadoUsuarios_' . now()->format('Y-m-d_His') . '.xlsx');
     }
 
     /**

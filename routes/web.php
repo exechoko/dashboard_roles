@@ -232,6 +232,7 @@ Route::group(['middleware' => ['auth', 'track.online']], function () {
     Route::resource('roles', RolController::class);
     Route::get('/usuarios/json', [UsuarioController::class, 'json'])->name('usuarios.json');
     Route::get('/usuarios/conectados', [UsuarioController::class, 'conectados'])->name('usuarios.conectados');
+    Route::get('/usuarios/exportar/excel', [UsuarioController::class, 'exportarExcel'])->name('usuarios.exportar-excel');
     Route::resource('usuarios', UsuarioController::class);
     Route::resource('blogs', BlogController::class);
     Route::get('/equipos/estadisticas', [App\Http\Controllers\DashboardController::class, 'equipamientoEstadisticas'])

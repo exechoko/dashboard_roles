@@ -17,6 +17,13 @@
                         </div>
 
                         <div class="card-body">
+                            @if($sinFiltros)
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    Mostrando solo los últimos 7 días para no cargar todo el historial.
+                                    Ajustá el rango de fechas o aplicá otro filtro para buscar en registros más viejos.
+                                </div>
+                            @endif
                             <form action="{{ route('auditoria.index') }}" method="get" onsubmit="return showLoad()">
                                 <div class="row">
                                     <!-- Búsqueda general -->

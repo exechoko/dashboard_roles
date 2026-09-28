@@ -15,12 +15,22 @@ class AuditoriaController extends Controller
 
     public function index(Request $request)
     {
-        $texto = trim($request->get('texto'));
+        $texto = trim((string) $request->get('texto'));
         $tabla = $request->get('tabla');
         $accion = $request->get('accion');
         $usuario = $request->get('usuario');
         $fecha_desde = $request->get('fecha_desde');
         $fecha_hasta = $request->get('fecha_hasta');
+
+        // Si se entra a la pantalla sin ningún filtro, no traemos todo el
+        // historial (la tabla tiene cientos de miles de registros): se acota
+        // por defecto a los últimos 7 días. El usuario puede ampliar el rango
+        // de fechas manualmente si necesita ver historial más viejo.
+        $sinFiltros = $texto === '' && !$tabla && !$accion && !$usuario && !$fecha_desde && !$fecha_hasta;
+
+        if ($sinFiltros) {
+            $fecha_desde = now()->subDays(7)->toDateString();
+        }
 
         // Query base
         $query = Auditoria::query();
@@ -86,7 +96,8 @@ class AuditoriaController extends Controller
             'fecha_hasta',
             'tablas',
             'acciones',
-            'usuarios'
+            'usuarios',
+            'sinFiltros'
         ));
     }
 

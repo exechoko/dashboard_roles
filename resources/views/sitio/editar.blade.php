@@ -63,15 +63,16 @@
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
-                                            <label for="destino_id">Dependencia <span class="text-danger">*</span></label>
-                                            <select name="destino_id" class="form-control select2" required>
-                                                <option value="">Seleccionar la dependencia</option>
-                                                @foreach ($dependencias as $d)
-                                                    <option value="{{ $d->id }}" {{ old('destino_id', $sitio->destino_id) == $d->id ? 'selected' : '' }}>
-                                                        {{ $d->nombre . ' - ' . $d->dependeDe() }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                            <x-combobox-ajax
+                                                id="destino_id"
+                                                name="destino_id"
+                                                label="Dependencia"
+                                                :url="route('opciones.sitios', 'destinos')"
+                                                placeholder="Buscar dependencia…"
+                                                :selected-items="$dependenciaSeleccionada"
+                                                :required="true"
+                                                :min-chars="0"
+                                            />
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6">

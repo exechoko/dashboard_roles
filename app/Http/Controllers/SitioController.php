@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Exports\SitiosExport;
 use App\Http\Requests\SitioRequest;
-use App\Models\Destino;
 use App\Models\Sitio;
+use App\Services\OpcionesComboboxService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
@@ -55,7 +55,6 @@ class SitioController extends Controller
      */
     public function create()
     {
-        $dependencias = Destino::all();
         $localidades = [
             'Paraná',
             'Colonia Avellaneda',
@@ -68,7 +67,7 @@ class SitioController extends Controller
         ];
         $energizadoPor = Sitio::ENERGIZADO_POR;
 
-        return view('sitio.crear', compact('dependencias', 'localidades', 'con_carteles', 'energizadoPor'));
+        return view('sitio.crear', compact('localidades', 'con_carteles', 'energizadoPor'));
     }
 
     /**
@@ -121,10 +120,10 @@ class SitioController extends Controller
      * @param  \App\Models\Sitio  $sitio
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit($id, OpcionesComboboxService $opciones)
     {
         $sitio = Sitio::find($id);
-        $dependencias = Destino::all();
+        $dependenciaSeleccionada = $opciones->seleccionados('destinos', [old('destino_id', $sitio->destino_id)]);
         $localidades = [
             'Paraná',
             'Colonia Avellaneda',
@@ -137,7 +136,7 @@ class SitioController extends Controller
         ];
         $energizadoPor = Sitio::ENERGIZADO_POR;
 
-        return view('sitio.editar', compact('dependencias', 'localidades', 'sitio', 'con_carteles', 'energizadoPor'));
+        return view('sitio.editar', compact('localidades', 'sitio', 'dependenciaSeleccionada', 'con_carteles', 'energizadoPor'));
     }
 
     /**

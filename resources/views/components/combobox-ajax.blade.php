@@ -7,7 +7,7 @@
         name        (string)  requerido — name del hidden input (lo que se envía al form)
         url         (string)  requerido — endpoint AJAX
         method      (string)  default 'GET' — método HTTP: 'GET' o 'POST'
-        display     (string)  default 'nombre'  — campo a mostrar en la lista (soporta "{id} - {nombre}")
+        display     (string)  default 'label'   — campo a mostrar en la lista (soporta "{id} - {nombre}")
         valueField  (string)  default 'id'      — campo a guardar en el hidden input
         placeholder (string)  default 'Buscar…'
         perPage     (int)     default 15
@@ -19,7 +19,7 @@
         required    (bool)    default false
         extraParams (array)   parámetros extra enviados en cada request
         multiple    (bool)    default false — permite varias selecciones (chips + un hidden name[] por ítem)
-        selectedItems (array) valores iniciales en modo multiple: [['id'=>1,'text'=>'Texto'], ...]
+        selectedItems (array) valores iniciales [['id'=>1,'text'=>'Texto'], ...]; en modo simple se usa el primero
 
     Respuesta esperada del servidor (compatible con ->paginate() de Laravel):
         { "data": [...], "current_page": 1, "last_page": 5, "total": 72, "per_page": 15 }
@@ -30,12 +30,13 @@
             id="cliente_id"
             name="cliente_id"
             url="{{ route('clientes.search') }}"
-            display="nombre"
             value-field="id"
             placeholder="Buscar cliente…"
             :per-page="20"
             label="Cliente"
         />
+
+    Los atributos class y style se aplican al contenedor.
 
     Eventos / API JS:
         $('#cliente_id_wrap').on('combobox:select', function(e, item) { ... });
@@ -48,7 +49,7 @@
     'name',
     'url',
     'method'      => 'GET',
-    'display'     => 'nombre',
+    'display'     => 'label',
     'valueField'  => 'id',
     'placeholder' => 'Buscar…',
     'perPage'     => 15,
@@ -64,10 +65,10 @@
 ])
 
 @php
-    $resolvedValueField = $attributes->get('value-field')
-        ?? $attributes->get('valueField')
-        ?? $valueField
-        ?? 'id';
+    if (! $multiple && ! empty($selectedItems)) {
+        $selected = $selectedItems[0]['id'];
+        $selectedText = $selectedItems[0]['text'];
+    }
 @endphp
 
 @once
@@ -272,7 +273,6 @@
     border-color: var(--input-border, rgba(0,229,255,.28));
 }
 </style>
-</style>
 @endonce
 
 @if($label)
@@ -281,7 +281,7 @@
 </label>
 @endif
 
-<div class="cb-ajax-wrap" id="{{ $id }}_wrap">
+<div {{ $attributes->only('class', 'style')->merge(['class' => 'cb-ajax-wrap', 'id' => $id . '_wrap']) }}>
 
     <div class="cb-ajax-field @unless($multiple) cb-clearable @endunless">
         <input
@@ -379,11 +379,10 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
 
         self.url         = config.url;
         self.method      = (config.method || 'GET').toUpperCase();
-        self.displayTpl  = config.display    || 'nombre';
-        self.display     = self.displayTpl;
-        self.valueField  = config.valueField || 'id';
-        self.perPage     = (config.perPage !== undefined && config.perPage !== null) ? config.perPage : 15;
-        self.minChars    = (config.minChars !== undefined && config.minChars !== null) ? config.minChars : 3;
+        self.displayTpl  = config.display;
+        self.valueField  = config.valueField;
+        self.perPage     = config.perPage;
+        self.minChars    = config.minChars;
 
         self.currentPage   = 1;
         self.lastPage      = 1;
@@ -393,6 +392,7 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
         self.focusedIndex  = -1;
         self.isLoading     = false;
         self.extraParams   = {};
+        self.isOpen        = false;
 
         self._bindEvents();
         self._bindScroll();
@@ -403,37 +403,33 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
         var self = this;
 
         self.textInput.on('keydown', function(e) {
-            if (keyIs(e, ['ArrowDown'], [40]) && self.dropdown.is(':visible')) {
+            if (keyIs(e, ['ArrowDown'], [40]) && self.isOpen) {
                 e.preventDefault();
                 e.stopPropagation();
                 self._moveFocus(1);
                 return;
             }
 
-            if (keyIs(e, ['ArrowUp'], [38]) && self.dropdown.is(':visible')) {
+            if (keyIs(e, ['ArrowUp'], [38]) && self.isOpen) {
                 e.preventDefault();
                 e.stopPropagation();
                 self._moveFocus(-1);
                 return;
             }
 
-            if (keyIs(e, ['Enter'], [13]) && self.dropdown.is(':visible')) {
+            if (keyIs(e, ['Enter'], [13]) && self.isOpen) {
                 e.preventDefault();
                 e.stopPropagation();
                 self._selectFocused();
                 return;
             }
 
-            if (keyIs(e, ['Escape', 'Esc'], [27]) && self.dropdown.is(':visible')) {
+            if (keyIs(e, ['Escape', 'Esc'], [27]) && self.isOpen) {
                 e.preventDefault();
                 e.stopPropagation();
                 self.closeDropdown();
                 return;
             }
-        });
-
-        self.textInput.on('input', function() {
-            self._syncClear();
         });
 
         self.clearBtn.on('click', function(e) {
@@ -443,14 +439,16 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
             self.textInput.focus();
         });
 
-        self.textInput.on('keyup', function(e) {
-            if (keyIs(e, ['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'Esc', 'Tab'], [40, 38, 13, 27, 9])) { return; }
+        self.textInput.on('input', function() {
+            self._syncClear();
 
             if (!self.multiple && self.hidden.val() !== '') {
                 self.hidden.val('').trigger('change');
             }
 
             var val = self.textInput.val().trim();
+            if (val === self.currentSearch) { return; }
+
             self.currentSearch = val;
             self.currentPage   = 1;
             self.focusedIndex  = -1;
@@ -471,7 +469,7 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
 
         self.openBtn.on('click', function(e) {
             e.stopPropagation();
-            if (self.dropdown.is(':visible')) {
+            if (self.isOpen) {
                 self.closeDropdown();
             } else {
                 self.currentSearch = '';
@@ -479,6 +477,11 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
                 self._fetch();
                 self.textInput.focus();
             }
+        });
+
+        self.list.on('mousedown', '.cb-ajax-item', function(e) {
+            e.preventDefault();
+            self._select($(this).data('item'));
         });
 
         self.chips.on('click', '.cb-ajax-chip-remove', function(e) {
@@ -499,13 +502,6 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
             if (self.currentPage < self.lastPage) {
                 self.currentPage++;
                 self._fetch();
-            }
-        });
-
-        $(document).on('click.cb-ajax-' + self.wrap.attr('id'), function(e) {
-            if (!self.wrap.is(e.target) && self.wrap.has(e.target).length === 0
-                && !self.dropdown.is(e.target) && self.dropdown.has(e.target).length === 0) {
-                self.closeDropdown();
             }
         });
     };
@@ -619,19 +615,14 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
             return;
         }
 
-        $.each(items, function(i, item) {
-            var li = $('<li class="cb-ajax-item">')
-                .toggleClass('cb-selected', self.multiple && self._hasValue(item[self.valueField]))
+        var elegidos = self.multiple ? self._chipValues() : [];
+        var filas = $.map(items, function(item) {
+            return $('<li class="cb-ajax-item">')
+                .toggleClass('cb-selected', elegidos.indexOf(String(item[self.valueField])) !== -1)
                 .text(self._label(item))
-                .data('item', item);
-
-            li.on('mousedown', function(e) {
-                e.preventDefault();
-                self._select($(this).data('item'));
-            });
-
-            self.list.append(li);
+                .data('item', item)[0];
         });
+        self.list.append(filas);
 
         if (lastPage > 1) {
             self._showPagination(currentPage, lastPage, total);
@@ -742,6 +733,10 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
 
     ComboboxAjaxInstance.prototype.openDropdown = function() {
         var self = this;
+        if (self.isOpen) { return; }
+        if (ComboboxAjax.abierto) {
+            ComboboxAjax.abierto.closeDropdown();
+        }
         var rect = self.wrap[0].getBoundingClientRect();
         var scrollTop  = window.pageYOffset || document.documentElement.scrollTop;
         var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
@@ -758,10 +753,13 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
             .show();
 
         self.openBtn.find('i').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+        self.isOpen = true;
+        ComboboxAjax.abierto = self;
     };
 
     ComboboxAjaxInstance.prototype.closeDropdown = function() {
         var self = this;
+        if (!self.isOpen) { return; }
         self.dropdown
             .hide()
             .detach()
@@ -770,6 +768,10 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
             .appendTo(self.wrap);
 
         self.openBtn.find('i').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+        self.isOpen = false;
+        if (ComboboxAjax.abierto === self) {
+            ComboboxAjax.abierto = null;
+        }
     };
 
     ComboboxAjaxInstance.prototype._chipValues = function() {
@@ -805,6 +807,7 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
 
     ComboboxAjaxInstance.prototype.clear = function() {
         this.textInput.val('');
+        this.currentSearch = '';
         this._syncClear();
         if (this.hidden.length && this.hidden.val() !== '') {
             this.hidden.val('').trigger('change');
@@ -835,6 +838,13 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
         }
     };
 
+    $(document).on('click.cb-ajax', function(e) {
+        var abierto = ComboboxAjax.abierto;
+        if (abierto && !$(e.target).closest(abierto.wrap).length && !$(e.target).closest(abierto.dropdown).length) {
+            abierto.closeDropdown();
+        }
+    });
+
     window.ComboboxAjax.Instance = ComboboxAjaxInstance;
 
 })(jQuery);
@@ -851,7 +861,7 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
         name:       @json($name),
         multiple:   @json((bool) $multiple),
         display:    @json($display),
-        valueField: @json($resolvedValueField),
+        valueField: @json($valueField),
         perPage:    @json((int) $perPage),
         minChars:   @json((int) $minChars),
     });

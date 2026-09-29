@@ -35,6 +35,7 @@ class PersonalController extends Controller
                 });
             })
             ->with('licencias')
+            ->ordenadoPorJerarquia()
             ->orderBy('apellido')
             ->orderBy('nombre')
             ->paginate(20)

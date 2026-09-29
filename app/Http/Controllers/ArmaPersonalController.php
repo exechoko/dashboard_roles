@@ -82,6 +82,7 @@ class ArmaPersonalController extends Controller
 
         $personales = $query
             ->with('licencias')
+            ->ordenadoPorJerarquia()
             ->orderBy('apellido')
             ->orderBy('nombre')
             ->paginate(15)

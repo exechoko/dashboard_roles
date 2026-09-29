@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\ArmaTipo;
 use App\Models\ArmasAnterior;
 use App\Models\ArmaRetencion;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -45,6 +46,26 @@ class Personal extends Model
         $indice = array_search(trim((string) $jerarquia), self::JERARQUIAS_ORDEN, true);
 
         return $indice === false ? count(self::JERARQUIAS_ORDEN) + 1 : $indice;
+    }
+
+    /**
+     * Ordena en SQL por escalafón (mismo orden que pesoJerarquia()), para
+     * listados paginados. Las jerarquías desconocidas van al final.
+     */
+    public function scopeOrdenadoPorJerarquia(Builder $query): Builder
+    {
+        $casos = '';
+        $bindings = [];
+
+        foreach (self::JERARQUIAS_ORDEN as $indice => $jerarquia) {
+            $casos .= ' WHEN ? THEN '.$indice;
+            $bindings[] = $jerarquia;
+        }
+
+        return $query->orderByRaw(
+            'CASE TRIM(jerarquia)'.$casos.' ELSE '.(count(self::JERARQUIAS_ORDEN) + 1).' END',
+            $bindings
+        );
     }
 
     public function getPesoJerarquiaAttribute(): int

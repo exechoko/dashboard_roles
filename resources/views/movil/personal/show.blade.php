@@ -7,11 +7,26 @@
     @php($resumenLicencia = $personal->resumen_licencia_actual)
 
     <div class="m-detail">
-        <div class="m-card__title" style="margin-bottom:.6rem;">
-            {{ $personal->apellido }}, {{ $personal->nombre }}
-            @if ($personal->situacion_personal911)
-                <span class="m-chip">{{ $personal->situacion_personal911 }}</span>
+        <div class="m-personal-card" style="margin-bottom:.6rem;">
+            @if ($personal->tieneFotoPersonal911())
+                <button type="button" class="m-personal-thumb"
+                    data-modal-tpl="personal-foto-{{ $personal->id }}"
+                    data-modal-title="{{ $personal->jerarquia }} {{ $personal->apellido }}, {{ $personal->nombre }}"
+                    aria-label="Ver foto de {{ $personal->apellido }}, {{ $personal->nombre }}">
+                    <img src="{{ route('personal.foto', $personal) }}" alt="">
+                </button>
+                <template id="personal-foto-{{ $personal->id }}">
+                    <img src="{{ route('personal.foto', $personal) }}"
+                        alt="Foto de {{ $personal->apellido }}, {{ $personal->nombre }}"
+                        class="m-personal-foto-grande">
+                </template>
             @endif
+            <div class="m-card__title">
+                {{ $personal->apellido }}, {{ $personal->nombre }}
+                @if ($personal->situacion_personal911)
+                    <span class="m-chip">{{ $personal->situacion_personal911 }}</span>
+                @endif
+            </div>
         </div>
 
         <dl style="margin:0;">
@@ -88,4 +103,5 @@
             @endforeach
         </div>
     @endif
+    @include('movil.partials.modal')
 @endsection

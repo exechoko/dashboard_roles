@@ -39,21 +39,39 @@
         <div class="m-list">
             @foreach ($personales as $personal)
                 @php($deLicencia = $personal->resumen_licencia_actual)
-                <a href="{{ route('movil.personal.show', $personal) }}" class="m-card">
-                    <div class="m-card__title">{{ $personal->apellido }}, {{ $personal->nombre }}</div>
-                    <div class="m-card__subtitle"><i class="fas fa-id-badge"></i> LP {{ $personal->lp }} · {{ $personal->jerarquia }}</div>
-                    <div class="m-card__meta">
-                        @if ($personal->situacion_personal911)
-                            <span class="m-chip">{{ $personal->situacion_personal911 }}</span>
-                        @endif
-                        @if ($deLicencia)
-                            <span class="m-chip" style="background-color: var(--m-warning); color:#fff;">De licencia</span>
-                        @endif
-                        @if ($personal->numeracion_arma)
-                            <span class="m-chip"><i class="fas fa-crosshairs"></i> {{ $personal->numeracion_arma }}</span>
-                        @endif
-                    </div>
-                </a>
+                <div class="m-card m-personal-card">
+                    @if ($personal->tieneFotoPersonal911())
+                        <button type="button" class="m-personal-thumb"
+                            data-modal-tpl="personal-foto-{{ $personal->id }}"
+                            data-modal-title="{{ $personal->jerarquia }} {{ $personal->apellido }}, {{ $personal->nombre }}"
+                            aria-label="Ver foto de {{ $personal->apellido }}, {{ $personal->nombre }}">
+                            <img src="{{ route('personal.foto', $personal) }}" alt="" loading="lazy">
+                        </button>
+                        <template id="personal-foto-{{ $personal->id }}">
+                            <img src="{{ route('personal.foto', $personal) }}"
+                                alt="Foto de {{ $personal->apellido }}, {{ $personal->nombre }}"
+                                class="m-personal-foto-grande">
+                            <div class="m-modal__meta" style="margin:.8rem 0 0;text-align:center;">LP {{ $personal->lp }}</div>
+                        </template>
+                    @else
+                        <span class="m-personal-thumb m-personal-thumb--vacio"><i class="fas fa-user"></i></span>
+                    @endif
+                    <a href="{{ route('movil.personal.show', $personal) }}" class="m-personal-info">
+                        <div class="m-card__title">{{ $personal->apellido }}, {{ $personal->nombre }}</div>
+                        <div class="m-card__subtitle"><i class="fas fa-id-badge"></i> LP {{ $personal->lp }} · {{ $personal->jerarquia }}</div>
+                        <div class="m-card__meta">
+                            @if ($personal->situacion_personal911)
+                                <span class="m-chip">{{ $personal->situacion_personal911 }}</span>
+                            @endif
+                            @if ($deLicencia)
+                                <span class="m-chip" style="background-color: var(--m-warning); color:#fff;">De licencia</span>
+                            @endif
+                            @if ($personal->numeracion_arma)
+                                <span class="m-chip"><i class="fas fa-crosshairs"></i> {{ $personal->numeracion_arma }}</span>
+                            @endif
+                        </div>
+                    </a>
+                </div>
             @endforeach
         </div>
 
@@ -61,4 +79,5 @@
             {{ $personales->links() }}
         </div>
     @endif
+    @include('movil.partials.modal')
 @endsection

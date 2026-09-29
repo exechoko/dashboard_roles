@@ -54,11 +54,10 @@
                                                 id="tipo_terminal_id"
                                                 name="tipo_terminal_id"
                                                 label="Tipo de terminal"
-                                                :url="route('flota.busquedaAvanzada.opciones', 'tipos-terminal')"
-                                                display="label"
+                                                :url="route('opciones.flota', 'tipos-terminal')"
                                                 placeholder="Buscar tipo de terminal…"
                                                 :multiple="true"
-                                                :selected-items="$seleccionados['tipos-terminal']"
+                                                :selected-items="$seleccionados['tipo_terminal_id']"
                                                 :min-chars="0"
                                             />
                                         </div>
@@ -69,11 +68,10 @@
                                                 id="equipo_id"
                                                 name="equipo_id"
                                                 label="Equipo"
-                                                :url="route('flota.busquedaAvanzada.equipos')"
-                                                display="label"
+                                                :url="route('opciones.flota', 'equipos')"
                                                 placeholder="Buscar por TEI, ISSI, marca o modelo…"
                                                 :multiple="true"
-                                                :selected-items="$equiposSeleccionados"
+                                                :selected-items="$seleccionados['equipo_id']"
                                                 :min-chars="2"
                                             />
                                         </div>
@@ -84,11 +82,10 @@
                                                 id="recurso_id"
                                                 name="recurso_id"
                                                 label="Recurso"
-                                                :url="route('flota.busquedaAvanzada.opciones', 'recursos')"
-                                                display="label"
+                                                :url="route('opciones.flota', 'recursos')"
                                                 placeholder="Buscar recurso…"
                                                 :multiple="true"
-                                                :selected-items="$seleccionados['recursos']"
+                                                :selected-items="$seleccionados['recurso_id']"
                                                 :min-chars="0"
                                             />
                                         </div>
@@ -102,8 +99,7 @@
                                                 id="destino_actual_id"
                                                 name="destino_actual_id"
                                                 label="Dependencia Actual"
-                                                :url="route('flota.busquedaAvanzada.opciones', 'destinos')"
-                                                display="label"
+                                                :url="route('opciones.flota', 'destinos')"
                                                 placeholder="Buscar dependencia…"
                                                 :multiple="true"
                                                 :selected-items="$seleccionados['destino_actual_id']"
@@ -117,8 +113,7 @@
                                                 id="destino_id"
                                                 name="destino_id"
                                                 label="Dependencia Patrimonial"
-                                                :url="route('flota.busquedaAvanzada.opciones', 'destinos')"
-                                                display="label"
+                                                :url="route('opciones.flota', 'destinos')"
                                                 placeholder="Buscar dependencia…"
                                                 :multiple="true"
                                                 :selected-items="$seleccionados['destino_id']"
@@ -132,11 +127,10 @@
                                                 id="estado_id"
                                                 name="estado_id"
                                                 label="Estado"
-                                                :url="route('flota.busquedaAvanzada.opciones', 'estados')"
-                                                display="label"
+                                                :url="route('opciones.flota', 'estados')"
                                                 placeholder="Buscar estado…"
                                                 :multiple="true"
-                                                :selected-items="$seleccionados['estados']"
+                                                :selected-items="$seleccionados['estado_id']"
                                                 :min-chars="0"
                                             />
                                         </div>
@@ -150,11 +144,10 @@
                                                 id="tipo_movimiento_id"
                                                 name="tipo_movimiento_id"
                                                 label="Tipo de movimiento"
-                                                :url="route('flota.busquedaAvanzada.opciones', 'tipos-movimiento')"
-                                                display="label"
+                                                :url="route('opciones.flota', 'tipos-movimiento')"
                                                 placeholder="Buscar tipo de movimiento…"
                                                 :multiple="true"
-                                                :selected-items="$seleccionados['tipos-movimiento']"
+                                                :selected-items="$seleccionados['tipo_movimiento_id']"
                                                 :min-chars="0"
                                             />
                                         </div>
@@ -189,11 +182,9 @@
                                                 id="estado_patrimonial"
                                                 name="estado_patrimonial"
                                                 label="Patrimonio"
-                                                :url="route('flota.busquedaAvanzada.opciones', 'patrimonio')"
-                                                display="label"
+                                                :url="route('opciones.flota', 'patrimonio')"
                                                 placeholder="Cualquier estado"
-                                                :selected="$seleccionados['patrimonio'][0]['id'] ?? ''"
-                                                :selected-text="$seleccionados['patrimonio'][0]['text'] ?? ''"
+                                                :selected-items="$seleccionados['estado_patrimonial']"
                                                 :min-chars="0"
                                             />
                                         </div>

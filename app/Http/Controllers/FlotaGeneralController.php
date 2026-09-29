@@ -10,10 +10,9 @@ use App\Models\FlotaGeneral;
 use App\Models\Recurso;
 use App\Models\Historico;
 use App\Models\TipoMovimiento;
-use App\Models\TipoTerminal;
 use App\Models\Vehiculo;
+use App\Services\OpcionesComboboxService;
 use App\Services\PatrimonioService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -35,8 +34,6 @@ class FlotaGeneralController extends Controller
         $this->middleware('permission:ver-flota|crear-flota|editar-flota|borrar-flota')->only([
             'index',
             'busquedaAvanzada',
-            'buscarEquiposJSON',
-            'buscarOpcionesFiltroJSON',
             'exportExcelBusquedaAvanzada',
         ]);
         $this->middleware('permission:crear-flota', ['only' => ['create', 'store']]);
@@ -72,12 +69,10 @@ class FlotaGeneralController extends Controller
         return view('flota.index', compact('flota', 'texto'));
     }
 
-    public function busquedaAvanzada(Request $request)
+    public function busquedaAvanzada(Request $request, OpcionesComboboxService $opciones)
     {
         //dd($request->all());
         // Obtener datos para los dropdowns (solo estos se cargan siempre)
-        $equiposSeleccionados = $this->equiposSeleccionadosParaCombobox((array) $request->input('equipo_id', []));
-
 
         // Inicializar variables
         $flota = collect(); // Colección vacía por defecto
@@ -113,197 +108,30 @@ class FlotaGeneralController extends Controller
 
         return view('flota.busqueda_avanzada', array_merge($parametrosBusqueda, [
             'flota' => $flota,
-            'equiposSeleccionados' => $equiposSeleccionados,
-            'seleccionados' => $this->opcionesFiltroSeleccionadas($parametrosBusqueda),
+            'seleccionados' => $this->opcionesFiltroSeleccionadas($opciones, $parametrosBusqueda),
             'totalRegistros' => $totalRegistros,
             'hayBusqueda' => $hayBusqueda
         ]));
     }
 
     /**
-     * Endpoint AJAX (paginado) del combobox de equipos en la búsqueda avanzada.
-     */
-    public function buscarEquiposJSON(Request $request): JsonResponse
-    {
-        $termino = trim((string) $request->input('search', ''));
-        $perPage = min(max((int) $request->input('per_page', 15), 1), 50);
-
-        $equipos = Equipo::select('id', 'tei', 'issi', 'tipo_terminal_id')
-            ->with('tipo_terminal:id,marca,modelo,tipo_uso_id', 'tipo_terminal.tipo_uso:id,uso')
-            ->when($request->boolean('sin_flota'), fn ($query) => $query->doesntHave('flota_general'))
-            ->when($termino !== '', function ($query) use ($termino) {
-                $query->where(function ($q) use ($termino) {
-                    $q->where('tei', 'like', "%{$termino}%")
-                        ->orWhere('issi', 'like', "%{$termino}%")
-                        ->orWhereHas('tipo_terminal', function ($t) use ($termino) {
-                            $t->where('marca', 'like', "%{$termino}%")
-                                ->orWhere('modelo', 'like', "%{$termino}%");
-                        });
-                });
-            })
-            ->orderBy('tei', 'desc')
-            ->paginate($perPage);
-
-        $equipos->getCollection()->transform(function (Equipo $equipo) {
-            return ['id' => $equipo->id, 'label' => $this->etiquetaEquipo($equipo)];
-        });
-
-        return response()->json($equipos);
-    }
-
-    /**
-     * Endpoint AJAX de los combobox de catálogos simples de la búsqueda avanzada.
-     */
-    public function buscarOpcionesFiltroJSON(Request $request, string $catalogo): JsonResponse
-    {
-        $termino = trim((string) $request->input('search', ''));
-        $perPage = min(max((int) $request->input('per_page', 15), 1), 50);
-
-        if ($catalogo === 'patrimonio') {
-            $opciones = collect($this->opcionesPatrimonio())
-                ->filter(fn (string $texto) => $termino === '' || stripos($texto, $termino) !== false)
-                ->map(fn (string $texto, string $id) => ['id' => $id, 'label' => $texto])
-                ->values();
-
-            return response()->json($opciones);
-        }
-
-        $definicion = $this->definicionCatalogoFiltro($catalogo);
-        abort_if($definicion === null, 404);
-
-        $paginado = $definicion['consulta']()
-            ->when($termino !== '', function ($query) use ($termino, $definicion) {
-                $query->where(function ($q) use ($termino, $definicion) {
-                    foreach ($definicion['buscar'] as $columna) {
-                        $q->orWhere($columna, 'like', "%{$termino}%");
-                    }
-                });
-            })
-            ->paginate($perPage);
-
-        $paginado->getCollection()->transform(fn ($modelo) => ['id' => $modelo->id, 'label' => $definicion['etiqueta']($modelo)]);
-
-        return response()->json($paginado);
-    }
-
-    /**
-     * @return array{consulta: \Closure, buscar: array<int, string>, etiqueta: \Closure, parametro: string}|null
-     */
-    private function definicionCatalogoFiltro(string $catalogo): ?array
-    {
-        return [
-            'recursos' => [
-                'consulta' => fn () => Recurso::select('id', 'nombre')->orderBy('nombre'),
-                'buscar' => ['nombre'],
-                'etiqueta' => fn (Recurso $recurso) => $recurso->nombre,
-                'parametro' => 'recurso_id',
-            ],
-            'destinos' => [
-                'consulta' => fn () => Destino::select('id', 'nombre', 'parent_id')->with('padre:id,nombre')->orderBy('nombre'),
-                'buscar' => ['nombre'],
-                'etiqueta' => fn (Destino $destino) => $destino->nombre . ' - ' . $destino->dependeDe(),
-                'parametro' => 'destino_id',
-            ],
-            'estados' => [
-                'consulta' => fn () => Estado::select('id', 'nombre')->orderBy('nombre'),
-                'buscar' => ['nombre'],
-                'etiqueta' => fn (Estado $estado) => $estado->nombre,
-                'parametro' => 'estado_id',
-            ],
-            'tipos-terminal' => [
-                'consulta' => fn () => TipoTerminal::select('id', 'marca', 'modelo')->orderBy('marca'),
-                'buscar' => ['marca', 'modelo'],
-                'etiqueta' => fn (TipoTerminal $tipo) => $tipo->marca . ' ' . $tipo->modelo,
-                'parametro' => 'tipo_terminal_id',
-            ],
-            'tipos-movimiento' => [
-                'consulta' => fn () => TipoMovimiento::select('id', 'nombre')->orderBy('nombre'),
-                'buscar' => ['nombre'],
-                'etiqueta' => fn (TipoMovimiento $tipo) => $tipo->nombre,
-                'parametro' => 'tipo_movimiento_id',
-            ],
-        ][$catalogo] ?? null;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function opcionesPatrimonio(): array
-    {
-        return [
-            'sin_patrimoniar' => 'Sin patrimoniar',
-            'patrimoniado' => 'Patrimoniado (Firmado/Sin firma req.)',
-            'pendiente' => 'Pendiente de firma',
-        ];
-    }
-
-    /**
-     * Ítems iniciales de cada combobox según los filtros recibidos.
+     * Ítems iniciales de cada combobox de la búsqueda avanzada según los filtros recibidos.
      *
      * @param  array<string, mixed>  $parametros
      * @return array<string, array<int, array{id: int|string, text: string}>>
      */
-    private function opcionesFiltroSeleccionadas(array $parametros): array
+    private function opcionesFiltroSeleccionadas(OpcionesComboboxService $opciones, array $parametros): array
     {
-        $seleccionados = [];
-
-        foreach (['recursos', 'estados', 'tipos-terminal', 'tipos-movimiento'] as $catalogo) {
-            $seleccionados[$catalogo] = $this->itemsSeleccionadosDeCatalogo($catalogo, (array) $parametros[$this->definicionCatalogoFiltro($catalogo)['parametro']]);
-        }
-
-        $seleccionados['destino_id'] = $this->itemsSeleccionadosDeCatalogo('destinos', (array) $parametros['destino_id']);
-        $seleccionados['destino_actual_id'] = $this->itemsSeleccionadosDeCatalogo('destinos', (array) $parametros['destino_actual_id']);
-
-        $patrimonio = $parametros['estado_patrimonial'] ?? null;
-        $seleccionados['patrimonio'] = isset($this->opcionesPatrimonio()[$patrimonio])
-            ? [['id' => $patrimonio, 'text' => $this->opcionesPatrimonio()[$patrimonio]]]
-            : [];
-
-        return $seleccionados;
-    }
-
-    /**
-     * @param  array<int, int|string>  $ids
-     * @return array<int, array{id: int, text: string}>
-     */
-    private function itemsSeleccionadosDeCatalogo(string $catalogo, array $ids): array
-    {
-        if (empty($ids)) {
-            return [];
-        }
-
-        $definicion = $this->definicionCatalogoFiltro($catalogo);
-
-        return $definicion['consulta']()
-            ->whereIn('id', $ids)
-            ->get()
-            ->map(fn ($modelo) => ['id' => $modelo->id, 'text' => $definicion['etiqueta']($modelo)])
-            ->all();
-    }
-
-    /**
-     * @param  array<int, int|string>  $equipoIds
-     * @return array<int, array{id: int, text: string}>
-     */
-    private function equiposSeleccionadosParaCombobox(array $equipoIds): array
-    {
-        if (empty($equipoIds)) {
-            return [];
-        }
-
-        return Equipo::select('id', 'tei', 'issi', 'tipo_terminal_id')
-            ->with('tipo_terminal:id,marca,modelo,tipo_uso_id', 'tipo_terminal.tipo_uso:id,uso')
-            ->whereIn('id', $equipoIds)
-            ->get()
-            ->map(fn (Equipo $equipo) => ['id' => $equipo->id, 'text' => $this->etiquetaEquipo($equipo)])
-            ->all();
-    }
-
-    private function etiquetaEquipo(Equipo $equipo): string
-    {
-        $terminal = $equipo->tipo_terminal;
-
-        return trim($terminal->marca . ' ' . $terminal->modelo . ' - ' . $terminal->tipo_uso->uso . ' - ' . $equipo->tei . ' ' . $equipo->issi);
+        return [
+            'equipo_id' => $opciones->seleccionados('equipos', $parametros['equipo_id']),
+            'recurso_id' => $opciones->seleccionados('recursos', $parametros['recurso_id']),
+            'estado_id' => $opciones->seleccionados('estados', $parametros['estado_id']),
+            'tipo_terminal_id' => $opciones->seleccionados('tipos-terminal', $parametros['tipo_terminal_id']),
+            'tipo_movimiento_id' => $opciones->seleccionados('tipos-movimiento', $parametros['tipo_movimiento_id']),
+            'destino_id' => $opciones->seleccionados('destinos', $parametros['destino_id']),
+            'destino_actual_id' => $opciones->seleccionados('destinos', $parametros['destino_actual_id']),
+            'estado_patrimonial' => $opciones->seleccionados('patrimonio', [$parametros['estado_patrimonial']]),
+        ];
     }
 
     public function exportExcelBusquedaAvanzada(Request $request)
@@ -1056,9 +884,10 @@ class FlotaGeneralController extends Controller
         //
     }
 
-    public function edit($id)
+    public function edit($id, OpcionesComboboxService $opciones)
     {
         $flota = FlotaGeneral::find($id);
+        $equipoSeleccionado = $opciones->seleccionados('equipos', [$flota->equipo_id]);
         //Los equipos que se pueden usar para reemplazar son los que estan en stock
         $recurso_stock = Recurso::where('nombre', 'Stock 911')->first();
         //-------------------------------------------------------------------------
@@ -1067,7 +896,7 @@ class FlotaGeneralController extends Controller
         $tipos_movimiento = TipoMovimiento::all();
         $hist = Historico::where('equipo_id', $flota->equipo_id)->orderBy('created_at', 'desc')->first();
 
-        return view('flota.editar', compact('flota', 'tipos_movimiento', 'hist', 'flotas_stock', 'estados'));
+        return view('flota.editar', compact('flota', 'equipoSeleccionado', 'tipos_movimiento', 'hist', 'flotas_stock', 'estados'));
     }
 
     public function update(Request $request, $id)

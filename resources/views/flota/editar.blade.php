@@ -43,11 +43,9 @@
                                                             id="equipo"
                                                             name="equipo"
                                                             label="Equipo"
-                                                            :url="route('flota.busquedaAvanzada.equipos')"
-                                                            display="label"
+                                                            :url="route('opciones.flota', 'equipos')"
                                                             placeholder="Buscar por TEI, ISSI, marca o modelo…"
-                                                            :selected="$flota->equipo_id"
-                                                            :selected-text="$flota->equipo->tei . ' ' . $flota->equipo->tipo_terminal->tipo_uso->uso . ' ' . $flota->equipo->issi . ' ' . $flota->equipo->tipo_terminal->marca . ' ' . $flota->equipo->tipo_terminal->modelo"
+                                                            :selected-items="$equipoSeleccionado"
                                                             :min-chars="2"
                                                         />
                                                     </div>
@@ -139,8 +137,7 @@
                                                 id="dependencia"
                                                 name="dependencia"
                                                 label="Dependencia o lugar al que se asigna"
-                                                :url="route('flota.busquedaAvanzada.opciones', 'destinos')"
-                                                display="label"
+                                                :url="route('opciones.flota', 'destinos')"
                                                 placeholder="Buscar dependencia…"
                                                 :min-chars="0"
                                             />

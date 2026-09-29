@@ -327,8 +327,20 @@ Route::group(['middleware' => ['auth', 'track.online']], function () {
     Route::get('/flota/historico/{id}/imprimir', [FlotaGeneralController::class, 'imprimirHistorico'])->name('flota.historico.imprimir');
     Route::get('/ver-historico-desde-equipo/{id}', [App\Http\Controllers\EquipoController::class, 'verHistoricoDesdeEquipo'])->name('verHistoricoDesdeEquipo');
     Route::get('/busqueda-avanzada', [App\Http\Controllers\FlotaGeneralController::class, 'busquedaAvanzada'])->name('flota.busquedaAvanzada');
-    Route::get('/busqueda-avanzada/equipos', [App\Http\Controllers\FlotaGeneralController::class, 'buscarEquiposJSON'])->name('flota.busquedaAvanzada.equipos');
-    Route::get('/busqueda-avanzada/opciones/{catalogo}', [App\Http\Controllers\FlotaGeneralController::class, 'buscarOpcionesFiltroJSON'])->name('flota.busquedaAvanzada.opciones');
+    Route::prefix('opciones')->controller(App\Http\Controllers\OpcionesComboboxController::class)->group(function () {
+        Route::get('flota/{catalogo}', 'buscar')
+            ->middleware('permission:ver-flota|crear-flota|editar-flota|borrar-flota')
+            ->whereIn('catalogo', ['equipos', 'recursos', 'destinos', 'estados', 'tipos-terminal', 'tipos-movimiento', 'patrimonio'])
+            ->name('opciones.flota');
+        Route::get('recursos/{catalogo}', 'buscar')
+            ->middleware('permission:ver-recurso|crear-recurso|editar-recurso|borrar-recurso')
+            ->whereIn('catalogo', ['destinos', 'vehiculos'])
+            ->name('opciones.recursos');
+        Route::get('sitios/{catalogo}', 'buscar')
+            ->middleware('permission:ver-sitio|crear-sitio|editar-sitio|borrar-sitio')
+            ->whereIn('catalogo', ['destinos'])
+            ->name('opciones.sitios');
+    });
     Route::get('/busqueda-avanzada/export-excel', [App\Http\Controllers\FlotaGeneralController::class, 'exportExcelBusquedaAvanzada'])->name('flota.busquedaAvanzada.export');
     Route::post('/update-historico/{id}', [App\Http\Controllers\FlotaGeneralController::class, 'update_historico'])->name('flota.update_historico');
     Route::post('/flota/patrimoniar-rapido', [App\Http\Controllers\FlotaGeneralController::class, 'patrimoniarRapido'])->name('flota.patrimoniar-rapido');

@@ -46,9 +46,8 @@
                                                 id="equipo"
                                                 name="equipo"
                                                 label="Equipos"
-                                                :url="route('flota.busquedaAvanzada.equipos')"
+                                                :url="route('opciones.flota', 'equipos')"
                                                 :extra-params="['sin_flota' => 1]"
-                                                display="label"
                                                 placeholder="Buscar por TEI, ISSI, marca o modelo…"
                                                 :min-chars="2"
                                             />
@@ -60,8 +59,7 @@
                                                 id="dependencia"
                                                 name="dependencia"
                                                 label="Dependencia"
-                                                :url="route('flota.busquedaAvanzada.opciones', 'destinos')"
-                                                display="label"
+                                                :url="route('opciones.flota', 'destinos')"
                                                 placeholder="Buscar dependencia…"
                                                 :min-chars="0"
                                             />

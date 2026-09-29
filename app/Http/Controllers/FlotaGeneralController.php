@@ -130,6 +130,7 @@ class FlotaGeneralController extends Controller
 
         $equipos = Equipo::select('id', 'tei', 'issi', 'tipo_terminal_id')
             ->with('tipo_terminal:id,marca,modelo,tipo_uso_id', 'tipo_terminal.tipo_uso:id,uso')
+            ->when($request->boolean('sin_flota'), fn ($query) => $query->doesntHave('flota_general'))
             ->when($termino !== '', function ($query) use ($termino) {
                 $query->where(function ($q) use ($termino) {
                     $q->where('tei', 'like', "%{$termino}%")
@@ -944,16 +945,9 @@ class FlotaGeneralController extends Controller
 
     public function create()
     {
-        //Equipos que no tiene flota asociada
-        $equipos = Equipo::doesntHave('flota_general')->get();
-        /*$equipos = Equipo::all();
-        dd($equipos->count());*/
         $tipos_movimiento = TipoMovimiento::all();
-        $dependencias = Destino::all();
-        $recursos = Recurso::all();
 
-        //dd($dependencias);
-        return view('flota.crear', compact('equipos', 'dependencias', 'recursos', 'tipos_movimiento'));
+        return view('flota.crear', compact('tipos_movimiento'));
     }
 
     public function store(Request $request)
@@ -1065,19 +1059,15 @@ class FlotaGeneralController extends Controller
     public function edit($id)
     {
         $flota = FlotaGeneral::find($id);
-        $equipos = Equipo::all();
         //Los equipos que se pueden usar para reemplazar son los que estan en stock
         $recurso_stock = Recurso::where('nombre', 'Stock 911')->first();
         //-------------------------------------------------------------------------
         $flotas_stock = FlotaGeneral::with('equipo')->where('recurso_id', $recurso_stock->id)->get();
-        $dependencias = Destino::all();
-        $recursos = Recurso::all();
         $estados = Estado::all();
         $tipos_movimiento = TipoMovimiento::all();
         $hist = Historico::where('equipo_id', $flota->equipo_id)->orderBy('created_at', 'desc')->first();
-        //dd($flotas_stock);
 
-        return view('flota.editar', compact('flota', 'equipos', 'dependencias', 'recursos', 'tipos_movimiento', 'hist', 'flotas_stock', 'estados'));
+        return view('flota.editar', compact('flota', 'tipos_movimiento', 'hist', 'flotas_stock', 'estados'));
     }
 
     public function update(Request $request, $id)

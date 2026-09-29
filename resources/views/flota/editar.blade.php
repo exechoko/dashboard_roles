@@ -39,18 +39,17 @@
                                             <div class="row">
                                                 <div class="col-xs-12 col-sm-12 col-md-6">
                                                     <div class="form-group">
-                                                        <label for="">Equipo</label>
-                                                        <select name="equipo" id="" class="form-control select2"
-                                                            style="margin-bottom: 15px">
-                                                            <option value="{{ $flota->equipo_id }}">
-                                                                {{ $flota->equipo->tei . ' ' . $flota->equipo->tipo_terminal->tipo_uso->uso . ' ' . $flota->equipo->issi . ' ' . $flota->equipo->tipo_terminal->marca . ' ' . $flota->equipo->tipo_terminal->modelo }}
-                                                            </option>
-                                                            @foreach ($equipos as $equipo)
-                                                                <option value="{{ $equipo->id }}">
-                                                                    {{ $equipo->tei . ' ' . $equipo->tipo_terminal->tipo_uso->uso . ' ' . $equipo->issi . ' - ' . $equipo->tipo_terminal->marca . ' ' . $equipo->tipo_terminal->modelo }}
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
+                                                        <x-combobox-ajax
+                                                            id="equipo"
+                                                            name="equipo"
+                                                            label="Equipo"
+                                                            :url="route('flota.busquedaAvanzada.equipos')"
+                                                            display="label"
+                                                            placeholder="Buscar por TEI, ISSI, marca o modelo…"
+                                                            :selected="$flota->equipo_id"
+                                                            :selected-text="$flota->equipo->tei . ' ' . $flota->equipo->tipo_terminal->tipo_uso->uso . ' ' . $flota->equipo->issi . ' ' . $flota->equipo->tipo_terminal->marca . ' ' . $flota->equipo->tipo_terminal->modelo"
+                                                            :min-chars="2"
+                                                        />
                                                     </div>
                                                 </div>
                                                 <div class="col-xs-12 col-sm-12 col-md-6">
@@ -136,16 +135,15 @@
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6" id="dependenciaDestino">
                                         <div class="form-group">
-                                            <label for="">Dependencia o lugar al que se asigna</label>
-                                            <select name="dependencia" id="dependencia" class="form-control select2"
-                                                style="margin-bottom: 15px; width: 100%;">
-                                                <option value="">Seleccionar destino/dependencia</option>
-                                                @foreach ($dependencias as $dependencia)
-                                                    <option value="{{ $dependencia->id }}">
-                                                        {{ $dependencia->nombre . ' - ' . $dependencia->dependeDe() }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                            <x-combobox-ajax
+                                                id="dependencia"
+                                                name="dependencia"
+                                                label="Dependencia o lugar al que se asigna"
+                                                :url="route('flota.busquedaAvanzada.opciones', 'destinos')"
+                                                display="label"
+                                                placeholder="Buscar dependencia…"
+                                                :min-chars="0"
+                                            />
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-6" id="recursoDestino">
@@ -323,7 +321,7 @@
             function generarIssiSugerido() {
                 var dependenciaId = $('#dependencia').val();
                 var recursoId = $('#recurso').val();
-                var equipoId = $('select[name="equipo"]').val();
+                var equipoId = $('input[name="equipo"]').val();
 
                 if (!dependenciaId || !recursoId || !equipoId) {
                     $('#issiSugeridoBadge').hide();

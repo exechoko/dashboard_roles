@@ -176,6 +176,32 @@
 .cb-ajax-field .cb-ajax-text {
     padding-right: 34px;
 }
+.cb-ajax-field.cb-clearable .cb-ajax-text {
+    padding-right: 58px;
+}
+.cb-ajax-clear {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 30px;
+    bottom: 0;
+    width: 24px;
+    padding: 0;
+    color: var(--text-secondary, #6c757d);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+}
+.cb-ajax-clear:hover {
+    color: var(--accent-danger, #dc3545);
+}
+.cb-ajax-clear:focus {
+    outline: none;
+}
+.cb-ajax-field.cb-has-value .cb-ajax-clear {
+    display: block;
+}
 .cb-ajax-open {
     position: absolute;
     top: 0;
@@ -257,7 +283,7 @@
 
 <div class="cb-ajax-wrap" id="{{ $id }}_wrap">
 
-    <div class="cb-ajax-field">
+    <div class="cb-ajax-field @unless($multiple) cb-clearable @endunless">
         <input
             type="text"
             class="form-control cb-ajax-text"
@@ -267,6 +293,17 @@
             value="{{ $selectedText }}"
             @if($disabled) disabled @endif
         >
+        @unless($multiple)
+            <button
+                class="cb-ajax-clear"
+                type="button"
+                tabindex="-1"
+                aria-label="Borrar"
+                @if($disabled) disabled @endif
+            >
+                <i class="fas fa-times"></i>
+            </button>
+        @endunless
         <button
             class="cb-ajax-open"
             type="button"
@@ -330,6 +367,8 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
         self.multiple   = !!config.multiple;
         self.inputName  = config.name;
         self.openBtn    = self.wrap.find('.cb-ajax-open');
+        self.clearBtn   = self.wrap.find('.cb-ajax-clear');
+        self.field      = self.wrap.find('.cb-ajax-field');
         self.dropdown   = self.wrap.find('.cb-ajax-dropdown');
         self.status     = self.wrap.find('.cb-ajax-status');
         self.list       = self.wrap.find('.cb-ajax-list');
@@ -357,6 +396,7 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
 
         self._bindEvents();
         self._bindScroll();
+        self._syncClear();
     }
 
     ComboboxAjaxInstance.prototype._bindEvents = function() {
@@ -392,11 +432,22 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
             }
         });
 
+        self.textInput.on('input', function() {
+            self._syncClear();
+        });
+
+        self.clearBtn.on('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            self.clear();
+            self.textInput.focus();
+        });
+
         self.textInput.on('keyup', function(e) {
             if (keyIs(e, ['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'Esc', 'Tab'], [40, 38, 13, 27, 9])) { return; }
 
-            if (!self.multiple) {
-                self.hidden.val('');
+            if (!self.multiple && self.hidden.val() !== '') {
+                self.hidden.val('').trigger('change');
             }
 
             var val = self.textInput.val().trim();
@@ -598,7 +649,8 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
             return;
         }
         self.textInput.val(self._label(item));
-        self.hidden.val(item[self.valueField]);
+        self._syncClear();
+        self.hidden.val(item[self.valueField]).trigger('change');
         self.closeDropdown();
         self.wrap.trigger('combobox:select', [item]);
     };
@@ -743,13 +795,20 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
         this.wrap.trigger('combobox:remove', [value]);
     };
 
+    ComboboxAjaxInstance.prototype._syncClear = function() {
+        this.field.toggleClass('cb-has-value', !this.multiple && this.textInput.val() !== '');
+    };
+
     ComboboxAjaxInstance.prototype.getValue = function() {
         return this.multiple ? this._chipValues() : this.hidden.val();
     };
 
     ComboboxAjaxInstance.prototype.clear = function() {
         this.textInput.val('');
-        this.hidden.val('');
+        this._syncClear();
+        if (this.hidden.length && this.hidden.val() !== '') {
+            this.hidden.val('').trigger('change');
+        }
         this.chips.empty();
         this.closeDropdown();
         this.list.empty();
@@ -765,6 +824,7 @@ window.ComboboxAjax = window.ComboboxAjax || { instances: {} };
         }
         this.hidden.val(value);
         this.textInput.val(text !== undefined ? text : value);
+        this._syncClear();
     };
 
     ComboboxAjaxInstance.prototype.setDisabled = function(disabled) {

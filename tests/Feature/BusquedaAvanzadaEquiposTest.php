@@ -120,4 +120,43 @@ class BusquedaAvanzadaEquiposTest extends TestCase
             ->assertSee('name="destino_id[]" value="' . $destino->id . '"', false)
             ->assertSee('name="estado_patrimonial" value="pendiente"', false);
     }
+
+    public function test_filtro_sin_flota_excluye_equipos_ya_asignados(): void
+    {
+        $conFlota = Equipo::has('flota_general')->first();
+        $this->assertNotNull($conFlota);
+
+        $respuesta = $this->actingAs($this->usuarioConPermisoDeFlota())
+            ->getJson(route('flota.busquedaAvanzada.equipos', ['search' => $conFlota->tei, 'sin_flota' => 1]))
+            ->assertOk();
+
+        $this->assertNotContains($conFlota->id, collect($respuesta->json('data'))->pluck('id')->all());
+    }
+
+    public function test_crear_flota_usa_combobox_para_equipo_y_dependencia(): void
+    {
+        $usuario = User::factory()->create();
+        $usuario->givePermissionTo('crear-flota');
+
+        $this->actingAs($usuario)
+            ->get(route('flota.create'))
+            ->assertOk()
+            ->assertSee('id="equipo_wrap"', false)
+            ->assertSee('id="dependencia_wrap"', false);
+    }
+
+    public function test_editar_flota_precarga_el_equipo_actual(): void
+    {
+        $flota = \App\Models\FlotaGeneral::first();
+        $this->assertNotNull($flota);
+
+        $usuario = User::factory()->create();
+        $usuario->givePermissionTo('editar-flota');
+
+        $this->actingAs($usuario)
+            ->get(route('flota.edit', $flota->id))
+            ->assertOk()
+            ->assertSee('name="equipo" value="' . $flota->equipo_id . '"', false)
+            ->assertSee('id="dependencia_wrap"', false);
+    }
 }

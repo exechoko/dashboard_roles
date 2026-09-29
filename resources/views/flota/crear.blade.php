@@ -42,47 +42,29 @@
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
-                                            <label for="">Equipos</label>
-                                            <select name="equipo" id="" class="form-control select2"
-                                                style="margin-bottom: 15px">
-                                                <option value="">Seleccionar Equipo</option>
-                                                @foreach ($equipos as $equipo)
-                                                    <option value="{{ $equipo->id }}">
-                                                        {{ $equipo->tipo_terminal->tipo_uso->uso . ' ' . $equipo->issi . ' - ' . $equipo->tei . ' - '. $equipo->tipo_terminal->marca . ' ' . $equipo->tipo_terminal->modelo }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                            <x-combobox-ajax
+                                                id="equipo"
+                                                name="equipo"
+                                                label="Equipos"
+                                                :url="route('flota.busquedaAvanzada.equipos')"
+                                                :extra-params="['sin_flota' => 1]"
+                                                display="label"
+                                                placeholder="Buscar por TEI, ISSI, marca o modelo…"
+                                                :min-chars="2"
+                                            />
                                         </div>
                                     </div>
-                                    <!--div class="col-xs-12 col-sm-12 col-md-4">
-                                        <div class="form-group">
-                                            <label for="">Recurso</label>
-                                            <select name="recurso" id="" class="form-control select2"
-                                                style="margin-bottom: 15px">
-                                                <option value="">Seleccionar Recurso</option>
-                                                @foreach ($recursos as $recurso)
-                                                    <option value="{{ $recurso->id }}">
-                                                        @if (is_null($recurso->vehiculo))
-                                                        {{ $recurso->nombre }}
-                                                        @else
-                                                        {{ $recurso->nombre . ' - ' . $recurso->vehiculo->tipo_vehiculo }}
-                                                        @endif
-                                                        </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div-->
                                     <div class="col-xs-12 col-sm-12 col-md-6">
                                         <div class="form-group">
-                                            <label for="">Dependencia</label>
-                                            <select name="dependencia" id="dependencia" class="form-control select2"
-                                                style="margin-bottom: 15px">
-                                                <option value="">Seleccionar Dependencia</option>
-                                                @foreach ($dependencias as $dependencia)
-                                                    <option value="{{ $dependencia->id }}">
-                                                        {{ $dependencia->nombre . ' - ' . $dependencia->dependeDe() }}</option>
-                                                @endforeach
-                                            </select>
+                                            <x-combobox-ajax
+                                                id="dependencia"
+                                                name="dependencia"
+                                                label="Dependencia"
+                                                :url="route('flota.busquedaAvanzada.opciones', 'destinos')"
+                                                display="label"
+                                                placeholder="Buscar dependencia…"
+                                                :min-chars="0"
+                                            />
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">

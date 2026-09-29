@@ -50,83 +50,47 @@
                                 <div class="row mt-3">
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="filter-label" for="tipo_terminal_id">Tipo de terminal</label>
-                                            <select name="tipo_terminal_id[]" class="form-control select2" multiple="multiple">
-                                                @foreach ($tiposTerminal as $tipo)
-                                                    <option value="{{ $tipo->id }}"
-                                                        {{ in_array($tipo->id, (array) $tipo_terminal_id) ? 'selected' : '' }}>
-                                                        {{ $tipo->marca . ' ' . $tipo->modelo }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                            <x-combobox-ajax
+                                                id="tipo_terminal_id"
+                                                name="tipo_terminal_id"
+                                                label="Tipo de terminal"
+                                                :url="route('flota.busquedaAvanzada.opciones', 'tipos-terminal')"
+                                                display="label"
+                                                placeholder="Buscar tipo de terminal…"
+                                                :multiple="true"
+                                                :selected-items="$seleccionados['tipos-terminal']"
+                                                :min-chars="0"
+                                            />
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="filter-label" for="equipo_id">Equipo</label>
-                                            <select name="equipo_id[]" class="form-control select2" multiple="multiple">
-                                                @foreach ($equipos as $equipo)
-                                                    <option value="{{ $equipo->id }}"
-                                                        {{ in_array($equipo->id, (array) $equipo_id) ? 'selected' : '' }}>
-                                                        {{ $equipo->tipo_terminal->marca . ' ' . $equipo->tipo_terminal->modelo . ' - ' . $equipo->tipo_terminal->tipo_uso->uso . ' - ' . $equipo->tei . ' ' . $equipo->issi }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                            <x-combobox-ajax
+                                                id="equipo_id"
+                                                name="equipo_id"
+                                                label="Equipo"
+                                                :url="route('flota.busquedaAvanzada.equipos')"
+                                                display="label"
+                                                placeholder="Buscar por TEI, ISSI, marca o modelo…"
+                                                :multiple="true"
+                                                :selected-items="$equiposSeleccionados"
+                                                :min-chars="2"
+                                            />
                                         </div>
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="filter-label" for="recurso_id">Recurso</label>
-                                            <select name="recurso_id[]" class="form-control select2" multiple="multiple">
-                                                @foreach ($recursos as $recurso)
-                                                    <option value="{{ $recurso->id }}"
-                                                        {{ in_array($recurso->id, (array) $recurso_id) ? 'selected' : '' }}>
-                                                        {{ $recurso->nombre }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="row mt-2">
-                                    <div class="col-md-4">
-                                        <div class="form-group">
-                                            <label class="filter-label" for="destino_actual_id">Dependencia Actual</label>
-                                            <select name="destino_actual_id[]" class="form-control select2" multiple="multiple">
-                                                @foreach ($destinos as $destino)
-                                                    <option value="{{ $destino->id }}"
-                                                        {{ in_array($destino->id, (array) $destino_actual_id) ? 'selected' : '' }}>
-                                                        {{ $destino->nombre . ' - ' . $destino->dependeDe() }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group">
-                                            <label class="filter-label" for="destino_id">Dependencia Patrimonial</label>
-                                            <select name="destino_id[]" class="form-control select2" multiple="multiple">
-                                                @foreach ($destinos as $destino)
-                                                    <option value="{{ $destino->id }}"
-                                                        {{ in_array($destino->id, (array) $destino_id) ? 'selected' : '' }}>
-                                                        {{ $destino->nombre . ' - ' . $destino->dependeDe() }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group">
-                                            <label class="filter-label" for="estado_id">Estado</label>
-                                            <select name="estado_id[]" class="form-control select2" multiple="multiple">
-                                                @foreach ($estados as $estado)
-                                                    <option value="{{ $estado->id }}"
-                                                        {{ in_array($estado->id, (array) $estado_id) ? 'selected' : '' }}>
-                                                        {{ $estado->nombre }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                            <x-combobox-ajax
+                                                id="recurso_id"
+                                                name="recurso_id"
+                                                label="Recurso"
+                                                :url="route('flota.busquedaAvanzada.opciones', 'recursos')"
+                                                display="label"
+                                                placeholder="Buscar recurso…"
+                                                :multiple="true"
+                                                :selected-items="$seleccionados['recursos']"
+                                                :min-chars="0"
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -134,15 +98,65 @@
                                 <div class="row mt-2">
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="filter-label" for="tipo_movimiento_id">Tipo de movimiento</label>
-                                            <select name="tipo_movimiento_id[]" class="form-control select2" multiple="multiple">
-                                                @foreach ($tiposMovimiento as $tipoMov)
-                                                    <option value="{{ $tipoMov->id }}"
-                                                        {{ in_array($tipoMov->id, (array) $tipo_movimiento_id) ? 'selected' : '' }}>
-                                                        {{ $tipoMov->nombre }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                            <x-combobox-ajax
+                                                id="destino_actual_id"
+                                                name="destino_actual_id"
+                                                label="Dependencia Actual"
+                                                :url="route('flota.busquedaAvanzada.opciones', 'destinos')"
+                                                display="label"
+                                                placeholder="Buscar dependencia…"
+                                                :multiple="true"
+                                                :selected-items="$seleccionados['destino_actual_id']"
+                                                :min-chars="0"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <x-combobox-ajax
+                                                id="destino_id"
+                                                name="destino_id"
+                                                label="Dependencia Patrimonial"
+                                                :url="route('flota.busquedaAvanzada.opciones', 'destinos')"
+                                                display="label"
+                                                placeholder="Buscar dependencia…"
+                                                :multiple="true"
+                                                :selected-items="$seleccionados['destino_id']"
+                                                :min-chars="0"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <x-combobox-ajax
+                                                id="estado_id"
+                                                name="estado_id"
+                                                label="Estado"
+                                                :url="route('flota.busquedaAvanzada.opciones', 'estados')"
+                                                display="label"
+                                                placeholder="Buscar estado…"
+                                                :multiple="true"
+                                                :selected-items="$seleccionados['estados']"
+                                                :min-chars="0"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row mt-2">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <x-combobox-ajax
+                                                id="tipo_movimiento_id"
+                                                name="tipo_movimiento_id"
+                                                label="Tipo de movimiento"
+                                                :url="route('flota.busquedaAvanzada.opciones', 'tipos-movimiento')"
+                                                display="label"
+                                                placeholder="Buscar tipo de movimiento…"
+                                                :multiple="true"
+                                                :selected-items="$seleccionados['tipos-movimiento']"
+                                                :min-chars="0"
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -171,13 +185,17 @@
                                     </div>
                                     <div class="col-md-3">
                                         <div class="form-group">
-                                            <label class="filter-label" for="estado_patrimonial">Patrimonio</label>
-                                            <select name="estado_patrimonial" class="form-control select2">
-                                                <option value="">Cualquier estado</option>
-                                                <option value="sin_patrimoniar" {{ (isset($estado_patrimonial) && $estado_patrimonial == 'sin_patrimoniar') ? 'selected' : '' }}>Sin patrimoniar</option>
-                                                <option value="patrimoniado" {{ (isset($estado_patrimonial) && $estado_patrimonial == 'patrimoniado') ? 'selected' : '' }}>Patrimoniado (Firmado/Sin firma req.)</option>
-                                                <option value="pendiente" {{ (isset($estado_patrimonial) && $estado_patrimonial == 'pendiente') ? 'selected' : '' }}>Pendiente de firma</option>
-                                            </select>
+                                            <x-combobox-ajax
+                                                id="estado_patrimonial"
+                                                name="estado_patrimonial"
+                                                label="Patrimonio"
+                                                :url="route('flota.busquedaAvanzada.opciones', 'patrimonio')"
+                                                display="label"
+                                                placeholder="Cualquier estado"
+                                                :selected="$seleccionados['patrimonio'][0]['id'] ?? ''"
+                                                :selected-text="$seleccionados['patrimonio'][0]['text'] ?? ''"
+                                                :min-chars="0"
+                                            />
                                         </div>
                                     </div>
                                     <div class="col-md-3">

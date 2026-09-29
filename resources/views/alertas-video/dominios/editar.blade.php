@@ -12,7 +12,7 @@
                     <h4>Datos del Dominio</h4>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('alertas-video.dominios.update', $dominioAlerta) }}" method="POST">
+                    <form action="{{ route('alertas-video.dominios.update', $dominioAlerta) }}" method="POST" data-evitar-doble-envio>
                         @csrf
                         @method('PUT')
                         @include('alertas-video.dominios._form')
@@ -31,3 +31,5 @@
         </div>
     </section>
 @endsection
+
+@include('alertas-video._evitar-doble-envio')

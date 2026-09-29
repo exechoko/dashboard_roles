@@ -21,7 +21,7 @@
                                 </div>
                             @endif
 
-                            <form action="{{ route('alertas-video.dominios.importar.post') }}" method="POST" enctype="multipart/form-data">
+                            <form action="{{ route('alertas-video.dominios.importar.post') }}" method="POST" data-evitar-doble-envio enctype="multipart/form-data">
                                 @csrf
 
                                 <div class="form-group">
@@ -98,3 +98,5 @@
         </div>
     </section>
 @endsection
+
+@include('alertas-video._evitar-doble-envio')

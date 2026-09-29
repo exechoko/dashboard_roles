@@ -5,8 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Recurso;
 use Cache;
 use Illuminate\Http\Request;
-use App\Models\Destino;
-use App\Models\Vehiculo;
+use App\Services\OpcionesComboboxService;
 use Illuminate\Support\Facades\DB;
 
 class RecursoController extends Controller
@@ -19,7 +18,7 @@ class RecursoController extends Controller
         $this->middleware('permission:borrar-recurso', ['only' => ['destroy']]);
     }
 
-    public function index(Request $request)
+    public function index(Request $request, OpcionesComboboxService $opciones)
     {
         $texto = trim($request->get('texto'));
         $dependencia_seleccionada = $request->get('dependencia_id');
@@ -44,22 +43,14 @@ class RecursoController extends Controller
             ->orderBy('nombre', 'asc')
             ->paginate(100);
 
-        // Dependencias con caché
-        $dependencias = optimize(Destino::class)
-            ->orderBy('nombre', 'asc')
-            ->cached('dependencias_all', 60)
-            ->get();
+        $dependenciaSeleccionada = $opciones->seleccionados('destinos', [$dependencia_seleccionada]);
 
-        return view('recursos.index', compact('recursos', 'texto', 'dependencias', 'dependencia_seleccionada'));
+        return view('recursos.index', compact('recursos', 'texto', 'dependenciaSeleccionada'));
     }
 
     public function create()
     {
-        $dependencias = Destino::all();
-        $vehiculos = Vehiculo::all();
-
-        //dd($dependencias);
-        return view('recursos.crear', compact('dependencias', 'vehiculos'));
+        return view('recursos.crear');
     }
 
     public function store(Request $request)
@@ -103,13 +94,13 @@ class RecursoController extends Controller
         //
     }
 
-    public function edit($id)
+    public function edit($id, OpcionesComboboxService $opciones)
     {
         $recurso = Recurso::find($id);
-        $dependencias = Destino::all();
-        $vehiculos = Vehiculo::all();
+        $dependenciaSeleccionada = $opciones->seleccionados('destinos', [$recurso->destino_id]);
+        $vehiculoSeleccionado = $opciones->seleccionados('vehiculos', [$recurso->vehiculo_id]);
 
-        return view('recursos.editar', compact('recurso', 'dependencias', 'vehiculos'));
+        return view('recursos.editar', compact('recurso', 'dependenciaSeleccionada', 'vehiculoSeleccionado'));
     }
 
     public function update(Request $request, $id)

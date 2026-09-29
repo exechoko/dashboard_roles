@@ -37,15 +37,16 @@
                                     @if($texto)
                                         <a href="{{ route('recursos.index') }}" class="search-clear"><i class="fas fa-times"></i></a>
                                     @endif
-                                    <select name="dependencia_id" class="form-control search-select select2"
-                                        style="border:none;border-left:1px solid var(--border-color);border-radius:0;max-width:240px;background:transparent;color:var(--text-primary);">
-                                        <option value="">Todas las dependencias</option>
-                                        @foreach ($dependencias as $dependencia)
-                                            <option value="{{ $dependencia->id }}" {{ $dependencia_seleccionada == $dependencia->id ? 'selected' : '' }}>
-                                                {{ $dependencia->nombre . ' - ' . $dependencia->dependeDe() }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <x-combobox-ajax
+                                        id="dependencia_id"
+                                        name="dependencia_id"
+                                        class="search-combobox"
+                                        style="width: 300px; flex-shrink: 0;"
+                                        :url="route('opciones.recursos', 'destinos')"
+                                        placeholder="Todas las dependencias"
+                                        :selected-items="$dependenciaSeleccionada"
+                                        :min-chars="0"
+                                    />
                                     <button type="submit" class="btn-search"><i class="fas fa-search mr-1"></i> Buscar</button>
                                 </div>
                             </form>
@@ -163,3 +164,16 @@
         });
     </script>
 @endsection
+
+@push('styles')
+    <style>
+        .search-combobox .cb-ajax-text {
+            border: none;
+            border-left: 1px solid var(--border-color);
+            border-radius: 0;
+            background: transparent;
+            box-shadow: none;
+            color: var(--text-primary);
+        }
+    </style>
+@endpush

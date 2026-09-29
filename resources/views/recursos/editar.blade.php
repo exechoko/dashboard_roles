@@ -30,16 +30,15 @@
                                 <div class="row">
                                     <div class="col-xs-12 col-sm-12 col-md-12">
                                         <div class="form-group">
-                                            <label for="">Dependencia</label>
-                                            <select name="dependencia" id="" class="form-control select2"
-                                                style="margin-bottom: 15px">
-                                                <option value="{{ $recurso->destino_id }}">{{ $recurso->destino->nombre }}
-                                                </option>
-                                                @foreach ($dependencias as $dependencia)
-                                                    <option value="{{ $dependencia->id }}">
-                                                        {{ $dependencia->nombre }}</option>
-                                                @endforeach
-                                            </select>
+                                            <x-combobox-ajax
+                                                id="dependencia"
+                                                name="dependencia"
+                                                label="Dependencia"
+                                                :url="route('opciones.recursos', 'destinos')"
+                                                placeholder="Buscar dependencia…"
+                                                :selected-items="$dependenciaSeleccionada"
+                                                :min-chars="0"
+                                            />
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
@@ -51,23 +50,15 @@
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-4">
                                         <div class="form-group">
-                                            <label for="">Vehiculo</label>
-                                            <select name="vehiculo" id="" class="form-control select2"
-                                                style="margin-bottom: 15px">
-                                                @if (is_null($recurso->vehiculo_id))
-                                                    <option value="">-</option>
-                                                @else
-                                                    <option value="{{ $recurso->vehiculo_id }}">
-                                                        {{ $recurso->vehiculo->marca . ' ' . $recurso->vehiculo->modelo . ' ' . $recurso->vehiculo->dominio }}
-                                                    </option>
-                                                @endif
-                                                @foreach ($vehiculos as $vehiculo)
-                                                    <option value="{{ $vehiculo->id }}">
-                                                        {{ $vehiculo->marca . ' ' . $vehiculo->modelo . ' ' . $vehiculo->dominio }}
-                                                    </option>
-                                                @endforeach
-
-                                            </select>
+                                            <x-combobox-ajax
+                                                id="vehiculo"
+                                                name="vehiculo"
+                                                label="Vehiculo"
+                                                :url="route('opciones.recursos', 'vehiculos')"
+                                                placeholder="Buscar por tipo, marca, modelo o dominio…"
+                                                :selected-items="$vehiculoSeleccionado"
+                                                :min-chars="1"
+                                            />
                                         </div>
                                     </div>
                                     <div class="col-xs-12 col-sm-12 col-md-12">

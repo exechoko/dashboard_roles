@@ -118,6 +118,10 @@ class PersonaAlerta extends Model
             ->where(function ($query) use ($dniNormalizado, $palabras) {
                 if ($dniNormalizado !== null) {
                     $query->orWhere('dni', $dniNormalizado);
+
+                    if (mb_strlen($dniNormalizado) >= 4) {
+                        $query->orWhere('dni', 'like', $dniNormalizado . '%');
+                    }
                 }
 
                 foreach ($palabras as $palabra) {
@@ -129,7 +133,14 @@ class PersonaAlerta extends Model
 
         return $candidatos
             ->map(function (self $persona) use ($dniNormalizado, $palabras) {
-                $score = ($dniNormalizado !== null && $persona->dni === $dniNormalizado) ? 100 : 0;
+                $score = 0;
+
+                if ($dniNormalizado !== null && $persona->dni === $dniNormalizado) {
+                    $score = 100;
+                } elseif ($dniNormalizado !== null && mb_strlen($dniNormalizado) >= 4 && str_starts_with((string) $persona->dni, $dniNormalizado)) {
+                    $score = 50;
+                }
+
                 $nombreUpper = mb_strtoupper($persona->apellido_nombre);
 
                 foreach ($palabras as $palabra) {

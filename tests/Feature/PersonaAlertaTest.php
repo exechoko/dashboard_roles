@@ -176,6 +176,22 @@ class PersonaAlertaTest extends TestCase
         $response->assertJsonFragment(['id' => $persona->id]);
     }
 
+    public function test_encuentra_coincidencias_por_dni_parcial_mientras_se_escribe(): void
+    {
+        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $persona = PersonaAlerta::factory()->create(['dni' => '28999111', 'apellido_nombre' => 'Cualquier Nombre']);
+
+        $this->actingAs($admin)
+            ->get(route('alertas-video.personas.buscar-coincidencias', ['dni' => '2899']))
+            ->assertOk()
+            ->assertJsonFragment(['id' => $persona->id]);
+
+        $this->actingAs($admin)
+            ->get(route('alertas-video.personas.buscar-coincidencias', ['dni' => '289']))
+            ->assertOk()
+            ->assertJson(['coincidencias' => []]);
+    }
+
     public function test_no_devuelve_coincidencias_sin_datos_suficientes(): void
     {
         $admin = User::where('email', 'admin@gmail.com')->firstOrFail();

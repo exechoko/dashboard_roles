@@ -18,10 +18,6 @@
     'favorito' => false,
 ])
 
-@php
-    $esImagen = in_array(strtolower($archivo->extension), ['jpg', 'jpeg', 'png', 'gif']);
-@endphp
-
 <div {{ $attributes->merge(['class' => 'descarga-card card h-100']) }} data-archivo-id="{{ $archivo->id }}">
     @if($mostrarCheckbox)
         <div class="descarga-card__check custom-control custom-checkbox">
@@ -36,9 +32,12 @@
     @endif
 
     <a href="{{ route('descargas.show', $archivo) }}" class="descarga-card__preview">
-        @if($esImagen)
+        @if($archivo->es_imagen)
             <img src="{{ route('descargas.preview', $archivo) }}" alt="{{ $archivo->nombre_original }}" loading="lazy"
                  onerror="this.replaceWith(Object.assign(document.createElement('i'), {className: '{{ $archivo->icono_extension }}'}))">
+        @elseif($archivo->es_video)
+            <i class="{{ $archivo->icono_extension }}"></i>
+            <span class="descarga-card__play"><i class="fas fa-play"></i></span>
         @else
             <i class="{{ $archivo->icono_extension }}"></i>
         @endif

@@ -3,7 +3,7 @@
 @section('content')
 <section class="section">
     <div class="section-header">
-        <h3 class="page__heading"><i class="fas fa-images mr-2"></i>Galería de Imágenes</h3>
+        <h3 class="page__heading"><i class="fas fa-images mr-2"></i>Galería</h3>
     </div>
 
     <div class="section-body">
@@ -88,7 +88,7 @@
         </div>
 
         <h5 class="mb-3">
-            Imágenes disponibles
+            Imágenes y videos disponibles
             <span class="badge badge-secondary ml-2">{{ $archivos->total() }}</span>
         </h5>
 
@@ -106,7 +106,7 @@
             <div class="descargas-empty card">
                 <div class="card-body">
                     <i class="fas fa-images"></i>
-                    <p class="mb-0">No se encontraron imágenes disponibles con estos filtros.</p>
+                    <p class="mb-0">No se encontraron imágenes o videos disponibles con estos filtros.</p>
                 </div>
             </div>
         @endif

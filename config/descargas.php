@@ -8,7 +8,11 @@ return [
     // que cada chunk tiene que quedar bien por debajo de eso.
     'chunk_size_mb' => env('DESCARGAS_CHUNK_SIZE_MB', 20),
 
-    'preview_extensiones' => ['pdf', 'jpg', 'jpeg', 'png', 'gif'],
+    'preview_extensiones' => ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'mp4', 'webm', 'mov', 'ogg'],
+
+    // Usadas por la Galería y por el ícono/reproductor de cada archivo.
+    'extensiones_imagen' => ['jpg', 'jpeg', 'png', 'gif'],
+    'extensiones_video' => ['mp4', 'webm', 'mov', 'ogg'],
 
     'links_expiracion_horas' => env('DESCARGAS_LINKS_EXPIRACION_HORAS', 24),
 

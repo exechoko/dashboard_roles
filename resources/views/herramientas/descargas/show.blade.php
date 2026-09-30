@@ -104,9 +104,14 @@
                             <h5 class="mb-0"><i class="fas fa-eye mr-2"></i>Vista previa</h5>
                         </div>
                         <div class="card-body text-center">
-                            @if(in_array($archivo->extension, ['jpg', 'jpeg', 'png', 'gif']))
+                            @if($archivo->es_imagen)
                                 <img src="{{ route('descargas.preview', $archivo) }}" class="img-fluid rounded" style="max-height: 500px;" alt="Preview"
                                      onerror="this.replaceWith(Object.assign(document.createElement('p'), {className: 'text-muted mb-0 py-5', innerHTML: '<i class=\'fas fa-image fa-2x mb-2 d-block\'></i>La vista previa no está disponible.'}))">
+                            @elseif($archivo->es_video)
+                                <video controls class="img-fluid rounded" style="max-height: 500px; width: 100%; background: #000;"
+                                       preload="metadata" src="{{ route('descargas.preview', $archivo) }}">
+                                    Tu navegador no admite la reproducción de este video.
+                                </video>
                             @elseif($archivo->extension === 'pdf')
                                 <iframe src="{{ route('descargas.preview', $archivo) }}" style="width: 100%; height: 600px; border: 1px solid var(--border-color);"></iframe>
                             @endif

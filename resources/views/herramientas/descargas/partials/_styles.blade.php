@@ -79,6 +79,7 @@
     }
 
     .descarga-card__preview {
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -96,6 +97,21 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
+    }
+
+    .descarga-card__play {
+        position: absolute;
+        bottom: .6rem;
+        right: .6rem;
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, 0.55);
+        color: #fff;
+        font-size: .8rem;
     }
 
     .descarga-card__body {

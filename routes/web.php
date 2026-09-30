@@ -783,7 +783,8 @@ Route::group(['middleware' => ['auth', 'track.online']], function () {
     // Proxy del Visor GIS CeCoCo — fuera del grupo prefix para admitir slashes en el path.
     Route::any('/cecoco/gis-proxy/{path?}', [App\Http\Controllers\GisViewerController::class, 'proxy'])
         ->name('cecoco.gis-proxy')
-        ->where('path', '.*');
+        ->where('path', '.*')
+        ->middleware('permission:ver-mapa-gis-cecoco');
 
     Route::prefix('api/cecoco')->name('api.cecoco.')->group(function () {
         Route::get('/eventos', [App\Http\Controllers\EventoCecocoController::class, 'apiListar'])->name('eventos');

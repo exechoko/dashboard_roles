@@ -181,6 +181,48 @@ class SeguridadAuditoriaTest extends TestCase
     }
 
     /**
+     * @dataProvider tablasReferenciaInvalidas
+     */
+    public function test_tipo_de_bien_rechaza_nombres_de_tabla_con_caracteres_peligrosos(string $tabla): void
+    {
+        $super = $this->usuarioCon([], [self::ROL_SUPER]);
+
+        $this->actingAs($super)
+            ->post(route('patrimonio.tipos-bien.store'), [
+                'nombre' => 'Tipo ' . uniqid(),
+                'tiene_tabla_propia' => 1,
+                'tabla_referencia' => $tabla,
+            ])
+            ->assertSessionHasErrors('tabla_referencia');
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function tablasReferenciaInvalidas(): array
+    {
+        return [
+            'punto y coma' => ['camaras; DROP TABLE users'],
+            'backtick' => ['camaras`'],
+            'con base de datos' => ['otra_bd.users'],
+            'espacio' => ['camaras users'],
+        ];
+    }
+
+    public function test_tipo_de_bien_acepta_un_nombre_de_tabla_valido(): void
+    {
+        $super = $this->usuarioCon([], [self::ROL_SUPER]);
+
+        $this->actingAs($super)
+            ->post(route('patrimonio.tipos-bien.store'), [
+                'nombre' => 'Tipo ' . uniqid(),
+                'tiene_tabla_propia' => 1,
+                'tabla_referencia' => 'camaras',
+            ])
+            ->assertSessionHasNoErrors();
+    }
+
+    /**
      * @dataProvider ipsNoPermitidas
      */
     public function test_reiniciar_camara_rechaza_ips_no_permitidas(string $ip): void

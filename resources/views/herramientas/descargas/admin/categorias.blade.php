@@ -113,9 +113,9 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>Icono (FontAwesome)</label>
-                                <input type="text" name="icono" class="form-control" value="fas fa-folder" placeholder="fas fa-folder">
-                                <small class="form-text text-muted">Ej: fas fa-file-pdf, fas fa-image</small>
+                                <label>Icono</label>
+                                <x-fontawesome-icon-picker name="icono" id="icono" value="fas fa-folder" />
+                                <small class="form-text text-muted">Elegí uno de la lista o escribí la clase manualmente.</small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -162,8 +162,8 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>Icono (FontAwesome)</label>
-                                <input type="text" name="icono" id="edit_icono" class="form-control">
+                                <label>Icono</label>
+                                <x-fontawesome-icon-picker name="icono" id="edit_icono" />
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -206,6 +206,7 @@ document.querySelectorAll('.btn-editar').forEach(btn => {
         document.getElementById('edit_nombre').value = this.dataset.nombre;
         document.getElementById('edit_descripcion').value = this.dataset.descripcion || '';
         document.getElementById('edit_icono').value = this.dataset.icono;
+        document.getElementById('edit_icono').dispatchEvent(new Event('input'));
         document.getElementById('edit_color').value = this.dataset.color;
         document.getElementById('edit_orden').value = this.dataset.orden;
         document.getElementById('edit_activo').checked = this.dataset.activo === '1';

@@ -10,6 +10,18 @@ class CamaraReinicioService
     private const TIPO_BDE = 'BDE (Totem)';
 
     /**
+     * Rechaza loopback, link-local (metadatos cloud) y rangos reservados.
+     */
+    private function esIpNoPermitida(string $ip): bool
+    {
+        return ! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_RES_RANGE)
+            || str_starts_with($ip, '127.')
+            || str_starts_with($ip, '169.254.')
+            || $ip === '0.0.0.0'
+            || $ip === '::1';
+    }
+
+    /**
      * Reinicia la cámara pegándole al cgi de reboot del fabricante (Dahua)
      * desde el servidor, usando las credenciales que correspondan según el
      * tipo de cámara (los BDE (Tótem) usan usuario y contraseña propios).
@@ -22,6 +34,10 @@ class CamaraReinicioService
 
         if (empty($ip)) {
             return ['ok' => false, 'mensaje' => 'La cámara no tiene IP cargada.', 'status' => null];
+        }
+
+        if (! filter_var($ip, FILTER_VALIDATE_IP) || $this->esIpNoPermitida($ip)) {
+            return ['ok' => false, 'mensaje' => 'La IP de la cámara no es válida.', 'status' => null];
         }
 
         [$user, $pass] = $this->credenciales($camara);

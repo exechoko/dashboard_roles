@@ -130,15 +130,27 @@
         @endif
 
         {{-- Archivos --}}
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap" style="gap: .5rem;">
             <h5 class="mb-0">
                 Archivos disponibles
                 <span class="badge badge-secondary ml-2">{{ $archivos->total() }}</span>
             </h5>
-            <button type="button" class="btn btn-success btn-sm" id="btnDescargarZip" disabled>
-                <i class="fas fa-file-archive"></i> Descargar seleccionados como ZIP
-                <span class="badge badge-light ml-2" id="contadorSeleccionados">0</span>
-            </button>
+            <div class="d-flex align-items-center flex-wrap" style="gap: .75rem;">
+                @if($archivos->count() > 0)
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox" class="custom-control-input" id="selectAllArchivos">
+                        <label class="custom-control-label" for="selectAllArchivos">Seleccionar todo</label>
+                    </div>
+                @endif
+                <button type="button" class="btn btn-outline-success btn-sm" id="btnDescargarSeparado" disabled
+                        title="Descarga cada archivo por separado, sin armar un ZIP (más cómodo desde el celular)">
+                    <i class="fas fa-download"></i> Descargar sin ZIP
+                </button>
+                <button type="button" class="btn btn-success btn-sm" id="btnDescargarZip" disabled>
+                    <i class="fas fa-file-archive"></i> Descargar como ZIP
+                    <span class="badge badge-light ml-2" id="contadorSeleccionados">0</span>
+                </button>
+            </div>
         </div>
 
         @if($archivos->count() > 0)
@@ -171,6 +183,14 @@ $(document).ready(function() {
     const maxTamanoBytes = {{ config('descargas.zip_tamano_maximo_gb', 10) * 1024 * 1024 * 1024 }};
 
     $(document).on('change', '.archivo-checkbox', function() {
+        const total = $('.archivo-checkbox').length;
+        const marcados = $('.archivo-checkbox:checked').length;
+        $('#selectAllArchivos').prop('checked', total > 0 && marcados === total);
+        actualizarContador();
+    });
+
+    $('#selectAllArchivos').change(function() {
+        $('.archivo-checkbox').prop('checked', this.checked);
         actualizarContador();
     });
 
@@ -178,6 +198,7 @@ $(document).ready(function() {
         const seleccionados = $('.archivo-checkbox:checked').length;
         $('#contadorSeleccionados').text(seleccionados);
         $('#btnDescargarZip').prop('disabled', seleccionados === 0);
+        $('#btnDescargarSeparado').prop('disabled', seleccionados === 0);
 
         let tamanoTotal = 0;
         $('.archivo-checkbox:checked').each(function() {
@@ -214,6 +235,40 @@ $(document).ready(function() {
             error: function(xhr) {
                 descargasErrorAjax(xhr, 'Error al actualizar favorito');
             }
+        });
+    });
+
+    $('#btnDescargarSeparado').click(function() {
+        const archivosIds = $('.archivo-checkbox:checked').map(function() { return $(this).val(); }).get();
+        if (archivosIds.length === 0) {
+            return;
+        }
+
+        descargasConfirmar({
+            titulo: `¿Descargar ${archivosIds.length} archivo(s) por separado?`,
+            texto: 'El navegador va a pedir permiso para varias descargas seguidas (aparece un aviso arriba, tipo "este sitio quiere descargar varios archivos"): hay que tocar "Permitir" para que bajen todos. Es más práctico que un ZIP desde el celular.',
+            confirmText: 'Sí, descargar',
+            icon: 'question',
+        }).then((result) => {
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            // Sin demora entre clicks: los navegadores solo cuentan una
+            // descarga como "iniciada por el usuario" si ocurre dentro del
+            // mismo gesto de clic, sin pasar por un setTimeout de por medio.
+            // Aun así, a partir de la 2da/3ra descarga el navegador puede
+            // mostrar un aviso pidiendo permitir "descargas múltiples".
+            archivosIds.forEach(function(id) {
+                const link = document.createElement('a');
+                link.href = `/descargas/${id}/download`;
+                link.rel = 'noopener';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            });
+
+            descargasToast(`Descargando ${archivosIds.length} archivo(s)...`);
         });
     });
 

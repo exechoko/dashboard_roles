@@ -488,13 +488,9 @@
             </a>
             <div class="dropdown-menu dropdown-menu-right">
                 <div class="dropdown-title">{{ __('messages.common.login') }}
-                    / {{ __('messages.common.register') }}</div>
+                </div>
                 <a href="{{ route('login') }}" class="dropdown-item has-icon">
                     <i class="fas fa-sign-in-alt"></i> {{ __('messages.common.login') }}
-                </a>
-                <div class="dropdown-divider"></div>
-                <a href="{{ route('register') }}" class="dropdown-item has-icon">
-                    <i class="fas fa-user-plus"></i> {{ __('messages.common.register') }}
                 </a>
             </div>
         </li>

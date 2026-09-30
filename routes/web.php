@@ -77,7 +77,7 @@ Route::get('/', function () {
 })->name('login.view');
 
 
-Auth::routes();
+Auth::routes(['register' => false]);
 
 // Login propio de la app móvil: misma autenticación (guard 'web', mismos
 // usuarios) que el login de escritorio, pero con una URL y una vista propias

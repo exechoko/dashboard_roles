@@ -357,7 +357,7 @@ class EventoCecocoParser
             'box' => $get('box') ?: null,
             'operador' => $get('operador') ?: null,
             'descripcion' => $get('descripcion') ?: null,
-            'direccion' => $get('direccion') ?: null,
+            'direccion' => self::limpiarDireccion($get('direccion')),
             'telefono' => $get('telefono') ? substr($get('telefono'), 0, 30) : null,
             'fecha_cierre' => $this->parsearFecha($get('fecha_cierre')),
             'tipo_servicio' => $get('tipo_servicio') ?: null,
@@ -368,6 +368,53 @@ class EventoCecocoParser
             'created_at' => now()->toDateTimeString(),
             'updated_at' => now()->toDateTimeString(),
         ];
+    }
+
+    /**
+     * Devuelve null si la dirección es solo un marcador operativo (D.D, Género,
+     * Violencia de Género, etc.) sin calle. Si mezcla marcador y calle se conserva.
+     */
+    public static function limpiarDireccion(string $direccion): ?string
+    {
+        $direccion = trim($direccion);
+        if ($direccion === '') {
+            return null;
+        }
+
+        $patron = '/^[ .\-]*(programa +)?(f?d[ .]*d|g[eé]nero|[aá]rea +de +g[eé]nero|[aá]rea( +de)? +violencia'
+            . '|unidad( +fiscal)?( +de)? +violencia +de +g[eé]nero( +y +abuso +sexual)?|violencia +de +g[eé]nero'
+            . '|sala +de +violencia|violencia +familiar|fiscal[ií]a( +de)?( +violencia +de)? +g[eé]nero'
+            . '|unidad +fiscal +de +g[eé]nero|dispositivo +dual)([ .\-]*(no +cerrar|prueba))?[ .\-]*$/iu';
+
+        if (preg_match($patron, $direccion) === 1) {
+            return null;
+        }
+
+        $etiquetaPersona = '/(?<!\p{L})(agre?|agresor|vic|v[ií]ctima)(?!\p{L})[ _.]*(n[ºo°.]?\s*)?\(?\d+|(?<!\p{L})(agr|vic)_/iu';
+        if (preg_match($etiquetaPersona, $direccion) === 1) {
+            return null;
+        }
+
+        $original = $direccion;
+        $marcador = '(?:no +cerrar|en +proceso|d[ .]*d|g[eé]nero|violencia +de +g[eé]nero)';
+        $inicio   = '/^[ .\-\/,(]*' . $marcador . '(?![\p{L}\p{N}])[ .\-\/,)]*/iu';
+        $final    = '/[ .\-\/,(]*(?<![\p{L}\p{N}])' . $marcador . '[ .\-\/,)]*$/iu';
+
+        for ($i = 0; $i < 5; $i++) {
+            $limpia = trim(preg_replace([$inicio, $final], '', $direccion));
+            if ($limpia === $direccion) {
+                break;
+            }
+            $direccion = $limpia;
+        }
+
+        if (preg_match('/(^|\s)(de|del|la|el|fiscal[ií]a|unidad)$/iu', $direccion) === 1) {
+            return $original;
+        }
+
+        $sinInformacion ='/^[ .\-\/,()]*((calle|av\.?|avenida|prueba|no +cerrar|en +proceso|consulta)[ .\-\/,()]*)*$/iu';
+
+        return preg_match($sinInformacion, $direccion) === 1 ? null : $direccion;
     }
 
     private function parsearFecha(string $valor): ?string

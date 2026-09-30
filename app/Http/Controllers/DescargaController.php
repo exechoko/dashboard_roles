@@ -34,6 +34,39 @@ class DescargaController extends Controller
 
     public function index(Request $request)
     {
+        $filtrosDisponibles = [
+            'buscar', 'categoria_id', 'extension', 'user_id',
+            'fecha_subida_desde', 'fecha_subida_hasta', 'tamano_min', 'tamano_max',
+        ];
+        $hayFiltro = $request->hasAny($filtrosDisponibles);
+
+        // withCount evita un COUNT por categoría (N+1) para la tarjeta de
+        // accesos rápidos.
+        $categorias = DescargaCategoria::activas()->ordenadas()->withCount('archivosActivos')->get();
+        $extensiones = DescargaArchivo::accesiblesPor(Auth::user())
+            ->activos()
+            ->select('extension')
+            ->distinct()
+            ->pluck('extension')
+            ->sort();
+        $usuarios = \App\Models\User::whereHas('archivosSubidos', function ($q) {
+            $q->activos()->accesiblesPor(Auth::user());
+        })->select('id', 'name')->orderBy('name')->get();
+
+        // Sin categoría, búsqueda ni ningún otro filtro activo: se muestran
+        // solo las categorías. Cargar y paginar todos los archivos accesibles
+        // (con su categoría/usuario/roles) en cada visita a la landing era el
+        // cuello de botella que ralentizaba la carga inicial del módulo.
+        if (!$hayFiltro) {
+            return view('herramientas.descargas.index', [
+                'archivos' => null,
+                'categorias' => $categorias,
+                'extensiones' => $extensiones,
+                'usuarios' => $usuarios,
+                'favoritosIds' => [],
+            ]);
+        }
+
         $query = DescargaArchivo::with(['categoria', 'user', 'roles'])
             ->activos()
             ->noExpirados()
@@ -104,19 +137,6 @@ class DescargaController extends Controller
         }
 
         $archivos = $query->paginate(20)->withQueryString();
-        $categorias = DescargaCategoria::activas()->ordenadas()->get();
-        $extensiones = DescargaArchivo::accesiblesPor(Auth::user())
-            ->activos()
-            ->select('extension')
-            ->distinct()
-            ->pluck('extension')
-            ->sort();
-        
-        // Obtener usuarios que han subido archivos
-        $usuarios = \App\Models\User::whereHas('archivosSubidos', function ($q) {
-            $q->activos()->accesiblesPor(Auth::user());
-        })->select('id', 'name')->orderBy('name')->get();
-
         $favoritosIds = DescargaFavorito::where('user_id', Auth::id())->pluck('archivo_id')->all();
 
         return view('herramientas.descargas.index', compact('archivos', 'categorias', 'extensiones', 'usuarios', 'favoritosIds'));

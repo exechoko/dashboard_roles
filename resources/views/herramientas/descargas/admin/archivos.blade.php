@@ -106,7 +106,15 @@
                                             <span class="badge badge-info">{{ $archivo->descargas_count }}</span>
                                         </td>
                                         <td>
-                                            @if(!$archivo->activo)
+                                            @if($archivo->estado_proceso === 'procesando')
+                                                <span class="badge badge-info" title="Se está moviendo/transcodificando en segundo plano">
+                                                    <i class="fas fa-spinner fa-spin"></i> Procesando
+                                                </span>
+                                            @elseif($archivo->estado_proceso === 'error')
+                                                <span class="badge badge-danger" title="{{ $archivo->error_proceso }}">
+                                                    <i class="fas fa-exclamation-triangle"></i> Error de proceso
+                                                </span>
+                                            @elseif(!$archivo->activo)
                                                 <span class="badge badge-danger">Inactivo</span>
                                             @elseif($archivo->esta_expirado)
                                                 <span class="badge badge-warning">Expirado</span>

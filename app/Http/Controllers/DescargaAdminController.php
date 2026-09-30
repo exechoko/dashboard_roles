@@ -716,33 +716,6 @@ class DescargaAdminController extends Controller
             ->header('Content-Disposition', 'attachment; filename="logs_descargas_' . now()->format('Y-m-d') . '.csv"');
     }
 
-    public function progreso(Request $request)
-    {
-        $jobs = json_decode($request->query('jobs', '[]'), true);
-
-        return view('herramientas.descargas.admin.progreso', compact('jobs'));
-    }
-
-    public function jobStatus($jobId)
-    {
-        $archivo = DescargaArchivo::where('job_id', $jobId)->first();
-
-        if (!$archivo) {
-            return response()->json([
-                'estado' => 'desconocido',
-                'progreso' => 0,
-                'error' => null,
-            ]);
-        }
-
-        return response()->json([
-            'estado' => $archivo->estado_proceso,
-            'progreso' => $archivo->progreso,
-            'error' => $archivo->error_proceso,
-            'archivo_id' => $archivo->id,
-        ]);
-    }
-
     /**
      * Mostrar todas las solicitudes de compartir
      */

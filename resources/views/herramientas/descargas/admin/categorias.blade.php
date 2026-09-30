@@ -4,17 +4,14 @@
 <section class="section">
     <div class="section-header d-flex justify-content-between align-items-center">
         <h3 class="page__heading"><i class="fas fa-tags mr-2"></i>Categorías</h3>
-        <div>
-            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalCrearCategoria">
-                <i class="fas fa-plus"></i> Nueva categoría
-            </button>
-            <a href="{{ route('descargas.admin.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Volver
-            </a>
-        </div>
+        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalCrearCategoria">
+            <i class="fas fa-plus"></i> Nueva categoría
+        </button>
     </div>
 
     <div class="section-body">
+        @include('herramientas.descargas.admin.partials._nav')
+
         <div class="card">
             <div class="card-body">
                 @if($categorias->count() > 0)
@@ -66,7 +63,7 @@
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             @if($categoria->archivos_count == 0)
-                                                <form action="{{ route('descargas.admin.categorias.destroy', $categoria) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar esta categoría?')">
+                                                <form action="{{ route('descargas.admin.categorias.destroy', $categoria) }}" method="POST" class="d-inline form-eliminar-categoria" data-categoria="{{ $categoria->nombre }}">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-outline-danger">
@@ -116,9 +113,9 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>Icono (FontAwesome)</label>
-                                <input type="text" name="icono" class="form-control" value="fas fa-folder" placeholder="fas fa-folder">
-                                <small class="form-text text-muted">Ej: fas fa-file-pdf, fas fa-image</small>
+                                <label>Icono</label>
+                                <x-fontawesome-icon-picker name="icono" id="icono" value="fas fa-folder" />
+                                <small class="form-text text-muted">Elegí uno de la lista o escribí la clase manualmente.</small>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -165,8 +162,8 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label>Icono (FontAwesome)</label>
-                                <input type="text" name="icono" id="edit_icono" class="form-control">
+                                <label>Icono</label>
+                                <x-fontawesome-icon-picker name="icono" id="edit_icono" />
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -196,9 +193,11 @@
         </div>
     </div>
 </div>
+@include('herramientas.descargas.partials._styles')
 @endsection
 
 @push('scripts')
+@include('herramientas.descargas.partials._scripts')
 <script>
 document.querySelectorAll('.btn-editar').forEach(btn => {
     btn.addEventListener('click', function() {
@@ -207,9 +206,25 @@ document.querySelectorAll('.btn-editar').forEach(btn => {
         document.getElementById('edit_nombre').value = this.dataset.nombre;
         document.getElementById('edit_descripcion').value = this.dataset.descripcion || '';
         document.getElementById('edit_icono').value = this.dataset.icono;
+        document.getElementById('edit_icono').dispatchEvent(new Event('input'));
         document.getElementById('edit_color').value = this.dataset.color;
         document.getElementById('edit_orden').value = this.dataset.orden;
         document.getElementById('edit_activo').checked = this.dataset.activo === '1';
+    });
+});
+
+$('.form-eliminar-categoria').submit(function(e) {
+    e.preventDefault();
+    const form = $(this);
+
+    descargasConfirmar({
+        titulo: '¿Eliminar esta categoría?',
+        texto: `"${form.data('categoria')}" se eliminará permanentemente.`,
+        confirmText: 'Sí, eliminar',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.off('submit').submit();
+        }
     });
 });
 </script>

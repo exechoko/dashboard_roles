@@ -4,17 +4,14 @@
 <section class="section">
     <div class="section-header d-flex justify-content-between align-items-center">
         <h3 class="page__heading"><i class="fas fa-history mr-2"></i>Historial de Descargas</h3>
-        <div>
-            <a href="{{ route('descargas.admin.exportar_logs', request()->query()) }}" class="btn btn-success">
-                <i class="fas fa-file-csv"></i> Exportar CSV
-            </a>
-            <a href="{{ route('descargas.admin.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Volver
-            </a>
-        </div>
+        <a href="{{ route('descargas.admin.exportar_logs', request()->query()) }}" class="btn btn-success">
+            <i class="fas fa-file-csv"></i> Exportar CSV
+        </a>
     </div>
 
     <div class="section-body">
+        @include('herramientas.descargas.admin.partials._nav')
+
         {{-- Filtros --}}
         <div class="card mb-4">
             <div class="card-body">
@@ -108,4 +105,6 @@
         </div>
     </div>
 </section>
+
+@include('herramientas.descargas.partials._styles')
 @endsection

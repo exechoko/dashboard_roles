@@ -1,18 +1,15 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title">Solicitudes para Compartir Archivos</h4>
-                    <div class="card-actions">
-                        <a href="{{ route('descargas.admin.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Volver
-                        </a>
-                    </div>
-                </div>
+<section class="section">
+    <div class="section-header">
+        <h3 class="page__heading"><i class="fas fa-envelope-open mr-2"></i>Solicitudes para Compartir Archivos</h3>
+    </div>
+
+    <div class="section-body">
+        @include('herramientas.descargas.admin.partials._nav')
+
+        <div class="card">
                 <div class="card-body">
                     {{-- Filtros --}}
                     <form method="GET" action="{{ route('descargas.admin.solicitudes') }}" class="mb-4">
@@ -215,8 +212,9 @@
                         </div>
                     @endif
                 </div>
-            </div>
         </div>
     </div>
-</div>
+</section>
+
+@include('herramientas.descargas.partials._styles')
 @endsection

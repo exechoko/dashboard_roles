@@ -117,7 +117,9 @@ class DescargaController extends Controller
             $q->activos()->accesiblesPor(Auth::user());
         })->select('id', 'name')->orderBy('name')->get();
 
-        return view('herramientas.descargas.index', compact('archivos', 'categorias', 'extensiones', 'usuarios'));
+        $favoritosIds = DescargaFavorito::where('user_id', Auth::id())->pluck('archivo_id')->all();
+
+        return view('herramientas.descargas.index', compact('archivos', 'categorias', 'extensiones', 'usuarios', 'favoritosIds'));
     }
 
     public function galeria(Request $request)
@@ -126,7 +128,10 @@ class DescargaController extends Controller
             ->activos()
             ->noExpirados()
             ->accesiblesPor(Auth::user())
-            ->whereIn('extension', ['jpg', 'jpeg', 'png', 'gif']);
+            ->whereIn('extension', array_merge(
+                config('descargas.extensiones_imagen', []),
+                config('descargas.extensiones_video', [])
+            ));
 
         // Búsqueda por texto
         if ($request->filled('buscar')) {
@@ -179,14 +184,19 @@ class DescargaController extends Controller
         $archivos = $query->paginate(24)->withQueryString();
         $categorias = DescargaCategoria::activas()->ordenadas()->get();
         
-        // Obtener usuarios que han subido imágenes
+        // Obtener usuarios que han subido imágenes o videos
         $usuarios = \App\Models\User::whereHas('archivosSubidos', function ($q) {
             $q->activos()
               ->accesiblesPor(Auth::user())
-              ->whereIn('extension', ['jpg', 'jpeg', 'png', 'gif']);
+              ->whereIn('extension', array_merge(
+                  config('descargas.extensiones_imagen', []),
+                  config('descargas.extensiones_video', [])
+              ));
         })->select('id', 'name')->orderBy('name')->get();
 
-        return view('herramientas.descargas.galeria', compact('archivos', 'categorias', 'usuarios'));
+        $favoritosIds = DescargaFavorito::where('user_id', Auth::id())->pluck('archivo_id')->all();
+
+        return view('herramientas.descargas.galeria', compact('archivos', 'categorias', 'usuarios', 'favoritosIds'));
     }
 
     public function show(DescargaArchivo $archivo)
@@ -422,8 +432,9 @@ class DescargaController extends Controller
 
         $archivos = $query->paginate(20)->withQueryString();
         $categorias = DescargaCategoria::activas()->ordenadas()->get();
+        $favoritosIds = DescargaFavorito::where('user_id', Auth::id())->pluck('archivo_id')->all();
 
-        return view('herramientas.descargas.compartidos', compact('archivos', 'categorias'));
+        return view('herramientas.descargas.compartidos', compact('archivos', 'categorias', 'favoritosIds'));
     }
 
     /**

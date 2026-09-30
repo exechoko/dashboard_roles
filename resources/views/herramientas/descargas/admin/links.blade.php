@@ -4,17 +4,14 @@
 <section class="section">
     <div class="section-header d-flex justify-content-between align-items-center">
         <h3 class="page__heading"><i class="fas fa-link mr-2"></i>Links Públicos</h3>
-        <div>
-            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalCrearLink">
-                <i class="fas fa-plus"></i> Generar link
-            </button>
-            <a href="{{ route('descargas.admin.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Volver
-            </a>
-        </div>
+        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalCrearLink">
+            <i class="fas fa-plus"></i> Generar link
+        </button>
     </div>
 
     <div class="section-body">
+        @include('herramientas.descargas.admin.partials._nav')
+
         <div class="alert alert-info">
             <i class="fas fa-info-circle mr-2"></i>
             Los links públicos permiten compartir archivos con personas externas al sistema. Cada link tiene un <strong>límite de usos configurable</strong> (1 por defecto) y expira automáticamente.
@@ -79,7 +76,7 @@
                                         </td>
                                         <td>
                                             @if($link->activo)
-                                                <form action="{{ route('descargas.admin.links.destroy', $link) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Desactivar este link?')">
+                                                <form action="{{ route('descargas.admin.links.destroy', $link) }}" method="POST" class="d-inline form-desactivar-link">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-outline-danger" title="Desactivar">
@@ -153,9 +150,11 @@
         </div>
     </div>
 </div>
+@include('herramientas.descargas.partials._styles')
 @endsection
 
 @push('scripts')
+@include('herramientas.descargas.partials._scripts')
 <script>
 document.querySelectorAll('.btn-copy').forEach(btn => {
     btn.addEventListener('click', function() {
@@ -169,6 +168,21 @@ document.querySelectorAll('.btn-copy').forEach(btn => {
                 icon.classList.add('fa-copy');
             }, 2000);
         });
+    });
+});
+
+$('.form-desactivar-link').submit(function(e) {
+    e.preventDefault();
+    const form = $(this);
+
+    descargasConfirmar({
+        titulo: '¿Desactivar este link?',
+        texto: 'Dejará de funcionar para quien lo tenga.',
+        confirmText: 'Sí, desactivar',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.off('submit').submit();
+        }
     });
 });
 </script>

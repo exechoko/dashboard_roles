@@ -2,19 +2,13 @@
 
 @section('content')
 <section class="section">
-    <div class="section-header d-flex justify-content-between align-items-center">
+    <div class="section-header">
         <h3 class="page__heading"><i class="fas fa-cogs mr-2"></i>Administración de Descargas</h3>
-        <div>
-            <a href="{{ route('descargas.admin.create') }}" class="btn btn-success">
-                <i class="fas fa-plus"></i> Subir archivos
-            </a>
-            <a href="{{ route('descargas.index') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-eye"></i> Ver plataforma
-            </a>
-        </div>
     </div>
 
     <div class="section-body">
+        @include('herramientas.descargas.admin.partials._nav')
+
         {{-- Estadísticas --}}
         <div class="row">
             <div class="col-lg-3 col-md-6 mb-4">
@@ -101,65 +95,6 @@
             </div>
         </div>
 
-        {{-- Accesos rápidos --}}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h4>Accesos rápidos</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="row text-center">
-                            @php
-                                $solicitudesPendientes = \App\Models\DescargaSolicitudCompartir::where('estado', 'pendiente')->count();
-                            @endphp
-                            <div class="col-md-3 col-6 mb-3">
-                                <a href="{{ route('descargas.admin.solicitudes') }}" class="btn btn-outline-{{ $solicitudesPendientes > 0 ? 'danger' : 'secondary' }} btn-lg btn-block position-relative">
-                                    <i class="fas fa-envelope-open fa-2x mb-2"></i><br>
-                                    Solicitudes
-                                    @if($solicitudesPendientes > 0)
-                                        <span class="badge badge-danger badge-pill">{{ $solicitudesPendientes }}</span>
-                                    @endif
-                                </a>
-                            </div>
-                            <div class="col-md-3 col-6 mb-3">
-                                <a href="{{ route('descargas.admin.categorias') }}" class="btn btn-outline-primary btn-lg btn-block">
-                                    <i class="fas fa-tags fa-2x mb-2"></i><br>
-                                    Categorías
-                                </a>
-                            </div>
-                            <div class="col-md-3 col-6 mb-3">
-                                <a href="{{ route('descargas.admin.archivos') }}" class="btn btn-outline-info btn-lg btn-block">
-                                    <i class="fas fa-file-alt fa-2x mb-2"></i><br>
-                                    Archivos
-                                </a>
-                            </div>
-                            <div class="col-md-3 col-6 mb-3">
-                                <a href="{{ route('descargas.admin.logs') }}" class="btn btn-outline-success btn-lg btn-block">
-                                    <i class="fas fa-history fa-2x mb-2"></i><br>
-                                    Historial
-                                </a>
-                            </div>
-                        </div>
-                        <div class="row text-center">
-                            <div class="col-md-3 col-6 mb-3">
-                                <a href="{{ route('descargas.admin.links') }}" class="btn btn-outline-warning btn-lg btn-block">
-                                    <i class="fas fa-link fa-2x mb-2"></i><br>
-                                    Links públicos
-                                </a>
-                            </div>
-                            <div class="col-md-3 col-6 mb-3">
-                                <a href="{{ route('descargas.admin.qrs') }}" class="btn btn-outline-warning btn-lg btn-block">
-                                    <i class="fas fa-qrcode fa-2x mb-2"></i><br>
-                                    Códigos QR
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="row">
             {{-- Últimos archivos --}}
             <div class="col-lg-6">
@@ -187,7 +122,7 @@
                                                     {{ Str::limit($archivo->nombre_original, 30) }}
                                                 </td>
                                                 <td>
-                                                    <span class="badge" style="background-color: {{ $archivo->categoria->color }}">
+                                                    <span class="badge descarga-badge-categoria" style="--categoria-color: {{ $archivo->categoria->color }}">
                                                         {{ $archivo->categoria->nombre }}
                                                     </span>
                                                 </td>
@@ -244,4 +179,6 @@
         </div>
     </div>
 </section>
+
+@include('herramientas.descargas.partials._styles')
 @endsection

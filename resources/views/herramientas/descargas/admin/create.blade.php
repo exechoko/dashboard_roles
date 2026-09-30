@@ -2,14 +2,13 @@
 
 @section('content')
 <section class="section">
-    <div class="section-header d-flex justify-content-between align-items-center">
+    <div class="section-header">
         <h3 class="page__heading"><i class="fas fa-upload mr-2"></i>Subir archivos</h3>
-        <a href="{{ route('descargas.admin.archivos') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Volver
-        </a>
     </div>
 
     <div class="section-body">
+        @include('herramientas.descargas.admin.partials._nav')
+
         <div class="card">
             <div class="card-body">
                 <form action="{{ route('descargas.admin.store') }}" method="POST" enctype="multipart/form-data" id="formUpload">
@@ -56,6 +55,8 @@
         </div>
     </div>
 </section>
+
+@include('herramientas.descargas.partials._styles')
 
 {{-- Template para cada archivo --}}
 <template id="tplArchivoConfig">
@@ -513,18 +514,15 @@ function formatSize(bytes) {
 @push('styles')
 <style>
 .dropzone-custom {
-    border: 2px dashed #ccc;
+    border: 2px dashed var(--border-color);
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s;
 }
 .dropzone-custom:hover,
 .dropzone-custom.dragover {
-    border-color: #007bff;
-    background-color: #f8f9fa;
-}
-.archivo-config-card .card-header {
-    background-color: #f8f9fa;
+    border-color: var(--accent-primary);
+    background-color: var(--bg-tertiary);
 }
 </style>
 @endpush

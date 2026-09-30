@@ -246,6 +246,10 @@ class DescargaArchivo extends Model
             'rar' => 'fas fa-file-archive text-secondary',
             'txt' => 'fas fa-file-alt text-dark',
             'csv' => 'fas fa-file-csv text-success',
+            'mp4' => 'fas fa-file-video text-danger',
+            'webm' => 'fas fa-file-video text-danger',
+            'mov' => 'fas fa-file-video text-danger',
+            'ogg' => 'fas fa-file-video text-danger',
         ];
 
         return $iconos[strtolower($this->extension)] ?? 'fas fa-file text-secondary';
@@ -255,6 +259,16 @@ class DescargaArchivo extends Model
     {
         $extensionesPreview = config('descargas.preview_extensiones', ['pdf', 'jpg', 'jpeg', 'png', 'gif']);
         return in_array(strtolower($this->extension), $extensionesPreview);
+    }
+
+    public function getEsImagenAttribute(): bool
+    {
+        return in_array(strtolower($this->extension), config('descargas.extensiones_imagen', []));
+    }
+
+    public function getEsVideoAttribute(): bool
+    {
+        return in_array(strtolower($this->extension), config('descargas.extensiones_video', []));
     }
 
     public function puedeDescargar(User $user): bool

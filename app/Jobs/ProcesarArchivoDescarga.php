@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\DescargaArchivo;
+use App\Services\Descargas\DescargaVideoTranscoder;
 use App\Services\TelegramService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -100,6 +101,8 @@ class ProcesarArchivoDescarga implements ShouldQueue
                 'progreso' => 70,
             ]);
 
+            $this->transcodificarSiHaceFalta($archivo);
+
             // Enviar notificaciones (opcional, para no llenar de mails
             // cuando se comparte con un rol/usuario que no hace falta avisar)
             if ($this->notificar) {
@@ -151,6 +154,72 @@ class ProcesarArchivoDescarga implements ShouldQueue
 
             throw $e;
         }
+    }
+
+    /**
+     * Si el archivo es un video en un códec que los navegadores no
+     * reproducen nativamente (ej. HEVC de celulares), lo transcodifica a
+     * H.264/AAC para que la vista previa de la ficha funcione. Si el
+     * conversor no está disponible o la conversión falla, se deja el
+     * archivo original tal cual — solo se pierde el preview inline, la
+     * descarga no se ve afectada.
+     */
+    private function transcodificarSiHaceFalta(DescargaArchivo $archivo): void
+    {
+        if (!in_array(strtolower($archivo->extension), config('descargas.extensiones_video', []), true)) {
+            return;
+        }
+
+        $rutaAbsolutaOriginal = Storage::disk('descargas')->path($archivo->ruta_relativa);
+        $transcoder = app(DescargaVideoTranscoder::class);
+
+        if (!$transcoder->haceFaltaTranscodificar($rutaAbsolutaOriginal)) {
+            return;
+        }
+
+        Log::info('Transcodificando video a H.264/AAC para compatibilidad de navegador', [
+            'archivo_id' => $archivo->id,
+            'ruta' => $archivo->ruta_relativa,
+        ]);
+
+        $tmpSalida = $transcoder->transcodificar($rutaAbsolutaOriginal);
+
+        if ($tmpSalida === null) {
+            return;
+        }
+
+        $directorio = pathinfo($archivo->ruta_relativa, PATHINFO_DIRNAME);
+        $nuevoNombreArchivo = pathinfo($archivo->nombre_archivo, PATHINFO_FILENAME) . '.mp4';
+        $nuevaRutaRelativa = $directorio . '/' . $nuevoNombreArchivo;
+        $nuevaRutaAbsoluta = Storage::disk('descargas')->path($nuevaRutaRelativa);
+
+        if (file_exists($nuevaRutaAbsoluta)) {
+            @unlink($nuevaRutaAbsoluta);
+        }
+
+        if (!rename($tmpSalida, $nuevaRutaAbsoluta)) {
+            Log::warning('DescargaVideoTranscoder: no se pudo mover el video transcodificado a su ubicación final', [
+                'archivo_id' => $archivo->id,
+            ]);
+            @unlink($tmpSalida);
+
+            return;
+        }
+
+        if ($rutaAbsolutaOriginal !== $nuevaRutaAbsoluta && file_exists($rutaAbsolutaOriginal)) {
+            @unlink($rutaAbsolutaOriginal);
+        }
+
+        $archivo->update([
+            'ruta_relativa' => $nuevaRutaRelativa,
+            'nombre_archivo' => $nuevoNombreArchivo,
+            'nombre_original' => pathinfo($archivo->nombre_original, PATHINFO_FILENAME) . '.mp4',
+            'extension' => 'mp4',
+            'mime_type' => 'video/mp4',
+            'tamano_bytes' => filesize($nuevaRutaAbsoluta),
+        ]);
+
+        Log::info('Video transcodificado exitosamente', ['archivo_id' => $archivo->id]);
     }
 
     public function failed(\Exception $e): void

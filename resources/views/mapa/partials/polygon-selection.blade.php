@@ -1498,7 +1498,7 @@
     // ========================================
     // CAPTURA OPTIMIZADA
     // ========================================
-    async function captureMapImageOptimized() {
+    async function captureMapImageOptimized(drawPolygon = true) {
         try {
             console.log('📸 Iniciando captura del área seleccionada...');
 
@@ -1524,13 +1524,13 @@
 
                 if (typeof html2canvas !== 'undefined') {
                     console.log('🔄 Capturando con html2canvas...');
-                    capturedImage = await captureMapAreaOnly();
+                    capturedImage = await captureMapAreaOnly(drawPolygon);
                 }
 
                 // Si falla html2canvas, usar canvas manual
                 if (!capturedImage) {
                     console.log('🔄 Usando captura manual...');
-                    capturedImage = await captureWithManualCanvasSimple();
+                    capturedImage = await captureWithManualCanvasSimple(drawPolygon);
                 }
 
                 return capturedImage;
@@ -1550,7 +1550,7 @@
     // ========================================
     // CAPTURA SOLO EL ÁREA DEL MAPA
     // ========================================
-    async function captureMapAreaOnly() {
+    async function captureMapAreaOnly(drawPolygon = true) {
         try {
             const mapContainer = document.getElementById('map');
 
@@ -1628,7 +1628,7 @@
                 console.log(`✅ Mapa capturado: ${canvas.width}x${canvas.height}px`);
 
                 const ctx = canvas.getContext('2d');
-                drawMarkersOnCanvas(ctx, mapContainer);
+                drawMarkersOnCanvas(ctx, mapContainer, drawPolygon);
 
                 return canvas.toDataURL('image/png', 0.92);
             }
@@ -1715,7 +1715,7 @@
     // ========================================
     // CAPTURA MANUAL SIMPLIFICADA
     // ========================================
-    async function captureWithManualCanvasSimple() {
+    async function captureWithManualCanvasSimple(drawPolygon = true) {
         try {
             console.log('🎨 Captura manual del área...');
 
@@ -1757,7 +1757,7 @@
             }
 
             // Dibujar marcadores
-            drawMarkersOnCanvas(ctx, mapContainer);
+            drawMarkersOnCanvas(ctx, mapContainer, drawPolygon);
 
             return canvas.toDataURL('image/png', 0.92);
 
@@ -2284,9 +2284,10 @@
     // ========================================
     // DIBUJAR MARCADORES EN CANVAS
     // ========================================
-    function drawMarkersOnCanvas(ctx, mapContainer) {
-        // Primero dibujar el polígono
-        drawPolygonOnCanvas(ctx, mapContainer);
+    function drawMarkersOnCanvas(ctx, mapContainer, drawPolygon = true) {
+        if (drawPolygon) {
+            drawPolygonOnCanvas(ctx, mapContainer);
+        }
 
         console.log(`🎯 Dibujando ${selectedCamerasInPolygon.length} marcadores en canvas...`);
 
@@ -2619,7 +2620,7 @@
                 (L.GeometryUtil.geodesicArea(currentPolygon.getLatLngs()[0]) / 1000000).toFixed(2) : 'N/A';
 
             updateProgress(20, 'Capturando imagen del mapa...');
-            const mapImage = await captureMapImageOptimized();
+            const mapImage = await captureMapImageOptimized(false);
 
             const mapBytes = mapImage ? dataUrlToUint8Array(mapImage) : null;
 

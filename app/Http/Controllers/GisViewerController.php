@@ -16,6 +16,9 @@ class GisViewerController extends Controller
     private string $password;
     private int $timeout;
 
+    /** Métodos que el visor necesita; se bloquean PUT/DELETE/PATCH hacia los servidores GIS. */
+    private const METODOS_PERMITIDOS_PROXY = ['GET', 'HEAD', 'POST', 'OPTIONS'];
+
     private const SESSION_KEY = 'gis_jsessionid';
     private const SESSION_EXTRA_KEY = 'gis_extra_cookies';
     private const LOGIN_PATH = '/gisviewer/main/cecoco/?language=es_ES';
@@ -103,6 +106,10 @@ class GisViewerController extends Controller
     // -----------------------------------------------------------------------
     public function proxy(Request $request, string $path = '')
     {
+        if (!in_array(strtoupper($request->method()), self::METODOS_PERMITIDOS_PROXY, true)) {
+            abort(405, 'Método no permitido.');
+        }
+
         if (empty($path)) {
             $path = ltrim(self::MAP_PATH, '/');
         }
@@ -714,7 +721,7 @@ class GisViewerController extends Controller
     {
         $pathLower = strtolower(rawurldecode($path));
 
-        if (preg_match('#(^|/)\.{1,2}(/|$)|//|\\|%#', $pathLower)) {
+        if (preg_match('#(^|/)\.{1,2}(/|$)|//|\\|%|;#', $pathLower)) {
             Log::warning('GisViewer: path con secuencias de traversal', ['path' => $path]);
             abort(403, 'Path no permitido.');
         }

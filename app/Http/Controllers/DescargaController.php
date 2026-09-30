@@ -426,8 +426,9 @@ class DescargaController extends Controller
 
         $archivos = $query->paginate(20)->withQueryString();
         $categorias = DescargaCategoria::activas()->ordenadas()->get();
+        $favoritosIds = DescargaFavorito::where('user_id', Auth::id())->pluck('archivo_id')->all();
 
-        return view('herramientas.descargas.compartidos', compact('archivos', 'categorias'));
+        return view('herramientas.descargas.compartidos', compact('archivos', 'categorias', 'favoritosIds'));
     }
 
     /**

@@ -150,6 +150,12 @@
                             <input type="checkbox" class="custom-control-input" id="selectAllArchivos">
                             <label class="custom-control-label" for="selectAllArchivos">Seleccionar todo</label>
                         </div>
+                        @if($archivos->total() > $archivos->count())
+                            <button type="button" class="btn btn-link btn-sm p-0" id="btnSeleccionarTodosResultados"
+                                    data-url="{{ route('descargas.ids-filtrados', request()->except('page')) }}">
+                                Seleccionar los {{ $archivos->total() }} resultados
+                            </button>
+                        @endif
                     @endif
                     <button type="button" class="btn btn-outline-success btn-sm" id="btnDescargarSeparado" disabled
                             title="Descarga cada archivo por separado, sin armar un ZIP (más cómodo desde el celular)">
@@ -160,6 +166,14 @@
                         <span class="badge badge-light ml-2" id="contadorSeleccionados">0</span>
                     </button>
                 </div>
+            </div>
+
+            <div class="alert alert-info py-2 px-3 mb-3 d-none align-items-center flex-wrap" id="avisoSeleccionCompleta" style="gap: .5rem;">
+                <i class="fas fa-check-circle mr-1"></i>
+                <span>Vas a descargar los <strong id="avisoSeleccionCompletaTotal"></strong> archivos de este filtro, no solo los de esta página.</span>
+                <button type="button" class="btn btn-sm btn-outline-secondary ml-auto" id="btnCancelarSeleccionCompleta">
+                    Usar solo esta página
+                </button>
             </div>
 
             @if($archivos->count() > 0)
@@ -191,8 +205,72 @@
 <script>
 $(document).ready(function() {
     const maxTamanoBytes = {{ config('descargas.zip_tamano_maximo_gb', 10) * 1024 * 1024 * 1024 }};
+    const maxTamanoGb = {{ config('descargas.zip_tamano_maximo_gb', 10) }};
+
+    // Cuando está activa, la selección real no son los checkboxes tildados
+    // en esta página sino seleccionCompleta.ids (todos los resultados del
+    // filtro actual, traídos por /descargas/ids-filtrados).
+    let seleccionCompleta = null;
+
+    function activarSeleccionCompleta(data) {
+        seleccionCompleta = data;
+        $('.archivo-checkbox').prop('checked', true);
+        $('#selectAllArchivos').prop('checked', true);
+        $('#contadorSeleccionados').text(data.total);
+        $('#avisoSeleccionCompletaTotal').text(data.total);
+        $('#avisoSeleccionCompleta').removeClass('d-none').addClass('d-flex');
+
+        const superaLimite = data.tamano_bytes > maxTamanoBytes;
+        $('#btnDescargarZip').prop('disabled', superaLimite);
+        if (superaLimite) {
+            descargasToast(`El tamaño total (${data.total} archivos) supera el límite de ${maxTamanoGb} GB para armar un ZIP`, 'warning');
+        }
+
+        // Descargar sin ZIP dispara una descarga por archivo: con una
+        // selección de este tamaño el navegador bloquea la mayoría por
+        // "sitio pidiendo descargar muchos archivos". Mejor forzar el ZIP.
+        $('#btnDescargarSeparado').prop('disabled', true)
+            .attr('title', 'No disponible para selecciones tan grandes: usá "Descargar como ZIP"');
+    }
+
+    function cancelarSeleccionCompleta() {
+        if (!seleccionCompleta) {
+            return;
+        }
+        seleccionCompleta = null;
+        $('#avisoSeleccionCompleta').removeClass('d-flex').addClass('d-none');
+        $('#btnDescargarSeparado').attr('title', 'Descarga cada archivo por separado, sin armar un ZIP (más cómodo desde el celular)');
+    }
+
+    $('#btnSeleccionarTodosResultados').click(function() {
+        const btn = $(this);
+        const originalText = btn.text();
+        btn.prop('disabled', true).text('Cargando...');
+
+        $.ajax({
+            url: btn.data('url'),
+            method: 'GET',
+            success: function(response) {
+                activarSeleccionCompleta(response);
+            },
+            error: function(xhr) {
+                descargasErrorAjax(xhr, 'Error al seleccionar todos los resultados');
+            },
+            complete: function() {
+                btn.prop('disabled', false).text(originalText);
+            }
+        });
+    });
+
+    $('#btnCancelarSeleccionCompleta').click(function() {
+        cancelarSeleccionCompleta();
+        $('.archivo-checkbox').prop('checked', false);
+        $('#selectAllArchivos').prop('checked', false);
+        actualizarContador();
+    });
 
     $(document).on('change', '.archivo-checkbox', function() {
+        cancelarSeleccionCompleta();
         const total = $('.archivo-checkbox').length;
         const marcados = $('.archivo-checkbox:checked').length;
         $('#selectAllArchivos').prop('checked', total > 0 && marcados === total);
@@ -200,11 +278,16 @@ $(document).ready(function() {
     });
 
     $('#selectAllArchivos').change(function() {
+        cancelarSeleccionCompleta();
         $('.archivo-checkbox').prop('checked', this.checked);
         actualizarContador();
     });
 
     function actualizarContador() {
+        if (seleccionCompleta) {
+            return;
+        }
+
         const seleccionados = $('.archivo-checkbox:checked').length;
         $('#contadorSeleccionados').text(seleccionados);
         $('#btnDescargarZip').prop('disabled', seleccionados === 0);
@@ -283,7 +366,9 @@ $(document).ready(function() {
     });
 
     $('#btnDescargarZip').click(function() {
-        const archivosIds = $('.archivo-checkbox:checked').map(function() { return $(this).val(); }).get();
+        const archivosIds = seleccionCompleta
+            ? seleccionCompleta.ids
+            : $('.archivo-checkbox:checked').map(function() { return $(this).val(); }).get();
         if (archivosIds.length === 0) {
             return;
         }
@@ -312,6 +397,7 @@ $(document).ready(function() {
                     });
 
                     $('.archivo-checkbox').prop('checked', false);
+                    cancelarSeleccionCompleta();
                     actualizarContador();
                 } else {
                     descargasToast(response.message, 'error');

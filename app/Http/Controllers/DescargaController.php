@@ -14,6 +14,7 @@ use App\Models\DescargaSolicitudCompartir;
 use App\Models\DescargaZipTemporal;
 use App\Models\User;
 use App\Services\Descargas\DescargaRepositorio;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -67,55 +68,13 @@ class DescargaController extends Controller
             ]);
         }
 
-        $query = DescargaArchivo::with(['categoria', 'user', 'roles'])
-            ->activos()
-            ->noExpirados()
-            ->accesiblesPor(Auth::user());
-
-        // Búsqueda por texto
-        if ($request->filled('buscar')) {
-            $busqueda = $request->input('buscar');
-            $query->where(function ($q) use ($busqueda) {
-                $q->where('nombre_original', 'like', "%{$busqueda}%")
-                  ->orWhere('extension', 'like', "%{$busqueda}%")
-                  ->orWhere('descripcion', 'like', "%{$busqueda}%");
-            });
-        }
-
-        // Filtro por categoría
-        if ($request->filled('categoria_id')) {
-            $query->where('categoria_id', $request->input('categoria_id'));
-        }
-
-        // Filtro por extensión
-        if ($request->filled('extension')) {
-            $query->where('extension', $request->input('extension'));
-        }
-
-        // Filtro por usuario que subió
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->input('user_id'));
-        }
-
-        // Filtro por fecha de subida desde
-        if ($request->filled('fecha_subida_desde')) {
-            $query->whereDate('created_at', '>=', $request->input('fecha_subida_desde'));
-        }
-
-        // Filtro por fecha de subida hasta
-        if ($request->filled('fecha_subida_hasta')) {
-            $query->whereDate('created_at', '<=', $request->input('fecha_subida_hasta'));
-        }
-
-        // Filtro por tamaño mínimo (en KB)
-        if ($request->filled('tamano_min')) {
-            $query->where('tamano_bytes', '>=', $request->input('tamano_min') * 1024);
-        }
-
-        // Filtro por tamaño máximo (en KB)
-        if ($request->filled('tamano_max')) {
-            $query->where('tamano_bytes', '<=', $request->input('tamano_max') * 1024);
-        }
+        $query = $this->aplicarFiltrosArchivos(
+            DescargaArchivo::with(['categoria', 'user', 'roles'])
+                ->activos()
+                ->noExpirados()
+                ->accesiblesPor(Auth::user()),
+            $request
+        );
 
         // Ordenamiento
         $orden = $request->input('orden', 'recientes');
@@ -140,6 +99,72 @@ class DescargaController extends Controller
         $favoritosIds = DescargaFavorito::where('user_id', Auth::id())->pluck('archivo_id')->all();
 
         return view('herramientas.descargas.index', compact('archivos', 'categorias', 'extensiones', 'usuarios', 'favoritosIds'));
+    }
+
+    /**
+     * IDs y tamaño total de todos los archivos que matchean los filtros
+     * actuales (sin paginar). Usado por "Seleccionar categoría completa" en
+     * el listado, para armar el ZIP con más archivos de los que entran en
+     * una sola página sin tener que traer los 20 con sus relaciones.
+     */
+    public function idsFiltrados(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $archivos = $this->aplicarFiltrosArchivos(
+            DescargaArchivo::activos()->noExpirados()->accesiblesPor(Auth::user()),
+            $request
+        )->get(['id', 'tamano_bytes']);
+
+        return response()->json([
+            'ids' => $archivos->pluck('id'),
+            'total' => $archivos->count(),
+            'tamano_bytes' => $archivos->sum('tamano_bytes'),
+        ]);
+    }
+
+    /**
+     * Aplica a $query los mismos filtros de búsqueda/categoría/extensión/etc.
+     * que usan index() e idsFiltrados(), para no duplicarlos.
+     */
+    private function aplicarFiltrosArchivos(Builder $query, Request $request): Builder
+    {
+        if ($request->filled('buscar')) {
+            $busqueda = $request->input('buscar');
+            $query->where(function ($q) use ($busqueda) {
+                $q->where('nombre_original', 'like', "%{$busqueda}%")
+                  ->orWhere('extension', 'like', "%{$busqueda}%")
+                  ->orWhere('descripcion', 'like', "%{$busqueda}%");
+            });
+        }
+
+        if ($request->filled('categoria_id')) {
+            $query->where('categoria_id', $request->input('categoria_id'));
+        }
+
+        if ($request->filled('extension')) {
+            $query->where('extension', $request->input('extension'));
+        }
+
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->input('user_id'));
+        }
+
+        if ($request->filled('fecha_subida_desde')) {
+            $query->whereDate('created_at', '>=', $request->input('fecha_subida_desde'));
+        }
+
+        if ($request->filled('fecha_subida_hasta')) {
+            $query->whereDate('created_at', '<=', $request->input('fecha_subida_hasta'));
+        }
+
+        if ($request->filled('tamano_min')) {
+            $query->where('tamano_bytes', '>=', $request->input('tamano_min') * 1024);
+        }
+
+        if ($request->filled('tamano_max')) {
+            $query->where('tamano_bytes', '<=', $request->input('tamano_max') * 1024);
+        }
+
+        return $query;
     }
 
     public function galeria(Request $request)

@@ -980,6 +980,7 @@ Route::group(['middleware' => ['auth', 'track.online']], function () {
         Route::post('/{archivo}/favorito', [DescargaController::class, 'toggleFavorito'])->name('toggle-favorito');
         Route::post('/solicitar-zip', [DescargaController::class, 'solicitarZip'])->name('solicitar-zip');
         Route::get('/descargar-zip/{token}', [DescargaController::class, 'descargarZip'])->name('descargar-zip');
+        Route::get('/ids-filtrados', [DescargaController::class, 'idsFiltrados'])->name('ids-filtrados');
 
         // Rutas catch-all (deben ir al final)
         Route::get('/galeria', [DescargaController::class, 'galeria'])->name('galeria');

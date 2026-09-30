@@ -188,7 +188,9 @@ class DescargaController extends Controller
               ->whereIn('extension', ['jpg', 'jpeg', 'png', 'gif']);
         })->select('id', 'name')->orderBy('name')->get();
 
-        return view('herramientas.descargas.galeria', compact('archivos', 'categorias', 'usuarios'));
+        $favoritosIds = DescargaFavorito::where('user_id', Auth::id())->pluck('archivo_id')->all();
+
+        return view('herramientas.descargas.galeria', compact('archivos', 'categorias', 'usuarios', 'favoritosIds'));
     }
 
     public function show(DescargaArchivo $archivo)

@@ -162,6 +162,36 @@
         opacity: .5;
     }
 
+    .descargas-info-list {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        row-gap: .85rem;
+        column-gap: 1rem;
+    }
+
+    .descargas-info-list dt {
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: .82rem;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+    }
+
+    .descargas-info-list dd {
+        margin-bottom: 0;
+        color: var(--text-primary);
+    }
+
+    @media (max-width: 575.98px) {
+        .descargas-info-list {
+            grid-template-columns: 1fr;
+            row-gap: .25rem;
+        }
+        .descargas-info-list dd {
+            margin-bottom: .5rem;
+        }
+    }
+
     .descargas-stat-icon {
         width: 3.25rem;
         height: 3.25rem;

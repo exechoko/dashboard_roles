@@ -26,87 +26,74 @@
                         <h5 class="mb-0"><i class="fas fa-info-circle mr-2"></i>Información del archivo</h5>
                     </div>
                     <div class="card-body">
-                        <table class="table table-borderless mb-0">
-                            <tr>
-                                <th style="width: 150px;">Nombre original</th>
-                                <td>{{ $archivo->nombre_original }}</td>
-                            </tr>
-                            <tr>
-                                <th>Categoría</th>
-                                <td>
-                                    <span class="badge" style="background-color: {{ $archivo->categoria->color }}">
-                                        <i class="{{ $archivo->categoria->icono }} mr-1"></i>
-                                        {{ $archivo->categoria->nombre }}
-                                    </span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>Tamaño</th>
-                                <td>{{ $archivo->tamano_humano }}</td>
-                            </tr>
-                            <tr>
-                                <th>Tipo</th>
-                                <td><span class="badge badge-secondary">.{{ strtoupper($archivo->extension) }}</span></td>
-                            </tr>
-                            <tr>
-                                <th>Subido por</th>
-                                <td>{{ $archivo->user->name ?? 'Sistema' }}</td>
-                            </tr>
-                            <tr>
-                                <th>Fecha de carga</th>
-                                <td>{{ $archivo->created_at->format('d/m/Y H:i') }}</td>
-                            </tr>
-                            <tr>
-                                <th>Descargas</th>
-                                <td><span class="badge badge-info">{{ $archivo->descargas_count }}</span></td>
-                            </tr>
+                        <dl class="descargas-info-list mb-0">
+                            <dt>Nombre original</dt>
+                            <dd>{{ $archivo->nombre_original }}</dd>
+
+                            <dt>Categoría</dt>
+                            <dd>
+                                <span class="badge descarga-badge-categoria" style="--categoria-color: {{ $archivo->categoria->color }}">
+                                    <i class="{{ $archivo->categoria->icono }} mr-1"></i>
+                                    {{ $archivo->categoria->nombre }}
+                                </span>
+                            </dd>
+
+                            <dt>Tamaño</dt>
+                            <dd>{{ $archivo->tamano_humano }}</dd>
+
+                            <dt>Tipo</dt>
+                            <dd><span class="badge badge-secondary">.{{ strtoupper($archivo->extension) }}</span></dd>
+
+                            <dt>Subido por</dt>
+                            <dd>{{ $archivo->user->name ?? 'Sistema' }}</dd>
+
+                            <dt>Fecha de carga</dt>
+                            <dd>{{ $archivo->created_at->format('d/m/Y H:i') }}</dd>
+
+                            <dt>Descargas</dt>
+                            <dd><span class="badge badge-info">{{ $archivo->descargas_count }}</span></dd>
+
                             @if($archivo->expira_at)
-                                <tr>
-                                    <th>Expiración</th>
-                                    <td>
-                                        @if($archivo->esta_expirado)
-                                            <span class="badge badge-danger">Expirado</span>
-                                        @else
-                                            <span class="badge badge-warning">
-                                                Expira en {{ $archivo->dias_para_expirar }} días
-                                                ({{ $archivo->expira_at->format('d/m/Y H:i') }})
-                                            </span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endif
-                            @if($archivo->descripcion)
-                                <tr>
-                                    <th>Descripción</th>
-                                    <td>{{ $archivo->descripcion }}</td>
-                                </tr>
-                            @endif
-                            @if($archivo->tags->count() > 0)
-                                <tr>
-                                    <th>Etiquetas</th>
-                                    <td>
-                                        @foreach($archivo->tags as $tag)
-                                            <span class="badge badge-light mr-1">{{ $tag->nombre }}</span>
-                                        @endforeach
-                                    </td>
-                                </tr>
-                            @endif
-                            @if($archivo->es_compartido)
-                                <tr>
-                                    <th>Compartido por</th>
-                                    <td>
-                                        <span class="badge badge-info">
-                                            <i class="fas fa-share-alt"></i>
-                                            {{ $archivo->compartidoPor->name ?? 'N/A' }}
+                                <dt>Expiración</dt>
+                                <dd>
+                                    @if($archivo->esta_expirado)
+                                        <span class="badge badge-danger">Expirado</span>
+                                    @else
+                                        <span class="badge badge-warning">
+                                            Expira en {{ $archivo->dias_para_expirar }} días
+                                            ({{ $archivo->expira_at->format('d/m/Y H:i') }})
                                         </span>
-                                        <br>
-                                        <small class="text-muted">
-                                            Fecha: {{ $archivo->updated_at->format('d/m/Y H:i') }}
-                                        </small>
-                                    </td>
-                                </tr>
+                                    @endif
+                                </dd>
                             @endif
-                        </table>
+
+                            @if($archivo->descripcion)
+                                <dt>Descripción</dt>
+                                <dd>{{ $archivo->descripcion }}</dd>
+                            @endif
+
+                            @if($archivo->tags->count() > 0)
+                                <dt>Etiquetas</dt>
+                                <dd>
+                                    @foreach($archivo->tags as $tag)
+                                        <span class="badge badge-light mr-1">{{ $tag->nombre }}</span>
+                                    @endforeach
+                                </dd>
+                            @endif
+
+                            @if($archivo->es_compartido)
+                                <dt>Compartido por</dt>
+                                <dd>
+                                    <span class="badge badge-info">
+                                        <i class="fas fa-share-alt"></i>
+                                        {{ $archivo->compartidoPor->name ?? 'N/A' }}
+                                    </span>
+                                    <small class="text-muted d-block mt-1">
+                                        Fecha: {{ $archivo->updated_at->format('d/m/Y H:i') }}
+                                    </small>
+                                </dd>
+                            @endif
+                        </dl>
                     </div>
                 </div>
 
@@ -118,9 +105,10 @@
                         </div>
                         <div class="card-body text-center">
                             @if(in_array($archivo->extension, ['jpg', 'jpeg', 'png', 'gif']))
-                                <img src="{{ route('descargas.preview', $archivo) }}" class="img-fluid" style="max-height: 500px;" alt="Preview">
+                                <img src="{{ route('descargas.preview', $archivo) }}" class="img-fluid rounded" style="max-height: 500px;" alt="Preview"
+                                     onerror="this.replaceWith(Object.assign(document.createElement('p'), {className: 'text-muted mb-0 py-5', innerHTML: '<i class=\'fas fa-image fa-2x mb-2 d-block\'></i>La vista previa no está disponible.'}))">
                             @elseif($archivo->extension === 'pdf')
-                                <iframe src="{{ route('descargas.preview', $archivo) }}" style="width: 100%; height: 600px; border: 1px solid #ddd;"></iframe>
+                                <iframe src="{{ route('descargas.preview', $archivo) }}" style="width: 100%; height: 600px; border: 1px solid var(--border-color);"></iframe>
                             @endif
                         </div>
                     </div>
@@ -185,9 +173,9 @@
                                 ->where('archivo_id', $archivo->id)
                                 ->exists();
                         @endphp
-                        <button type="button" class="btn btn-{{ $esFavorito ? 'warning' : 'outline-warning' }} btn-lg btn-block mt-2 btn-toggle-favorito" 
+                        <button type="button" class="btn btn-{{ $esFavorito ? 'warning' : 'outline-warning' }} btn-lg btn-block mt-2 btn-toggle-favorito"
                                 data-archivo-id="{{ $archivo->id }}">
-                            <i class="fas fa-star"></i> 
+                            <i class="fas fa-star"></i>
                             {{ $esFavorito ? 'Quitar de favoritos' : 'Agregar a favoritos' }}
                         </button>
                     </div>
@@ -212,9 +200,9 @@
                                         <i class="fas fa-user"></i> {{ $usuario->name }}
                                     </span>
                                     @can('administrar-plataforma-descargas')
-                                        <form action="{{ route('descargas.admin.revocar-acceso', [$archivo, $usuario]) }}" 
-                                              method="POST" class="d-inline"
-                                              onsubmit="return confirm('¿Revocar acceso a {{ $usuario->name }}?')">
+                                        <form action="{{ route('descargas.admin.revocar-acceso', [$archivo, $usuario]) }}"
+                                              method="POST" class="d-inline form-revocar-acceso"
+                                              data-usuario="{{ $usuario->name }}">
                                             @csrf
                                             <button type="submit" class="btn btn-sm btn-outline-danger" title="Revocar acceso">
                                                 <i class="fas fa-times"></i>
@@ -229,7 +217,7 @@
                             {{-- Nada adicional para admin --}}
                         @else
                             <hr>
-                            <button type="button" class="btn btn-outline-primary btn-block" 
+                            <button type="button" class="btn btn-outline-primary btn-block"
                                     data-toggle="modal" data-target="#modalCompartir">
                                 <i class="fas fa-share-alt"></i> Solicitar compartir con otro usuario
                             </button>
@@ -260,23 +248,22 @@
     </div>
 </section>
 
+@include('herramientas.descargas.partials._styles')
+
 @push('scripts')
+@include('herramientas.descargas.partials._scripts')
 <script>
 $(document).ready(function() {
     $('.btn-toggle-favorito').click(function() {
         const button = $(this);
         const archivoId = button.data('archivo-id');
-        const token = '{{ csrf_token() }}';
 
         $.ajax({
             url: `/descargas/${archivoId}/favorito`,
             method: 'POST',
-            data: {
-                _token: token
-            },
+            data: { _token: '{{ csrf_token() }}' },
             success: function(response) {
                 if (response.success) {
-                    // Cambiar el estado del botón
                     if (response.es_favorito) {
                         button.removeClass('btn-outline-warning').addClass('btn-warning');
                         button.html('<i class="fas fa-star"></i> Quitar de favoritos');
@@ -284,27 +271,26 @@ $(document).ready(function() {
                         button.removeClass('btn-warning').addClass('btn-outline-warning');
                         button.html('<i class="fas fa-star"></i> Agregar a favoritos');
                     }
-                    
-                    // Mostrar notificación
-                    const alertClass = response.es_favorito ? 'success' : 'info';
-                    const alertHtml = `
-                        <div class="alert alert-${alertClass} alert-dismissible fade show" role="alert">
-                            ${response.message}
-                            <button type="button" class="close" data-dismiss="alert">
-                                <span>&times;</span>
-                            </button>
-                        </div>
-                    `;
-                    $('.section-body').prepend(alertHtml);
-                    
-                    // Auto-ocultar después de 3 segundos
-                    setTimeout(function() {
-                        $('.alert').alert('close');
-                    }, 3000);
+                    descargasToast(response.message || 'Favoritos actualizados');
                 }
             },
             error: function(xhr) {
-                alert('Error al actualizar favorito');
+                descargasErrorAjax(xhr, 'Error al actualizar favorito');
+            }
+        });
+    });
+
+    $('.form-revocar-acceso').submit(function(e) {
+        e.preventDefault();
+        const form = $(this);
+
+        descargasConfirmar({
+            titulo: '¿Revocar acceso?',
+            texto: `Se le quitará el acceso directo a ${form.data('usuario')}.`,
+            confirmText: 'Sí, revocar',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.off('submit').submit();
             }
         });
     });
@@ -331,7 +317,7 @@ $(document).ready(function() {
                     </div>
                     <div class="modal-body">
                         <p>Selecciona el usuario con quien deseas compartir este archivo:</p>
-                        
+
                         <div class="form-group">
                             <label>Usuario destino *</label>
                             <select name="usuario_destino_id" class="form-control" required>
@@ -344,13 +330,13 @@ $(document).ready(function() {
 
                         <div class="form-group">
                             <label>Motivo (opcional)</label>
-                            <textarea name="motivo" class="form-control" rows="3" 
+                            <textarea name="motivo" class="form-control" rows="3"
                                       placeholder="Explica por qué necesitas compartir este archivo..."></textarea>
                         </div>
 
                         <div class="alert alert-info">
                             <i class="fas fa-info-circle"></i>
-                            <strong>Importante:</strong> La solicitud será enviada a los administradores para su aprobación. 
+                            <strong>Importante:</strong> La solicitud será enviada a los administradores para su aprobación.
                             El usuario seleccionado recibirá acceso directo al archivo una vez aprobada la solicitud.
                         </div>
                     </div>
@@ -367,7 +353,6 @@ $(document).ready(function() {
 
     @push('scripts')
     <script>
-    // Cargar usuarios en el modal
     $('#modalCompartir').on('show.bs.modal', function () {
         fetch('{{ route("usuarios.json") }}')
             .then(response => response.json())
@@ -375,9 +360,8 @@ $(document).ready(function() {
                 const select = $('select[name="usuario_destino_id"]');
                 select.empty();
                 select.append('<option value="">Seleccionar usuario...</option>');
-                
+
                 data.forEach(usuario => {
-                    // No mostrar el usuario actual
                     if (usuario.id != {{ Auth::id() }}) {
                         select.append(`<option value="${usuario.id}">${usuario.name} (${usuario.email})</option>`);
                     }
@@ -385,11 +369,11 @@ $(document).ready(function() {
             })
             .catch(error => {
                 console.error('Error cargando usuarios:', error);
-                alert('Error al cargar la lista de usuarios');
+                descargasToast('Error al cargar la lista de usuarios', 'error');
+            });
     });
-});
-</script>
-@endpush
+    </script>
+    @endpush
 @endcan
 
 {{-- Modal para generar QR --}}
@@ -413,8 +397,8 @@ $(document).ready(function() {
 
                     <div class="form-group">
                         <label>Tiempo de expiración (horas)</label>
-                        <input type="number" name="expira_horas" class="form-control" 
-                               value="{{ config('descargas.qr_default_expiracion_horas', 24) }}" 
+                        <input type="number" name="expira_horas" class="form-control"
+                               value="{{ config('descargas.qr_default_expiracion_horas', 24) }}"
                                min="1" max="720">
                         <small class="form-text text-muted">
                             El código QR expirará después de este tiempo (máximo 720 horas = 30 días)
@@ -491,50 +475,33 @@ $(document).ready(function() {
 $(document).ready(function() {
     $('#formGenerarQr').submit(function(e) {
         e.preventDefault();
-        
+
         const form = $(this);
         const btn = form.find('button[type="submit"]');
         const originalText = btn.html();
-        
+
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Generando...');
-        
+
         $.ajax({
             url: form.attr('action'),
             method: 'POST',
             data: form.serialize(),
             success: function(response) {
                 if (response.success) {
-                    // Cerrar modal de generación
                     $('#modalGenerarQr').modal('hide');
-                    
-                    // Mostrar modal con QR generado
+
                     $('#qrImageGenerado').attr('src', response.qr_url);
                     $('#qrUrlGenerado').val(response.download_url);
                     $('#btnDescargarQr').attr('href', response.qr_url);
                     $('#modalQrGenerado').modal('show');
-                    
-                    // Mostrar mensaje de éxito
-                    const alertHtml = `
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle"></i>
-                            ${response.message} - Expira: ${response.expira_at}
-                            <button type="button" class="close" data-dismiss="alert">
-                                <span>&times;</span>
-                            </button>
-                        </div>
-                    `;
-                    $('.section-body').prepend(alertHtml);
-                    
-                    setTimeout(function() {
-                        $('.alert').alert('close');
-                    }, 5000);
+
+                    descargasToast(`${response.message} - Expira: ${response.expira_at}`);
                 } else {
-                    alert(response.message || 'Error al generar el QR');
+                    descargasToast(response.message || 'Error al generar el QR', 'error');
                 }
             },
             error: function(xhr) {
-                const response = xhr.responseJSON;
-                alert(response?.message || 'Error al generar el QR');
+                descargasErrorAjax(xhr, 'Error al generar el QR');
             },
             complete: function() {
                 btn.prop('disabled', false).html(originalText);
@@ -546,7 +513,7 @@ $(document).ready(function() {
         const input = $('#qrUrlGenerado')[0];
         input.select();
         document.execCommand('copy');
-        
+
         const btn = $(this);
         const originalHtml = btn.html();
         btn.html('<i class="fas fa-check"></i> Copiado');

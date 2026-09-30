@@ -9,11 +9,13 @@ use Illuminate\Console\Command;
 
 class LimpiarDireccionesCecoco extends Command
 {
+    private const DIRECCION_LISTIN_UNKNOWN = 'Segundo Sombra y Los Aromos';
+
     protected $signature = 'cecoco:limpiar-direcciones
                             {--dry-run : Solo mostrar qué cambiaría, sin modificar la base}
                             {--muestra=15 : Cantidad de ejemplos a mostrar}';
 
-    protected $description = 'Aplica a los eventos CECOCO ya importados la misma limpieza de dirección que hace la importación (marcadores D.D/Género y datos de agresor/víctima)';
+    protected $description = 'Aplica a los eventos CECOCO ya importados la misma limpieza de dirección que hace la importación (marcadores D.D/Género y datos de agresor/víctima) y vacía la dirección errónea del listín en llamadas UNKNOWN';
 
     public function handle(): int
     {
@@ -63,7 +65,24 @@ class LimpiarDireccionesCecoco extends Command
         $this->info(($dryRun ? '[dry-run] Cambiarían ' : 'Actualizadas ') . "{$filasAfectadas} filas ({$aNull} quedan en NULL).");
         $this->info(($dryRun ? '[dry-run] Se copiarían ' : 'Copiadas ') . "{$coordsCopiadas} geocodificaciones a la dirección limpia.");
 
+        $this->limpiarDireccionDelListin($dryRun);
+
         return self::SUCCESS;
+    }
+
+    /**
+     * Vacía la dirección que el listín de CECOCO asignaba por error a las llamadas
+     * de teléfono UNKNOWN (ya corregido en origen), que las apilaba todas en un punto del mapa.
+     */
+    private function limpiarDireccionDelListin(bool $dryRun): void
+    {
+        $consulta = EventoCecoco::query()
+            ->where('telefono', 'UNKNOWN')
+            ->where('direccion', self::DIRECCION_LISTIN_UNKNOWN);
+
+        $filas = $dryRun ? $consulta->count() : $consulta->toBase()->update(['direccion' => null]);
+
+        $this->info(($dryRun ? '[dry-run] Quedarían ' : 'Quedaron ') . "{$filas} eventos UNKNOWN sin la dirección '" . self::DIRECCION_LISTIN_UNKNOWN . "'.");
     }
 
     /**

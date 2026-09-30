@@ -1535,8 +1535,8 @@
         function crearCapaBase() {
             var capas = [
                 {
-                    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-                    options: { attribution:'&copy; OpenStreetMap contributors &copy; CARTO', maxZoom:19, subdomains:'abcd', crossOrigin:false }
+                    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+                    options: { attribution:'Tiles &copy; Esri', maxZoom:19, crossOrigin:false }
                 },
                 {
                     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',

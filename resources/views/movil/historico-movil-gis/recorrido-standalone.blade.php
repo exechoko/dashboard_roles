@@ -57,10 +57,9 @@
     });
 
     var map = L.map('map');
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 19,
-        subdomains: 'abcd',
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+        attribution: 'Tiles &copy; Esri'
     }).addTo(map);
 
     var latlngs = puntos.map(function (p) { return [p.lat, p.lng]; });

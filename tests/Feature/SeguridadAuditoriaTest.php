@@ -42,6 +42,22 @@ class SeguridadAuditoriaTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_el_registro_publico_esta_deshabilitado(): void
+    {
+        $email = 'registro-' . uniqid() . '@example.test';
+
+        $this->get('/register')->assertNotFound();
+        $this->post('/register', [
+            'name' => 'Intruso',
+            'email' => $email,
+            'password' => 'secreto123',
+            'password_confirmation' => 'secreto123',
+        ])->assertStatus(404);
+
+        $this->assertDatabaseMissing('users', ['email' => $email]);
+        $this->assertGuest();
+    }
+
     public function test_usuarios_json_exige_permiso(): void
     {
         $this->actingAs($this->usuarioCon())->get(route('usuarios.json'))->assertForbidden();

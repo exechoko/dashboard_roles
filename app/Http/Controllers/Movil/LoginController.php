@@ -33,7 +33,7 @@ class LoginController extends BaseLoginController
         }
 
         // El super administrador siempre puede acceder
-        if ($user->email === 'admin@gmail.com') {
+        if ($user->hasRole('Super Administrador')) {
             return;
         }
 

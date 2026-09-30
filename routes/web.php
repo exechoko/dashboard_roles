@@ -230,7 +230,8 @@ Route::group(['middleware' => ['auth', 'track.online']], function () {
         ->middleware('permission:ver-menu-web|editar-web-contadores|editar-web-textos|editar-web-historia|editar-web-tecnologia|editar-web-dependencias|editar-web-galeria');
 
     Route::resource('roles', RolController::class);
-    Route::get('/usuarios/json', [UsuarioController::class, 'json'])->name('usuarios.json');
+    Route::get('/usuarios/json', [UsuarioController::class, 'json'])->name('usuarios.json')
+        ->middleware('permission:ver-usuario|ver-plataforma-descargas|administrar-plataforma-descargas');
     Route::get('/usuarios/conectados', [UsuarioController::class, 'conectados'])->name('usuarios.conectados');
     Route::get('/usuarios/exportar/excel', [UsuarioController::class, 'exportarExcel'])->name('usuarios.exportar-excel');
     Route::resource('usuarios', UsuarioController::class);

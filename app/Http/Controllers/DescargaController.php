@@ -117,7 +117,9 @@ class DescargaController extends Controller
             $q->activos()->accesiblesPor(Auth::user());
         })->select('id', 'name')->orderBy('name')->get();
 
-        return view('herramientas.descargas.index', compact('archivos', 'categorias', 'extensiones', 'usuarios'));
+        $favoritosIds = DescargaFavorito::where('user_id', Auth::id())->pluck('archivo_id')->all();
+
+        return view('herramientas.descargas.index', compact('archivos', 'categorias', 'extensiones', 'usuarios', 'favoritosIds'));
     }
 
     public function galeria(Request $request)

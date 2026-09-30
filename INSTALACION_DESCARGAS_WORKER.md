@@ -174,12 +174,6 @@ Los ZIPs expiran después de 24 horas por defecto. Puedes cambiar esto en `confi
    Get-Content storage/logs/laravel.log -Tail 100
    ```
 
-### El progreso no se actualiza en la interfaz
-
-1. Verificar que la ruta `/descargas/admin/job-status/{jobId}` esté accesible
-2. Abrir la consola del navegador (F12) y verificar que no haya errores JavaScript
-3. Verificar que el worker esté procesando el trabajo
-
 ### Los archivos no se mueven a la ubicación final
 
 1. Verificar permisos de escritura en la carpeta `storage/app/descargas/`

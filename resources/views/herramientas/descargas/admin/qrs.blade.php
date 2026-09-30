@@ -2,14 +2,13 @@
 
 @section('content')
 <section class="section">
-    <div class="section-header d-flex justify-content-between align-items-center">
+    <div class="section-header">
         <h3 class="page__heading"><i class="fas fa-qrcode mr-2"></i>Códigos QR Generados</h3>
-        <a href="{{ route('descargas.admin.index') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Volver
-        </a>
     </div>
 
     <div class="section-body">
+        @include('herramientas.descargas.admin.partials._nav')
+
         {{-- Filtros --}}
         <div class="card mb-4">
             <div class="card-body">
@@ -64,8 +63,9 @@
                                 @foreach($qrs as $qr)
                                     <tr>
                                         <td class="text-center">
-                                            <img src="{{ route('descargas.admin.qr.descargar-imagen', $qr) }}" 
-                                                 alt="QR" style="width: 50px; height: 50px;">
+                                            <img src="{{ route('descargas.admin.qr.descargar-imagen', $qr) }}"
+                                                 alt="QR" style="width: 50px; height: 50px;"
+                                                 onerror="this.replaceWith(Object.assign(document.createElement('i'), {className: 'fas fa-qrcode fa-2x text-muted'}))">
                                         </td>
                                         <td>
                                             <a href="{{ route('descargas.show', $qr->archivo) }}" class="font-weight-bold">
@@ -109,14 +109,14 @@
                                                 <i class="fas fa-download"></i>
                                             </a>
                                             @if($qr->activo && !$qr->expira_at->isPast() && $qr->usos_count < $qr->max_usos)
-                                                <button type="button" class="btn btn-sm btn-info btn-ver-qr" 
+                                                <button type="button" class="btn btn-sm btn-info btn-ver-qr"
                                                         data-qr-url="{{ route('descargas.qr.descargar', $qr->token) }}"
+                                                        data-qr-imagen="{{ route('descargas.admin.qr.descargar-imagen', $qr) }}"
                                                         title="Ver código QR">
                                                     <i class="fas fa-qrcode"></i>
                                                 </button>
-                                                <form action="{{ route('descargas.admin.qr.desactivar', $qr) }}" 
-                                                      method="POST" class="d-inline" 
-                                                      onsubmit="return confirm('¿Desactivar este código QR?')">
+                                                <form action="{{ route('descargas.admin.qr.desactivar', $qr) }}"
+                                                      method="POST" class="d-inline form-desactivar-qr">
                                                     @csrf
                                                     <button type="submit" class="btn btn-sm btn-danger" title="Desactivar">
                                                         <i class="fas fa-ban"></i>
@@ -171,13 +171,16 @@
     </div>
 </div>
 
+@include('herramientas.descargas.partials._styles')
+@endsection
+
 @push('scripts')
+@include('herramientas.descargas.partials._scripts')
 <script>
 $(document).ready(function() {
     $('.btn-ver-qr').click(function() {
-        const qrUrl = $(this).data('qr-url');
-        $('#qrUrl').val(qrUrl);
-        $('#qrImage').attr('src', 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(qrUrl));
+        $('#qrUrl').val($(this).data('qr-url'));
+        $('#qrImage').attr('src', $(this).data('qr-imagen'));
         $('#modalVerQr').modal('show');
     });
 
@@ -185,7 +188,7 @@ $(document).ready(function() {
         const input = $('#qrUrl')[0];
         input.select();
         document.execCommand('copy');
-        
+
         const btn = $(this);
         const originalHtml = btn.html();
         btn.html('<i class="fas fa-check"></i> Copiado');
@@ -193,7 +196,21 @@ $(document).ready(function() {
             btn.html(originalHtml);
         }, 2000);
     });
+
+    $('.form-desactivar-qr').submit(function(e) {
+        e.preventDefault();
+        const form = $(this);
+
+        descargasConfirmar({
+            titulo: '¿Desactivar este código QR?',
+            texto: 'Dejará de poder usarse para descargar el archivo.',
+            confirmText: 'Sí, desactivar',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.off('submit').submit();
+            }
+        });
+    });
 });
 </script>
 @endpush
-@endsection

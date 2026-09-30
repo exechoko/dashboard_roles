@@ -2,19 +2,13 @@
 
 @section('content')
 <section class="section">
-    <div class="section-header d-flex justify-content-between align-items-center">
+    <div class="section-header">
         <h3 class="page__heading"><i class="fas fa-file-alt mr-2"></i>Gestión de Archivos</h3>
-        <div>
-            <a href="{{ route('descargas.admin.create') }}" class="btn btn-success">
-                <i class="fas fa-plus"></i> Subir archivos
-            </a>
-            <a href="{{ route('descargas.admin.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Volver
-            </a>
-        </div>
     </div>
 
     <div class="section-body">
+        @include('herramientas.descargas.admin.partials._nav')
+
         {{-- Filtros --}}
         <div class="card mb-4">
             <div class="card-body">
@@ -95,7 +89,7 @@
                                             @endif
                                         </td>
                                         <td>
-                                            <span class="badge" style="background-color: {{ $archivo->categoria->color }}">
+                                            <span class="badge descarga-badge-categoria" style="--categoria-color: {{ $archivo->categoria->color }}">
                                                 {{ $archivo->categoria->nombre }}
                                             </span>
                                         </td>
@@ -140,7 +134,7 @@
                                                     </button>
                                                 </form>
                                             @endif
-                                            <form action="{{ route('descargas.admin.destroy', $archivo) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar este archivo? Esta acción no se puede deshacer.')">
+                                            <form action="{{ route('descargas.admin.destroy', $archivo) }}" method="POST" class="d-inline form-eliminar-archivo" data-archivo="{{ $archivo->nombre_original }}">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
@@ -166,4 +160,28 @@
         </div>
     </div>
 </section>
+
+@include('herramientas.descargas.partials._styles')
+
+@push('scripts')
+@include('herramientas.descargas.partials._scripts')
+<script>
+$(document).ready(function() {
+    $('.form-eliminar-archivo').submit(function(e) {
+        e.preventDefault();
+        const form = $(this);
+
+        descargasConfirmar({
+            titulo: '¿Eliminar este archivo?',
+            texto: `"${form.data('archivo')}" se marcará como inactivo. Esta acción no se puede deshacer desde la interfaz.`,
+            confirmText: 'Sí, eliminar',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.off('submit').submit();
+            }
+        });
+    });
+});
+</script>
+@endpush
 @endsection

@@ -4,17 +4,14 @@
 <section class="section">
     <div class="section-header d-flex justify-content-between align-items-center">
         <h3 class="page__heading"><i class="fas fa-tags mr-2"></i>Categorías</h3>
-        <div>
-            <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalCrearCategoria">
-                <i class="fas fa-plus"></i> Nueva categoría
-            </button>
-            <a href="{{ route('descargas.admin.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Volver
-            </a>
-        </div>
+        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#modalCrearCategoria">
+            <i class="fas fa-plus"></i> Nueva categoría
+        </button>
     </div>
 
     <div class="section-body">
+        @include('herramientas.descargas.admin.partials._nav')
+
         <div class="card">
             <div class="card-body">
                 @if($categorias->count() > 0)
@@ -66,7 +63,7 @@
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             @if($categoria->archivos_count == 0)
-                                                <form action="{{ route('descargas.admin.categorias.destroy', $categoria) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar esta categoría?')">
+                                                <form action="{{ route('descargas.admin.categorias.destroy', $categoria) }}" method="POST" class="d-inline form-eliminar-categoria" data-categoria="{{ $categoria->nombre }}">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-outline-danger">
@@ -196,9 +193,11 @@
         </div>
     </div>
 </div>
+@include('herramientas.descargas.partials._styles')
 @endsection
 
 @push('scripts')
+@include('herramientas.descargas.partials._scripts')
 <script>
 document.querySelectorAll('.btn-editar').forEach(btn => {
     btn.addEventListener('click', function() {
@@ -210,6 +209,21 @@ document.querySelectorAll('.btn-editar').forEach(btn => {
         document.getElementById('edit_color').value = this.dataset.color;
         document.getElementById('edit_orden').value = this.dataset.orden;
         document.getElementById('edit_activo').checked = this.dataset.activo === '1';
+    });
+});
+
+$('.form-eliminar-categoria').submit(function(e) {
+    e.preventDefault();
+    const form = $(this);
+
+    descargasConfirmar({
+        titulo: '¿Eliminar esta categoría?',
+        texto: `"${form.data('categoria')}" se eliminará permanentemente.`,
+        confirmText: 'Sí, eliminar',
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.off('submit').submit();
+        }
     });
 });
 </script>

@@ -151,6 +151,32 @@ class SeguridadAuditoriaTest extends TestCase
             'doble barra' => ['geoserver//rest/workspaces'],
             'punto' => ['geoserver/./rest'],
             'punto codificado' => ['geoserver/%2e%2e/rest'],
+            'parametro de path con punto y coma' => ['geoserver;x/rest/workspaces'],
+        ];
+    }
+
+    /**
+     * @dataProvider metodosProxyNoPermitidos
+     */
+    public function test_proxy_gis_rechaza_metodos_que_modifican_recursos(string $metodo): void
+    {
+        Http::fake();
+        $usuario = $this->usuarioCon(['ver-mapa-gis-cecoco']);
+
+        $this->actingAs($usuario)->call($metodo, '/cecoco/gis-proxy/geoserver/wfs')->assertStatus(405);
+
+        Http::assertNothingSent();
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function metodosProxyNoPermitidos(): array
+    {
+        return [
+            'PUT' => ['PUT'],
+            'DELETE' => ['DELETE'],
+            'PATCH' => ['PATCH'],
         ];
     }
 

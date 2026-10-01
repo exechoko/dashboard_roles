@@ -440,11 +440,41 @@ class ChatTest extends TestCase
         $propietario = User::factory()->create();
         $otro = User::factory()->create();
         $conversacion = $this->crearConversacionPrivada($propietario, $otro);
+        $this->usarBroadcasterAbly();
 
         $this->actingAs($ajeno)
             ->postJson('/broadcasting/auth', [
                 'channel_name' => "private-chat.conversacion.{$conversacion->id}",
             ])
             ->assertForbidden();
+    }
+
+    public function test_un_participante_puede_autorizarse_en_el_canal_privado_de_la_conversacion(): void
+    {
+        $propietario = $this->usuarioConAccesoAlChat();
+        $otro = User::factory()->create();
+        $conversacion = $this->crearConversacionPrivada($propietario, $otro);
+        $this->usarBroadcasterAbly();
+
+        $this->actingAs($propietario)
+            ->postJson('/broadcasting/auth', [
+                'channel_name' => "private-chat.conversacion.{$conversacion->id}",
+            ])
+            ->assertOk();
+    }
+
+    /**
+     * El driver "log" del .env local autoriza cualquier canal sin evaluar
+     * routes/channels.php; en producción se usa Ably, así que se cambia a ese
+     * driver (con una clave falsa) y se vuelven a registrar los canales.
+     */
+    private function usarBroadcasterAbly(): void
+    {
+        config([
+            'broadcasting.default' => 'ably',
+            'broadcasting.connections.ably.key' => 'appid.keyid:secreto-de-prueba',
+        ]);
+
+        require base_path('routes/channels.php');
     }
 }

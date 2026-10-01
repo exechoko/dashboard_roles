@@ -10,18 +10,6 @@ use Minishlink\WebPush\WebPush;
 
 class WebPushService
 {
-    private WebPush $webPush;
-
-    public function __construct()
-    {
-        $this->webPush = new WebPush([
-            'VAPID' => [
-                'subject' => config('services.webpush.subject'),
-                'publicKey' => config('services.webpush.public_key'),
-                'privateKey' => config('services.webpush.private_key'),
-            ],
-        ]);
-    }
 
     /**
      * Manda una notificación a todas las suscripciones activas del usuario
@@ -43,16 +31,24 @@ class WebPushService
             return;
         }
 
-        $porEnviar = 0;
+        $porEnviar = $suscripciones->reject(
+            fn (PushSubscription $suscripcion) => in_array($suscripcion->plataforma, $plataformasEnLinea, true)
+        );
 
-        foreach ($suscripciones as $suscripcion) {
-            if (in_array($suscripcion->plataforma, $plataformasEnLinea, true)) {
-                continue;
-            }
+        if ($porEnviar->isEmpty()) {
+            return;
+        }
 
-            $porEnviar++;
+        $webPush = $this->crearCliente();
 
-            $this->webPush->queueNotification(
+        if ($webPush === null) {
+            Log::warning('WebPushService: VAPID no configurado (services.webpush), no se envía el push.');
+
+            return;
+        }
+
+        foreach ($porEnviar as $suscripcion) {
+            $webPush->queueNotification(
                 Subscription::create([
                     'endpoint' => $suscripcion->endpoint,
                     'publicKey' => $suscripcion->public_key,
@@ -63,11 +59,7 @@ class WebPushService
             );
         }
 
-        if ($porEnviar === 0) {
-            return;
-        }
-
-        foreach ($this->webPush->flush() as $reporte) {
+        foreach ($webPush->flush() as $reporte) {
             if ($reporte->isSuccess()) {
                 continue;
             }
@@ -85,5 +77,24 @@ class WebPushService
                 'response' => $reporte->getResponseContent(),
             ]);
         }
+    }
+
+    /**
+     * Arma el cliente de Web Push, o null si faltan las claves VAPID (sin
+     * ellas la librería lanza una excepción al construirse).
+     */
+    private function crearCliente(): ?WebPush
+    {
+        $vapid = [
+            'subject' => config('services.webpush.subject'),
+            'publicKey' => config('services.webpush.public_key'),
+            'privateKey' => config('services.webpush.private_key'),
+        ];
+
+        if (in_array(null, $vapid, true) || in_array('', $vapid, true)) {
+            return null;
+        }
+
+        return new WebPush(['VAPID' => $vapid]);
     }
 }

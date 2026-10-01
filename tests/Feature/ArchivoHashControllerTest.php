@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
@@ -20,7 +19,7 @@ class ArchivoHashControllerTest extends TestCase
 
     public function test_un_usuario_autenticado_puede_ver_la_herramienta(): void
     {
-        $response = $this->actingAs(User::factory()->make(['email' => 'admin@gmail.com']))
+        $response = $this->actingAs($this->crearSuperAdministrador())
             ->get(route('herramientas.hash.index'));
 
         $response->assertOk()
@@ -35,7 +34,7 @@ class ArchivoHashControllerTest extends TestCase
             'The quick brown fox jumps over the lazy dog'
         );
 
-        $response = $this->actingAs(User::factory()->make(['email' => 'admin@gmail.com']))
+        $response = $this->actingAs($this->crearSuperAdministrador())
             ->post(route('herramientas.hash.calcular'), ['archivo' => $archivo]);
 
         $response->assertOk()
@@ -48,7 +47,7 @@ class ArchivoHashControllerTest extends TestCase
 
     public function test_el_calculo_requiere_un_archivo(): void
     {
-        $response = $this->actingAs(User::factory()->make(['email' => 'admin@gmail.com']))
+        $response = $this->actingAs($this->crearSuperAdministrador())
             ->post(route('herramientas.hash.calcular'));
 
         $response->assertSessionHasErrors('archivo');
@@ -62,7 +61,7 @@ class ArchivoHashControllerTest extends TestCase
             'hash' => 'd7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592',
         ];
 
-        $response = $this->actingAs(User::factory()->make(['email' => 'admin@gmail.com']))
+        $response = $this->actingAs($this->crearSuperAdministrador())
             ->postJson(route('herramientas.hash.historial.registrar'), $datos);
 
         $response->assertCreated()
@@ -79,7 +78,7 @@ class ArchivoHashControllerTest extends TestCase
 
     public function test_rechaza_un_hash_con_formato_invalido(): void
     {
-        $response = $this->actingAs(User::factory()->make(['email' => 'admin@gmail.com']))
+        $response = $this->actingAs($this->crearSuperAdministrador())
             ->postJson(route('herramientas.hash.historial.registrar'), [
                 'nombre_archivo' => 'evidencia.bin',
                 'cifrado_aplicado' => 'SHA-256',

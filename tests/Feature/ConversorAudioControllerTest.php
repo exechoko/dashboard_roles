@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -27,7 +26,7 @@ class ConversorAudioControllerTest extends TestCase
 
     public function test_un_usuario_autenticado_puede_ver_la_herramienta(): void
     {
-        $response = $this->actingAs(User::factory()->make(['email' => 'admin@gmail.com']))
+        $response = $this->actingAs($this->crearSuperAdministrador())
             ->get(route('herramientas.conversor-audio.index'));
 
         $response->assertOk()
@@ -37,7 +36,7 @@ class ConversorAudioControllerTest extends TestCase
 
     public function test_la_conversion_requiere_un_archivo(): void
     {
-        $response = $this->actingAs(User::factory()->make(['email' => 'admin@gmail.com']))
+        $response = $this->actingAs($this->crearSuperAdministrador())
             ->postJson(route('herramientas.conversor-audio.lote.archivo', ['token' => $this->token()]));
 
         $response->assertUnprocessable()
@@ -48,7 +47,7 @@ class ConversorAudioControllerTest extends TestCase
     {
         $archivo = UploadedFile::fake()->create('audio.mp3', 10);
 
-        $response = $this->actingAs(User::factory()->make(['email' => 'admin@gmail.com']))
+        $response = $this->actingAs($this->crearSuperAdministrador())
             ->postJson(route('herramientas.conversor-audio.lote.archivo', ['token' => $this->token()]), [
                 'archivo' => $archivo,
             ]);
@@ -63,7 +62,7 @@ class ConversorAudioControllerTest extends TestCase
         // si FFmpeg está instalado en la máquina que corre el test.
         $archivo = UploadedFile::fake()->createWithContent('modulacion.wav', 'esto no es audio');
 
-        $response = $this->actingAs(User::factory()->make(['email' => 'admin@gmail.com']))
+        $response = $this->actingAs($this->crearSuperAdministrador())
             ->postJson(route('herramientas.conversor-audio.lote.archivo', ['token' => $this->token()]), [
                 'archivo' => $archivo,
             ]);
@@ -74,7 +73,7 @@ class ConversorAudioControllerTest extends TestCase
 
     public function test_registra_en_el_historial_una_conversion_fallida(): void
     {
-        $usuario = User::firstOrCreate(['email' => 'admin@gmail.com'], User::factory()->raw());
+        $usuario = $this->crearSuperAdministrador();
         // Contenido inválido: falla la conversión sin depender de si FFmpeg
         // está instalado en la máquina que corre el test.
         $archivo = UploadedFile::fake()->createWithContent('modulacion.wav', 'esto no es audio');
@@ -100,7 +99,7 @@ class ConversorAudioControllerTest extends TestCase
 
     public function test_descargar_un_lote_sin_archivos_convertidos_devuelve_404(): void
     {
-        $response = $this->actingAs(User::factory()->make(['email' => 'admin@gmail.com']))
+        $response = $this->actingAs($this->crearSuperAdministrador())
             ->getJson(route('herramientas.conversor-audio.lote.descargar', ['token' => $this->token()]));
 
         $response->assertNotFound()
@@ -109,7 +108,7 @@ class ConversorAudioControllerTest extends TestCase
 
     public function test_descarga_el_unico_mp3_de_un_lote_sin_armar_zip(): void
     {
-        $usuario = User::firstOrCreate(['email' => 'admin@gmail.com'], User::factory()->raw());
+        $usuario = $this->crearSuperAdministrador();
         $token = $this->token();
         $directorio = "conversor_audio_temp/{$usuario->id}/{$token}";
 

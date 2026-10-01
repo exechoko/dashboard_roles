@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Models\ActivacionTotem;
 use App\Models\Camara;
 use App\Models\EventoCecoco;
-use App\Models\User;
 use App\Services\ArchivoHashService;
 use App\Services\DetectorActivacionesTotem;
 use App\Services\SubidaVideoTotemService;
@@ -28,7 +27,7 @@ class ActivacionTotemTest extends TestCase
 
     public function test_un_usuario_autenticado_puede_ver_el_listado(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         $evento = EventoCecoco::factory()->create([
             'descripcion' => 'Activacion del Totem ubicado en Espejo y Crausaz',
         ]);
@@ -50,7 +49,7 @@ class ActivacionTotemTest extends TestCase
 
     public function test_estado_subidas_devuelve_el_subida_estado_de_los_ids_pedidos(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         $evento = EventoCecoco::factory()->create();
         $procesando = ActivacionTotem::create([
             'evento_cecoco_id' => $evento->id,
@@ -81,7 +80,7 @@ class ActivacionTotemTest extends TestCase
 
     public function test_el_dashboard_muestra_la_tarjeta_de_activaciones_pendientes(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         $evento = EventoCecoco::factory()->create([
             'descripcion' => 'Activacion del Totem ubicado en Racedo y Blvd',
         ]);
@@ -164,7 +163,7 @@ class ActivacionTotemTest extends TestCase
 
     public function test_marcar_como_eliminado_registra_usuario_y_fecha(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         $activacion = ActivacionTotem::create([
             'evento_cecoco_id' => EventoCecoco::factory()->create()->id,
             'nro_expediente' => '9999907',
@@ -193,7 +192,7 @@ class ActivacionTotemTest extends TestCase
         // Regresión: el botón "Marcar como eliminado" estaba oculto salvo que
         // el registro estuviera vencido (+6 meses), sin forma de resetear un
         // registro recién descargado por error (tótem equivocado, reintento).
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         $evento = EventoCecoco::factory()->create();
         $activacion = ActivacionTotem::create([
             'evento_cecoco_id' => $evento->id,
@@ -244,26 +243,26 @@ class ActivacionTotemTest extends TestCase
 
     public function test_no_detecta_bde_pegado_dentro_de_otra_palabra(): void
     {
-        EventoCecoco::factory()->create([
+        $evento = EventoCecoco::factory()->create([
             'descripcion' => 'Se comunica una femenina afuerabde una vivienda en Grabde calle',
         ]);
 
         $creadas = app(DetectorActivacionesTotem::class)->detectar();
 
         $this->assertSame(0, $creadas);
-        $this->assertDatabaseCount('activaciones_totem', 0);
+        $this->assertDatabaseMissing('activaciones_totem', ['evento_cecoco_id' => $evento->id]);
     }
 
     public function test_no_detecta_el_boliche_totem(): void
     {
-        EventoCecoco::factory()->create([
+        $evento = EventoCecoco::factory()->create([
             'descripcion' => 'Se comunica un masculino solicitando personal en el boliche TOTEM',
         ]);
 
         $creadas = app(DetectorActivacionesTotem::class)->detectar();
 
         $this->assertSame(0, $creadas);
-        $this->assertDatabaseCount('activaciones_totem', 0);
+        $this->assertDatabaseMissing('activaciones_totem', ['evento_cecoco_id' => $evento->id]);
     }
 
     public function test_reescanear_no_duplica_ni_resucita_descartados(): void
@@ -279,7 +278,7 @@ class ActivacionTotemTest extends TestCase
         $creadas = app(DetectorActivacionesTotem::class)->detectar();
 
         $this->assertSame(0, $creadas);
-        $this->assertDatabaseCount('activaciones_totem', 1);
+        $this->assertSame(1, ActivacionTotem::where('evento_cecoco_id', $evento->id)->count());
         $this->assertDatabaseHas('activaciones_totem', [
             'evento_cecoco_id' => $evento->id,
             'estado' => ActivacionTotem::ESTADO_DESCARTADO,
@@ -288,7 +287,7 @@ class ActivacionTotemTest extends TestCase
 
     public function test_marcar_como_descargado_registra_usuario_y_fecha(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         $evento = EventoCecoco::factory()->create([
             'descripcion' => 'Activacion del Totem ubicado en Racedo y America',
         ]);
@@ -554,7 +553,7 @@ class ActivacionTotemTest extends TestCase
 
     public function test_subir_video_bloqueado_si_ya_esta_descargado(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         [$totem] = $this->totemDeRedTemporal();
         $evento = EventoCecoco::factory()->create();
         $activacion = ActivacionTotem::create([
@@ -578,7 +577,7 @@ class ActivacionTotemTest extends TestCase
 
     public function test_subir_video_bloqueado_devuelve_json_para_requests_ajax(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         [$totem] = $this->totemDeRedTemporal();
         $evento = EventoCecoco::factory()->create();
         $activacion = ActivacionTotem::create([
@@ -601,7 +600,7 @@ class ActivacionTotemTest extends TestCase
 
     public function test_subir_video_exitoso_devuelve_json_para_requests_ajax(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         [$totem] = $this->totemDeRedTemporal();
         $evento = EventoCecoco::factory()->create();
         $activacion = ActivacionTotem::create([
@@ -625,7 +624,7 @@ class ActivacionTotemTest extends TestCase
 
     public function test_subir_video_guarda_temporal_y_marca_pendiente(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         [$totem] = $this->totemDeRedTemporal();
         $evento = EventoCecoco::factory()->create();
         $activacion = ActivacionTotem::create([
@@ -656,7 +655,7 @@ class ActivacionTotemTest extends TestCase
 
     public function test_subir_video_neutraliza_path_traversal_en_el_nombre_del_archivo(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         [$totem] = $this->totemDeRedTemporal();
         $evento = EventoCecoco::factory()->create();
         $activacion = ActivacionTotem::create([
@@ -685,7 +684,7 @@ class ActivacionTotemTest extends TestCase
         // Regresión: subirVideo() setea descargado_por de inmediato pero
         // fecha_descarga recién queda seteada cuando el comando termina de
         // procesar. La vista no puede asumir que ambos van siempre juntos.
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         $evento = EventoCecoco::factory()->create();
         ActivacionTotem::create([
             'evento_cecoco_id' => $evento->id,
@@ -705,11 +704,12 @@ class ActivacionTotemTest extends TestCase
 
     public function test_descargar_video_devuelve_el_archivo(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         [$totem, $rutaBase] = $this->totemDeRedTemporal();
         $evento = EventoCecoco::factory()->create();
 
-        $rutaArchivo = $rutaBase . '\\' . $totem->carpeta_red . '\\video_final.mp4';
+        $rutaArchivo = $rutaBase . DIRECTORY_SEPARATOR . 'video_final.mp4';
+        File::ensureDirectoryExists($rutaBase);
         File::put($rutaArchivo, 'contenido final del video');
 
         $activacion = ActivacionTotem::create([
@@ -736,7 +736,7 @@ class ActivacionTotemTest extends TestCase
 
     public function test_descargar_video_redirige_con_error_si_no_hay_archivo(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         $evento = EventoCecoco::factory()->create();
         $activacion = ActivacionTotem::create([
             'evento_cecoco_id' => $evento->id,
@@ -753,7 +753,7 @@ class ActivacionTotemTest extends TestCase
 
     public function test_descargar_certificado_incluye_el_hash(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         [$totem] = $this->totemDeRedTemporal();
         $evento = EventoCecoco::factory()->create();
         $activacion = ActivacionTotem::create([

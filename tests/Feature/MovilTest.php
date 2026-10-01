@@ -155,6 +155,10 @@ class MovilTest extends TestCase
     public function test_un_usuario_con_reiniciar_camara_puede_reiniciarla_desde_movil(): void
     {
         Http::fake(['*/cgi-bin/magicBox.cgi*' => Http::response('', 200)]);
+        config([
+            'services.camaras.user' => 'usuario-camara',
+            'services.camaras.pass' => 'clave-camara',
+        ]);
 
         $usuario = $this->usuarioCon(['ver-camara', 'reiniciar-camara']);
         $camara = Camara::create(['nombre' => 'Cámara test', 'ip' => '10.0.0.5']);

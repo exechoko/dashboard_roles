@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\AlertaMovimiento;
 use App\Models\PersonaAlerta;
-use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -23,7 +22,7 @@ class PersonaAlertaTest extends TestCase
 
     public function test_un_usuario_autenticado_puede_ver_el_listado(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         PersonaAlerta::factory()->create(['apellido_nombre' => 'Perez Juan']);
 
         $response = $this->actingAs($admin)->get(route('alertas-video.personas.index'));
@@ -35,7 +34,7 @@ class PersonaAlertaTest extends TestCase
     public function test_puede_cargar_una_persona_con_foto_y_queda_registrada_en_el_historial(): void
     {
         Storage::fake('anexos');
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
 
         $response = $this->actingAs($admin)->post(route('alertas-video.personas.store'), $this->datosBase([
             'apellido_nombre' => 'Gomez Maria',
@@ -57,7 +56,7 @@ class PersonaAlertaTest extends TestCase
 
     public function test_no_permite_cargar_una_persona_con_dni_duplicado(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         PersonaAlerta::factory()->create(['dni' => '20333444']);
 
         $response = $this->actingAs($admin)->post(route('alertas-video.personas.store'), $this->datosBase([
@@ -71,7 +70,7 @@ class PersonaAlertaTest extends TestCase
 
     public function test_el_dni_se_normaliza_sin_puntos(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
 
         $this->actingAs($admin)->post(route('alertas-video.personas.store'), $this->datosBase([
             'apellido_nombre' => 'Con Puntos',
@@ -83,7 +82,7 @@ class PersonaAlertaTest extends TestCase
 
     public function test_detecta_duplicado_de_dni_aunque_uno_tenga_puntos(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         PersonaAlerta::factory()->create(['dni' => '25444555']);
 
         $response = $this->actingAs($admin)->post(route('alertas-video.personas.store'), $this->datosBase([
@@ -97,7 +96,7 @@ class PersonaAlertaTest extends TestCase
 
     public function test_permite_cargar_varias_personas_sin_dni(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         PersonaAlerta::factory()->create(['dni' => null, 'apellido_nombre' => 'Sin Datos Uno']);
 
         $response = $this->actingAs($admin)->post(route('alertas-video.personas.store'), $this->datosBase([
@@ -110,7 +109,7 @@ class PersonaAlertaTest extends TestCase
 
     public function test_no_permite_cargar_una_persona_sin_los_campos_obligatorios(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
 
         $response = $this->actingAs($admin)->post(route('alertas-video.personas.store'), [
             'apellido_nombre' => 'Sin Datos Obligatorios',
@@ -122,7 +121,7 @@ class PersonaAlertaTest extends TestCase
 
     public function test_el_listado_solo_muestra_activas_por_defecto(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         PersonaAlerta::factory()->create(['apellido_nombre' => 'Activa Visible', 'activo' => true]);
         PersonaAlerta::factory()->create(['apellido_nombre' => 'Inactiva Oculta', 'activo' => false]);
 
@@ -134,7 +133,7 @@ class PersonaAlertaTest extends TestCase
 
     public function test_puede_marcar_una_persona_como_inactiva_y_queda_en_el_historial(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         $persona = PersonaAlerta::factory()->create(['activo' => true]);
 
         $response = $this->actingAs($admin)->post(route('alertas-video.personas.activo', $persona), [
@@ -152,7 +151,7 @@ class PersonaAlertaTest extends TestCase
 
     public function test_encuentra_coincidencias_por_nombre_parcial_y_en_otro_orden(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         $persona = PersonaAlerta::factory()->create(['apellido_nombre' => 'Gonzalez Maria Fernanda', 'dni' => null]);
 
         $response = $this->actingAs($admin)->get(route('alertas-video.personas.buscar-coincidencias', [
@@ -165,7 +164,7 @@ class PersonaAlertaTest extends TestCase
 
     public function test_encuentra_coincidencias_por_dni_exacto_con_o_sin_puntos(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         $persona = PersonaAlerta::factory()->create(['dni' => '28999111', 'apellido_nombre' => 'Cualquier Nombre']);
 
         $response = $this->actingAs($admin)->get(route('alertas-video.personas.buscar-coincidencias', [
@@ -178,7 +177,7 @@ class PersonaAlertaTest extends TestCase
 
     public function test_encuentra_coincidencias_por_dni_parcial_mientras_se_escribe(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         $persona = PersonaAlerta::factory()->create(['dni' => '28999111', 'apellido_nombre' => 'Cualquier Nombre']);
 
         $this->actingAs($admin)
@@ -194,7 +193,7 @@ class PersonaAlertaTest extends TestCase
 
     public function test_no_devuelve_coincidencias_sin_datos_suficientes(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         PersonaAlerta::factory()->create(['apellido_nombre' => 'Alguien Registrado']);
 
         $response = $this->actingAs($admin)->get(route('alertas-video.personas.buscar-coincidencias', [
@@ -207,7 +206,7 @@ class PersonaAlertaTest extends TestCase
 
     public function test_al_crear_puede_marcarse_inactiva_directamente_sin_registrar_cambio_activo(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
 
         $this->actingAs($admin)->post(route('alertas-video.personas.store'), $this->datosBase([
             'apellido_nombre' => 'Caso Cerrado',
@@ -225,7 +224,7 @@ class PersonaAlertaTest extends TestCase
 
     public function test_al_editar_y_desactivar_queda_registrado_como_cambio_de_estado(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         $persona = PersonaAlerta::factory()->create(['activo' => true]);
 
         $this->actingAs($admin)->put(route('alertas-video.personas.update', $persona), $this->datosBase([
@@ -244,7 +243,7 @@ class PersonaAlertaTest extends TestCase
 
     public function test_al_editar_sin_cambiar_el_estado_activo_no_registra_cambio_activo(): void
     {
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        $admin = $this->crearSuperAdministrador();
         $persona = PersonaAlerta::factory()->create(['activo' => true]);
 
         $this->actingAs($admin)->put(route('alertas-video.personas.update', $persona), $this->datosBase([

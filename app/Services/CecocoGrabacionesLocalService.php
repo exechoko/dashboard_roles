@@ -249,17 +249,20 @@ class CecocoGrabacionesLocalService
     }
 
     /**
-     * Verifica que el path sea válido y esté dentro del directorio base.
+     * Verifica que el path sea un archivo de audio dentro del directorio base.
      */
     public function validarPath(string $filepath): bool
     {
-        $real    = realpath($filepath);
+        $real     = realpath($filepath);
         $realBase = realpath($this->baseDir);
 
         if (!$real || !$realBase) {
             return false;
         }
 
-        return str_starts_with($real, $realBase);
+        $dentroDeLaBase = str_starts_with($real, rtrim($realBase, '\/') . DIRECTORY_SEPARATOR);
+        $extension      = strtolower(pathinfo($real, PATHINFO_EXTENSION));
+
+        return $dentroDeLaBase && is_file($real) && in_array($extension, ['mp3', 'wav', 'ogg', 'aac'], true);
     }
 }

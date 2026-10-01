@@ -151,7 +151,8 @@ class ActivacionTotemController extends Controller
 
         $carpetaTemporal = storage_path('app/totem-uploads-temp');
         File::ensureDirectoryExists($carpetaTemporal);
-        $archivo->move($carpetaTemporal, $activacionTotem->id . '_' . $nombreOriginal);
+        $nombreSeguro = preg_replace('/[^A-Za-z0-9._-]/', '_', basename(str_replace('\\', '/', $nombreOriginal)));
+        $archivo->move($carpetaTemporal, $activacionTotem->id . '_' . $nombreSeguro);
 
         $activacionTotem->update([
             'camara_id' => $request->validated('camara_id'),

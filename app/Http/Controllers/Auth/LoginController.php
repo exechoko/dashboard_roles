@@ -47,7 +47,7 @@ class LoginController extends Controller
     protected function authenticated(Request $request, $user)
     {
         // El super administrador siempre puede acceder
-        if ($user->email === 'admin@gmail.com') {
+        if ($user->hasRole('Super Administrador')) {
             return;
         }
 

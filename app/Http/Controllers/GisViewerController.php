@@ -16,6 +16,9 @@ class GisViewerController extends Controller
     private string $password;
     private int $timeout;
 
+    /** Métodos que el visor necesita; se bloquean PUT/DELETE/PATCH hacia los servidores GIS. */
+    private const METODOS_PERMITIDOS_PROXY = ['GET', 'HEAD', 'POST', 'OPTIONS'];
+
     private const SESSION_KEY = 'gis_jsessionid';
     private const SESSION_EXTRA_KEY = 'gis_extra_cookies';
     private const LOGIN_PATH = '/gisviewer/main/cecoco/?language=es_ES';
@@ -103,6 +106,10 @@ class GisViewerController extends Controller
     // -----------------------------------------------------------------------
     public function proxy(Request $request, string $path = '')
     {
+        if (!in_array(strtoupper($request->method()), self::METODOS_PERMITIDOS_PROXY, true)) {
+            abort(405, 'Método no permitido.');
+        }
+
         if (empty($path)) {
             $path = ltrim(self::MAP_PATH, '/');
         }
@@ -698,10 +705,45 @@ class GisViewerController extends Controller
     private function resolveTargetUrl(string $path): string
     {
         $path = ltrim($path, '/');
+        $this->validarPathProxy($path);
+
         if (str_starts_with($path, 'geoserver/') || $path === 'geoserver') {
             return $this->geoServerUrl . '/' . $path;
         }
         return $this->gisBaseUrl . '/' . $path;
+    }
+
+    /**
+     * Valida que el path solicitado no acceda a endpoints administrativos
+     * o sensibles de los servidores internos GIS/GeoServer.
+     */
+    private function validarPathProxy(string $path): void
+    {
+        $pathLower = strtolower(rawurldecode($path));
+
+        if (preg_match('#(^|/)\.{1,2}(/|$)|//|\\|%|;#', $pathLower)) {
+            Log::warning('GisViewer: path con secuencias de traversal', ['path' => $path]);
+            abort(403, 'Path no permitido.');
+        }
+
+        $bloqueados = [
+            'geoserver/rest/',
+            'geoserver/rest',
+            'geoserver/web/',
+            'geoserver/webadmin',
+            'geoserver/j_spring_security',
+            'gisviewer/rest/admin/',
+            'gisviewer/rest/security',
+            'gisviewer/h2-console',
+            'geoserver/h2-console',
+        ];
+
+        foreach ($bloqueados as $patron) {
+            if (str_starts_with($pathLower, $patron)) {
+                Log::warning('GisViewer: intento de acceso a ruta bloqueada', ['path' => $path]);
+                abort(403, 'Acceso no permitido a endpoint administrativo del GIS.');
+            }
+        }
     }
 
     private function toAbsoluteUrl(string $url, string $base): string

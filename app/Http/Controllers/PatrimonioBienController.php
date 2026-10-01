@@ -112,6 +112,10 @@ class PatrimonioBienController extends Controller
             // Si tiene tabla propia, procesar vinculación
             if ($tipoBien->tiene_tabla_propia && $tipoBien->tabla_referencia) {
 
+                if (!preg_match('/^[A-Za-z0-9_]+$/', $tipoBien->tabla_referencia)) {
+                    return back()->with('error', 'La tabla de referencia del tipo de bien no es válida')->withInput();
+                }
+
                 // Validar que se seleccionó un item
                 if (!$request->item_origen_id) {
                     return back()->with('error', 'Debe seleccionar un item para patrimoniar')->withInput();
@@ -560,7 +564,7 @@ class PatrimonioBienController extends Controller
                 return response()->json([]);
             }
 
-            if (!DB::getSchemaBuilder()->hasTable($tipoBien->tabla_referencia)) {
+            if (!preg_match('/^[A-Za-z0-9_]+$/', $tipoBien->tabla_referencia) || !DB::getSchemaBuilder()->hasTable($tipoBien->tabla_referencia)) {
                 return response()->json([]);
             }
 

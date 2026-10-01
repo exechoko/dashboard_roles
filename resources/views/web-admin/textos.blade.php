@@ -102,7 +102,7 @@
                                                 <button type="button" class="btn btn-light" data-cmd="unlink" title="Quitar enlace"><i class="fas fa-unlink"></i></button>
                                                 <button type="button" class="btn btn-light" data-cmd="removeFormat" title="Quitar formato"><i class="fas fa-eraser"></i></button>
                                             </div>
-                                            <div class="wysiwyg__area form-control" contenteditable="true" data-wysiwyg-area>{!! $valor !!}</div>
+                                            <div class="wysiwyg__area form-control" contenteditable="true" data-wysiwyg-area>{!! \App\Services\SanitizadorHtmlWeb::limpiar((string) $valor) !!}</div>
                                             <input type="hidden" name="textos[{{ $clave }}]" data-wysiwyg-input>
                                         </div>
                                     @elseif (($meta['tipo'] ?? 'text') === 'textarea')

@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 use App\Models\User;
 use Spatie\Permission\Models\Permission;
@@ -17,11 +18,15 @@ class SuperAdminSeeder extends Seeder
      */
     public function run()
     {
+        $password = Str::random(24);
+
         $usuario = User::create([
             'name' => 'Admin',
             'email' => 'admin@gmail.com',
-            'password' => bcrypt('123456789')
+            'password' => bcrypt($password)
         ]);
+
+        $this->command?->warn("Contraseña generada para admin@gmail.com (se muestra una sola vez): {$password}");
 
         /*$rol = Role::create(['name'=>'Super Administrador']);
         $permisos = Permission::pluck('id', 'id')->all();

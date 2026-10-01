@@ -164,8 +164,17 @@ class UsuarioController extends Controller
         $input['acceso_externo'] = $request->boolean('acceso_externo');
         $input['acceso_pwa'] = $request->boolean('acceso_pwa');
 
-        $user = User::create($input);
         $roles = (array) $request->input('roles');
+
+        // Validar que el usuario autenticado no asigne roles que no posee
+        $rolesPermitidos = Auth::user()->roles->pluck('name')->toArray();
+        $rolesInvalidos = array_diff($roles, $rolesPermitidos);
+
+        if (!empty($rolesInvalidos)) {
+            return back()->withErrors(['roles' => 'No tiene permiso para asignar los roles: ' . implode(', ', $rolesInvalidos)]);
+        }
+
+        $user = User::create($input);
         $user->assignRole($roles);
 
         Auditoria::create([
@@ -262,10 +271,23 @@ class UsuarioController extends Controller
         $user = User::find($id);
         $rolesAnteriores = $user->roles->pluck('name')->all();
 
+        // Validar que el usuario autenticado no asigne roles que no posee
+        $rolesNuevos = (array) $request->input('roles');
+        $rolesPermitidos = Auth::user()->roles->pluck('name')->toArray();
+        $rolesInvalidos = array_diff($rolesNuevos, $rolesPermitidos);
+
+        if (!empty($rolesInvalidos)) {
+            return back()->withErrors(['roles' => 'No tiene permiso para asignar los roles: ' . implode(', ', $rolesInvalidos)]);
+        }
+
+        // Bloquear auto-promoción a Super Administrador
+        if ((int) $id === Auth::id() && !$user->hasRole('Super Administrador') && in_array('Super Administrador', $rolesNuevos)) {
+            return back()->withErrors(['roles' => 'No puede auto-asignarse el rol Super Administrador.']);
+        }
+
         $user->update($input);
         DB::table('model_has_roles')->where('model_id', $id)->delete();
 
-        $rolesNuevos = (array) $request->input('roles');
         $user->assignRole($rolesNuevos);
 
         $this->auditarCambioRoles($user, $rolesAnteriores, $rolesNuevos);

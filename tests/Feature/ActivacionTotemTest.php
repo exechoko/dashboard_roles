@@ -654,6 +654,32 @@ class ActivacionTotemTest extends TestCase
         @unlink($rutaTemporalEsperada);
     }
 
+    public function test_subir_video_neutraliza_path_traversal_en_el_nombre_del_archivo(): void
+    {
+        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
+        [$totem] = $this->totemDeRedTemporal();
+        $evento = EventoCecoco::factory()->create();
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_PENDIENTE,
+        ]);
+
+        $this->actingAs($admin)->post(route('activaciones-totem.subir-video', $activacion), [
+            'camara_id' => $totem->id,
+            'video' => UploadedFile::fake()->create('../../malicioso.mp4', 100, 'video/mp4'),
+            'observaciones' => 'Traversal',
+        ])->assertRedirect(route('activaciones-totem.index'));
+
+        $rutaSegura = storage_path('app/totem-uploads-temp/' . $activacion->id . '_malicioso.mp4');
+        $this->assertFileExists($rutaSegura);
+        $this->assertFileDoesNotExist(storage_path('malicioso.mp4'));
+        $this->assertFileDoesNotExist(storage_path('app/malicioso.mp4'));
+        @unlink($rutaSegura);
+    }
+
     public function test_el_listado_renderiza_sin_error_mientras_el_video_esta_en_proceso(): void
     {
         // Regresión: subirVideo() setea descargado_por de inmediato pero

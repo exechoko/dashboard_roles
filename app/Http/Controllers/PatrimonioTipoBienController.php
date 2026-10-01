@@ -26,7 +26,7 @@ class PatrimonioTipoBienController extends Controller
         $validated = $request->validate([
             'nombre' => 'required|string|max:100|unique:patrimonio_tipos_bien,nombre',
             'tiene_tabla_propia' => 'boolean',
-            'tabla_referencia' => 'nullable|string|max:100',
+            'tabla_referencia' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9_]+$/'],
             'descripcion' => 'nullable|string',
         ]);
 
@@ -55,7 +55,7 @@ class PatrimonioTipoBienController extends Controller
         $validated = $request->validate([
             'nombre' => 'required|string|max:100|unique:patrimonio_tipos_bien,nombre,' . $id,
             'tiene_tabla_propia' => 'boolean',
-            'tabla_referencia' => 'nullable|string|max:100',
+            'tabla_referencia' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9_]+$/'],
             'descripcion' => 'nullable|string',
         ]);
 

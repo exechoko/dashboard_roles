@@ -77,7 +77,7 @@ Route::get('/', function () {
 })->name('login.view');
 
 
-Auth::routes();
+Auth::routes(['register' => false]);
 
 // Login propio de la app móvil: misma autenticación (guard 'web', mismos
 // usuarios) que el login de escritorio, pero con una URL y una vista propias
@@ -230,7 +230,8 @@ Route::group(['middleware' => ['auth', 'track.online']], function () {
         ->middleware('permission:ver-menu-web|editar-web-contadores|editar-web-textos|editar-web-historia|editar-web-tecnologia|editar-web-dependencias|editar-web-galeria');
 
     Route::resource('roles', RolController::class);
-    Route::get('/usuarios/json', [UsuarioController::class, 'json'])->name('usuarios.json');
+    Route::get('/usuarios/json', [UsuarioController::class, 'json'])->name('usuarios.json')
+        ->middleware('permission:ver-usuario|ver-plataforma-descargas|administrar-plataforma-descargas');
     Route::get('/usuarios/conectados', [UsuarioController::class, 'conectados'])->name('usuarios.conectados');
     Route::get('/usuarios/exportar/excel', [UsuarioController::class, 'exportarExcel'])->name('usuarios.exportar-excel');
     Route::resource('usuarios', UsuarioController::class);
@@ -782,7 +783,8 @@ Route::group(['middleware' => ['auth', 'track.online']], function () {
     // Proxy del Visor GIS CeCoCo — fuera del grupo prefix para admitir slashes en el path.
     Route::any('/cecoco/gis-proxy/{path?}', [App\Http\Controllers\GisViewerController::class, 'proxy'])
         ->name('cecoco.gis-proxy')
-        ->where('path', '.*');
+        ->where('path', '.*')
+        ->middleware('permission:ver-mapa-gis-cecoco');
 
     Route::prefix('api/cecoco')->name('api.cecoco.')->group(function () {
         Route::get('/eventos', [App\Http\Controllers\EventoCecocoController::class, 'apiListar'])->name('eventos');

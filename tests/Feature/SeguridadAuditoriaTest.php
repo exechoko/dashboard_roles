@@ -111,6 +111,43 @@ class SeguridadAuditoriaTest extends TestCase
         $this->assertTrue($objetivo->fresh()->hasRole('Administrador'));
     }
 
+    public function test_super_administrador_puede_asignar_roles_que_no_posee(): void
+    {
+        $super = $this->usuarioCon([], [self::ROL_SUPER]);
+        $objetivo = $this->usuarioCon([], ['Operador']);
+        Role::findOrCreate('Administrador', 'web');
+
+        $this->actingAs($super)
+            ->put(route('usuarios.update', $objetivo->id), $this->datosUsuario($objetivo, ['Administrador']))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('usuarios.index'));
+
+        $this->assertTrue($objetivo->fresh()->hasRole('Administrador'));
+        $this->assertFalse($objetivo->fresh()->hasRole('Operador'));
+    }
+
+    public function test_super_administrador_puede_crear_usuario_con_rol_que_no_posee(): void
+    {
+        $super = $this->usuarioCon([], [self::ROL_SUPER]);
+        Role::findOrCreate('Operador', 'web');
+        $email = 'nuevo-' . uniqid() . '@example.test';
+
+        $this->actingAs($super)
+            ->post(route('usuarios.store'), [
+                'name' => 'Nuevo',
+                'apellido' => 'Usuario',
+                'lp' => (string) random_int(800000000, 999999999),
+                'dni' => '12345678',
+                'email' => $email,
+                'password' => 'secreto123',
+                'confirm-password' => 'secreto123',
+                'roles' => ['Operador'],
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertTrue(User::where('email', $email)->firstOrFail()->hasRole('Operador'));
+    }
+
     public function test_store_con_rol_no_permitido_no_crea_el_usuario(): void
     {
         $editor = $this->usuarioCon(['crear-usuario'], ['Operador']);

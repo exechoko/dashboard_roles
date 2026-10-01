@@ -166,9 +166,7 @@ class UsuarioController extends Controller
 
         $roles = (array) $request->input('roles');
 
-        // Validar que el usuario autenticado no asigne roles que no posee
-        $rolesPermitidos = Auth::user()->roles->pluck('name')->toArray();
-        $rolesInvalidos = array_diff($roles, $rolesPermitidos);
+        $rolesInvalidos = $this->rolesNoAsignables($roles);
 
         if (!empty($rolesInvalidos)) {
             return back()->withErrors(['roles' => 'No tiene permiso para asignar los roles: ' . implode(', ', $rolesInvalidos)]);
@@ -271,10 +269,8 @@ class UsuarioController extends Controller
         $user = User::find($id);
         $rolesAnteriores = $user->roles->pluck('name')->all();
 
-        // Validar que el usuario autenticado no asigne roles que no posee
         $rolesNuevos = (array) $request->input('roles');
-        $rolesPermitidos = Auth::user()->roles->pluck('name')->toArray();
-        $rolesInvalidos = array_diff($rolesNuevos, $rolesPermitidos);
+        $rolesInvalidos = $this->rolesNoAsignables($rolesNuevos);
 
         if (!empty($rolesInvalidos)) {
             return back()->withErrors(['roles' => 'No tiene permiso para asignar los roles: ' . implode(', ', $rolesInvalidos)]);
@@ -293,6 +289,25 @@ class UsuarioController extends Controller
         $this->auditarCambioRoles($user, $rolesAnteriores, $rolesNuevos);
 
         return redirect()->route('usuarios.index');
+    }
+
+    /**
+     * Devuelve los roles que el usuario autenticado no puede asignar: solo
+     * puede asignar roles que él mismo posee, salvo el Super Administrador,
+     * que puede asignar cualquiera.
+     *
+     * @param  array<int, string>  $roles
+     * @return array<int, string>
+     */
+    private function rolesNoAsignables(array $roles): array
+    {
+        $editor = Auth::user();
+
+        if ($editor->hasRole('Super Administrador')) {
+            return [];
+        }
+
+        return array_values(array_diff($roles, $editor->roles->pluck('name')->all()));
     }
 
     /**

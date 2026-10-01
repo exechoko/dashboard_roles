@@ -12,6 +12,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProcesarArchivoDescarga implements ShouldQueue
 {
@@ -86,10 +87,18 @@ class ProcesarArchivoDescarga implements ShouldQueue
                 $archivo->update(['progreso' => 30]);
             }
 
-            // Mover archivo a ubicación final
+            // Mover archivo a ubicación final. nombreOriginal viene del
+            // nombre de archivo que mandó el cliente (sin pasar por
+            // DescargaRepositorio::sanitizarNombre, que solo usan los otros
+            // flujos de subida) — se sanitiza acá para no armar una ruta con
+            // "../" que Flysystem podría resolver a una carpeta fuera de
+            // {año}/{mes} dentro del disco (ver fix análogo en
+            // ActivacionTotemController::subirVideo).
             $anio = date('Y');
             $mes = date('m');
-            $nombreUnico = uniqid() . '_' . $this->nombreOriginal;
+            $nombreBase = Str::ascii(basename(str_replace('\\', '/', $this->nombreOriginal)));
+            $nombreSeguro = preg_replace('/[^A-Za-z0-9._-]/', '_', $nombreBase) ?: 'archivo';
+            $nombreUnico = uniqid() . '_' . $nombreSeguro;
             $rutaFinal = "{$anio}/{$mes}/{$nombreUnico}";
 
             Storage::disk('descargas')->move($this->archivoTemporalPath, $rutaFinal);

@@ -110,66 +110,90 @@
             </div>
         </div>
 
-        {{-- Categorías como accesos rápidos --}}
-        @if($categorias->count() > 0 && !request()->hasAny(['buscar', 'categoria_id', 'extension']))
-            <div class="row mb-4">
-                @foreach($categorias as $categoria)
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="{{ route('descargas.index', ['categoria_id' => $categoria->id]) }}" class="text-decoration-none">
-                            <div class="card h-100" style="border-left: 4px solid {{ $categoria->color }} !important;">
-                                <div class="card-body text-center">
-                                    <i class="{{ $categoria->icono }} fa-2x mb-2" style="color: {{ $categoria->color }}"></i>
-                                    <h6 class="card-title mb-1">{{ $categoria->nombre }}</h6>
-                                    <small class="text-muted">{{ $categoria->archivos_activos_count ?? $categoria->archivos()->activos()->count() }} archivos</small>
+        @if(is_null($archivos))
+            {{-- Landing: solo categorías. El listado de archivos se carga recién
+                 al entrar a una categoría o al buscar/filtrar. --}}
+            @if($categorias->count() > 0)
+                <div class="row mb-4">
+                    @foreach($categorias as $categoria)
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{{ route('descargas.index', ['categoria_id' => $categoria->id]) }}" class="text-decoration-none">
+                                <div class="card h-100" style="border-left: 4px solid {{ $categoria->color }} !important;">
+                                    <div class="card-body text-center">
+                                        <i class="{{ $categoria->icono }} fa-2x mb-2" style="color: {{ $categoria->color }}"></i>
+                                        <h6 class="card-title mb-1">{{ $categoria->nombre }}</h6>
+                                        <small class="text-muted">{{ $categoria->archivos_activos_count }} archivos</small>
+                                    </div>
                                 </div>
-                            </div>
-                        </a>
-                    </div>
-                @endforeach
-            </div>
-        @endif
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
 
-        {{-- Archivos --}}
-        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap" style="gap: .5rem;">
-            <h5 class="mb-0">
-                Archivos disponibles
-                <span class="badge badge-secondary ml-2">{{ $archivos->total() }}</span>
-            </h5>
-            <div class="d-flex align-items-center flex-wrap" style="gap: .75rem;">
-                @if($archivos->count() > 0)
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="selectAllArchivos">
-                        <label class="custom-control-label" for="selectAllArchivos">Seleccionar todo</label>
-                    </div>
-                @endif
-                <button type="button" class="btn btn-outline-success btn-sm" id="btnDescargarSeparado" disabled
-                        title="Descarga cada archivo por separado, sin armar un ZIP (más cómodo desde el celular)">
-                    <i class="fas fa-download"></i> Descargar sin ZIP
-                </button>
-                <button type="button" class="btn btn-success btn-sm" id="btnDescargarZip" disabled>
-                    <i class="fas fa-file-archive"></i> Descargar como ZIP
-                    <span class="badge badge-light ml-2" id="contadorSeleccionados">0</span>
-                </button>
-            </div>
-        </div>
-
-        @if($archivos->count() > 0)
-            <div class="descargas-grid mb-3">
-                @foreach($archivos as $archivo)
-                    <x-descarga-archivo-card :archivo="$archivo" mostrar-checkbox mostrar-favorito
-                        :favorito="in_array($archivo->id, $favoritosIds)" />
-                @endforeach
-            </div>
-            <div class="d-flex justify-content-center">
-                {{ $archivos->links() }}
-            </div>
-        @else
             <div class="descargas-empty card">
                 <div class="card-body">
-                    <i class="fas fa-inbox"></i>
-                    <p class="mb-0">No se encontraron archivos disponibles con estos filtros.</p>
+                    <i class="fas fa-folder-open"></i>
+                    <p class="mb-0">Elegí una categoría de arriba, o usá el buscador, para ver los archivos disponibles.</p>
                 </div>
             </div>
+        @else
+            {{-- Archivos --}}
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap" style="gap: .5rem;">
+                <h5 class="mb-0">
+                    Archivos disponibles
+                    <span class="badge badge-secondary ml-2">{{ $archivos->total() }}</span>
+                </h5>
+                <div class="d-flex align-items-center flex-wrap" style="gap: .75rem;">
+                    @if($archivos->count() > 0)
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="selectAllArchivos">
+                            <label class="custom-control-label" for="selectAllArchivos">Seleccionar todo</label>
+                        </div>
+                        @if($archivos->total() > $archivos->count())
+                            <button type="button" class="btn btn-link btn-sm p-0" id="btnSeleccionarTodosResultados"
+                                    data-url="{{ route('descargas.ids-filtrados', request()->except('page')) }}">
+                                Seleccionar los {{ $archivos->total() }} resultados
+                            </button>
+                        @endif
+                    @endif
+                    <button type="button" class="btn btn-outline-success btn-sm" id="btnDescargarSeparado" disabled
+                            title="Descarga cada archivo por separado, sin armar un ZIP (más cómodo desde el celular)">
+                        <i class="fas fa-download"></i> Descargar sin ZIP
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm" id="btnDescargarZip" disabled>
+                        <i class="fas fa-file-archive"></i> Descargar como ZIP
+                        <span class="badge badge-light ml-2" id="contadorSeleccionados">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="alert alert-info py-2 px-3 mb-3 d-none align-items-center flex-wrap" id="avisoSeleccionCompleta" style="gap: .5rem;">
+                <i class="fas fa-check-circle mr-1"></i>
+                <span>Vas a descargar los <strong id="avisoSeleccionCompletaTotal"></strong> archivos de este filtro, no solo los de esta página.</span>
+                <button type="button" class="btn btn-sm btn-outline-secondary ml-auto" id="btnCancelarSeleccionCompleta">
+                    Usar solo esta página
+                </button>
+            </div>
+
+            @if($archivos->count() > 0)
+                <div class="descargas-grid mb-3">
+                    @foreach($archivos as $archivo)
+                        <x-descarga-archivo-card :archivo="$archivo" mostrar-checkbox mostrar-favorito
+                            :favorito="in_array($archivo->id, $favoritosIds)" />
+                    @endforeach
+                </div>
+                <div class="d-flex justify-content-center">
+                    {{ $archivos->links() }}
+                </div>
+            @else
+                <div class="descargas-empty card">
+                    <div class="card-body">
+                        <i class="fas fa-inbox"></i>
+                        <p class="mb-0">No se encontraron archivos disponibles con estos filtros.</p>
+                    </div>
+                </div>
+            @endif
         @endif
     </div>
 </section>
@@ -181,8 +205,72 @@
 <script>
 $(document).ready(function() {
     const maxTamanoBytes = {{ config('descargas.zip_tamano_maximo_gb', 10) * 1024 * 1024 * 1024 }};
+    const maxTamanoGb = {{ config('descargas.zip_tamano_maximo_gb', 10) }};
+
+    // Cuando está activa, la selección real no son los checkboxes tildados
+    // en esta página sino seleccionCompleta.ids (todos los resultados del
+    // filtro actual, traídos por /descargas/ids-filtrados).
+    let seleccionCompleta = null;
+
+    function activarSeleccionCompleta(data) {
+        seleccionCompleta = data;
+        $('.archivo-checkbox').prop('checked', true);
+        $('#selectAllArchivos').prop('checked', true);
+        $('#contadorSeleccionados').text(data.total);
+        $('#avisoSeleccionCompletaTotal').text(data.total);
+        $('#avisoSeleccionCompleta').removeClass('d-none').addClass('d-flex');
+
+        const superaLimite = data.tamano_bytes > maxTamanoBytes;
+        $('#btnDescargarZip').prop('disabled', superaLimite);
+        if (superaLimite) {
+            descargasToast(`El tamaño total (${data.total} archivos) supera el límite de ${maxTamanoGb} GB para armar un ZIP`, 'warning');
+        }
+
+        // Descargar sin ZIP dispara una descarga por archivo: con una
+        // selección de este tamaño el navegador bloquea la mayoría por
+        // "sitio pidiendo descargar muchos archivos". Mejor forzar el ZIP.
+        $('#btnDescargarSeparado').prop('disabled', true)
+            .attr('title', 'No disponible para selecciones tan grandes: usá "Descargar como ZIP"');
+    }
+
+    function cancelarSeleccionCompleta() {
+        if (!seleccionCompleta) {
+            return;
+        }
+        seleccionCompleta = null;
+        $('#avisoSeleccionCompleta').removeClass('d-flex').addClass('d-none');
+        $('#btnDescargarSeparado').attr('title', 'Descarga cada archivo por separado, sin armar un ZIP (más cómodo desde el celular)');
+    }
+
+    $('#btnSeleccionarTodosResultados').click(function() {
+        const btn = $(this);
+        const originalText = btn.text();
+        btn.prop('disabled', true).text('Cargando...');
+
+        $.ajax({
+            url: btn.data('url'),
+            method: 'GET',
+            success: function(response) {
+                activarSeleccionCompleta(response);
+            },
+            error: function(xhr) {
+                descargasErrorAjax(xhr, 'Error al seleccionar todos los resultados');
+            },
+            complete: function() {
+                btn.prop('disabled', false).text(originalText);
+            }
+        });
+    });
+
+    $('#btnCancelarSeleccionCompleta').click(function() {
+        cancelarSeleccionCompleta();
+        $('.archivo-checkbox').prop('checked', false);
+        $('#selectAllArchivos').prop('checked', false);
+        actualizarContador();
+    });
 
     $(document).on('change', '.archivo-checkbox', function() {
+        cancelarSeleccionCompleta();
         const total = $('.archivo-checkbox').length;
         const marcados = $('.archivo-checkbox:checked').length;
         $('#selectAllArchivos').prop('checked', total > 0 && marcados === total);
@@ -190,11 +278,16 @@ $(document).ready(function() {
     });
 
     $('#selectAllArchivos').change(function() {
+        cancelarSeleccionCompleta();
         $('.archivo-checkbox').prop('checked', this.checked);
         actualizarContador();
     });
 
     function actualizarContador() {
+        if (seleccionCompleta) {
+            return;
+        }
+
         const seleccionados = $('.archivo-checkbox:checked').length;
         $('#contadorSeleccionados').text(seleccionados);
         $('#btnDescargarZip').prop('disabled', seleccionados === 0);
@@ -273,7 +366,9 @@ $(document).ready(function() {
     });
 
     $('#btnDescargarZip').click(function() {
-        const archivosIds = $('.archivo-checkbox:checked').map(function() { return $(this).val(); }).get();
+        const archivosIds = seleccionCompleta
+            ? seleccionCompleta.ids
+            : $('.archivo-checkbox:checked').map(function() { return $(this).val(); }).get();
         if (archivosIds.length === 0) {
             return;
         }
@@ -302,6 +397,7 @@ $(document).ready(function() {
                     });
 
                     $('.archivo-checkbox').prop('checked', false);
+                    cancelarSeleccionCompleta();
                     actualizarContador();
                 } else {
                     descargasToast(response.message, 'error');

@@ -30,8 +30,60 @@ class GrabadorTetraService
     private int    $timeoutTotal;
     private ?float $searchDeadline = null;
 
-    /** Filas por página de la búsqueda recuperable (enum 6 = 750): el grabador tarda ~30 ms por fila. */
-    private const FILAS_POR_PAGINA = 750;
+    /** Filas por página de la búsqueda recuperable (enum 4 = 200): el grabador tarda ~30 ms por fila,
+     * así cada paso dura segundos y no depende de la velocidad del enlace ni de los cortes del proxy. */
+    private const FILAS_POR_PAGINA = 200;
+
+    /**
+     * Cuenta las modulaciones de la ventana sin descargarlas: páginas de 25 filas, saltos crecientes
+     * hasta pasar el final y bisección. Devuelve null si no alcanzó el presupuesto de tiempo.
+     */
+    public function contarBusqueda(Carbon $desde, Carbon $hasta, float $deadline, ?string $sesion = null): ?int
+    {
+        $this->searchDeadline = $deadline;
+        try {
+            $session = $sesion ?? $this->autenticar();
+            $json = $this->consultarBusqueda($session, ['action' => 'startsearch', 'criteriacount' => '1',
+                'replaytophone' => '0', 'searchno' => '1', 'SearchDirection' => '1', 'MaximumResults' => '1',
+                'AutoExplandLinkedCalls' => '0', 'Criteria1FieldID' => '1', 'Criteria1FieldType' => '3',
+                'Criteria1Type' => '2', 'Criteria1Date1' => $desde->format('Ymd'), 'Criteria1Time1' => $desde->format('Hi'),
+                'Criteria1Date2' => $hasta->format('Ymd'), 'Criteria1Time2' => $hasta->format('Hi')]);
+            $pagina = 25;
+            $filas = count($json['results']['gridRows'] ?? []);
+            if ($filas < $pagina) { return $filas; }
+            $low = $pagina;
+            $high = null;
+            while ($high === null ? $low < 20000 : $low < $high) {
+                $skip = $high === null ? $low * 2 : intdiv($low + $high, 2);
+                $json = $this->consultarBusqueda($session, ['action' => 'continuesearch', 'searchid' => (string) $json['searchid'],
+                    'maximumresults' => '1', 'resultstoskip' => (string) $skip]);
+                $filas = count($json['results']['gridRows'] ?? []);
+                if ($filas === 0) { $high = $skip; }
+                elseif ($filas < $pagina) { return $skip + $filas; }
+                else { $low = $skip + $pagina; }
+            }
+            return $low;
+        } finally {
+            $this->searchDeadline = null;
+        }
+    }
+
+    /** Ejecuta una acción de búsqueda y espera con getstatus hasta que el grabador la marque como terminada. */
+    private function consultarBusqueda(string $session, array $params): array
+    {
+        $query = ['id' => 'searchapi', 'SessionID' => $session, 'isajaxrequest' => '1'] + $params;
+        while (true) {
+            $response = $this->httpClient()->get($this->baseUrl . '/', ['query' => $query, 'headers' => $this->cookieHeader($session)]);
+            $json = json_decode((string) $response->getBody(), true);
+            if ($response->getStatusCode() !== 200 || !is_array($json) || empty($json['searchid'])) {
+                throw new \RuntimeException('Invalid recorder response');
+            }
+            if (($json['searchStatus'] ?? '') === 'done') { return $json; }
+            $query = ['id' => 'searchapi', 'SessionID' => $session, 'isajaxrequest' => '1',
+                'action' => 'getstatus', 'searchid' => (string) $json['searchid']];
+            usleep(200000);
+        }
+    }
 
     /** One recorder operation per request; pending work is never an empty page. */
     public function avanzarBusqueda(array $cursor, Carbon $desde, Carbon $hasta, float $deadline): array
@@ -44,23 +96,24 @@ class GrabadorTetraService
                 'isajaxrequest' => '1'];
             if ($action === 'startsearch') {
                 $query += ['criteriacount' => '1', 'replaytophone' => '0', 'searchno' => '1',
-                    'SearchDirection' => '1', 'MaximumResults' => '6', 'AutoExplandLinkedCalls' => '0',
+                    'SearchDirection' => '1', 'MaximumResults' => '4', 'AutoExplandLinkedCalls' => '0',
                     'Criteria1FieldID' => '1', 'Criteria1FieldType' => '3', 'Criteria1Type' => '2',
                     'Criteria1Date1' => $desde->format('Ymd'), 'Criteria1Time1' => $desde->format('Hi'),
                     'Criteria1Date2' => $hasta->format('Ymd'), 'Criteria1Time2' => $hasta->format('Hi')];
             } else {
                 $query['searchid'] = $cursor['searchid'];
                 if ($action === 'continuesearch') {
-                    $query += ['maximumresults' => '6', 'resultstoskip' => (string) ($cursor['skip'] ?? 0)];
+                    $query += ['maximumresults' => '4', 'resultstoskip' => (string) ($cursor['skip'] ?? 0)];
                 }
             }
             try {
                 $response = $this->httpClient()->get($this->baseUrl . '/', [
                     'query' => $query, 'headers' => $this->cookieHeader($session)]);
             } catch (\GuzzleHttp\Exception\ConnectException $e) {
-                // Tras abortar un getstatus el grabador responde "done" vacío: se reinicia la ventana.
+                // Tras abortar un getstatus el grabador responde "done" vacío: se reinicia la ventana
+                // desde cero (el llamador conserva las filas únicas por itemid).
                 if ($action === 'startsearch') { throw $e; }
-                return ['cursor' => ['fase' => 'startsearch', 'skip' => $cursor['skip'] ?? 0], 'modulaciones' => [], 'agotada' => false];
+                return ['cursor' => ['fase' => 'startsearch'], 'modulaciones' => [], 'agotada' => false];
             }
             $json = json_decode((string) $response->getBody(), true);
             if ($action !== 'startsearch' && (in_array($response->getStatusCode(), [401, 403], true)
@@ -1047,7 +1100,7 @@ class GrabadorTetraService
         $remaining = $this->searchDeadline === null ? null : $this->searchDeadline - microtime(true);
         if ($remaining !== null && $remaining <= 0) { throw new \RuntimeException('Search budget exhausted'); }
         return new Client([
-            'timeout'         => $remaining === null ? $this->timeout : min(80, $remaining),
+            'timeout'         => $remaining === null ? $this->timeout : min(45, $remaining),
             'connect_timeout' => $remaining === null ? 5 : min(3, $remaining),
             'http_errors'     => false,
             'verify'          => false,

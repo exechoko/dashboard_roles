@@ -35,12 +35,12 @@ class GrabadorTetraBusquedaPasoTest extends TestCase
         $this->assertCount(2, $history);
         parse_str($history[0]['request']->getUri()->getQuery(), $query);
         $this->assertSame('startsearch', $query['action']);
-        $this->assertSame('6', $query['MaximumResults']);
+        $this->assertSame('4', $query['MaximumResults']);
         parse_str($history[1]['request']->getUri()->getQuery(), $query);
         $this->assertSame('getstatus', $query['action']);
     }
 
-    public function test_timeout_en_getstatus_reinicia_la_ventana_conservando_skip(): void
+    public function test_timeout_en_getstatus_reinicia_la_ventana_desde_cero(): void
     {
         $mock = new MockHandler([new \GuzzleHttp\Exception\ConnectException(
             'cURL error 28', new \GuzzleHttp\Psr7\Request('GET', 'http://recorder.invalid'))]);
@@ -52,7 +52,51 @@ class GrabadorTetraBusquedaPasoTest extends TestCase
             Carbon::now(), Carbon::now(), microtime(true) + 30);
         $this->assertFalse($page['agotada']);
         $this->assertSame([], $page['modulaciones']);
-        $this->assertSame(['fase' => 'startsearch', 'skip' => 1000], $page['cursor']);
+        $this->assertSame(['fase' => 'startsearch'], $page['cursor']);
+    }
+
+    private function servicioConPaginas(array $filasPorRespuesta, array &$history): GrabadorTetraService
+    {
+        $respuestas = array_map(fn ($n) => new Response(200, [], json_encode(['searchid' => 's1', 'searchStatus' => 'done',
+            'results' => ['gridRows' => array_fill(0, $n, ['x'])]])), $filasPorRespuesta);
+        $stack = HandlerStack::create(new MockHandler($respuestas));
+        $stack->push(Middleware::history($history));
+        return new class(new Client(['handler' => $stack])) extends GrabadorTetraService {
+            public function __construct(private Client $client) { parent::__construct(); }
+            protected function httpClient(): Client { return $this->client; }
+        };
+    }
+
+    public static function conteos(): array
+    {
+        return [
+            'ventana vacia' => [[0], 0],
+            'una sola pagina' => [[3], 3],
+            'salto exacto' => [[25, 10], 60],
+            'biseccion corta' => [[25, 0, 13], 50],
+            'biseccion tras saltos' => [[25, 25, 0, 18], 130],
+        ];
+    }
+
+    /** @dataProvider conteos */
+    public function test_contar_busqueda_obtiene_el_total_sin_descargar_filas(array $filas, int $esperado): void
+    {
+        $history = [];
+        $service = $this->servicioConPaginas($filas, $history);
+        $total = $service->contarBusqueda(Carbon::now(), Carbon::now(), microtime(true) + 30, 'dummy');
+        $this->assertSame($esperado, $total);
+        parse_str($history[0]['request']->getUri()->getQuery(), $query);
+        $this->assertSame('1', $query['MaximumResults']);
+    }
+
+    public function test_contar_busqueda_propaga_el_fallo_para_que_el_llamador_lo_ignore(): void
+    {
+        $service = new class(new Client(['handler' => HandlerStack::create(new MockHandler([new Response(500, [], 'x')]))])) extends GrabadorTetraService {
+            public function __construct(private Client $client) { parent::__construct(); }
+            protected function httpClient(): Client { return $this->client; }
+        };
+        $this->expectException(\RuntimeException::class);
+        $service->contarBusqueda(Carbon::now(), Carbon::now(), microtime(true) + 30, 'dummy');
     }
 
     public static function respuestasInvalidas(): array
@@ -86,7 +130,7 @@ class GrabadorTetraBusquedaPasoTest extends TestCase
         $client = $clientMethod->invoke($service);
         $this->assertEqualsWithDelta(30, $client->getConfig('timeout'), 1);
         $deadline->setValue($service, microtime(true) + 120);
-        $this->assertSame(80, $clientMethod->invoke($service)->getConfig('timeout'));
+        $this->assertSame(45, $clientMethod->invoke($service)->getConfig('timeout'));
         $deadline->setValue($service, microtime(true) + 30);
         $this->assertSame(3, $client->getConfig('connect_timeout'));
         $deadline->setValue($service, null);

@@ -51,7 +51,7 @@ class CecocoModulacionesBusquedaServiceTest extends TestCase
         $recorder->shouldReceive('avanzarBusqueda')->andReturnUsing(function ($cursor, $desde, $hasta, $deadline) use ($quantity, &$calls) {
             $calls[] = $cursor;
             $this->assertGreaterThan(microtime(true), $deadline);
-            $this->assertLessThanOrEqual(85, $deadline - microtime(true));
+            $this->assertLessThanOrEqual(50, $deadline - microtime(true));
             $skip = $cursor['skip'] ?? 0;
             $count = min(1000, max(0, $quantity - $skip));
             $items = [];
@@ -97,6 +97,30 @@ class CecocoModulacionesBusquedaServiceTest extends TestCase
         $this->assertStringNotContainsString('secret', json_encode($this->service->respuesta($paused)));
         $continued = $this->service->avanzar(10, $this->evento, $start['busqueda_id'], 2);
         $this->assertCount(1, $continued['items']);
+    }
+
+    public function test_respuesta_informa_total_esperado_y_un_fallo_del_conteo_no_frena_la_busqueda(): void
+    {
+        $recorder = Mockery::mock(GrabadorTetraService::class);
+        $recorder->shouldReceive('contarBusqueda')->once()->andReturn(42);
+        $recorder->shouldReceive('avanzarBusqueda')->andReturn(
+            ['modulaciones' => [$this->item(1)], 'agotada' => false, 'cursor' => ['fase' => 'continuesearch', 'skip' => 1]]);
+        $this->app->instance(GrabadorTetraService::class, $recorder);
+        $state = $this->service->iniciar(10, $this->evento, false);
+        $state = $this->service->avanzar(10, $this->evento, $state['busqueda_id'], 0);
+        $public = $this->service->respuesta($state);
+        $this->assertSame(42, $public['total_esperado']);
+        $this->assertSame(1, $public['total']);
+
+        $fallido = Mockery::mock(GrabadorTetraService::class);
+        $fallido->shouldReceive('contarBusqueda')->once()->andThrow(new \RuntimeException('boom'));
+        $fallido->shouldReceive('avanzarBusqueda')->andReturn(
+            ['modulaciones' => [$this->item(1)], 'agotada' => false, 'cursor' => ['fase' => 'continuesearch', 'skip' => 1]]);
+        $this->app->instance(GrabadorTetraService::class, $fallido);
+        $nueva = $this->service->iniciar(10, $this->evento, true);
+        $nueva = $this->service->avanzar(10, $this->evento, $nueva['busqueda_id'], 0);
+        $this->assertNull($this->service->respuesta($nueva)['total_esperado']);
+        $this->assertCount(1, $nueva['items']);
     }
 
     public function test_cursor_reiniciado_deduplica_y_pendiente_no_entrega_snapshot(): void

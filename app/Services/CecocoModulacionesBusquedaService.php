@@ -54,7 +54,8 @@ class CecocoModulacionesBusquedaService
                 'fuente' => config('grabador.url') ? 'grabador' : 'local',
                 'cursor' => ['fase' => 'startsearch'], 'items' => [], 'agotada' => false,
                 'fase' => config('grabador.url') ? 'grabador' : 'local',
-                'progreso' => now()->timestamp, 'max_skip' => 0, 'terminada' => null];
+                'progreso' => now()->timestamp, 'max_skip' => 0, 'terminada' => null,
+                'total_esperado' => config('grabador.url') ? false : null];
             return $this->guardar($state, $user, $evento);
         } finally { $lock->release(); }
     }
@@ -77,9 +78,9 @@ class CecocoModulacionesBusquedaService
 
     public function avanzar(int $user, EventoCecoco $evento, string $token, int $revision): array
     {
-        @set_time_limit(120);
-        $deadline = microtime(true) + 85; // Una página de 750 filas tarda 20-50 s en el grabador; margen para guardar y bajo el límite de 100 s de Cloudflare.
-        $lock = Cache::store('modulaciones')->lock($this->key($user, $evento) . ':lock', 120);
+        @set_time_limit(90);
+        $deadline = microtime(true) + 50; // Una página de 200 filas tarda 6-25 s en el grabador; margen para guardar y bajo el límite de 100 s de Cloudflare.
+        $lock = Cache::store('modulaciones')->lock($this->key($user, $evento) . ':lock', 90);
         abort_unless($lock->get(), 409, 'La búsqueda está ocupada; recuperá su estado.');
         try {
             $state = $this->recuperar($user, $evento, $token);
@@ -92,9 +93,15 @@ class CecocoModulacionesBusquedaService
             $state['estado'] = 'buscando';
             try {
                 if ($state['fase'] === 'grabador') {
-                    $sessionLock = Cache::store('modulaciones')->lock('mod_search_recorder:' . hash('sha256', config('grabador.url') . '|' . config('grabador.user')), 120);
+                    $sessionLock = Cache::store('modulaciones')->lock('mod_search_recorder:' . hash('sha256', config('grabador.url') . '|' . config('grabador.user')), 90);
                     if (!$sessionLock->get()) { return $this->guardar($state, $user, $evento); }
                     try {
+                        if (($state['total_esperado'] ?? null) === false) {
+                            // Un fallo del conteo no frena la descarga: el total queda desconocido.
+                            try {
+                                $state['total_esperado'] = app(GrabadorTetraService::class)->contarBusqueda(Carbon::parse($state['ventana']['desde']), Carbon::parse($state['ventana']['hasta']), min($deadline - 25, microtime(true) + 20));
+                            } catch (\Throwable $e) { $state['total_esperado'] = null; }
+                        }
                         $page = app(GrabadorTetraService::class)->avanzarBusqueda($state['cursor'], Carbon::parse($state['ventana']['desde']), Carbon::parse($state['ventana']['hasta']), $deadline);
                     } finally { $sessionLock->release(); }
                     $oldCount = count($state['items']);
@@ -191,6 +198,7 @@ class CecocoModulacionesBusquedaService
         $status = $state['estado'];
         $result = ['success' => true, 'estado' => $status, 'busqueda_id' => $state['busqueda_id'],
             'revision' => $state['revision'], 'total' => count($state['items']), 'limite' => self::LIMITE,
+            'total_esperado' => is_int($state['total_esperado'] ?? null) ? $state['total_esperado'] : null,
             'hayMas' => !in_array($status, ['completa', 'limite_alcanzado'], true),
             'ventana' => $state['ventana'], 'fuente' => $state['fuente'], 'reintentar_en' => 1.5,
             'avance' => $state['progreso'],

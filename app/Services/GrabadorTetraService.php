@@ -30,8 +30,9 @@ class GrabadorTetraService
     private int    $timeoutTotal;
     private ?float $searchDeadline = null;
 
-    /** Filas por página de la búsqueda recuperable (enum 6 = 750): el grabador tarda ~30 ms por fila. */
-    private const FILAS_POR_PAGINA = 750;
+    /** Filas por página de la búsqueda recuperable (enum 4 = 200): el grabador tarda ~30 ms por fila,
+     * así cada paso dura segundos y no depende de la velocidad del enlace ni de los cortes del proxy. */
+    private const FILAS_POR_PAGINA = 200;
 
     /** One recorder operation per request; pending work is never an empty page. */
     public function avanzarBusqueda(array $cursor, Carbon $desde, Carbon $hasta, float $deadline): array
@@ -44,23 +45,24 @@ class GrabadorTetraService
                 'isajaxrequest' => '1'];
             if ($action === 'startsearch') {
                 $query += ['criteriacount' => '1', 'replaytophone' => '0', 'searchno' => '1',
-                    'SearchDirection' => '1', 'MaximumResults' => '6', 'AutoExplandLinkedCalls' => '0',
+                    'SearchDirection' => '1', 'MaximumResults' => '4', 'AutoExplandLinkedCalls' => '0',
                     'Criteria1FieldID' => '1', 'Criteria1FieldType' => '3', 'Criteria1Type' => '2',
                     'Criteria1Date1' => $desde->format('Ymd'), 'Criteria1Time1' => $desde->format('Hi'),
                     'Criteria1Date2' => $hasta->format('Ymd'), 'Criteria1Time2' => $hasta->format('Hi')];
             } else {
                 $query['searchid'] = $cursor['searchid'];
                 if ($action === 'continuesearch') {
-                    $query += ['maximumresults' => '6', 'resultstoskip' => (string) ($cursor['skip'] ?? 0)];
+                    $query += ['maximumresults' => '4', 'resultstoskip' => (string) ($cursor['skip'] ?? 0)];
                 }
             }
             try {
                 $response = $this->httpClient()->get($this->baseUrl . '/', [
                     'query' => $query, 'headers' => $this->cookieHeader($session)]);
             } catch (\GuzzleHttp\Exception\ConnectException $e) {
-                // Tras abortar un getstatus el grabador responde "done" vacío: se reinicia la ventana.
+                // Tras abortar un getstatus el grabador responde "done" vacío: se reinicia la ventana
+                // desde cero (el llamador conserva las filas únicas por itemid).
                 if ($action === 'startsearch') { throw $e; }
-                return ['cursor' => ['fase' => 'startsearch', 'skip' => $cursor['skip'] ?? 0], 'modulaciones' => [], 'agotada' => false];
+                return ['cursor' => ['fase' => 'startsearch'], 'modulaciones' => [], 'agotada' => false];
             }
             $json = json_decode((string) $response->getBody(), true);
             if ($action !== 'startsearch' && (in_array($response->getStatusCode(), [401, 403], true)
@@ -1047,7 +1049,7 @@ class GrabadorTetraService
         $remaining = $this->searchDeadline === null ? null : $this->searchDeadline - microtime(true);
         if ($remaining !== null && $remaining <= 0) { throw new \RuntimeException('Search budget exhausted'); }
         return new Client([
-            'timeout'         => $remaining === null ? $this->timeout : min(80, $remaining),
+            'timeout'         => $remaining === null ? $this->timeout : min(45, $remaining),
             'connect_timeout' => $remaining === null ? 5 : min(3, $remaining),
             'http_errors'     => false,
             'verify'          => false,

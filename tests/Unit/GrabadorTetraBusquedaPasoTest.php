@@ -35,12 +35,12 @@ class GrabadorTetraBusquedaPasoTest extends TestCase
         $this->assertCount(2, $history);
         parse_str($history[0]['request']->getUri()->getQuery(), $query);
         $this->assertSame('startsearch', $query['action']);
-        $this->assertSame('6', $query['MaximumResults']);
+        $this->assertSame('4', $query['MaximumResults']);
         parse_str($history[1]['request']->getUri()->getQuery(), $query);
         $this->assertSame('getstatus', $query['action']);
     }
 
-    public function test_timeout_en_getstatus_reinicia_la_ventana_conservando_skip(): void
+    public function test_timeout_en_getstatus_reinicia_la_ventana_desde_cero(): void
     {
         $mock = new MockHandler([new \GuzzleHttp\Exception\ConnectException(
             'cURL error 28', new \GuzzleHttp\Psr7\Request('GET', 'http://recorder.invalid'))]);
@@ -52,7 +52,7 @@ class GrabadorTetraBusquedaPasoTest extends TestCase
             Carbon::now(), Carbon::now(), microtime(true) + 30);
         $this->assertFalse($page['agotada']);
         $this->assertSame([], $page['modulaciones']);
-        $this->assertSame(['fase' => 'startsearch', 'skip' => 1000], $page['cursor']);
+        $this->assertSame(['fase' => 'startsearch'], $page['cursor']);
     }
 
     public static function respuestasInvalidas(): array
@@ -86,7 +86,7 @@ class GrabadorTetraBusquedaPasoTest extends TestCase
         $client = $clientMethod->invoke($service);
         $this->assertEqualsWithDelta(30, $client->getConfig('timeout'), 1);
         $deadline->setValue($service, microtime(true) + 120);
-        $this->assertSame(80, $clientMethod->invoke($service)->getConfig('timeout'));
+        $this->assertSame(45, $clientMethod->invoke($service)->getConfig('timeout'));
         $deadline->setValue($service, microtime(true) + 30);
         $this->assertSame(3, $client->getConfig('connect_timeout'));
         $deadline->setValue($service, null);

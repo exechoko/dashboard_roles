@@ -23,6 +23,7 @@ yarn-error.log
 /.atl
 /skills
 /.claude
+/.codex/
 /.codebuddy
 /.devin
 /.windsurf

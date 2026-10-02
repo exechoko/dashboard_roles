@@ -634,12 +634,19 @@ var modSearch = null, modTimer = null, modController = null, modOpen = false;
 var modRefreshing = false, modRefreshFrom = null;
 var modGeneration = 0, modFailures = 0, modLastProgress = 0, modLastTotal = -1, modLastServerProgress = null;
 
-function modStatus(message, complete) {
+function modProgreso(data) {
+    var esperado = data && data.total_esperado;
+    return esperado ? Math.min(100, Math.max(5, Math.round(data.total * 100 / esperado))) : null;
+}
+function modConteo(data) {
+    return data.total_esperado ? data.total + ' de ' + data.total_esperado + ' recuperadas' : data.total + ' recuperadas';
+}
+function modStatus(message, complete, percent) {
     document.getElementById('mod-search-message').textContent = message;
     var bar = document.getElementById('mod-search-bar');
     bar.classList.toggle('progress-bar-animated', !complete);
     bar.classList.toggle('progress-bar-striped', !complete);
-    bar.style.width = complete ? '100%' : '35%';
+    bar.style.width = complete ? '100%' : (percent ? percent + '%' : '35%');
     bar.parentElement.setAttribute('aria-label', message);
     document.getElementById('modulaciones-loading').style.display = 'block';
 }
@@ -649,7 +656,7 @@ function modStop() {
     if (modController) { modController.abort(); modController = null; }
 }
 function modPause() {
-    modStatus('Reintentando; conservamos el avance' + (modSearch ? ' (' + modSearch.total + ' recuperadas)' : ''), false);
+    modStatus('Reintentando; conservamos el avance' + (modSearch ? ' (' + modConteo(modSearch) + ')' : ''), false, modProgreso(modSearch));
     modFailures = 0; modLastProgress = Date.now();
     modSchedule(modSearch ? 'estado' : 'iniciar', 10000);
 }
@@ -713,7 +720,7 @@ function modRequest(action) {
             return;
         }
         if (action !== 'estado') { modFailures = 0; }
-        modStatus(data.message + ' (' + data.total + ' recuperadas)', false);
+        modStatus(data.message + ' (' + modConteo(data) + ')', false, modProgreso(data));
         if (Date.now() - modLastProgress >= 120000) { modPause(); return; }
         modSchedule('avanzar', 1500);
     }).catch(function(error) {

@@ -55,6 +55,50 @@ class GrabadorTetraBusquedaPasoTest extends TestCase
         $this->assertSame(['fase' => 'startsearch'], $page['cursor']);
     }
 
+    private function servicioConPaginas(array $filasPorRespuesta, array &$history): GrabadorTetraService
+    {
+        $respuestas = array_map(fn ($n) => new Response(200, [], json_encode(['searchid' => 's1', 'searchStatus' => 'done',
+            'results' => ['gridRows' => array_fill(0, $n, ['x'])]])), $filasPorRespuesta);
+        $stack = HandlerStack::create(new MockHandler($respuestas));
+        $stack->push(Middleware::history($history));
+        return new class(new Client(['handler' => $stack])) extends GrabadorTetraService {
+            public function __construct(private Client $client) { parent::__construct(); }
+            protected function httpClient(): Client { return $this->client; }
+        };
+    }
+
+    public static function conteos(): array
+    {
+        return [
+            'ventana vacia' => [[0], 0],
+            'una sola pagina' => [[3], 3],
+            'salto exacto' => [[25, 10], 60],
+            'biseccion corta' => [[25, 0, 13], 50],
+            'biseccion tras saltos' => [[25, 25, 0, 18], 130],
+        ];
+    }
+
+    /** @dataProvider conteos */
+    public function test_contar_busqueda_obtiene_el_total_sin_descargar_filas(array $filas, int $esperado): void
+    {
+        $history = [];
+        $service = $this->servicioConPaginas($filas, $history);
+        $total = $service->contarBusqueda(Carbon::now(), Carbon::now(), microtime(true) + 30, 'dummy');
+        $this->assertSame($esperado, $total);
+        parse_str($history[0]['request']->getUri()->getQuery(), $query);
+        $this->assertSame('1', $query['MaximumResults']);
+    }
+
+    public function test_contar_busqueda_propaga_el_fallo_para_que_el_llamador_lo_ignore(): void
+    {
+        $service = new class(new Client(['handler' => HandlerStack::create(new MockHandler([new Response(500, [], 'x')]))])) extends GrabadorTetraService {
+            public function __construct(private Client $client) { parent::__construct(); }
+            protected function httpClient(): Client { return $this->client; }
+        };
+        $this->expectException(\RuntimeException::class);
+        $service->contarBusqueda(Carbon::now(), Carbon::now(), microtime(true) + 30, 'dummy');
+    }
+
     public static function respuestasInvalidas(): array
     {
         return [['not json'], [json_encode(['searchid' => 's', 'searchStatus' => 'done'])],

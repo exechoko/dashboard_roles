@@ -37,11 +37,12 @@ async function open(page, responder) {
 
 test('buscando y pausada mantienen inaccesibles lista y filtro, sin vacío', async ({ page }) => {
     await open(page, () => status('pausada', 999));
-    await expect(page.locator('#mod-search-continue')).toBeVisible({ timeout: 25000 });
+    await expect(page.locator('#mod-search-message')).toContainText('Reintentando', { timeout: 25000 });
     await expect(page.locator('#modulaciones-lista')).toBeHidden();
     await expect(page.locator('#modulaciones-empty')).toBeHidden();
     await expect(page.locator('#modulaciones-filtro')).toBeDisabled();
     await expect(page.locator('#mod-search-message')).toContainText('conservamos el avance');
+    await expect(page.locator('#mod-search-continue')).toHaveCount(0);
 });
 
 test('el límite conserva siempre la advertencia y no llena la barra', async ({ page }) => {

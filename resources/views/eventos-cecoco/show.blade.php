@@ -526,7 +526,7 @@ function escHtml(str) {
 @can('escuchar-modulaciones-cecoco')
 
 @push('scripts')
-<div class="modal fade" id="modalModulaciones" tabindex="-1" role="dialog" aria-labelledby="modalModulacionesLabel" aria-hidden="true">
+<div class="modal fade" id="modalModulaciones" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="modalModulacionesLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
@@ -560,7 +560,6 @@ function escHtml(str) {
                 </div>
                 <div class="mb-2">
                     <button type="button" class="btn btn-sm btn-outline-primary" id="mod-search-refresh">Actualizar</button>
-                    <button type="button" class="btn btn-sm btn-primary" id="mod-search-continue" hidden>Continuar</button>
                 </div>
                 <div id="modulaciones-loading" class="py-3" role="status" aria-live="polite">
                     <p id="mod-search-message">Buscando modulaciones de la ventana horaria…</p>
@@ -650,9 +649,9 @@ function modStop() {
     if (modController) { modController.abort(); modController = null; }
 }
 function modPause() {
-    clearTimeout(modTimer);
-    modStatus('Búsqueda pausada; conservamos el avance' + (modSearch ? ' (' + modSearch.total + ' recuperadas)' : ''), false);
-    document.getElementById('mod-search-continue').hidden = false;
+    modStatus('Reintentando; conservamos el avance' + (modSearch ? ' (' + modSearch.total + ' recuperadas)' : ''), false);
+    modFailures = 0; modLastProgress = Date.now();
+    modSchedule(modSearch ? 'estado' : 'iniciar', 10000);
 }
 function modSchedule(action, delay) {
     clearTimeout(modTimer);
@@ -694,7 +693,6 @@ function modRequest(action) {
         if (modRefreshing && data.busqueda_id) { modRefreshing = false; }
         if (!data.busqueda_id) { modSearch = null; modSchedule('iniciar', 0); return; }
         modSearch = data;
-        document.getElementById('mod-search-continue').hidden = true;
         document.getElementById('modulaciones-error').style.display = 'none';
         if (data.total !== modLastTotal || data.avance !== modLastServerProgress) {
             modLastProgress = Date.now(); modLastTotal = data.total; modLastServerProgress = data.avance;
@@ -724,10 +722,12 @@ function modRequest(action) {
         if (!error.permanent && modFailures < 3) {
             // Recover first: a lost POST response may already have advanced the revision.
             modSchedule('estado', [2000, 5000, 10000][modFailures++]);
+        } else if (error.permanent) {
+            clearTimeout(modTimer);
+            document.getElementById('modulaciones-error').style.display = 'block';
+            document.getElementById('modulaciones-error').textContent = error.message;
         } else {
             modPause();
-            document.getElementById('modulaciones-error').style.display = 'block';
-            document.getElementById('modulaciones-error').textContent = error.permanent ? error.message : 'No se pudo conectar. Podés continuar la búsqueda.';
         }
     });
 }
@@ -740,15 +740,11 @@ function abrirModulaciones() {
     document.getElementById('modulaciones-lista').innerHTML = '';
     document.getElementById('modulaciones-filtro').value = '';
     document.getElementById('modulaciones-filtro').disabled = true;
-    document.getElementById('mod-search-continue').hidden = true;
     document.getElementById('mod-search-limit').hidden = true;
     modStatus('Buscando modulaciones de la ventana horaria…', false);
     $('#modalModulaciones').modal('show');
     modRequest('estado');
 }
-document.getElementById('mod-search-continue').addEventListener('click', function() {
-    modFailures = 0; modLastProgress = Date.now(); modRequest('estado');
-});
 document.getElementById('mod-search-refresh').addEventListener('click', function() {
     modRefreshing = true; modRefreshFrom = modSearch ? modSearch.busqueda_id : null;
     modStop(); modSearch = null; modFailures = 0; modLastTotal = -1; modLastProgress = Date.now();

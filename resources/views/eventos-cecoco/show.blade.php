@@ -675,7 +675,7 @@ function modRequest(action) {
             ? { operacion: 'avanzar', busqueda_id: modSearch.busqueda_id, revision: modSearch.revision }
             : { operacion: 'iniciar', actualizar: action === 'actualizar' });
     }
-    var timeout = setTimeout(function() { if (generation === modGeneration && modController) { modController.abort(); } }, 32000);
+    var timeout = setTimeout(function() { if (generation === modGeneration && modController) { modController.abort(); } }, 85000);
     fetch(url, options).then(function(r) {
         return r.json().then(function(data) {
             if (!r.ok || !data.success) {

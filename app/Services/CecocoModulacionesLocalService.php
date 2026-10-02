@@ -117,6 +117,67 @@ class CecocoModulacionesLocalService
             return $modulacionesGrabador;
         }
 
+        return $this->emparejarConArchivos($modulacionesGrabador, $archivos);
+    }
+
+    /** Runs only in the supervised child; checkpoint before potentially blocking disk I/O. */
+    public function escanearPaso(array $job, callable $save): void
+    {
+        $deadline = microtime(true) + 8;
+        $desde = Carbon::parse($job['ventana']['desde']);
+        $hasta = Carbon::parse($job['ventana']['hasta']);
+        if (!($job['local'] ?? true)) { $desde->subSeconds($this->toleranciaEmparejado); $hasta->addSeconds($this->toleranciaEmparejado); }
+        $cp = $job['checkpoint'] ?: ['mes' => $desde->copy()->startOfMonth()->format('Y-m-d'), 'operador' => 0, 'archivo' => 0];
+        $unique = $job['unicas'] ?? [];
+        while (microtime(true) < $deadline) {
+            $month = Carbon::parse($cp['mes']);
+            if ($month->gt($hasta)) { $job['completa'] = true; $save($job); return; }
+            $dir = $this->baseDir . DIRECTORY_SEPARATOR . $month->format('Y') . DIRECTORY_SEPARATOR . $month->format('Y_m');
+            $job['checkpoint'] = $cp; $save($job);
+            if (!is_dir($dir)) {
+                $cp = ['mes' => $month->addMonth()->format('Y-m-d'), 'operador' => 0, 'archivo' => 0];
+                continue;
+            }
+            $operators = new \FilesystemIterator($dir, \FilesystemIterator::SKIP_DOTS);
+            $index = 0; $found = false;
+            foreach ($operators as $operator) {
+                if ($index++ < $cp['operador']) { continue; }
+                $found = true;
+                if (!$operator->isDir() || $operator->isLink()) { $cp['operador']++; $cp['archivo'] = 0; break; }
+                $files = new \FilesystemIterator($operator->getPathname(), \FilesystemIterator::SKIP_DOTS);
+                $offset = 0;
+                foreach ($files as $file) {
+                    if ($offset++ < $cp['archivo']) { continue; }
+                    if (microtime(true) >= $deadline) { $job['checkpoint'] = $cp; $save($job); return; }
+                    $name = $file->getFilename();
+                    if (!$file->isLink() && in_array(strtolower(pathinfo($name, PATHINFO_EXTENSION)), self::EXTENSIONES_AUDIO, true)
+                        && ($this->marcadorTelefonia === '' || !str_contains($name, $this->marcadorTelefonia))) {
+                        $item = $this->parsearNombreArchivo($name, $file->getPathname());
+                        if ($item && Carbon::parse($item['fechaInicio'])->between($desde, $hasta)
+                            && (($job['local'] ?? true) || isset($job['minutos'][Carbon::parse($item['fechaInicio'])->format('Ymd_Hi')]))) {
+                            $job['archivos'][$file->getPathname()] = $item;
+                            if ($job['local'] ?? false) {
+                                $unique[$item['fechaInicio'] . '|' . $item['duracion'] . '|' . $item['canal']] = true;
+                                $job['unicas'] = $unique;
+                                if (count($unique) >= CecocoModulacionesBusquedaService::LIMITE) {
+                                    $job['agotada'] = false; $job['completa'] = true;
+                                    $cp['archivo']++; $job['checkpoint'] = $cp; $save($job); return;
+                                }
+                            }
+                        }
+                    }
+                    $cp['archivo']++;
+                    $job['checkpoint'] = $cp; $save($job);
+                }
+                $cp['operador']++; $cp['archivo'] = 0; break;
+            }
+            if (!$found) { $cp = ['mes' => $month->addMonth()->format('Y-m-d'), 'operador' => 0, 'archivo' => 0]; }
+            $job['checkpoint'] = $cp; $save($job);
+        }
+    }
+
+    public function emparejarConArchivos(array $modulacionesGrabador, array $archivos): array
+    {
         $porSegundo = [];
         foreach ($archivos as $i => $archivo) {
             $porSegundo[Carbon::parse($archivo['fechaInicio'])->getTimestamp()][] = $i;

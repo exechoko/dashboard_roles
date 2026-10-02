@@ -1063,194 +1063,64 @@ class EventoCecocoController extends Controller
         }
     }
 
-    /**
-     * Busca modulaciones de radio TETRA del grabador para el evento, dentro de la
-     * ventana que arranca N minutos antes de la fecha del evento y termina en su
-     * cierre. Pagina con un cursor (searchid + skip): el frontend pide página por
-     * página con requests cortos para que el proxy (Cloudflare, ~100 s) no corte
-     * la conexión cuando hay muchas modulaciones.
-     */
+    /** Recupera o avanza una búsqueda privada; el servidor controla ventana y cursor. */
     public function modulaciones(Request $request, EventoCecoco $eventoCecoco): JsonResponse
     {
-        $this->authorize('escuchar-modulaciones-cecoco');
-
-        if (empty($eventoCecoco->fecha_hora)) {
-            return response()->json([
-                'success'      => false,
-                'message'      => 'El evento no tiene fecha/hora registrada. No es posible buscar modulaciones.',
-                'modulaciones' => [],
-            ]);
+        try { $this->authorize('escuchar-modulaciones-cecoco'); }
+        catch (\Illuminate\Auth\Access\AuthorizationException $e) {
+            return $this->errorBusquedaModulaciones(['message' => 'No tenés permiso para escuchar modulaciones.'], 403);
         }
-
-        $minutosAntes = (int) config('grabador.minutos_antes', 10);
-        $desde = $eventoCecoco->fecha_hora->copy()->subMinutes($minutosAntes);
-        $hasta = $eventoCecoco->fecha_cierre
-            ? $eventoCecoco->fecha_cierre->copy()
-            : $eventoCecoco->fecha_hora->copy()->addMinutes((int) config('grabador.minutos_despues_sin_cierre', 60));
-
-        // Cola de ventanas pendientes: en la 1ª ronda es solo la ventana completa
-        // del evento; en las siguientes es lo que devolvió la ronda anterior
-        // (ventanas que quedaron por bisecar/agotar). Ver buscarPorVentanas().
-        $cola        = $this->decodificarColaModulaciones((string) $request->input('cola', ''), $desde, $hasta);
-        $totalPrevio = max(0, (int) $request->input('total', 0));
-
+        $service = app(\App\Services\CecocoModulacionesBusquedaService::class);
+        $user = (int) $request->user()->getAuthIdentifier();
+        $headers = ['Cache-Control' => 'private, no-store'];
+        if ($request->hasAny(['cola', 'total', 'desde', 'hasta'])) {
+            return $this->errorBusquedaModulaciones(['message' => 'La pantalla cambió. Recargá la página para buscar modulaciones.', 'recargar' => true], 409);
+        }
         try {
-            $localService = new CecocoModulacionesLocalService();
-
-            // El grabador es la fuente autoritativa: devuelve una sola fila por
-            // modulación real (CECOCO en cambio graba una copia por operador que
-            // escucha), y su audio (servido por itemid vía el Replay Server) nunca
-            // puede confundir canales. El disco local sólo se usa como respaldo
-            // cuando el Replay Server no está disponible: ahí sí hay que emparejar
-            // cada fila con su .mp3 por hora+duración, con el riesgo de ambigüedad
-            // que eso implica (ver CecocoModulacionesLocalService::emparejarConGrabador).
-            if (config('grabador.url')) {
-                try {
-                    $grabador = new GrabadorTetraService();
-                    $limite   = microtime(true) + (int) config('grabador.timeout_total', 90);
-                    $ronda    = $grabador->buscarPorVentanas($cola, $limite);
-
-                    $modulaciones = $ronda['modulaciones'];
-                    $maxTotal     = (int) config('grabador.max_resultados', 500);
-                    if ($totalPrevio + count($modulaciones) > $maxTotal) {
-                        $modulaciones = array_slice($modulaciones, 0, max(0, $maxTotal - $totalPrevio));
-                        $ronda['cola'] = [];
-                    }
-
-                    $primeraRondaVacia = $totalPrevio === 0 && empty($modulaciones) && empty($ronda['cola']);
-
-                    if (!$primeraRondaVacia) {
-                        // El listado del grabador se devuelve siempre: es la fuente
-                        // autoritativa de qué se moduló, y sirve aunque no haya backup
-                        // local de ese día ni Replay Server para reproducirlo. El audio
-                        // en sí se pide siempre al grabador (por itemid, sin ambigüedad)
-                        // salvo que el Replay Server no esté disponible, en cuyo caso se
-                        // cae al disco local como respaldo.
-                        if (!$grabador->replayDisponible()) {
-                            $modulaciones = $localService->emparejarConGrabador($modulaciones, $desde, $hasta);
-                            $this->marcarAudiosSinReplay($modulaciones, $grabador);
-                        }
-                        $this->asignarUrlsDeStream($modulaciones, $eventoCecoco);
-
-                        return response()->json([
-                            'success'      => true,
-                            'modulaciones' => $modulaciones,
-                            'total'        => $totalPrevio + count($modulaciones),
-                            'ventana'      => ['desde' => $desde->format('Y-m-d H:i:s'), 'hasta' => $hasta->format('Y-m-d H:i:s')],
-                            'fuente'       => 'grabador',
-                            'cola'         => empty($ronda['cola']) ? null : $this->codificarColaModulaciones($ronda['cola']),
-                            'hayMas'       => !empty($ronda['cola']),
-                        ]);
-                    }
-                } catch (\Exception $e) {
-                    Log::warning('modulaciones: grabador no disponible, se usa el disco local', [
-                        'evento_id' => $eventoCecoco->id,
-                        'error'     => $e->getMessage(),
-                    ]);
-
-                    // Ya había resultados del grabador acumulados en rondas anteriores:
-                    // no mezclarlos en silencio con una búsqueda local de otra fuente
-                    // sobre la ventana completa. Mejor mostrar el error (el frontend ya
-                    // sabe renderizar lo acumulado hasta acá) que arriesgar duplicados.
-                    if ($totalPrevio > 0) {
-                        throw $e;
-                    }
+            if ($request->isMethod('get')) {
+                $request->validate(['busqueda_id' => ['nullable', 'regex:/^[a-f0-9]{64}$/D']]);
+                $state = $service->estado($user, $eventoCecoco, $request->input('busqueda_id'));
+                if (!$state) {
+                    return response()->json(['success' => true, 'estado' => 'buscando', 'busqueda_id' => null, 'revision' => 0, 'total' => 0,
+                        'limite' => 2000, 'hayMas' => true, 'ventana' => $service->ventana($eventoCecoco), 'fuente' => null,
+                        'reintentar_en' => 1.5, 'message' => 'Iniciá una nueva búsqueda.'], 200, $headers);
                 }
+            } else {
+                $data = $request->validate(['operacion' => 'required|in:iniciar,avanzar', 'actualizar' => 'sometimes|boolean',
+                    'busqueda_id' => ['required_if:operacion,avanzar', 'regex:/^[a-f0-9]{64}$/D'],
+                    'revision' => 'required_if:operacion,avanzar|integer|min:0']);
+                $start = $data['operacion'] === 'iniciar';
+                $rateKey = 'mod_search_rate:' . $user . ':' . ($start ? 'start' : 'advance');
+                $rateLock = \Illuminate\Support\Facades\Cache::lock($rateKey . ':lock', 45);
+                abort_unless($rateLock->get(), 429);
+                try {
+                    abort_if(\Illuminate\Support\Facades\RateLimiter::tooManyAttempts($rateKey, $start ? 10 : 60), 429);
+                    \Illuminate\Support\Facades\RateLimiter::hit($rateKey, 60);
+                } finally { $rateLock->release(); }
+                $state = $start ? $service->iniciar($user, $eventoCecoco, (bool) ($data['actualizar'] ?? false))
+                    : $service->avanzar($user, $eventoCecoco, $data['busqueda_id'], (int) $data['revision']);
             }
-
-            // Respaldo: búsqueda directa en disco local (deduplicando copias por operador).
-            $resultado = $localService->buscarModulaciones($desde, $hasta);
-            $this->asignarUrlsDeStream($resultado['modulaciones'], $eventoCecoco);
-
-            return response()->json([
-                'success'      => true,
-                'modulaciones' => $resultado['modulaciones'],
-                'total'        => count($resultado['modulaciones']),
-                'ventana'      => $resultado['ventana'],
-                'fuente'       => $resultado['fuente'] ?? 'local',
-                'cola'         => null,
-                'hayMas'       => false,
-            ]);
-        } catch (\Exception $e) {
-            Log::error('modulaciones evento cecoco', [
-                'evento_id' => $eventoCecoco->id,
-                'error'     => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al buscar modulaciones: ' . $e->getMessage(),
-            ], 500);
+            $result = $service->respuesta($state);
+            if (isset($result['modulaciones'])) { $this->asignarUrlsDeStream($result['modulaciones'], $eventoCecoco); }
+            return response()->json($result, 200, $headers);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->errorBusquedaModulaciones(['message' => 'Solicitud inválida. Recargá la página.'], 422);
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
+            $status = $e->getStatusCode();
+            return $this->errorBusquedaModulaciones(['estado' => 'pausada', 'reintentar_en' => $status === 429 ? 10 : 1.5,
+                'message' => $status === 410 ? 'La búsqueda caducó. Actualizá para comenzar otra.' : 'No se pudo avanzar. Recuperá el estado o actualizá la búsqueda.'], $status);
+        } catch (\Throwable $e) {
+            Log::warning('modulaciones: operación interrumpida', ['evento_id' => $eventoCecoco->id]);
+            return $this->errorBusquedaModulaciones(['estado' => 'pausada', 'message' => 'Búsqueda pausada; conservamos el avance'], 503);
         }
     }
 
-    /**
-     * Decodifica la cola de ventanas pendientes que manda el frontend entre
-     * rondas de búsqueda de modulaciones (ver GrabadorTetraService::buscarPorVentanas).
-     * Sin cola (1ª ronda), la cola es solo la ventana completa del evento.
-     *
-     * @return array<int, array{0: Carbon, 1: Carbon}>
-     */
-    private function decodificarColaModulaciones(string $colaJson, Carbon $desde, Carbon $hasta): array
+    private function errorBusquedaModulaciones(array $data, int $status): JsonResponse
     {
-        if ($colaJson === '') {
-            return [[$desde->copy(), $hasta->copy()]];
-        }
-
-        $decodificada = json_decode($colaJson, true);
-        if (!is_array($decodificada)) {
-            return [[$desde->copy(), $hasta->copy()]];
-        }
-
-        $cola = [];
-        foreach ($decodificada as $ventana) {
-            if (!is_array($ventana) || count($ventana) !== 2) {
-                continue;
-            }
-            try {
-                $cola[] = [Carbon::parse($ventana[0]), Carbon::parse($ventana[1])];
-            } catch (\Exception $e) {
-                continue;
-            }
-        }
-
-        return $cola;
+        return response()->json(array_merge(['success' => false, 'estado' => 'fallida', 'busqueda_id' => null,
+            'revision' => null, 'total' => null, 'limite' => 2000, 'hayMas' => true, 'ventana' => null,
+            'fuente' => null, 'reintentar_en' => 1.5], $data), $status, ['Cache-Control' => 'private, no-store']);
     }
-
-    /**
-     * @param array<int, array{0: Carbon, 1: Carbon}> $cola
-     */
-    private function codificarColaModulaciones(array $cola): string
-    {
-        return json_encode(array_map(
-            fn ($ventana) => [$ventana[0]->format('Y-m-d H:i:s'), $ventana[1]->format('Y-m-d H:i:s')],
-            $cola
-        ));
-    }
-
-    /**
-     * Marca como no disponibles los audios que sólo existen en el grabador cuando
-     * el Replay Server (que sirve los WAV) no es alcanzable desde este servidor.
-     *
-     * @param array<int, array<string, mixed>> $modulaciones
-     */
-    private function marcarAudiosSinReplay(array &$modulaciones, GrabadorTetraService $grabador): void
-    {
-        // Con candidatos ambiguos (ver CecocoModulacionesLocalService::emparejarConGrabador)
-        // sí hay audio local disponible para elegir, aunque no haya un 'path' único.
-        $haySinMatch = array_filter($modulaciones, fn ($m) => empty($m['path']) && empty($m['candidatosAudio']));
-        if (empty($haySinMatch) || $grabador->replayDisponible()) {
-            return;
-        }
-
-        foreach ($modulaciones as &$m) {
-            if (empty($m['path']) && empty($m['candidatosAudio'])) {
-                $m['audioDisponible'] = false;
-            }
-        }
-        unset($m);
-    }
-
     /**
      * Asigna a cada modulación la URL del proxy de audio (mp3 local o WAV del grabador)
      * y quita la ruta física para no exponerla al cliente. Cuando el emparejado con
@@ -1274,20 +1144,29 @@ class EventoCecocoController extends Controller
         foreach ($modulaciones as &$m) {
             if (!empty($m['candidatosAudio'])) {
                 foreach ($m['candidatosAudio'] as &$c) {
-                    $c['url'] = route('api.cecoco.modulacion.stream', array_merge(['path' => base64_encode($c['path'])], $contextoEvento));
+                    $c['url'] = $this->urlAudioLocalModulacion($c['path'], $contextoEvento);
                     unset($c['path']);
                 }
                 unset($c);
             }
 
             if (!empty($m['path'])) {
-                $m['url'] = route('api.cecoco.modulacion.stream', array_merge(['path' => base64_encode($m['path'])], $contextoEvento));
+                $m['url'] = $this->urlAudioLocalModulacion($m['path'], $contextoEvento);
                 unset($m['path']);
             } else {
                 $m['url'] = route('api.cecoco.modulacion.stream', array_merge(['itemid' => $m['itemid']], $contextoEvento));
             }
         }
         unset($m);
+    }
+
+    private function urlAudioLocalModulacion(string $path, array $contexto): string
+    {
+        $user = (int) auth()->id();
+        $token = hash_hmac('sha256', $user . '|' . $contexto['evento_id'] . '|' . $path, (string) config('app.key'));
+        Cache::store('modulaciones')->put('mod_audio:' . $token,
+            ['usuario' => $user, 'evento' => (string) $contexto['evento_id'], 'path' => $path], now()->addMinutes(30));
+        return route('api.cecoco.modulacion.stream', array_merge(['audio_token' => $token], $contexto));
     }
 
     /**
@@ -1297,6 +1176,14 @@ class EventoCecocoController extends Controller
     public function streamModulacion(Request $request)
     {
         $this->authorize('escuchar-modulaciones-cecoco');
+
+        if ($request->has('audio_token')) {
+            $token = (string) $request->input('audio_token');
+            $audio = preg_match('/^[a-f0-9]{64}$/D', $token) ? Cache::store('modulaciones')->get('mod_audio:' . $token) : null;
+            abort_unless($audio && $audio['usuario'] === (int) $request->user()->getAuthIdentifier()
+                && $audio['evento'] === (string) $request->input('evento_id'), 404);
+            $request->merge(['path' => base64_encode($audio['path'])]);
+        }
 
         // Modulación en disco local.
         if ($request->filled('path')) {

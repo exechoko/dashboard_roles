@@ -35,7 +35,7 @@ class GrabadorTetraBusquedaPasoTest extends TestCase
         $this->assertCount(2, $history);
         parse_str($history[0]['request']->getUri()->getQuery(), $query);
         $this->assertSame('startsearch', $query['action']);
-        $this->assertSame('7', $query['MaximumResults']);
+        $this->assertSame('6', $query['MaximumResults']);
         parse_str($history[1]['request']->getUri()->getQuery(), $query);
         $this->assertSame('getstatus', $query['action']);
     }
@@ -86,7 +86,7 @@ class GrabadorTetraBusquedaPasoTest extends TestCase
         $client = $clientMethod->invoke($service);
         $this->assertEqualsWithDelta(30, $client->getConfig('timeout'), 1);
         $deadline->setValue($service, microtime(true) + 120);
-        $this->assertSame(60, $clientMethod->invoke($service)->getConfig('timeout'));
+        $this->assertSame(80, $clientMethod->invoke($service)->getConfig('timeout'));
         $deadline->setValue($service, microtime(true) + 30);
         $this->assertSame(3, $client->getConfig('connect_timeout'));
         $deadline->setValue($service, null);

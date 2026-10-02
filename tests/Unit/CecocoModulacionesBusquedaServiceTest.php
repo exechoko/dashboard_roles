@@ -51,7 +51,7 @@ class CecocoModulacionesBusquedaServiceTest extends TestCase
         $recorder->shouldReceive('avanzarBusqueda')->andReturnUsing(function ($cursor, $desde, $hasta, $deadline) use ($quantity, &$calls) {
             $calls[] = $cursor;
             $this->assertGreaterThan(microtime(true), $deadline);
-            $this->assertLessThanOrEqual(70, $deadline - microtime(true));
+            $this->assertLessThanOrEqual(85, $deadline - microtime(true));
             $skip = $cursor['skip'] ?? 0;
             $count = min(1000, max(0, $quantity - $skip));
             $items = [];

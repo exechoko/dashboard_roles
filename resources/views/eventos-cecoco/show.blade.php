@@ -558,9 +558,15 @@ function escHtml(str) {
                         </div>
                     </div>
                 </div>
-                <div id="modulaciones-loading" class="text-center py-4">
-                    <i class="fas fa-sync-alt grabacion-spin"></i> Buscando modulaciones...
+                <div class="mb-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="mod-search-refresh">Actualizar</button>
+                    <button type="button" class="btn btn-sm btn-primary" id="mod-search-continue" hidden>Continuar</button>
                 </div>
+                <div id="modulaciones-loading" class="py-3" role="status" aria-live="polite">
+                    <p id="mod-search-message">Buscando modulaciones de la ventana horaria…</p>
+                    <div class="progress"><div id="mod-search-bar" class="progress-bar progress-bar-striped progress-bar-animated" style="width:35%"></div></div>
+                </div>
+                <div id="mod-search-limit" class="alert alert-warning" role="alert" hidden></div>
                 <div id="modulaciones-empty" style="display:none;" class="text-center py-4 text-muted">
                     <i class="fas fa-signal" style="font-size:2rem;"></i>
                     <p class="mt-2">No se encontraron modulaciones en la ventana del evento.</p>
@@ -625,74 +631,135 @@ function guardarEscuchada(clave) {
 
 var MOD_URL_BASE = '{{ route("api.cecoco.modulaciones", $eventoCecoco) }}';
 
-function abrirModulaciones() {
-    document.getElementById('modulaciones-loading').style.display     = 'block';
-    document.getElementById('modulaciones-loading').innerHTML         = '<i class="fas fa-sync-alt grabacion-spin"></i> Buscando modulaciones...';
-    document.getElementById('modulaciones-empty').style.display       = 'none';
-    document.getElementById('modulaciones-error').style.display       = 'none';
-    document.getElementById('modulaciones-lista').style.display       = 'none';
-    document.getElementById('modulaciones-ventana').style.display     = 'none';
-    document.getElementById('modulaciones-filtro-wrap').style.display = 'none';
-    document.getElementById('modulaciones-sin-filtro').style.display  = 'none';
-    document.getElementById('modulaciones-lista').innerHTML           = '';
-    document.getElementById('modulaciones-filtro').value             = '';
+var modSearch = null, modTimer = null, modController = null, modOpen = false;
+var modRefreshing = false, modRefreshFrom = null;
+var modGeneration = 0, modFailures = 0, modLastProgress = 0, modLastTotal = -1, modLastServerProgress = null;
 
-    $('#modalModulaciones').modal('show');
-
-    cargarPaginaModulaciones(MOD_URL_BASE, { modulaciones: [], ventana: null, fuente: null });
+function modStatus(message, complete) {
+    document.getElementById('mod-search-message').textContent = message;
+    var bar = document.getElementById('mod-search-bar');
+    bar.classList.toggle('progress-bar-animated', !complete);
+    bar.classList.toggle('progress-bar-striped', !complete);
+    bar.style.width = complete ? '100%' : '35%';
+    bar.parentElement.setAttribute('aria-label', message);
+    document.getElementById('modulaciones-loading').style.display = 'block';
 }
-
-// Pide las modulaciones página por página: cada request al servidor dura pocos
-// segundos, así el proxy (Cloudflare corta a los ~100 s) nunca llega a cortar
-// aunque haya miles de modulaciones. Muestra el progreso mientras carga.
-function cargarPaginaModulaciones(url, acumulado) {
-    fetch(url, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(function(r) {
-        return r.json().catch(function() {
-            // El servidor no devolvió JSON (ej. página de error de Apache/Cloudflare).
-            throw new Error('HTTP ' + r.status + ' (respuesta no JSON)');
+function modStop() {
+    clearTimeout(modTimer);
+    modGeneration++;
+    if (modController) { modController.abort(); modController = null; }
+}
+function modPause() {
+    clearTimeout(modTimer);
+    modStatus('Búsqueda pausada; conservamos el avance' + (modSearch ? ' (' + modSearch.total + ' recuperadas)' : ''), false);
+    document.getElementById('mod-search-continue').hidden = false;
+}
+function modSchedule(action, delay) {
+    clearTimeout(modTimer);
+    if (modOpen) { modTimer = setTimeout(function() { modRequest(action); }, delay); }
+}
+function modRequest(action) {
+    if (!modOpen || modController) { return; }
+    var generation = modGeneration;
+    modController = new AbortController();
+    var headers = { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' };
+    var options = { headers: headers, signal: modController.signal, credentials: 'same-origin' };
+    var url = MOD_URL_BASE;
+    if (action === 'estado') {
+        if (modSearch) { url += '?busqueda_id=' + encodeURIComponent(modSearch.busqueda_id); }
+    } else {
+        options.method = 'POST';
+        headers['Content-Type'] = 'application/json';
+        headers['X-CSRF-TOKEN'] = document.querySelector('meta[name="csrf-token"]').content;
+        options.body = JSON.stringify(action === 'avanzar'
+            ? { operacion: 'avanzar', busqueda_id: modSearch.busqueda_id, revision: modSearch.revision }
+            : { operacion: 'iniciar', actualizar: action === 'actualizar' });
+    }
+    var timeout = setTimeout(function() { if (generation === modGeneration && modController) { modController.abort(); } }, 32000);
+    fetch(url, options).then(function(r) {
+        return r.json().then(function(data) {
+            if (!r.ok || !data.success) {
+                var error = new Error(data.message || 'No se pudo recuperar la búsqueda.');
+                error.permanent = [401, 403, 404, 410, 419, 422].indexOf(r.status) !== -1 || data.recargar;
+                throw error;
+            }
+            return data;
         });
-    })
-    .then(function(data) {
-        if (!data.success) {
+    }).then(function(data) {
+        if (!modOpen || generation !== modGeneration) { return; }
+        clearTimeout(timeout); modController = null;
+        if (modRefreshing && action === 'estado' && data.busqueda_id === modRefreshFrom) {
+            modSchedule('actualizar', 1500); return;
+        }
+        if (modRefreshing && data.busqueda_id) { modRefreshing = false; }
+        if (!data.busqueda_id) { modSearch = null; modSchedule('iniciar', 0); return; }
+        modSearch = data;
+        document.getElementById('mod-search-continue').hidden = true;
+        document.getElementById('modulaciones-error').style.display = 'none';
+        if (data.total !== modLastTotal || data.avance !== modLastServerProgress) {
+            modLastProgress = Date.now(); modLastTotal = data.total; modLastServerProgress = data.avance;
+        }
+        if (data.estado === 'completa' || data.estado === 'limite_alcanzado') {
+            modFailures = 0;
+            document.getElementById('modulaciones-filtro').disabled = false;
+            renderizarModulaciones(data);
+            modStatus(data.message, data.estado === 'completa');
+            var warning = document.getElementById('mod-search-limit');
+            warning.hidden = data.estado !== 'limite_alcanzado';
+            warning.textContent = warning.hidden ? '' : data.message;
+            return;
+        }
+        if (data.estado === 'pausada') {
+            if (modFailures < 3) { modSchedule('avanzar', [2000, 5000, 10000][modFailures++]); }
+            else { modPause(); }
+            return;
+        }
+        if (action !== 'estado') { modFailures = 0; }
+        modStatus(data.message + ' (' + data.total + ' recuperadas)', false);
+        if (Date.now() - modLastProgress >= 120000) { modPause(); return; }
+        modSchedule('avanzar', 1500);
+    }).catch(function(error) {
+        if (!modOpen || generation !== modGeneration) { return; }
+        clearTimeout(timeout); modController = null;
+        if (!error.permanent && modFailures < 3) {
+            // Recover first: a lost POST response may already have advanced the revision.
+            modSchedule('estado', [2000, 5000, 10000][modFailures++]);
+        } else {
+            modPause();
             document.getElementById('modulaciones-error').style.display = 'block';
-            document.getElementById('modulaciones-error').textContent   =
-                (data.message || 'Error al obtener modulaciones.') +
-                (acumulado.modulaciones.length > 0 ? ' La lista de abajo puede estar incompleta.' : '');
-            if (acumulado.modulaciones.length > 0) { renderizarModulaciones(acumulado); }
-            else { document.getElementById('modulaciones-loading').style.display = 'none'; }
-            return;
+            document.getElementById('modulaciones-error').textContent = error.permanent ? error.message : 'No se pudo conectar. Podés continuar la búsqueda.';
         }
-
-        acumulado.modulaciones = acumulado.modulaciones.concat(data.modulaciones || []);
-        if (!acumulado.ventana && data.ventana) { acumulado.ventana = data.ventana; }
-        if (!acumulado.fuente && data.fuente)   { acumulado.fuente  = data.fuente; }
-
-        if (data.hayMas && data.cola) {
-            document.getElementById('modulaciones-loading').innerHTML =
-                '<i class="fas fa-sync-alt grabacion-spin"></i> Buscando modulaciones... (' + acumulado.modulaciones.length + ' encontradas)';
-            cargarPaginaModulaciones(
-                MOD_URL_BASE + '?cola=' + encodeURIComponent(data.cola) + '&total=' + encodeURIComponent(acumulado.modulaciones.length),
-                acumulado
-            );
-            return;
-        }
-
-        renderizarModulaciones(acumulado);
-    })
-    .catch(function(err) {
-        console.error(err);
-        document.getElementById('modulaciones-error').style.display = 'block';
-        document.getElementById('modulaciones-error').textContent   =
-            'Error al obtener modulaciones: ' + (err && err.message ? err.message : 'error de red') +
-            (acumulado.modulaciones.length > 0 ? '. La lista de abajo puede estar incompleta.' : '');
-        if (acumulado.modulaciones.length > 0) { renderizarModulaciones(acumulado); }
-        else { document.getElementById('modulaciones-loading').style.display = 'none'; }
     });
 }
-
+function abrirModulaciones() {
+    modStop(); modOpen = true; modSearch = null; modFailures = 0; modRefreshing = false;
+    modLastTotal = -1; modLastServerProgress = null; modLastProgress = Date.now();
+    ['modulaciones-empty', 'modulaciones-error', 'modulaciones-lista', 'modulaciones-ventana', 'modulaciones-filtro-wrap', 'modulaciones-sin-filtro'].forEach(function(id) {
+        document.getElementById(id).style.display = 'none';
+    });
+    document.getElementById('modulaciones-lista').innerHTML = '';
+    document.getElementById('modulaciones-filtro').value = '';
+    document.getElementById('modulaciones-filtro').disabled = true;
+    document.getElementById('mod-search-continue').hidden = true;
+    document.getElementById('mod-search-limit').hidden = true;
+    modStatus('Buscando modulaciones de la ventana horaria…', false);
+    $('#modalModulaciones').modal('show');
+    modRequest('estado');
+}
+document.getElementById('mod-search-continue').addEventListener('click', function() {
+    modFailures = 0; modLastProgress = Date.now(); modRequest('estado');
+});
+document.getElementById('mod-search-refresh').addEventListener('click', function() {
+    modRefreshing = true; modRefreshFrom = modSearch ? modSearch.busqueda_id : null;
+    modStop(); modSearch = null; modFailures = 0; modLastTotal = -1; modLastProgress = Date.now();
+    ['modulaciones-lista', 'modulaciones-empty', 'modulaciones-filtro-wrap', 'modulaciones-sin-filtro'].forEach(function(id) { document.getElementById(id).style.display = 'none'; });
+    document.getElementById('modulaciones-filtro').disabled = true;
+    document.getElementById('mod-search-limit').hidden = true;
+    document.querySelectorAll('#modulaciones-lista audio').forEach(function(audio) { audio.pause(); });
+    document.getElementById('modulaciones-lista').innerHTML = '';
+    modStatus('Buscando modulaciones de la ventana horaria…', false);
+    modRequest('actualizar');
+});
 function renderizarModulaciones(data) {
     document.getElementById('modulaciones-loading').style.display = 'none';
 
@@ -857,16 +924,21 @@ function renderizarModulaciones(data) {
             // Si el navegador no logra cargar alguno de los audios de la tarjeta (ej.
             // el proxy devuelve un error), se reemplaza ese player por un aviso claro.
             card.querySelectorAll('audio').forEach(function(audioEl) {
-                var sourceEl = audioEl.querySelector('source');
-                if (sourceEl) {
-                    sourceEl.addEventListener('error', function() {
-                        var aviso = document.createElement('span');
-                        aviso.className = 'mod-audio mod-audio-error badge badge-warning';
-                        aviso.innerHTML = '<i class="fas fa-volume-mute"></i> Audio no disponible';
-                        audioEl.replaceWith(aviso);
+                function ofrecerReintento() {
+                    var aviso = audioEl.parentElement.querySelector('.mod-audio-error');
+                    if (aviso) { return; }
+                    aviso = document.createElement('button');
+                    aviso.type = 'button';
+                    aviso.className = 'mod-audio-error btn btn-sm btn-outline-warning';
+                    aviso.textContent = 'Reintentar audio';
+                    aviso.addEventListener('click', function() {
+                        aviso.remove(); audioEl.load(); audioEl.play().catch(function() {});
                     });
+                    audioEl.insertAdjacentElement('afterend', aviso);
                 }
-
+                audioEl.addEventListener('error', ofrecerReintento);
+                var sourceEl = audioEl.querySelector('source');
+                if (sourceEl) { sourceEl.addEventListener('error', ofrecerReintento); }
                 // Marcar como escuchada al reproducir cualquiera de los audios
                 // (queda guardado en el navegador).
                 audioEl.addEventListener('play', function() {
@@ -917,6 +989,8 @@ function filtrarModulaciones() {
 document.getElementById('modulaciones-filtro').addEventListener('input', filtrarModulaciones);
 
 $('#modalModulaciones').on('hide.bs.modal', function() {
+    modOpen = false;
+    modStop();
     document.querySelectorAll('#modulaciones-lista audio').forEach(function(audio) {
         audio.pause();
         audio.currentTime = 0;

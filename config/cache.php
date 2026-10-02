@@ -33,6 +33,11 @@ return [
 
     'stores' => [
 
+        'modulaciones' => [
+            'driver' => 'file',
+            'path' => env('MODULACIONES_CACHE_PATH', storage_path('framework/cache/modulaciones')),
+        ],
+
         'apc' => [
             'driver' => 'apc',
         ],

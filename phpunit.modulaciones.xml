@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="vendor/autoload.php" cacheResult="false" colors="true">
+    <testsuites><testsuite name="Modulaciones">
+        <file>tests/Unit/CecocoModulacionesBusquedaServiceTest.php</file>
+        <file>tests/Unit/GrabadorTetraBusquedaPasoTest.php</file>
+        <file>tests/Unit/CecocoModulacionesEscaneoTest.php</file>
+        <file>tests/Unit/CecocoModulacionesLocalServiceTest.php</file>
+        <file>tests/Feature/ValidarPathAudiosLocalesTest.php</file>
+        <file>tests/Feature/CecocoModulacionesApiTest.php</file>
+    </testsuite></testsuites>
+    <php>
+        <env name="APP_ENV" value="testing" force="true"/>
+        <env name="APP_KEY" value="base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" force="true"/>
+        <env name="APP_CONFIG_CACHE" value="/scratch/config.php" force="true"/>
+        <env name="APP_SERVICES_CACHE" value="/scratch/services.php" force="true"/>
+        <env name="APP_PACKAGES_CACHE" value="/scratch/packages.php" force="true"/>
+        <env name="DB_CONNECTION" value="sqlite" force="true"/>
+        <env name="DB_DATABASE" value=":memory:" force="true"/>
+        <env name="CACHE_DRIVER" value="array" force="true"/>
+        <env name="MODULACIONES_CACHE_PATH" value="/scratch/modulaciones-cache" force="true"/>
+        <env name="VIEW_COMPILED_PATH" value="/scratch/views" force="true"/>
+        <env name="LOG_CHANNEL" value="stderr" force="true"/>
+        <env name="MAIL_MAILER" value="array" force="true"/>
+        <env name="QUEUE_CONNECTION" value="sync" force="true"/>
+        <env name="SESSION_DRIVER" value="array" force="true"/>
+        <env name="BCRYPT_ROUNDS" value="4" force="true"/>
+        <env name="TELESCOPE_ENABLED" value="false" force="true"/>
+    </php>
+</phpunit>

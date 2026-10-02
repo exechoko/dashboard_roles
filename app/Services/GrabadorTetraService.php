@@ -51,8 +51,14 @@ class GrabadorTetraService
                     $query += ['maximumresults' => '7', 'resultstoskip' => (string) ($cursor['skip'] ?? 0)];
                 }
             }
-            $response = $this->httpClient()->get($this->baseUrl . '/', [
-                'query' => $query, 'headers' => $this->cookieHeader($session)]);
+            try {
+                $response = $this->httpClient()->get($this->baseUrl . '/', [
+                    'query' => $query, 'headers' => $this->cookieHeader($session)]);
+            } catch (\GuzzleHttp\Exception\ConnectException $e) {
+                // Tras abortar un getstatus el grabador responde "done" vacío: se reinicia la ventana.
+                if ($action === 'startsearch') { throw $e; }
+                return ['cursor' => ['fase' => 'startsearch', 'skip' => $cursor['skip'] ?? 0], 'modulaciones' => [], 'agotada' => false];
+            }
             $json = json_decode((string) $response->getBody(), true);
             if ($action !== 'startsearch' && (in_array($response->getStatusCode(), [401, 403], true)
                 || (!is_array($json) && str_contains((string) $response->getBody(), 'secureauthorise')))) {
@@ -1038,7 +1044,7 @@ class GrabadorTetraService
         $remaining = $this->searchDeadline === null ? null : $this->searchDeadline - microtime(true);
         if ($remaining !== null && $remaining <= 0) { throw new \RuntimeException('Search budget exhausted'); }
         return new Client([
-            'timeout'         => $remaining === null ? $this->timeout : min(10, $remaining),
+            'timeout'         => $remaining === null ? $this->timeout : min(60, $remaining),
             'connect_timeout' => $remaining === null ? 5 : min(3, $remaining),
             'http_errors'     => false,
             'verify'          => false,

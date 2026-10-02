@@ -40,6 +40,21 @@ class GrabadorTetraBusquedaPasoTest extends TestCase
         $this->assertSame('getstatus', $query['action']);
     }
 
+    public function test_timeout_en_getstatus_reinicia_la_ventana_conservando_skip(): void
+    {
+        $mock = new MockHandler([new \GuzzleHttp\Exception\ConnectException(
+            'cURL error 28', new \GuzzleHttp\Psr7\Request('GET', 'http://recorder.invalid'))]);
+        $service = new class(new Client(['handler' => HandlerStack::create($mock)])) extends GrabadorTetraService {
+            public function __construct(private Client $client) { parent::__construct(); }
+            protected function httpClient(): Client { return $this->client; }
+        };
+        $page = $service->avanzarBusqueda(['session' => 'dummy', 'fase' => 'getstatus', 'searchid' => 's1', 'skip' => 1000],
+            Carbon::now(), Carbon::now(), microtime(true) + 30);
+        $this->assertFalse($page['agotada']);
+        $this->assertSame([], $page['modulaciones']);
+        $this->assertSame(['fase' => 'startsearch', 'skip' => 1000], $page['cursor']);
+    }
+
     public static function respuestasInvalidas(): array
     {
         return [['not json'], [json_encode(['searchid' => 's', 'searchStatus' => 'done'])],
@@ -69,7 +84,10 @@ class GrabadorTetraBusquedaPasoTest extends TestCase
         $this->assertLessThanOrEqual(1, $client->getConfig('connect_timeout'));
         $deadline->setValue($service, microtime(true) + 30);
         $client = $clientMethod->invoke($service);
-        $this->assertSame(10, $client->getConfig('timeout'));
+        $this->assertEqualsWithDelta(30, $client->getConfig('timeout'), 1);
+        $deadline->setValue($service, microtime(true) + 120);
+        $this->assertSame(60, $clientMethod->invoke($service)->getConfig('timeout'));
+        $deadline->setValue($service, microtime(true) + 30);
         $this->assertSame(3, $client->getConfig('connect_timeout'));
         $deadline->setValue($service, null);
         $this->assertSame((int) config('grabador.timeout', 30), $clientMethod->invoke($service)->getConfig('timeout'));

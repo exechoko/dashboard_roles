@@ -77,8 +77,9 @@ class CecocoModulacionesBusquedaService
 
     public function avanzar(int $user, EventoCecoco $evento, string $token, int $revision): array
     {
-        $deadline = microtime(true) + 29.5; // Reserve time to persist and serialize the response.
-        $lock = Cache::store('modulaciones')->lock($this->key($user, $evento) . ':lock', 45);
+        @set_time_limit(100);
+        $deadline = microtime(true) + 70; // Una página de 1000 filas tarda ~35 s en el grabador; margen para guardar y bajo el límite de 100 s de Cloudflare.
+        $lock = Cache::store('modulaciones')->lock($this->key($user, $evento) . ':lock', 100);
         abort_unless($lock->get(), 409, 'La búsqueda está ocupada; recuperá su estado.');
         try {
             $state = $this->recuperar($user, $evento, $token);
@@ -91,7 +92,7 @@ class CecocoModulacionesBusquedaService
             $state['estado'] = 'buscando';
             try {
                 if ($state['fase'] === 'grabador') {
-                    $sessionLock = Cache::store('modulaciones')->lock('mod_search_recorder:' . hash('sha256', config('grabador.url') . '|' . config('grabador.user')), 45);
+                    $sessionLock = Cache::store('modulaciones')->lock('mod_search_recorder:' . hash('sha256', config('grabador.url') . '|' . config('grabador.user')), 100);
                     if (!$sessionLock->get()) { return $this->guardar($state, $user, $evento); }
                     try {
                         $page = app(GrabadorTetraService::class)->avanzarBusqueda($state['cursor'], Carbon::parse($state['ventana']['desde']), Carbon::parse($state['ventana']['hasta']), $deadline);

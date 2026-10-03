@@ -7,6 +7,7 @@ use App\Models\MailBuzon;
 use App\Models\MailMensaje;
 use App\Models\User;
 use App\Services\Mbox\MboxIndexador;
+use App\Services\Mbox\MboxLector;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -66,6 +67,144 @@ class MailControllerIntegrationTest extends TestCase
         $respuesta->assertOk();
         $respuesta->assertSee('Version en', false);
         $respuesta->assertDontSee('<script', false);
+    }
+
+    public function test_se_puede_mostrar_la_alternativa_de_texto_del_mensaje(): void
+    {
+        [$usuario] = $this->indexarFixtureYUsuario();
+        $mensaje = MailMensaje::where('message_id', 'msg2@example.com')->firstOrFail();
+
+        $this->actingAs($usuario)
+            ->get(route('herramientas.mails.cuerpo', [$mensaje, 'formato' => 'texto']))
+            ->assertOk()
+            ->assertSee('Version en texto plano del aviso.', false);
+    }
+
+    public function test_el_html_convierte_los_emails_protegidos_por_cloudflare_a_mailto(): void
+    {
+        $email = 'contacto@example.com';
+        $clave = 0x0c;
+        $protegido = sprintf('%02x', $clave);
+
+        foreach (str_split($email) as $caracter) {
+            $protegido .= sprintf('%02x', ord($caracter) ^ $clave);
+        }
+
+        $html = '<a href="/cdn-cgi/l/email-protection#'.$protegido.'">[email protected]</a>';
+        $sanitizado = app(MboxLector::class)->sanitizarHtml($html);
+
+        $this->assertSame('<a href="mailto:contacto@example.com">contacto@example.com</a>', $sanitizado);
+    }
+
+    private function protegerEmailCloudflare(string $texto, int $clave = 0x0c): string
+    {
+        $hex = sprintf('%02x', $clave);
+
+        foreach (str_split($texto) as $caracter) {
+            $hex .= sprintf('%02x', ord($caracter) ^ $clave);
+        }
+
+        return $hex;
+    }
+
+    public function test_el_html_decodifica_data_cfemail_en_span_y_en_enlace(): void
+    {
+        $hex = $this->protegerEmailCloudflare('contacto@example.com', 0x5a);
+        $lector = app(MboxLector::class);
+
+        $this->assertSame(
+            'Escribir a contacto@example.com ahora',
+            $lector->sanitizarHtml('Escribir a <span class="__cf_email__" data-cfemail="'.$hex.'">[email&#160;protected]</span> ahora')
+        );
+
+        $this->assertSame(
+            '<a href="mailto:contacto@example.com" class="__cf_email__">contacto@example.com</a>',
+            $lector->sanitizarHtml('<a class="__cf_email__" href="/cdn-cgi/l/email-protection" data-cfemail="'.$hex.'">[email protected]</a>')
+        );
+    }
+
+    public function test_el_html_conserva_el_texto_y_el_asunto_de_enlaces_protegidos(): void
+    {
+        $hex = $this->protegerEmailCloudflare('contacto@example.com?subject=Hola', 0x21);
+        $inner = $this->protegerEmailCloudflare('contacto@example.com', 0x33);
+        $html = '<a href="https://sitio.com/cdn-cgi/l/email-protection#'.$hex.'">Escribinos: <span data-cfemail="'.$inner.'">[email protected]</span></a>';
+
+        $this->assertSame(
+            '<a href="mailto:contacto@example.com?subject=Hola">Escribinos: contacto@example.com</a>',
+            app(MboxLector::class)->sanitizarHtml($html)
+        );
+    }
+
+    public function test_el_html_deja_intacto_lo_que_no_es_un_email_protegido_valido(): void
+    {
+        $html = '<a href="/cdn-cgi/l/email-protection#zz">x</a><span data-cfemail="0c0d">[email protected]</span>';
+
+        $this->assertSame($html, app(MboxLector::class)->sanitizarHtml($html));
+    }
+
+    public function test_el_cuerpo_de_un_mail_real_muestra_los_emails_de_cloudflare_decodificados(): void
+    {
+        $span = $this->protegerEmailCloudflare('span@example.com');
+        $enlace = $this->protegerEmailCloudflare('enlace@example.com?subject=Hola', 0x41);
+        $ruta = tempnam(sys_get_temp_dir(), 'mbox');
+        file_put_contents($ruta, implode("\r\n", [
+            'From remitente@example.com Mon Jan  1 10:00:00 2024',
+            'From: Remitente <remitente@example.com>',
+            'To: dest@example.com',
+            'Subject: Cloudflare',
+            'Date: Mon, 1 Jan 2024 10:00:00 +0000',
+            'Message-ID: <cf-e2e@example.com>',
+            'MIME-Version: 1.0',
+            'Content-Type: text/html; charset=UTF-8',
+            '',
+            '<p>Mail: <span class="__cf_email__" data-cfemail="'.$span.'">[email&#160;protected]</span></p>'
+                .'<a href="/cdn-cgi/l/email-protection#'.$enlace.'">Contacto</a>',
+            '',
+        ]));
+
+        try {
+            $role = Role::firstOrCreate(['name' => 'rol_test_mbox_cf', 'guard_name' => 'web']);
+            $role->givePermissionTo(Permission::firstOrCreate(['name' => 'ver-visor-mails', 'guard_name' => 'web']));
+            $buzon = MailBuzon::create(['nombre' => 'Buzón CF', 'carpeta' => 'test_cf_'.uniqid(), 'role_id' => $role->id, 'activo' => true]);
+            $archivo = MailArchivo::create([
+                'buzon_id' => $buzon->id,
+                'nombre_archivo' => 'cf.mbox',
+                'ruta_absoluta' => $ruta,
+                'tamano_bytes' => filesize($ruta),
+                'estado' => 'pendiente',
+            ]);
+            app(MboxIndexador::class)->indexar($archivo);
+
+            $usuario = User::factory()->create();
+            $usuario->assignRole($role);
+            $mensaje = MailMensaje::where('message_id', 'cf-e2e@example.com')->firstOrFail();
+
+            $this->actingAs($usuario)
+                ->get(route('herramientas.mails.cuerpo', $mensaje))
+                ->assertOk()
+                ->assertSee('Mail: span@example.com', false)
+                ->assertSee('href="mailto:enlace@example.com?subject=Hola"', false)
+                ->assertDontSee('protected]', false);
+        } finally {
+            @unlink($ruta);
+        }
+    }
+
+    public function test_si_el_archivo_mbox_no_existe_se_muestra_un_mensaje_claro(): void
+    {
+        [$usuario] = $this->indexarFixtureYUsuario();
+        $mensaje = MailMensaje::where('message_id', 'msg1@example.com')->firstOrFail();
+        $mensaje->archivo->update(['ruta_absoluta' => 'F:\Backup_inexistente\faltante.mbox']);
+
+        $this->actingAs($usuario)
+            ->get(route('herramientas.mails.cuerpo', $mensaje))
+            ->assertStatus(503)
+            ->assertSee('No se puede acceder al archivo de correo', false)
+            ->assertSee('faltante.mbox', false);
+
+        $this->actingAs($usuario)
+            ->get(route('herramientas.mails.eml', $mensaje))
+            ->assertStatus(503);
     }
 
     public function test_se_puede_descargar_el_adjunto_del_mensaje(): void

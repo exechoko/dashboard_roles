@@ -30,9 +30,9 @@ class MboxLector
     {
         $ruta = $mensaje->archivo->ruta_absoluta;
 
-        $fh = fopen($ruta, 'rb');
+        $fh = is_file($ruta) ? @fopen($ruta, 'rb') : false;
         if ($fh === false) {
-            throw new RuntimeException("No se pudo abrir el archivo mbox: {$ruta}");
+            throw new MboxNoDisponibleException($ruta);
         }
 
         try {
@@ -75,6 +75,7 @@ class MboxLector
      */
     public function sanitizarHtml(string $html, array $mapaCid = []): string
     {
+        $html = $this->decodificarEmailsCloudflare($html);
         $html = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $html) ?? $html;
         $html = preg_replace('/<iframe\b[^>]*>.*?<\/iframe>/is', '', $html) ?? $html;
         $html = preg_replace('/<(script|iframe|object|embed|link)\b[^>]*\/?>/is', '', $html) ?? $html;
@@ -97,6 +98,74 @@ class MboxLector
         $html = preg_replace('/src\s*=\s*(["\'])(?!cid:|data:image\/)https?:\/\/[^"\']*\1/i', 'src=""', $html) ?? $html;
 
         return $html;
+    }
+
+    /**
+     * Revierte la ofuscación de Cloudflare ("Email Address Obfuscation"):
+     * elementos con data-cfemail (span, a, etc.) y enlaces con href
+     * /cdn-cgi/l/email-protection#HEX, incluidos los que llevan ?subject=...
+     */
+    private function decodificarEmailsCloudflare(string $html): string
+    {
+        $html = preg_replace_callback('/<([a-z][a-z0-9]*)\b([^>]*\bdata-cfemail\s*=\s*(["\'])([0-9a-f]+)\3[^>]*)>(.*?)<\/\1>/is', function (array $m): string {
+            if (strtolower($m[1]) === 'a') {
+                return $m[0];
+            }
+
+            $email = $this->decodificarHexCloudflare($m[4]);
+
+            return $email === null ? $m[0] : e(explode('?', $email)[0]);
+        }, $html) ?? $html;
+
+        return preg_replace_callback('/<a\b([^>]*)>(.*?)<\/a>/is', function (array $anchor): string {
+            $atributos = $anchor[1];
+            $hex = null;
+
+            if (preg_match('/\sdata-cfemail\s*=\s*(["\'])([0-9a-f]+)\1/i', $atributos, $dataMatch)) {
+                $hex = $dataMatch[2];
+            } elseif (preg_match('/\bhref\s*=\s*(["\'])(.*?)\1/is', $atributos, $hrefMatch)) {
+                $href = html_entity_decode($hrefMatch[2], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $fragment = parse_url($href, PHP_URL_FRAGMENT);
+
+                if (str_ends_with((string) parse_url($href, PHP_URL_PATH), '/cdn-cgi/l/email-protection') && is_string($fragment)) {
+                    $hex = $fragment;
+                }
+            }
+
+            $email = $hex === null ? null : $this->decodificarHexCloudflare($hex);
+
+            if ($email === null) {
+                return $anchor[0];
+            }
+
+            $resto = preg_replace('/\s(?:data-cfemail|href)\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $atributos) ?? $atributos;
+            $resto = rtrim($resto);
+            $direccion = e(explode('?', $email)[0]);
+            $contenido = preg_replace('/\[email(?:&#160;|&nbsp;|\s|\xC2\xA0)protected\]/i', $direccion, $anchor[2]) ?? $anchor[2];
+
+            return '<a href="mailto:'.e($email).'"'.$resto.'>'.$contenido.'</a>';
+        }, $html) ?? $html;
+    }
+
+    /**
+     * El primer byte es la clave XOR; el resto, el email (con query opcional).
+     */
+    private function decodificarHexCloudflare(string $hex): ?string
+    {
+        if (strlen($hex) < 4 || strlen($hex) % 2 !== 0 || !ctype_xdigit($hex)) {
+            return null;
+        }
+
+        $key = hexdec(substr($hex, 0, 2));
+        $email = '';
+
+        for ($index = 2; $index < strlen($hex); $index += 2) {
+            $email .= chr(hexdec(substr($hex, $index, 2)) ^ $key);
+        }
+
+        $direccion = explode('?', $email)[0];
+
+        return filter_var($direccion, FILTER_VALIDATE_EMAIL) === false ? null : $email;
     }
 
     private function desescaparMboxrd(string $crudo): string

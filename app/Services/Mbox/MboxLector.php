@@ -101,6 +101,33 @@ class MboxLector
     }
 
     /**
+     * Cloudflare (Email Address Obfuscation, en el túnel de producción) reescribe
+     * los emails de la respuesta como "[email protected]" y el script que los
+     * revierte no corre dentro del iframe con sandbox. Escribir la "@" como
+     * entidad HTML evita que Cloudflare reconozca el email; el navegador la
+     * muestra igual. No se toca el contenido de <style>, donde las entidades
+     * no se interpretan.
+     */
+    public function evitarOfuscacionDeCloudflare(string $html): string
+    {
+        $partes = preg_split('/(<style\b.*?<\/style>)/is', $html, -1, PREG_SPLIT_DELIM_CAPTURE);
+
+        if ($partes === false) {
+            return $html;
+        }
+
+        foreach ($partes as $indice => $parte) {
+            if ($indice % 2 === 1) {
+                continue;
+            }
+
+            $partes[$indice] = preg_replace('/(?<=[\w.+\-])@(?=[\w\-]+\.)/', '&#64;', $parte) ?? $parte;
+        }
+
+        return implode('', $partes);
+    }
+
+    /**
      * Revierte la ofuscación de Cloudflare ("Email Address Obfuscation"):
      * elementos con data-cfemail (span, a, etc.) y enlaces con href
      * /cdn-cgi/l/email-protection#HEX, incluidos los que llevan ?subject=...

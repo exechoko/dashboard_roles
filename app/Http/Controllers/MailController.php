@@ -76,6 +76,7 @@ class MailController extends Controller
         $html = $request->query('formato') === 'texto'
             ? $this->cuerpoTexto($mensaje, $lector)
             : $this->cuerpoSanitizado($mensaje, $lector);
+        $html = $lector->evitarOfuscacionDeCloudflare($html);
 
         return response($html, 200)
             ->header('Content-Type', 'text/html; charset=UTF-8')
@@ -99,12 +100,12 @@ class MailController extends Controller
         $cuerpoHtml = $this->cuerpoSanitizado($mensaje, $lector);
         $nonce = base64_encode(random_bytes(16));
 
-        $html = view('herramientas.mails.imprimir', [
+        $html = $lector->evitarOfuscacionDeCloudflare(view('herramientas.mails.imprimir', [
             'mensaje' => $mensaje,
             'adjuntos' => $mensaje->adjuntos_json ?? [],
             'cuerpoHtml' => $cuerpoHtml,
             'nonce' => $nonce,
-        ])->render();
+        ])->render());
 
         return response($html, 200)
             ->header('Content-Type', 'text/html; charset=UTF-8')

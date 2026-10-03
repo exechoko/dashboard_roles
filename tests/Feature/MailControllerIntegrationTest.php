@@ -182,8 +182,8 @@ class MailControllerIntegrationTest extends TestCase
             $this->actingAs($usuario)
                 ->get(route('herramientas.mails.cuerpo', $mensaje))
                 ->assertOk()
-                ->assertSee('Mail: span@example.com', false)
-                ->assertSee('href="mailto:enlace@example.com?subject=Hola"', false)
+                ->assertSee('Mail: span&#64;example.com', false)
+                ->assertSee('href="mailto:enlace&#64;example.com?subject=Hola"', false)
                 ->assertDontSee('protected]', false);
         } finally {
             @unlink($ruta);
@@ -205,6 +205,27 @@ class MailControllerIntegrationTest extends TestCase
         $this->actingAs($usuario)
             ->get(route('herramientas.mails.eml', $mensaje))
             ->assertStatus(503);
+    }
+
+    public function test_los_emails_se_escriben_con_arroba_como_entidad_para_que_cloudflare_no_los_ofusque(): void
+    {
+        $html = '<style>@media print { a { color: red } }</style><p>De: <a href="mailto:jdo.familia@jusentrerios.gov.ar">jdo.familia@jusentrerios.gov.ar</a> @usuario</p>';
+        $resultado = app(MboxLector::class)->evitarOfuscacionDeCloudflare($html);
+
+        $this->assertStringContainsString('<style>@media print', $resultado);
+        $this->assertStringContainsString('href="mailto:jdo.familia&#64;jusentrerios.gov.ar"', $resultado);
+        $this->assertStringContainsString('>jdo.familia&#64;jusentrerios.gov.ar</a> @usuario', $resultado);
+    }
+
+    public function test_el_cuerpo_y_la_impresion_no_exponen_emails_en_claro_a_cloudflare(): void
+    {
+        [$usuario] = $this->indexarFixtureYUsuario();
+        $mensaje = MailMensaje::where('message_id', 'msg1@example.com')->firstOrFail();
+
+        $this->actingAs($usuario)
+            ->get(route('herramientas.mails.imprimir', $mensaje))
+            ->assertOk()
+            ->assertDontSee('@example.com', false);
     }
 
     public function test_se_puede_descargar_el_adjunto_del_mensaje(): void
@@ -258,8 +279,8 @@ class MailControllerIntegrationTest extends TestCase
 
         $respuesta->assertOk();
         $respuesta->assertSee('Notificacion con HTML');
-        $respuesta->assertSee('secretaria@example.com', false);
-        $respuesta->assertSee('copia@example.com', false);
+        $respuesta->assertSee('secretaria&#64;example.com', false);
+        $respuesta->assertSee('copia&#64;example.com', false);
         $respuesta->assertSee('Version en', false);
         $respuesta->assertDontSee('<script>', false);
 

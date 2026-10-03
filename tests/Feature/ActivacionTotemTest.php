@@ -679,6 +679,30 @@ class ActivacionTotemTest extends TestCase
         @unlink($rutaSegura);
     }
 
+    public function test_el_servicio_encuentra_el_temporal_cuando_el_nombre_original_tiene_signo_pesos(): void
+    {
+        $admin = $this->crearSuperAdministrador();
+        [$totem] = $this->totemDeRedTemporal();
+        $evento = EventoCecoco::factory()->create();
+        $activacion = ActivacionTotem::create([
+            'evento_cecoco_id' => $evento->id,
+            'nro_expediente' => $evento->nro_expediente,
+            'fecha_evento' => $evento->fecha_hora,
+            'palabra_detectada' => 'totem',
+            'estado' => ActivacionTotem::ESTADO_PENDIENTE,
+        ]);
+
+        $this->actingAs($admin)->post(route('activaciones-totem.subir-video', $activacion), [
+            'camara_id' => $totem->id,
+            'video' => UploadedFile::fake()->create('2026-09-13-030351_2026-09-13-030828_1000285$1$0$0.mp4', 100, 'video/mp4'),
+            'observaciones' => 'Nombre real del exportador',
+        ])->assertRedirect(route('activaciones-totem.index'));
+
+        $rutaTemporal = app(SubidaVideoTotemService::class)->rutaTemporal($activacion->fresh());
+        $this->assertFileExists($rutaTemporal);
+        @unlink($rutaTemporal);
+    }
+
     public function test_el_listado_renderiza_sin_error_mientras_el_video_esta_en_proceso(): void
     {
         // Regresión: subirVideo() setea descargado_por de inmediato pero

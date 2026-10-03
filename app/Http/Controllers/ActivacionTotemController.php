@@ -9,6 +9,7 @@ use App\Models\ActivacionTotem;
 use App\Models\Camara;
 use App\Models\EventoCecoco;
 use App\Services\DetectorActivacionesTotem;
+use App\Services\SubidaVideoTotemService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -151,7 +152,7 @@ class ActivacionTotemController extends Controller
 
         $carpetaTemporal = storage_path('app/totem-uploads-temp');
         File::ensureDirectoryExists($carpetaTemporal);
-        $nombreSeguro = preg_replace('/[^A-Za-z0-9._-]/', '_', basename(str_replace('\\', '/', $nombreOriginal)));
+        $nombreSeguro = SubidaVideoTotemService::nombreSeguro($nombreOriginal);
         $archivo->move($carpetaTemporal, $activacionTotem->id . '_' . $nombreSeguro);
 
         $activacionTotem->update([

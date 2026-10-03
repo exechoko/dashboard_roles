@@ -91,6 +91,16 @@ class SubidaVideoTotemService
 
     public function rutaTemporal(ActivacionTotem $activacion): string
     {
-        return storage_path('app/totem-uploads-temp/' . $activacion->id . '_' . $activacion->nombre_archivo_original);
+        return storage_path('app/totem-uploads-temp/' . $activacion->id . '_' . self::nombreSeguro((string) $activacion->nombre_archivo_original));
+    }
+
+    /**
+     * Nombre con el que se guarda el temporal en disco local. Lo usan tanto el
+     * controlador (al recibir el archivo) como el comando (al buscarlo), para
+     * que coincidan aunque el original traiga caracteres como `$`.
+     */
+    public static function nombreSeguro(string $nombreOriginal): string
+    {
+        return preg_replace('/[^A-Za-z0-9._-]/', '_', basename(str_replace('\\', '/', $nombreOriginal)));
     }
 }

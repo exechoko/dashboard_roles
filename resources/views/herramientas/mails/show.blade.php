@@ -76,7 +76,20 @@
                     {{-- Sandbox sin allow-same-origin ni allow-scripts a propósito: aunque
                          sanitizarHtml() ya quita <script> y handlers on*, el iframe queda en
                          un origen opaco que no puede tocar las cookies ni el DOM del sistema. --}}
-                    <iframe src="{{ route('herramientas.mails.cuerpo', $mensaje) }}"
+                    <div class="mb-2">
+                        <a href="{{ route('herramientas.mails.cuerpo', [$mensaje, 'formato' => 'texto']) }}"
+                           target="mail-body"
+                           class="btn btn-outline-secondary btn-sm">
+                            Ver texto sin formato
+                        </a>
+                        <a href="{{ route('herramientas.mails.cuerpo', $mensaje) }}"
+                           target="mail-body"
+                           class="btn btn-outline-secondary btn-sm">
+                            Volver al HTML
+                        </a>
+                    </div>
+
+                    <iframe name="mail-body" src="{{ route('herramientas.mails.cuerpo', $mensaje) }}"
                             sandbox="allow-popups allow-popups-to-escape-sandbox"
                             style="width:100%; height:70vh; border:1px solid #e0e0e0; border-radius:4px; background:#fff;">
                     </iframe>

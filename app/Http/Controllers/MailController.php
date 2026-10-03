@@ -69,11 +69,13 @@ class MailController extends Controller
         ]);
     }
 
-    public function cuerpo(MailMensaje $mensaje, MboxLector $lector): Response
+    public function cuerpo(MailMensaje $mensaje, MboxLector $lector, Request $request): Response
     {
         $this->autorizarBuzon($mensaje);
 
-        $html = $this->cuerpoSanitizado($mensaje, $lector);
+        $html = $request->query('formato') === 'texto'
+            ? $this->cuerpoTexto($mensaje, $lector)
+            : $this->cuerpoSanitizado($mensaje, $lector);
 
         return response($html, 200)
             ->header('Content-Type', 'text/html; charset=UTF-8')
@@ -128,6 +130,13 @@ class MailController extends Controller
         }
 
         return $lector->sanitizarHtml($html, $mapaCid);
+    }
+
+    private function cuerpoTexto(MailMensaje $mensaje, MboxLector $lector): string
+    {
+        $texto = $lector->parsear($mensaje)->getTextContent() ?? '(este correo no incluye una versión de texto sin formato)';
+
+        return '<pre style="white-space:pre-wrap;font-family:inherit;margin:0;">'.e($texto).'</pre>';
     }
 
     public function adjunto(MailMensaje $mensaje, int $parte, MboxLector $lector): StreamedResponse
